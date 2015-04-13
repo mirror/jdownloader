@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -93,13 +92,12 @@ public class DataFileCom extends PluginForHost {
     private final boolean                  SKIPWAITTIME                 = true;
 
     private final String[]                 IPCHECK                      = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private static AtomicBoolean           hasAttemptedDownloadstart    = new AtomicBoolean(false);
-    private static AtomicLong              timeBefore                   = new AtomicLong(0);
     private static final String            PROPERTY_LASTDOWNLOAD        = "datafilecom_lastdownload_timestamp";
     private final String                   PROPERTY_LASTIP              = "PROPERTY_LASTIP";
     private static AtomicReference<String> lastIP                       = new AtomicReference<String>();
     private static AtomicReference<String> currentIP                    = new AtomicReference<String>();
     private static HashMap<String, Long>   blockedIPsMap                = new HashMap<String, Long>();
+    private static Object                  CTRLLOCK                     = new Object();
     private final Pattern                  IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
     private static final long              FREE_RECONNECTWAIT           = 3610000L;
 
@@ -221,7 +219,6 @@ public class DataFileCom extends PluginForHost {
     private void redirectAntiDDos(Browser br) throws Exception {
         String js = br.getRegex("<style type=\"text/css\">a\\{color\\: white\\;\\}</style><script language=\"JavaScript\">(.*)</script>").getMatch(0);
         if (js != null) {
-
             ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
             final ScriptEngine engine = mgr.getEngineByName("JavaScript");
             // history.length<1){document.body.innerHTML=''
@@ -269,10 +266,12 @@ public class DataFileCom extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked" })
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         currentIP.set(this.getIP());
-        /* Load list of saved IPs + timestamp of last download */
-        final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
-        if (lastdownloadmap != null && lastdownloadmap instanceof HashMap) {
-            blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+        synchronized (CTRLLOCK) {
+            /* Load list of saved IPs + timestamp of last download */
+            final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
+            if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
+                blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+            }
         }
         boolean captchaSuccess = false;
         if (br.containsHTML(PREMIUMONLY)) {
@@ -287,136 +286,132 @@ public class DataFileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
         String dllink = checkDirectLink(downloadLink, "directlink");
-        try {
-            if (dllink == null) {
-                if (this.getPluginConfig().getBooleanProperty(ENABLE_FREE_STORED_WAITTIME, defaultENABLE_fREE_PARALLEL_DOWNLOADS)) {
-                    final long lastdownload = getPluginSavedLastDownloadTimestamp();
-                    final long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
-                    /**
-                     * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
-                     */
-                    if (ipChanged(downloadLink) == false && passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
-                    }
+        if (dllink == null) {
+            if (this.getPluginConfig().getBooleanProperty(ENABLE_FREE_STORED_WAITTIME, defaultENABLE_fREE_PARALLEL_DOWNLOADS)) {
+                final long lastdownload = getPluginSavedLastDownloadTimestamp();
+                final long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
+                /**
+                 * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
+                 */
+                if (ipChanged(downloadLink) == false && passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
                 }
-                handleURLErrors(this.br.getURL());
-                final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-                br.setFollowRedirects(false);
-                final Regex waitTime = br.getRegex("class=\"time\">(\\d+):(\\d+):(\\d+)</span>");
-                int tmphrs = 0, tmpmin = 0, tmpsecs = 0;
-                String tempHours = waitTime.getMatch(0);
-                if (tempHours != null) {
-                    tmphrs = Integer.parseInt(tempHours);
+            }
+            handleURLErrors(this.br.getURL());
+            final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+            br.setFollowRedirects(false);
+            final Regex waitTime = br.getRegex("class=\"time\">(\\d+):(\\d+):(\\d+)</span>");
+            int tmphrs = 0, tmpmin = 0, tmpsecs = 0;
+            String tempHours = waitTime.getMatch(0);
+            if (tempHours != null) {
+                tmphrs = Integer.parseInt(tempHours);
+            }
+            String tempMinutes = waitTime.getMatch(1);
+            if (tempMinutes != null) {
+                tmpmin = Integer.parseInt(tempMinutes);
+            }
+            String tempSeconds = waitTime.getMatch(2);
+            if (tempSeconds != null) {
+                tmpsecs = Integer.parseInt(tempSeconds);
+            }
+            final long wait = (tmphrs * 60 * 60 * 1000) + (tmpmin * 60 * 1000) + (tmpsecs * 1001);
+            if (wait == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (!SKIPRECONNECTWAITTIME && wait > 3601800) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
+            }
+            long timeBeforeCaptcha = System.currentTimeMillis();
+            final String rcID = br.getRegex("api/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
+            if (rcID == null) {
+                logger.warning("rcID is null");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId(rcID);
+            rc.load();
+            for (int i = 1; i <= 5; i++) {
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                if (!SKIPWAITTIME || i > 1) {
+                    waitTime(timeBeforeCaptcha, downloadLink, wait);
                 }
-                String tempMinutes = waitTime.getMatch(1);
-                if (tempMinutes != null) {
-                    tmpmin = Integer.parseInt(tempMinutes);
-                }
-                String tempSeconds = waitTime.getMatch(2);
-                if (tempSeconds != null) {
-                    tmpsecs = Integer.parseInt(tempSeconds);
-                }
-                final long wait = (tmphrs * 60 * 60 * 1000) + (tmpmin * 60 * 1000) + (tmpsecs * 1001);
-                if (wait == 0) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (!SKIPRECONNECTWAITTIME && wait > 3601800) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
-                }
-                long timeBeforeCaptcha = System.currentTimeMillis();
-                final String rcID = br.getRegex("api/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
-                if (rcID == null) {
-                    logger.warning("rcID is null");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.setId(rcID);
-                rc.load();
-                for (int i = 1; i <= 5; i++) {
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                    if (!SKIPWAITTIME || i > 1) {
-                        waitTime(timeBeforeCaptcha, downloadLink, wait);
-                    }
-                    // Validation phase, return token that need to be added to getFileDownloadLink call
-                    postPage("http://www.datafile.com/files/ajax.html", "doaction=validateCaptcha&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid);
+                // Validation phase, return token that need to be added to getFileDownloadLink call
+                postPage("http://www.datafile.com/files/ajax.html", "doaction=validateCaptcha&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid);
 
-                    String token = br.getRegex("\\{\"success\":1,\"token\":\"(.*)\"\\}").getMatch(0);
-                    if (token == null || br.containsHTML("\"success\":0")) {
-                        rc.reload();
-                        continue;
-                    }
-                    postPage("http://www.datafile.com/files/ajax.html", "doaction=getFileDownloadLink&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid + "&token=" + token);
-                    captchaSuccess = true;
-                    break;
+                String token = br.getRegex("\\{\"success\":1,\"token\":\"(.*)\"\\}").getMatch(0);
+                if (token == null || br.containsHTML("\"success\":0")) {
+                    rc.reload();
+                    continue;
                 }
-                /*
-                 * Collection of possible "msg" values: "Please type the two words from picture", "The two words is not valid!<br \/>Please
-                 * try again."
-                 */
-                if (!captchaSuccess) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                dllink = br.getRegex("\"link\":\"([^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                dllink = dllink.replace("\\", "");
-                if (dllink.startsWith("/")) {
-                    dllink = "http://datafile.com" + dllink;
-                }
-                /* Sometimes a limitmessage/errorcode is inside the link - handle that! */
-                this.handleURLErrors(dllink);
+                postPage("http://www.datafile.com/files/ajax.html", "doaction=getFileDownloadLink&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid + "&token=" + token);
+                captchaSuccess = true;
+                break;
             }
-            try {
-                /*
-                 * The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime
-                 * later!
-                 */
-                hasAttemptedDownloadstart.set(true);
-                timeBefore.set(System.currentTimeMillis());
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
-                if (dl.getConnection().getContentType().contains("html")) {
-                    if (dl.getConnection().getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
-                    }
-                    br.followConnection();
-                    handleGeneralErrors();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                downloadLink.setFinalFileName(getServerFilename());
-                downloadLink.setProperty("directlink", dllink);
-                // add download slot
-                controlSlot(+1, account);
-                try {
-                    dl.startDownload();
-                } finally {
-                    // remove download slot
-                    controlSlot(-1, account);
-                }
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
-                    logger.info("Retry on ERROR_DOWNLOAD_INCOMPLETE");
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                throw e;
+            /*
+             * Collection of possible "msg" values: "Please type the two words from picture", "The two words is not valid!<br \/>Please try
+             * again."
+             */
+            if (!captchaSuccess) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-        } finally {
+            dllink = br.getRegex("\"link\":\"([^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = dllink.replace("\\", "");
+            if (dllink.startsWith("/")) {
+                dllink = "http://datafile.com" + dllink;
+            }
+            /* Sometimes a limitmessage/errorcode is inside the link - handle that! */
+            this.handleURLErrors(dllink);
+        }
+        try {
+
+            /*
+             * The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later!
+             */
             try {
-                if (DataFileCom.hasAttemptedDownloadstart.get() == true) {
-                    logger.info("Downloadstart was attempted --> Setting timestamps in plugin config/account");
-                    blockedIPsMap.put(currentIP.get(), timeBefore.get());
+                logger.info("Downloadstart was attempted --> Setting timestamps in plugin config/account");
+                synchronized (CTRLLOCK) {
+                    blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
                     this.getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
                     if (account != null) {
                         /* Storing on account is not (yet) needed but let's do it anyways - it might be useful in the future! */
-                        account.setProperty(PROPERTY_LASTDOWNLOAD, timeBefore.get());
+                        account.setProperty(PROPERTY_LASTDOWNLOAD, System.currentTimeMillis());
                     }
+                    this.setIP(downloadLink, account);
                 }
-                this.setIP(downloadLink, account);
             } catch (final Throwable e) {
             }
+
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+                }
+                br.followConnection();
+                handleGeneralErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            downloadLink.setFinalFileName(getServerFilename());
+            downloadLink.setProperty("directlink", dllink);
+            // add download slot
+            controlSlot(+1, account);
+            try {
+                dl.startDownload();
+            } finally {
+                // remove download slot
+                controlSlot(-1, account);
+            }
+        } catch (final PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
+                logger.info("Retry on ERROR_DOWNLOAD_INCOMPLETE");
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            throw e;
         }
     }
 
@@ -1077,10 +1072,8 @@ public class DataFileCom extends PluginForHost {
         return getJson(ibr.toString(), key);
     }
 
-    private static Object        CTRLLOCK = new Object();
-
-    private static AtomicInteger maxPrem  = new AtomicInteger(1);
-    private static AtomicInteger maxFree  = new AtomicInteger(1);
+    private static AtomicInteger maxPrem = new AtomicInteger(1);
+    private static AtomicInteger maxFree = new AtomicInteger(1);
 
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree

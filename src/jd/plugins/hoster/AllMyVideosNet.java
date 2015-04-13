@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allmyvideos.net", "allmyvids.de" }, urls = { "https?://(www\\.)?allmyvideos\\.net/[a-z0-9]{12}", "et65iuz549tgfr4u89ztg5zht58g590jh40erh7UNUSEDREGEXeTGig5rik" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allmyvideos.net", "allmyvids.de" }, urls = { "https?://(www\\.)?allmyvideos\\.net/([a-z0-9]{12}|v/v\\-[A-Za-z0-9]+)", "et65iuz549tgfr4u89ztg5zht58g590jh40erh7UNUSEDREGEXeTGig5rik" }, flags = { 0, 0 })
 public class AllMyVideosNet extends PluginForHost {
 
     public AllMyVideosNet(PluginWrapper wrapper) {
@@ -47,27 +47,47 @@ public class AllMyVideosNet extends PluginForHost {
 
     /**
      * This site uses a modified XFS script
-     * 
+     *
      * @throws Exception
      */
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
-        if (downloadLink.getDownloadURL().matches(TYPE_OLD)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.setCookie("http://allmyvideos.net/", "lang", "english");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">File not found<|Reason of deletion:|Reason for deletion")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getDownloadURL().matches(TYPE_OLD)) {
+            /* Stupid - strange linktype embeds real XFS-id */
+            final String real_id = br.getRegex("/builtin\\-([a-z0-9]{12})\\.html").getMatch(0);
+            if (real_id == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String new_url = "http://allmyvideos.net/" + real_id;
+            downloadLink.setUrlDownload(new_url);
+            br.getPage(new_url);
+        }
+        if (br.containsHTML(">File not found<|Reason of deletion:|Reason for deletion")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("type=\"hidden\" name=\"fname\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final Form download1 = getFormByKey("op", "download1");
-        if (download1 != null) br.submitForm(download1);
+        if (download1 != null) {
+            br.submitForm(download1);
+        }
         DLLINK = br.getRegex("\"file\" : \"(http://[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (ext == null || ext.length() > 5) {
+            ext = ".mp4";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -75,10 +95,11 @@ public class AllMyVideosNet extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -102,7 +123,7 @@ public class AllMyVideosNet extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      * @param value
      * @return
@@ -113,8 +134,12 @@ public class AllMyVideosNet extends PluginForHost {
             for (Form f : workaround) {
                 for (InputField field : f.getInputFields()) {
                     if (key != null && key.equals(field.getKey())) {
-                        if (value == null && field.getValue() == null) return f;
-                        if (value != null && value.equals(field.getValue())) return f;
+                        if (value == null && field.getValue() == null) {
+                            return f;
+                        }
+                        if (value != null && value.equals(field.getValue())) {
+                            return f;
+                        }
                     }
                 }
             }

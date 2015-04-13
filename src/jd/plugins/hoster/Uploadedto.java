@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
@@ -94,11 +93,10 @@ public class Uploadedto extends PluginForHost {
     private final String                   ACTIVATEACCOUNTERRORHANDLING              = "ACTIVATEACCOUNTERRORHANDLING";
     private final String                   EXPERIMENTALHANDLING                      = "EXPERIMENTALHANDLING";
     private Pattern                        IPREGEX                                   = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static AtomicBoolean           hasAttemptedDownloadstart                 = new AtomicBoolean(false);
-    private static AtomicLong              timeBefore                                = new AtomicLong(0);
     private static AtomicReference<String> lastIP                                    = new AtomicReference<String>();
     private static AtomicReference<String> currentIP                                 = new AtomicReference<String>();
     private static HashMap<String, Long>   blockedIPsMap                             = new HashMap<String, Long>();
+    private static Object                  CTRLLOCK                                  = new Object();
     private static AtomicBoolean           usePremiumAPI                             = new AtomicBoolean(true);
     private static final String            NOCHUNKS                                  = "NOCHUNKS";
     private static final String            NORESUME                                  = "NORESUME";
@@ -694,229 +692,222 @@ public class Uploadedto extends PluginForHost {
         currentIP.set(this.getIP());
         if (account == null) {
             logger.info("Free, WEB download method in use!");
-            /* Load list of saved IPs + timestamp of last download */
-            final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
-            if (lastdownloadmap != null && lastdownloadmap instanceof HashMap) {
-                blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+            synchronized (CTRLLOCK) {
+                /* Load list of saved IPs + timestamp of last download */
+                final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
+                if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
+                    blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+                }
             }
         } else {
             // good to know account been used.
             logger.info("Free account, WEB download method in use!");
         }
         String baseURL = getProtocol() + "uploaded.net/";
+        SubConfiguration config = null;
         try {
-            SubConfiguration config = null;
-            try {
-                config = getPluginConfig();
-                if (config.getBooleanProperty("premAdShown", Boolean.FALSE) == false) {
-                    if (config.getProperty("premAdShown2") == null) {
-                        showFreeDialog("uploaded.to");
-                    } else {
-                        config = null;
-                    }
+            config = getPluginConfig();
+            if (config.getBooleanProperty("premAdShown", Boolean.FALSE) == false) {
+                if (config.getProperty("premAdShown2") == null) {
+                    showFreeDialog("uploaded.to");
                 } else {
                     config = null;
                 }
-            } catch (final Throwable e) {
-            } finally {
-                if (config != null) {
-                    config.setProperty("premAdShown", Boolean.TRUE);
-                    config.setProperty("premAdShown2", "shown");
-                    config.save();
-                }
+            } else {
+                config = null;
             }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("premAdShown", Boolean.TRUE);
+                config.setProperty("premAdShown2", "shown");
+                config.save();
+            }
+        }
 
-            workAroundTimeOut(br);
-            String id = getID(downloadLink);
-            br.setFollowRedirects(false);
-            prepBrowser();
+        workAroundTimeOut(br);
+        String id = getID(downloadLink);
+        br.setFollowRedirects(false);
+        prepBrowser();
 
-            /**
-             * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting when a limit is reached
-             */
-            long lastdownload = 0;
-            long passedTimeSinceLastDl = 0;
-            logger.info("New Download: currentIP = " + currentIP.get());
-            if (account != null && this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, default_aaeh)) {
-                lastdownload = getLongProperty(account, PROPERTY_LASTDOWNLOAD, 0);
-                passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
-                if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
-                    /**
-                     * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
-                     */
-                    /* IP was changed - now we only have to switch to the next account! */
-                    logger.info("IP has changed -> Disabling current free account to try to use the next free account or free unregistered mode");
-                    account.setError(AccountError.TEMP_DISABLED, "Free limit reached");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
-            } else if (account == null && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
+        /**
+         * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting when a limit is reached
+         */
+        long lastdownload = 0;
+        long passedTimeSinceLastDl = 0;
+        logger.info("New Download: currentIP = " + currentIP.get());
+        if (account != null && this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, default_aaeh)) {
+            lastdownload = getLongProperty(account, PROPERTY_LASTDOWNLOAD, 0);
+            passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
+            if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
                 /**
                  * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
                  */
-                lastdownload = getPluginSavedLastDownloadTimestamp();
-                passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
-                if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
-                }
+                /* IP was changed - now we only have to switch to the next account! */
+                logger.info("IP has changed -> Disabling current free account to try to use the next free account or free unregistered mode");
+                account.setError(AccountError.TEMP_DISABLED, "Free limit reached");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
+        } else if (account == null && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
+            /**
+             * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
+             */
+            lastdownload = getPluginSavedLastDownloadTimestamp();
+            passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
+            if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
+            }
+        }
 
-            final String addedDownloadlink = baseURL + "file/" + id;
-            getPage(br, addedDownloadlink);
-            String dllink = null;
-            String redirect = br.getRedirectLocation();
-            if (redirect != null) {
-                if (redirect.contains("/404")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                dllink = redirect;
-                logger.info("Maybe direct download");
+        final String addedDownloadlink = baseURL + "file/" + id;
+        getPage(br, addedDownloadlink);
+        String dllink = null;
+        String redirect = br.getRedirectLocation();
+        if (redirect != null) {
+            if (redirect.contains("/404")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (dllink == null) {
-                generalFreeErrorhandling(account);
-                String passCode = null;
+            dllink = redirect;
+            logger.info("Maybe direct download");
+        }
+        if (dllink == null) {
+            generalFreeErrorhandling(account);
+            String passCode = null;
+            if (br.containsHTML("<h2>Authentification</h2>")) {
+                logger.info("Password protected link");
+                passCode = getPassword(downloadLink);
+                if (passCode == null || passCode.equals("")) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
+                }
+                postPage(br, br.getURL(), "pw=" + Encoding.urlEncode(passCode));
                 if (br.containsHTML("<h2>Authentification</h2>")) {
-                    logger.info("Password protected link");
-                    passCode = getPassword(downloadLink);
-                    if (passCode == null || passCode.equals("")) {
-                        throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
-                    }
-                    postPage(br, br.getURL(), "pw=" + Encoding.urlEncode(passCode));
-                    if (br.containsHTML("<h2>Authentification</h2>")) {
-                        downloadLink.setProperty("pass", null);
-                        throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
-                    }
-                    downloadLink.setProperty("pass", passCode);
+                    downloadLink.setProperty("pass", null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Password wrong!");
                 }
-                // free account might not have captcha...
-                if (dllink == null) {
-                    dllink = br.getRegex("(\"|\\')(https?://[a-z0-9\\-]+\\.(uploaded\\.net|uploaded\\.to)/dl/[a-z0-9\\-]+)(\"|\\')").getMatch(1);
-                }
-                final Browser brc = br.cloneBrowser();
-                getPage(brc, baseURL + "js/download.js");
-                final String rcID = brc.getRegex("Recaptcha\\.create\\(\"([^<>\"]*?)\"").getMatch(0);
-                int wait = 30;
-                final String waitTime = br.getRegex("<span>Current waiting period: <span>(\\d+)</span> seconds</span>").getMatch(0);
-                if (waitTime != null) {
-                    wait = Integer.parseInt(waitTime);
-                }
-                if (rcID == null) {
-                    if (brc.containsHTML("<title></title>")) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-                    }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                postPage(br, baseURL + "io/ticket/slot/" + getID(downloadLink), "");
-                if (!br.containsHTML("\\{succ:true\\}")) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final long timebefore = System.currentTimeMillis();
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.setId(rcID);
-                rc.load();
-                for (int i = 0; i <= 5; i++) {
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                    int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
-                    if (i == 0 && passedTime < wait) {
-                        sleep((wait - passedTime) * 1001l, downloadLink);
-                    }
-                    postPage(br, baseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
-                    if (br.containsHTML("\"err\":\"captcha\"")) {
-                        try {
-                            invalidateLastChallengeResponse();
-                        } catch (final Throwable e) {
-                        }
-                        rc.reload();
-                        continue;
-                    } else {
-                        try {
-                            validateLastChallengeResponse();
-                        } catch (final Throwable e) {
-                        }
-                    }
-                    break;
-                }
-                generalFreeErrorhandling(account);
-                if (br.containsHTML("limit\\-parallel")) {
-                    freeDownloadlimitReached("You're already downloading");
-                }
-                dllink = br.getRegex("url:\\'(http.*?)\\'").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("url:\\'(dl/.*?)\\'").getMatch(0);
-                    if (dllink == null) {
-                        dllink = br.getRegex("(\"|\\')(https?://[a-z0-9\\-]+\\.(uploaded\\.net|uploaded\\.to)/dl/[a-z0-9\\-]+)(\"|\\')").getMatch(1);
-                        if (dllink == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                    }
-                }
+                downloadLink.setProperty("pass", passCode);
             }
-            /* The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later! */
-            hasAttemptedDownloadstart.set(true);
-            timeBefore.set(System.currentTimeMillis());
-            dl = BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-            try {
-                /* remove next major update */
-                /* workaround for broken timeout in 0.9xx public */
-                ((RAFDownload) dl).getRequest().setConnectTimeout(30000);
-                ((RAFDownload) dl).getRequest().setReadTimeout(60000);
-            } catch (final Throwable ee) {
+            // free account might not have captcha...
+            if (dllink == null) {
+                dllink = br.getRegex("(\"|\\')(https?://[a-z0-9\\-]+\\.(uploaded\\.net|uploaded\\.to)/dl/[a-z0-9\\-]+)(\"|\\')").getMatch(1);
             }
-            if (!dl.getConnection().isContentDisposition()) {
-                try {
-                    br.followConnection();
-                } catch (final Throwable e) {
-                    logger.severe(e.getMessage());
-                }
-                logger.info(br.toString());
-                if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                generalFreeErrorhandling(account);
-                if (br.containsHTML("please try again in an hour or purchase one of our")) {
-                    freeDownloadlimitReached(null);
-                }
-                if (dl.getConnection().getResponseCode() == 508) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError(508)", 30 * 60 * 1000l);
-                }
-                if (br.containsHTML("try again later")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-                }
-                if (br.containsHTML("All of our free\\-download capacities are")) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All of our free-download capacities are exhausted currently", 10 * 60 * 1000l);
-                }
-                if (br.containsHTML("File not found!")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (br.getURL().contains("view=error")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-                }
-                if ("No htmlCode read".equalsIgnoreCase(br.toString())) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+            final Browser brc = br.cloneBrowser();
+            getPage(brc, baseURL + "js/download.js");
+            final String rcID = brc.getRegex("Recaptcha\\.create\\(\"([^<>\"]*?)\"").getMatch(0);
+            int wait = 30;
+            final String waitTime = br.getRegex("<span>Current waiting period: <span>(\\d+)</span> seconds</span>").getMatch(0);
+            if (waitTime != null) {
+                wait = Integer.parseInt(waitTime);
+            }
+            if (rcID == null) {
+                if (brc.containsHTML("<title></title>")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (dl.getConnection().getResponseCode() == 404) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            postPage(br, baseURL + "io/ticket/slot/" + getID(downloadLink), "");
+            if (!br.containsHTML("\\{succ:true\\}")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl.startDownload();
-        } finally {
-            /* Remember time of the last download if download was attempted */
-            if (hasAttemptedDownloadstart.get() == true) {
-                logger.info("Downloadstart was attempted --> Setting timestamps in plugin config/account");
-                if (account != null) {
-                    account.setProperty(PROPERTY_LASTDOWNLOAD, timeBefore.get());
-                } else {
-                    blockedIPsMap.put(currentIP.get(), timeBefore.get());
+            final long timebefore = System.currentTimeMillis();
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId(rcID);
+            rc.load();
+            for (int i = 0; i <= 5; i++) {
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
+                if (i == 0 && passedTime < wait) {
+                    sleep((wait - passedTime) * 1001l, downloadLink);
                 }
+                postPage(br, baseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+                if (br.containsHTML("\"err\":\"captcha\"")) {
+                    try {
+                        invalidateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
+                    rc.reload();
+                    continue;
+                } else {
+                    try {
+                        validateLastChallengeResponse();
+                    } catch (final Throwable e) {
+                    }
+                }
+                break;
+            }
+            generalFreeErrorhandling(account);
+            if (br.containsHTML("limit\\-parallel")) {
+                freeDownloadlimitReached("You're already downloading");
+            }
+            dllink = br.getRegex("url:\\'(http.*?)\\'").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("url:\\'(dl/.*?)\\'").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("(\"|\\')(https?://[a-z0-9\\-]+\\.(uploaded\\.net|uploaded\\.to)/dl/[a-z0-9\\-]+)(\"|\\')").getMatch(1);
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+            }
+        }
+        /* The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later! */
+        synchronized (CTRLLOCK) {
+            if (account != null) {
+                account.setProperty(PROPERTY_LASTDOWNLOAD, System.currentTimeMillis());
             } else {
-                logger.info("Downloadstart was NOT attempted --> NOT setting timestamps");
+                blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
             }
             setIP(downloadLink, account);
         }
+        dl = BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        try {
+            /* remove next major update */
+            /* workaround for broken timeout in 0.9xx public */
+            ((RAFDownload) dl).getRequest().setConnectTimeout(30000);
+            ((RAFDownload) dl).getRequest().setReadTimeout(60000);
+        } catch (final Throwable ee) {
+        }
+        if (!dl.getConnection().isContentDisposition()) {
+            try {
+                br.followConnection();
+            } catch (final Throwable e) {
+                logger.severe(e.getMessage());
+            }
+            logger.info(br.toString());
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            generalFreeErrorhandling(account);
+            if (br.containsHTML("please try again in an hour or purchase one of our")) {
+                freeDownloadlimitReached(null);
+            }
+            if (dl.getConnection().getResponseCode() == 508) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError(508)", 30 * 60 * 1000l);
+            }
+            if (br.containsHTML("try again later")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+            }
+            if (br.containsHTML("All of our free\\-download capacities are")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All of our free-download capacities are exhausted currently", 10 * 60 * 1000l);
+            }
+            if (br.containsHTML("File not found!")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (br.getURL().contains("view=error")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            }
+            if ("No htmlCode read".equalsIgnoreCase(br.toString())) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (dl.getConnection().getResponseCode() == 404) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        dl.startDownload();
     }
 
     private void generalFreeErrorhandling(final Account account) throws PluginException {
@@ -1270,6 +1261,7 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (usePremiumAPI.get() && preferAPI(account) && !downloadLink.getBooleanProperty("preDlPass", false)) {
@@ -1763,10 +1755,8 @@ public class Uploadedto extends PluginForHost {
     }
 
     private void freeDownloadlimitReached(final String message) throws PluginException {
-        long timestamp_last_download_started = timeBefore.get();
-        if (timestamp_last_download_started == 0) {
-            timestamp_last_download_started = getPluginSavedLastDownloadTimestamp();
-        }
+        /* Even without IP workaround we can use the timestamp to determine needed waittime. */
+        final long timestamp_last_download_started = getPluginSavedLastDownloadTimestamp();
         final long timePassed = System.currentTimeMillis() - timestamp_last_download_started;
         if (timePassed >= FREE_RECONNECTWAIT) {
             logger.info("According to saved waittime we passed the waittime which is impossible as uploaded has shown reconnect errormessage --> Throwing IP_BLOCKED exception with full reconnect time");

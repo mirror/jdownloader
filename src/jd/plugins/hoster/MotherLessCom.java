@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
@@ -188,6 +190,7 @@ public class MotherLessCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         // reset comment/message
         if ("video".equals(parameter.getStringProperty("dltype", null))) {
@@ -252,7 +255,7 @@ public class MotherLessCom extends PluginForHost {
         try {
             Browser brc = br.cloneBrowser();
             brc.getHeaders().put("Accept-Encoding", "identity");
-            con = brc.openGetConnection(DLLINK);
+            con = openConnection(brc, DLLINK);
             if (con.getContentType().contains("html")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -272,6 +275,20 @@ public class MotherLessCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
+        }
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     public static DownloadLink notOnlineYet(DownloadLink downloadLink, boolean reset) {

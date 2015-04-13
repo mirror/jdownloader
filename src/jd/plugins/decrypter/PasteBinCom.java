@@ -34,7 +34,7 @@ public class PasteBinCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String type_invalid = "http://(www\\.)?pastebin\\.com/(languages|trends|signup|login|pro|tools|archive|login\\.php|faq|settings|alerts|domains|contact|stats|etc|favicon|users|api|download|privacy|passmailer)";
+    private static final String type_invalid = "http://(www\\.)?pastebin\\.com/(languages|trends|signup|login|pro|profile|tools|archive|login\\.php|faq|search|settings|alerts|domains|contact|stats|etc|favicon|users|api|download|privacy|passmailer)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
