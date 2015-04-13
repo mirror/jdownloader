@@ -955,7 +955,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
     public Map<YoutubeITAG, YoutubeStreamData> loadVideo(final YoutubeClipData vid) throws Exception {
         final Map<YoutubeITAG, YoutubeStreamData> ret = new HashMap<YoutubeITAG, YoutubeStreamData>();
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
-
+        boolean loggedIn = br.getCookie("https://youtube.com", "LOGIN_INFO") != null;
         this.br.setFollowRedirects(true);
 
         /* this cookie makes html5 available and skip controversy check */
@@ -994,12 +994,13 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                     apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=embedded&ps=default&eurl=&gl=US&hl=en");
                 }
             }
+
             if (apiBrowser.containsHTML("requires_purchase=1")) {
                 logger.warning("Download not possible: You have to pay to watch this video");
                 throw new Exception("Paid Video");
             }
             final String errorcode = apiBrowser.getRegex("errorcode=(\\d+)").getMatch(0);
-            final String reason = apiBrowser.getRegex("reason=([^\\&]+)").getMatch(0);
+            String reason = apiBrowser.getRegex("reason=([^\\&]+)").getMatch(0);
             if ("150".equals(errorcode)) {
                 // http://www.youtube.com/watch?v=xxWHMmiOTVM
                 // reason=This video contains content from WMG. It is restricted from playback on certain sites.<br/><u><a
@@ -1011,7 +1012,13 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
             }
             if (reason != null) {
-                vid.error = Encoding.urlDecode(reason, false);
+                reason = Encoding.urlDecode(reason, false);
+                // remove all tags
+                reason = reason.replaceAll("<.*?>", "");
+                if (reason != null && reason.contains("Watch this video on YouTube") && !loggedIn) {
+                    reason = "Account required. Add your Youtube Account to JDownloader";
+                }
+                vid.error = reason;
             }
         }
 
