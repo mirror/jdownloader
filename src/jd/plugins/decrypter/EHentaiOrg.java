@@ -43,8 +43,6 @@ public class EHentaiOrg extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> allPages = new ArrayList<String>();
-        allPages.add("0");
         final String parameter = param.toString();
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         if (uid == null) {
@@ -60,17 +58,18 @@ public class EHentaiOrg extends PluginForDecrypt {
         if (fpName != null) {
             fpName = Encoding.htmlDecode(fpName.trim());
         }
+        int pagemax = 1;
         final String[] pages = br.getRegex("/?p=(\\d+)\" onclick=").getColumn(0);
         if (pages != null && pages.length != 0) {
             for (final String aPage : pages) {
-                if (!allPages.contains(aPage)) {
-                    allPages.add(aPage);
+                final int pageint = Integer.parseInt(aPage);
+                if (pageint > pagemax) {
+                    pagemax = pageint;
                 }
             }
         }
         final DecimalFormat df = new DecimalFormat("0000");
-        int counter = 1;
-        for (final String currentPage : allPages) {
+        for (int page = 0; page <= pagemax; page++) {
             try {
                 if (this.isAbort()) {
                     logger.info("Decryption aborted by user: " + parameter);
@@ -80,17 +79,18 @@ public class EHentaiOrg extends PluginForDecrypt {
                 // Not available in old 0.9.581 Stable
             }
             final Browser br2 = br.cloneBrowser();
-            if (!currentPage.equals("0")) {
-                br2.getPage(parameter + "/?p=" + currentPage);
+            if (page > 0) {
+                br2.getPage(parameter + "/?p=" + page);
             }
             final String[] links = br2.getRegex("\"(http://g\\.e-hentai\\.org/s/[a-z0-9]+/" + uid + "-\\d+)\"").getColumn(0);
             if (links == null || links.length == 0 || fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            int counter = 1;
             for (final String singleLink : links) {
                 final DownloadLink dl = createDownloadlink("http://ehentaidecrypted.org/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                final String namepart = fpName + "_" + df.format(counter);
+                final String namepart = fpName + "_" + df.format(page);
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("individual_link", singleLink);
                 dl.setProperty("namepart", namepart);
