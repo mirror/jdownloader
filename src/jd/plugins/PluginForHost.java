@@ -25,6 +25,7 @@ import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -1604,7 +1605,7 @@ public abstract class PluginForHost extends Plugin {
         return variants != null && variants.size() > 0;
     }
 
-    public void extendLinkgrabberContextMenu(JComponent parent, final PluginView<CrawledLink> pv, List<PluginView<CrawledLink>> allPvs) {
+    public void extendLinkgrabberContextMenu(JComponent parent, final PluginView<CrawledLink> pv, Collection<PluginView<CrawledLink>> allPvs) {
         if (allPvs.size() == 1) {
             final JMenu setVariants = new JMenu(_GUI._.PluginForHost_extendLinkgrabberContextMenu_generic_convert());
             setVariants.setIcon(DomainInfo.getInstance(getHost()).getFavIcon());

@@ -1,8 +1,11 @@
 package org.jdownloader.gui.views;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -12,91 +15,55 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
-import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelData;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 
 public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
 
-    private static List<AbstractNode> pack(AbstractNode clicked) {
-        java.util.List<AbstractNode> ret = new ArraySet<AbstractNode>();
-        ret.add(clicked);
-        return ret;
-    }
+    public static class PluginView<ChildrenType extends AbstractPackageChildrenNode> extends ArrayList<ChildrenType> {
 
-    private ArrayList<PackageView<PackageType, ChildrenType>>                  packageViews;
-    private ArrayList<PluginView<ChildrenType>>                                pluginViews;
-    private AbstractNode                                                       contextObject;
-
-    private List<? extends AbstractNode>                                       rawSelection;
-
-    private ArraySet<ChildrenType>                                             children;
-
-    private List<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters = null;
-
-    public List<PackageControllerTableModelFilter<PackageType, ChildrenType>> getTableFilters() {
-        return filters;
-    }
-
-    private ArraySet<AbstractNode>                                       raw;
-    private HashMap<PluginForHost, PluginView<ChildrenType>>             pluginView;
-
-    private HashMap<PackageType, PackageView<PackageType, ChildrenType>> view;
-    private boolean                                                      applyTableFilter;
-
-    public static class PluginView<ChildrenType extends AbstractPackageChildrenNode> {
-        private final ArraySet<ChildrenType> children;
-        private final PluginForHost          plugin;
+        private final PluginForHost plugin;
 
         public PluginView(PluginForHost pkg) {
-            children = new ArraySet<ChildrenType>();
             this.plugin = pkg;
         }
 
-        public ArraySet<ChildrenType> getChildren() {
-            return children;
+        public List<ChildrenType> getChildren() {
+            return this;
         }
 
         public PluginForHost getPlugin() {
             return plugin;
         }
 
-        public void addChildren(List<ChildrenType> children) {
-            this.children.addAll(children);
-        }
-
-        public void addChild(ChildrenType child) {
-            children.add(child);
-        }
-
     };
 
-    public static class PackageView<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
-        private final ArraySet<ChildrenType> children;
-        private final PackageType            pkg;
-        private final boolean                packageIncluded;
-        private final int                    pkgSize;
-        private final boolean                isExpanded;
+    public static class PackageView<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends ArrayList<ChildrenType> {
+        private final PackageType pkg;
+        private final boolean     packageIncluded;
+        private final int         pkgSize;
+        private final boolean     isExpanded;
 
         public PackageView(PackageType pkg, boolean packageIncluded) {
-            children = new ArraySet<ChildrenType>();
             this.pkg = pkg;
             boolean readL = pkg.getModifyLock().readLock();
             try {
                 this.pkgSize = pkg.getChildren().size();
+                this.isExpanded = pkg.isExpanded();
             } finally {
                 pkg.getModifyLock().readUnlock(readL);
             }
             this.packageIncluded = packageIncluded;
-            this.isExpanded = pkg.isExpanded();
         }
 
-        public ArraySet<ChildrenType> getChildren() {
-            return children;
+        public List<ChildrenType> getChildren() {
+            return this;
         }
 
         public PackageType getPackage() {
@@ -105,14 +72,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
         public boolean isPackageSelected() {
             return packageIncluded;
-        }
-
-        private void addChildren(List<ChildrenType> children) {
-            this.children.addAll(children);
-        }
-
-        private void addChild(ChildrenType child) {
-            children.add(child);
         }
 
         public boolean isExpanded() {
@@ -124,56 +83,52 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         }
 
         public boolean isFull() {
-            return children.size() == pkgSize;
+            return size() == pkgSize;
         }
     };
 
+    private final List<? extends AbstractNode>                                   rawSelection;
+
+    protected List<PackageControllerTableModelFilter<PackageType, ChildrenType>> childrenFilters = null;
+
+    private final AbstractNode                                                   contextObject;
+
     @SuppressWarnings("unchecked")
-    public SelectionInfo(AbstractNode contextObject, List<? extends AbstractNode> selection, boolean applyTableFilter) {
+    public SelectionInfo(final AbstractNode contextObject, final List<? extends AbstractNode> selection, final boolean applyTableFilter) {
         this.contextObject = contextObject;
-        this.applyTableFilter = applyTableFilter;
         if (selection == null || selection.size() == 0) {
             if (contextObject == null) {
-                rawSelection = new ArraySet<AbstractNode>();
+                rawSelection = new ArrayList<AbstractNode>(0);
             } else {
-                rawSelection = pack(contextObject);
+                final List<AbstractNode> rawSelection = new ArrayList<AbstractNode>(1);
+                rawSelection.add(contextObject);
+                this.rawSelection = rawSelection;
             }
         } else {
             rawSelection = selection;
         }
 
-        children = new ArraySet<ChildrenType>();
-        packageViews = new ArrayList<PackageView<PackageType, ChildrenType>>();
-
-        view = new HashMap<PackageType, PackageView<PackageType, ChildrenType>>();
-        pluginView = new HashMap<PluginForHost, SelectionInfo.PluginView<ChildrenType>>();
-        pluginViews = new ArrayList<SelectionInfo.PluginView<ChildrenType>>();
-
-        // System.out.println(kEvent);
-
-        PackageControllerTable<PackageType, ChildrenType> table = null;
+        final PackageControllerTable<PackageType, ChildrenType> table;
         if (contextObject != null) {
             if (contextObject instanceof DownloadLink || contextObject instanceof FilePackage) {
                 table = (PackageControllerTable<PackageType, ChildrenType>) DownloadsTable.getInstance();
             } else {
                 table = (PackageControllerTable<PackageType, ChildrenType>) LinkGrabberTable.getInstance();
             }
-        } else if (rawSelection != null && rawSelection.size() > 0) {
+        } else if (rawSelection != null && rawSelection.size() > 0 && rawSelection.get(0) != null) {
             if (rawSelection.get(0) instanceof DownloadLink || rawSelection.get(0) instanceof FilePackage) {
                 table = (PackageControllerTable<PackageType, ChildrenType>) DownloadsTable.getInstance();
             } else {
                 table = (PackageControllerTable<PackageType, ChildrenType>) LinkGrabberTable.getInstance();
             }
-        }
-        if (table != null && applyTableFilter) {
-            PackageControllerTableModel<PackageType, ChildrenType> tableModel = table.getModel();
-            List<PackageControllerTableModelFilter<PackageType, ChildrenType>> lfilters = tableModel.getEnabledTableFilters();
-            if (lfilters != null && lfilters.size() > 0) {
-                filters = lfilters;
-            }
+        } else {
+            table = null;
         }
         if (table != null) {
-            // long t = System.currentTimeMillis();
+            if (applyTableFilter) {
+                final PackageControllerTableModelData<PackageType, ChildrenType> tableData = table.getModel().getTableData();
+                childrenFilters = tableData.getChildrenFilters();
+            }
             table.getController().getQueue().addWait(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
 
                 @Override
@@ -182,39 +137,23 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                     return null;
                 }
             });
-            // System.out.println("Within Queue: " + (System.currentTimeMillis() - t) + " Size:" + (selection != null ? selection.size() :
-            // 0));
         } else {
-            // long t = System.currentTimeMillis();
             aggregate();
-            // System.out.println("Outside Queue: " + (System.currentTimeMillis() - t) + " Size:" + (selection != null ? selection.size() :
-            // 0));
         }
     }
 
-    public boolean contains(AbstractPackageNode<?, ?> child) {
-
-        return view.containsKey(child);
+    public boolean contains(AbstractPackageNode<?, ?> pkg) {
+        return getPackageViewsMap().containsKey(pkg);
     }
+
+    protected final ArrayList<ChildrenType> children = new ArrayList<ChildrenType>();
 
     public boolean contains(AbstractPackageChildrenNode<?> child) {
-
-        return children.contains(child);
-
-    }
-
-    //
-    // public SelectionInfo(List<? extends AbstractNode> selection) {
-    // this(null, selection, null);
-    //
-    // }
-
-    private SelectionInfo() {
+        return getChildren().contains(child);
     }
 
     @SuppressWarnings("unchecked")
     protected void aggregate() {
-        raw = new ArraySet<AbstractNode>(rawSelection);
         // use cases:
         // we use this class not only for real selections, but also for faked selections. that means, that the selection of a child without
         // it's package is possible even if the package is collapsed
@@ -224,176 +163,122 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         // all children of a collapsed package with or without the package itself
         // no children, but the package colapsed or expanded
 
-        // LinkedHashSet<AbstractNode> notSelectedParents = new LinkedHashSet<AbstractNode>();
-        // if we selected a link, and not its parent, this parent will not be agregated. That's why we add them here.
-        // for (AbstractNode node : rawSelection) {
-        // if (node == null) continue;
-        //
-        // if (node instanceof AbstractPackageChildrenNode) {
-        // // if (!has.contains(((AbstractPackageChildrenNode) node).getParentNode())) {
-        // PackageType pkg = (PackageType) ((AbstractPackageChildrenNode) node).getParentNode();
-        // if (pkg != null && pkg.isExpanded()) {
-        // raw.add(pkg);
-        //
-        // }
-        //
-        // // }
-        // }
-        // }
-
-        for (AbstractNode node : raw) {
+        // if we selected a package, and ALL it's links, we want all
+        // links
+        // if we selected a package, and nly afew links, we probably
+        // want only these few links.
+        // if we selected a package, and it is NOT expanded, we want
+        // all
+        // links
+        final LinkedHashSet<ChildrenType> lastPackageChildren = new LinkedHashSet<ChildrenType>();
+        PackageView<PackageType, ChildrenType> lastPackageView = null;
+        for (AbstractNode node : getRawSelection()) {
             if (node == null) {
                 continue;
-            }
-            if (node instanceof AbstractPackageChildrenNode) {
-
-                PackageType pkg = ((ChildrenType) node).getParentNode();
-                if (pkg != null) {
-                    PackageView<PackageType, ChildrenType> pv = internalPackageView(pkg);
-                    pv.addChild((ChildrenType) node);
+            } else if (node instanceof AbstractPackageNode) {
+                /* rawSelection contains package */
+                final PackageType currentPackage = (PackageType) node;
+                if (lastPackageView == null || lastPackageView.getPackage() != currentPackage) {
+                    aggregatePackagePackageView(lastPackageView, lastPackageChildren);
+                    lastPackageChildren.clear();
+                    lastPackageView = internalPackageView(currentPackage, true);
                 }
-                addPluginView(node);
-                children.add((ChildrenType) node);
-            } else {
+            } else if (node instanceof AbstractPackageChildrenNode) {
+                /* rawSelection contains child */
+                final ChildrenType currentChild = (ChildrenType) node;
+                final PackageType currentPackage = currentChild.getParentNode();
+                if (lastPackageView == null || lastPackageView.getPackage() != currentPackage) {
+                    aggregatePackagePackageView(lastPackageView, lastPackageChildren);
+                    lastPackageChildren.clear();
+                    lastPackageView = internalPackageView(currentPackage, true);
+                }
+                lastPackageChildren.add(currentChild);
+            }
+        }
+        aggregatePackagePackageView(lastPackageView, lastPackageChildren);
+    }
 
-                // if we selected a package, and ALL it's links, we want all
-                // links
-                // if we selected a package, and nly afew links, we probably
-                // want only these few links.
-                // if we selected a package, and it is NOT expanded, we want
-                // all
-                // links
-                boolean readL = ((PackageType) node).getModifyLock().readLock();
+    private void aggregatePackagePackageView(PackageView<PackageType, ChildrenType> lastPackageView, LinkedHashSet<ChildrenType> lastPackageChildren) {
+        if (lastPackageView != null) {
+            final PackageType lastPackage = lastPackageView.getPackage();
+            PluginView<ChildrenType> lastPluginView = null;
+            if (lastPackageView.isExpanded == false || lastPackageChildren.size() == 0) {
+                if (lastPackageChildren.size() > 0) {
+                    new WTFException("lastPackageChildren for collapsed lastPackageView!?!?").printStackTrace();
+                }
+                final boolean readL = lastPackage.getModifyLock().readLock();
                 try {
-                    PackageView<PackageType, ChildrenType> pv = internalPackageView((PackageType) node);
-                    if (!((PackageType) node).isExpanded()) {
-                        // add allTODO
-                        List<ChildrenType> childs = ((PackageType) node).getChildren();
-                        ArraySet<ChildrenType> unFiltered = new ArraySet<ChildrenType>();
-                        if (filters == null) {
-                            children.addAll(childs);
-                            pv.addChildren(childs);
-                            for (ChildrenType l : childs) {
-                                addPluginView(l);
-                            }
-                        } else {
-                            for (ChildrenType l : childs) {
-                                boolean filtered = false;
-                                for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
-                                    if (filter.isFiltered(l)) {
-                                        filtered = true;
-                                        break;
-                                    }
-                                }
-                                if (!filtered) {
-                                    unFiltered.add(l);
-                                    pv.addChild(l);
-                                    addPluginView(l);
-                                }
-                            }
-                            children.addAll(unFiltered);
+                    final List<ChildrenType> packageChildren = lastPackage.getChildren();
+                    if (childrenFilters == null || childrenFilters.size() == 0) {
+                        children.addAll(packageChildren);
+                        lastPackageView.addAll(packageChildren);
+                        for (final ChildrenType child : packageChildren) {
+                            (lastPluginView = internalPluginView(child, lastPluginView)).add(child);
                         }
                     } else {
-                        List<ChildrenType> childs = ((PackageType) node).getChildren();
-                        boolean containsNone = true;
-                        boolean containsAll = true;
-                        ArraySet<ChildrenType> selected = new ArraySet<ChildrenType>();
-                        ArraySet<ChildrenType> unFiltered = new ArraySet<ChildrenType>();
-                        for (ChildrenType l : childs) {
-                            if (raw.contains(l)) {
-                                selected.add(l);
-                                containsNone = false;
-                            } else {
-                                containsAll = false;
-                                if (filters != null) {
-                                    boolean filtered = false;
-                                    for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
-                                        if (filter.isFiltered(l)) {
-                                            filtered = true;
-                                            break;
-                                        }
-                                    }
-                                    if (!filtered) {
-                                        unFiltered.add(l);
-                                    }
+                        childrenLoop: for (final ChildrenType child : packageChildren) {
+                            for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : childrenFilters) {
+                                if (filter.isFiltered(child)) {
+                                    continue childrenLoop;
                                 }
                             }
-                        }
-                        // table.getModel()
-                        if (containsNone) {
-                            // this is a special case. if the user selected only the package, we cannot simply add all children. We need to
-                            // check if he works on a filtered view.
-                            if (filters == null) {
-                                pv.addChildren(childs);
-                                children.addAll(childs);
-                                for (ChildrenType l : childs) {
-                                    addPluginView(l);
-                                }
-                            } else {
-                                pv.addChildren(unFiltered);
-                                children.addAll(unFiltered);
-                                for (ChildrenType l : unFiltered) {
-                                    addPluginView(l);
-                                }
-                            }
-                        } else if (containsAll) {
-                            pv.addChildren(childs);
-                            children.addAll(childs);
-                            for (ChildrenType l : childs) {
-                                addPluginView(l);
-                            }
-                        } else {
-                            pv.addChildren(selected);
-                            for (ChildrenType l : selected) {
-                                addPluginView(l);
-                            }
+                            children.add(child);
+                            lastPackageView.add(child);
+                            (lastPluginView = internalPluginView(child, lastPluginView)).add(child);
                         }
                     }
                 } finally {
-                    ((PackageType) node).getModifyLock().readUnlock(readL);
+                    lastPackage.getModifyLock().readUnlock(readL);
+                }
+            } else {
+                children.addAll(lastPackageChildren);
+                lastPackageView.addAll(lastPackageChildren);
+                for (final ChildrenType child : lastPackageChildren) {
+                    (lastPluginView = internalPluginView(child, lastPluginView)).add(child);
                 }
             }
         }
-
     }
 
-    protected void addPluginView(AbstractNode node) {
-        PluginForHost plg = node instanceof CrawledLink ? ((CrawledLink) node).gethPlugin() : ((DownloadLink) node).getDefaultPlugin();
-        internalPluginView(plg).addChild((ChildrenType) node);
-    }
+    private final HashMap<PluginForHost, PluginView<ChildrenType>> pluginViews = new HashMap<PluginForHost, SelectionInfo.PluginView<ChildrenType>>();
 
-    private PluginView<ChildrenType> internalPluginView(PluginForHost pkg) {
-        PluginView<ChildrenType> pv = pluginView.get(pkg);
-
+    protected PluginView<ChildrenType> internalPluginView(ChildrenType node, PluginView<ChildrenType> lastPluginView) {
+        final PluginForHost plugin = node instanceof CrawledLink ? ((CrawledLink) node).gethPlugin() : ((DownloadLink) node).getDefaultPlugin();
+        if (lastPluginView != null && lastPluginView.getPlugin() == plugin) {
+            /* faster than map lookup */
+            return lastPluginView;
+        }
+        PluginView<ChildrenType> pv = pluginViews.get(plugin);
         if (pv == null) {
-
-            pv = new PluginView<ChildrenType>(pkg);
-            pluginViews.add(pv);
-            pluginView.put(pkg, pv);
+            pv = new PluginView<ChildrenType>(plugin);
+            pluginViews.put(plugin, pv);
         }
         return pv;
     }
 
-    public List<PluginView<ChildrenType>> getPluginViews() {
-        return pluginViews;
+    public Collection<PluginView<ChildrenType>> getPluginViews() {
+        return pluginViews.values();
     }
+
+    private final List<PackageView<PackageType, ChildrenType>>                 packageViewList = new ArrayList<PackageView<PackageType, ChildrenType>>();
+    private final HashMap<PackageType, PackageView<PackageType, ChildrenType>> packageViews    = new HashMap<PackageType, PackageView<PackageType, ChildrenType>>();
 
     /**
      * @param pkg
      * @return
      */
-    private PackageView<PackageType, ChildrenType> internalPackageView(PackageType pkg) {
-        PackageView<PackageType, ChildrenType> pv = view.get(pkg);
+    protected PackageView<PackageType, ChildrenType> internalPackageView(PackageType pkg, boolean packageIncluded) {
+        PackageView<PackageType, ChildrenType> pv = getPackageView(pkg);
         if (pv == null) {
-            pv = new PackageView<PackageType, ChildrenType>(pkg, raw.contains(pkg));
-            packageViews.add(pv);
-            view.put(pkg, pv);
+            pv = new PackageView<PackageType, ChildrenType>(pkg, packageIncluded);
+            getPackageViews().add(pv);
+            getPackageViewsMap().put(pkg, pv);
         }
         return pv;
     }
 
     /**
-     * 
+     *
      * @see #getContextLink()
      * @return
      */
@@ -403,20 +288,19 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
     /**
      * if this object is a childcontext, this returns the child, else throws exception
-     * 
+     *
      * @return
      */
     public ChildrenType getContextLink() {
         if (isLinkContext()) {
-            return (ChildrenType) contextObject;
+            return (ChildrenType) getRawContext();
         }
-
         throw new BadContextException("Not available in Packagecontext");
     }
 
     /**
      * If there is a context Object, this method returns it. try to muse {@link #getContextLink()} or {@link #getContextPackage()} instead
-     * 
+     *
      * @return
      */
     public AbstractNode getRawContext() {
@@ -425,39 +309,38 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
     /**
      * if we have packagecontext, this returns the package, else the child's PACKAGE
-     * 
+     *
      * @return
      */
     public PackageType getContextPackage() {
-        if (contextObject == null) {
+        final AbstractNode context = getRawContext();
+        if (context == null) {
             throw new BadContextException("Context is null");
         }
         if (isPackageContext()) {
-            return (PackageType) contextObject;
+            return (PackageType) context;
         } else {
-            return ((ChildrenType) contextObject).getParentNode();
+            return ((ChildrenType) context).getParentNode();
         }
-
     }
 
     /**
      * Returns either the context pacakge, or the context link's package, or the first links package
-     * 
+     *
      * @see #getContextPackage()
      * @return
      */
     public PackageType getFirstPackage() {
-
-        if (contextObject == null) {
-            if (children.size() == 0) {
+        final AbstractNode context = getRawContext();
+        if (context == null) {
+            final List<ChildrenType> lchildren = getChildren();
+            if (lchildren.size() == 0) {
                 throw new BadContextException("Invalid Context");
             }
-            return children.get(0).getParentNode();
+            return lchildren.get(0).getParentNode();
         } else {
-
             return getContextPackage();
         }
-
     }
 
     /**
@@ -471,7 +354,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     /**
      * Returns a List of the rawselection. Contains packages and links as they were selected in the table. USe {@link #getChildren()}
      * instead
-     * 
+     *
      * @return
      */
     public List<? extends AbstractNode> getRawSelection() {
@@ -480,71 +363,45 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
     /**
      * A list of all selected children. This list also contains the children of collapsed selected packages
-     * 
+     *
      * @return
      */
-    public ArraySet<ChildrenType> getChildren() {
+    public List<ChildrenType> getChildren() {
         return children;
     }
 
     /**
      * true if the direct context is a link
-     * 
+     *
      * @return
      */
     public boolean isLinkContext() {
-        return contextObject != null && contextObject instanceof AbstractPackageChildrenNode;
+        final AbstractNode context = getRawContext();
+        return context != null && context instanceof AbstractPackageChildrenNode;
     }
 
     /**
      * false if there are selected links
-     * 
+     *
      * @return
      */
     public boolean isEmpty() {
-        return children == null || children.size() == 0;
+        final List<ChildrenType> lchildren = getChildren();
+        return lchildren.size() == 0;
     }
 
     /**
      * true if the direct context is a package
-     * 
+     *
      * @return
      */
     public boolean isPackageContext() {
-        return contextObject != null && contextObject instanceof AbstractPackageNode;
+        final AbstractNode context = getRawContext();
+        return context != null && context instanceof AbstractPackageNode;
     }
 
-    // public SelectionInfo<PackageType, ChildrenType> derive(AbstractNode contextObject2, MouseEvent event, KeyEvent kEvent, ActionEvent
-    // actionEvent, ExtColumn<AbstractNode> column) {
-    // SelectionInfo<PackageType, ChildrenType> ret = new SelectionInfo<PackageType, ChildrenType>();
-    //
-    // ret.allPackages = allPackages;
-    // ret.children = children;
-    // ret.contextColumn = this.contextColumn;
-    // ret.contextObject = this.contextObject;
-    // ret.filters = filters;
-    // ret.packageViews = packageViews;
-    //
-    // ret.raw = raw;
-    // ret.rawSelection = rawSelection;
-    //
-    // ret.table = table;
-    // ret.view = view;
-    //
-    // if (contextObject2 != null) {
-    //
-    // ret.contextObject = contextObject2;
-    // }
-    //
-    // if (column != null) {
-    //
-    // ret.contextColumn = column;
-    // }
-    // return ret;
-    // }
-
     public boolean isFullPackageSelection(PackageType pkg) {
-        PackageView<PackageType, ChildrenType> ret = view.get(pkg);
+        final PackageView<PackageType, ChildrenType> ret = getPackageView(pkg);
         if (ret == null) {
             return false;
         }
@@ -552,11 +409,15 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     public List<PackageView<PackageType, ChildrenType>> getPackageViews() {
+        return packageViewList;
+    }
+
+    protected Map<PackageType, PackageView<PackageType, ChildrenType>> getPackageViewsMap() {
         return packageViews;
     }
 
     public PackageView<PackageType, ChildrenType> getPackageView(PackageType entry) {
-        return view.get(entry);
+        return getPackageViewsMap().get(entry);
     }
 
 }

@@ -202,7 +202,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
         case UNSELECTED:
 
-            final List<PackageControllerTableModelFilter<FilePackage, DownloadLink>> filters = DownloadsTableModel.getInstance().getEnabledTableFilters();
+            final List<PackageControllerTableModelFilter<FilePackage, DownloadLink>> filters = DownloadsTableModel.getInstance().getTableFilters();
             boolean read = DownloadController.getInstance().readLock();
             try {
                 for (FilePackage pkg : DownloadController.getInstance().getPackages()) {
@@ -557,7 +557,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                             return;
                         }
                     }
-                    final List<PackageControllerTableModelFilter<FilePackage, DownloadLink>> filters = DownloadsTableModel.getInstance().getEnabledTableFilters();
+                    final List<PackageControllerTableModelFilter<FilePackage, DownloadLink>> filters = DownloadsTableModel.getInstance().getTableFilters();
                     boolean read = DownloadController.getInstance().readLock();
                     try {
                         for (FilePackage pkg : DownloadController.getInstance().getPackages()) {
