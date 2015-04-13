@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -32,8 +33,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "onedrive.live.com" }, urls = { "https?://(www\\.)?(onedrive\\.live\\.com/.+|skydrive\\.live\\.com/.+|(sdrv|1drv)\\.ms/[A-Za-z0-9]+)" }, flags = { 0 })
 public class OneDriveLiveCom extends PluginForDecrypt {
@@ -52,6 +51,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
     private static final int    MAX_ENTRIES_PER_REQUEST      = 1000;
     private static final String DOWNLOAD_ZIP                 = "DOWNLOAD_ZIP_2";
 
+    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -59,6 +59,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         String cid = null;
         String id = null;
         String authkey = null;
+        String fpName = null;
         try {
             br.setLoadLimit(br.getLoadLimit() * 2);
         } catch (final Throwable e) {
@@ -134,17 +135,32 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        /* Improvised way to get foldername */
-        final String[] names = br.getRegex("\"modifiedDate\":\\d+,\"name\":\"([^<>\"]*?)\"").getColumn(0);
-        String folderName = br.getRegex("\"group\":0,\"iconType\":\"NonEmptyDocumentFolder\".*?\"name\":\"([^<>\"]*?)\"").getMatch(0);
-        if (folderName == null && names != null && names.length > 0) {
-            folderName = names[names.length - 1];
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        ArrayList<Object> ressourcelist = (ArrayList) entries.get("items");
+        entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
+        fpName = (String) entries.get("name");
+        entries = (LinkedHashMap<String, Object>) entries.get("folder");
+        ressourcelist = (ArrayList) entries.get("children");
+        if (fpName == null) {
+            fpName = "onedrive.live.com content of user " + cid + " - folder - " + id;
         }
-        if (folderName == null) {
-            folderName = br.getRegex("\"name\":\"([^<>\"]*?)\",\"orderedFriendlyName\"").getMatch(0);
-        }
-        if (folderName == null) {
-            folderName = "onedrive.live.com content of user " + cid + " - folder - " + id;
+
+        long totalSize = 0;
+        final long totalCount = ((Number) entries.get("totalCount")).longValue();
+        final long childCount = ((Number) entries.get("childCount")).longValue();
+
+        if (br.containsHTML("\"code\":154")) {
+            main.setFinalFileName(fpName);
+            main.setAvailable(false);
+            main.setProperty("offline", true);
+            decryptedLinks.add(main);
+            return decryptedLinks;
+        } else if (totalCount == 0 && childCount == 0) {
+            main.setFinalFileName(fpName);
+            main.setAvailable(false);
+            main.setProperty("offline", true);
+            decryptedLinks.add(main);
+            return decryptedLinks;
         }
 
         main.setProperty("mainlink", parameter);
@@ -153,114 +169,85 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         main.setProperty("plain_id", id);
         main.setProperty("plain_authkey", authkey);
 
-        if (br.containsHTML("\"code\":154")) {
-            main.setFinalFileName(folderName);
-            main.setAvailable(false);
-            main.setProperty("offline", true);
-            decryptedLinks.add(main);
-            return decryptedLinks;
-        } else if ("0".equals(getJson("totalCount", br.toString())) && "0".equals(getJson("childCount", br.toString()))) {
-            main.setFinalFileName(folderName);
-            main.setAvailable(false);
-            main.setProperty("offline", true);
-            decryptedLinks.add(main);
-            return decryptedLinks;
-        }
-
-        String linktext = getLinktext(this.br);
-        if (linktext == null || linktext.equals("")) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        folderName = Encoding.htmlDecode(folderName.trim());
-
-        final String[] links = linktext.split("\"userRole\":2\\},\\{\"");
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        long totalSize = 0;
-        for (final String singleinfo : links) {
-            /* Check if it's a folder */
-            final String itemType = getJson("itemType", singleinfo);
-            /* Check for invalid data */
-            if (itemType == null) {
-                continue;
-            }
-            if (itemType.equals("32")) {
-                final String folder_id = new Regex(singleinfo, "\"(?:(?:Non)?EmptyDocumentFolder|NonEmptyAlbum|EmptyAlbum)\",\"id\":\"([^<>\"]*?)\"").getMatch(0);
-                final String folder_cid = getJson("creatorCid", singleinfo);
-                if (folder_id == null || folder_cid == null) {
+        for (final Object ressource : ressourcelist) {
+            final LinkedHashMap<String, Object> entry = (LinkedHashMap<String, Object>) ressource;
+            final long type = ((Number) entry.get("itemType")).longValue();
+            final long size = Long.parseLong((String) entry.get("size"));
+            final String item_id = (String) entry.get("id");
+            final String creatorCid = (String) entry.get("creatorCid");
+            if (type == 32) {
+                /* Folder --> Goes back into decrypter */
+                if (item_id == null || creatorCid == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                final DownloadLink dl = createDownloadlink("https://onedrive.live.com/?cid=" + folder_cid + "&id=" + folder_id);
+                String folderlink = "https://onedrive.live.com/?cid=" + creatorCid + "&id=" + item_id;
+                if (authkey != null) {
+                    /* Don't forget to add authKey if needed */
+                    folderlink += "&authkey=" + authkey;
+                }
+                final DownloadLink dl = createDownloadlink(folderlink);
                 decryptedLinks.add(dl);
             } else {
-                String filesize = getJson("size", singleinfo);
-                if (filesize == null) {
-                    filesize = getJson("displaySize", singleinfo);
-                }
-                String filename = getJson("name", singleinfo);
-                String view_url = getJson("viewInBrowser", singleinfo);
-                String download_url = getJson("download", singleinfo);
+                /* File --> Grab information & return to decrypter. All found links are usually ONLINE and downloadable! */
+                final LinkedHashMap<String, Object> urls = (LinkedHashMap<String, Object>) entry.get("urls");
+                String filename = (String) entry.get("name");
+                String view_url = (String) urls.get("viewInBrowser");
+                final String download_url = (String) urls.get("download");
+                final String iconType = (String) entry.get("iconType");
+                final String extension = (String) entry.get("extension");
 
                 /* For single pictures, get the highest quality pic */
-                if ("Photo".equals(getJson("iconType", singleinfo))) {
+                if ("Photo".equals(iconType) && extension == null) {
                     /* Download and view of the original picture only possible via account */
                     // br.getPage("https://onedrive.live.com/download.aspx?cid=" + cid + "&resid=" + Encoding.urlEncode(id) + "&canary=");
                     // download_url = br.getRedirectLocation();
-                    final String photoLinks[] = new Regex(singleinfo, "\"streamVersion\":\\d+,\"url\":\"([^<>\"]*?)\"").getColumn(0);
-                    if (photoLinks != null && photoLinks.length != 0) {
-                        download_url = "https://dm" + photoLinks[photoLinks.length - 1];
-                    }
-                }
-
-                String ext = getJson("extension", singleinfo);
-                /* Sometimes extension is not given --> Get it via mimeType */
-                if (ext == null) {
-                    String mimeType = getJson("mimeType", singleinfo);
-                    if (mimeType != null && mimeType.contains("/")) {
-                        mimeType = mimeType.replace("\\", "");
-                        ext = "." + mimeType.substring(mimeType.lastIndexOf("/") + 1);
-                    }
-                }
-                if (filesize == null || filename == null || ext == null) {
+                    // final String photoLinks[] = new Regex(singleinfo, "\"streamVersion\":\\d+,\"url\":\"([^<>\"]*?)\"").getColumn(0);
+                    // if (photoLinks != null && photoLinks.length != 0) {
+                    // download_url = "https://dm" + photoLinks[photoLinks.length - 1];
+                    // }
+                    /* TODO: */
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
+
+                if (filename == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                final String linkid = id + "_" + filename;
                 final DownloadLink dl = createDownloadlink("http://onedrivedecrypted.live.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                filename = Encoding.htmlDecode(filename.trim()) + ext;
-                final long cursize = SizeFormatter.getSize(filesize);
-                dl.setDownloadSize(cursize);
-                totalSize += cursize;
+                /* Files without extension == possible */
+                if (extension != null) {
+                    filename += extension;
+                }
+                dl.setDownloadSize(size);
+                totalSize += size;
                 dl.setFinalFileName(filename);
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("original_link", original_link);
                 dl.setProperty("plain_name", filename);
-                dl.setProperty("plain_size", filesize);
                 /*
                  * Add this because urls cannot be used to differ between the links, also the RegEx to split the links might fail so the
                  * same file gets added multiple times
                  */
-                dl.setProperty("LINKDUPEID", "onedrivelive" + id + "_" + filename);
-                if (view_url != null) {
-                    view_url = view_url.replace("\\", "");
-                } else {
+                if (view_url == null) {
                     view_url = "https://onedrive.live.com/?cid=" + cid + "&id=" + id;
                     if (authkey != null) {
+                        /* Don't forget to add authKey if needed */
                         view_url += "&authkey=" + authkey;
                     }
                 }
                 dl.setProperty("plain_view_url", view_url);
                 try {
                     dl.setContentUrl(view_url);
+                    dl.setLinkID(linkid);
                 } catch (final Throwable e) {
                     /* Not available in old 0.9.591 Stable */
                     dl.setBrowserUrl(view_url);
+                    dl.setProperty("LINKDUPEID", linkid);
                 }
                 if (download_url != null) {
-                    download_url = download_url.replace("\\", "");
                     dl.setProperty("plain_download_url", download_url);
                 } else {
                     dl.setProperty("account_only", true);
@@ -275,16 +262,17 @@ public class OneDriveLiveCom extends PluginForDecrypt {
 
         if (decryptedLinks.size() > 1 && SubConfiguration.getConfig("onedrive.live.com").getBooleanProperty(DOWNLOAD_ZIP, false)) {
             /* = all files (links) of the folder as .zip archive */
-            final String main_name = folderName + ".zip";
-            main.setFinalFileName(folderName);
+            final String main_name = fpName + ".zip";
+            main.setFinalFileName(fpName);
             main.setProperty("plain_name", main_name);
             main.setProperty("plain_size", Long.toString(totalSize));
             main.setProperty("complete_folder", true);
+            /* TODO: */
             // decryptedLinks.add(main);
         }
 
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(folderName);
+        fp.setName(fpName);
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;

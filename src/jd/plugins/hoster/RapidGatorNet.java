@@ -101,6 +101,8 @@ public class RapidGatorNet extends PluginForHost {
     private static final long              FREE_RECONNECTWAIT_DAILYLIMIT   = 3 * 60 * 60 * 1000L;
     private static final long              FREE_RECONNECTWAIT_OTHERS       = 30 * 60 * 1000L;
 
+    private static final long              FREE_CAPTCHA_EXPIRE_TIME        = 105 * 1000L;
+
     @Override
     public String getAGBLink() {
         return "http://rapidgator.net/article/terms";
@@ -465,6 +467,7 @@ public class RapidGatorNet extends PluginForHost {
             }
             // wasn't needed for raz, but psp said something about a redirect)
             this.br.followConnection();
+            final long timeBeforeCaptchaInput = System.currentTimeMillis();
             if (this.br.containsHTML("(api\\.recaptcha\\.net/|google\\.com/recaptcha/api/)")) {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
@@ -473,6 +476,7 @@ public class RapidGatorNet extends PluginForHost {
                     rc.load();
                     final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
                     final String c = this.getCaptchaCode("recaptcha", cf, downloadLink);
+                    checkForExpiredCaptcha(timeBeforeCaptchaInput);
                     rc.getForm().put("DownloadCaptchaForm%5Bcaptcha%5D", "");
                     rc.setCode(c);
                     if (this.br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/)")) {
@@ -497,6 +501,7 @@ public class RapidGatorNet extends PluginForHost {
                         final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(this.br);
                         final File cf = sm.downloadCaptcha(this.getLocalCaptchaFile());
                         code = this.getCaptchaCode(cf, downloadLink);
+                        checkForExpiredCaptcha(timeBeforeCaptchaInput);
                         final String chid = sm.getChallenge(code);
 
                         // if (chid == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -522,6 +527,7 @@ public class RapidGatorNet extends PluginForHost {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         challenge = this.getCaptchaCode(challenge, downloadLink);
+                        checkForExpiredCaptcha(timeBeforeCaptchaInput);
                         captcha.put("adscaptcha_response_field", challenge);
                         captcha.put("adscaptcha_challenge_field", Encoding.urlEncode(code));
                     }
@@ -592,6 +598,22 @@ public class RapidGatorNet extends PluginForHost {
             }
         }
 
+    }
+
+    /**
+     * If users need more than X seconds to enter the captcha and we actually send the captcha input after this time has passed, rapidgator
+     * will 'ban' the IP of the user for at least 60 minutes. This function is there to avoid this case. Instead of sending the captcha it
+     * throws a retry exception, avoiding the 60+ minutes IP 'ban'.
+     */
+    private void checkForExpiredCaptcha(final long timeBefore) throws PluginException {
+        final long passedTime = System.currentTimeMillis() - timeBefore;
+        if (passedTime >= (FREE_CAPTCHA_EXPIRE_TIME - 1000)) {
+            /*
+             * Do NOT throw a captcha Exception here as it is not the users' fault that we cannot download - he simply took too much time to
+             * enter the captcha!
+             */
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Captcha session expired");
+        }
     }
 
     @Override
@@ -1142,9 +1164,9 @@ public class RapidGatorNet extends PluginForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             * 
+             *
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             * 
+             *
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
