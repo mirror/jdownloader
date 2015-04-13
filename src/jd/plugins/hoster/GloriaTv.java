@@ -82,7 +82,9 @@ public class GloriaTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (!filesize.equals("-1")) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
