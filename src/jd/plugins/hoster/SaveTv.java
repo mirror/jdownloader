@@ -169,9 +169,9 @@ public class SaveTv extends PluginForHost {
     public SaveTv(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.save.tv/stv/s/obj/registration/RegPage1.cfm");
-        if (!isJDStable()) {
-            setConfigElements();
-        }
+        // if (!isJDStable()) {
+        setConfigElements();
+        // }
     }
 
     private boolean isJDStable() {
@@ -541,32 +541,16 @@ public class SaveTv extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
-        }
-        // Bad workaround for bug: http://svn.jdownloader.org/issues/10306
-        logger.warning("Downloading as premium in free mode as a workaround for bug #10306");
         try {
-            handlePremium(downloadLink, aa);
-        } catch (final PluginException e) {
-            /* Catch premium errors - usually the account would be deactivated then -> Wait */
-            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "FATAL server error", 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            if (e instanceof PluginException) {
+                throw (PluginException) e;
             }
-            /* Show other download errors */
-            throw e;
         }
+        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
     }
 
     @SuppressWarnings("deprecation")

@@ -138,8 +138,7 @@ public class TwitterCom extends PluginForDecrypt {
                     }
                 }
                 if (addedlinks_all == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    break;
                 }
                 br.getPage("https://twitter.com/i/profiles/show/" + user + "/media_timeline?include_available_features=1&include_entities=1&max_id=" + maxid);
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
@@ -160,6 +159,9 @@ public class TwitterCom extends PluginForDecrypt {
                 dl.setName(final_filename);
                 decryptedLinks.add(dl);
             }
+        }
+        if (decryptedLinks.size() == 0) {
+            return null;
         }
         return decryptedLinks;
     }

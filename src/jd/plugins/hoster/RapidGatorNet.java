@@ -97,7 +97,9 @@ public class RapidGatorNet extends PluginForHost {
     private static AtomicReference<String> lastIP                          = new AtomicReference<String>();
     private final Pattern                  IPREGEX                         = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
 
-    private static final long              FREE_RECONNECTWAIT              = 2 * 60 * 60 * 1000L;
+    private static final long              FREE_RECONNECTWAIT_GENERAL      = 2 * 60 * 60 * 1000L;
+    private static final long              FREE_RECONNECTWAIT_DAILYLIMIT   = 3 * 60 * 60 * 1000L;
+    private static final long              FREE_RECONNECTWAIT_OTHERS       = 30 * 60 * 1000L;
 
     @Override
     public String getAGBLink() {
@@ -352,8 +354,8 @@ public class RapidGatorNet extends PluginForHost {
                 }
                 final long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload_timestamp;
                 this.logger.info("Wait time between downloads to prevent your IP from been blocked for 1 Day!");
-                if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait time between download session", FREE_RECONNECTWAIT - passedTimeSinceLastDl);
+                if (passedTimeSinceLastDl < FREE_RECONNECTWAIT_GENERAL) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait time between download session", FREE_RECONNECTWAIT_GENERAL - passedTimeSinceLastDl);
                 }
             }
         }
@@ -370,12 +372,12 @@ public class RapidGatorNet extends PluginForHost {
         try {
             // end of experiment
             if (this.br.containsHTML("You have reached your daily downloads limit\\. Please try")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily downloads limit", FREE_RECONNECTWAIT);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily downloads limit", FREE_RECONNECTWAIT_DAILYLIMIT);
             } else if (br.containsHTML(">[\\r\n ]+You have reached your hourly downloads limit\\.")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your hourly downloads limit", FREE_RECONNECTWAIT);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your hourly downloads limit", FREE_RECONNECTWAIT_GENERAL);
             }
             if (this.br.containsHTML("(You can`t download not more than 1 file at a time in free mode\\.<|>Wish to remove the restrictions\\?)")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can't download more than one file within a certain time period in free mode", FREE_RECONNECTWAIT);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can't download more than one file within a certain time period in free mode", FREE_RECONNECTWAIT_OTHERS);
             }
             final String freedlsizelimit = this.br.getRegex("'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
             if (freedlsizelimit != null) {
@@ -459,7 +461,7 @@ public class RapidGatorNet extends PluginForHost {
                     con1.disconnect();
                 } catch (final Throwable e) {
                 }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Downloading is not possible at the moment", FREE_RECONNECTWAIT);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Downloading is not possible at the moment", FREE_RECONNECTWAIT_OTHERS);
             }
             // wasn't needed for raz, but psp said something about a redirect)
             this.br.followConnection();
@@ -567,9 +569,9 @@ public class RapidGatorNet extends PluginForHost {
                 }
                 this.br.followConnection();
                 if (this.br.containsHTML("<div class=\"error\">[\r\n ]+Error\\. Link expired. You have reached your daily limit of downloads\\.")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Link expired, or You've reached your daily limit ", FREE_RECONNECTWAIT);
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Link expired, or You've reached your daily limit ", FREE_RECONNECTWAIT_DAILYLIMIT);
                 } else if (this.br.containsHTML("<div class=\"error\">[\r\n ]+File is already downloading</div>")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download session in progress", FREE_RECONNECTWAIT);
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download session in progress", FREE_RECONNECTWAIT_OTHERS);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }

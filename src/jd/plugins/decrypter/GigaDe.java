@@ -37,16 +37,15 @@ public class GigaDe extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<String> api_links_dupe = new ArrayList<String>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getURL().equals("http://www.giga.de/tv/")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
         String fpName = br.getRegex("<h1 class=\"entry\\-title\">([^<>\"/]+)</h1>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?) \\– GIGA</title>").getMatch(0);
-        /** Add embedded videos if there are */
+        if (fpName == null) {
+            fpName = br.getRegex("<title>([^<>\"]*?) \\– GIGA</title>").getMatch(0);
+        }
+        /* Add embedded videos if there are */
         final String youtubeLink = br.getRegex("<embed src=\"(http://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"").getMatch(0);
         if (youtubeLink != null) {
             decryptedLinks.add(createDownloadlink(youtubeLink));
@@ -54,8 +53,17 @@ public class GigaDe extends PluginForDecrypt {
         }
         final String[][] links = br.getRegex("id=\"NVBPlayer(\\d+\\-\\d+)\">.*?<span property=\"media:title\" content=\"([^<>\"/]+)\".*?<source src=\"(http://video\\.giga\\.de/data/[a-z0-9\\-]+\\-normal\\.mp4)\"").getMatches();
         final String[] otherLinks = br.getRegex("rel=\"media:video\" resource=\"(http://(www\\.)?video\\.giga\\.de/data/[^<>/\"]*?\\.mp4)\"").getColumn(0);
-        final String[] api_links = br.getRegex("\"/api/video/#v=(\\d+)\\&p=\\d+").getColumn(0);
+        final String[] api_links = br.getRegex("\"[^<>\"]*?/#v=(\\d+)\\&p=\\d+[^<>\"]*?\"").getColumn(0);
         if ((links == null || links.length == 0) && (otherLinks == null || otherLinks.length == 0) && (api_links == null || api_links.length == 0) || fpName == null) {
+            if (!br.containsHTML("id=\"adsense_video_")) {
+                logger.info("Link offline: " + parameter);
+                try {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                }
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
@@ -84,6 +92,10 @@ public class GigaDe extends PluginForDecrypt {
         }
         if (api_links != null && api_links.length != 0) {
             for (final String api_link : api_links) {
+                /* RegEx might pick up the same ID multiple times */
+                if (api_links_dupe.contains(api_link)) {
+                    continue;
+                }
                 br.getPage("http://www.giga.de/api/syndication/video/video_id/" + api_link + "/playlist.json?content=syndication/key/368b5f151da4ae05ced7fa296bdff65a/");
                 final String[] qualities = br.getRegex("(\"\\d+\":\\{\"quality\".*?\\})").getColumn(0);
                 if (qualities != null && qualities.length != 0) {
@@ -94,7 +106,9 @@ public class GigaDe extends PluginForDecrypt {
                             url = url.replace("\\", "");
                             final DownloadLink dl = createDownloadlink("directhttp://" + url);
                             String ext = url.substring(url.lastIndexOf("."));
-                            if (ext == null || ext.length() > 5) ext = ".mp4";
+                            if (ext == null || ext.length() > 5) {
+                                ext = ".mp4";
+                            }
                             dl.setFinalFileName(fpName + ext);
                             decryptedLinks.add(dl);
                         }
@@ -116,7 +130,9 @@ public class GigaDe extends PluginForDecrypt {
 
     private String getJson(final String parameter, final String source) {
         String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null) result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        if (result == null) {
+            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+        }
         return result;
     }
 
