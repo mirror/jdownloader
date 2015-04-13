@@ -46,7 +46,7 @@ public class GigaDe extends PluginForDecrypt {
             fpName = br.getRegex("<title>([^<>\"]*?) \\– GIGA</title>").getMatch(0);
         }
         /* Add embedded videos if there are */
-        final String youtubeLink = br.getRegex("<embed src=\"(http://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"").getMatch(0);
+        final String youtubeLink = br.getRegex("src=\"(http://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"").getMatch(0);
         if (youtubeLink != null) {
             decryptedLinks.add(createDownloadlink(youtubeLink));
             return decryptedLinks;

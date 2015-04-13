@@ -92,7 +92,7 @@ public class FilesUploadOrg extends PluginForHost {
         String filesize;
         if (AVAILABLE_CHECK_OVER_INFO_PAGE) {
             br.getPage(link.getDownloadURL() + "~i");
-            if (!br.getURL().contains("~i")) {
+            if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("Filename:[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)<").getMatch(0);
@@ -113,7 +113,7 @@ public class FilesUploadOrg extends PluginForHost {
                 link.getLinkStatus().setStatusText(SERVERERRORUSERTEXT);
                 return AvailableStatus.TRUE;
             }
-            if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\""))) {
+            if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\"")) || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))\\)<");

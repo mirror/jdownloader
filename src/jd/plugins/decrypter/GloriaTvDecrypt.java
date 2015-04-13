@@ -77,11 +77,11 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
                 if (info.contains("Download video")) {
                     final String filesize = new Regex(info, "(\\d{1,5}(?:\\.\\d{1,3})? (?:MB|GB))").getMatch(0);
                     lengtscale = new Regex(info, "(\\d{2,3}x\\d{2,3})\\)").getMatch(0);
-                    qualinfo[1] = "video";
+                    qualinfo[1] = "mp4";
                     qualinfo[3] = filesize;
                 } else {
                     lengtscale = new Regex(info, "Download audio \\((.*?)\\)").getMatch(0);
-                    qualinfo[1] = "audio";
+                    qualinfo[1] = "mp3";
                     qualinfo[3] = "-1";
                 }
                 downloadlink = Encoding.htmlDecode(downloadlink);
@@ -97,9 +97,11 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
                 }
             }
         } else {
-            final String resolutions[] = { "686x432", "458x288", "228x144" };
+            final String resolutions[] = { "686x432", "458x288", "228x144", "256x144" };
             final String[] qualities = br.getRegex("\"(http://[a-z0-9\\-\\.]+\\.gloria\\.tv/[a-z0-9\\-]+/mediafile[^<>\"]*?)\"").getColumn(0);
-            String audiolink = br.getRegex("mp3:\\'(http:[^<>\"]*?)\\'").getMatch(0);
+            final Regex audioregex = br.getRegex("(mp3|m4a):\\'(http:[^<>\"]*?)\\'");
+            final String audioExt = audioregex.getMatch(0);
+            String audiolink = audioregex.getMatch(1);
             if (qualities.length == 0 && audiolink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -114,7 +116,7 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
                 audiolink = audiolink.replace("\\", "");
                 final String qualinfo[] = new String[4];
                 qualinfo[0] = audiolink;
-                qualinfo[1] = "audio";
+                qualinfo[1] = audioExt;
                 qualinfo[2] = "0";
                 qualinfo[3] = "-1";
                 finfo[counter] = qualinfo;
@@ -125,14 +127,15 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
                     final String qualinfo[] = new String[4];
                     qualityurl = Encoding.htmlDecode(qualityurl);
                     qualinfo[0] = qualityurl;
-                    qualinfo[1] = "video";
-                    qualinfo[2] = resolutions[counter];
+                    qualinfo[1] = "mp4";
+                    if (counter > resolutions.length - 1) {
+                        qualinfo[2] = "Unknown";
+                    } else {
+                        qualinfo[2] = resolutions[counter];
+                    }
                     qualinfo[3] = "-1";
                     finfo[counter] = qualinfo;
                     counter++;
-                    if (counter == 3) {
-                        break;
-                    }
                 }
             }
         }
@@ -141,18 +144,14 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
             return null;
         }
         for (final String sinfo[] : finfo) {
-            String ext;
+            if (sinfo[0] == null) {
+                break;
+            }
             final String finallink = Encoding.htmlDecode(sinfo[0]);
             final String type = sinfo[1];
             final String lengtscale = sinfo[2];
             final String fsize = sinfo[3];
-            String filename = videotitle + "_" + type + "_" + lengtscale;
-            if (type.equals("audio")) {
-                ext = ".mp3";
-            } else {
-                ext = ".mp4";
-            }
-            filename += ext;
+            final String filename = videotitle + "_" + type + "_" + lengtscale + "." + type;
             final DownloadLink dl = createDownloadlink("http://gloriadecrypted.tv/" + System.currentTimeMillis() + new Random().nextInt(100000));
             dl.setProperty("free_directlink", finallink);
             dl.setProperty("mainlink", parameter);
