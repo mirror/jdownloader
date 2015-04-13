@@ -177,7 +177,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     @Override
     public void actionPerformed(final ActionEvent e) {
         final SelectionInfo<CrawledPackage, CrawledLink> finalSelection = selection;
-        final List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> filters = LinkGrabberTableModel.getInstance().getEnabledTableFilters();
+        final List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> filters = LinkGrabberTableModel.getInstance().getTableFilters();
         LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
@@ -477,7 +477,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                             return;
                         }
                     }
-                    final List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> filters = LinkGrabberTableModel.getInstance().getEnabledTableFilters();
+                    final List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> filters = LinkGrabberTableModel.getInstance().getTableFilters();
                     boolean read = LinkCollector.getInstance().readLock();
                     try {
                         for (CrawledPackage pkg : LinkCollector.getInstance().getPackages()) {

@@ -17,7 +17,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.packagizer.PackagizerController;
-import org.jdownloader.gui.views.ArraySet;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -170,7 +169,7 @@ public class LinkTreeUtils {
         }
 
         String rawURL = null;
-        ArraySet actualChildren = new SelectionInfo(null, links, true).getChildren();
+        List<?> actualChildren = new SelectionInfo(null, links, true).getChildren();
         for (Object node : actualChildren) {
             DownloadLink link = null;
             if (node instanceof DownloadLink) {

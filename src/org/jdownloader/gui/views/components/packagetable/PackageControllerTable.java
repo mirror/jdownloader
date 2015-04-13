@@ -27,6 +27,7 @@ import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
 
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractNodeVisitor;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
@@ -211,10 +212,8 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                         if (cachedSelectionInfo.filteredSelection == null) {
                             if (sm.isSelectionEmpty()) {
                                 cachedSelectionInfo.filteredSelection = new SelectionInfo<ParentType, ChildrenType>(null, null, true);
-
                             } else {
                                 cachedSelectionInfo.filteredSelection = new SelectionInfo<ParentType, ChildrenType>(contextMenuTrigger, getModel().getSelectedObjects(), true);
-
                             }
                         }
                         return cachedSelectionInfo.filteredSelection;
@@ -232,13 +231,53 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 } else {
                     if (excludeFilteredLinks) {
                         if (cachedSelectionInfo.filteredList == null) {
-                            cachedSelectionInfo.filteredList = new SelectionInfo<ParentType, ChildrenType>(null, getModel().getElements(), true);
+                            final PackageControllerTableModelData<ParentType, ChildrenType> tableData = getModel().getTableData();
+                            cachedSelectionInfo.filteredList = new SelectionInfo<ParentType, ChildrenType>(null, null, false) {
+
+                                @Override
+                                public List<? extends AbstractNode> getRawSelection() {
+                                    return tableData;
+                                }
+
+                                @Override
+                                protected void aggregate() {
+                                    childrenFilters = tableData.getChildrenFilters();
+                                    super.aggregate();
+                                }
+                            };
                         }
                         return cachedSelectionInfo.filteredList;
-
                     } else {
                         if (cachedSelectionInfo.unfilteredList == null) {
-                            cachedSelectionInfo.unfilteredList = new SelectionInfo<ParentType, ChildrenType>(null, getModel().getController().getAllChildren(), false);
+                            cachedSelectionInfo.unfilteredList = new SelectionInfo<ParentType, ChildrenType>(null, null, false) {
+
+                                @Override
+                                public List<? extends AbstractNode> getRawSelection() {
+                                    return children;
+                                }
+
+                                @Override
+                                protected void aggregate() {
+                                    getModel().getController().visitNodes(new AbstractNodeVisitor<ChildrenType, ParentType>() {
+                                        PackageView<ParentType, ChildrenType> lastPackageView = null;
+                                        PluginView<ChildrenType>              lastPluginView  = null;
+
+                                        @Override
+                                        public Boolean visitPackageNode(ParentType currentPackage) {
+                                            lastPackageView = internalPackageView(currentPackage, true);
+                                            return Boolean.TRUE;
+                                        }
+
+                                        @Override
+                                        public Boolean visitChildrenNode(ChildrenType node) {
+                                            children.add(node);
+                                            lastPackageView.add(node);
+                                            (lastPluginView = internalPluginView(node, lastPluginView)).add(node);
+                                            return Boolean.TRUE;
+                                        }
+                                    }, true);
+                                }
+                            };
                         }
                         return cachedSelectionInfo.unfilteredList;
                     }

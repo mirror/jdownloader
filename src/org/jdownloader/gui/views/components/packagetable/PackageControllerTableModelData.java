@@ -31,7 +31,9 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
     }
 
     public void setTableModelCustomizer(List<PackageControllerTableModelCustomizer> tableModelCustomizer) {
-        if (tableModelCustomizer != null && tableModelCustomizer.size() == 0) tableModelCustomizer = null;
+        if (tableModelCustomizer == null || tableModelCustomizer.size() == 0) {
+            tableModelCustomizer = null;
+        }
         this.tableModelCustomizer = tableModelCustomizer;
     }
 
@@ -48,7 +50,9 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
     }
 
     protected void setPackageFilters(List<PackageControllerTableModelFilter<PackageType, ChildrenType>> packageFilters) {
-        if (packageFilters != null && packageFilters.size() == 0) packageFilters = null;
+        if (packageFilters != null && packageFilters.size() == 0) {
+            packageFilters = null;
+        }
         this.packageFilters = packageFilters;
         updateFilteredState();
     }
@@ -58,14 +62,16 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
     }
 
     protected void setChildrenFilters(List<PackageControllerTableModelFilter<PackageType, ChildrenType>> childrenFilters) {
-        if (childrenFilters != null && childrenFilters.size() == 0) childrenFilters = null;
+        if (childrenFilters != null && childrenFilters.size() == 0) {
+            childrenFilters = null;
+        }
         this.childrenFilters = childrenFilters;
         updateFilteredState();
     }
 
     /*
      * updates the filtered flag
-     * 
+     *
      * we don't want quickfilters to count as filtered state, users will still be able to move/dragdrop stuff
      */
     private void updateFilteredState() {
