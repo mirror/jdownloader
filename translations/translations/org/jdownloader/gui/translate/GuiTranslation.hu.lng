@@ -1548,6 +1548,7 @@ download_start_msg=Rajta gyerünk! A letöltések elindultak!
 download_stopped=Leállítás
 download_stopped_msg=Az összes letöltés leállt, vagy elkészült.
 downloadview_all=Minden letöltés
+downloadview_exists=A fájl már létezik
 downloadview_failed=Sikertelen letöltések
 downloadview_offline=Nem elérhető letöltések
 downloadview_running=Letöltések folyamatban
