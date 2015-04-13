@@ -30,7 +30,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -106,19 +105,6 @@ public class ReverBnationComHoster extends PluginForHost {
             }
             downloadLink.setProperty("downloadstream", true);
             throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-        String amzName = dl.getConnection().getHeaderField("x-amz-meta-filename");
-        if (amzName != null) {
-            downloadLink.setFinalFileName(amzName);
-        } else {
-            String name = Plugin.getFileNameFromHeader(dl.getConnection());
-            if ("flash9-en.ocx".equals(name)) {
-                /* workaround for dirty name */
-                String orgName = downloadLink.getStringProperty("orgName", null);
-                if (orgName != null) {
-                    downloadLink.setFinalFileName(orgName);
-                }
-            }
         }
         dl.startDownload();
     }

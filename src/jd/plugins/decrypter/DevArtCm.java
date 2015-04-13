@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -65,7 +66,7 @@ public class DevArtCm extends PluginForDecrypt {
     private static Object         LOCK             = new Object();
 
     private static final String   FASTLINKCHECK_2  = "FASTLINKCHECK_2";
-    private static final String   TYPE_COLLECTIONS = "https?://[\\w\\.\\-]*?deviantart\\.com/[A-Za-z0-9\\-]+/collections/\\d+";
+    private static final String   TYPE_COLLECTIONS = "https?://[\\w\\.\\-]*?deviantart\\.com/.*?/collections(/.+)?";
     private static final String   TYPE_CATPATH_ALL = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=.+)?";
     private static final String   TYPE_CATPATH_1   = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath(=(/|%2F([a-z0-9]+)?|[a-z0-9]+)(\\&offset=\\d+)?)?";
     private static final String   TYPE_CATPATH_2   = "https?://[\\w\\.\\-]*?deviantart\\.com/(gallery|favourites)/\\?catpath=[a-z0-9]{1,}(\\&offset=\\d+)?";
@@ -78,6 +79,7 @@ public class DevArtCm extends PluginForDecrypt {
     private String                PARAMETER        = null;
     private boolean               FASTLINKCHECK    = false;
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         FASTLINKCHECK = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK_2, false);
         synchronized (LOCK) {
@@ -112,7 +114,7 @@ public class DevArtCm extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        if (br.containsHTML("The page you were looking for doesn\\'t exist\\.")) {
+        if (br.containsHTML("The page you were looking for doesn\\'t exist\\.") || br.getURL().matches("https?://([A-Za-z0-9]+\\.)?deviantart\\.com/browse/.+")) {
             final DownloadLink offline = createDownloadlink("directhttp://" + PARAMETER);
             offline.setAvailable(false);
             offline.setProperty("offline", true);
@@ -122,7 +124,7 @@ public class DevArtCm extends PluginForDecrypt {
 
         if (PARAMETER.matches(TYPE_JOURNAL)) {
             decryptJournals();
-        } else if (PARAMETER.matches(TYPE_COLLECTIONS)) {
+        } else if (new Regex(PARAMETER, Pattern.compile(TYPE_COLLECTIONS, Pattern.CASE_INSENSITIVE)).matches()) {
             decryptCollections();
         } else if (PARAMETER.matches(TYPE_BLOG)) {
             decryptBlog();
@@ -279,6 +281,13 @@ public class DevArtCm extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     private void decryptStandard() throws DecrypterException, IOException {
+        if (br.containsHTML("class=\"empty\\-state gallery\"")) {
+            try {
+                this.decryptedLinks.add(this.createOfflinelink(PARAMETER));
+            } catch (final Throwable e) {
+            }
+            return;
+        }
         /* Correct input links */
         if (PARAMETER.matches("http://[^<>\"/]+\\.deviantart\\.com/gallery/\\?\\d+")) {
             final Regex paramregex = new Regex(PARAMETER, "(http://[^<>\"/]+\\.deviantart\\.com/gallery/\\?)(\\d+)");
@@ -286,7 +295,10 @@ public class DevArtCm extends PluginForDecrypt {
         }
         /* only non /art/ requires packagename */
         // find and set username
-        final String username = getSiteUsername();
+        String username = getSiteUsername();
+        if (username == null && !PARAMETER.contains("://www.")) {
+            username = new Regex(PARAMETER, "https?://([^<>\"]*?)\\.deviantart\\.com/").getMatch(0);
+        }
         if (username == null) {
             logger.warning("Plugin broken for link: " + PARAMETER);
             throw new DecrypterException("Decrypter broken for link: " + PARAMETER);

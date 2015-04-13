@@ -157,6 +157,9 @@ public class ReverBnationCom extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 artist_name_general = br.getRegex("class=\"artist_name\">By: ([^<>\"]*?)</span>").getMatch(0);
+                if (artist_name_general == null) {
+                    artist_name_general = br.getRegex("class=\"artist_name\">By: <span title=\"([^<>\"]*?)\"").getMatch(0);
+                }
                 final String showAllSongs = br.getRegex("<a href=\"([^<>\"]+/songs)\" class=\"standard_well see_more\">All Songs</a>").getMatch(0);
                 if (showAllSongs != null) {
                     br.getPage("http://www.reverbnation.com" + showAllSongs);

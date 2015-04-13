@@ -48,6 +48,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
     private String              json;
     private String              PARAMETER        = null;
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         prepBR();
@@ -103,7 +104,6 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
         main.setProperty("plain_request_id", id);
         main.setProperty("mainlink", PARAMETER);
 
-        String fpName = null;
         String mainName = new Regex(json, "\"body\":\\{\"count\":\\{\"folders\":\\d+,\"files\":\\d+\\},\"name\":\"([^<>\"]*?)\"").getMatch(0);
         if (mainName == null) {
             mainName = new Regex(PARAMETER, "public/([a-z0-9]+)/").getMatch(0);
@@ -112,7 +112,6 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             mainName = id;
         }
         mainName = Encoding.htmlDecode(mainName.trim());
-        fpName = mainName;
         final String[] links = getList(id);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
@@ -134,6 +133,7 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
             } else {
                 String browserurl;
                 final DownloadLink dl = createDownloadlink("http://clouddecrypted.mail.ru/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                final String weblink = new Regex(singleinfo, "\"weblink\":\"([^<>\"]*?)/[^<>\"/]+\"").getMatch(0);
                 final String filesize = getJson(singleinfo, "size");
                 String filename = getJson(singleinfo, "name");
                 if (filesize == null || filename == null) {
@@ -166,6 +166,12 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
                 }
                 browserurl = "https://cloud.mail.ru/public/" + unique_id;
                 dl.setProperty("browser_url", browserurl);
+                if (weblink != null) {
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(weblink);
+                    fp.setProperty("ALLOW_MERGE", true);
+                    dl._setFilePackage(fp);
+                }
                 try {
                     dl.setContentUrl(browserurl);
                 } catch (final Throwable e) {
@@ -179,17 +185,12 @@ public class CloudMailRuDecrypter extends PluginForDecrypt {
 
         if (decryptedLinks.size() > 1 && totalSize <= MAX_ZIP_FILESIZE * 1024 && SubConfiguration.getConfig("cloud.mail.ru").getBooleanProperty(DOWNLOAD_ZIP, false)) {
             /* = all files (links) of the folder as .zip archive */
-            final String main_name = fpName + ".zip";
-            main.setFinalFileName(fpName);
+            final String main_name = mainName + ".zip";
             main.setProperty("plain_name", main_name);
             main.setProperty("plain_size", Long.toString(totalSize));
             main.setProperty("complete_folder", true);
             decryptedLinks.add(main);
         }
-
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName);
-        fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
     }
