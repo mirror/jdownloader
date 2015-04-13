@@ -1548,6 +1548,7 @@ download_start_msg=Devam, devam, devam! İndirmeler şu an yürütülüyor!
 download_stopped=Durdur
 download_stopped_msg=Tüm indirmeler durduruldu ya da tamamlandı.
 downloadview_all=Tüm İndirmeler
+downloadview_exists=Dosya mevcut
 downloadview_failed=Başarısız İndirmeler
 downloadview_offline=Çevrimdışı İndirmeler
 downloadview_running=Yürütülen İndirmeler
