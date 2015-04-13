@@ -49,7 +49,7 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
         final String parameter = param.toString();
         br.getPage(parameter);
         /* Article offline | no video (only text) */
-        if (br.containsHTML("class=\"missing\"") || !br.containsHTML("videojs\\(")) {
+        if (br.containsHTML("class=\"missing\"") || (!br.containsHTML("videojs\\(") && !br.containsHTML("jplayer\\-audio\\-"))) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
             offline.setAvailable(false);
@@ -99,23 +99,40 @@ public class GloriaTvDecrypt extends PluginForDecrypt {
         } else {
             final String resolutions[] = { "686x432", "458x288", "228x144" };
             final String[] qualities = br.getRegex("\"(http://[a-z0-9\\-\\.]+\\.gloria\\.tv/[a-z0-9\\-]+/mediafile[^<>\"]*?)\"").getColumn(0);
-            if (qualities == null || qualities.length == 0) {
+            String audiolink = br.getRegex("mp3:\\'(http:[^<>\"]*?)\\'").getMatch(0);
+            if (qualities.length == 0 && audiolink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            finfo = new String[qualities.length][4];
+            int count_all = qualities.length;
+            if (audiolink != null) {
+                count_all++;
+            }
+            finfo = new String[count_all][4];
             int counter = 0;
-            for (String qualityurl : qualities) {
+            if (audiolink != null) {
+                audiolink = audiolink.replace("\\", "");
                 final String qualinfo[] = new String[4];
-                qualityurl = Encoding.htmlDecode(qualityurl);
-                qualinfo[0] = qualityurl;
-                qualinfo[1] = "video";
-                qualinfo[2] = resolutions[counter];
+                qualinfo[0] = audiolink;
+                qualinfo[1] = "audio";
+                qualinfo[2] = "0";
                 qualinfo[3] = "-1";
                 finfo[counter] = qualinfo;
                 counter++;
-                if (counter == 3) {
-                    break;
+            }
+            if (qualities != null && qualities.length > 0) {
+                for (String qualityurl : qualities) {
+                    final String qualinfo[] = new String[4];
+                    qualityurl = Encoding.htmlDecode(qualityurl);
+                    qualinfo[0] = qualityurl;
+                    qualinfo[1] = "video";
+                    qualinfo[2] = resolutions[counter];
+                    qualinfo[3] = "-1";
+                    finfo[counter] = qualinfo;
+                    counter++;
+                    if (counter == 3) {
+                        break;
+                    }
                 }
             }
         }
