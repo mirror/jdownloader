@@ -1548,6 +1548,7 @@ download_start_msg=Nerladdningar körs nu!
 download_stopped=Stopp
 download_stopped_msg=Alla nerladdningar har stoppats eller avslutats.
 downloadview_all=Alla nerladdningar
+downloadview_exists=Filen existerar
 downloadview_failed=Misslyckade nerladdningar
 downloadview_offline=Offline nerladdningar
 downloadview_running=Aktiva nerladdningar
