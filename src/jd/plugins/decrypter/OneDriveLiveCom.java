@@ -142,6 +142,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         entries = (LinkedHashMap<String, Object>) entries.get("folder");
         ressourcelist = (ArrayList) entries.get("children");
         if (fpName == null) {
+            /* This should NEVER happen */
             fpName = "onedrive.live.com content of user " + cid + " - folder - " + id;
         }
 
