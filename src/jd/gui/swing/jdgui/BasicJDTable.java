@@ -271,7 +271,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         return popup;
     }
 
-    public boolean osResizeableColumns() {
+    public boolean isResizeableColumns() {
 
         return true;
     }
