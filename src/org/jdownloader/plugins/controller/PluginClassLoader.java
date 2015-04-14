@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -28,22 +29,42 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.updatev2.ClassLoaderExtension;
 
 public class PluginClassLoader extends URLClassLoader {
+    private static final HashMap<String, AtomicInteger> LOCKS = new HashMap<String, AtomicInteger>();
+
+    private static synchronized Object requestLock(String name) {
+        AtomicInteger lock = LOCKS.get(name);
+        if (lock == null) {
+            lock = new AtomicInteger(0);
+            LOCKS.put(name, lock);
+        }
+        lock.incrementAndGet();
+        return lock;
+    }
+
+    private static synchronized void unLock(String name) {
+        final AtomicInteger lock = LOCKS.get(name);
+        if (lock != null) {
+            if (lock.decrementAndGet() == 0) {
+                LOCKS.remove(name);
+            }
+        }
+    }
 
     private static final HashMap<String, HashMap<String, Object>> sharedPluginObjectsPool = new HashMap<String, HashMap<String, Object>>();
     private static final HashSet<String>                          immutableClasses        = new HashSet<String>() {
-        {
-            add("java.lang.Boolean");
-            add("java.lang.Byte");
-            add("java.lang.String");
-            add("java.lang.Double");
-            add("java.lang.Integer");
-            add("java.lang.Long");
-            add("java.lang.Float");
-            add("java.lang.Short");
-            add("java.math.BigInteger");
-            add("java.math.BigDecimal");
-        }
-    };
+                                                                                              {
+                                                                                                  add("java.lang.Boolean");
+                                                                                                  add("java.lang.Byte");
+                                                                                                  add("java.lang.String");
+                                                                                                  add("java.lang.Double");
+                                                                                                  add("java.lang.Integer");
+                                                                                                  add("java.lang.Long");
+                                                                                                  add("java.lang.Float");
+                                                                                                  add("java.lang.Short");
+                                                                                                  add("java.math.BigInteger");
+                                                                                                  add("java.math.BigDecimal");
+                                                                                              }
+                                                                                          };
 
     public static class PluginClassLoaderChild extends URLClassLoader {
 
@@ -304,14 +325,14 @@ public class PluginClassLoader extends URLClassLoader {
                     }
                     if (check) {
                         check = !name.equals("org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream");/*
-                         * available in 09581
-                         * Stable
-                         */
+                                                                                                                       * available in 09581
+                                                                                                                       * Stable
+                                                                                                                       */
                     }
                     if (check) {
                         check = !name.equals("org.appwork.utils.net.throttledconnection.ThrottledConnection");/*
-                         * available in 09581 Stable
-                         */
+                                                                                                               * available in 09581 Stable
+                                                                                                               */
                     }
                     if (check) {
                         if (name.startsWith("org.appwork") || name.startsWith("jd.plugins.hoster") || name.startsWith("jd.plugins.decrypter")) {
@@ -325,23 +346,27 @@ public class PluginClassLoader extends URLClassLoader {
                 if (name.startsWith("jd.plugins.hoster.RTMPDownload")) {
                     return super.loadClass(name);
                 }
-                Class<?> c = null;
-                synchronized (this) {
-
-                    /*
-                     * we have to synchronize this because concurrent defineClass for same class throws exception
-                     */
-                    c = findLoadedClass(name);
-                    if (c != null) {
+                final Object lock = requestLock(name);
+                synchronized (lock) {
+                    try {
+                        Class<?> c = null;
+                        /*
+                         * we have to synchronize this because concurrent defineClass for same class throws exception
+                         */
+                        c = findLoadedClass(name);
+                        if (c != null) {
+                            return c;
+                        }
+                        final URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
+                        if (myUrl == null) {
+                            throw new ClassNotFoundException("Class does not exist(anymore): " + name);
+                        }
+                        c = mapStaticFields(loadAndDefineClass(myUrl, name, null));
                         return c;
+                    } finally {
+                        unLock(name);
                     }
-                    URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
-                    if (myUrl == null) {
-                        throw new ClassNotFoundException("Class does not exist(anymore): " + name);
-                    }
-                    c = mapStaticFields(loadAndDefineClass(myUrl, name, null));
                 }
-                return c;
             } catch (Exception e) {
                 LogSource logger = LogController.getRebirthLogger(LogController.GL);
                 if (logger != null) {
