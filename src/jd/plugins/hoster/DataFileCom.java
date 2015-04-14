@@ -81,7 +81,11 @@ public class DataFileCom extends PluginForHost {
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = false;
     private static final int               FREE_MAXCHUNKS               = 1;
-    private static final int               FREE_MAXDOWNLOADS            = 1;
+    /*
+     * How multiple free downloads are possible: Start first download & save timestamp of downloadstart. Next download can be started one
+     * hour later - does not matter if the first one still runs. Tested up to 4 but more must be possible ;)
+     */
+    private static final int               FREE_MAXDOWNLOADS            = 20;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
@@ -169,7 +173,7 @@ public class DataFileCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Deleted file */
-        if (br.containsHTML(">Sorry but this file has been deleted")) {
+        if (br.containsHTML(">Sorry but this file has been deleted") || br.getHttpConnection().getResponseCode() == 404) {
             if (urlFileName != null) {
                 link.setName(urlFileName);
             }
@@ -828,6 +832,8 @@ public class DataFileCom extends PluginForHost {
             if ("500".equalsIgnoreCase(code)) {
                 // 500 MySQL server has gone away
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 10 * 60 * 1000l);
+            } else if ("503".equalsIgnoreCase(code)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503: Server ID not found", 5 * 60 * 1000l);
             }
             if ("700".equalsIgnoreCase(code) || "701".equalsIgnoreCase(code)) {
                 // 700 File url not valid

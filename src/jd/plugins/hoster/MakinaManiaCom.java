@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "makinamania.com" }, urls = { "http://(www\\.)?makinamania\\.com/((download/|descargar\\-).+|index\\.php\\?action=dlattach;topic=\\d+\\.0;attach=\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "makinamania.com" }, urls = { "http://(www\\.)?makinamania\\.com/((download/|descargar\\-).+|index\\.php\\?action=dlattach;topic=\\d+(?:\\.0)?;attach=\\d+)" }, flags = { 2 })
 public class MakinaManiaCom extends PluginForHost {
 
     public MakinaManiaCom(PluginWrapper wrapper) {
@@ -54,8 +54,9 @@ public class MakinaManiaCom extends PluginForHost {
     private static final String MAINPAGE         = "http://makinamania.com";
     private static Object       LOCK             = new Object();
     private static final String NOCHUNKS         = "NOCHUNKS";
-    private static final String ATTACHEDFILELINK = "http://(www\\.)?makinamania\\.com/index\\.php\\?action=dlattach;topic=\\d+\\.0;attach=\\d+";
+    private static final String ATTACHEDFILELINK = "http://(www\\.)?makinamania\\.com/index\\.php\\?action=dlattach;topic=\\d+(?:\\.0)?;attach=\\d+";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -92,6 +93,7 @@ public class MakinaManiaCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);

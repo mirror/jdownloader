@@ -59,7 +59,7 @@ public class ReverBnationCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         if (parameter.matches("http://(www\\.)?reverbnation\\.com/page_object/page_object_photos/artist_\\d+")) {
             br.getPage(parameter);
-            String fpName = getFpname();
+            String fpName = null;
             int counter = 1;
             DecimalFormat df = new DecimalFormat("000");
             final String[] pictures = br.getRegex("id=\"photo_\\d+\">[\t\n\r ]+<img data\\-crop=\"\\d+x\\d+\" data\\-full\\-size=\"(//[^<>\"]*?)\"").getColumn(0);
@@ -71,11 +71,6 @@ public class ReverBnationCom extends PluginForDecrypt {
                     counter++;
                 }
                 decryptedLinks.add(fina);
-            }
-            if (fpName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
             }
         } else if (parameter.matches("http://(www\\.)?reverbnation\\.com/(play_now/song_\\d+|open_graph/song/\\d+|[A-Za-z0-9\\-_]+/song/\\d+)")) {
             songID = new Regex(parameter, "(\\d+)$").getMatch(0);
@@ -124,12 +119,8 @@ public class ReverBnationCom extends PluginForDecrypt {
             String artist_name_general = null;
             if (parameter.matches("http://(www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|open_graph/song/\\d+)") || parameter.matches(PLAYLISTLINK)) {
                 br.getPage(parameter);
-                fpName = getFpname();
-                /* TODO! */
-                throw new DecrypterException("Decrypter broken for link:" + parameter);
             } else if (parameter.matches("http://(www\\.)?reverbnation\\.com/artist/downloads/\\d+")) {
                 br.getPage(parameter);
-                fpName = getFpname();
                 /* TODO! */
                 throw new DecrypterException("Decrypter broken for link:" + parameter);
             } else {
@@ -156,24 +147,27 @@ public class ReverBnationCom extends PluginForDecrypt {
                     }
                     return decryptedLinks;
                 }
-                artist_name_general = br.getRegex("class=\"artist_name\">By: ([^<>\"]*?)</span>").getMatch(0);
-                if (artist_name_general == null) {
-                    artist_name_general = br.getRegex("class=\"artist_name\">By: <span title=\"([^<>\"]*?)\"").getMatch(0);
-                }
                 final String showAllSongs = br.getRegex("<a href=\"([^<>\"]+/songs)\" class=\"standard_well see_more\">All Songs</a>").getMatch(0);
                 if (showAllSongs != null) {
                     br.getPage("http://www.reverbnation.com" + showAllSongs);
                 }
-                artistID = br.getRegex("CURRENT_PAGE_OBJECT = \\'artist_(\\d+)\\';").getMatch(0);
-                if (artistID == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                allInfo = br.getRegex("<div class=\"play_details\">(.*?)</li>").getColumn(0);
             }
-            if (username == null || allInfo == null || allInfo.length == 0) {
+            artist_name_general = br.getRegex("class=\"artist_name\">By: ([^<>\"]*?)</span>").getMatch(0);
+            if (artist_name_general == null) {
+                artist_name_general = br.getRegex("class=\"artist_name\">By: <span title=\"([^<>\"]*?)\"").getMatch(0);
+            }
+            artistID = br.getRegex("CURRENT_PAGE_OBJECT = \\'artist_(\\d+)\\';").getMatch(0);
+            if (artistID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
+            }
+            allInfo = br.getRegex("<div class=\"play_details\">(.*?)</li>").getColumn(0);
+            if (allInfo == null || allInfo.length == 0 || artist_name_general == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            if (username == null) {
+                username = artist_name_general;
             }
             fpName = username + " - " + artist_name_general + " - " + artistID;
             for (final String singleInfo : allInfo) {
@@ -233,11 +227,6 @@ public class ReverBnationCom extends PluginForDecrypt {
     private String createContentURL(final String songID) {
         final String content_url = "http://www.reverbnation.com/controller/audio_player/download_song/" + songID + "?modal=true";
         return content_url;
-    }
-
-    private String getFpname() {
-        String fpName = br.getRegex("<title>([^<>\"]*?) \\- ReverbNation</title>").getMatch(0);
-        return fpName;
     }
 
     /* NO OVERRIDE!! */
