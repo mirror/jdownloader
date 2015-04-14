@@ -45,6 +45,7 @@ public class Sxrcm extends PluginForDecrypt {
     }
 
     // @Override
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -56,6 +57,14 @@ public class Sxrcm extends PluginForDecrypt {
         synchronized (LOCK) {
             if (new Regex(parameter, PATTEREN_SUPPORTED_MAIN).matches()) {
                 br.getPage(parameter);
+                if (br.getRedirectLocation() != null) {
+                    try {
+                        decryptedLinks.add(this.createOfflinelink(parameter));
+                    } catch (final Throwable e) {
+                        // Not available in old 0.9.581 Stable
+                    }
+                    return decryptedLinks;
+                }
                 final String[] final_links = br.getRegex("onclick=\"this\\.className\\+=\\' disabled\\'\" href=\"(http[^<>\"]*?)\"").getColumn(0);
                 if (final_links != null && final_links.length != 0) {
                     for (final String finallink : final_links) {
@@ -104,12 +113,22 @@ public class Sxrcm extends PluginForDecrypt {
                     Thread.sleep(1000);
                     br.getPage(link);
                     final String finallink = br.getRedirectLocation();
+                    if (finallink == null && br.getHttpConnection().getResponseCode() == 302) {
+                        try {
+                            decryptedLinks.add(this.createOfflinelink(parameter));
+                        } catch (final Throwable e) {
+                            // Not available in old 0.9.581 Stable
+                        }
+                        return decryptedLinks;
+                    }
                     if (finallink == null || finallink.contains("sexuria.com/")) {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
                     final DownloadLink dlLink = createDownloadlink(finallink);
-                    if (pwList != null) dlLink.setSourcePluginPasswordList(pwList);
+                    if (pwList != null) {
+                        dlLink.setSourcePluginPasswordList(pwList);
+                    }
                     decryptedLinks.add(dlLink);
                     try {
                         distribute(dlLink);
