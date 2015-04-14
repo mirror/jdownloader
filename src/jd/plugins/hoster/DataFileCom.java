@@ -81,8 +81,8 @@ public class DataFileCom extends PluginForHost {
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = false;
     private static final int               FREE_MAXCHUNKS               = 1;
-    private static final int               FREE_MAXDOWNLOADS            = 20;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final int               FREE_MAXDOWNLOADS            = 1;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
