@@ -41,7 +41,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.VKontakteRu.JSonUtils;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/.+|l\\.facebook\\.com/l/[^/]+/.+)" }, flags = { 0 })
 public class FaceBookComGallery extends PluginForDecrypt {
 
     public FaceBookComGallery(PluginWrapper wrapper) {
@@ -49,45 +49,47 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     /* must be static so all plugins share same lock */
-    private static Object         LOCK                           = new Object();
-    private static final String   FACEBOOKMAINPAGE               = "http://www.facebook.com";
-    private int                   DIALOGRETURN                   = -1;
-    private static final String   FASTLINKCHECK_PICTURES         = "FASTLINKCHECK_PICTURES";
+    private static Object         LOCK                            = new Object();
+    private static final String   FACEBOOKMAINPAGE                = "http://www.facebook.com";
+    private int                   DIALOGRETURN                    = -1;
+    private static final String   FASTLINKCHECK_PICTURES          = "FASTLINKCHECK_PICTURES";
 
-    private static final String   TYPE_FBSHORTLINK               = "http(s)?://(www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
-    private static final String   TYPE_SINGLE_PHOTO              = "http(s)?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+.*?";
-    private static final String   TYPE_SINGLE_VIDEO_ALL          = "https?://(www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
-    private static final String   TYPE_SINGLE_VIDEO_EMBED        = "https?://(www\\.)?facebook\\.com/video/embed\\?video_id=\\d+";
-    private static final String   TYPE_SET_LINK_PHOTO            = "http(s)?://(www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)o?a[0-9\\.]+(\\&type=\\d+)?";
-    private static final String   TYPE_SET_LINK_VIDEO            = "https?://(www\\.)?facebook\\.com/media/set/\\?set=vb\\.\\d+.*?";
-    private static final String   TYPE_ALBUMS_LINK               = "https?://(www\\.)?facebook\\.com/.+photos_albums";
-    private static final String   TYPE_PHOTOS_OF_LINK            = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of";
-    private static final String   TYPE_PHOTOS_ALL_LINK           = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all";
-    private static final String   TYPE_PHOTOS_STREAM_LINK        = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_stream";
-    private static final String   TYPE_PHOTOS_LINK               = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos";
-    private static final String   TYPE_GROUPS_PHOTOS             = "https?://(www\\.)?facebook\\.com/groups/\\d+/photos/";
-    private static final String   TYPE_GROUPS_FILES              = "https?://(www\\.)?facebook\\.com/groups/\\d+/files/";
-    private static final String   TYPE_PROFILE_PHOTOS            = "https?://(www\\.)?facebook\\.com/profile\\.php\\?id=\\d+\\&sk=photos\\&collection_token=[A-Z0-9%]+";
+    private static final String   TYPE_FBSHORTLINK                = "http(s)?://(www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
+    private static final String   TYPE_FB_REDIRECT_TO_EXTERN_SITE = "https?://l\\.facebook\\.com/l/[^/]+/.+";
+    private static final String   TYPE_SINGLE_PHOTO               = "http(s)?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+.*?";
+    private static final String   TYPE_SINGLE_VIDEO_ALL           = "https?://(www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
+    private static final String   TYPE_SINGLE_VIDEO_EMBED         = "https?://(www\\.)?facebook\\.com/video/embed\\?video_id=\\d+";
+    private static final String   TYPE_SET_LINK_PHOTO             = "http(s)?://(www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)o?a[0-9\\.]+(\\&type=\\d+)?";
+    private static final String   TYPE_SET_LINK_VIDEO             = "https?://(www\\.)?facebook\\.com/media/set/\\?set=vb\\.\\d+.*?";
+    private static final String   TYPE_ALBUMS_LINK                = "https?://(www\\.)?facebook\\.com/.+photos_albums";
+    private static final String   TYPE_PHOTOS_OF_LINK             = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of";
+    private static final String   TYPE_PHOTOS_ALL_LINK            = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all";
+    private static final String   TYPE_PHOTOS_STREAM_LINK         = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_stream";
+    private static final String   TYPE_PHOTOS_LINK                = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos";
+    private static final String   TYPE_GROUPS_PHOTOS              = "https?://(www\\.)?facebook\\.com/groups/\\d+/photos/";
+    private static final String   TYPE_GROUPS_FILES               = "https?://(www\\.)?facebook\\.com/groups/\\d+/files/";
+    private static final String   TYPE_PROFILE_PHOTOS             = "https?://(www\\.)?facebook\\.com/profile\\.php\\?id=\\d+\\&sk=photos\\&collection_token=[A-Z0-9%]+";
 
-    private static final int      MAX_LOOPS_GENERAL              = 150;
-    private static final int      MAX_PICS_DEFAULT               = 5000;
-    public static final String    REV                            = "1496061";
+    private static final int      MAX_LOOPS_GENERAL               = 150;
+    private static final int      MAX_PICS_DEFAULT                = 5000;
+    public static final String    REV                             = "1496061";
 
-    private static String         MAINPAGE                       = "http://www.facebook.com";
-    private static final String   CRYPTLINK                      = "facebookdecrypted.com/";
-    private static final String   EXCEPTION_LINKOFFLINE          = "EXCEPTION_LINKOFFLINE";
+    private static String         MAINPAGE                        = "http://www.facebook.com";
+    private static final String   CRYPTLINK                       = "facebookdecrypted.com/";
+    private static final String   EXCEPTION_LINKOFFLINE           = "EXCEPTION_LINKOFFLINE";
 
-    private static final String   CONTENTUNAVAILABLE             = ">Dieser Inhalt ist derzeit nicht verfügbar|>This content is currently unavailable<";
-    private String                PARAMETER                      = null;
-    private boolean               FASTLINKCHECK_PICTURES_ENABLED = false;
-    private boolean               logged_in                      = false;
-    final ArrayList<DownloadLink> decryptedLinks                 = new ArrayList<DownloadLink>();
+    private static final String   CONTENTUNAVAILABLE              = ">Dieser Inhalt ist derzeit nicht verfügbar|>This content is currently unavailable<";
+    private String                PARAMETER                       = null;
+    private boolean               FASTLINKCHECK_PICTURES_ENABLED  = false;
+    private boolean               logged_in                       = false;
+    final ArrayList<DownloadLink> decryptedLinks                  = new ArrayList<DownloadLink>();
 
     /*
      * Dear whoever is looking at this - this is a classic example of spaghetticode. If you like spaghettis, go ahead, and get you some
      * tomatoe sauce and eat it but if not, well have fun re-writing this from scratch ;) Wikipedia:
      * http://en.wikipedia.org/wiki/Spaghetti_code
      */
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String parameter = param.toString().replace("#!/", "");
         PARAMETER = parameter;
@@ -99,6 +101,11 @@ public class FaceBookComGallery extends PluginForDecrypt {
         } else if (PARAMETER.matches(TYPE_SINGLE_PHOTO)) {
             final String id = new Regex(PARAMETER, "fbid=(\\d+)").getMatch(0);
             final DownloadLink fina = createDownloadlink("https://www.facebookdecrypted.com/photo.php?fbid=" + id);
+            decryptedLinks.add(fina);
+            return decryptedLinks;
+        } else if (PARAMETER.matches(TYPE_FB_REDIRECT_TO_EXTERN_SITE)) {
+            final String external_url = "http://" + new Regex(PARAMETER, "facebook\\.com/l/[^/]+/(.+)").getMatch(0);
+            final DownloadLink fina = createDownloadlink(external_url);
             decryptedLinks.add(fina);
             return decryptedLinks;
         }
