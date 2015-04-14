@@ -55,9 +55,13 @@ public class EHentaiOrg extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = br.getRegex("<title>([^<>\"]*?) - E-Hentai Galleries</title>").getMatch(0);
-        if (fpName != null) {
-            fpName = Encoding.htmlDecode(fpName.trim());
+        if (fpName == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "fpName can not be found");
         }
+        fpName = Encoding.htmlDecode(fpName.trim());
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(fpName);
+
         int pagemax = 0;
         final String[] pages = br.getRegex("/?p=(\\d+)\" onclick=").getColumn(0);
         if (pages != null && pages.length != 0) {
@@ -69,6 +73,7 @@ public class EHentaiOrg extends PluginForDecrypt {
             }
         }
         final DecimalFormat df = new DecimalFormat("0000");
+        int counter = 1;
         for (int page = 0; page <= pagemax; page++) {
             try {
                 if (this.isAbort()) {
@@ -87,14 +92,13 @@ public class EHentaiOrg extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            int counter = 1;
             for (final String singleLink : links) {
                 final DownloadLink dl = createDownloadlink("http://ehentaidecrypted.org/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                final String namepart = fpName + "_" + df.format(page);
+                final String namepart = fpName + "_" + uid + "-" + df.format(counter);
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("individual_link", singleLink);
                 dl.setProperty("namepart", namepart);
-                dl.setName(namepart + new Regex(singleLink, "([A-Za-z0-9]+)/?$").getMatch(0) + ".jpg");
+                dl.setName(namepart + ".jpg");
                 dl.setAvailable(true);
                 try {
                     dl.setContentUrl(singleLink);
@@ -102,19 +106,17 @@ public class EHentaiOrg extends PluginForDecrypt {
                     /* Not available in old 0.9.581 Stable */
                     dl.setBrowserUrl(singleLink);
                 }
-                decryptedLinks.add(dl);
+                fp.add(dl);
                 try {
                     distribute(dl);
                 } catch (final Throwable e) {
-                    // No available in old Stable
+                    /* does not exist in 09581 */
                 }
+                decryptedLinks.add(dl);
                 counter++;
             }
             sleep(new Random().nextInt(5000), param);
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName);
-        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 
