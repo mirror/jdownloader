@@ -25,6 +25,7 @@ public class Recaptcha2Helper {
 
     private String  siteKey;
     private Browser br;
+
     private String  version  = "r20150330155956";
     private String  language = "en";
 
@@ -70,8 +71,8 @@ public class Recaptcha2Helper {
      * Browser can be null and new Browser session will be used. Be aware it will be using JDownloader default User-Agent <br />
      * Provided Browser referer is nullfied. <br />
      * Host can be null only when existing Browser is provided, host will be determined from current URL. <br />
-     *
-     *
+     * 
+     * 
      * @author raztoki
      * @param br
      * @param siteKey
@@ -215,17 +216,19 @@ public class Recaptcha2Helper {
         // botGuard not supported
         botGuardString = "!A";
 
-        final String rcFrameUrl = "https://www.google.com/recaptcha/api2/frame?c=" + tokenForFrameLoading + "&hl=" + language + "&k=" + siteKey + "&v=" + version + "&bg=" + botGuardString + "&usegapi=1&jsh=" + Encoding.urlEncode(jshString);
+        final String rcFrameUrl = "https://www.google.com/recaptcha/api2/frame?c=" + tokenForFrameLoading + "&hl=" + language + "&k=" + siteKey + "&v=" + version + "&bg=" + botGuardString + "&chr=" + Encoding.urlEncode("[61,60,22]") + "&usegapi=1&jsh=" + Encoding.urlEncode(jshString);
 
         br.getPage(rcFrameUrl);
+        tokenForCaptchaChallengePayload = unjsonify(br.getRegex("\\[\\\\x22rresp\\\\x22,\\s*\\\\x22([^\\\\]+)").getMatch(0));
 
-        tokenToReload = unjsonify(br.getRegex("\\[\\\\x22finput\\\\x22\\,\\s*\\\\x22([^\\\\]+)").getMatch(0));
-        // .* can cause lag.
-        tokenToReloadFbg = unjsonify(br.getRegex(",\\d\\]\\\\n,\\\\x22([^\\\\]+)").getMatch(0));
-        // for debugging purposes so we don't throw exception
-        // br.setAllowedResponseCodes(500);
-        br.postPage("https://www.google.com/recaptcha/api2/reload?k=" + siteKey, "c=" + tokenToReload + "&reason=r&fbg=" + (tokenToReloadFbg != null || !"null".equalsIgnoreCase(tokenToReloadFbg) ? tokenToReloadFbg : ""));
-        tokenForCaptchaChallengePayload = unjsonify(br.getRegex("\\[\"rresp\",\\s*\"([^\"]+)").getMatch(0));
+        // tokenToReload = unjsonify(br.getRegex("\\[\\\\x22finput\\\\x22\\,\\s*\\\\x22([^\\\\]+)").getMatch(0));
+        // // .* can cause lag.
+        // tokenToReloadFbg = unjsonify(br.getRegex(",\\d\\]\\\\n,\\\\x22([^\\\\]+)").getMatch(0));
+        // // for debugging purposes so we don't throw exception
+        // // br.setAllowedResponseCodes(500);
+        // br.postPage("https://www.google.com/recaptcha/api2/reload?k=" + siteKey, "c=" + tokenToReload + "&reason=r&fbg=" +
+        // (tokenToReloadFbg != null || !"null".equalsIgnoreCase(tokenToReloadFbg) ? tokenToReloadFbg : ""));
+        // tokenForCaptchaChallengePayload = unjsonify(br.getRegex("\\[\"rresp\",\\s*\"([^\"]+)").getMatch(0));
 
         timeImageLoading = System.currentTimeMillis();
         return "https://www.google.com/recaptcha/api2/payload?c=" + tokenForCaptchaChallengePayload + "&k=" + siteKey;
@@ -245,15 +248,18 @@ public class Recaptcha2Helper {
 
         final long timeToSolve = System.currentTimeMillis() - timeImageLoading;
         final long timeToSolveMore = timeToSolve + (long) (Math.random() * 500);
-        br.postPage("https://www.google.com/recaptcha/api2/userverify?k=" + siteKey, "c=" + tokenForCaptchaChallengePayload + "&response=" + Encoding.Base64Encode(responseJson) + "&t=" + timeToSolve + "&ct=" + timeToSolveMore + "&bg=" + botGuardString);
+        br.postPage("https://www.google.com/recaptcha/api2/userverify?k=" + siteKey, "c=" + tokenForCaptchaChallengePayload + "&response=" + Encoding.Base64Encode(responseJson).replaceAll("=", ".") + "&t=" + timeToSolve + "&ct=" + timeToSolve + "&bg=" + botGuardString);
         String[] responseData = br.getRegex("\\[\"uvresp\"\\s*,\\s*\"([^\"]+)\"\\s*\\,\\s*(\\d*)\\s*\\,\\s*(\\d*)").getRow(0);
-        responseToken = responseData[0];
-        successIdentifier = responseData[1].length() > 0 ? Integer.parseInt(responseData[1]) : 0;
-        // I'm not sure if this is the timeout. it may be the timeout in seconds until responseToken is valid
-        verifyTime = System.currentTimeMillis();
-        timeout = responseData[2].length() > 0 ? Integer.parseInt(responseData[2]) * 1000 : 0;
-        success = successIdentifier > 0;
-
+        if (responseData == null) {
+            success = false;
+        } else {
+            responseToken = responseData[0];
+            successIdentifier = responseData[1].length() > 0 ? Integer.parseInt(responseData[1]) : 0;
+            // I'm not sure if this is the timeout. it may be the timeout in seconds until responseToken is valid
+            verifyTime = System.currentTimeMillis();
+            timeout = responseData[2].length() > 0 ? Integer.parseInt(responseData[2]) * 1000 : 0;
+            success = successIdentifier > 0;
+        }
         return success;
     }
 
