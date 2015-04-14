@@ -736,7 +736,23 @@ public class Uploadedto extends PluginForHost {
         long lastdownload = 0;
         long passedTimeSinceLastDl = 0;
         logger.info("New Download: currentIP = " + currentIP.get());
+        /**
+         * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
+         */
+        if (this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
+            /*
+             * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if he
+             * tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN download
+             * using the same free accounts after performing a reconnect!
+             */
+            lastdownload = getPluginSavedLastDownloadTimestamp();
+            passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
+            if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
+            }
+        }
         if (account != null && this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, default_aaeh)) {
+            /* User has no limit on his IP in general --> Check if the current account has a limit. */
             lastdownload = getLongProperty(account, PROPERTY_LASTDOWNLOAD, 0);
             passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
             if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
@@ -747,15 +763,6 @@ public class Uploadedto extends PluginForHost {
                 logger.info("IP has changed -> Disabling current free account to try to use the next free account or free unregistered mode");
                 account.setError(AccountError.TEMP_DISABLED, "Free limit reached");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-        } else if (account == null && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
-            /**
-             * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
-             */
-            lastdownload = getPluginSavedLastDownloadTimestamp();
-            passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
-            if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
             }
         }
 
