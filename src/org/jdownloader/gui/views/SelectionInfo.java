@@ -15,7 +15,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
@@ -190,7 +189,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                 if (lastPackageView == null || lastPackageView.getPackage() != currentPackage) {
                     aggregatePackagePackageView(lastPackageView, lastPackageChildren);
                     lastPackageChildren.clear();
-                    lastPackageView = internalPackageView(currentPackage, true);
+                    lastPackageView = internalPackageView(currentPackage, false);
                 }
                 lastPackageChildren.add(currentChild);
             }
@@ -202,10 +201,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         if (lastPackageView != null) {
             final PackageType lastPackage = lastPackageView.getPackage();
             PluginView<ChildrenType> lastPluginView = null;
-            if (lastPackageView.isExpanded == false || lastPackageChildren.size() == 0) {
-                if (lastPackageChildren.size() > 0) {
-                    new WTFException("lastPackageChildren for collapsed lastPackageView!?!?").printStackTrace();
-                }
+            if (lastPackageView.isPackageSelected() && (lastPackageView.isExpanded == false || lastPackageChildren.size() == 0)) {
                 final boolean readL = lastPackage.getModifyLock().readLock();
                 try {
                     final List<ChildrenType> packageChildren = lastPackage.getChildren();
