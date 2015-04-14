@@ -63,12 +63,8 @@ public class BinBoxIo extends PluginForDecrypt {
         salt = parameter.substring(parameter.lastIndexOf("#") + 1);
         getPaste();
         if (paste == null) {
-            if (br.containsHTML("solvemedia\\.com/papi/")) {
-                final String validate = br.getRegex("type=\"hidden\" name=\"validate\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (validate == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
+            Form captcha = br.getFormbyProperty("id", "captchaForm");
+            if (captcha != null && captcha.containsHTML("solvemedia\\.com/papi/")) {
                 for (int i = 1; i <= 3; i++) {
                     final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                     final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
@@ -87,7 +83,9 @@ public class BinBoxIo extends PluginForDecrypt {
                         continue;
                     }
                     final String chid = sm.getChallenge(code);
-                    br.postPage(br.getURL(), "validate=" + validate + "&adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + chid);
+                    captcha.put("adcopy_response", Encoding.urlEncode(code));
+                    captcha.put("adcopy_challenge", chid);
+                    br.submitForm(captcha);
                     if (br.containsHTML("solvemedia\\.com/papi/")) {
                         continue;
                     }
@@ -97,6 +95,10 @@ public class BinBoxIo extends PluginForDecrypt {
                     throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
                 getPaste();
+            } else {
+                // unsupported captcha type, or broken
+                logger.warning("Unsupported captcha type or broken decrypter, please confirm in browser.");
+                return null;
             }
         }
         doThis();
@@ -130,8 +132,8 @@ public class BinBoxIo extends PluginForDecrypt {
                     logger.info("Link offline: " + parameter);
                 }
             } else if (br.containsHTML(/* DCMA */"<div id=\"paste-deleted\"" +
-                    /* suspended or deactivated account */"|This link is unavailable because |" +
-                    /* content deleted */"The content you have requested has been deleted\\.")) {
+            /* suspended or deactivated account */"|This link is unavailable because |" +
+            /* content deleted */"The content you have requested has been deleted\\.")) {
                 try {
                     decryptedLinks.add(createOfflinelink(parameter, fpName != null ? Encoding.htmlDecode(fpName.trim()) : null, null));
                 } catch (final Throwable t) {
