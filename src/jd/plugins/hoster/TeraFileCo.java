@@ -284,6 +284,19 @@ public class TeraFileCo extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        // at this stage they have commented out the submit button for free download && we add it back, get captcha, download servers never
+        // work. see https://board.jdownloader.org/showthread.php?t=63452
+        if (true) {
+            logger.info("Only downloadable via premium");
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
+        }
         requestFileInformation(downloadLink);
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
