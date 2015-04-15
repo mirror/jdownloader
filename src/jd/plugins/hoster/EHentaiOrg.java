@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.HeadRequest;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -80,15 +81,14 @@ public class EHentaiOrg extends PluginForHost {
             try {
                 if (isJDStable()) {
                     /* @since JD2 */
-                    con = br.openHeadConnection(DLLINK);
+                    con = br2.openHeadConnection(DLLINK);
                 } else {
                     /* Not supported in old 0.9.581 Stable */
-                    con = br.openGetConnection(DLLINK);
+                    con = br2.openGetConnection(DLLINK);
                 }
             } catch (final BrowserException ebr) {
                 /* Whatever happens - its most likely a server problem for this host! */
-                ebr.printStackTrace();
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             }
             if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -101,22 +101,35 @@ public class EHentaiOrg extends PluginForHost {
             downloadLink.setProperty("directlink", DLLINK);
             return AvailableStatus.TRUE;
         } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+            if (con != null) {
+                if (con.getRequest() instanceof HeadRequest) {
+                    br2.loadConnection(con);
+                } else {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
             }
         }
     }
 
-    @SuppressWarnings("deprecation")
+   
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        } catch (final BrowserException ebr) {
+            /* Whatever happens - its most likely a server problem for this host! */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
+                dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
+                dl.getConnection().disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             br.followConnection();
