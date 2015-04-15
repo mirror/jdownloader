@@ -237,9 +237,9 @@ public class RarStreamer implements Runnable {
 
     /**
      * Helper for the passwordfinding method.
-     * 
+     *
      * @author botzi
-     * 
+     *
      */
     private static class BooleanHelper {
         private boolean bool;
@@ -257,7 +257,7 @@ public class RarStreamer implements Runnable {
 
         /**
          * Returns the result.
-         * 
+         *
          * @return The result.
          */
         boolean getBoolean() {
@@ -291,7 +291,7 @@ public class RarStreamer implements Runnable {
             }
 
             rarStreamProvider = new RarStreamProvider(archive, password, this.streamProvider);
-            IInStream rarStream = rarStreamProvider.getStream(archive.getFirstArchiveFile());
+            IInStream rarStream = rarStreamProvider.getStream(archive.getArchiveFiles().get(0));
             rarArchive = SevenZip.openInArchive(ArchiveFormat.RAR, rarStream, rarStreamProvider);
 
             final BooleanHelper passwordfound = new BooleanHelper();
@@ -412,7 +412,7 @@ public class RarStreamer implements Runnable {
 
         rarStreamProvider = new RarStreamProvider(archive, password, this.streamProvider);
         try {
-            IInStream rarStream = rarStreamProvider.getStream(archive.getFirstArchiveFile());
+            IInStream rarStream = rarStreamProvider.getStream(archive.getArchiveFiles().get(0));
             rarArchive = SevenZip.openInArchive(ArchiveFormat.RAR, rarStream, rarStreamProvider);
             for (ISimpleInArchiveItem item : rarArchive.getSimpleInterface().getArchiveItems()) {
                 if (pathToStream == null) {

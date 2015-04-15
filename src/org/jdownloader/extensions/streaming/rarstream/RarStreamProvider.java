@@ -41,9 +41,9 @@ import org.jdownloader.logging.LogController;
 
 /**
  * Used to join the separated rar files.
- * 
+ *
  * @author botzi
- * 
+ *
  */
 public class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword {
     private Map<String, IInStream>       openStreamMap   = new HashMap<String, IInStream>();
@@ -62,7 +62,9 @@ public class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOp
     }
 
     RarStreamProvider(Archive archive, String password, StreamingProvider streamProvider) {
-        if (password == null) password = "";
+        if (password == null) {
+            password = "";
+        }
         this.password = password;
         this.archive = archive;
         this.streamProvider = streamProvider;
@@ -82,15 +84,21 @@ public class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOp
         logger = LogController.CL();
         // support for test.part01-blabla.tat archives.
         // we have to create a rename matcher map in this case because 7zip cannot handle this type
-        if (logger != null) logger.info("Init Map:");
-        if (archive.getFirstArchiveFile().getFilePath().matches("(?i).*\\.pa?r?t?\\.?\\d+\\D.*?\\.rar$")) {
+        if (logger != null) {
+            logger.info("Init Map:");
+        }
+        if (archive.getArchiveFiles().get(0).getFilePath().matches("(?i).*\\.pa?r?t?\\.?\\d+\\D.*?\\.rar$")) {
             for (ArchiveFile af : archive.getArchiveFiles()) {
                 String name = archive.getName() + "." + new Regex(af.getFilePath(), ".*(part\\d+)").getMatch(0) + ".rar";
 
-                if (logger != null) logger.info(af.getFilePath() + " name: " + name);
-                if (af == archive.getFirstArchiveFile()) {
+                if (logger != null) {
+                    logger.info(af.getFilePath() + " name: " + name);
+                }
+                if (af == archive.getArchiveFiles().get(0)) {
                     firstName = name;
-                    if (logger != null) logger.info(af.getFilePath() + " FIRSTNAME name: " + name);
+                    if (logger != null) {
+                        logger.info(af.getFilePath() + " FIRSTNAME name: " + name);
+                    }
                 }
                 if (map.put(name, af) != null) {
                     //
@@ -124,7 +132,9 @@ public class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOp
     public IInStream getStream(String filename) throws SevenZipException {
         try {
 
-            if (logger != null) logger.info("Stream request: " + filename);
+            if (logger != null) {
+                logger.info("Stream request: " + filename);
+            }
             IInStream stream = openStreamMap.get(filename);
             ArchiveFile af = map.get(filename);
             if (stream != null) {
@@ -133,10 +143,14 @@ public class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOp
                 return stream;
             }
 
-            if (logger != null) logger.info("New RandomAccess: " + (af == null ? filename : af.getFilePath()));
+            if (logger != null) {
+                logger.info("New RandomAccess: " + (af == null ? filename : af.getFilePath()));
+            }
             name = filename;
             ArchiveFile archiveFile = af == null ? archive.getArchiveFileByPath(filename) : af;
-            if (archiveFile == null) return null;
+            if (archiveFile == null) {
+                return null;
+            }
             if (archiveFile instanceof DownloadLinkArchiveFile) {
                 Streaming streaming = streamProvider.getStreamingProvider(((DownloadLinkArchiveFile) archiveFile).getDownloadLinks().get(0));
 
@@ -156,7 +170,7 @@ public class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOp
 
     /**
      * Closes open files.
-     * 
+     *
      * @throws IOException
      */
     void close() throws IOException {
@@ -174,7 +188,7 @@ public class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOp
     }
 
     public void setCompleted(Long files, Long bytes) throws SevenZipException {
-        
+
     }
 
     public void setTotal(Long files, Long bytes) throws SevenZipException {
@@ -203,7 +217,7 @@ public class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOp
     }
 
     public RandomAccessStreaming getPart1Stream() throws SevenZipException {
-        return (RandomAccessStreaming) getStream(getArchive().getFirstArchiveFile());
+        return (RandomAccessStreaming) getStream(archive.getArchiveFiles().get(0));
 
     }
 

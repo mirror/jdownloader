@@ -45,7 +45,8 @@ public class UnixSplit extends IExtraction {
     @Override
     public void extract(ExtractionController ctrl) {
         final Archive archive = getArchive();
-        final String matches[] = splitType.getMatches(archive.getFirstArchiveFile().getName());
+        final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
+        final String matches[] = splitType.getMatches(firstArchiveFile.getName());
         if (matches != null) {
             try {
                 if (SplitUtil.merge(controller, matches[0], 0, getConfig())) {
@@ -91,7 +92,8 @@ public class UnixSplit extends IExtraction {
                     ret.add(new DummyArchiveFile(archiveFile));
                 }
                 if (hasMissingArchiveFiles == false) {
-                    final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
+                    final ArchiveFile firstFile = archive.getArchiveFiles().get(0);
+                    final String firstArchiveFile = firstFile.getFilePath();
                     final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
                     if (splitType.getFirstPartIndex() != splitType.getPartNumber(partNumberOfFirstArchiveFile)) {
                         throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");

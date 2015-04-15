@@ -59,12 +59,13 @@ public class HJSplit extends IExtraction {
     @Override
     public void extract(ExtractionController ctrl) {
         final Archive archive = getArchive();
-        final String matches[] = splitType.getMatches(archive.getFirstArchiveFile().getName());
+        final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
+        final String matches[] = splitType.getMatches(firstArchiveFile.getName());
         if (matches != null) {
             try {
                 final String fileName;
                 final int skipBytes;
-                final String signature = JDHexUtils.toString(FileSignatures.readFileSignature(new File(archive.getFirstArchiveFile().getFilePath())));
+                final String signature = JDHexUtils.toString(FileSignatures.readFileSignature(new File(firstArchiveFile.getFilePath())));
                 if (new Regex(signature, "^[\\w]{3}  \\d{3}").matches()) {
                     final String extension = new Regex(signature, "^([\\w]{3})").getMatch(0);
                     fileName = matches[0] + "." + extension;
@@ -118,12 +119,13 @@ public class HJSplit extends IExtraction {
                     ret.add(new DummyArchiveFile(archiveFile));
                 }
                 if (hasMissingArchiveFiles == false) {
-                    final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
+                    final ArchiveFile firstFile = archive.getArchiveFiles().get(0);
+                    final String firstArchiveFile = firstFile.getFilePath();
                     final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
                     if (splitType.getFirstPartIndex() != splitType.getPartNumber(partNumberOfFirstArchiveFile)) {
                         throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
                     }
-                    if (archive.getFirstArchiveFile().exists()) {
+                    if (firstFile.exists()) {
                         final String signature = JDHexUtils.toString(FileSignatures.readFileSignature(new File(firstArchiveFile)));
                         if (new Regex(signature, "^[\\w]{3}  \\d{3}").matches()) {
                             /**

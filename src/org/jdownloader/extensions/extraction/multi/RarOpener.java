@@ -42,9 +42,9 @@ import org.jdownloader.extensions.extraction.ArchiveFile;
 
 /**
  * Used to join the separated rar files.
- * 
+ *
  * @author botzi
- * 
+ *
  */
 class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword, Closeable {
     private final Map<String, OpenerAccessTracker> openedRandomAccessFileList = new HashMap<String, OpenerAccessTracker>();
@@ -84,14 +84,15 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
         if (logger != null) {
             logger.info("Init Map:");
         }
-        if (archive.getFirstArchiveFile().getFilePath().matches("(?i).*\\.pa?r?t?\\.?\\d+\\D.*?\\.rar$")) {
+        ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
+        if (firstArchiveFile.getFilePath().matches("(?i).*\\.pa?r?t?\\.?\\d+\\D.*?\\.rar$")) {
             for (ArchiveFile af : archive.getArchiveFiles()) {
                 String name = archive.getName() + "." + new Regex(af.getFilePath(), ".*(part\\d+)").getMatch(0) + ".rar";
 
                 if (logger != null) {
                     logger.info(af.getFilePath() + " name: " + name);
                 }
-                if (af == archive.getFirstArchiveFile()) {
+                if (af == firstArchiveFile) {
                     firstName = name;
                     if (logger != null) {
                         logger.info(af.getFilePath() + " FIRSTNAME name: " + name);
@@ -155,7 +156,7 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
 
     /**
      * Closes open files.
-     * 
+     *
      * @throws IOException
      */
     public void close() throws IOException {

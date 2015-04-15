@@ -15,6 +15,17 @@ public abstract class HistoryManager<T extends HistoryEntry> {
     private final ArrayList<T> packageHistory;
 
     public HistoryManager(final List<T> packageNameHistory, final int max) {
+        try {
+            ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+                @Override
+                public void onShutdown(ShutdownRequest shutdownRequest) {
+                    save(list());
+                }
+            });
+        } catch (IllegalStateException e) {
+            /* prevent ClassNotFound exception on shutdown */
+        }
         if (packageNameHistory == null) {
             packageHistory = new ArrayList<T>();
         } else {
@@ -32,14 +43,6 @@ public abstract class HistoryManager<T extends HistoryEntry> {
                 it.remove();
             }
         }
-
-        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-
-            @Override
-            public void onShutdown(ShutdownRequest shutdownRequest) {
-                save(list());
-            }
-        });
 
     }
 

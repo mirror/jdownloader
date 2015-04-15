@@ -66,7 +66,6 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.extraction.actions.ExtractAction;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
-import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchive;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFile;
@@ -183,8 +182,16 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 return currentController;
             }
         }
-        if (archive.getFirstArchiveFile() == null || !archive.getFirstArchiveFile().isComplete()) {
-            logger.info("Archive is not complete: " + archive.getName());
+        if (archive.getArchiveFiles().size() < 1) {
+            logger.info("Archive:" + archive.getName() + "|Empty");
+            return null;
+        }
+        if (archive.isActive()) {
+            logger.info("Archive:" + archive.getName() + "|Active");
+            return null;
+        }
+        if (isComplete(archive) == false) {
+            logger.info("Archive:" + archive.getName() + "|Incomplete");
             return null;
         }
         final IExtraction extractor = getExtractorInstanceByFactory(archive.getFactory());
@@ -727,22 +734,14 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                             if (archiveSettingsPasswords != null) {
                                 knownPasswords.addAll(archiveSettingsPasswords);
                             }
-                            DownloadLinkArchive previousDownloadLinkArchive = null;
-                            Archive previousArchive = con.getArchiv();
-                            while (previousArchive != null) {
-                                if (con.getArchiv() instanceof DownloadLinkArchive) {
-                                    previousDownloadLinkArchive = (DownloadLinkArchive) con.getArchiv();
-                                }
-                                previousArchive = previousArchive.getPreviousArchive();
-                            }
                             final List<ArchiveFactory> archiveFactories = new ArrayList<ArchiveFactory>(files.size());
                             for (File archiveStartFile : files) {
-                                archiveFactories.add(new FileArchiveFactory(archiveStartFile, previousDownloadLinkArchive));
+                                archiveFactories.add(new FileArchiveFactory(archiveStartFile, con.getArchiv()));
                             }
                             final List<Archive> newArchives = ArchiveValidator.getArchivesFromPackageChildren(archiveFactories);
                             for (Archive newArchive : newArchives) {
                                 if (onNewArchive(caller, newArchive)) {
-                                    final ArchiveFile firstArchiveFile = newArchive.getFirstArchiveFile();
+                                    final ArchiveFile firstArchiveFile = newArchive.getArchiveFiles().get(0);
                                     if (firstArchiveFile instanceof FileArchiveFile) {
                                         newArchive.getSettings().setExtractPath(((FileArchiveFile) firstArchiveFile).getFile().getParent());
                                     }
