@@ -1548,6 +1548,7 @@ download_start_msg=Idemo, idemo, idemo! Download-i su pokrenuti!
 download_stopped=Stop
 download_stopped_msg=Svi download-i su zaustavljeni ili završeni.
 downloadview_all=Svi Download-i
+downloadview_exists=Dokument postoji
 downloadview_failed=Neuspjeli Download-i
 downloadview_offline=Offline Download-i
 downloadview_running=Aktivni Download-i
