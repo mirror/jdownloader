@@ -1548,6 +1548,7 @@ download_start_msg=Jo, jo, jo! Stahování jsou nyní spuštěna!
 download_stopped=Zastavit
 download_stopped_msg=Všechna stahování byla zastavena nebo dokončena.
 downloadview_all=Všechna stahování
+downloadview_exists=Soubor existuje
 downloadview_failed=Neúspěšná stahování
 downloadview_offline=Stahování offline
 downloadview_running=Spuštěná stahování
