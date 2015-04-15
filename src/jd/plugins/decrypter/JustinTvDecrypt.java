@@ -285,6 +285,16 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 // we need sig for next request
                 // https://api.twitch.tv/api/vods/3707868/access_token?as3=t
                 ajaxGetPage("http://api.twitch.tv/kraken/videos/v" + vid + "?on_site=1");
+                if (ajax.getHttpConnection().getResponseCode() == 404) {
+                    // offline
+                    final String message = getJson(ajax, "message");
+                    try {
+                        decryptedLinks.add(createOfflinelink(parameter, vid + " - " + message, message));
+                    } catch (final Throwable t) {
+                        logger.info("OfflineLink :" + parameter);
+                    }
+                    return decryptedLinks;
+                }
                 String filename = getJson(ajax, "title");
                 final String channelName = getJson(ajax, "display_name");
                 final String date = getJson(ajax, "recorded_at");
