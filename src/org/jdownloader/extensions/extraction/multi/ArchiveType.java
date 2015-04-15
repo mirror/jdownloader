@@ -1267,9 +1267,9 @@ public enum ArchiveType {
     }
 
     public static List<ArchiveFile> getMissingArchiveFiles(Archive archive, ArchiveType archiveType, int numberOfParts) {
-        final ArchiveFile link = archive.getFirstArchiveFile();
-        if (link != null) {
-            final String linkPath = link.getFilePath();
+        final ArchiveFile firstArchiveFile = archive.getArchiveFiles().size() > 0 ? archive.getArchiveFiles().get(0) : null;
+        if (firstArchiveFile != null) {
+            final String linkPath = firstArchiveFile.getFilePath();
             final String[] filePathParts = archiveType.getMatches(linkPath);
             if (filePathParts != null) {
                 final BitSet availableParts = new BitSet();
@@ -1358,15 +1358,11 @@ public enum ArchiveType {
                     archive.setArchiveID(archiveType.name() + fileNameParts[0] + archiveType.buildIDPattern(fileNameParts, isMultiPart));
                     final ArrayList<ArchiveFile> sortedArchiveFiles = new ArrayList<ArchiveFile>();
                     final int minimumParts = Math.max(archiveType.getMinimumNeededPartIndex(), highestPartNumber);
-                    ArchiveFile firstArchiveFile = null;
                     for (int partIndex = archiveType.getFirstPartIndex(); partIndex <= minimumParts; partIndex++) {
                         if (availableParts.get(partIndex) == false) {
                             final File missingFile = new File(archiveType.buildMissingPart(filePathParts, partIndex, partStringLength));
                             sortedArchiveFiles.add(new MissingArchiveFile(missingFile.getName(), missingFile.getAbsolutePath()));
                         } else {
-                            if (firstArchiveFile == null) {
-                                firstArchiveFile = archiveFiles[partIndex];
-                            }
                             if (allowDeepInspection && Boolean.FALSE.equals(archiveType.isValidPart(partIndex, archiveFiles[partIndex]))) {
                                 continue archiveTypeLoop;
                             }
@@ -1374,7 +1370,6 @@ public enum ArchiveType {
                         }
                     }
                     archive.setArchiveFiles(sortedArchiveFiles);
-                    archive.setFirstArchiveFile(firstArchiveFile);
                     return archive;
                 } else {
                     continue archiveTypeLoop;

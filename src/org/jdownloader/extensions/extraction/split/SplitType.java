@@ -378,9 +378,9 @@ public enum SplitType {
     }
 
     public static List<ArchiveFile> getMissingArchiveFiles(Archive archive, SplitType splitType, int numberOfParts) {
-        final ArchiveFile link = archive.getFirstArchiveFile();
-        if (link != null) {
-            final String linkPath = link.getFilePath();
+        final ArchiveFile firstArchiveFile = archive.getArchiveFiles().size() > 0 ? archive.getArchiveFiles().get(0) : null;
+        if (firstArchiveFile != null) {
+            final String linkPath = firstArchiveFile.getFilePath();
             final String[] filePathParts = splitType.getMatches(linkPath);
             if (filePathParts != null) {
                 final BitSet availableParts = new BitSet();
@@ -460,15 +460,11 @@ public enum SplitType {
                 archive.setArchiveID(splitType.name() + fileNameParts[0] + splitType.buildIDPattern(fileNameParts));
                 final ArrayList<ArchiveFile> sortedArchiveFiles = new ArrayList<ArchiveFile>();
                 final int minimumParts = Math.max(splitType.getMinimumNeededPartIndex(), highestPartNumber);
-                ArchiveFile firstArchiveFile = null;
                 for (int partIndex = splitType.getFirstPartIndex(); partIndex <= minimumParts; partIndex++) {
                     if (availableParts.get(partIndex) == false) {
                         final File missingFile = new File(splitType.buildMissingPart(filePathParts, partIndex, partStringLength));
                         sortedArchiveFiles.add(new MissingArchiveFile(missingFile.getName(), missingFile.getAbsolutePath()));
                     } else {
-                        if (firstArchiveFile == null) {
-                            firstArchiveFile = archiveFiles[partIndex];
-                        }
                         if (allowDeepInspection && splitType.isValidPart(partIndex, archiveFiles[partIndex]) == false) {
                             return null;
                         }
@@ -476,7 +472,6 @@ public enum SplitType {
                     }
                 }
                 archive.setArchiveFiles(sortedArchiveFiles);
-                archive.setFirstArchiveFile(firstArchiveFile);
                 return archive;
             }
         }

@@ -325,7 +325,7 @@ public class Multi extends IExtraction {
                 }
                 if (hasMissingArchiveFiles == false) {
                     final ArchiveType archiveType = archive.getArchiveType();
-                    final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
+                    final String firstArchiveFile = archive.getArchiveFiles().get(0).getFilePath();
                     final String partNumberOfFirstArchiveFile = archiveType.getPartNumberString(firstArchiveFile);
                     if (archiveType.getFirstPartIndex() != archiveType.getPartNumber(partNumberOfFirstArchiveFile)) {
                         throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
@@ -555,10 +555,11 @@ public class Multi extends IExtraction {
     public File getExtractFilePath(ISimpleInArchiveItem item, ExtractionController ctrl, AtomicBoolean skipped) throws SevenZipException {
         final Archive archive = getArchive();
         String path = item.getPath();
+        final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
         if (StringUtils.isEmpty(path)) {
             // example: test.tar.gz / test.tgz contains a test.tar file, that has
             // NO name. we create a dummy name here.
-            final String firstPartName = archive.getFactory().toFile(archive.getFirstArchiveFile().getFilePath()).getName();
+            final String firstPartName = archive.getFactory().toFile(firstArchiveFile.getFilePath()).getName();
             final int in = firstPartName.lastIndexOf(".");
             if (in > 0) {
                 path = firstPartName.substring(0, in);
@@ -571,7 +572,7 @@ public class Multi extends IExtraction {
         }
         final Long size = item.getSize();
         if (filter(item.getPath())) {
-            logger.info("Filtering file " + item.getPath() + " in " + archive.getFirstArchiveFile().getFilePath());
+            logger.info("Filtering file " + item.getPath() + " in " + firstArchiveFile.getFilePath());
             if (size != null) {
                 ctrl.addAndGetProcessedBytes(size);
             }
@@ -705,6 +706,7 @@ public class Multi extends IExtraction {
     public boolean findPassword(final ExtractionController ctl, String password, boolean optimized) throws ExtractionException {
         final Archive archive = getArchive();
         final ArchiveFormat format = archive.getArchiveType().getArchiveFormat();
+        final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
         crack++;
         if (StringUtils.isEmpty(password)) {
             /* This should never happen */
@@ -725,7 +727,7 @@ public class Multi extends IExtraction {
 
             final IArchiveOpenCallback callBack;
             if (archive.getArchiveFiles().size() == 1) {
-                final RandomAccessFile raf = new RandomAccessFile(archive.getFirstArchiveFile().getFilePath(), "r");
+                final RandomAccessFile raf = new RandomAccessFile(firstArchiveFile.getFilePath(), "r");
                 closable = raf;
                 callBack = new DummyOpener(password);
                 inStream = new RandomAccessFileInStream(raf);
@@ -735,19 +737,19 @@ public class Multi extends IExtraction {
                     final RarOpener rarOpener = new RarOpener(archive, password, logger);
                     closable = rarOpener;
                     callBack = rarOpener;
-                    inStream = rarOpener.getStream(archive.getFirstArchiveFile());
+                    inStream = rarOpener.getStream(firstArchiveFile);
                     break;
                 case SEVENZIP_PARTS:
                     final MultiOpener sevenZipPartsOpener = new MultiOpener(password);
                     closable = sevenZipPartsOpener;
                     callBack = sevenZipPartsOpener;
-                    inStream = new ModdedVolumedArchiveInStream(archive.getFirstArchiveFile().getFilePath(), sevenZipPartsOpener);
+                    inStream = new ModdedVolumedArchiveInStream(firstArchiveFile.getFilePath(), sevenZipPartsOpener);
                     break;
                 default:
                     final MultiOpener multiOpener = new MultiOpener(password);
                     closable = multiOpener;
                     callBack = multiOpener;
-                    inStream = multiOpener.getStream(archive.getFirstArchiveFile());
+                    inStream = multiOpener.getStream(firstArchiveFile);
                     break;
                 }
             }
@@ -875,6 +877,7 @@ public class Multi extends IExtraction {
     @Override
     public boolean prepare() throws ExtractionException {
         final Archive archive = getArchive();
+        final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
         try {
             final String[] patternStrings = config.getBlacklistPatterns();
             filter.clear();
@@ -891,7 +894,7 @@ public class Multi extends IExtraction {
             }
             final ArchiveFormat format = archive.getArchiveType().getArchiveFormat();
             try {
-                final String sig = FileSignatures.readFileSignature(new File(archive.getFirstArchiveFile().getFilePath()));
+                final String sig = FileSignatures.readFileSignature(new File(firstArchiveFile.getFilePath()));
                 final Signature signature = new FileSignatures().getSignature(sig);
                 if (signature != null) {
                     final ArchiveFormat signatureFormat;
@@ -918,7 +921,7 @@ public class Multi extends IExtraction {
 
             final IArchiveOpenCallback callBack;
             if (archive.getArchiveFiles().size() == 1) {
-                final RandomAccessFile raf = new RandomAccessFile(archive.getFirstArchiveFile().getFilePath(), "r");
+                final RandomAccessFile raf = new RandomAccessFile(firstArchiveFile.getFilePath(), "r");
                 closable = raf;
                 callBack = new DummyOpener();
                 inStream = new RandomAccessFileInStream(raf);
@@ -928,19 +931,19 @@ public class Multi extends IExtraction {
                     final RarOpener rarOpener = new RarOpener(archive, logger);
                     closable = rarOpener;
                     callBack = rarOpener;
-                    inStream = rarOpener.getStream(archive.getFirstArchiveFile());
+                    inStream = rarOpener.getStream(firstArchiveFile);
                     break;
                 case SEVENZIP_PARTS:
                     final MultiOpener sevenZipPartsOpener = new MultiOpener();
                     closable = sevenZipPartsOpener;
                     callBack = sevenZipPartsOpener;
-                    inStream = new ModdedVolumedArchiveInStream(archive.getFirstArchiveFile().getFilePath(), sevenZipPartsOpener);
+                    inStream = new ModdedVolumedArchiveInStream(firstArchiveFile.getFilePath(), sevenZipPartsOpener);
                     break;
                 default:
                     final MultiOpener multiOpener = new MultiOpener();
                     closable = multiOpener;
                     callBack = multiOpener;
-                    inStream = multiOpener.getStream(archive.getFirstArchiveFile());
+                    inStream = multiOpener.getStream(firstArchiveFile);
                     break;
                 }
             }

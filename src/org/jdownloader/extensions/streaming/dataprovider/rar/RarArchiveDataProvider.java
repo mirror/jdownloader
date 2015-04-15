@@ -71,12 +71,13 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
         // we have to create a rename matcher map in this case because 7zip
         // cannot handle this type
         logger.info("Init Map:");
-        if (archive.getFirstArchiveFile().getFilePath().matches("(?i).*\\.pa?r?t?\\.?\\d+\\D.*?\\.rar$")) {
+        final ArchiveFile firstFile = archive.getArchiveFiles().get(0);
+        if (firstFile.getFilePath().matches("(?i).*\\.pa?r?t?\\.?\\d+\\D.*?\\.rar$")) {
             for (ArchiveFile af : archive.getArchiveFiles()) {
                 String name = archive.getName() + "." + new Regex(af.getFilePath(), ".*(part\\d+)").getMatch(0) + ".rar";
 
                 logger.info(af.getFilePath() + " name: " + name);
-                if (af == archive.getFirstArchiveFile()) {
+                if (af == firstFile) {
                     firstName = name;
                     logger.info(af.getFilePath() + " FIRSTNAME name: " + name);
                 }
@@ -191,7 +192,8 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
     }
 
     public RarFromDataproviderStream getPart1Stream() throws SevenZipException {
-        return (RarFromDataproviderStream) getStream(getArchive().getFirstArchiveFile());
+        final ArchiveFile firstFile = archive.getArchiveFiles().get(0);
+        return (RarFromDataproviderStream) getStream(firstFile);
 
     }
 
@@ -234,7 +236,8 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
                 this.streamingChunk.close();
             } catch (Throwable e) {
             }
-            IInStream rarStream = getStream(archive.getFirstArchiveFile());
+            final ArchiveFile firstFile = archive.getArchiveFiles().get(0);
+            IInStream rarStream = getStream(firstFile);
             rarArchive = SevenZip.openInArchive(ArchiveFormat.RAR, rarStream, this);
             if (archiveThrowsExceptionWithoutPassword) {
                 // no exception? that's fine. password is probably correct
@@ -509,7 +512,8 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
         }
 
         try {
-            IInStream rarStream = getStream(archive.getFirstArchiveFile());
+            final ArchiveFile firstFile = archive.getArchiveFiles().get(0);
+            IInStream rarStream = getStream(firstFile);
             rarArchive = SevenZip.openInArchive(ArchiveFormat.RAR, rarStream, this);
             System.out.println("Items: " + rarArchive.getSimpleInterface().getNumberOfItems());
             for (ISimpleInArchiveItem item : rarArchive.getSimpleInterface().getArchiveItems()) {

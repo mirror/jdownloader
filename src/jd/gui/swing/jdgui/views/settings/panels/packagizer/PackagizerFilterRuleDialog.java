@@ -70,7 +70,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     private class PriorityAction extends AbstractAction {
 
         /**
-         * 
+         *
          */
         private static final long serialVersionUID = 1L;
         private Priority          priority;
@@ -98,7 +98,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     private class RadioButton extends JRadioButton {
 
         /**
-         * 
+         *
          */
         private static final long serialVersionUID = 1L;
 
@@ -346,7 +346,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
     /**
      * Returns a Linkgrabberfilter representing current settings. does NOT save the original one
-     * 
+     *
      * @return
      */
     private PackagizerRule getCurrentCopy() {
@@ -396,7 +396,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         fpDest = new PathChooser("PackagizerDest", true) {
 
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
@@ -463,7 +463,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         fpPriority.add(p3);
         txtPackagename = new ExtTextField() {
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
@@ -484,7 +484,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
         txtNewFilename = new ExtTextField() {
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
@@ -505,7 +505,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
         txtComment = new ExtTextField() {
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
@@ -601,7 +601,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         fpMove = new PathChooser("PackagizerMove", true) {
 
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
@@ -643,7 +643,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
         lblRename = createLbl(_GUI._.PackagizerFilterRuleDialog_layoutDialogContent_rename());
         txtRename = new ExtTextField() {
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
@@ -831,12 +831,11 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
         if (cbDest.isSelected()) {
             DownloadPathHistoryManager.getInstance().add(fpDest.getTxt().getText());
-
         }
         if (cbMove.isSelected()) {
             DownloadPathHistoryManager.getInstance().add(fpDest.getTxt().getText());
-
         }
+
         rule.setMoveto(cbMove.isSelected() ? fpMove.getPath() : null);
         rule.setRename(cbRename.isSelected() ? txtRename.getText() : null);
         rule.setLinkEnabled(cbEnable.isSelected() ? cobEnable.getSelectedIndex() == 0 : null);

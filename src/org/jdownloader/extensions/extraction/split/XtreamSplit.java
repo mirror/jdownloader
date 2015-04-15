@@ -301,10 +301,11 @@ public class XtreamSplit extends IExtraction {
     @Override
     public boolean prepare() {
         final Archive archive = getArchive();
-        outputFile = new File(archive.getFirstArchiveFile().getFilePath().replaceFirst("\\.[\\d]+\\.xtm$", ""));
+        final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
+        outputFile = new File(firstArchiveFile.getFilePath().replaceFirst("\\.[\\d]+\\.xtm$", ""));
         FileInputStream in = null;
         try {
-            in = new FileInputStream(archive.getFirstArchiveFile().getFilePath());
+            in = new FileInputStream(firstArchiveFile.getFilePath());
             AWFCUtils awfc = new AWFCUtils(in);
             in.skip(40);// Skip useless bytes
             byte[] buffer = new byte[awfc.ensureRead()]; // original fileName length
@@ -389,8 +390,9 @@ public class XtreamSplit extends IExtraction {
                     }
                     ret.add(new DummyArchiveFile(archiveFile));
                 }
-                if (hasMissingArchiveFiles == false && archive.getFirstArchiveFile().exists()) {
-                    final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
+                final ArchiveFile firstFile = archive.getArchiveFiles().get(0);
+                if (hasMissingArchiveFiles == false && firstFile.exists()) {
+                    final String firstArchiveFile = firstFile.getFilePath();
                     final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
                     if (splitType.getFirstPartIndex() != splitType.getPartNumber(partNumberOfFirstArchiveFile)) {
                         throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");

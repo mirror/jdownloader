@@ -186,12 +186,14 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                 /* rawSelection contains child */
                 final ChildrenType currentChild = (ChildrenType) node;
                 final PackageType currentPackage = currentChild.getParentNode();
-                if (lastPackageView == null || lastPackageView.getPackage() != currentPackage) {
-                    aggregatePackagePackageView(lastPackageView, lastPackageChildren);
-                    lastPackageChildren.clear();
-                    lastPackageView = internalPackageView(currentPackage, false);
+                if (currentPackage != null) {
+                    if (lastPackageView == null || lastPackageView.getPackage() != currentPackage) {
+                        aggregatePackagePackageView(lastPackageView, lastPackageChildren);
+                        lastPackageChildren.clear();
+                        lastPackageView = internalPackageView(currentPackage, false);
+                    }
+                    lastPackageChildren.add(currentChild);
                 }
-                lastPackageChildren.add(currentChild);
             }
         }
         aggregatePackagePackageView(lastPackageView, lastPackageChildren);

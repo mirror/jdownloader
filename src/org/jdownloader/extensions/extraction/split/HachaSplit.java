@@ -68,10 +68,11 @@ public class HachaSplit extends IExtraction {
     @Override
     public void extract(ExtractionController ctrl) {
         final Archive archive = getArchive();
-        final String matches[] = splitType.getMatches(archive.getFirstArchiveFile().getFilePath());
+        final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
+        final String matches[] = splitType.getMatches(firstArchiveFile.getFilePath());
         if (matches != null) {
             try {
-                final HachaHeader hachaHeader = parseHachaHeader(archive.getFirstArchiveFile());
+                final HachaHeader hachaHeader = parseHachaHeader(firstArchiveFile);
                 if (SplitUtil.merge(controller, hachaHeader.getFileName(), hachaHeader.getHeaderSize(), getConfig())) {
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
                 } else {
@@ -115,13 +116,14 @@ public class HachaSplit extends IExtraction {
                     ret.add(new DummyArchiveFile(archiveFile));
                 }
                 if (hasMissingArchiveFiles == false) {
-                    final String firstArchiveFile = archive.getFirstArchiveFile().getFilePath();
+                    final ArchiveFile firstFile = archive.getArchiveFiles().get(0);
+                    final String firstArchiveFile = firstFile.getFilePath();
                     final String partNumberOfFirstArchiveFile = splitType.getPartNumberString(firstArchiveFile);
                     if (splitType.getFirstPartIndex() != splitType.getPartNumber(partNumberOfFirstArchiveFile)) {
                         throw new CheckException("Wrong firstArchiveFile(" + firstArchiveFile + ") for Archive(" + archive.getName() + ")");
                     }
-                    if (archive.getFirstArchiveFile().exists()) {
-                        final HachaHeader hachaHeader = parseHachaHeader(archive.getFirstArchiveFile());
+                    if (firstFile.exists()) {
+                        final HachaHeader hachaHeader = parseHachaHeader(firstFile);
                         final List<ArchiveFile> missingArchiveFiles = SplitType.getMissingArchiveFiles(archive, splitType, hachaHeader.getNumberOfParts());
                         if (missingArchiveFiles != null) {
                             for (ArchiveFile missingArchiveFile : missingArchiveFiles) {

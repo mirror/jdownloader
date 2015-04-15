@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.CFG_EXTRACTION;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionEvent;
@@ -61,8 +62,9 @@ public class ExtractionBubbleContent extends AbstractBubbleContentPanel {
         }
         if (event != null) {
             if (archive != null) {
-                archive.setText(caller.getArchiv().getFirstArchiveFile().getName());
-                archive.setTooltip(caller.getArchiv().getFirstArchiveFile().getFilePath());
+                final ArchiveFile firstArchiveFile = caller.getArchiv().getArchiveFiles().get(0);
+                archive.setText(firstArchiveFile.getName());
+                archive.setTooltip(firstArchiveFile.getFilePath());
             }
 
             switch (event.getType()) {

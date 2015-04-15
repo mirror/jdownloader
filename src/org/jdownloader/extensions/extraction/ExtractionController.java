@@ -193,7 +193,8 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     @Override
     public Void run() {
         // let's write an info file. and delete if after extraction. this why we have infosfiles if the extraction crashes jd
-        crashLog = new ExtractLogFileWriter(archive.getName(), archive.getFirstArchiveFile().getFilePath(), archive.getFactory().getID()) {
+        final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
+        crashLog = new ExtractLogFileWriter(archive.getName(), firstArchiveFile.getFilePath(), archive.getFactory().getID()) {
             @Override
             public void write(String string) {
                 super.write(string);
@@ -209,7 +210,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
             crashLog.write("Archive Setup: \r\n" + JSonStorage.toString(archive.getSettings()));
             extractor.setCrashLog(crashLog);
-            logger.info("Start unpacking of " + archive.getFirstArchiveFile().getFilePath());
+            logger.info("Start unpacking of " + firstArchiveFile.getFilePath());
 
             for (ArchiveFile archiveFile : archive.getArchiveFiles()) {
                 if (!archiveFile.exists()) {
@@ -324,7 +325,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 try {
                     switch (reservationResult) {
                     case FAILED:
-                        logger.info("Not enough harddisk space for unpacking archive " + archive.getFirstArchiveFile().getFilePath());
+                        logger.info("Not enough harddisk space for unpacking archive " + firstArchiveFile.getFilePath());
                         crashLog.write("Diskspace Problem: " + reservationResult);
                         crashLog.write("Failed");
                         fireEvent(ExtractionEvent.Type.NOT_ENOUGH_SPACE);
