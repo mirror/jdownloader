@@ -17,6 +17,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.captcha.event.ChallengeResponseEvent;
 import org.jdownloader.captcha.event.ChallengeResponseEventSender;
+import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
 import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolver;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
@@ -77,6 +78,9 @@ public class ChallengeResponseController {
             }
             if (!Application.isHeadless()) {
                 addSolver(DialogClickCaptchaSolver.getInstance());
+            }
+            if (!Application.isHeadless() && !Application.isJared(null)) {
+                addSolver(BrowserSolver.getInstance());
             }
             addSolver(CaptchaAPISolver.getInstance());
         }

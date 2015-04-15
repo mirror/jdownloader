@@ -10,11 +10,7 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
-import org.jdownloader.captcha.v2.solver.captchabrotherhood.CaptchaBrotherHoodSettings;
-import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSettings;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
-import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolverConfig;
-import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSettings;
 import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
@@ -23,12 +19,9 @@ import org.jdownloader.settings.advanced.AdvancedConfigManager;
 public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
 
     private CaptchaSettings                       config;
-    private Captcha9kwSettings                    config9kw;
-    private CaptchaMyJDSolverConfig               configMyJD;
-    private CaptchaBrotherHoodSettings            configcbh;
 
     private BasicCaptchaDialogHandler             handler;
-    private DeathByCaptchaSettings                configDBC;
+
     private Thread                                waitingThread;
     private boolean                               focusRequested;
     private static final DialogBasicCaptchaSolver INSTANCE = new DialogBasicCaptchaSolver();
@@ -56,28 +49,9 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
     private DialogBasicCaptchaSolver() {
         super(1);
         config = JsonConfig.create(CaptchaSettings.class);
-        config9kw = JsonConfig.create(Captcha9kwSettings.class);
-        configDBC = JsonConfig.create(DeathByCaptchaSettings.class);
-        configcbh = JsonConfig.create(CaptchaBrotherHoodSettings.class);
-
-        configMyJD = JsonConfig.create(CaptchaMyJDSolverConfig.class);
 
         AdvancedConfigManager.getInstance().register(JsonConfig.create(DialogCaptchaSolverConfig.class));
     }
-
-    // /**
-    // * returns true if the dialog solver waits for invisible solvers like captcha exchange services
-    // *
-    // * @return
-    // */
-    // public boolean hasToWaitForInvisibleSolvers() {
-    // if (configDBC.isEnabled() && config.getCaptchaDialogDBCTimeout() > 0) return true;
-    // if (config9kw.isEnabled() && config.getCaptchaDialog9kwTimeout() > 0) return true;
-    // if (configMyJD.isCESEnabled() && config.getCaptchaDialogMyJDCESTimeout() > 0) return true;
-    // if (configcbh.isEnabled() && config.getCaptchaDialogCaptchaBrotherhoodTimeout() > 0) return true;
-    // if (configresolutor.isEnabled() && config.getCaptchaDialogResolutorCaptchaTimeout() > 0) return true;
-    // return false;
-    // }
 
     @Override
     public void solve(final SolverJob<String> job) throws InterruptedException, SkipException {

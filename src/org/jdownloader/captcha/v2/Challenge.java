@@ -13,6 +13,7 @@ import org.appwork.exceptions.WTFException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
+import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
@@ -109,6 +110,9 @@ public abstract class Challenge<T> {
         if (challenge instanceof PrePluginCheckDummyChallenge) {
             return ((PrePluginCheckDummyChallenge) challenge).getLink().getHost();
         }
+        if (challenge instanceof AbstractBrowserChallenge) {
+            return ((AbstractBrowserChallenge) challenge).getPlugin().getHost();
+        }
         return null;
     }
 
@@ -159,6 +163,9 @@ public abstract class Challenge<T> {
         }
         if (challenge instanceof PrePluginCheckDummyChallenge) {
             return ((PrePluginCheckDummyChallenge) challenge).getLink().getDefaultPlugin();
+        }
+        if (challenge instanceof AbstractBrowserChallenge) {
+            return ((AbstractBrowserChallenge) challenge).getPlugin();
         }
         return null;
     }

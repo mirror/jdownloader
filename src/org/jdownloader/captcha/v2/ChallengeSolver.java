@@ -21,9 +21,9 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
 public abstract class ChallengeSolver<T> {
 
-    private ThreadPoolExecutor threadPool;
-    private Class<T>           resultType;
-    private SolverService      service;
+    protected ThreadPoolExecutor threadPool;
+    private Class<T>             resultType;
+    private SolverService        service;
 
     /**
      * 
@@ -38,12 +38,23 @@ public abstract class ChallengeSolver<T> {
         }
         service.addSolver(this);
         initThreadPool(i);
+        Class<?> cls = this.getClass();
 
-        final Type superClass = this.getClass().getGenericSuperclass();
-        if (superClass instanceof Class) {
-            throw new IllegalArgumentException("Wrong Construct");
+        while (true) {
+            Type superClass = cls.getGenericSuperclass();
+            if (superClass == null) {
+                throw new IllegalArgumentException("Wrong Construct");
+            }
+            if (superClass instanceof Class) {
+                cls = (Class<?>) superClass;
+            } else if (superClass instanceof ParameterizedType) {
+                resultType = (Class<T>) ((ParameterizedType) superClass).getActualTypeArguments()[0];
+                break;
+            } else {
+                throw new IllegalArgumentException("Wrong Construct");
+            }
         }
-        resultType = (Class<T>) ((ParameterizedType) superClass).getActualTypeArguments()[0];
+
     }
 
     public ChallengeSolver(int i) {

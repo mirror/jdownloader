@@ -19,10 +19,6 @@ public abstract class AbstractDialogSolver<T> extends ChallengeSolver<T> {
 
     }
 
-    protected int getDefaultWaitForOthersTimeout() {
-        return 120000;
-    }
-
     public void checkSilentMode(final SolverJob<T> job) throws SkipException, InterruptedException {
         if (JDGui.getInstance().isSilentModeActive()) {
             switch (CFG_SILENTMODE.CFG.getOnCaptchaDuringSilentModeAction()) {
