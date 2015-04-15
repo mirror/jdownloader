@@ -7,10 +7,10 @@ import java.util.logging.Logger;
 
 import javax.swing.SwingUtilities;
 
-import jd.gui.swing.dialog.AbstractCaptchaDialog;
 import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.DialogType;
 import jd.gui.swing.jdgui.JDGui;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
@@ -27,13 +27,14 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogHandler;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
+import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.SilentModeSettings.CaptchaDuringSilentModeAction;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 
-public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>> {
+public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
 
     private DomainInfo            host;
     protected T                   captchaChallenge;
@@ -119,7 +120,7 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
         };
     }
 
-    protected void showDialog(AbstractCaptchaDialog dialog2) throws DialogClosedException, DialogCanceledException {
+    protected void showDialog(AbstractDialog<?> dialog2) throws DialogClosedException, DialogCanceledException {
 
         dialogHandler.showDialog(dialog2);
 
@@ -137,10 +138,11 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
 
     private Logger getLogger() {
         Logger logger = null;
-        if (captchaChallenge.getPlugin() instanceof PluginForHost) {
-            logger = captchaChallenge.getPlugin().getLogger();
-        } else if (captchaChallenge.getPlugin() instanceof PluginForDecrypt) {
-            logger = captchaChallenge.getPlugin().getLogger();
+        Plugin plg = Challenge.getPlugin(captchaChallenge);
+        if (plg != null && plg instanceof PluginForHost) {
+            logger = plg.getLogger();
+        } else if (plg != null && plg instanceof PluginForDecrypt) {
+            logger = plg.getLogger();
         }
         if (logger == null) {
             logger = LogController.GL;
@@ -154,38 +156,36 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
             int f = 0;
 
             int countdown = getTimeoutInMS();
-            if (captchaChallenge.getPlugin() instanceof PluginForHost) {
+            if (Challenge.getPlugin(captchaChallenge) instanceof PluginForHost) {
                 dialogType = DialogType.HOSTER;
                 if (countdown > 0) {
                     f = f | UIOManager.LOGIC_COUNTDOWN;
                 }
-            } else if (captchaChallenge.getPlugin() instanceof PluginForDecrypt) {
+            } else if (Challenge.getPlugin(captchaChallenge) instanceof PluginForDecrypt) {
                 dialogType = DialogType.CRAWLER;
 
                 if (countdown > 0) {
                     f = f | UIOManager.LOGIC_COUNTDOWN;
                 }
             }
-
-            Image[] images = CaptchaDialog.getGifImages(captchaChallenge.getImageFile().toURI().toURL());
-            if (images == null || images.length == 0) {
-                BufferedImage img = IconIO.getImage(captchaChallenge.getImageFile().toURI().toURL(), false);
-                if (img != null) {
-                    images = new Image[] { img };
+            if (captchaChallenge instanceof ImageCaptchaChallenge) {
+                Image[] images = CaptchaDialog.getGifImages(((ImageCaptchaChallenge<?>) captchaChallenge).getImageFile().toURI().toURL());
+                if (images == null || images.length == 0) {
+                    BufferedImage img = IconIO.getImage(((ImageCaptchaChallenge<?>) captchaChallenge).getImageFile().toURI().toURL(), false);
+                    if (img != null) {
+                        images = new Image[] { img };
+                    }
                 }
-            }
 
-            if (images == null || images.length == 0 || images[0] == null) {
-                getLogger().severe("Could not load CaptchaImage! " + captchaChallenge.getImageFile().getAbsolutePath());
-                return;
-            }
-
-            // }
-
-            try {
+                if (images == null || images.length == 0 || images[0] == null) {
+                    getLogger().severe("Could not load CaptchaImage! " + ((ImageCaptchaChallenge<?>) captchaChallenge).getImageFile().getAbsolutePath());
+                    return;
+                }
 
                 showDialog(dialogType, f, images);
-            } finally {
+
+            } else {
+                showDialog(dialogType, f, null);
 
             }
 
@@ -228,12 +228,12 @@ public abstract class ChallengeDialogHandler<T extends ImageCaptchaChallenge<?>>
 
         int countdown = -1;
 
-        if (captchaChallenge.getPlugin() instanceof PluginForHost) {
+        if (Challenge.getPlugin(captchaChallenge) instanceof PluginForHost) {
 
             if (config.isDialogCountdownForDownloadsEnabled()) {
                 countdown = config.getCaptchaDialogDefaultCountdown();
             }
-        } else if (captchaChallenge.getPlugin() instanceof PluginForDecrypt) {
+        } else if (Challenge.getPlugin(captchaChallenge) instanceof PluginForDecrypt) {
 
             if (config.isDialogCountdownForCrawlerEnabled()) {
                 countdown = config.getCaptchaDialogDefaultCountdown();

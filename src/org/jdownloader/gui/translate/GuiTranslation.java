@@ -5386,8 +5386,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Manual Captcha Solving" })
     String DialogBasicCaptchaSolver_getName();
 
+    @Default(lngs = { "en" }, values = { "Manual Captcha Solving in Browser" })
+    String BrowserSolverService_getName();
+
     @Default(lngs = { "en" }, values = { "Dialog (Window) in JDownloader" })
     String DialogBasicCaptchaSolver_gettypeName();
+
+    @Default(lngs = { "en" }, values = { "Dialog (Window) in the Browser(Chrome, Firefox, Internet Explorer,..." })
+    String BrowserSolverService_gettypeName();
 
     @Default(lngs = { "en" }, values = { "Manual remote Captcha Solving" })
     String CaptchaAPISolver_getName();

@@ -283,33 +283,34 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
     }
 
     private void sendEvent(SolverJob<?> job, String type) {
-        long captchCount = 0;
+        if (job.getChallenge() instanceof ImageCaptchaChallenge) {
+            long captchCount = 0;
 
-        for (SolverJob<?> entry : CaptchaAPISolver.getInstance().listJobs()) {
+            for (SolverJob<?> entry : CaptchaAPISolver.getInstance().listJobs()) {
 
-            if (entry.getChallenge() instanceof ImageCaptchaChallenge) {
-                captchCount++;
+                if (entry.getChallenge() instanceof ImageCaptchaChallenge) {
+                    captchCount++;
+                }
             }
+
+            ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
+
+            CaptchaJob apiJob = new CaptchaJob();
+            if (challenge.getResultType().isAssignableFrom(String.class)) {
+                apiJob.setType("Text");
+            } else {
+                apiJob.setType("Click");
+            }
+
+            apiJob.setID(challenge.getId().getID());
+            apiJob.setHoster(challenge.getPlugin().getHost());
+            apiJob.setCaptchaCategory(challenge.getExplain());
+            apiJob.setCount(captchCount);
+            org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
+            data.put("message", type);
+            data.put("data", apiJob);
+            publishEvent(EVENTID.CAPTCHA, data);
         }
-
-        ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
-
-        CaptchaJob apiJob = new CaptchaJob();
-        if (challenge.getResultType().isAssignableFrom(String.class)) {
-            apiJob.setType("Text");
-        } else {
-            apiJob.setType("Click");
-        }
-
-        apiJob.setID(challenge.getId().getID());
-        apiJob.setHoster(challenge.getPlugin().getHost());
-        apiJob.setCaptchaCategory(challenge.getExplain());
-        apiJob.setCount(captchCount);
-        org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
-        data.put("message", type);
-        data.put("data", apiJob);
-        publishEvent(EVENTID.CAPTCHA, data);
-
     }
 
     public void onStateChange(StateEvent event) {
