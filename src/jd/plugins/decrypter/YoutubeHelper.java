@@ -662,12 +662,12 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     /**
      * *
-     * 
+     *
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     * 
+     *
      * @return
      * @throws IOException
      * @throws PluginException
@@ -842,7 +842,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             String match = this.br.getRegex("<div class=\"yt-user-info\"><a [^>]*data-name[^>]*>(.*?)</a>").getMatch(0);
             if (StringUtils.isEmpty(match)) {
                 // in the html5 json info
-                match = this.br.getRegex("\"author\":\\s*\"(.*?)\",").getMatch(0);
+                match = this.br.getRegex("\"author\":\\s*\"(.*?)\"").getMatch(0);
             }
             if (StringUtils.isNotEmpty(match)) {
                 vid.channel = Encoding.htmlDecode(match.trim());
