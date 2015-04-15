@@ -36,6 +36,7 @@ addScheduleEntryDialog_time=Tempo
 addScheduleEntryDialog_title=Criar nova atividade agendada
 addScheduleEntryDialog_title_edit=Editar atividades agendadas
 description=Definir agenda para executar ações, iniciar downloads...
+entry_remove_action_msg=Remover mesmo %s1
 entry_remove_action_title=Você realmente deseja remover %s1 das atividades agendadas?
 lit_copy=Copiar
 lit_never=Nunca
