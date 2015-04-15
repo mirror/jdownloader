@@ -76,7 +76,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     @Override
     public boolean isHeadlessRunnable() {
-        return false;
+        return true;
     }
 
     public boolean hasConfigPanel() {
@@ -463,9 +463,10 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     @Override
     protected void stop() throws StopException {
         DownloadWatchDog.getInstance().getStateMachine().removeListener(this);
-        MenuManagerMainToolbar.getInstance().unregisterExtender(this);
-        MenuManagerMainmenu.getInstance().unregisterExtender(this);
-
+        if (!Application.isHeadless()) {
+            MenuManagerMainToolbar.getInstance().unregisterExtender(this);
+            MenuManagerMainmenu.getInstance().unregisterExtender(this);
+        }
     }
 
     @Override
@@ -477,9 +478,6 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         if (!getSettings().isShutdownActiveByDefaultEnabled()) {
             CFG_SHUTDOWN.SHUTDOWN_ACTIVE.setValue(false);
         }
-        // if (menuAction == null) {
-        // menuAction = new ShutdownEnableToggle(null);
-        // }
 
         DownloadWatchDog.getInstance().getStateMachine().addListener(this);
         LogController.CL().info("Shutdown OK");
@@ -495,18 +493,12 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         return null;
     }
 
-    // @Override
-    // public List<JMenuItem> getMenuAction() {
-    // java.util.List<JMenuItem> menu = new ArrayList<JMenuItem>();
-    // menu.add(new JCheckBoxMenuItem(menuAction));
-    // return menu;
-    // }
-
     @Override
     protected void initExtension() throws StartException {
-        // ConfigContainer cc = new ConfigContainer(getName());
-        // initSettings(cc);
-        configPanel = new ShutdownConfigPanel(this);
+
+        if (!Application.isHeadless()) {
+            configPanel = new ShutdownConfigPanel(this);
+        }
     }
 
     public void onStateChange(StateEvent event) {
