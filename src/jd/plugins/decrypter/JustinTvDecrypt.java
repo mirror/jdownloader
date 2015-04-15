@@ -52,20 +52,25 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private Browser ajax = null;
+    private Browser ajax         = null;
+    private String  userApiToken = null;
+    private String  userId       = null;
 
     private void ajaxGetPage(final String string) throws IOException {
         ajax = br.cloneBrowser();
         ajax.getHeaders().put("Accept", "application/vnd.twitchtv.v3+json");
         ajax.getHeaders().put("Referer", "http://api.twitch.tv/crossdomain/receiver.html?v=2");
         ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        if (userApiToken != null) {
+            ajax.getHeaders().put("Twitch-Api-Token", userApiToken);
+        }
         ajax.getPage(string);
     }
 
     private void ajaxGetPagePlayer(final String string) throws IOException {
         ajax = br.cloneBrowser();
         ajax.getHeaders().put("Accept", "*/*");
-        ajax.getHeaders().put("X-Requested-With", "ShockwaveFlash/16.0.0.257");
+        ajax.getHeaders().put("X-Requested-With", "ShockwaveFlash/17.0.0.134");
         ajax.getPage(string);
     }
 
@@ -279,7 +284,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 // they have multiple qualities, this would be defendant on uploaders original quality.
                 // we need sig for next request
                 // https://api.twitch.tv/api/vods/3707868/access_token?as3=t
-                this.ajaxGetPage("http://api.twitch.tv/kraken/videos/v" + vid + "?on_site=1");
+                ajaxGetPage("http://api.twitch.tv/kraken/videos/v" + vid + "?on_site=1");
                 String filename = getJson(ajax, "title");
                 final String channelName = getJson(ajax, "display_name");
                 final String date = getJson(ajax, "recorded_at");
@@ -288,14 +293,15 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 }
                 filename = Encoding.htmlDecode(filename.trim());
                 filename = filename.replaceAll("[\r\n#]+", "");
-                this.ajaxGetPagePlayer("http://api.twitch.tv/api/vods/" + vid + "/access_token?as3=t");
+                this.ajaxGetPagePlayer("http://api.twitch.tv/api/vods/" + vid + "/access_token?as3=t" + (token != null ? "&oauth_token=" + token : ""));
                 // {"token":"{\"user_id\":null,\"vod_id\":3707868,\"expires\":1421924057,\"chansub\":{\"restricted_bitrates\":[]},\"privileged\":false}","sig":"a73d0354f84e8122d78b14f47552e0f83217a89e"}
                 final String auth = getJson(ajax, "sig");
                 final String expire = getJson(ajax.toString().replaceAll("\\\\\"", "\""), "expires");
+                final String privileged = getJson(ajax.toString().replaceAll("\\\\\"", "\""), "privileged");
                 // auth required
                 // http://usher.twitch.tv/vod/3707868?nauth=%7B%22user_id%22%3Anull%2C%22vod_id%22%3A3707868%2C%22expires%22%3A1421885482%2C%22chansub%22%3A%7B%22restricted_bitrates%22%3A%5B%5D%7D%2C%22privileged%22%3Afalse%7D&nauthsig=d4ecb4772b28b224accbbc4711dff1c786725ce9
-                final String a = Encoding.urlEncode("{\"user_id\":null,\"vod_id\":" + vid + ",\"expires\":" + expire + ",\"chansub\":{\"restricted_bitrates\":[]},\"privileged\":false}") + "&nauthsig=" + auth;
-                ajaxGetPagePlayer("http://usher.twitch.tv/vod/" + vid + "?nauth=" + a);
+                final String a = Encoding.urlEncode("{\"user_id\":" + (userId != null ? userId : "null") + ",\"vod_id\":" + vid + ",\"expires\":" + expire + ",\"chansub\":{\"restricted_bitrates\":[]},\"privileged\":" + privileged + "}") + "&nauthsig=" + auth;
+                this.ajaxGetPagePlayer("http://usher.twitch.tv/vod/" + vid + "?nauth=" + a);
                 // #EXTM3U
                 // #EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="chunked",NAME="Source",AUTOSELECT=YES,DEFAULT=YES
                 // #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=3428253,CODECS="avc1.4D4029,mp4a.40.2",VIDEO="chunked"
@@ -312,6 +318,16 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 // #EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="mobile",NAME="Mobile",AUTOSELECT=YES,DEFAULT=YES
                 // #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=271909,CODECS="avc1.42C00D,mp4a.40.2",VIDEO="mobile"
                 // http://vod.ak.hls.ttvnw.net/v1/AUTH_system/vods_edbf/adren_tv_12744116464_192799820/mobile/index-dvr.m3u8
+                if (ajax.getHttpConnection().getResponseCode() == 403) {
+                    // error handling for invalid token and or subscription based video/channel?
+                    try {
+                        final String failreason = ("true".equalsIgnoreCase(privileged) ? "Subscription required" : "Login required");
+                        decryptedLinks.add(createOfflinelink(parameter, vid + " - " + failreason, failreason));
+                    } catch (final Throwable t) {
+                        logger.info("OfflineLink :" + parameter);
+                    }
+                    return decryptedLinks;
+                }
                 final String[] medias = ajax.getRegex("#EXT-X-MEDIA([^\r\n]+[\r\n]+){3}").getColumn(-1);
                 if (medias == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -457,6 +473,14 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         } catch (final PluginException e) {
             aa.setValid(false);
             return false;
+        }
+        // set from cookie value after login.
+        // Set-Cookie:api_token=[a-f0-9]{32}; domain=.twitch.tv; path=/; expires=Wed, 29-Apr-2015 01:00:05 GMT
+        userApiToken = br.getCookie(this.getHost(), "api_token");
+        // userId is present in another cookie?
+        userId = br.getCookie(this.getHost(), "persistent");
+        if (userId != null) {
+            userId = new Regex(userId, "^(\\d+)").getMatch(0);
         }
         return true;
     }
