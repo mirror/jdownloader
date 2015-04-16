@@ -18,9 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.util.zip.CRC32;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -33,6 +31,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
@@ -40,7 +39,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
 import org.jdownloader.downloader.hds.HDSDownloader;
@@ -48,93 +46,230 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtlnow.rtl.de", "rtlnitronow.de", "voxnow.de", "superrtlnow.de", "rtl2now.rtl2.de" }, urls = { "http://(www\\.)?rtl\\-now\\.rtl\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?rtlnitronow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?voxnow\\.de//?([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?superrtlnow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?rtl2now\\.rtl2\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+" }, flags = { 32, 32, 32, 32, 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtlnow.rtl.de", "rtlnitronow.de", "voxnow.de", "superrtlnow.de", "rtl2now.rtl2.de", "n-tvnow.de" }, urls = { "http://(www\\.)?rtl\\-now\\.rtl\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?rtlnitronow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?voxnow\\.de//?([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?superrtlnow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?rtl2now\\.rtl2\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?n\\-tvnow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+" }, flags = { 32, 32, 32, 32, 32, 32 })
 public class RTLnowDe extends PluginForHost {
-
-    /* Tags: rtl-interactive.de, RTL */
-    private Document doc;
-    private String   DLCONTENT;
 
     public RTLnowDe(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
     }
 
-    private long crc32Hash(final String wahl) throws UnsupportedEncodingException {
-        String a = Long.toString(System.currentTimeMillis()) + Double.toString(Math.random());
-        if ("session".equals(wahl)) {
-            a = Long.toString(System.currentTimeMillis()) + Double.toString(Math.random()) + Long.toString(Runtime.getRuntime().totalMemory());
-        }
-        final CRC32 c = new CRC32();
-        c.update(a.getBytes("UTF-8"));
-        return c.getValue();
+    /* Tags: rtl-interactive.de, RTL */
+    /* General information: The "filmID" is a number which is usually in the html as "film_id" or in the XML 'generate' URL as "para1" */
+    /* https?://(www\\.)?<host>/hds/videos/<filmID>/manifest\\-hds\\.f4m */
+    private String               HDSTYPE_NEW          = "https?://(www\\.)?[a-z0-0\\-\\.]+/hds/videos/\\d+/manifest\\-hds\\.f4m";
+    /*
+     * http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/abr/videos/<seriesID (same for app episodes of one series>/<videoIUD(same for all
+     * qualities/versions of a video)>/V_\\d+_[A-Z0-9]+_16-\\d+_\\d+_abr\\-<bitrate - usually 550, 1000 or
+     * 1500)>_[a-f0-9]{30}\\.mp4\\.f4m\\?cb=\\d+
+     */
+    private String               HDSTYPE_NEW_DETAILED = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/abr/videos/\\d+/\\d+/V_\\d+_[A-Z0-9]+_16-\\d+_\\d+_abr\\-\\d+_[a-f0-9]{30}\\.mp4\\.f4m\\?cb=\\d+";
+    /*
+     * http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/<seriesID (same for app episodes of one
+     * series>/V_\\d+_[A-Z0-9]+_E\\d+_\\d+_h264-mq_<[a-f0-9] usually {30,}>\\.f4v\\.f4m\\?ts=\\d+
+     */
+    // http://hds.fra.rtlnow.de/hds-vod-enc/rtlnow/videos/7947/V_680273_CWRW_E68173_116557_h264-mq_433c5d3b9df8489a7e62bb68ff11eff.f4v.f4m?ts=1429140440
+    private String               HDSTYPE_OLD          = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/\\d+/V_\\d+_[A-Z0-9]+_E\\d+_\\d+_h264-mq_[a-f0-9]+\\.f4v\\.f4m\\?ts=\\d+";
+    private Document             doc;
+    private static final boolean ALLOW_RTMP           = true;
+    private Account              currAcc              = null;
+    private DownloadLink         currDownloadLink     = null;
+
+    /* Thx https://github.com/bromix/plugin.video.rtl-now.de/blob/master/resources/lib/rtlinteractive/client.py */
+    // private String apiUrl = null;
+    // private String apiSaltPhone = null;
+    // private String apiSaltTablet = null;
+    // private String apiKeyPhone = null;
+    // private String apiKeyTablet = null;
+    // private String apiID = null;
+    //
+    // private void initAPI() throws PluginException {
+    // final String currHost = this.currDownloadLink.getHost();
+    // if (currHost.equals("rtlnow.rtl.de")) {
+    // apiUrl = "https://rtl-now.rtl.de/";
+    // apiSaltPhone = "ba647945-6989-477b-9767-870790fcf552";
+    // apiSaltTablet = "ba647945-6989-477b-9767-870790fcf552";
+    // apiKeyPhone = "46f63897-89aa-44f9-8f70-f0052050fe59";
+    // apiKeyTablet = "56f63897-89aa-44f9-8f70-f0052050fe59";
+    // apiID = "9";
+    //
+    // br.getHeaders().put("X-App-Name", "RTL NOW App");
+    // br.getHeaders().put("X-Device-Type", "rtlnow_android");
+    // br.getHeaders().put("X-App-Version", "1.3.1");
+    // } else if (currHost.equals("voxnow.de")) {
+    // apiUrl = "https://www.voxnow.de/";
+    // apiSaltPhone = "9fb130b5-447e-4bbc-a44a-406f2d10d963";
+    // apiSaltTablet = "0df2738e-6fce-4c44-adaf-9981902de81b";
+    // apiKeyPhone = "b11f23ac-10f1-4335-acb8-ebaaabdb8cde";
+    // apiKeyTablet = "2e99d88e-088e-4108-a319-c94ba825fe29";
+    // apiID = "41";
+    //
+    // br.getHeaders().put("X-App-Name", "VOX NOW App");
+    // br.getHeaders().put("X-Device-Type", "voxnow_android");
+    // br.getHeaders().put("X-App-Version", "1.3.1");
+    // } else if (currHost.equals("rtl2now.rtl2.de")) {
+    // apiUrl = "https://rtl2now.rtl2.de/";
+    // apiSaltPhone = "9be405a6-2d5c-4e62-8ba0-ba2b5f11072d";
+    // apiSaltTablet = "4bfab4aa-705a-4e8c-b1a7-b551b1b2613f";
+    // apiKeyPhone = "26c0d1ac-e6a0-4df9-9f79-e07727f33380";
+    // apiKeyTablet = "83bbc955-c96e-4b50-b263-bc7bcbcdf8c8";
+    // apiID = "37";
+    //
+    // br.getHeaders().put("X-App-Name", "RTL II NOW App");
+    // br.getHeaders().put("X-Device-Type", "rtl2now_android");
+    // br.getHeaders().put("X-App-Version", "1.3.1");
+    // } else if (currHost.equals("n-tvnow.de")) {
+    // apiUrl = "https://www.n-tvnow.de/";
+    // apiSaltPhone = "ba647945-6989-477b-9767-870790fcf552";
+    // apiSaltTablet = "ba647945-6989-477b-9767-870790fcf552";
+    // apiKeyPhone = "46f63897-89aa-44f9-8f70-f0052050fe59";
+    // apiKeyTablet = "56f63897-89aa-44f9-8f70-f0052050fe59";
+    // apiID = "49";
+    //
+    // br.getHeaders().put("X-App-Name", "N-TV NOW App");
+    // br.getHeaders().put("X-Device-Type", "ntvnow_android");
+    // br.getHeaders().put("X-App-Version", "1.3.1");
+    // } else {
+    // /* Unsupported host */
+    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    // }
+    // br.getHeaders().put("User-Agent",
+    // "Mozilla/5.0 (Linux; Android 4.4.2; GT-I9505 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/30.0.0.0 Mobile Safari/537.36");
+    // }
+    //
+    // private void apiperformrequest(final String path, String params) {
+    // final String requestUrl = this.apiUrl + path;
+    // }
+    //
+    // private String apiCalculateToken(final long timestamp, final String params) throws NoSuchAlgorithmException {
+    // final StringBuilder sb = new StringBuilder();
+    // sb.append(this.apiKeyTablet);
+    // sb.append(";");
+    // sb.append(this.apiSaltTablet);
+    // sb.append(";");
+    // sb.append(Long.toString(timestamp));
+    //
+    // final String[] paramslist = params.split("&");
+    // for (final String parampair : paramslist) {
+    // final String[] parPAIR = parampair.split("=");
+    // sb.append(";");
+    // sb.append(parPAIR[1]);
+    // }
+    //
+    // if (params.length() == 0) {
+    // sb.append(";");
+    // }
+    //
+    // final MessageDigest md = MessageDigest.getInstance("md5");
+    // md.update(sb.toString().getBytes());
+    // /* TODO */
+    //
+    // String token = "";
+    // try {
+    // } catch (final Throwable e) {
+    // token = "";
+    // }
+    //
+    // return token;
+    // }
+    //
+    // private void apiGet_film_details(final String filmID) {
+    // final String params = "filmid=" + filmID;
+    // apiperformrequest("/api/query/json/content.film_details", params);
+    // }
+
+    private void setConstants(final Account acc, final DownloadLink dl) {
+        this.currAcc = acc;
+        this.currDownloadLink = dl;
     }
 
+    @SuppressWarnings("deprecation")
     private void download(final DownloadLink downloadLink) throws Exception {
-
+        String rtmp_playpath = downloadLink.getStringProperty("rlnowrtmpplaypath", null);
+        rtmp_playpath = null;
         String contentUrl = br.getRegex("data:\'(.*?)\'").getMatch(0);
         final String ivw = br.getRegex("ivw:\'(.*?)\',").getMatch(0);
         final String client = br.getRegex("id:\'(.*?)\'").getMatch(0);
-        final String swfurl = br.getRegex("swfobject.embedSWF\\(\"(.*?)\",").getMatch(0);
+        final String swfurl = br.getRegex("swfobject\\.embedSWF\\(\"(.*?)\",").getMatch(0);
+        String dllink = null;
         if (contentUrl == null || ivw == null || client == null || swfurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
         contentUrl = Encoding.urlDecode(downloadLink.getHost() + contentUrl, true);
-        if (contentUrl == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (contentUrl != null) {
+            contentUrl = "http://" + contentUrl;
+            downloadLink.setProperty("rlnowcontenturl", contentUrl);
+
+            XPath xPath = xmlParser(contentUrl + "&ts=" + System.currentTimeMillis() / 1000);
+            final String query = "/data/playlist/videoinfo";
+
+            dllink = xPath.evaluate(query + "/filename", doc);
+            // final String fkcont = xPath.evaluate("/data/fkcontent", doc);
+            // final String timetp = xPath.evaluate("/data/timetype", doc);
+            // final String season = xPath.evaluate("/data/season", doc);
         }
-        contentUrl = "http://" + contentUrl;
-
-        final XPath xPath = xmlParser(contentUrl + "&ts=" + System.currentTimeMillis() / 1000);
-        final String query = "/data/playlist/videoinfo";
-
-        final String dllink = xPath.evaluate(query + "/filename", doc);
-        final String fkcont = xPath.evaluate("/data/fkcontent", doc);
-        final String timetp = xPath.evaluate("/data/timetype", doc);
-        final String season = xPath.evaluate("/data/season", doc);
-
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (rtmp_playpath == null && dllink != null && dllink.matches(HDSTYPE_OLD)) {
+            rtmp_playpath = new Regex(dllink, "(\\d+/V_[^<>\"/]*?\\.(?:f4v|mp4))").getMatch(0);
+            downloadLink.setProperty("rlnowdllink", dllink);
         }
-        if (dllink.startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, dllink);
-
-            String playpath = new Regex(dllink, "(rtlnow|voxnow|superrtlnow|rtl2now)/(.*?)$").getMatch(1);
-            String host = new Regex(dllink, "(.*?)((rtl\\.de|edgefcs\\.net)(:1935)?/(ondemand)?)").getMatch(-1);
-            if (playpath == null || host == null) {
-                logger.info("dllink: " + dllink);
+        if ((dllink != null && dllink.startsWith("rtmp")) || rtmp_playpath != null && ALLOW_RTMP) {
+            /* Either we already got rtmp urls or we can try to build them via the playpath-part of our HDS manifest url. */
+            String rtmpurl = null;
+            // rtmp_playpath = rtmp_playpath.replace(".mp4", ".f4v");
+            final String host = downloadLink.getHost();
+            String app = null;
+            if (dllink != null && dllink.startsWith("rtmp")) {
+                /* Old rtmpe links, sometimes still existant --> Extract playpath */
+                rtmp_playpath = "mp4:" + new Regex(dllink, "rtmpe?://[^/]+/[^/]+/(.+)").getMatch(0);
+            } else {
+                rtmp_playpath = "mp4:" + rtmp_playpath;
+            }
+            app = new Regex(host, "([a-z0-9\\-]+now)").getMatch(0);
+            if (app == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String app = dllink.replace(playpath, "").replace(host, "");
-            if (host.contains("edgefcs.net")) {
-                app = "ondemand?ovpfv=1.1&" + new Regex(playpath, "(auth=.*?)$").getMatch(0);
-                playpath = new Regex(dllink, "(rtlnow|voxnow|superrtlnow|rtl2now)/(.*?)$").getMatch(-1);
+            app = app.replace("-", "");
+            /* Correct app for some rare cases */
+            if (app.equals("rtlnitronow")) {
+                app = "nitronow";
             }
-            if (host.endsWith("de/")) {
-                host = host.replace("de/", "de:1935/");
-            }
-            String play = playpath.substring(0, playpath.lastIndexOf("."));
-            if (dllink.endsWith(".f4v")) {
-                play = "mp4:" + playpath;
-            }
-            playpath = play + "?ivw=" + ivw + "&client=" + client + "&type=content&user=" + crc32Hash("user") + "&mrwid=0&session=" + crc32Hash("session") + "&angebot=rtlnow&starttime=00:00:00:00";
-            if (timetp != null) {
-                playpath = playpath + "&timetype=" + timetp;
-            }
-            if (fkcont != null) {
-                playpath = playpath + "&fkcontent=" + fkcont;
-            }
-            if (season != null) {
-                playpath = playpath + "&season=" + season;
-            }
-            DLCONTENT = host + "@" + app + "@" + playpath + "@" + swfurl + "@" + downloadLink.getDownloadURL();
+            /* Either use fms-fra[1-32].rtl.de or just fms.rtl.de */
+            rtmpurl = "rtmpe://fms.rtl.de/" + app + "/";
 
+            /* Save the playpath for future usage. */
+            downloadLink.setProperty("rlnowrtmpplaypath", rtmp_playpath);
             downloadLink.setProperty("FLVFIXER", true);
-            setupRTMPConnection(dl);
+            dl = new RTMPDownload(this, downloadLink, rtmpurl);
+            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+
+            rtmp.setPlayPath(rtmp_playpath);
+            rtmp.setPageUrl(downloadLink.getDownloadURL());
+            rtmp.setSwfVfy("http://cdn.static-fra.de/now/vodplayer.swf");
+            rtmp.setFlashVer("WIN 14,0,0,145");
+            rtmp.setApp(app);
+            rtmp.setUrl(rtmpurl);
+            rtmp.setResume(true);
+            rtmp.setRealTime();
+            if (!getPluginConfig().getBooleanProperty("DEFAULTTIMEOUT", false)) {
+                rtmp.setTimeOut(-1);
+            }
             ((RTMPDownload) dl).startDownload();
 
         } else {
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (dllink.matches(this.HDSTYPE_NEW)) {
+                logger.info("2nd attempt to get final hds url");
+                /* TODO */
+                if (true) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final XPath xPath = xmlParser(dllink);
+                final NodeList nl = (NodeList) xPath.evaluate("/manifest/media", doc, XPathConstants.NODESET);
+                final Node n = nl.item(0);
+                dllink = n.getAttributes().getNamedItem("href").getTextContent();
+            }
             br.getPage(dllink);
             String hds = parseManifest();
 
@@ -155,13 +290,27 @@ public class RTLnowDe extends PluginForHost {
 
             for (int i = 0; i < nl.getLength(); i++) {
                 Node n = nl.item(i);
-                String streamId = n.getAttributes().getNamedItem("streamId").getTextContent();
-                String url = n.getAttributes().getNamedItem("url").getTextContent();
+                String streamId = null;
+                String bootstrapInfoId = null;
+                String drmAdditionalHeaderId = null;
+                String url = null;
+                if (n.getAttributes().getNamedItem("url") != null) {
+                    /* Crypted */
+                    url = n.getAttributes().getNamedItem("url").getTextContent();
+                    streamId = n.getAttributes().getNamedItem("streamId").getTextContent();
+                    bootstrapInfoId = n.getAttributes().getNamedItem("bootstrapInfoId").getTextContent();
+                    drmAdditionalHeaderId = n.getAttributes().getNamedItem("drmAdditionalHeaderId").getTextContent();
+                } else {
+                    /* Uncrypted */
+                    url = n.getAttributes().getNamedItem("href").getTextContent();
+                }
 
-                String bootstrapInfoId = n.getAttributes().getNamedItem("bootstrapInfoId").getTextContent();
-                String drmAdditionalHeaderId = n.getAttributes().getNamedItem("drmAdditionalHeaderId").getTextContent();
-                String base = br.getBaseURL();
-                return base + url;
+                if (url.startsWith("http")) {
+                    return url;
+                } else {
+                    String base = br.getBaseURL();
+                    return base + url;
+                }
                 // System.out.println(n);
                 // String tc = n.getTextContent();
                 // String media = xPath.evaluate("metadata", n).trim();
@@ -210,6 +359,7 @@ public class RTLnowDe extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        setConstants(null, downloadLink);
         setBrowserExclusive();
         final String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
@@ -265,22 +415,6 @@ public class RTLnowDe extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    private void setupRTMPConnection(final DownloadInterface dl) {
-        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
-        rtmp.setPlayPath(DLCONTENT.split("@")[2]);
-        rtmp.setPageUrl(DLCONTENT.split("@")[4]);
-        rtmp.setSwfVfy(DLCONTENT.split("@")[3]);
-        rtmp.setFlashVer("WIN 10,1,102,64");
-        rtmp.setApp(DLCONTENT.split("@")[1]);
-        rtmp.setUrl(DLCONTENT.split("@")[0] + DLCONTENT.split("@")[1]);
-        rtmp.setResume(true);
-        rtmp.setRealTime();
-        if (!getPluginConfig().getBooleanProperty("DEFAULTTIMEOUT", false)) {
-            rtmp.setTimeOut(-1);
-        }
-    }
-
     private XPath xmlParser(final String linkurl) throws Exception {
         try {
             final URL url = new URL(linkurl);
@@ -300,6 +434,16 @@ public class RTLnowDe extends PluginForHost {
             return null;
         }
     }
+
+    // private long crc32Hash(final String wahl) throws UnsupportedEncodingException {
+    // String a = Long.toString(System.currentTimeMillis()) + Double.toString(Math.random());
+    // if ("session".equals(wahl)) {
+    // a = Long.toString(System.currentTimeMillis()) + Double.toString(Math.random()) + Long.toString(Runtime.getRuntime().totalMemory());
+    // }
+    // final CRC32 c = new CRC32();
+    // c.update(a.getBytes("UTF-8"));
+    // return c.getValue();
+    // }
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "DEFAULTTIMEOUT", JDL.L("plugins.hoster.rtlnowde.enabledeafulttimeout", "Enable default timeout?")).setDefaultValue(false));

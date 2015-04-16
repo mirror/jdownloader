@@ -16,23 +16,16 @@
 
 package jd.plugins.hoster;
 
-import java.util.HashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "n24.de" }, urls = { "http://(www\\.)?n24\\.de/mediathek/[\\w\\-]+\\.html" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "n24.de" }, urls = { "http://(www\\.)?n24\\.de/[^<>\"]*?(M|m)ediathek/[^/]+/d/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 32 })
 public class N24Mediathek extends PluginForHost {
 
     private String DLLINK = null;
@@ -43,7 +36,7 @@ public class N24Mediathek extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.n24.de/service/nutzungsbedingungen_1/nutzungsbedingungen.html";
+        return "http://image5-cdn.n24.de/blob/5354958/3/agb-produktion-n24-data.pdf";
     }
 
     @Override
@@ -51,80 +44,50 @@ public class N24Mediathek extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        download(downloadLink);
-    }
-
-    private void setupRTMPConnection(String[] stream, DownloadInterface dl) {
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setUrl(stream[0]);
-        rtmp.setPlayPath(stream[1]);
-        rtmp.setSwfVfy(stream[2]);
-        rtmp.setResume(true);
-    }
-
-    private void download(final DownloadLink downloadLink) throws Exception {
-        String stream[] = DLLINK.split("@");
-        if (stream[0].startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, stream[0]);
-            setupRTMPConnection(stream, dl);
-
-            ((RTMPDownload) dl).startDownload();
-
-        } else {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "N24-Mediathek: " + stream[0]);
-        }
-    }
-
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-
-        if (br.containsHTML(">(Aus lizenzrechtlichen Gründen ist dieses Video momentan nicht auf N24\\.de zu sehen|Die von Ihnen angeforderte Website konnte leider nicht angezeigt werden)\\.<")) {
-            logger.info("N24-Mediathek: Not available --> " + downloadLink.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.containsHTML("n24VideoCfg\\.")) {
+            /* Not a video (offline or maybe picture gallery) */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
-        String fValues = br.getRegex("class=\"jsb_ jsb_flash_player\" type=\"hidden\" value=\"\\{(.*?)\\}").getMatch(0);
-        if (fValues == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        fValues = fValues.replaceAll("\\&quot;", "@");
-        HashMap<String, String> flashValues = new HashMap<String, String>();
-        for (String s[] : new Regex(fValues, "@([^@]+)@:@([^@]+)@,").getMatches()) {
-            flashValues.put(s[0], decodeUnicode(s[1]).replaceAll("\\\\", ""));
+        String titleName = br.getRegex("title: \\'([^<>\"\\']*?)\\'").getMatch(0);
+        if (titleName == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
-        String playPath = flashValues.get("filename");
-        String flashPlayer = flashValues.get("playerUrl");
-        String clipId = flashValues.get("clip_id");
-        String titleHeader = flashValues.get("header");
-        String titleName = flashValues.get("title");
-        if (playPath == null || flashPlayer == null || clipId == null || titleHeader == null | titleName == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        Browser flashPlayerJS = br.cloneBrowser();
-        flashPlayerJS.getPage("/mediathek/static/js/FlashPlayer.js");
-        if (flashPlayerJS.getHttpConnection().getResponseCode() != 200) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String rtmpUrl = flashPlayerJS.getRegex("player_video_item.connectionUrl = \"(rtmp[^\"]+)\"").getMatch(0);
-        if (rtmpUrl == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        downloadLink.setFinalFileName(Encoding.htmlDecode((titleHeader + "_" + titleName + ".mp4").trim()));
-        DLLINK = rtmpUrl + "@" + playPath + "@" + flashPlayer;
+        titleName = Encoding.htmlDecode(titleName).trim();
+        downloadLink.setFinalFileName(titleName + ".mp4");
 
         return AvailableStatus.TRUE;
     }
 
-    private String decodeUnicode(String s) {
-        Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
-        String res = s;
-        Matcher m = p.matcher(res);
-        while (m.find()) {
-            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        /*
+         * Sometimes they also got HLS available but so far I saw it only once and also it was never enforced - only for html5
+         * implementation!
+         */
+        final String rtmp_server = br.getRegex("_n24VideoCfg\\.flash\\.videoFlashconnectionUrl = \"(rtmp://[^<>\"]*?)\"").getMatch(0);
+        final String rtmp_path = br.getRegex("_n24VideoCfg\\.flash\\.videoFlashSource = \"([^<>\"]*?)\"").getMatch(0);
+        if (rtmp_server == null || rtmp_path == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (res == null) res = s;
-        return res;
+        dl = new RTMPDownload(this, downloadLink, rtmp_server);
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        rtmp.setUrl(rtmp_server);
+        rtmp.setPlayPath(rtmp_path);
+        rtmp.setSwfVfy("http://www.n24.de/_swf/HomePlayer.swf?cachingVersion=2.74");
+        rtmp.setPageUrl(this.br.getURL());
+        rtmp.setResume(true);
+
+        ((RTMPDownload) dl).startDownload();
+
     }
 
     @Override

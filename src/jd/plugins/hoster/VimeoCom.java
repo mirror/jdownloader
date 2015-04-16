@@ -102,12 +102,13 @@ public class VimeoCom extends PluginForHost {
         if (vimeo_forced_referer != null) {
             prepBr.getHeaders().put("Referer", vimeo_forced_referer);
         }
-        // we do not want German headers!
+        /* we do not want German headers! */
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.getHeaders().put("User-Agent", userAgent.get());
         return prepBr;
     }
 
+    /* API - might be useful for the future: https://github.com/bromix/plugin.video.vimeo/blob/master/resources/lib/vimeo/client.py */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();

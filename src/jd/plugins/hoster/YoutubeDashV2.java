@@ -125,6 +125,10 @@ public class YoutubeDashV2 extends PluginForHost {
     private YoutubeHelper          cachedHelper;
     private YoutubeDashConfigPanel configPanel;
 
+    /**
+     * Maybe useful in the future - this guy has a lot of knowledge and makes good scripts:
+     * https://github.com/bromix/plugin.video.youtube/tree/master/resources/lib
+     */
     @Override
     public String getAGBLink() {
         return "http://youtube.com/t/terms";
@@ -806,8 +810,8 @@ public class YoutubeDashV2 extends PluginForHost {
             // _JDT._.CountryIPBlockException_createCandidateResult(), 1 * 24 * 60 * 60 * 100l);
             // }
             if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error,/*
-                                                                                                                                 * 15.12.2014
-                                                                                                                                 */"This video is not available.")) {
+             * 15.12.2014
+             */"This video is not available.")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.CountryIPBlockException_createCandidateResult());
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);

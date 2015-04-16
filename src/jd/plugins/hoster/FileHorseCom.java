@@ -79,11 +79,15 @@ public class FileHorseCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL() + "download/");
         String dllink = br.getRegex("http-equiv=\"refresh\" content=\"\\d+; url=(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(https?://(www\\.)?filehorse\\.com/download/file/[^<>\"]*?)\"").getMatch(0);
+        }
         if (dllink == null) {
             Form d = br.getFormBySubmitvalue(Encoding.urlEncode("Download Now"));
             // NEW, recaptchav2

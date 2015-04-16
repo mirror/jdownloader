@@ -57,8 +57,9 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String   TYPE_FBSHORTLINK                = "http(s)?://(www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
     private static final String   TYPE_FB_REDIRECT_TO_EXTERN_SITE = "https?://l\\.facebook\\.com/l/[^/]+/.+";
     private static final String   TYPE_SINGLE_PHOTO               = "http(s)?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+.*?";
-    private static final String   TYPE_SINGLE_VIDEO_ALL           = "https?://(www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
+    private static final String   TYPE_SINGLE_VIDEO_MANY_TYPES    = "https?://(www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
     private static final String   TYPE_SINGLE_VIDEO_EMBED         = "https?://(www\\.)?facebook\\.com/video/embed\\?video_id=\\d+";
+    private static final String   TYPE_SINGLE_VIDEO_VIDEOS        = "https?://(www\\.)?facebook\\.com/.+/videos/\\d+.+";
     private static final String   TYPE_SET_LINK_PHOTO             = "http(s)?://(www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)o?a[0-9\\.]+(\\&type=\\d+)?";
     private static final String   TYPE_SET_LINK_VIDEO             = "https?://(www\\.)?facebook\\.com/media/set/\\?set=vb\\.\\d+.*?";
     private static final String   TYPE_ALBUMS_LINK                = "https?://(www\\.)?facebook\\.com/.+photos_albums";
@@ -93,8 +94,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String parameter = param.toString().replace("#!/", "");
         PARAMETER = parameter;
-        if (PARAMETER.matches(TYPE_SINGLE_VIDEO_ALL) || PARAMETER.matches(TYPE_SINGLE_VIDEO_EMBED) || PARAMETER.contains("/video.php?v=")) {
-            final String id = new Regex(PARAMETER, "(?:v|video_id)=(\\d+)").getMatch(0);
+        if (PARAMETER.matches(TYPE_SINGLE_VIDEO_MANY_TYPES) || PARAMETER.matches(TYPE_SINGLE_VIDEO_EMBED) || PARAMETER.matches(TYPE_SINGLE_VIDEO_VIDEOS) || PARAMETER.contains("/video.php?v=")) {
+            final String id = new Regex(PARAMETER, "(?:v=|video_id=|/videos/)(\\d+)").getMatch(0);
             final DownloadLink fina = createDownloadlink("https://www.facebookdecrypted.com/video.php?v=" + id);
             decryptedLinks.add(fina);
             return decryptedLinks;
@@ -1089,7 +1090,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         String temp_name = lid;
         if (input_link.matches(TYPE_SINGLE_PHOTO)) {
             temp_name += ".jpg";
-        } else if (input_link.matches(TYPE_SINGLE_VIDEO_ALL)) {
+        } else if (input_link.matches(TYPE_SINGLE_VIDEO_MANY_TYPES)) {
             temp_name += ".mp4";
         }
         return temp_name;
