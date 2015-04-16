@@ -27,14 +27,6 @@ import org.jdownloader.controlling.domainrules.DomainRule;
 import org.jdownloader.gui.translate._GUI;
 
 public interface GeneralSettings extends ConfigInterface {
-    class DefaultBrowserCommand extends AbstractDefaultFactory<String[]> {
-
-        @Override
-        public String[] getDefaultValue() {
-            return CrossSystem.isWindows() ? new String[] { "rundll32.exe", "url.dll,FileProtocolHandler", "%s" } : null;
-        }
-
-    }
 
     class DefaultDownloadFolder extends AbstractDefaultFactory<String> {
 
@@ -75,8 +67,6 @@ public interface GeneralSettings extends ConfigInterface {
     int getAutoStartCountdownSeconds();
 
     AutoDownloadStartOption getAutoStartDownloadOption();
-
-    String[] getBrowserCommandLine();
 
     @AboutConfig
     @DefaultEnumValue("NEVER")
@@ -315,11 +305,6 @@ public interface GeneralSettings extends ConfigInterface {
     @DefaultEnumValue("ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS")
     void setAutoStartDownloadOption(AutoDownloadStartOption option);
 
-    @DefaultFactory(DefaultBrowserCommand.class)
-    @AboutConfig
-    @DescriptionForConfigEntry("CommandLine to open a link in a browser. Use %s as wildcard for the url")
-    void setBrowserCommandLine(String[] b);
-
     void setCleanupAfterDownloadAction(CleanAfterDownloadAction action);
 
     void setCleanUpFilenames(boolean b);
@@ -535,7 +520,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     /**
      * remove on 1.december 2014. We just keep it now to convert to {@link #setUrlOrder(UrlDisplayEntry[])}
-     *
+     * 
      * @return
      */
     @Deprecated
@@ -543,7 +528,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     /**
      * remove on 1.december 2014. We just keep it now to convert to {@link #setUrlOrder(UrlDisplayEntry[])}
-     *
+     * 
      * @return
      */
     @Deprecated
