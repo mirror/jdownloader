@@ -14,6 +14,7 @@ public class CFG_IMAGE_TYPERZ {
         ConfigUtils.printStaticMappings(ImageTyperzConfigInterface.class);
     }
 
+    //
     // Static Mappings for interface org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzConfigInterface
     public static final ImageTyperzConfigInterface                 CFG                       = JsonConfig.create(ImageTyperzConfigInterface.class);
     public static final StorageHandler<ImageTyperzConfigInterface> SH                        = (StorageHandler<ImageTyperzConfigInterface>) CFG._getStorageHandler();
