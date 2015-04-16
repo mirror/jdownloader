@@ -32,7 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1gold.de", "sixx.de" }, urls = { "http://(www\\.)?prosieben\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://www\\.prosiebenmaxx\\.de/[^<>\"\\']*?videos?/[\\w\\-]+", "http://(www\\.)?the\\-voice\\-of\\-germany\\.de/video/[\\w\\-]+", "http://(www\\.)?kabeleins\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(www\\.)?sat1\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(www\\.)?sat1gold\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(www\\.)?sixx\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+" }, flags = { 32, 32, 32, 32, 32, 32, 32 })
@@ -106,19 +105,34 @@ public class ProSevenDe extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    private void setupRTMPConnection(final DownloadInterface dl, final DownloadLink downloadLink, final String[] stream) {
+    private void downloadRTMP(final DownloadLink downloadLink) throws Exception {
+        final String protocol = new Regex(this.clipUrl, "^(rtmp(?:e|t)?://)").getMatch(0);
+        String app;
+        if (protocol.equals("rtmpe://")) {
+            app = "psdvodrtmpdrm";
+            /* We can still get rtmpe urls via the old API but they won't work anyways. */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "rtmpe:// not supported!");
+        } else {
+            app = "psdvodrtmp";
+        }
+        // app = "psdvodrtmpdrm";
+        String url = protocol + app + ".fplive.net:1935/" + app;
+        // url = "rtmpe://psdvodrtmpdrm.fplive.net:1935/psdvodrtmp";
+        final String playpath = new Regex(this.clipUrl, "(mp4:.+)").getMatch(0);
+        if (playpath == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // playpath = playpath.replace("?start_time=", "?country=DE&start_time=");
+        dl = new RTMPDownload(this, downloadLink, clipUrl);
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setApp(stream[1] + stream[2].substring(stream[2].indexOf("?")));
-        rtmp.setUrl(stream[0] + stream[1]);
-        rtmp.setPlayPath("mp4:" + stream[2]);
-        rtmp.setSwfVfy("http://is.myvideo.de/player/GP/4.3.2/player.swf");
+        /* Setup connection */
+        rtmp.setApp(app);
+        rtmp.setUrl(url);
+        rtmp.setPlayPath(playpath);
+        rtmp.setFlashVer("WIN 17,0,0,169");
+        rtmp.setSwfVfy("http://is.myvideo.de/player/GP/4.3.6/player.swf");
         rtmp.setPageUrl(downloadLink.getDownloadURL());
         rtmp.setResume(true);
-    }
-
-    private void downloadRTMP(final DownloadLink downloadLink, final String[] stream) throws Exception {
-        dl = new RTMPDownload(this, downloadLink, clipUrl);
-        setupRTMPConnection(dl, downloadLink, stream);
         ((RTMPDownload) dl).startDownload();
     }
 
@@ -135,19 +149,14 @@ public class ProSevenDe extends PluginForHost {
         if (clipID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /* First check if we already have an rtmp url - usually not. */
-        if (!clipUrl.startsWith("rtmp")) {
-            /* TODO: Maybe implement the current version of this request though this old one still works great. */
-            /*
-             * Request V2:
-             * http://vas.sim-technik.de/vas/live/v2/videos/<clipID>/sources/url?access_token=sat1gold&client_location=<currentURL
-             * >&client_name
-             * =kolibri-1.11.3-hotfix1&client_id=<clientid>&server_id=<serverid>&source_ids=0%2C6%2C4&callback=_kolibri_jsonp_callbacks
-             * ._5236
-             */
-            br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clipID + "&app=moveplayer&method=2&callback=SIMVideoPlayer.FlashPlayer.jsonpCallback");
-            getDllink();
-        }
+        /* TODO: Maybe implement the current version of this request though this old one still works great. */
+        /*
+         * Request V2: http://vas.sim-technik.de/vas/live/v2/videos/<clipID>/sources/url?access_token=sat1gold&client_location=<currentURL
+         * >&client_name
+         * =kolibri-1.11.3-hotfix1&client_id=<clientid>&server_id=<serverid>&source_ids=0%2C6%2C4&callback=_kolibri_jsonp_callbacks ._5236
+         */
+        br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clipID + "&app=moveplayer&method=2&callback=SIMVideoPlayer.FlashPlayer.jsonpCallback");
+        getDllink();
         if (clipUrl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -171,13 +180,7 @@ public class ProSevenDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not available in your country #2");
         }
         if (clipUrl.startsWith("rtmp")) {
-            clipUrl = clipUrl.replace("mp4:", "");
-            String[] stream = new Regex(clipUrl, "(rtmp.?://[0-9a-z]+\\.fplive\\.net/)([0-9a-z]+/[\\w\\-]+/\\d+/)(.*?)$").getRow(0);
-            if (stream != null && stream.length == 3) {
-                downloadRTMP(downloadLink, stream);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            downloadRTMP(downloadLink);
         } else {
             /* Happens if usually the clip is streamed via rtmpe --> No HbbTV version available either. */
             if (clipUrl.contains("no_flash_de")) {
