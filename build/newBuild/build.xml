@@ -130,11 +130,9 @@
 			</fileset>
 		</copy>
 		<copy todir="${dist}">
-			<fileset dir="${res}" includes="*.txt, *.exe, *.bat, *.properties" />
+			<fileset dir="${res}" includes="*.html, *.txt, *.exe, *.bat, *.properties" />
 		</copy>
-		<copy todir="${dist}">
-			<fileset dir="${res}" includes="*.txt, *.exe, *.bat, *.properties" />
-		</copy>
+	
 		<mkdir dir="${dist}/java" />
 		<mkdir dir="${dist}/tmp" />
 
@@ -282,7 +280,8 @@
 				<exclude name="**/test/**" />
 			</fileset>
 			<fileset dir="src">			             
-			                <include name="**/*.js" />			    
+			                <include name="**/*.js" />			
+			     <include name="**/*.html" />     
 			</fileset>
 			<fileset dir="${cls}">
 				<include name="jd/plugins/hoster/RTMPDownload.class" />
