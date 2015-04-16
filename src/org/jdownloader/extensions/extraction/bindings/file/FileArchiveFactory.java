@@ -131,13 +131,6 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
                 return origin;
             }
 
-            @Override
-            public void setFirstArchiveFile(ArchiveFile firstArchiveFile) {
-                if (firstArchiveFile instanceof FileArchiveFile) {
-                    ((FileArchiveFile) firstArchiveFile).setFirstArchiveFile(true);
-                }
-                super.setFirstArchiveFile(firstArchiveFile);
-            }
         };
     }
 
