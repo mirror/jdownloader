@@ -63,26 +63,21 @@ public class Archive {
     private List<ArchiveFile> archives;
 
     /**
-     * First part of the archives.
-     */
-    private ArchiveFile       firstArchiveFile = null;
-
-    /**
      * Exitcode of the extrraction.
      */
-    private int               exitCode         = -1;
+    private int               exitCode    = -1;
 
     /**
      * Is extraction process active.
      */
-    private boolean           active           = false;
+    private boolean           active      = false;
 
     /**
      * Type of the archive.
      */
-    private ArchiveType       archiveType      = null;
+    private ArchiveType       archiveType = null;
 
-    private SplitType         splitType        = null;
+    private SplitType         splitType   = null;
 
     public SplitType getSplitType() {
         return splitType;
@@ -176,15 +171,13 @@ public class Archive {
         }
     }
 
-    public void setFirstArchiveFile(ArchiveFile firstArchiveFile) {
-        if (this.firstArchiveFile != null) {
-            throw new IllegalStateException("firstArchiveFile is already set!");
-        }
-        this.firstArchiveFile = firstArchiveFile;
-    }
-
     public ArchiveFile getFirstArchiveFile() {
-        return firstArchiveFile;
+        for (ArchiveFile file : getArchiveFiles()) {
+            if (!(file instanceof MissingArchiveFile)) {
+                return file;
+            }
+        }
+        return null;
     }
 
     public void setActive(boolean active) {
@@ -228,9 +221,11 @@ public class Archive {
     }
 
     public boolean contains(Object link) {
-        for (ArchiveFile file : getArchiveFiles()) {
-            if (file.equals(link)) {
-                return true;
+        if (link != null) {
+            for (ArchiveFile file : getArchiveFiles()) {
+                if (file.equals(link)) {
+                    return true;
+                }
             }
         }
         return false;
@@ -248,8 +243,7 @@ public class Archive {
         return getFactory().getFolder();
     }
 
-    public synchronized ContentView getContentView() {
-
+    public ContentView getContentView() {
         return contents;
     }
 
@@ -262,9 +256,11 @@ public class Archive {
     }
 
     public ArchiveFile getArchiveFileByPath(String filename) {
-        for (ArchiveFile af : archives) {
-            if (filename.equals(af.getFilePath())) {
-                return af;
+        if (filename != null) {
+            for (ArchiveFile af : archives) {
+                if (filename.equals(af.getFilePath())) {
+                    return af;
+                }
             }
         }
         return null;
@@ -286,9 +282,6 @@ public class Archive {
 
     public void setStatus(ExtractionController controller, ExtractionStatus status) {
         for (ArchiveFile link : getArchiveFiles()) {
-            if (link == null) {
-                continue;
-            }
             link.setStatus(controller, status);
         }
     }
@@ -313,11 +306,13 @@ public class Archive {
     }
 
     public void setAutoExtract(BooleanStatus booleanStatus) {
-        if (getSettings().getAutoExtract() == booleanStatus) {
-            return;
+        if (booleanStatus == null) {
+            booleanStatus = BooleanStatus.UNSET;
         }
-        getSettings().setAutoExtract(booleanStatus);
-        notifyChanges(ArchiveSettings.AUTO_EXTRACT);
+        if (getSettings().getAutoExtract() != booleanStatus) {
+            getSettings().setAutoExtract(booleanStatus);
+            notifyChanges(ArchiveSettings.AUTO_EXTRACT);
+        }
     }
 
     public Archive getPreviousArchive() {
