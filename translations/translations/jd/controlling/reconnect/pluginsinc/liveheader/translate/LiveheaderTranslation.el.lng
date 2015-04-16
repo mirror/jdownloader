@@ -20,6 +20,7 @@ DataCompareDialog_layoutDialogContent_webinterface=Σελίδα Ρυθμίσεω
 DataCompareDialog_layoutDialogContent_webinterface_desc=Για να πραγματοποιήσετε μια επανασύνδεση, ο JDownloader χρειάζεται τους κωδικούς εισόδου στη Σελίδα Ρυθμίσεων του Δρομολογητή σας.\r\r\nΣυνήθως, μπορείτε να βρείτε αυτούς τους κωδικούς στο κάτω μέρος του Δρομολογητή σας.\r\r\nΕάν δεν τους γνωρίζετε, ρωτήστε τον διαχειριστή του Δικτύου σας.
 DataCompareDialog_open_webinterface=Άνοιγμα Σελίδας Ρυθμίσεων
 EditScriptAction_EditScriptAction_=Επεξεργασία αρχείου δέσμης ενεργειών
+EditScriptAction_EditScriptAction_add=Νέο Αρχείο
 EditScriptAction_EditScriptAction_tt=Εισαγάγετε ένα δικό σας αρχείο Αρχείο Επανασύνδεσης ή τροποποιήστε το υπάρχον.
 GetIPAction_GetIPAction_=Λήψη της IP του Δρομολογητή
 GetIPAction_GetIPAction_tt=Σαρώνει το Δίκτυό σας και προσπαθεί να βρει την IP του Δρομολογητή σας
