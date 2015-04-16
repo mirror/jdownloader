@@ -212,7 +212,7 @@ public class JustinTv extends PluginForHost {
         String videoName = downloadLink.getStringProperty("plainfilename", null);
 
         final SubConfiguration cfg = SubConfiguration.getConfig("twitch.tv");
-        String formattedFilename = downloadLink.getStringProperty("m3u", null) != null ? downloadLink.getStringProperty(CUSTOM_FILENAME_4, defaultCustomFilenameHls) : cfg.getStringProperty(CUSTOM_FILENAME_3, defaultCustomFilenameWeb);
+        String formattedFilename = downloadLink.getStringProperty("m3u", null) != null ? cfg.getStringProperty(CUSTOM_FILENAME_4, defaultCustomFilenameHls) : cfg.getStringProperty(CUSTOM_FILENAME_3, defaultCustomFilenameWeb);
         if (formattedFilename == null || formattedFilename.equals("")) {
             formattedFilename = downloadLink.getStringProperty("m3u", null) != null ? defaultCustomFilenameHls : defaultCustomFilenameWeb;
         }
