@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.net.ConnectException;
 
 import jd.PluginWrapper;
@@ -47,6 +48,7 @@ public class YourUploadCom extends PluginForHost {
         return "http://yourupload.com/index.php?act=pages&page=terms-of-service";
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         if (link.getDownloadURL().matches(".+/watch/.+")) {
             link.setUrlDownload("http://embed.yourupload.com/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
@@ -57,6 +59,7 @@ public class YourUploadCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -76,7 +79,7 @@ public class YourUploadCom extends PluginForHost {
             }
             dllink = br.getRegex("'file':\\s+'(https?://.*?)'").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("<meta property=\"og:video\" content=\"(https?://.*?)\"/>").getMatch(0);
+                dllink = br.getRegex("property=\"og:video\" content=\"(https?://.*?)\"").getMatch(0);
             }
             if (dllink == null || filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -88,7 +91,7 @@ public class YourUploadCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 try {
-                    con = br2.openGetConnection(dllink);
+                    con = openConnection(br2, dllink);
                 } catch (final ConnectException e) {
                     return AvailableStatus.TRUE;
                 }
@@ -156,6 +159,20 @@ public class YourUploadCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
+        }
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
