@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -51,7 +52,7 @@ public class MaisUolComBr extends PluginForHost {
         br.setFollowRedirects(true);
         try {
             br.getPage(downloadLink.getDownloadURL());
-        } catch (final Throwable e) {
+        } catch (final BrowserException e) {
             if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 400) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
