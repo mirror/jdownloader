@@ -56,6 +56,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
     private void openURL(String url) {
 
         String[] browserCmd = BrowserSolverService.getInstance().getConfig().getBrowserCommandline();
+
         if (browserCmd == null || browserCmd.length == 0) {
             // if (CrossSystem.isWindows()) {
             //
@@ -86,12 +87,13 @@ public abstract class BrowserReference implements HttpRequestHandler {
         } else {
             // Point pos = getPreferredBrowserPosition();
             // Dimension size = getPreferredBrowserSize();
+            String[] cmds = new String[browserCmd.length];
             for (int i = 0; i < browserCmd.length; i++) {
-                browserCmd[i] = browserCmd[i].replace("%s", url);
+                cmds[i] = browserCmd[i].replace("%s", url);
 
             }
 
-            ProcessBuilder pb = ProcessBuilderFactory.create(browserCmd);
+            ProcessBuilder pb = ProcessBuilderFactory.create(cmds);
             pb.redirectErrorStream(true);
             try {
                 process = pb.start();
