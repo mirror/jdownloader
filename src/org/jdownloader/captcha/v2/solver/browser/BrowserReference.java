@@ -87,7 +87,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
             // Point pos = getPreferredBrowserPosition();
             // Dimension size = getPreferredBrowserSize();
             for (int i = 0; i < browserCmd.length; i++) {
-                browserCmd[i] = browserCmd[i].replace("%%%url%%%", url);
+                browserCmd[i] = browserCmd[i].replace("%s", url);
 
             }
 
