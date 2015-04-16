@@ -20,7 +20,7 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     public RecaptchaV2Challenge(String siteKey, PluginForHost pluginForHost) {
         super("recaptchav2", pluginForHost);
         this.siteKey = siteKey;
-        if (siteKey == null || !siteKey.matches("^[\\d\\w]+$")) {
+        if (siteKey == null || !siteKey.matches("^[\\w-]+$")) {
             throw new WTFException("Bad SiteKey");
         }
 
