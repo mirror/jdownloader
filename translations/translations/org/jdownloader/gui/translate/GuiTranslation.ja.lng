@@ -1548,6 +1548,7 @@ download_start_msg=號、號、號! JDownloader発進!
 download_stopped=停止
 download_stopped_msg=全てのダウンロードが完了又は停止しました。
 downloadview_all=全てのダウンロード
+downloadview_exists=ファイル既存
 downloadview_failed=ダウンロード失敗
 downloadview_offline=オフラインDL
 downloadview_running=ダウンロード中...
