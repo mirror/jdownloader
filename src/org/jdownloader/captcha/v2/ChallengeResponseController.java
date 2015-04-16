@@ -36,7 +36,7 @@ public class ChallengeResponseController {
 
     /**
      * get the only existing instance of ChallengeResponseController. This is a singleton
-     * 
+     *
      * @return
      */
     public static ChallengeResponseController getInstance() {
@@ -79,7 +79,7 @@ public class ChallengeResponseController {
             if (!Application.isHeadless()) {
                 addSolver(DialogClickCaptchaSolver.getInstance());
             }
-            if (!Application.isHeadless() && !Application.isJared(null)) {
+            if (!Application.isHeadless()) {
                 addSolver(BrowserSolver.getInstance());
             }
             addSolver(CaptchaAPISolver.getInstance());
@@ -145,7 +145,7 @@ public class ChallengeResponseController {
     /**
      * When one job gets a skiprequest, we have to check all pending jobs if this skiprequest affects them as well. if so, we have to skip
      * them as well.
-     * 
+     *
      * @param skipRequest
      * @param solver
      * @param challenge
