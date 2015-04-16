@@ -168,6 +168,7 @@ public class SpaceForFilesCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
@@ -176,6 +177,9 @@ public class SpaceForFilesCom extends PluginForHost {
         setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|>File not found)").matches()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (correctedBR.contains(">Download&nbsp;File&nbsp;<span style=\"font-style:italic;\"></span> ()</div>")) {
+            /* Empty filename == offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {

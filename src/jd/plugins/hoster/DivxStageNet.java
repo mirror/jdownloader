@@ -40,13 +40,21 @@ public class DivxStageNet extends PluginForHost {
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet, DivxStageNet */
     private static final String DOMAIN = "cloudtime.to";
 
+    @SuppressWarnings("deprecation")
     public DivxStageNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload("http://www.cloudtime.to/video/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        final String newurl = "http://www.cloudtime.to/video/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        link.setUrlDownload(newurl);
+        try {
+            link.setContentUrl(newurl);
+        } catch (final Throwable e) {
+            link.setBrowserUrl(newurl);
+        }
     }
 
     @Override
