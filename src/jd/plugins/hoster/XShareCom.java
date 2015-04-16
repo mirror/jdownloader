@@ -44,38 +44,74 @@ public class XShareCom extends PluginForHost {
         return "http://xshare.com/terms.php";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:37.0) Gecko/20100101 Firefox/37.0");
         try {
             br.getPage(downloadLink.getDownloadURL());
         } catch (final BrowserException e) {
             return AvailableStatus.UNCHECKABLE;
         }
-        if (br.containsHTML(">404 - Page not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">404 - Page not found<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>([^<>\"]*?)\\- xshare\\.com</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<div class=\"seperatorvideo\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<div class=\"seperatorvideo\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
+        }
         final String videoid = br.getRegex("video_id: (\\d+)").getMatch(0);
-        if (videoid == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://xshare.com/playlist_flow_player_flv.php?vid=" + videoid);
-        DLLINK = br.getRegex("url=\"(http://[^<>\"]*?)\" type=\"video/").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (videoid == null || filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        }
+        if (DLLINK == null) {
+            final String[] quals = { "video-hd", "video-high" };
+            for (final String qual : quals) {
+                DLLINK = br.getRegex("id=\"" + qual + "\" href=\"(http://[^<>\"]*?/mp4/[^<>\"]*?\\.mp4[^<>\"]*?)\"").getMatch(0);
+                if (DLLINK != null) {
+                    break;
+                }
+            }
+        }
+        if (DLLINK == null) {
+            br.getPage("http://xshare.com/playlist_flow_player_flv.php?vid=" + videoid);
+            DLLINK = br.getRegex("url=\"(http://[^<>\"]*?)\" type=\"video/").getMatch(0);
+        }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (ext == null || ext.length() > 5) {
+            ext = ".mp4";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        final Browser br2 = br.cloneBrowser();
+        final Browser br2 = new Browser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
+            br2.getHeaders().put("Accept-Encoding", "identity");
+            br2.getHeaders().put("Referer", "http://xshare.com/swf/flowplayer.commercial.flash9-3.2.15.swf");
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

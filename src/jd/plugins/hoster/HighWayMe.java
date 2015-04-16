@@ -510,9 +510,11 @@ public class HighWayMe extends PluginForHost {
      * 0 = everything ok, 1-99 = official errorcodes, 100-199 = login-errors, 666 = hell
      */
     private void updatestatuscode() {
-        String error = this.getJson("error");
+        /* First look for errorcode */
+        String error = this.getJson("code");
         if (error == null) {
-            error = getJson("code");
+            /* No errorcode? Look for errormessage (e.g. used in login function). */
+            error = this.getJson("error");
         }
         if (error != null) {
             if (error.matches("\\d+")) {
