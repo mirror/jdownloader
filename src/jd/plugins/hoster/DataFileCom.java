@@ -586,9 +586,7 @@ public class DataFileCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
                 if (dl.getConnection().getContentType().contains("html")) {
-                    if (dl.getConnection().getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
-                    }
+                    handleServerErrors();
                     logger.warning("The final dllink seems not to be a file!");
                     br.followConnection();
                     handleGeneralErrors();
@@ -862,9 +860,7 @@ public class DataFileCom extends PluginForHost {
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, ddlink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
-            }
+            handleServerErrors();
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             handleGeneralErrors();
@@ -880,6 +876,17 @@ public class DataFileCom extends PluginForHost {
             controlSlot(-1, account);
         }
 
+    }
+
+    private void handleServerErrors() throws PluginException {
+        if (dl.getConnection().getResponseCode() == 402) {
+            /* 402 Payment Required happens sometimes for unknown reason... */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 402", 10 * 60 * 1000l);
+        } else if (dl.getConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 30 * 60 * 1000l);
+        } else if (dl.getConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+        }
     }
 
     private String loginToken(final Account account) throws Exception {

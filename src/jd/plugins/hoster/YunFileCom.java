@@ -43,7 +43,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d|share)\\.)?(yunfile|filemarkets|yfdisk)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(p(?:age)?\\d|share)\\.)?(yunfile|filemarkets|yfdisk|needisk)\\.com/(file/(down/)?[a-z0-9]+/[a-z0-9]+|fs/[a-z0-9]+/?)" }, flags = { 2 })
 public class YunFileCom extends PluginForHost {
 
     private static final String            MAINPAGE    = "http://yunfile.com/";
@@ -66,8 +66,8 @@ public class YunFileCom extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("filemarkets.com".equals(getHost()) || "yfdisk.com".equals(getHost())) {
-            if (host == null || "filemarkets.com".equals(host) || "yfdisk.com".equals(host)) {
+        if ("filemarkets.com".equals(getHost()) || "yfdisk.com".equals(getHost()) || "needisk.com".equals(getHost())) {
+            if (host == null || "filemarkets.com".equals(host) || "yfdisk.com".equals(host) || "needisk.com".equals(host)) {
                 return "yunfile.com";
             }
         }

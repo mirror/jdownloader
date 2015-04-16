@@ -138,19 +138,19 @@ public class ReverBnationCom extends PluginForDecrypt {
                     }
                     return decryptedLinks;
                 }
-                if (br.containsHTML("rel=\"nofollow\" title=\"Listen to") || !br.containsHTML("class=\"artist_name\"")) {
-                    logger.info("No content to decrypt: " + parameter);
-                    try {
-                        decryptedLinks.add(this.createOfflinelink(parameter));
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
-                    }
-                    return decryptedLinks;
-                }
                 final String showAllSongs = br.getRegex("<a href=\"([^<>\"]+/songs)\" class=\"standard_well see_more\">All Songs</a>").getMatch(0);
                 if (showAllSongs != null) {
                     br.getPage("http://www.reverbnation.com" + showAllSongs);
                 }
+            }
+            if (br.containsHTML("rel=\"nofollow\" title=\"Listen to") || !br.containsHTML("class=\"artist_name\"") || br.getHttpConnection().getResponseCode() == 404) {
+                logger.info("No content to decrypt: " + parameter);
+                try {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                }
+                return decryptedLinks;
             }
             artist_name_general = br.getRegex("class=\"artist_name\">By: ([^<>\"]*?)</span>").getMatch(0);
             if (artist_name_general == null) {
