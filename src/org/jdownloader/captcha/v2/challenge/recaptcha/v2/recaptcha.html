@@ -1,36 +1,128 @@
 <!DOCTYPE HTML>
 <html dir="ltr">
-   <head>
-      <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-      <meta name="viewport" content="width=device-width, user-scalable=yes">
-      <title>ReCAPTCHA-Input</title>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, user-scalable=yes">
+<title>ReCAPTCHA-Input</title>
 
-      <script src='http://www.google.com/recaptcha/api.js' async defer></script>
-   </head>
-   <body>
-      <div class="sample-form">
-         <form method="POST">
-           
-                     <div class="">
-                        <!-- BEGIN: ReCAPTCHA implementation example. -->
-                        <div class="g-recaptcha" data-sitekey="%%%sitekey%%%"></div>
-                        <!-- Optional noscript fallback. -->
-                        <noscript>
-                           <div style="width: 302px; height: 352px;">
-                              <div style="width: 302px; height: 352px; position: relative;">
-                                 <div style="width: 302px; height: 352px; position: absolute;"><iframe src="/recaptcha/api/fallback?k=%%%sitekey%%%" frameborder="0" scrolling="no" style="width: 302px; height:352px; border-style: none;"></iframe></div>
-                                 <div style="width: 250px; height: 80px; position: absolute; border-style: none; bottom: 21px; left: 25px; margin: 0px; padding: 0px; right: 25px;"><textarea dir="ltr" id="g-recaptcha-response" name="g-recaptcha-response" class="g-recaptcha-response" style="width: 250px; height: 80px; border: 1px solid #c1c1c1; margin: 0px; padding: 0px; resize: none; "></textarea></div>
-                              </div>
-                           </div>
-                           <br>
-                        </noscript>
-                        <!-- END: ReCAPTCHA implementation example. -->
-                     </div>
-                <br/>
-                <input type="submit" value="Send" /></li>
-               </ul>
-            </fieldset>
-         </form>
-      </div>
-   </body>
+<script src='http://www.google.com/recaptcha/api.js' async defer></script>
+<script type="text/javascript">
+    function GetScreenCordinates(obj) {
+        var p = {};
+        p.x = obj.offsetLeft;
+        p.y = obj.offsetTop;
+        while (obj.offsetParent) {
+            p.x = p.x + obj.offsetParent.offsetLeft;
+            p.y = p.y + obj.offsetParent.offsetTop;
+            if (obj == document.getElementsByTagName("body")[0]) {
+                break;
+            } else {
+                obj = obj.offsetParent;
+            }
+        }
+        return p;
+    }
+    function success() {
+        document.send.submit();
+    }
+
+    function getOffsetSum(elem) {
+        var top = 0, left = 0
+        while (elem) {
+            top = top + parseInt(elem.offsetTop)
+            left = left + parseInt(elem.offsetLeft)
+            elem = elem.offsetParent
+        }
+
+        return {
+            top : top,
+            left : left
+        }
+    }
+
+    function getOffsetRect(elem) {
+        var box = elem.getBoundingClientRect()
+
+        var body = document.body
+        var docElem = document.documentElement
+
+        var scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop
+        var scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft
+
+        var clientTop = docElem.clientTop || body.clientTop || 0
+        var clientLeft = docElem.clientLeft || body.clientLeft || 0
+
+        var top = box.top + scrollTop - clientTop
+        var left = box.left + scrollLeft - clientLeft
+
+        return {
+            top : Math.round(top),
+            left : Math.round(left)
+        }
+    }
+
+    function getOffset(elem) {
+        if (elem.getBoundingClientRect) {
+            return getOffsetRect(elem)
+        } else {
+            return getOffsetSum(elem)
+        }
+    }
+    function init() {
+
+        //document.getElementById("elementID").offsetTop;
+        //document.getElementById("elementID").offsetLeft;
+        var rc = document.getElementById("rc");
+        var xmlHttp = null;
+        var p = getOffset(rc);
+        xmlHttp = new XMLHttpRequest();
+        var w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
+        var h = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
+        /* 
+        If the browser does not support screenX and screen Y, 
+        use screenLeft and screenTop instead (and vice versa)
+         */
+        var winLeft = window.screenLeft ? window.screenLeft : window.screenX;
+        var winTop = window.screenTop ? window.screenTop : window.screenY;
+        xmlHttp.open("GET", "?do=loaded&x=" + winLeft + "&y=" + winTop + "&w=" + window.outerWidth + "&h=" + window.outerHeight, false);
+        xmlHttp.send(null);
+
+    }
+</script>
+</head>
+<body onload="init()">
+	<div class="sample-form">
+		<form name="send" method="POST">
+
+			<div class="" >
+				<!-- BEGIN: ReCAPTCHA implementation example. -->
+				<div data-callback="success" id="rc" class="g-recaptcha"
+					data-sitekey="%%%sitekey%%%" style=" border-width:3px;  border-style:solid;  border-color:#ff9900;width: 302px; height: px;"></div>
+				<!-- Optional noscript fallback. -->
+				<noscript>
+					<div style="width: 302px; height: 352px;">
+						<div style="width: 302px; height: 352px; position: relative;">
+							<div style="width: 302px; height: 352px; position: absolute;">
+								<iframe src="/recaptcha/api/fallback?k=%%%sitekey%%%"
+									frameborder="0" scrolling="no"
+									style="width: 302px; height: 352px; border-style: none;"></iframe>
+							</div>
+							<div
+								style="width: 250px; height: 80px; position: absolute; border-style: none; bottom: 21px; left: 25px; margin: 0px; padding: 0px; right: 25px;">
+								<textarea dir="ltr" id="g-recaptcha-response"
+									name="g-recaptcha-response" class="g-recaptcha-response"
+									style="width: 250px; height: 80px; border: 1px solid #c1c1c1; margin: 0px; padding: 0px; resize: none;"></textarea>
+							</div>
+						</div>
+					</div>
+					<br>
+				</noscript>
+				<!-- END: ReCAPTCHA implementation example. -->
+			</div>
+
+		</form>
+	</div>
+
+
+</body>
 </html>

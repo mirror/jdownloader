@@ -3,7 +3,7 @@ package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 import java.io.IOException;
 import java.net.URL;
 
-import jd.plugins.PluginForHost;
+import jd.plugins.Plugin;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
@@ -17,7 +17,7 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         return siteKey;
     }
 
-    public RecaptchaV2Challenge(String siteKey, PluginForHost pluginForHost) {
+    public RecaptchaV2Challenge(String siteKey, Plugin pluginForHost) {
         super("recaptchav2", pluginForHost);
         this.siteKey = siteKey;
         if (siteKey == null || !siteKey.matches("^[\\w-]+$")) {
