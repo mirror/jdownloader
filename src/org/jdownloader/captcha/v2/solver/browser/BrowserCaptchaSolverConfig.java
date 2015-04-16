@@ -19,7 +19,7 @@ public interface BrowserCaptchaSolverConfig extends ChallengeSolverConfig {
     void setAutoOpenBrowserEnabled(boolean b);
 
     @AboutConfig
-    @DescriptionForConfigEntry("Example: [ \"C:\\\\Program Files (x86)\\\\Google\\Chrome\\\\Application\\\\chrome.exe\", \"-app=%s1\" ]")
+    @DescriptionForConfigEntry("Example: [ \"C:\\\\Program Files (x86)\\\\Google\\Chrome\\\\Application\\\\chrome.exe\", \"-app=%s\" ]")
     String[] getBrowserCommandline();
 
     void setBrowserCommandline(String[] cmd);
