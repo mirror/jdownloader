@@ -16,6 +16,7 @@
 
 package org.jdownloader.captcha.v2.solver.browser;
 
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
@@ -30,6 +31,7 @@ import java.awt.event.MouseEvent;
 import java.util.List;
 
 import javax.swing.BorderFactory;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -41,6 +43,7 @@ import javax.swing.KeyStroke;
 import jd.gui.swing.dialog.AbstractCaptchaDialog;
 import jd.gui.swing.dialog.DialogType;
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -66,6 +69,8 @@ import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
+import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.images.NewTheme;
@@ -153,26 +158,26 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
         return hideAllCaptchas;
     }
 
-    private DomainInfo         hosterInfo;
-    protected JPanel           iconPanel;
+    private DomainInfo            hosterInfo;
+    protected AbstractConfigPanel iconPanel;
 
-    protected Point            offset;
+    protected Point               offset;
 
-    private Plugin             plugin;
+    private Plugin                plugin;
 
-    protected boolean          stopDownloads = false;
+    protected boolean             stopDownloads = false;
 
-    private DialogType         type;
+    private DialogType            type;
 
-    protected boolean          refresh;
+    protected boolean             refresh;
 
-    protected boolean          stopCrawling;
+    protected boolean             stopCrawling;
 
-    protected boolean          stopShowingCrawlerCaptchas;
+    protected boolean             stopShowingCrawlerCaptchas;
 
-    protected BrowserReference browserReference;
+    protected BrowserReference    browserReference;
 
-    private String             responseCode;
+    private String                responseCode;
 
     private void createPopup() {
         final JPopupMenu popup = new JPopupMenu();
@@ -499,20 +504,20 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
         return null;
     }
 
-    protected int getPreferredHeight() {
-        if (!config.isValid()) {
-            return super.getPreferredHeight();
-        }
-        return config.getY();
-    }
-
-    @Override
-    protected int getPreferredWidth() {
-        if (!config.isValid()) {
-            return super.getPreferredWidth();
-        }
-        return config.getX();
-    }
+    // protected int getPreferredHeight() {
+    // if (!config.isValid()) {
+    // return super.getPreferredHeight();
+    // }
+    // return config.getY();
+    // }
+    //
+    // @Override
+    // protected int getPreferredWidth() {
+    // if (!config.isValid()) {
+    // return super.getPreferredWidth();
+    // }
+    // return config.getX();
+    // }
 
     public DialogType getType() {
         return type;
@@ -528,7 +533,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
     @Override
     protected boolean isResizable() {
-        return false;
+        return true;
     }
 
     public boolean isStopDownloads() {
@@ -701,41 +706,38 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
         HeaderScrollPane sp;
 
-        iconPanel = new JPanel(new MigLayout("ins 0", "[grow]", "[grow]"));
-        iconPanel.add(new ExtButton(new AppAction() {
-            {
-                setName("Open Browser");
+        iconPanel = new AbstractConfigPanel(5) {
+
+            @Override
+            public Icon getIcon() {
+                return null;
             }
 
             @Override
-            public void actionPerformed(ActionEvent e) {
-                if (browserReference != null) {
-                    browserReference.dispose();
-                }
-                browserReference = new BrowserReference(challenge) {
-
-                    @Override
-                    void onResponse(String parameter) {
-                        responseCode = parameter;
-                        new EDTRunner() {
-
-                            @Override
-                            protected void runInEDT() {
-                                setReturnmask(true);
-                                BrowserCaptchaDialog.this.dispose();
-                            }
-                        };
-
-                    }
-                };
-                try {
-                    browserReference.open();
-                } catch (Throwable e1) {
-                    UIOManager.I().showException(e1.getMessage(), e1);
-                    browserReference = null;
-                }
+            protected String getLeftGap() {
+                return "0";
             }
-        }));
+
+            @Override
+            public String getTitle() {
+                return null;
+            }
+
+            @Override
+            public void save() {
+            }
+
+            @Override
+            public void updateContents() {
+            }
+
+        };
+        // JLabel lbl = new JLabel("<html>" + _GUI._.BrowserCaptchaDialog_layoutDialogContent_explain_() + "</html>");
+        //
+        // iconPanel.add(lbl, "spanx,pushx,growx");
+        iconPanel.addDescriptionPlain(_GUI._.BrowserCaptchaDialog_layoutDialogContent_explain_());
+        iconPanel.addPair(_GUI._.BrowserCaptchaDialog_layoutDialogContent_autoclick(), null, new Checkbox(CFG_BROWSER_CAPTCHA_SOLVER.AUTO_CLICK_ENABLED));
+        iconPanel.addPair(_GUI._.BrowserCaptchaDialog_layoutDialogContent_autoopen(), null, new Checkbox(CFG_BROWSER_CAPTCHA_SOLVER.AUTO_OPEN_BROWSER_ENABLED));
 
         SwingUtils.setOpaque(iconPanel, false);
 
@@ -763,8 +765,32 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             // sp.setMinimumSize(new Dimension(Math.max(images[0].getWidth(null) + 10, headerPanel.getPreferredSize().width + 10),
             // images[0].getHeight(null) + headerPanel.getPreferredSize().height));
         }
-
+        if (BrowserSolverService.getInstance().getConfig().isAutoOpenBrowserEnabled()) {
+            openBrowser();
+        }
         return panel;
+    }
+
+    public void actionPerformed(final ActionEvent e) {
+        if (e.getSource() == this.okButton) {
+            openBrowser();
+        } else {
+            super.actionPerformed(e);
+        }
+    }
+
+    @Override
+    public String getOKButtonText() {
+
+        return _GUI._.BrowserCaptchaDialog_getOKButtonText_open_browser();
+    }
+
+    private Component key(String str) {
+        JLabel lbl = new JLabel(str);
+        lbl.setEnabled(false);
+        SwingUtils.toBold(lbl);
+
+        return lbl;
     }
 
     public boolean isRefresh() {
@@ -811,6 +837,34 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
     public void setPlugin(Plugin plugin) {
         this.plugin = plugin;
+    }
+
+    protected void openBrowser() {
+        if (browserReference != null) {
+            browserReference.dispose();
+        }
+        browserReference = new BrowserReference(challenge) {
+
+            @Override
+            void onResponse(String parameter) {
+                responseCode = parameter;
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        setReturnmask(true);
+                        BrowserCaptchaDialog.this.dispose();
+                    }
+                };
+
+            }
+        };
+        try {
+            browserReference.open();
+        } catch (Throwable e1) {
+            UIOManager.I().showException(e1.getMessage(), e1);
+            browserReference = null;
+        }
     }
 
 }

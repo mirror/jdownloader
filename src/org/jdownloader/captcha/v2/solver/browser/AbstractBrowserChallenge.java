@@ -1,15 +1,15 @@
 package org.jdownloader.captcha.v2.solver.browser;
 
-import jd.plugins.PluginForHost;
+import jd.plugins.Plugin;
 
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 
 public abstract class AbstractBrowserChallenge extends Challenge<String> {
 
-    private PluginForHost plugin;
+    private Plugin plugin;
 
-    public PluginForHost getPlugin() {
+    public Plugin getPlugin() {
         return plugin;
     }
 
@@ -18,7 +18,7 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
         return results != null && results.getValue() != null;
     }
 
-    public AbstractBrowserChallenge(String method, PluginForHost pluginForHost) {
+    public AbstractBrowserChallenge(String method, Plugin pluginForHost) {
 
         super(method, null);
         this.plugin = pluginForHost;
