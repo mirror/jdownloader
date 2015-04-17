@@ -276,7 +276,7 @@ gui_warning_reconnectunknown=Rekonekcija nije poznata
 image_description=Slikovne datoteke: jpg, png, gif,...
 jd_controlling_SingleDownloadController_askexists3=Pojavio se problem kod preuzimanja datoteke!\r\nDatoteka već postoji na tvrdom disku. Što želite učiniti?
 jd_controlling_SingleDownloadController_askexists_title=Datoteka postoji
-jd_controlling_reconnect_Reconnector_progress_failed2=Rekonekcija prečesto neuspjeva! Automatska rekonekcija je onemogućena!\r\nMolimo provjerite ponovno Vaše postavke!
+jd_controlling_reconnect_Reconnector_progress_failed2=Rekonekcija prečesto neuspjeva! Automatska rekonekcija je onemogućena! Molimo provjerite ponovno Vaše postavke!
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Rekonekcija nije odabrana</u></b><br/><p>Rekonekcija je napredni pristup za preskakanje dugog čekanja kod nekih hostova za slobodne korisnike. <br>Nije od pomoći ako koristite premium račun.</p><p>Pročitajte o rekonekciji više <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>ovdje</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Bez rekonekcije
 jd_plugins_PluginUtils_askPassword=Molimo unesite lozinku za %s1

@@ -96,6 +96,7 @@ set_autoremovefiles_true=Autom. uklanjanje datoteka je sada omogućeno
 set_autoremovelinks_false=Autom. uklanjanje linkova preuzimanja je sada isključeno
 set_autoremovelinks_true=Autom. uklanjanje linkova preuzimanja je sada omogućeno
 settings_auto_extract_default=Raspakiraj arhive nakon preuzimanja (zadano)
+settings_blacklist_regex=Ne raspakirati datoteke koje se podudaraju u sljedećim regularnim izrazima (jedan po retku)
 settings_cpupriority_high=Visok
 settings_cpupriority_low=Nizak
 settings_cpupriority_middle=Srednji
