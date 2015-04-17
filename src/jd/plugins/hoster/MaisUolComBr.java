@@ -53,7 +53,7 @@ public class MaisUolComBr extends PluginForHost {
         try {
             br.getPage(downloadLink.getDownloadURL());
         } catch (final BrowserException e) {
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 400) {
+            if (br.getHttpConnection() != null && (br.getHttpConnection().getResponseCode() == 400 | br.getHttpConnection().getResponseCode() == 500)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw e;

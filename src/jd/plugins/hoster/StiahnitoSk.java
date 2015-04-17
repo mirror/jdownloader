@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -28,8 +29,8 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -40,8 +41,18 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hellspy.cz" }, urls = { "https?://(www\\.)?hellspy\\.(cz|com)/(soutez/)?[a-z0-9\\-]+/\\d+" }, flags = { 2 })
-public class HellSpyCz extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stiahnito.sk" }, urls = { "http://(www\\.)?stiahnito\\.sk/(sutaz/)?[a-z0-9\\-]+/\\d+" }, flags = { 2 })
+public class StiahnitoSk extends PluginForHost {
+
+    public StiahnitoSk(PluginWrapper wrapper) {
+        super(wrapper);
+        this.enablePremium("http://www.stiahnito.sk/ucet/credit");
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.stiahnito.sk/terms-and-conditions";
+    }
 
     /*
      * Sister sites: hellshare.cz, (and their other domains), hellspy.cz (and their other domains), using same dataservers but slightly
@@ -59,29 +70,13 @@ public class HellSpyCz extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -5;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    private static final String  COOKIE_HOST                  = "http://hellspy.cz";
+    private static final String  COOKIE_HOST                  = "http://stiahnito.sk";
     private static final boolean ALL_PREMIUMONLY              = true;
     private static final String  HTML_IS_STREAM               = "section\\-videodetail\"";
     private static Object        LOCK                         = new Object();
 
-    public HellSpyCz(final PluginWrapper wrapper) {
-        super(wrapper);
-        this.enablePremium("http://www.en.hellshare.com/register");
-        /* Especially for premium - don't make too many requests in a short time or we'll get 503 responses. */
-        this.setStartIntervall(2000l);
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.en.hellshare.com/terms";
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public void correctDownloadLink(final DownloadLink link) throws Exception {
-        final String linkpart = new Regex(link.getDownloadURL(), "hellspy.cz/(.+)").getMatch(0);
-        link.setUrlDownload("http://www.hellspy.cz/" + linkpart);
-    }
+    /* don't touch the following! */
+    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
     @Override
@@ -91,8 +86,6 @@ public class HellSpyCz extends PluginForHost {
         String filesize = null;
         setBrowserExclusive();
         br.setCustomCharset("utf-8");
-        br.getHeaders().put("Accept-Language", "en-gb;q=0.9, en;q=0.8");
-        br.setFollowRedirects(true);
         this.br.setDebug(true);
         try {
             br.getPage(link.getDownloadURL());
@@ -102,7 +95,7 @@ public class HellSpyCz extends PluginForHost {
                 return AvailableStatus.UNCHECKABLE;
             }
         }
-        if (br.containsHTML(">Soubor nenalezen<") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         filename = br.getRegex("<h1 title=\"([^<>\"]*?)\"").getMatch(0);
@@ -111,7 +104,7 @@ public class HellSpyCz extends PluginForHost {
             ext = ".mp4";
         } else {
             /* Filesize is only given for non-streams */
-            filesize = br.getRegex("<span class=\"filesize right\">(\\d+(?:\\.\\d+)? <span>[^<>\"]*?)</span>").getMatch(0);
+            filesize = br.getRegex("class=\"file\\-size\">([^<>\"]*?)<").getMatch(0);
             if (filesize == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -124,21 +117,8 @@ public class HellSpyCz extends PluginForHost {
             filename += ext;
         }
         link.setFinalFileName(filename);
-        if (filesize != null) {
-            filesize = filesize.replace("<span>", "");
-            link.setDownloadSize(SizeFormatter.getSize(filesize.replace("&nbsp;", "")));
-        }
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override
@@ -211,115 +191,13 @@ public class HellSpyCz extends PluginForHost {
         return dllink;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        int maxchunks = ACCOUNT_PREMIUM_MAXCHUNKS;
-        String dllink = null;
-        requestFileInformation(downloadLink);
-        if (br.getHttpConnection().getResponseCode() == 502) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "We are sorry, but HellSpy is unavailable in your country", 4 * 60 * 60 * 1000l);
-        }
-        login(account, false);
-        br.getPage(downloadLink.getDownloadURL());
-        dllink = checkDirectLink(downloadLink, "account_premium_directlink");
-        if (dllink == null) {
-            if (br.containsHTML(HTML_IS_STREAM)) {
-                dllink = getStreamDirectlink();
-                /* No chunklimit for streams */
-                maxchunks = 0;
-            } else {
-                final String filedownloadbutton = br.getURL() + "?download=1&iframe_view=popup+download_iframe_detail_popup";
-                URLConnectionAdapter con = openConnection(this.br, filedownloadbutton);
-                if (con.getContentType().contains("html")) {
-                    br.followConnection();
-                    dllink = br.getRegex("launchFullDownload\\(\\'(http[^<>\"]*?)\\'\\);\"").getMatch(0);
-                } else {
-                    dllink = filedownloadbutton;
-                }
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = dllink.replaceAll("\\\\", "");
-        }
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, maxchunks);
-        if (dl.getConnection().getResponseCode() == 503) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
-        }
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setProperty("account_premium_directlink", dllink);
-        dl.startDownload();
-    }
-
-    private String getStreamDirectlink() throws PluginException, IOException {
-        String play_url = br.getRegex("\"(/[^<>\"]*?do=play)\"").getMatch(0);
-        if (play_url == null) {
-            logger.warning("Stream-play-url is null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        play_url = Encoding.htmlDecode(play_url);
-        this.br.getPage(play_url);
-        this.br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-        String dllink = br.getRegex("url: \"(http://stream\\d+\\.helldata\\.com[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Stream-finallink is null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return dllink;
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
-    /** TODO: Maybe add support for time-accounts */
-    @SuppressWarnings("deprecation")
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            ai.setStatus("Login failed");
-            account.setValid(false);
-            throw e;
-        }
-        br.getPage("/ucet/");
-        String traffic_left = br.getRegex("<td>Zakoupený:</td><td>(\\d+ MB)</td>").getMatch(0);
-        if (traffic_left == null) {
-            traffic_left = br.getRegex("<strong>Kreditů: </strong>([^<>\"]*?) \\&ndash; <a").getMatch(0);
-        }
-
-        if (traffic_left == null) {
-            ai.setStatus("Invalid/Unknown");
-            account.setValid(false);
-            return ai;
-        }
-        ai.setTrafficLeft(SizeFormatter.getSize(traffic_left));
-        ai.setValidUntil(-1);
-        ai.setStatus("Account with credits");
-        account.setProperty("free", false);
-        return ai;
+    public int getMaxSimultanFreeDownloadNum() {
+        return FREE_MAXDOWNLOADS;
     }
 
     @SuppressWarnings("unchecked")
-    public void login(final Account account, final boolean force) throws Exception {
+    private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
@@ -343,7 +221,7 @@ public class HellSpyCz extends PluginForHost {
                 setBrowserExclusive();
                 br.setFollowRedirects(true);
                 br.setDebug(true);
-                br.getPage("http://www.hellspy.cz/?do=loginBox-loginpopup");
+                br.getPage("http://www.stiahnito.sk/?do=loginBox-loginpopup");
                 String login_action = br.getRegex("\"(http://(?:www\\.)?hell\\-share\\.com/user/login/\\?do=apiLoginForm-submit[^<>\"]*?)\"").getMatch(0);
                 if (login_action == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -355,7 +233,7 @@ public class HellSpyCz extends PluginForHost {
                     }
                 }
                 login_action = Encoding.htmlDecode(login_action);
-                br.postPage(login_action, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&permanent_login=on&submit_login=P%C5%99ihl%C3%A1sit+se&login=1&redir_url=http%3A%2F%2Fwww.hellspy.cz%2F%3Fdo%3DloginBox-login");
+                br.postPage(login_action, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&permanent_login=on&submit_login=P%C5%99ihl%C3%A1sit+se&login=1&redir_url=http%3A%2F%2Fwww.stiahnito.sk%2F%3Fdo%3DloginBox-login");
                 String permLogin = br.getCookie(br.getURL(), "permlogin");
                 if (permLogin == null || br.containsHTML("zadal jsi špatné uživatelské")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -383,6 +261,89 @@ public class HellSpyCz extends PluginForHost {
 
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        final String trafficleft = br.getRegex("href=\"/ucet/credit\">[\t\n\r ]+(\\d+[\t\n\r ]+MB)[\t\n\r ]+</a>").getMatch(0);
+        if (trafficleft == null) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+        maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        try {
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(true);
+        } catch (final Throwable e) {
+            /* not available in old Stable 0.9.581 */
+        }
+        ai.setStatus("Premium Account");
+        account.setValid(true);
+        return ai;
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        int maxchunks = ACCOUNT_PREMIUM_MAXCHUNKS;
+        requestFileInformation(link);
+        login(account, false);
+        String dllink = this.checkDirectLink(link, "premium_directlink");
+        if (dllink == null) {
+            if (br.containsHTML(HTML_IS_STREAM)) {
+                dllink = getStreamDirectlink();
+                /* No chunklimit for streams */
+                maxchunks = 0;
+            } else {
+                br.getPage(link.getDownloadURL());
+                br.setFollowRedirects(false);
+                final String filedownloadbutton = br.getURL() + "?download=1&iframe_view=popup+download_iframe_detail_popup";
+                br.getPage(filedownloadbutton);
+                dllink = br.getRedirectLocation();
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = dllink.replaceAll("\\\\", "");
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, maxchunks);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setProperty("premium_directlink", dllink);
+        dl.startDownload();
+    }
+
+    private String getStreamDirectlink() throws PluginException, IOException {
+        String play_url = br.getRegex("\"(/[^<>\"]*?do=play)\"").getMatch(0);
+        if (play_url == null) {
+            logger.warning("Stream-play-url is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        play_url = Encoding.htmlDecode(play_url);
+        this.br.getPage(play_url);
+        this.br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+        String dllink = br.getRegex("url: \"(http://stream\\d+\\.helldata\\.com[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            logger.warning("Stream-finallink is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return dllink;
+    }
+
     private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
         URLConnectionAdapter con;
         if (isJDStable()) {
@@ -397,24 +358,10 @@ public class HellSpyCz extends PluginForHost {
         return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     @Override
@@ -422,19 +369,7 @@ public class HellSpyCz extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(final DownloadLink link) {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        return false;
-    }
 }
