@@ -116,7 +116,7 @@ public class RuTubeRu extends PluginForHost {
         String regId = "http://video\\.rutube\\.ru/([0-9a-f]{32})";
         String nextId = new Regex(dllink, regId).getMatch(0);
         br.setCustomCharset("utf-8");
-        br.getPage("http://rutube.ru/api/video/" + nextId);
+        br.getPage("http://rutube.ru/api/play/trackinfo/" + nextId + "/");
         if (br.containsHTML("<root><detail>Not found</detail></root>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
