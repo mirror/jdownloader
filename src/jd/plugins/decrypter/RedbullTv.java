@@ -101,7 +101,7 @@ public class RedbullTv extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         } else {
-            /* Typically needed for "live" streams (recordings). */
+            /* Typically only needed for "live" streams (recordings) as for some reason they don't have http sources available. */
             final String hlsurl = (String) entries.get("uri");
             if (hlsurl == null) {
                 return null;
