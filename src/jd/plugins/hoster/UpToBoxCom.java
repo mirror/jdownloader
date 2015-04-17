@@ -90,6 +90,7 @@ public class UpToBoxCom extends antiDDoSForHost {
     // captchatype: solvemedia
     // other: no redirects
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(DownloadLink link) {
         // link.setUrlDownload(COOKIE_HOST + "/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
@@ -178,10 +179,16 @@ public class UpToBoxCom extends antiDDoSForHost {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
             if (filesize == null) {
                 filesize = new Regex(correctedBR, "<div class=\"info\\-bar\\-grey\">[\t\n\r ]+http://uptobox\\.com/[a-z0-9]{12} \\((.*?)\\)").getMatch(0);
-                if (filesize == null) {
-                    filesize = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
-                }
             }
+        }
+        if (filesize == null) {
+            filesize = new Regex(correctedBR, "\\(([^<>\"]*?)\\)</div>[\t\n\r ]+<p class=\"tos\"").getMatch(0);
+        }
+        if (filesize == null) {
+            filesize = new Regex(correctedBR, "\\(([\\d\\.]+ ?(KB|MB|GB))\\)").getMatch(0);
+        }
+        if (filesize == null) {
+            filesize = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
         }
         if (filename == null || filename.equals("")) {
             if (correctedBR.contains("You have reached the download\\-limit")) {
