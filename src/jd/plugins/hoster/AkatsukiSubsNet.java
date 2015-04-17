@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -28,8 +27,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "akatsuki-subs.net" }, urls = { "http://(www\\.)?(downloads|archiv)\\.akatsuki\\-subs\\.net/file\\-\\d+\\.htm" }, flags = { 0 })
 public class AkatsukiSubsNet extends PluginForHost {
@@ -95,22 +92,8 @@ public class AkatsukiSubsNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server overloaded", 5 * 60 * 1000l);
         }
         br.setFollowRedirects(false);
-        boolean success = false;
-        int counter = 0;
-        String responseToken = null;
-        do {
-            Recaptcha2Helper rchelp = new Recaptcha2Helper();
-            rchelp.init(this.br);
-            final File outputFile = rchelp.loadImageFile();
-            String code = getCaptchaCode("recaptcha", outputFile, downloadLink);
-            success = rchelp.sendResponse(code);
-            responseToken = rchelp.getResponseToken();
-            counter++;
-        } while (!success && counter <= 3);
-        if (!success) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        final String postData = "submit=Download&g-recaptcha-response=" + Encoding.urlEncode(responseToken);
+        final String recaptchaV2Response = getRecaptchaV2Response();
+        final String postData = "submit=Download&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getURL(), postData, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

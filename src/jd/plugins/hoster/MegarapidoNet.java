@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,8 +38,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megarapido.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class MegarapidoNet extends PluginForHost {
@@ -324,26 +321,9 @@ public class MegarapidoNet extends PluginForHost {
                 this.getAPISafe("http://megarapido.net/login");
 
                 final DownloadLink dummyLink = new DownloadLink(this, "Account", "megarapido.net", DOMAIN, true);
-                boolean success = false;
-                int counter = 1;
-                String responseToken = null;
-                do {
-                    Recaptcha2Helper rchelp = new Recaptcha2Helper();
-                    rchelp.init(this.br);
-                    final File outputFile = rchelp.loadImageFile();
-                    String code = getCaptchaCode("recaptcha", outputFile, dummyLink);
-                    success = rchelp.sendResponse(code);
-                    responseToken = rchelp.getResponseToken();
-                    counter++;
-                } while (!success && counter <= 3);
-                if (!success) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDu hast zu viele ungültige login Captchas eingegeben!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou entered too many wrong login captchas!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                postData += "&g-recaptcha-response=" + Encoding.urlEncode(responseToken);
+                this.setDownloadLink(dummyLink);
+                final String recaptchaV2Response = getRecaptchaV2Response();
+                postData += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
 
                 this.postAPISafe("/painel_user/ajax/ajax.php", postData);
                 final String userLanguage = System.getProperty("user.language");

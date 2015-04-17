@@ -16,9 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -44,7 +42,6 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "neodrive.co", "cloudzilla.to" }, urls = { "http://(www\\.)?(cloudzilla\\.to|neodrive\\.co)/share/file/[A-Za-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM" }, flags = { 2, 0 })
 public class CloudZillaTo extends PluginForHost {
@@ -113,28 +110,24 @@ public class CloudZillaTo extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
+    @Override
+    protected String getRecaptchaV2ApiKey(final String source) {
+        if (source == null) {
+            return null;
+        }
+        final String apiKey = br.getRegex("var grecaptcha_key = \"([^<>\"]*?)\";").getMatch(0);
+        return apiKey;
+    }
+
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            final String siteKey = br.getRegex("var grecaptcha_key = \"([^<>\"]*?)\";").getMatch(0);
-            if (siteKey == null) {
-                logger.warning("Failed to find siteKey");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            Recaptcha2Helper rchelp = new Recaptcha2Helper();
-            rchelp.init(this.br, siteKey, new URL(br.getURL()).getHost());
-            final File outputFile = rchelp.loadImageFile();
-            final String code = getCaptchaCode("recaptcha", outputFile, downloadLink);
-            boolean success = rchelp.sendResponse(code);
-            if (!success) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            final String responseToken = rchelp.getResponseToken();
+            final String recaptchaV2Response = getRecaptchaV2Response();
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("X-Requested-With   XMLHttpRequest", "XMLHttpRequest");
-            br.postPage("/generateticket/", "key=&file_id=" + fid + "&captcha=" + Encoding.urlEncode(responseToken));
+            br.postPage("/generateticket/", "key=&file_id=" + fid + "&captcha=" + Encoding.urlEncode(recaptchaV2Response));
             final String server = br.getRegex("<server>([^<>\"]*?)</server>").getMatch(0);
             final String ticket_id = br.getRegex("<ticket_id>([^<>\"]*?)</ticket_id>").getMatch(0);
             final String waittime = br.getRegex("<wait>(\\d+)</wait>").getMatch(0);
