@@ -40,6 +40,11 @@ public abstract class BrowserReference implements HttpRequestHandler {
     private int                      width;
     private int                      height;
     private Process                  process;
+    private double                   scale;
+    private int                      rectWidth;
+    private int                      rectHeight;
+    private int                      rectX;
+    private int                      rectY;
 
     public BrowserReference(AbstractBrowserChallenge challenge) {
         this.challenge = challenge;
@@ -147,15 +152,17 @@ public abstract class BrowserReference implements HttpRequestHandler {
                 height = Integer.parseInt(request.getParameterbyKey("h"));
                 if (BrowserSolverService.getInstance().getConfig().isAutoClickEnabled()) {
                     Robot robot = new Robot();
-                    BufferedImage image = robot.createScreenCapture(new Rectangle(x, y, Math.min(500, width), Math.min(500, height)));
+                    BufferedImage image = robot.createScreenCapture(new Rectangle(x, y, Math.min(1000, width), Math.min(1000, height)));
                     // Dialog.getInstance().showConfirmDialog(0, "", "", new ImageIcon(image), null, null);
                     int color = 0xff9900;
                     int dx = Integer.MAX_VALUE;
                     int dy = Integer.MAX_VALUE;
                     int dwidth = -1;
                     int dheight = -1;
-                    for (int x = 0; x < Math.min(500, width); x += 3) {
-                        for (int y = 0; y < Math.min(500, height); y += 3) {
+                    int maxw = 500;
+                    int maxh = 500;
+                    for (int x = 0; x < Math.min(maxw, image.getWidth()); x += 1) {
+                        for (int y = 0; y < Math.min(maxh, image.getHeight()); y += 1) {
                             try {
                                 int localColor = image.getRGB(x, y);
                                 double dif = Colors.getColorDifference(color, localColor);
@@ -164,23 +171,30 @@ public abstract class BrowserReference implements HttpRequestHandler {
                                     dy = Math.min(dy, y);
                                     dwidth = Math.max(dwidth, x);
                                     dheight = Math.max(dheight, y);
+                                    maxw = Math.max(maxw, dwidth + 2);
+                                    maxh = Math.max(maxh, dheight + 2);
                                 }
                             } catch (Throwable e) {
                                 e.printStackTrace();
                             }
                         }
                     }
+                    rectWidth = dwidth - dx + 1;
+                    rectHeight = dheight - dy + 1;
+                    rectX = x + dx;
+                    rectY = y + dy;
                     // Graphics2D g = (Graphics2D) image.getGraphics();
                     // g.setColor(Color.RED);
                     // g.drawRect(dx, dy, dwidth - dx, dheight - dy);
+                    scale = Math.min(rectWidth / 306d, rectHeight / 80d);
 
-                    image = image.getSubimage(dx, dy, dwidth - dx + 1, dheight - dy + 1);
+                    image = image.getSubimage(dx, dy, rectWidth, rectHeight);
                     // Dialog.getInstance().showConfirmDialog(0, "", "", new ImageIcon(image), null, null);
 
                     response.getOutputStream(true).write("ok".getBytes("UTF-8"));
                     Point oldloc = MouseInfo.getPointerInfo().getLocation();
-                    int clickX = x + dx + 22 + (int) (Math.random() * 20);
-                    int clickY = y + dy + 32 + (int) (Math.random() * 20);
+                    int clickX = (int) (x + dx + 22 * scale + (int) (Math.random() * 20 * scale));
+                    int clickY = (int) (y + dy + 32 * scale + (int) (Math.random() * 20 * scale));
 
                     robot.mouseMove(clickX, clickY);
 
@@ -188,6 +202,81 @@ public abstract class BrowserReference implements HttpRequestHandler {
                     robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
                     robot.mouseMove(oldloc.x, oldloc.y);
+                    // new Thread() {
+                    // public void run() {
+                    // while (true) {
+                    // try {
+                    // Thread.sleep(1000);
+                    // } catch (InterruptedException e1) {
+                    // e1.printStackTrace();
+                    // }
+                    // Robot robot;
+                    // try {
+                    // robot = new Robot();
+                    //
+                    // BufferedImage image = robot.createScreenCapture(new Rectangle(rectX, rectY, rectWidth, rectHeight));
+                    // Graphics2D g = (Graphics2D) image.getGraphics();
+                    // g.setColor(Color.RED);
+                    //
+                    // for (int x = 0; x < Math.min((int) (100 * scale), image.getWidth()); x += 1) {
+                    // for (int y = 0; y < Math.min((int) (100 * scale), image.getHeight()); y += 1) {
+                    // try {
+                    // int localColor = image.getRGB(x, y);
+                    // double dif = Colors.getColorDifference(0xCCCCCC, localColor);
+                    //
+                    // if (dif < 1d) {
+                    // // g.drawRect(x, y, 1, 1);
+                    // boolean matches = true;
+                    //
+                    // for (int yy = 1; yy < (int) (10 * scale); yy++) {
+                    // if (Colors.getColorDifference(0xCCCCCC, image.getRGB(x, y + yy)) >= 1d) {
+                    // matches = false;
+                    // break;
+                    // }
+                    // }
+                    // if (!matches) {
+                    // continue;
+                    // }
+                    // for (int xx = 1; xx < (int) (10 * scale); xx++) {
+                    // if (Colors.getColorDifference(0xCCCCCC, image.getRGB(x + xx, y)) >= 1d) {
+                    // matches = false;
+                    // break;
+                    // }
+                    // }
+                    // if (!matches) {
+                    // continue;
+                    // }
+                    // if (matches) {
+                    // System.out.println(x + "-" + y);
+                    //
+                    // for (int yy = 1; yy < 10; yy++) {
+                    // if (Colors.getColorDifference(0xCCCCCC, image.getRGB(x, y + yy)) < 1d) {
+                    // image.setRGB(x, y + yy, Color.RED.getRGB());
+                    // }
+                    // }
+                    //
+                    // for (int xx = 1; xx < 10; xx++) {
+                    // if (Colors.getColorDifference(0xCCCCCC, image.getRGB(x + xx, y)) < 1d) {
+                    // image.setRGB(x + xx, y, Color.RED.getRGB());
+                    // }
+                    // }
+                    // Dialog.getInstance().showConfirmDialog(0, "", "", new ImageIcon(image), null, null);
+                    // return;
+                    // }
+                    //
+                    // }
+                    // } catch (Throwable e) {
+                    // e.printStackTrace();
+                    // }
+                    // }
+                    // }
+                    //
+                    // } catch (AWTException e) {
+                    // e.printStackTrace();
+                    // }
+                    // }
+                    // }
+                    // }.start();
                 }
                 return true;
             }
