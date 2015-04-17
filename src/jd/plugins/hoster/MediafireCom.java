@@ -53,9 +53,8 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" }, flags = { 32 })
 public class MediafireCom extends PluginForHost {
 
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
@@ -591,17 +590,8 @@ public class MediafireCom extends PluginForHost {
                             }
                         }
                     } else if (freeArea != null && freeArea.contains("g-recaptcha-response")) {
-                        Recaptcha2Helper rchelp = new Recaptcha2Helper();
-                        rchelp.init(this.br);
-                        final File outputFile = rchelp.loadImageFile();
-                        final String code = getCaptchaCode("recaptcha", outputFile, downloadLink);
-                        final boolean success = rchelp.sendResponse(code);
-                        if (!success) {
-                            logger.info("reCaptcha V2: Wrong user-input!");
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        }
-                        final String responseToken = rchelp.getResponseToken();
-                        form.put("g-recaptcha-response", responseToken);
+                        final String recaptchaV2Response = getRecaptchaV2Response();
+                        form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                         br.submitForm(form);
                     }
                 }

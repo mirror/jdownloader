@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
@@ -32,7 +31,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filehorse.com" }, urls = { "http://(www\\.)?(mac\\.)?filehorse\\.com/download\\-[a-z0-9\\-]+/(\\d+/)?" }, flags = { 0 })
 public class FileHorseCom extends PluginForHost {
@@ -92,23 +90,8 @@ public class FileHorseCom extends PluginForHost {
             Form d = br.getFormBySubmitvalue(Encoding.urlEncode("Download Now"));
             // NEW, recaptchav2
             if (d != null && d.containsHTML("google\\.com/recaptcha/")) {
-                // recaptcha v2
-                boolean success = false;
-                int counter = 0;
-                String responseToken = null;
-                do {
-                    Recaptcha2Helper rchelp = new Recaptcha2Helper();
-                    rchelp.init(this.br);
-                    final File outputFile = rchelp.loadImageFile();
-                    String code = getCaptchaCode("recaptcha", outputFile, downloadLink);
-                    success = rchelp.sendResponse(code);
-                    responseToken = rchelp.getResponseToken();
-                    counter++;
-                } while (!success && counter <= 3);
-                if (!success) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                d.put("g-recaptcha-response", Encoding.urlEncode(responseToken));
+                final String recaptchaV2Response = getRecaptchaV2Response();
+                d.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 br.submitForm(d);
                 dllink = br.getRegex("<a href=\"(https?://(\\w+\\.)?filehorse\\.com/download/file/[^\"]+)").getMatch(0);
             } else {

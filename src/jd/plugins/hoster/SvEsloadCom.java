@@ -46,9 +46,8 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sv-esload.com" }, urls = { "https?://(www\\.)?sv\\-esload\\.com/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sv-esload.com" }, urls = { "https?://(www\\.)?sv\\-esload\\.com/[A-Za-z0-9]+" }, flags = { 2 })
 public class SvEsloadCom extends PluginForHost {
 
     public SvEsloadCom(PluginWrapper wrapper) {
@@ -212,19 +211,8 @@ public class SvEsloadCom extends PluginForHost {
                     }
                     final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
                     if (br.containsHTML("data\\-sitekey=")) {
-                        captcha = true;
-                        success = false;
-                        Recaptcha2Helper rchelp = new Recaptcha2Helper();
-                        rchelp.init(this.br);
-                        final File outputFile = rchelp.loadImageFile();
-                        final String code = getCaptchaCode("recaptcha", outputFile, downloadLink);
-                        success = rchelp.sendResponse(code);
-                        if (!success) {
-                            logger.info("reCaptcha V2: Wrong user-input!");
-                            continue;
-                        }
-                        final String responseToken = rchelp.getResponseToken();
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + responseToken, resume, maxchunks);
+                        final String recaptchaV2Response = getRecaptchaV2Response();
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response), resume, maxchunks);
                     } else if (rcID != null) {
                         captcha = true;
                         success = false;
