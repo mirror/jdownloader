@@ -263,6 +263,7 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         });
     }
 
+    //
     protected JPopupMenu columnControlMenu(final ExtColumn<T> extColumn) {
         JPopupMenu popup = super.columnControlMenu(extColumn);
         // popup.add(new JSeparator());
