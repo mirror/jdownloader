@@ -4,7 +4,13 @@
 <meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, user-scalable=yes">
 <title>ReCAPTCHA-Input</title>
-
+<style type="text/css">
+iframe { 
+    border-width:1px;  
+    border-style:solid;  
+    border-color:#ff9900;
+}
+</style>
 <script src='http://www.google.com/recaptcha/api.js' async defer></script>
 <script type="text/javascript">
     function GetScreenCordinates(obj) {
@@ -97,25 +103,10 @@
 			<div class="" >
 				<!-- BEGIN: ReCAPTCHA implementation example. -->
 				<div data-callback="success" id="rc" class="g-recaptcha"
-					data-sitekey="%%%sitekey%%%" style=" border-width:3px;  border-style:solid;  border-color:#ff9900;width: 302px; height: px;"></div>
+					data-sitekey="%%%sitekey%%%" ></div>
 				<!-- Optional noscript fallback. -->
 				<noscript>
-					<div style="width: 302px; height: 352px;">
-						<div style="width: 302px; height: 352px; position: relative;">
-							<div style="width: 302px; height: 352px; position: absolute;">
-								<iframe src="/recaptcha/api/fallback?k=%%%sitekey%%%"
-									frameborder="0" scrolling="no"
-									style="width: 302px; height: 352px; border-style: none;"></iframe>
-							</div>
-							<div
-								style="width: 250px; height: 80px; position: absolute; border-style: none; bottom: 21px; left: 25px; margin: 0px; padding: 0px; right: 25px;">
-								<textarea dir="ltr" id="g-recaptcha-response"
-									name="g-recaptcha-response" class="g-recaptcha-response"
-									style="width: 250px; height: 80px; border: 1px solid #c1c1c1; margin: 0px; padding: 0px; resize: none;"></textarea>
-							</div>
-						</div>
-					</div>
-					<br>
+					<p>Javascript is required!</p>
 				</noscript>
 				<!-- END: ReCAPTCHA implementation example. -->
 			</div>
