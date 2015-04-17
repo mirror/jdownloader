@@ -16,6 +16,7 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.HttpHandlerInfo;
@@ -49,13 +50,13 @@ public abstract class BrowserReference implements HttpRequestHandler {
     public BrowserReference(AbstractBrowserChallenge challenge) {
         this.challenge = challenge;
         id = new UniqueAlltimeID();
+        // this should get setter in advanced.
         this.port = 12345;
-
     }
 
     public void open() throws IOException {
         handlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, this);
-        openURL("http://127.0.0.1:" + port + "/" + id.getID());
+        openURL("http://127.0.0.1:" + port + "/" + Hash.getMD5(this.challenge.getPlugin().getClass().getName()) + "?id=" + id.getID());
     }
 
     private void openURL(String url) {
@@ -136,7 +137,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
     @Override
     public boolean onGetRequest(GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
 
-        if (!StringUtils.equals(request.getRequestedPath(), "/" + id.getID())) {
+        if (!StringUtils.equals(request.getRequestedURL(), "/" + Hash.getMD5(this.challenge.getPlugin().getClass().getName()) + "?id=" + id.getID()) && !StringUtils.contains(request.getRequestedURL(), "?do=loaded")) {
             return false;
         }
 
@@ -304,7 +305,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
 
     @Override
     public boolean onPostRequest(PostRequest request, HttpResponse response) throws BasicRemoteAPIException {
-        if (!StringUtils.equals(request.getRequestedPath(), "/" + id.getID())) {
+        if (!StringUtils.equals(request.getRequestedURL(), "/" + Hash.getMD5(this.challenge.getPlugin().getClass().getName()) + "?id=" + id.getID())) {
             return false;
         }
         try {
