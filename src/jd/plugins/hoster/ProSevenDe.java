@@ -39,6 +39,7 @@ public class ProSevenDe extends PluginForHost {
 
     /** Other domains: proxieben.at (redirects to .de) */
     /** Tags: prosiebensat1.de, */
+    /** Interesting extern lib: https://github.com/bromix/repository.bromix.storage/tree/master/plugin.video.7tv */
 
     private static AtomicReference<String> agent   = new AtomicReference<String>(null);
     private HashMap<String, String>        fileDesc;
