@@ -85,11 +85,6 @@ public class DeviantArtCom extends PluginForHost {
         this.enablePremium(COOKIE_HOST.replace("http://", "https://") + "/join/");
     }
 
-    // @Override
-    // public void init() {
-    // Browser.setRequestIntervalLimitGlobal(this.getHost(), 2500);
-    // }
-
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/";
