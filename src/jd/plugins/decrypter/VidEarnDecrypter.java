@@ -53,7 +53,7 @@ public class VidEarnDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = null;
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=\"video\\-player\"")) {
             mainlink.setAvailable(false);
             mainlink.setProperty("offline", true);
         } else {

@@ -28,17 +28,27 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixlr.com" }, urls = { "http://(www\\.)?mixlr\\.com/[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixlr.com" }, urls = { "http://(?:www\\.)?mixlr\\.com/[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 0 })
 public class MixlrCom extends PluginForDecrypt {
 
     public MixlrCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String type_invalid = "https?://(?:www\\.)?mixlr\\.com/.+/(embed|chat|crowd).*?";
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        if (parameter.matches(type_invalid)) {
+            try {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+            }
+            return decryptedLinks;
+        }
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -52,7 +62,12 @@ public class MixlrCom extends PluginForDecrypt {
         String fpName = br.getRegex("<title>([^<>\"]*?) \\| Mixlr[\t\n\r ]+</title>").getMatch(0);
         final String jsarray = br.getRegex("var broadcasts = (\\[\\{.*?\\]);").getMatch(0);
         if (jsarray == null) {
-            return null;
+            try {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+            }
+            return decryptedLinks;
         }
         final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(jsarray);
         for (final Object mobject : ressourcelist) {

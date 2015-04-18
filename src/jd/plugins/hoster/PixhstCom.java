@@ -49,6 +49,7 @@ public class PixhstCom extends PluginForHost {
         return "http://pixhst.com/dmca.html";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -65,7 +66,7 @@ public class PixhstCom extends PluginForHost {
         }
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'(http://pixhst\\.com/avaxhome/[^<>\"]*?)\\'").getMatch(0);
+            DLLINK = br.getRegex("\\'(http://pi?xhst\\.[a-z0-9]+/avaxhome/[^<>\"]*?)\\'").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
