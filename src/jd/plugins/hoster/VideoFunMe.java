@@ -68,11 +68,18 @@ public class VideoFunMe extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         prepBrowser(br);
-        br.getPage(downloadLink.getDownloadURL());
+        /* If the mainpage is online and the link times out or any other Exception happens below --> Link is offline! */
+        br.cloneBrowser().getPage("http://videofun.me/");
+        try {
+            br.getPage(downloadLink.getDownloadURL());
+        } catch (final Throwable e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if ((br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Content has been removed due to "))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

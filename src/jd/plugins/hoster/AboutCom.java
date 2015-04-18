@@ -71,12 +71,18 @@ public class AboutCom extends PluginForHost {
 
         } else {
             br.setFollowRedirects(true);
-            if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            if (DLLINK.startsWith("mms")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol (mms://) not supported!"); }
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (DLLINK.startsWith("mms")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol (mms://) not supported!");
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
-                if (dl.getConnection().getResponseCode() == 403) throw new PluginException(LinkStatus.ERROR_FATAL, "This Content is not longer available!");
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "This Content is not longer available!");
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
@@ -96,18 +102,23 @@ public class AboutCom extends PluginForHost {
         rtmp.setRealTime();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
         String dlink = link.getDownloadURL();
         br.getPage(dlink);
-        if (br.containsHTML("404 Document Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("404 Document Not Found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^\"]+)\"").getMatch(0);
         String playerKey = br.getRegex("\"playerKey\".value=\"([^\"]+)\"").getMatch(0);
         String videoPlayer = br.getRegex("\"@videoPlayer\".value=\"([^\"]+)\"").getMatch(0);
         String playerId = br.getRegex("\"playerID\".value=\"(\\d+)").getMatch(0);
-        if (filename == null || playerKey == null || playerId == null || videoPlayer == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || playerKey == null || playerId == null || videoPlayer == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         /* AMF-Request */
         Browser amf = br.cloneBrowser();
@@ -137,27 +148,39 @@ public class AboutCom extends PluginForHost {
             String[] keys = { "pubId", "videoId", "fileSize" };
             double d = 0;
             for (int i = 0; i < amfRes.length; i++) {
-                if (amfRes[i] != 5) continue; // 0x05 double marker + 8byte data
-                if (amfRes[i + 9] > 13) continue;
+                if (amfRes[i] != 5) {
+                    continue; // 0x05 double marker + 8byte data
+                }
+                if (amfRes[i + 9] > 13) {
+                    continue;
+                }
                 byte[] amfDouble = new byte[8];
                 System.arraycopy(amfRes, i + 1, amfDouble, 0, 8);
                 /* Encoded as 64-bit double precision floating point number IEEE 754 standard */
                 d = Double.longBitsToDouble(new BigInteger(amfDouble).longValue());
-                if (d > 0) decodedAMF.put(keys[t++], String.valueOf((long) d));
+                if (d > 0) {
+                    decodedAMF.put(keys[t++], String.valueOf((long) d));
+                }
                 i += 8;
-                if (t == keys.length) break;
+                if (t == keys.length) {
+                    break;
+                }
             }
         } catch (Throwable e) {
             /* jd.http.getRequest().getResponseBytes() does not exist in 09581 */
         }
 
         DLLINK = new Regex(result, "(rtmp[^#]+)#").getMatch(0); // first match is FLVFullLengthURL
-        if (DLLINK == null || t != 3) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null || t != 3) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         String urlAppend = "&videoId=" + decodedAMF.get("videoId") + "&lineUpId=&pubId=" + decodedAMF.get("pubId") + "&playerId=" + playerId + "&affiliateId=";
         /* make rtmp url */
         String[] tmpRtmpUrl = new Regex(DLLINK, "(rtmp://[\\w\\.]+/)([\\w/]+)/\\&([\\w:\\-\\./]+)(\\&|\\?.*?)$").getRow(0);
-        if (tmpRtmpUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (tmpRtmpUrl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = tmpRtmpUrl[0] + "@" + tmpRtmpUrl[1] + "@" + tmpRtmpUrl[2] + "@" + tmpRtmpUrl[3] + "@" + urlAppend;
 
         link.setFinalFileName(Encoding.htmlDecode(filename.trim().replaceAll("\\s", "_")) + ".mp4");
@@ -180,7 +203,9 @@ public class AboutCom extends PluginForHost {
                 }
             }
         }
-        if (sb == null || sb.length() == 0) return null;
+        if (sb == null || sb.length() == 0) {
+            return null;
+        }
         return sb.toString().replaceAll("#+", "#");
     }
 
@@ -199,7 +224,9 @@ public class AboutCom extends PluginForHost {
         if (amf3) {
             result = "";
             for (int i : getUInt29(s.length() << 1 | 1)) {
-                if (i == 0) break;
+                if (i == 0) {
+                    break;
+                }
                 result += Integer.toHexString(i);
             }
         }

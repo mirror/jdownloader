@@ -65,7 +65,10 @@ public class BlipTvDecrypter extends PluginForDecrypt {
         try {
             br.getPage("http://blip.tv/rss/flash/" + fid);
         } catch (final BrowserException eb) {
-            final long response = br.getRequest().getHttpConnection().getResponseCode();
+            long response = br.getRequest().getHttpConnection().getResponseCode();
+            if (br.getRequest().getHttpConnection() != null) {
+                response = br.getRequest().getHttpConnection().getResponseCode();
+            }
             if (response == 404 || response == 410) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + parameter);
                 dl.setProperty("offline", true);

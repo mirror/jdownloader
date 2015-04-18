@@ -85,10 +85,10 @@ public class DeviantArtCom extends PluginForHost {
         this.enablePremium(COOKIE_HOST.replace("http://", "https://") + "/join/");
     }
 
-    @Override
-    public void init() {
-        Browser.setRequestIntervalLimitGlobal(this.getHost(), 2500);
-    }
+    // @Override
+    // public void init() {
+    // Browser.setRequestIntervalLimitGlobal(this.getHost(), 2500);
+    // }
 
     @Override
     public String getAGBLink() {
@@ -365,6 +365,9 @@ public class DeviantArtCom extends PluginForHost {
         }
         if (DLLINK == null) {
             getDllink();
+        }
+        synchronized (LOCK) {
+            this.sleep(2500l, downloadLink);
         }
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         /* Disable chunks as we only download pictures or small files */

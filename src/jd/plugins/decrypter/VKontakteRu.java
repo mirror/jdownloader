@@ -647,6 +647,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 embeddedVideo = Encoding.htmlDecode(embeddedVideo);
                 if (embeddedVideo.startsWith("http")) {
                     decryptedLinks.add(createDownloadlink(embeddedVideo));
+                } else if (embeddedVideo.matches("[a-f0-9]{32}")) {
+                    decryptedLinks.add(createDownloadlink("http://rutube.ru/video/" + embeddedVideo));
                 } else {
                     decryptedLinks.add(createDownloadlink("http://www.youtube.com/watch?v=" + embeddedVideo));
                 }

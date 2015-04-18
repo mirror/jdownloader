@@ -89,6 +89,15 @@ public class RedbullTv extends PluginForDecrypt {
         } else {
             entries = (LinkedHashMap<String, Object>) entries.get("demand");
         }
+        if (entries == null) {
+            /* Probably an ongoing/outstanding live stream --> Offline */
+            try {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+            }
+            return decryptedLinks;
+        }
         if (httpAvailable) {
             /* Typically available for all normal videos. */
             entries = (LinkedHashMap<String, Object>) entries.get("renditions");

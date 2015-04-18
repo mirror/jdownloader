@@ -17,13 +17,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -45,9 +46,9 @@ public class MaisUolComBr extends PluginForHost {
         return "http://mais.uol.com.br/";
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         try {
@@ -69,10 +70,19 @@ public class MaisUolComBr extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage("http://mais.uol.com.br/apiuol/player/media.js?action=showPlayer&p=mais&types=V&mediaId=" + mediaID);
-        final String formatsText = br.getRegex("\"formats\": \\[(.*?)\\]").getMatch(0);
-        String filename = br.getRegex("\"title\": \"([^<>\"]*?)\"").getMatch(0);
-        if (formatsText != null) {
-            DLLINK = new Regex(formatsText, "\"url\":\"(http://[^<>\"]*?)\"").getMatch(0);
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        entries = (LinkedHashMap<String, Object>) entries.get("media");
+        String filename = (String) entries.get("title");
+        final ArrayList<Object> ressourcelist = (ArrayList) entries.get("formats");
+        if (ressourcelist != null) {
+            for (final Object o : ressourcelist) {
+                final LinkedHashMap<String, Object> format = (LinkedHashMap<String, Object>) o;
+                final int id = ((Number) format.get("id")).intValue();
+                if (id == 9) {
+                    DLLINK = (String) format.get("url");
+                    break;
+                }
+            }
         } else {
             DLLINK = "http://storage.mais.uol.com.br/" + mediaID + ".mp3?ver=0";
         }
