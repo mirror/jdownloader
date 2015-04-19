@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2013  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -57,18 +57,18 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "daofile.com" }, urls = { "https?://(www\\.)?daofile\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+public class DaofileCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://ForDevsToPlayWith.com";
+    private static final String            COOKIE_HOST                  = "http://daofile.com";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(ForDevsToPlayWith\\.com)";
+    private static final String            DOMAINS                      = "(daofile\\.com)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -87,15 +87,15 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final int               WAITSECONDSMAX               = 100;
     private static final int               WAITSECONDSFORCED            = 5;
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = 0;
-    private static final int               FREE_MAXDOWNLOADS            = 20;
-    private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean           FREE_RESUME                  = false;
+    private static final int               FREE_MAXCHUNKS               = 1;
+    private static final int               FREE_MAXDOWNLOADS            = 1;
+    private static final boolean           ACCOUNT_FREE_RESUME          = false;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private static final boolean           ACCOUNT_PREMIUM_RESUME       = false;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
@@ -105,10 +105,10 @@ public class XFileSharingProBasic extends PluginForHost {
     private String                         fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.7.3
+    // XfileSharingProBasic Version 2.6.7.2
     // Tags: Script, template
-    // mods:
-    // limit-info:
+    // mods: requestFileInformation[Added another fnf RegEx], waitTime[2nd RegEx]
+    // limit-info: premium untested, set FREE account limits
     // protocol: no https
     // captchatype: null 4dignum solvemedia recaptcha
     // other:
@@ -131,9 +131,10 @@ public class XFileSharingProBasic extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    @SuppressWarnings("deprecation")
+    public DaofileCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @SuppressWarnings("deprecation")
@@ -147,7 +148,7 @@ public class XFileSharingProBasic extends PluginForHost {
         altbr = br.cloneBrowser();
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired|>\\( bytes\\)<)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
@@ -639,10 +640,6 @@ public class XFileSharingProBasic extends PluginForHost {
                 }
             }
         }
-        if (dllink == null) {
-            /* Sometimes used for streaming */
-            dllink = new Regex(correctedBR, "file:[\t\n\r ]*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
-        }
         return dllink;
     }
 
@@ -697,7 +694,10 @@ public class XFileSharingProBasic extends PluginForHost {
         int wait = 0;
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /* Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(0);
+        String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(0);
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
+        }
         if (ttt != null) {
             wait = Integer.parseInt(ttt);
             if (WAITFORCED && (wait >= WAITSECONDSMAX || wait <= WAITSECONDSMIN)) {
