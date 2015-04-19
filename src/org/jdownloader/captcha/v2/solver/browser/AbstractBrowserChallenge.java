@@ -26,4 +26,6 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
 
     abstract public String getHTML();
 
+    abstract public Marker findMarker(ScreenResource screenResource);
+
 }
