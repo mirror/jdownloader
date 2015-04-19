@@ -64,7 +64,7 @@ public class UpToBoxCom extends antiDDoSForHost {
     private final static String  SSL_CONNECTION               = "SSL_CONNECTION";
 
     private String               correctedBR                  = "";
-    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input|Password:</b>";
+    private static final String  PASSWORDTEXT                 = "Passwor(d|t):</b> <input|Password:</b>";
     private final String         COOKIE_HOST                  = "http://uptobox.com";
     private static final String  DOMAINS                      = "(uptobox\\.com|uptostream\\.com)";
     private static final String  regexIpBlock                 = "<center><p><b>Sorry, " + DOMAINS + " is not available in your country</b></p></center>";
@@ -243,11 +243,10 @@ public class UpToBoxCom extends antiDDoSForHost {
             for (int i = 0; i <= 3; i++) {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
-                boolean password = false;
                 boolean skipWaittime = true; // Wait time is not always needed.
                 if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
-                    password = true;
                     logger.info("The downloadlink seems to be password protected.");
+                    passCode = handlePassword(passCode, dlForm, downloadLink);
                 }
                 /* if happy hour */
                 if (new Regex(correctedBR, ">Happy hour!!! Download as many files as you want, we offer you a preview of the Premium\\.</font></p>").matches()) {
@@ -330,9 +329,6 @@ public class UpToBoxCom extends antiDDoSForHost {
                         dlForm.put("adcopy_response", "manual_challenge");
                     }
                     /* Captcha END */
-                    if (password) {
-                        passCode = handlePassword(passCode, dlForm, downloadLink);
-                    }
                     if (!skipWaittime) {
                         waitTime(timeBefore, downloadLink, true);
                     }
