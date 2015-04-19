@@ -90,7 +90,7 @@ public class RapidGatorNet extends PluginForHost {
     private final String                   apiURL                          = "https://rapidgator.net/api/";
 
     private final String[]                 IPCHECK                         = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private static AtomicBoolean           hasDled                         = new AtomicBoolean(false);
+    private static AtomicBoolean           hasAttemptedDownloadstart                         = new AtomicBoolean(false);
     private static AtomicLong              timeBefore                      = new AtomicLong(0);
     private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP = "rapidgatornet_lastdownload_timestamp";
     private final String                   LASTIP                          = "LASTIP";
@@ -582,14 +582,11 @@ public class RapidGatorNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
+            RapidGatorNet.hasAttemptedDownloadstart.set(true);
             this.dl.startDownload();
-            RapidGatorNet.hasDled.set(true);
-        } catch (final Exception e) {
-            RapidGatorNet.hasDled.set(false);
-            throw e;
         } finally {
             try {
-                if (RapidGatorNet.hasDled.get()) {
+                if (RapidGatorNet.hasAttemptedDownloadstart.get()) {
                     RapidGatorNet.timeBefore.set(System.currentTimeMillis());
                     this.getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD_TIMESTAMP, System.currentTimeMillis());
                 }

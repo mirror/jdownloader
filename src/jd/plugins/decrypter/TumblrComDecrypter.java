@@ -135,6 +135,13 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 externID = br.getRegex("\\\\x3csource src=\\\\x22(http://[^<>\"]*?)\\\\x22").getMatch(0);
+                if (externID == null) {
+                    externID = br.getRegex("\\'(https?://(www\\.)?tumblr\\.com/video/[^<>\"\\']*?)\\'").getMatch(0);
+                    if (externID != null) {
+                        br.getPage(externID);
+                        externID = br.getRegex("\"(https?://(www\\.)?tumblr\\.com/video_file/[^<>\"]*?)\"").getMatch(0);
+                    }
+                }
                 if (externID != null) {
                     if (externID.matches(".+tumblr\\.com/video_file/.+")) {
                         br.setFollowRedirects(false);
@@ -146,6 +153,11 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                         }
                         final DownloadLink dl = createDownloadlink(externID);
                         String extension = externID.substring(externID.lastIndexOf("."));
+                        /* Correct regexed extension */
+                        extension = new Regex(extension, "(\\.[a-z0-9]+)").getMatch(0);
+                        if (extension == null) {
+                            extension = ".mp4";
+                        }
                         dl.setFinalFileName(fpName + extension);
                         decryptedLinks.add(dl);
                     } else {
