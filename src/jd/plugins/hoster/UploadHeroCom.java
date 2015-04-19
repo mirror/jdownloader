@@ -46,9 +46,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadhero.co", "uploadhero.com" }, urls = { "http://(www\\.)?uploadhero\\.com?/(dl|v)/[A-Za-z0-9]+", "http://NULL_REGEX_BLAAAH12312321" }, flags = { 2, 0 })
 public class UploadHeroCom extends PluginForHost {
 
-    private static final String  MAINPAGE = "http://uploadhero.co";
-    private static Object        LOCK     = new Object();
-    private static AtomicInteger maxPrem  = new AtomicInteger(1);
+    private static final String  MAINPAGE         = "http://uploadhero.co";
+    private static final String  HTML_MAINTENANCE = ">We are currently doing maintenance on our network";
+    private static Object        LOCK             = new Object();
+    private static AtomicInteger maxPrem          = new AtomicInteger(1);
 
     public UploadHeroCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -97,7 +98,7 @@ public class UploadHeroCom extends PluginForHost {
     // They got a linkchecker but it's only available for registered users: http://uploadhero.co/link-checker
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie(MAINPAGE, "lang", "en");
@@ -108,6 +109,10 @@ public class UploadHeroCom extends PluginForHost {
         }
         if (br.getHttpConnection().getResponseCode() == 403 || br.containsHTML("(>The following download is not available on our server|>The file link is invalid|>The uploader has deleted the file|>The file was illegal and was deleted|<title>UploadHero \\- File Sharing made easy\\!</title>)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML(HTML_MAINTENANCE)) {
+            link.getLinkStatus().setStatusText("Server is under maintenance");
+            return AvailableStatus.UNCHECKABLE;
         }
         String filename = br.getRegex("<div class=\"nom_de_fichier\">([^<>\"/]+)</div>").getMatch(0);
         if (filename == null) {
@@ -335,8 +340,8 @@ public class UploadHeroCom extends PluginForHost {
     }
 
     private void generalErrorhandling() throws PluginException {
-        if (br.getURL().contains("/optmizing") || br.containsHTML(">UploadHero is on maintenance|Maintenance en cours")) {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode", 30 * 60 * 1000l);
+        if (br.containsHTML(HTML_MAINTENANCE)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode", 60 * 60 * 1000l);
         }
     }
 

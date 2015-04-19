@@ -27,6 +27,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -185,7 +186,18 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 // br.setCookie(this.getHost(), "player", "");
 
                 parameter = cleanVimeoURL;
-                br.getPage(parameter);
+                try {
+                    br.getPage(parameter);
+                } catch (final BrowserException e) {
+                    // HTTP/1.1 451 Unavailable For Legal Reasons
+                    if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 451) {
+                        final DownloadLink link = getOffline(parameter);
+                        link.setFinalFileName(ID);
+                        decryptedLinks.add(link);
+                        return decryptedLinks;
+                    }
+                    throw e;
+                }
 
                 /* Workaround for User from Iran */
                 if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) {

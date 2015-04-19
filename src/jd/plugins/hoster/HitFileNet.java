@@ -48,7 +48,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(?!download/)[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
 
     private final String         UA                  = RandomUserAgent.generate();
@@ -66,8 +66,16 @@ public class HitFileNet extends PluginForHost {
         this.enablePremium("http://hitfile.net/premium/emoney/5");
     }
 
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        link.setLinkID(fid);
+        link.setUrlDownload(MAINPAGE + "/" + fid);
+    }
+
     /** 01.12.14: turbobit.net & hitfile.net Linkchecker is broken - will hopefully be back soon! */
     // @Override
+    @SuppressWarnings("deprecation")
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) {
             return false;

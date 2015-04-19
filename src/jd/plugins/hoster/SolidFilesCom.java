@@ -50,6 +50,7 @@ public class SolidFilesCom extends PluginForHost {
     public static final String  DECRYPTFOLDERS = "DECRYPTFOLDERS";
     private static final String NOCHUNKS       = "NOCHUNKS";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         /* Offline links should also get nice filenames */
@@ -84,6 +85,9 @@ public class SolidFilesCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("We're currently processing this file and it's unfortunately not available yet")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is not available yet", 5 * 60 * 1000l);
+        }
         String dllink = br.getRegex("class=\"direct\\-download regular\\-download\"[^\r\n]+href=\"(https?://[^\"']+)").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://s\\d+\\.solidfilesusercontent\\.com/[^<>\"]*?)\"").getMatch(0);

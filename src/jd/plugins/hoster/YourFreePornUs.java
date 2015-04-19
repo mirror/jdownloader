@@ -52,7 +52,8 @@ public class YourFreePornUs extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("yourfreeporn.us/", "yourfreeporn.tv/"));
     }
 
-    private static final String VIDEOTHERE = "\"player\"";
+    private static final String HTML_LIMITREACHED = ">You have reached your free daily limit";
+    private static final String HTML_PREMIUMONLY       = "class=\"goPremiumPitch\"";
 
     @SuppressWarnings("deprecation")
     @Override
@@ -67,7 +68,10 @@ public class YourFreePornUs extends PluginForHost {
         /**
          * Limit reached? We don't care, we can get the filename from the url and still start the download
          */
-        if (!br.containsHTML(VIDEOTHERE)) {
+        if (br.containsHTML(HTML_PREMIUMONLY) || br.containsHTML(HTML_LIMITREACHED)) {
+            if (br.containsHTML(HTML_PREMIUMONLY)) {
+                downloadLink.getLinkStatus().setStatusText("This file can only be downloaded by premium users");
+            }
             filename = new Regex(downloadLink.getDownloadURL(), "/video/\\d+/([a-z0-9\\-_]+)").getMatch(0);
             if (filename == null) {
                 filename = new Regex(downloadLink.getDownloadURL(), "/video/(\\d+)").getMatch(0);
@@ -89,13 +93,17 @@ public class YourFreePornUs extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("<div align=\"center\"><a href=\"/signup\"><img src=\"/img/common/signup\\.jpg\"")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
-        }
-        // Maybe not even needed anymore, seems like all videos are only for
-        // premium
-        if (!br.containsHTML(VIDEOTHERE)) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        if (br.containsHTML(HTML_LIMITREACHED)) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        } else if (br.containsHTML(HTML_PREMIUMONLY)) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
         br.getPage("http://www.yourfreeporn.tv/media/player/config.php?vkey=" + new Regex(downloadLink.getDownloadURL(), "/video/(\\d+)").getMatch(0));
         DLLINK = br.getRegex("<src>(http://.*?)</src>").getMatch(0);
