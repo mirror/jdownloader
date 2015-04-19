@@ -25,6 +25,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -36,7 +37,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesupload.org" }, urls = { "http://(www\\.)?filesupload\\.org/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesupload.org" }, urls = { "http://(www\\.)?filesupload\\.org/([a-f0-9]{32}/.+|[A-Za-z0-9]+)" }, flags = { 0 })
 public class FilesUploadOrg extends PluginForHost {
 
     public FilesUploadOrg(PluginWrapper wrapper) {
@@ -57,6 +58,7 @@ public class FilesUploadOrg extends PluginForHost {
     }
 
     /* Other constants */
+    private String               fuid                                         = null;
     private final String         MAINPAGE                                     = "http://filesupload.org";
     private final String         domains                                      = "(filesupload\\.org)";
     private final String         TYPE                                         = "php";
@@ -84,13 +86,25 @@ public class FilesUploadOrg extends PluginForHost {
 
     private static AtomicInteger maxPrem                                      = new AtomicInteger(1);
 
+    private boolean isNewLinkType(final DownloadLink downloadLink) {
+        return downloadLink != null ? downloadLink.getDownloadURL().matches(".+filesupload\\.org/[a-f0-9]{32}/.+") : false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String filename;
-        String filesize;
-        if (AVAILABLE_CHECK_OVER_INFO_PAGE) {
+        String filename = null, filesize = null, md5 = null;
+        if (isNewLinkType(link)) {
+            setFuid(link);
+            br.getPage(link.getDownloadURL());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = br.getRegex("filename\\s*:\\s*</b>\\s*<i>\\s*(.*?)</i>").getMatch(0);
+            filesize = br.getRegex("size\\s*:\\s*</b>\\s*<i>\\s*(.*?)</i>").getMatch(0);
+            md5 = br.getRegex("md5\\s*:\\s*</b>\\s*<i>\\s*([a-f0-9]{32})</i>").getMatch(0);
+        } else if (AVAILABLE_CHECK_OVER_INFO_PAGE) {
             br.getPage(link.getDownloadURL() + "~i");
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -136,18 +150,27 @@ public class FilesUploadOrg extends PluginForHost {
                 }
             }
         }
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename).trim());
-        link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
+        }
+        if (md5 != null) {
+            link.setMD5Hash(md5);
+        }
         return AvailableStatus.TRUE;
+    }
+
+    private void setFuid(final DownloadLink link) {
+        fuid = new Regex(link.getDownloadURL(), ".+filesupload\\.org/([a-f0-9]{32})/.+").getMatch(0);
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (AVAILABLE_CHECK_OVER_INFO_PAGE) {
+        if (AVAILABLE_CHECK_OVER_INFO_PAGE && !isNewLinkType(downloadLink)) {
             br.getPage(downloadLink.getDownloadURL());
         }
         doFree(downloadLink, "free_directlink", FREE_RESUME, FREE_MAXCHUNKS);
@@ -173,31 +196,46 @@ public class FilesUploadOrg extends PluginForHost {
 
             /* Handle up to 3 pre-download pages before the (eventually existing) captcha */
             for (int i = 1; i <= 3; i++) {
-                logger.info("Handling pre-download page #" + i);
-                continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
-                if (continue_link == null) {
-                    continue_link = getDllink();
-                }
-                if (continue_link == null) {
-                    logger.info("No continue_link available, stepping out of pre-download loop");
-                    break;
+                if (isNewLinkType(downloadLink)) {
+                    continue_link = br.getRegex("<a href=\"(/download-or-watch/" + fuid + "/[^\"]+)").getMatch(0);
+                    br.getPage(continue_link);
+                    continue_link = br.getRegex("<source src=\"(https?://(?:www\\.)?filesupload\\.org(?::\\d+)?/[^\"]+md5=[a-f0-9]{32}[^\"]+)").getMatch(0);
+                    continue_link = HTMLEntities.unhtmlentities(continue_link);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
+                    if (dl.getConnection().isContentDisposition()) {
+                        break;
+                    }
+                    br.followConnection();
+                    if (br.getURL().contains(SERVERERROR)) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l);
+                    }
                 } else {
-                    logger.info("Found continue_link, continuing...");
-                }
-                final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
-                if (waittime != null) {
-                    logger.info("Found waittime, waiting (seconds): " + waittime + " + " + ADDITIONAL_WAIT_SECONDS + " additional seconds");
-                    sleep((Integer.parseInt(waittime) + ADDITIONAL_WAIT_SECONDS) * 1001l, downloadLink);
-                } else {
-                    logger.info("Current pre-download page has no waittime");
-                }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
-                if (dl.getConnection().isContentDisposition()) {
-                    break;
-                }
-                br.followConnection();
-                if (br.getURL().contains(SERVERERROR)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l);
+                    logger.info("Handling pre-download page #" + i);
+                    continue_link = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+                    if (continue_link == null) {
+                        continue_link = getDllink();
+                    }
+                    if (continue_link == null) {
+                        logger.info("No continue_link available, stepping out of pre-download loop");
+                        break;
+                    } else {
+                        logger.info("Found continue_link, continuing...");
+                    }
+                    final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+                    if (waittime != null) {
+                        logger.info("Found waittime, waiting (seconds): " + waittime + " + " + ADDITIONAL_WAIT_SECONDS + " additional seconds");
+                        sleep((Integer.parseInt(waittime) + ADDITIONAL_WAIT_SECONDS) * 1001l, downloadLink);
+                    } else {
+                        logger.info("Current pre-download page has no waittime");
+                    }
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
+                    if (dl.getConnection().isContentDisposition()) {
+                        break;
+                    }
+                    br.followConnection();
+                    if (br.getURL().contains(SERVERERROR)) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l);
+                    }
                 }
             }
         }
