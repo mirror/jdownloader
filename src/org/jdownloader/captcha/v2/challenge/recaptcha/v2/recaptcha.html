@@ -90,7 +90,8 @@ iframe {
          */
         var winLeft = window.screenLeft ? window.screenLeft : window.screenX;
         var winTop = window.screenTop ? window.screenTop : window.screenY;
-        xmlHttp.open("GET", "?do=loaded&x=" + winLeft + "&y=" + winTop + "&w=" + window.outerWidth + "&h=" + window.outerHeight, false);
+
+        xmlHttp.open("GET", "?do=loaded&x=" + winLeft + "&y=" + winTop + "&w=" + window.outerWidth + "&h=" + window.outerHeight+"&vw="+w+"&vh="+h, false);
         xmlHttp.send(null);
 
     }

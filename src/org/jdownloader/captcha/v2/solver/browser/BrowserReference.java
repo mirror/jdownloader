@@ -32,8 +32,8 @@ public abstract class BrowserReference implements HttpRequestHandler {
 
     private Process                  process;
     private double                   scale;
-    private ScreenResource           browserWindow;
-    private Marker                   marker;
+    private BrowserWindow            browserWindow;
+    private BrowserViewport          viewport;
 
     public BrowserReference(AbstractBrowserChallenge challenge) {
         this.challenge = challenge;
@@ -136,10 +136,11 @@ public abstract class BrowserReference implements HttpRequestHandler {
             String pDo = request.getParameterbyKey("do");
             if ("loaded".equals(pDo)) {
 
-                browserWindow = new BrowserWindow(Integer.parseInt(request.getParameterbyKey("x")), Integer.parseInt(request.getParameterbyKey("y")), Integer.parseInt(request.getParameterbyKey("w")), Integer.parseInt(request.getParameterbyKey("h")));
+                browserWindow = new BrowserWindow(Integer.parseInt(request.getParameterbyKey("x")), Integer.parseInt(request.getParameterbyKey("y")), Integer.parseInt(request.getParameterbyKey("w")), Integer.parseInt(request.getParameterbyKey("h")), Integer.parseInt(request.getParameterbyKey("vw")), Integer.parseInt(request.getParameterbyKey("vh")));
                 if (BrowserSolverService.getInstance().getConfig().isAutoClickEnabled()) {
 
-                    this.marker = challenge.findMarker(browserWindow);
+                    this.viewport = challenge.getBrowserViewport(browserWindow);
+                    viewport.onLoaded();
                     // Graphics2D g = (Graphics2D) image.getGraphics();
                     // g.setColor(Color.RED);
                     // g.drawRect(dx, dy, dwidth - dx, dheight - dy);
