@@ -40,6 +40,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
@@ -50,8 +51,11 @@ import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.challenge.areyouahuman.AreYouAHumanChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
+import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
+import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
@@ -59,7 +63,7 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
- * 
+ *
  * @author astaldo
  */
 public abstract class PluginForDecrypt extends Plugin {
@@ -143,7 +147,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * return how many Instances of this PluginForDecrypt may crawl concurrently
-     * 
+     *
      * @return
      */
     public int getMaxConcurrentProcessingInstances() {
@@ -152,7 +156,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * Diese Methode entschlüsselt Links.
-     * 
+     *
      * @param cryptedLinks
      *            Ein Vector, mit jeweils einem verschlüsseltem Link. Die einzelnen verschlüsselten Links werden aufgrund des Patterns
      *            {@link jd.plugins.Plugin#getSupportedLinks() getSupportedLinks()} herausgefiltert
@@ -164,7 +168,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * creates a offline link.
-     * 
+     *
      * @param link
      * @return
      * @since JD2
@@ -176,7 +180,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * creates a offline link, with logger and comment message.
-     * 
+     *
      * @param link
      * @param message
      * @return
@@ -189,7 +193,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * creates a offline link, with filename, with logger and comment message.
-     * 
+     *
      * @param link
      * @param filename
      * @param message
@@ -237,10 +241,10 @@ public abstract class PluginForDecrypt extends Plugin {
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen
      * Vector<String> mit den decoded Links setzen
-     * 
+     *
      * @param cryptedLink
      *            Ein einzelner verschlüsselter Link
-     * 
+     *
      * @return Ein Vector mit Klartext-links
      */
     public ArrayList<DownloadLink> decryptLink(CrawledLink source) {
@@ -343,9 +347,9 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * use this to process decrypted links while the decrypter itself is still running
-     * 
+     *
      * NOTE: if you use this, please put it in try{}catch(Throwable) as this function is ONLY available in>09581
-     * 
+     *
      * @param links
      */
     public void distribute(DownloadLink... links) {
@@ -519,7 +523,179 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     /**
-     * 
+     * will auto find api key, based on google default &lt;div&gt;, @Override getRecaptchaV2ApiKey(String) to make customised finder. <br />
+     * will auto retry x times, as google verifies token before sending it back to host. This will avoid wait time issues, etc, down the
+     * track
+     *
+     * @author raztoki
+     * @since JD2
+     * @return
+     * @throws PluginException
+     * @throws InterruptedException
+     * @throws DecrypterException
+     */
+    protected String getAreYouAHumanSecret() throws PluginException, InterruptedException, DecrypterException {
+        // call a BrowserSolver.recaptchav2 advanced config setting here. ??
+        final int captchaWeePeat = 3;
+        int captchaI = 0;
+        String captchaResponse = null;
+        while (captchaI <= captchaWeePeat) {
+            captchaResponse = getAreYouAHumanSecret(null);
+            // refresh or timeouts creates a "" result.
+            if ("".equals(captchaResponse)) {
+                if (captchaI + 1 == captchaWeePeat) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                captchaI++;
+                continue;
+            }
+            break;
+        }
+        return captchaResponse;
+    }
+
+    /**
+     * @since JD2
+     * @param siteKey
+     * @return
+     * @throws PluginException
+     * @throws InterruptedException
+     * @throws DecrypterException
+     */
+    protected String getAreYouAHumanSecret(final String siteKey) throws PluginException, InterruptedException, DecrypterException {
+        if (Thread.currentThread() instanceof SingleDownloadController) {
+            logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");
+        }
+        String apiKey = siteKey;
+        if (apiKey == null) {
+            apiKey = getAreYouAHumanApiKey();
+            if (apiKey == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "AreYouAHuman API Key can not be found");
+            }
+        }
+
+        final LinkCrawler currentCrawler = getCrawler();
+        final CrawledLink currentOrigin = getCurrentLink().getOriginLink();
+
+        AreYouAHumanChallenge c = new AreYouAHumanChallenge(apiKey, this) {
+            @Override
+            public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
+                Plugin challengePlugin = Challenge.getPlugin(challenge);
+                if (challengePlugin != null && !(challengePlugin instanceof PluginForDecrypt)) {
+                    /* we only want block PluginForDecrypt captcha here */
+                    return false;
+                }
+                PluginForDecrypt decrypt = (PluginForDecrypt) challengePlugin;
+                if (currentCrawler != decrypt.getCrawler()) {
+                    /* we have a different crawler source */
+                    return false;
+                }
+                switch (skipRequest) {
+                case STOP_CURRENT_ACTION:
+                    /* user wants to stop current action (eg crawling) */
+                    return true;
+                case BLOCK_ALL_CAPTCHAS:
+                    /* user wants to block all captchas (current session) */
+                    return true;
+                case BLOCK_HOSTER:
+                    /* user wants to block captchas from specific hoster */
+                    return StringUtils.equals(PluginForDecrypt.this.getHost(), Challenge.getHost(challenge));
+                case BLOCK_PACKAGE:
+                    CrawledLink crawledLink = decrypt.getCurrentLink();
+                    return crawledLink != null && crawledLink.getOriginLink() == currentOrigin;
+                default:
+                    return false;
+                }
+            }
+
+            @Override
+            public BrowserViewport getBrowserViewport(BrowserWindow screenResource) {
+                return null;
+            }
+        };
+        int ct = getCaptchaTimeout();
+        c.setTimeout(ct);
+        invalidateLastChallengeResponse();
+        final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
+        if (blackListEntry != null) {
+            logger.warning("Cancel. Blacklist Matching");
+            throw new CaptchaException(blackListEntry);
+        }
+        try {
+            ChallengeResponseController.getInstance().handle(c);
+        } catch (InterruptedException e) {
+            LogSource.exception(logger, e);
+            throw e;
+        } catch (SkipException e) {
+            LogSource.exception(logger, e);
+            switch (e.getSkipRequest()) {
+            case BLOCK_ALL_CAPTCHAS:
+                CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(getCrawler()));
+                break;
+            case BLOCK_HOSTER:
+                CaptchaBlackList.getInstance().add(new BlockCrawlerCaptchasByHost(getCrawler(), getHost()));
+                break;
+            case BLOCK_PACKAGE:
+                CaptchaBlackList.getInstance().add(new BlockCrawlerCaptchasByPackage(getCrawler(), getCurrentLink()));
+                break;
+            case REFRESH:
+                // refresh is not supported from the pluginsystem right now.
+                return "";
+            case STOP_CURRENT_ACTION:
+                if (Thread.currentThread() instanceof LinkCrawlerThread) {
+                    LinkCollector.getInstance().abort();
+                    // Just to be sure
+                    CaptchaBlackList.getInstance().add(new BlockAllCrawlerCaptchasEntry(getCrawler()));
+                }
+                break;
+            default:
+                break;
+            }
+            throw new CaptchaException(e.getSkipRequest());
+        }
+        if (!c.isSolved()) {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
+        return c.getResult().getValue();
+    }
+
+    /**
+     *
+     *
+     * @author raztoki
+     * @since JD2
+     * @return
+     */
+    protected String getAreYouAHumanApiKey() {
+        return getAreYouAHumanApiKey(br != null ? br.toString() : null);
+    }
+
+    /**
+     * will auto find api key, based on google default &lt;div&gt;, @Override to make customised finder.
+     *
+     * @author raztoki
+     * @since JD2
+     * @return
+     */
+    protected String getAreYouAHumanApiKey(final String source) {
+        if (source == null) {
+            return null;
+        }
+        // lets look for default
+        final String[] scripts = new Regex(source, "<script[^>]*>.*?</script>").getColumn(-1);
+        if (scripts != null) {
+            for (final String script : scripts) {
+                final String apiKey = new Regex(script, "src=('|\")https?://ws\\.areyouahuman\\.com/ws/script/([a-f0-9]{40})\\1").getMatch(1);
+                if (apiKey != null) {
+                    return apiKey;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     *
      * @param method
      *            Method name (name of the captcha method)
      * @param file
@@ -650,7 +826,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * Can be overridden to show the current status for example in captcha dialog
-     * 
+     *
      * @return
      */
     public String getCrawlerStatusString() {
@@ -663,7 +839,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /**
      * DO not use in Plugins for old 09581 Stable or try/catch
-     * 
+     *
      * @return
      */
     public boolean isAbort() {
