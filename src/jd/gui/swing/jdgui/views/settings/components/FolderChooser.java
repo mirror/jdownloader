@@ -173,11 +173,17 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
                 //
                 return file;
             }
-            if (!file.exists()) {
+            final File createFolder;
+            if (index >= 0) {
+                createFolder = checkPath;
+            } else {
+                createFolder = file;
+            }
+            if (!createFolder.exists()) {
 
-                if (UIOManager.I().showConfirmDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_title_(), _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_msg_(file.getAbsolutePath()))) {
-                    if (!FileCreationManager.getInstance().mkdir(file)) {
-                        UIOManager.I().showErrorMessage(_GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(file.getAbsolutePath()));
+                if (UIOManager.I().showConfirmDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_title_(), _GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_msg_(createFolder.getAbsolutePath()))) {
+                    if (!FileCreationManager.getInstance().mkdir(createFolder)) {
+                        UIOManager.I().showErrorMessage(_GUI._.DownloadFolderChooserDialog_handleNonExistingFolders_couldnotcreatefolder(createFolder.getAbsolutePath()));
                         return presetPath;
                     }
                 }
