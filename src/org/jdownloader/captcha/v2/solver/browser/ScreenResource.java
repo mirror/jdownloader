@@ -13,21 +13,19 @@ import javax.swing.ImageIcon;
 import jd.nutils.Colors;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 
 public abstract class ScreenResource {
 
     protected int x;
-    private int   blockSize;
+    private int   blockSize = 100;
 
     public ScreenResource(int x, int y, int width, int height) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
-        blockSize = 50;
 
     }
 
@@ -50,21 +48,26 @@ public abstract class ScreenResource {
         return height;
     }
 
-    protected int y;
-    protected int width;
-    protected int height;
-    private Robot robot;
+    protected int    y;
+    protected int    width;
+    protected int    height;
+    private Robot    robot;
+    protected double scale = 1d;
 
-    public Rectangle getRectangleByColor(int rgb, double tollerance, int xstart, int ystart) {
+    public Rectangle getRectangleByColor(int rgb, int wmin, int hmin, double tollerance, int xstart, int ystart) {
+
         long start = System.currentTimeMillis();
         int xstartBlock = xstart / blockSize;
         int ystartBlock = ystart / blockSize;
+
         int blockRadius = 0;
         try {
             Point point = null;
             step: while (true) {
                 blockRadius++;
-
+                if (blockRadius * blockSize > 200) {
+                    break;
+                }
                 int xblockmax = xstartBlock + blockRadius - 1;
                 int yblockmax = ystartBlock + blockRadius - 1;
                 boolean hasBlock = false;
@@ -72,7 +75,7 @@ public abstract class ScreenResource {
                 for (int xblock = xstartBlock; xblock <= xblockmax; xblock++) {
 
                     block = getBlock(xblock * blockSize, yblockmax * blockSize);
-
+                    // showImage(block.getImage());
                     if (block != null) {
                         hasBlock = true;
 
@@ -81,12 +84,14 @@ public abstract class ScreenResource {
                     }
                     point = scanBlock(block, rgb, tollerance, xstart, ystart);
                     if (point != null) {
+
                         break step;
                     }
                 }
                 for (int yblock = ystartBlock; yblock < yblockmax; yblock++) {
 
                     block = getBlock(xblockmax * blockSize, yblock);
+
                     if (block != null) {
                         hasBlock = true;
 
@@ -95,6 +100,7 @@ public abstract class ScreenResource {
                     }
                     point = scanBlock(block, rgb, tollerance, xstart, ystart);
                     if (point != null) {
+
                         break step;
                     }
                 }
@@ -107,44 +113,60 @@ public abstract class ScreenResource {
             int width = 0;
             int height = 0;
             if (point != null) {
-                BufferedImage xStrip = getRobot().createScreenCapture(new Rectangle(this.x + point.x, this.y + point.y, getWidth() - point.x, 1));
+
+                BufferedImage xStrip = getRobot().createScreenCapture(new Rectangle(this.x + point.x, this.y + point.y, this.x + getWidth() - point.x, 1));
+
                 // showImage(xStrip);
-                for (int x = 0; x < xStrip.getWidth(); x++) {
-                    if (Colors.getColorDifference(rgb, xStrip.getRGB(x, 0)) > tollerance) {
+
+                for (int x = wmin; x < xStrip.getWidth(); x++) {
+                    int col = xStrip.getRGB(x, 0);
+                    double dif = Colors.getColorDifference(rgb, col);
+                    if (dif > tollerance) {
                         break;
                     } else {
                         width = x + 1;
                     }
                 }
-                BufferedImage yStrip = getRobot().createScreenCapture(new Rectangle(this.x + point.x, this.y + point.y, 1, getHeight() - point.y));
+
+                BufferedImage yStrip = getRobot().createScreenCapture(new Rectangle(this.x + point.x, this.y + point.y, 1, this.y + getHeight() - point.y));
+
                 // showImage(yStrip);
-                for (int y = 0; y < yStrip.getHeight(); y++) {
-                    if (Colors.getColorDifference(rgb, yStrip.getRGB(0, y)) > tollerance) {
+
+                for (int y = hmin; y < yStrip.getHeight(); y++) {
+                    int col = yStrip.getRGB(0, y);
+                    double dif = Colors.getColorDifference(rgb, col);
+                    // System.out.println(Long.toHexString(col) + "\t" + dif);
+                    if (dif > tollerance) {
                         break;
                     } else {
                         height = y + 1;
                     }
                 }
                 Rectangle ret = new Rectangle(this.x + point.x, this.y + point.y, width, height);
+
                 // showImage(getRobot().createScreenCapture(ret));
-                System.out.println(System.currentTimeMillis() - start);
+
+                System.out.println("Found Rectangle in " + (System.currentTimeMillis() - start));
                 return ret;
             }
-            // rectWidth = dwidth - dx + 1;
-            // rectHeight = dheight - dy + 1;
-            // rectX = x + dx;
-            // rectY = y + dy;
+
         } catch (Throwable e) {
             e.printStackTrace();
+        } finally {
+            clearBlocks();
         }
         // return null;
         return null;
     }
 
+    private void clearBlocks() {
+        blocks = new HashMap<Integer, HashMap<Integer, Block>>();
+    }
+
     private Point scanBlock(Block block, int rgb, double tollerance, int xstart, int ystart) {
 
         try {
-
+            // block.image = null;
             int pixelRadius = 0;
             while (true) {
                 pixelRadius++;
@@ -159,10 +181,31 @@ public abstract class ScreenResource {
 
                     int pixelColor = block.getImage().getRGB(x, ymax);
                     double dif = Colors.getColorDifference(rgb, pixelColor);
+                    // System.out.println(Long.toHexString(pixelColor) + "\r\n" + x + "\tx\t" + ymax + "\t " + dif);
+                    // if (rgb == 0xcccccc) {
+                    // block.getImage().setRGB(x, ymax, 0x00ff00);
+                    // }
                     if (dif < tollerance) {
+                        // if (rgb == 0xcccccc) {
+                        // block.getImage().setRGB(x, ymax, 0Xff0000);
+                        // }
+                        // if (rgb == 0xcccccc) {
+                        // showImage(block.getImage());
+                        // }
+                        try {
+                            if (checkColor(rgb, tollerance, block.x + x + scale(1), block.y + ymax) && checkColor(rgb, tollerance, block.x + x + scale(48), block.y + ymax)) {
 
-                        px = new Point(block.x + x, block.y + ymax);
-                        break;
+                                if (checkColor(rgb, tollerance, block.x + x, block.y + ymax + scale(1)) && checkColor(rgb, tollerance, block.x + x, block.y + ymax + scale(48))) {
+
+                                    px = new Point(block.x + x, block.y + ymax);
+                                    break;
+
+                                }
+
+                            }
+                        } catch (NoBlockException e) {
+
+                        }
 
                     }
                 }
@@ -171,11 +214,32 @@ public abstract class ScreenResource {
                     int pixelColor = block.getImage().getRGB(xmax, y);
 
                     double dif = Colors.getColorDifference(rgb, pixelColor);
+                    // if (rgb == 0xcccccc) {
+                    // block.getImage().setRGB(xmax, y, 0X00fff0);
+                    // }
+                    // System.out.println(xmax + "\tx\t" + y + "\t " + dif);
                     if (dif < tollerance) {
-                        // block.getImage().setRGB(xmax, y, Color.blue.getRGB());
+                        // if (rgb == 0xcccccc) {
+                        // block.getImage().setRGB(xmax, y, 0Xff0000);
+                        // }
+                        // if (rgb == 0xcccccc) {
                         // showImage(block.getImage());
-                        py = new Point(block.x + xmax, block.y + y);
-                        break;
+                        // }
+                        try {
+
+                            if (checkColor(rgb, tollerance, block.x + xmax + scale(1), block.y + y) && checkColor(rgb, tollerance, block.x + xmax + scale(48), block.y + y)) {
+                                if (checkColor(rgb, tollerance, block.x + xmax, block.y + y + scale(1)) && checkColor(rgb, tollerance, block.x + xmax, block.y + y + scale(48))) {
+
+                                    px = new Point(block.x + xmax, block.y + y);
+                                    break;
+
+                                }
+
+                            }
+                        } catch (NoBlockException e) {
+
+                        }
+
                     }
                 }
 
@@ -198,6 +262,16 @@ public abstract class ScreenResource {
             return null;
         }
         return null;
+    }
+
+    protected boolean checkColor(int rgb, double tollerance, int x, int y) throws NoBlockException {
+        int col = getRGB(x, y);
+        double dif = Colors.getColorDifference(rgb, col);
+        return dif < tollerance;
+    }
+
+    protected int scale(Number i) {
+        return Math.max(1, (int) (scale * i.doubleValue()));
     }
 
     public class Block {
@@ -253,28 +327,25 @@ public abstract class ScreenResource {
 
     private HashMap<Integer, HashMap<Integer, Block>> blocks = new HashMap<Integer, HashMap<Integer, Block>>();
 
-    private int getRGB(int x, int y) {
-        robot = getRobot();
+    private int getRGB(int x, int y) throws NoBlockException {
+
         Block block = getBlock(x, y);
         return block.getRGB(x, y);
     }
 
     public void showImage(BufferedImage img) {
-        try {
-            Dialog.getInstance().showConfirmDialog(0, "", "", new ImageIcon(img), null, null);
-        } catch (DialogClosedException e) {
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
-        }
+
+        ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, "", "", new ImageIcon(img), null, null);
+        d.setTimeout(5000);
+        UIOManager.I().show(null, d);
     }
 
-    private Block getBlock(int x, int y) {
+    private Block getBlock(int x, int y) throws NoBlockException {
         if (x >= getWidth()) {
-            return null;
+            throw new NoBlockException(x, y);
         }
         if (y >= getHeight()) {
-            return null;
+            throw new NoBlockException(x, y);
         }
         x /= blockSize;
         y /= blockSize;
