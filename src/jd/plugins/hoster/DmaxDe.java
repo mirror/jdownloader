@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -164,7 +165,7 @@ public class DmaxDe extends PluginForHost {
                     con = openConnection(this.br, DLLINK);
                     foundFilesize = con.getLongContentLength();
                     link.setProperty("free_directlink", DLLINK);
-                } catch (final Throwable e) {
+                } catch (final BrowserException e) {
                     link.getLinkStatus().setStatusText("Es bestehen möglicherweise Serverprobleme");
                     if (downloadMode) {
                         throw e;

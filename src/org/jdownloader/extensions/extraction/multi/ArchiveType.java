@@ -32,7 +32,7 @@ public enum ArchiveType {
         /**
          * naming, see http://www.win-rar.com/press/downloads/Split_Files.pdf and http://kb.winzip.com/kb/entry/154/
          */
-        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.(part|p)(\\.?)(\\d+)(.*?)\\.rar$");
+        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.(part|p)(\\.?)(\\d+)(\\..*?)\\.rar$");
 
         @Override
         public ArchiveFormat getArchiveFormat() {

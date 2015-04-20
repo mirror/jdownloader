@@ -6,7 +6,6 @@ import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
@@ -16,6 +15,7 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.swing.SwingUtils;
@@ -84,7 +84,7 @@ public class CESBubbleContent extends AbstractBubbleContentPanel {
         add(east);
         if (cesSolverJob.getChallenge() instanceof ImageCaptchaChallenge) {
             try {
-                ImageIcon icon = new ImageIcon(ImageIO.read(((ImageCaptchaChallenge) cesSolverJob.getChallenge()).getImageFile()));
+                ImageIcon icon = new ImageIcon(ImageProvider.read(((ImageCaptchaChallenge) cesSolverJob.getChallenge()).getImageFile()));
                 if (icon.getIconWidth() > 300 || icon.getIconHeight() > 300) {
 
                     icon = new ImageIcon(IconIO.getScaledInstance(icon.getImage(), 300, 300));

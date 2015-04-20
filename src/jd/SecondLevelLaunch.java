@@ -74,6 +74,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -260,9 +261,9 @@ public class SecondLevelLaunch {
          * previous implementation silently ignored such a situation. If the previous behavior is desired, you can use the new system
          * property, java.util.Arrays.useLegacyMergeSort, to restore previous mergesort behavior. Nature of Incompatibility: behavioral RFE:
          * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6804124
-         * 
+         *
          * Sorting live data (values changing during sorting) violates the general contract
-         * 
+         *
          * java.lang.IllegalArgumentException: Comparison method violates its general contract!
          */
         System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
@@ -295,8 +296,8 @@ public class SecondLevelLaunch {
 
     /**
      * LÃ¤dt ein Dynamicplugin.
-     * 
-     * 
+     *
+     *
      * @throws IOException
      */
 
@@ -944,23 +945,24 @@ public class SecondLevelLaunch {
                                                     // or user input
                                                     return;
                                                 }
-                                                if (JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads() && JsonConfig.create(GeneralSettings.class).isSilentRestart()) {
-
-                                                    DownloadWatchDog.getInstance().startDownloads();
-                                                } else {
-
-                                                    if (JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() > 0 && CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS.isEnabled()) {
-                                                        ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _JDT._.Main_run_autostart_(), _JDT._.Main_run_autostart_msg(), NewTheme.I().getIcon("start", 32), _JDT._.Mainstart_now(), null);
-                                                        d.setTimeout(JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() * 1000);
+                                                boolean autoStart = JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads() || JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() > 0 && CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS.isEnabled();
+                                                if (autoStart) {
+                                                    final GeneralSettings generalSettings = JsonConfig.create(GeneralSettings.class);
+                                                    if (generalSettings.getAutoStartCountdownSeconds() > 0 && CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS.isEnabled()) {
+                                                        final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _JDT._.Main_run_autostart_(), _JDT._.Main_run_autostart_msg(), NewTheme.I().getIcon("start", 32), _JDT._.Mainstart_now(), null);
+                                                        d.setTimeout(generalSettings.getAutoStartCountdownSeconds() * 1000);
                                                         try {
-                                                            Dialog.getInstance().showDialog(d);
-                                                            DownloadWatchDog.getInstance().startDownloads();
+                                                            autoStart = false;
+                                                            UIOManager.I().show(ConfirmDialogInterface.class, d);
+                                                            d.throwCloseExceptions();
+                                                            autoStart = true;
                                                         } catch (DialogNoAnswerException e) {
                                                             if (e.isCausedByTimeout()) {
-                                                                DownloadWatchDog.getInstance().startDownloads();
+                                                                autoStart = true;
                                                             }
                                                         }
-                                                    } else {
+                                                    }
+                                                    if (autoStart) {
                                                         DownloadWatchDog.getInstance().startDownloads();
                                                     }
                                                 }

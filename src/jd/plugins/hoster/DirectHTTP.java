@@ -86,11 +86,16 @@ public class DirectHTTP extends PluginForHost {
             // this.rcBr could be null at this stage, if we are specifying challenge id and image ourselves.
             prepRcBr();
             this.rcBr.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                Browser.download(captchaFile, this.rcBr.openGetConnection(this.captchaAddress));
+                Browser.download(captchaFile, con = this.rcBr.openGetConnection(this.captchaAddress));
             } catch (final IOException e) {
                 captchaFile.delete();
                 throw e;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
             return captchaFile;
         }
