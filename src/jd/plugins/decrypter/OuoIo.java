@@ -41,7 +41,15 @@ public class OuoIo extends PluginForDecrypt {
         final String parameter = param.toString();
         final String fid = parameter.substring(parameter.lastIndexOf("/") + 1);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
+            try {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+            } catch (final Throwable e) {
+                /* Not available in old 0.9.581 Stable */
+            }
+            return decryptedLinks;
+        }
+        if (!br.containsHTML("class=\"content\"")) {
             try {
                 decryptedLinks.add(this.createOfflinelink(parameter));
             } catch (final Throwable e) {
