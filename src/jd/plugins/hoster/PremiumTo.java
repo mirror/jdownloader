@@ -59,6 +59,8 @@ public class PremiumTo extends PluginForHost {
     private static final String                            type_storage                   = "https?://storage\\.premium\\.to/file/[A-Z0-9]+";
     private static final String                            type_torrent                   = "https?://torrent\\d*\\.premium\\.to/.+";
 
+    private static final String                            API_BASE                       = "http://api.premium.to/";
+
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(2 * 1000L);
@@ -89,6 +91,7 @@ public class PremiumTo extends PluginForHost {
         return prepBr;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ac = new AccountInfo();
@@ -101,7 +104,7 @@ public class PremiumTo extends PluginForHost {
         }
         {
             Browser tbr = br.cloneBrowser();
-            tbr.getPage("http://premium.to/straffic.php");
+            tbr.getPage(API_BASE + "straffic.php");
             String[] traffic = tbr.toString().split(";");
             if (traffic != null && traffic.length == 2) {
                 // because we can not account for separate traffic allocations.
@@ -114,8 +117,8 @@ public class PremiumTo extends PluginForHost {
             }
         }
         {
-            Browser hbr = br.cloneBrowser();
-            hbr.getPage("http://premium.to/hosts.php");
+            final Browser hbr = br.cloneBrowser();
+            hbr.getPage(API_BASE + "hosts.php");
             String hosters[] = hbr.toString().split(";|\\s+");
             if (hosters != null && hosters.length != 0) {
                 ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosters));
@@ -170,7 +173,7 @@ public class PremiumTo extends PluginForHost {
         final boolean redirect = br.isFollowingRedirects();
         synchronized (LOCK) {
             try {
-                /** Load cookies */
+                /* Load cookies */
                 br.setCookiesExclusive(true);
                 prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
@@ -189,7 +192,7 @@ public class PremiumTo extends PluginForHost {
                         return;
                     }
                 }
-                br.postPageRaw("http://premium.to/login.php", "{\"u\":\"" + Encoding.urlEncode(account.getUser()) + "\", \"p\":\"" + Encoding.urlEncode(account.getPass()) + "\", \"r\":true}");
+                br.postPageRaw(API_BASE + "login.php", "{\"u\":\"" + Encoding.urlEncode(account.getUser()) + "\", \"p\":\"" + Encoding.urlEncode(account.getPass()) + "\", \"r\":true}");
                 if (br.getHttpConnection().getResponseCode() == 400) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -200,7 +203,7 @@ public class PremiumTo extends PluginForHost {
                 if (br.getCookie("premium.to", "auth") == null) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                /** Save cookies */
+                /* Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(this.getHost());
                 for (final Cookie c : add.getCookies()) {
@@ -266,7 +269,7 @@ public class PremiumTo extends PluginForHost {
                 connections = 1;
             }
 
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://premium.to/getfile.php?link=" + url, true, connections);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, API_BASE + "getfile.php?link=" + url, true, connections);
             if (dl.getConnection().getResponseCode() == 404) {
                 /* file offline */
                 dl.getConnection().disconnect();
