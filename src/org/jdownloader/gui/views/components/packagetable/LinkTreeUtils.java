@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.components.packagetable;
 
 import java.io.File;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import jd.controlling.linkcrawler.CrawledLink;
@@ -163,7 +164,7 @@ public class LinkTreeUtils {
     }
 
     public static HashSet<String> getURLs(List<? extends AbstractNode> links, final boolean openInBrowser) {
-        HashSet<String> urls = new HashSet<String>();
+        LinkedHashSet<String> urls = new LinkedHashSet<String>();
         if (links == null || links.size() == 0) {
             return urls;
         }

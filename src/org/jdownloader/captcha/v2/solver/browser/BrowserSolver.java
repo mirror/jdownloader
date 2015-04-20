@@ -19,7 +19,6 @@ public class BrowserSolver extends AbstractBrowserSolver {
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-
         return c instanceof AbstractBrowserChallenge && super.canHandle(c);
     }
 
