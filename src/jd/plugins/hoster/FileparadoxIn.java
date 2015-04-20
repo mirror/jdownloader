@@ -149,7 +149,7 @@ public class FileparadoxIn extends PluginForHost {
     public String rewriteHost(String host) {
         if ("fileparadox.in".equals(getHost()) || "fileparadox.com".equals(getHost())) {
             if (host == null || "fileparadox.in".equals(host) || "fileparadox.com".equals(host)) {
-                return "fileparadox.in";
+                return "rapidsonic.com";
             }
         }
         return super.rewriteHost(host);
