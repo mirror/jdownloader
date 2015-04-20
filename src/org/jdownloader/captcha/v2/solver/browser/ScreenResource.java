@@ -31,6 +31,9 @@ public abstract class ScreenResource {
 
     }
 
+    public ScreenResource() {
+    }
+
     public int getX() {
         return x;
     }
@@ -57,78 +60,83 @@ public abstract class ScreenResource {
         int xstartBlock = xstart / blockSize;
         int ystartBlock = ystart / blockSize;
         int blockRadius = 0;
-        Point point = null;
-        step: while (true) {
-            blockRadius++;
+        try {
+            Point point = null;
+            step: while (true) {
+                blockRadius++;
 
-            int xblockmax = xstartBlock + blockRadius - 1;
-            int yblockmax = ystartBlock + blockRadius - 1;
-            boolean hasBlock = false;
-            Block block;
-            for (int xblock = xstartBlock; xblock <= xblockmax; xblock++) {
+                int xblockmax = xstartBlock + blockRadius - 1;
+                int yblockmax = ystartBlock + blockRadius - 1;
+                boolean hasBlock = false;
+                Block block;
+                for (int xblock = xstartBlock; xblock <= xblockmax; xblock++) {
 
-                block = getBlock(xblock * blockSize, yblockmax * blockSize);
-                if (block != null) {
-                    hasBlock = true;
+                    block = getBlock(xblock * blockSize, yblockmax * blockSize);
 
-                } else {
+                    if (block != null) {
+                        hasBlock = true;
+
+                    } else {
+                        break;
+                    }
+                    point = scanBlock(block, rgb, tollerance, xstart, ystart);
+                    if (point != null) {
+                        break step;
+                    }
+                }
+                for (int yblock = ystartBlock; yblock < yblockmax; yblock++) {
+
+                    block = getBlock(xblockmax * blockSize, yblock);
+                    if (block != null) {
+                        hasBlock = true;
+
+                    } else {
+                        break;
+                    }
+                    point = scanBlock(block, rgb, tollerance, xstart, ystart);
+                    if (point != null) {
+                        break step;
+                    }
+                }
+                if (!hasBlock) {
                     break;
-                }
-                point = scanBlock(block, rgb, tollerance, xstart, ystart);
-                if (point != null) {
-                    break step;
-                }
-            }
-            for (int yblock = ystartBlock; yblock < yblockmax; yblock++) {
 
-                block = getBlock(xblockmax * blockSize, yblock);
-                if (block != null) {
-                    hasBlock = true;
-
-                } else {
-                    break;
                 }
-                point = scanBlock(block, rgb, tollerance, xstart, ystart);
-                if (point != null) {
-                    break step;
-                }
-            }
-            if (!hasBlock) {
-                break;
 
             }
-
+            int width = 0;
+            int height = 0;
+            if (point != null) {
+                BufferedImage xStrip = getRobot().createScreenCapture(new Rectangle(this.x + point.x, this.y + point.y, getWidth() - point.x, 1));
+                // showImage(xStrip);
+                for (int x = 0; x < xStrip.getWidth(); x++) {
+                    if (Colors.getColorDifference(rgb, xStrip.getRGB(x, 0)) > tollerance) {
+                        break;
+                    } else {
+                        width = x + 1;
+                    }
+                }
+                BufferedImage yStrip = getRobot().createScreenCapture(new Rectangle(this.x + point.x, this.y + point.y, 1, getHeight() - point.y));
+                // showImage(yStrip);
+                for (int y = 0; y < yStrip.getHeight(); y++) {
+                    if (Colors.getColorDifference(rgb, yStrip.getRGB(0, y)) > tollerance) {
+                        break;
+                    } else {
+                        height = y + 1;
+                    }
+                }
+                Rectangle ret = new Rectangle(this.x + point.x, this.y + point.y, width, height);
+                // showImage(getRobot().createScreenCapture(ret));
+                System.out.println(System.currentTimeMillis() - start);
+                return ret;
+            }
+            // rectWidth = dwidth - dx + 1;
+            // rectHeight = dheight - dy + 1;
+            // rectX = x + dx;
+            // rectY = y + dy;
+        } catch (Throwable e) {
+            e.printStackTrace();
         }
-        int width = 0;
-        int height = 0;
-        if (point != null) {
-            BufferedImage xStrip = getRobot().createScreenCapture(new Rectangle(this.x + point.x, this.y + point.y, getWidth() - point.x, 1));
-            // showImage(xStrip);
-            for (int x = 0; x < xStrip.getWidth(); x++) {
-                if (Colors.getColorDifference(rgb, xStrip.getRGB(x, 0)) > tollerance) {
-                    break;
-                } else {
-                    width = x + 1;
-                }
-            }
-            BufferedImage yStrip = getRobot().createScreenCapture(new Rectangle(this.x + point.x, this.y + point.y, 1, getHeight() - point.y));
-            // showImage(yStrip);
-            for (int y = 0; y < yStrip.getHeight(); y++) {
-                if (Colors.getColorDifference(rgb, yStrip.getRGB(0, y)) > tollerance) {
-                    break;
-                } else {
-                    height = y + 1;
-                }
-            }
-            Rectangle ret = new Rectangle(this.x + point.x, this.y + point.y, width, height);
-            // showImage(getRobot().createScreenCapture(ret));
-            System.out.println(System.currentTimeMillis() - start);
-            return ret;
-        }
-        // rectWidth = dwidth - dx + 1;
-        // rectHeight = dheight - dy + 1;
-        // rectX = x + dx;
-        // rectY = y + dy;
         // return null;
         return null;
     }
@@ -216,7 +224,7 @@ public abstract class ScreenResource {
             return getImage().getRGB(x2 - x, y2 - y);
         }
 
-        private BufferedImage getImage() {
+        public BufferedImage getImage() {
             BufferedImage img;
             if (image == null) {
                 return updateImage();
@@ -262,10 +270,10 @@ public abstract class ScreenResource {
     }
 
     private Block getBlock(int x, int y) {
-        if (x * blockSize >= getWidth()) {
+        if (x >= getWidth()) {
             return null;
         }
-        if (y * blockSize >= getHeight()) {
+        if (y >= getHeight()) {
             return null;
         }
         x /= blockSize;
@@ -285,7 +293,7 @@ public abstract class ScreenResource {
         return block;
     }
 
-    private Robot getRobot() {
+    protected Robot getRobot() {
         if (robot == null) {
             try {
                 robot = new Robot();
