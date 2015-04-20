@@ -23,7 +23,7 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     @Override
     public BrowserViewport getBrowserViewport(BrowserWindow screenResource) {
 
-        Rectangle rect = screenResource.getRectangleByColor(0xff9900, 1d, 0, 0);
+        Rectangle rect = screenResource.getRectangleByColor(0xff9900, 0, 0, 1d, 0, 0);
 
         return new Recaptcha2BrowserViewport(screenResource, rect);
     }
