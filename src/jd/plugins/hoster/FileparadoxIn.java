@@ -73,22 +73,22 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileparadox.com", "fileparadox.in" }, urls = { "https?://(www\\.)?fileparadox\\.(in|com)/((vid)?embed-)?[a-z0-9]{12}", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidsonic.com", "fileparadox.com", "fileparadox.in" }, urls = { "https?://(www\\.)?(fileparadox\\.(in|com)|rapidsonic\\.com)/((vid)?embed-)?[a-z0-9]{12}", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0, 0 })
 @SuppressWarnings("deprecation")
 public class FileparadoxIn extends PluginForHost {
 
     // Site Setters
     // primary website url, take note of redirects
-    private final String               COOKIE_HOST                  = "http://fileparadox.com";
+    private final String               COOKIE_HOST                  = "http://rapidsonic.com";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(fileparadox\\.in|fileparadox\\.com)";
+    private final String               DOMAINS                      = "(fileparadox\\.in|fileparadox\\.com|rapidsonic\\.com)";
     private final String               PASSWORDTEXT                 = "Password[\t\r\n ]+:</b>[\t\r\n ]+<input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/v(ideo)?\\.mp4)";
     private final boolean              supportsHTTPS                = true;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = true;
-    private final boolean              useAltLinkCheck              = false;
+    private final boolean              useAltLinkCheck              = true;
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
     private final boolean              useAltExpire                 = true;
@@ -147,9 +147,9 @@ public class FileparadoxIn extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("fileparadox.in".equals(getHost())) {
-            if (host == null || "fileparadox.in".equals(host)) {
-                return "fileparadox.com";
+        if ("fileparadox.in".equals(getHost()) || "fileparadox.com".equals(getHost())) {
+            if (host == null || "fileparadox.in".equals(host) || "fileparadox.com".equals(host)) {
+                return "fileparadox.in";
             }
         }
         return super.rewriteHost(host);
@@ -228,6 +228,8 @@ public class FileparadoxIn extends PluginForHost {
 
         if (useAltLinkCheck) {
             altAvailStat(downloadLink, fileInfo);
+            /* We want to grab the filename from normal src */
+            fileInfo[0] = null;
         }
 
         getPage(downloadLink.getDownloadURL());
@@ -596,6 +598,9 @@ public class FileparadoxIn extends PluginForHost {
         }
         if (inValidate(ttt)) {
             ttt = cbr.getRegex(">(\\d+)</span></span><span id=\"second\"").getMatch(0);
+        }
+        if (inValidate(ttt)) {
+            ttt = cbr.getRegex(">Please Wait <span id=\"[a-z0-9]+\">(\\d+)</span> seconds").getMatch(0);
         }
         if (!inValidate(ttt)) {
             // remove one second from past, to prevent returning too quickly.
