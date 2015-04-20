@@ -101,8 +101,11 @@ import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.challenge.areyouahuman.AreYouAHumanChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
+import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
+import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UrlProtection;
 import org.jdownloader.controlling.ffmpeg.FFMpegInstallProgress;
@@ -297,11 +300,11 @@ public abstract class PluginForHost extends Plugin {
         // call a BrowserSolver.recaptchav2 advanced config setting here. ??
         final int captchaWeePeat = 3;
         int captchaI = 0;
-        String recaptchaResponse = null;
+        String captchaResponse = null;
         while (captchaI <= captchaWeePeat) {
-            recaptchaResponse = getRecaptchaV2Response(null);
+            captchaResponse = getRecaptchaV2Response(null);
             // refresh or timeouts creates a "" result.
-            if ("".equals(recaptchaResponse)) {
+            if ("".equals(captchaResponse)) {
                 if (captchaI + 1 == captchaWeePeat) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
@@ -310,7 +313,7 @@ public abstract class PluginForHost extends Plugin {
             }
             break;
         }
-        return recaptchaResponse;
+        return captchaResponse;
     }
 
     /**
@@ -477,6 +480,210 @@ public abstract class PluginForHost extends Plugin {
                     if (apiKey != null) {
                         return apiKey;
                     }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * will auto find api key, based on google default &lt;div&gt;, @Override getRecaptchaV2ApiKey(String) to make customised finder. <br />
+     * will auto retry x times, as google verifies token before sending it back to host. This will avoid wait time issues, etc, down the
+     * track
+     *
+     * @author raztoki
+     * @since JD2
+     * @return
+     * @throws PluginException
+     * @throws InterruptedException
+     */
+    protected String getAreYouAHumanSecret() throws PluginException, InterruptedException {
+        // call a BrowserSolver.recaptchav2 advanced config setting here. ??
+        final int captchaWeePeat = 3;
+        int captchaI = 0;
+        String captchaResponse = null;
+        while (captchaI <= captchaWeePeat) {
+            captchaResponse = getRecaptchaV2Response(null);
+            // refresh or timeouts creates a "" result.
+            if ("".equals(captchaResponse)) {
+                if (captchaI + 1 == captchaWeePeat) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                captchaI++;
+                continue;
+            }
+            break;
+        }
+        return captchaResponse;
+    }
+
+    /**
+     * @since JD2
+     * @param siteKey
+     * @return
+     * @throws PluginException
+     * @throws InterruptedException
+     */
+    protected String getAreYouAHumanSecret(final String siteKey) throws PluginException, InterruptedException {
+        if (Thread.currentThread() instanceof LinkCrawlerThread) {
+            logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
+        }
+        String apiKey = siteKey;
+        if (apiKey == null) {
+            apiKey = getAreYouAHumanApiKey();
+            if (apiKey == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "AreYouAHuman API Key can not be found");
+            }
+        }
+        final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
+        progress.setProgressSource(this);
+        progress.setDisplayInProgressColumnEnabled(false);
+        this.hasCaptchas = true;
+        try {
+            link.addPluginProgress(progress);
+
+            final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
+            AreYouAHumanChallenge c = new AreYouAHumanChallenge(apiKey, this) {
+
+                @Override
+                public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
+                    if (insideAccountChecker) {
+                        /* we don't want to skip login captcha inside fetchAccountInfo(Thread is AccountCheckerThread) */
+                        return false;
+                    }
+                    Plugin challengePlugin = Challenge.getPlugin(challenge);
+                    if (challengePlugin != null && !(challengePlugin instanceof PluginForHost)) {
+                        /* we only want block PluginForHost captcha here */
+                        return false;
+                    }
+                    switch (skipRequest) {
+                    case BLOCK_ALL_CAPTCHAS:
+                        /* user wants to block all captchas (current session) */
+                        return true;
+                    case BLOCK_HOSTER:
+                        /* user wants to block captchas from specific hoster */
+                        return StringUtils.equals(link.getHost(), Challenge.getHost(challenge));
+                    case BLOCK_PACKAGE:
+                        /* user wants to block captchas from current FilePackage */
+                        DownloadLink lLink = Challenge.getDownloadLink(challenge);
+                        if (lLink == null || lLink.getDefaultPlugin() == null) {
+                            return false;
+                        }
+                        return link.getFilePackage() == lLink.getFilePackage();
+                    default:
+                        return false;
+                    }
+                }
+
+                @Override
+                public BrowserViewport getBrowserViewport(BrowserWindow screenResource) {
+                    return null;
+                }
+
+            };
+            c.setTimeout(getCaptchaTimeout());
+            if (Thread.currentThread() instanceof AccountCheckerThread || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
+                /**
+                 * account login -> do not use anticaptcha services
+                 */
+                c.setAccountLogin(true);
+            }
+            invalidateLastChallengeResponse();
+            final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
+            if (blackListEntry != null) {
+                logger.warning("Cancel. Blacklist Matching");
+                throw new CaptchaException(blackListEntry);
+            }
+            final SolverJob<String> job = ChallengeResponseController.getInstance().handle(c);
+            if (!c.isSolved()) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            return c.getResult().getValue();
+        } catch (InterruptedException e) {
+            LogSource.exception(logger, e);
+            throw e;
+        } catch (SkipException e) {
+            LogSource.exception(logger, e);
+            if (getDownloadLink() != null) {
+                switch (e.getSkipRequest()) {
+                case BLOCK_ALL_CAPTCHAS:
+                    CaptchaBlackList.getInstance().add(new BlockAllDownloadCaptchasEntry());
+
+                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    }
+                    break;
+                case BLOCK_HOSTER:
+                    CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByHost(getDownloadLink().getHost()));
+                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    }
+                    break;
+
+                case BLOCK_PACKAGE:
+                    CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByPackage(getDownloadLink().getParentNode()));
+                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    }
+                    break;
+                case SINGLE:
+                    CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(getDownloadLink()));
+                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    }
+                    break;
+                case TIMEOUT:
+                    if (JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
+                        CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(getDownloadLink()));
+                        if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                            HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                        }
+                    }
+                case REFRESH:
+                    // we should forward the refresh request to a new pluginstructure soon. For now. the plugin will just retry
+                    return "";
+                case STOP_CURRENT_ACTION:
+                    if (Thread.currentThread() instanceof SingleDownloadController) {
+                        DownloadWatchDog.getInstance().stopDownloads();
+                    }
+                    break;
+                }
+            }
+            throw new CaptchaException(e.getSkipRequest());
+        } finally {
+            link.removePluginProgress(progress);
+        }
+    }
+
+    /**
+     *
+     *
+     * @author raztoki
+     * @since JD2
+     * @return
+     */
+    protected String getAreYouAHumanApiKey() {
+        return getAreYouAHumanApiKey(br != null ? br.toString() : null);
+    }
+
+    /**
+     * will auto find api key, based on google default &lt;div&gt;, @Override to make customised finder.
+     *
+     * @author raztoki
+     * @since JD2
+     * @return
+     */
+    protected String getAreYouAHumanApiKey(final String source) {
+        if (source == null) {
+            return null;
+        }
+        // lets look for default
+        final String[] scripts = new Regex(source, "<script[^>]*>.*?</script>").getColumn(-1);
+        if (scripts != null) {
+            for (final String script : scripts) {
+                final String apiKey = new Regex(script, "src=('|\")https?://ws\\.areyouahuman\\.com/ws/script/([a-f0-9]{40})\\1").getMatch(1);
+                if (apiKey != null) {
+                    return apiKey;
                 }
             }
         }

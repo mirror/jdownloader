@@ -325,7 +325,12 @@ public abstract class BrowserReference implements HttpRequestHandler {
             return false;
         }
         try {
+            // recaptch2
             String parameter = request.getParameterbyKey("g-recaptcha-response");
+            if (parameter == null) {
+                // areweahuman
+                parameter = request.getParameterbyKey("session_secret");
+            }
             onResponse(parameter);
             if (parameter == null) {
                 throw new WTFException("No Response");
