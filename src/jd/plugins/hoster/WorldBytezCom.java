@@ -847,7 +847,7 @@ public class WorldBytezCom extends PluginForHost {
         account.setValid(true);
         String availabletraffic = new Regex(correctedBR, "glyphicon-signal\"></span>([^<>\"\\']+)</div>").getMatch(0);
         if (availabletraffic == null) {
-            availabletraffic = new Regex(correctedBR, ">\\s*Traffic available today:\\s*(?:<[^>]+>)*([0-9\\.]+\\s*(KB|MB|GB|TB)?)\\s*<").getMatch(0);
+            availabletraffic = new Regex(correctedBR, ">\\s*Traffic available today:\\s*(?:<[^>]+>)*(-?[0-9\\.]+\\s*(KB|MB|GB|TB)?)\\s*<").getMatch(0);
         }
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
@@ -974,7 +974,7 @@ public class WorldBytezCom extends PluginForHost {
                 getPage(downloadLink.getDownloadURL());
                 dllink = getDllink();
                 if (dllink == null) {
-                    Form dlform = br.getFormbyProperty("name", "F1");
+                    final Form dlform = getFormByKey("op", "download1");
                     if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
                         passCode = handlePassword(dlform, downloadLink);
                     }
@@ -982,7 +982,7 @@ public class WorldBytezCom extends PluginForHost {
                     if (dlform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    dlform.remove("down_direct");
+                    dlform.remove("method_free");
                     sendForm(dlform);
                     checkErrors(downloadLink, true);
                     dllink = getDllink();
