@@ -8,6 +8,7 @@ import jd.plugins.Plugin;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
+import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
@@ -35,6 +36,15 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
             throw new WTFException("Bad SiteKey");
         }
 
+    }
+
+    @Override
+    public String handleRequest(PostRequest request) throws IOException {
+        String parameter = request.getParameterbyKey("g-recaptcha-response");
+        if (parameter == null) {
+            throw new WTFException("No Response");
+        }
+        return parameter;
     }
 
     @Override

@@ -8,7 +8,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
-import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
@@ -21,9 +20,6 @@ import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.jdownloader.api.DeprecatedAPIHttpServerController;
-import org.jdownloader.captcha.v2.challenge.areyouahuman.AreYouAHumanChallenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1Challenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
@@ -181,61 +177,13 @@ public abstract class BrowserReference implements HttpRequestHandler {
             return false;
         }
         try {
-            if (challenge instanceof RecaptchaV1Challenge) {
-                String challenge = request.getParameterbyKey("recaptcha_challenge_field");
-                String responseString = request.getParameterbyKey("recaptcha_challenge_field");
-                onResponse(JSonStorage.serializeToJson(new String[] { challenge, responseString }));
-
+            String responseString = challenge.handleRequest(request);
+            if (responseString != null) {
+                onResponse(responseString);
                 response.setResponseCode(ResponseCode.SUCCESS_OK);
                 response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
 
-                response.getOutputStream(true).write("You can close the browser now".getBytes("UTF-8"));
-
-                // Close Browser Tab
-                Robot robot = new Robot();
-                robot.keyPress(KeyEvent.VK_CONTROL);
-                robot.keyPress(KeyEvent.VK_W);
-
-                robot.keyRelease(KeyEvent.VK_CONTROL);
-                robot.keyRelease(KeyEvent.VK_W);
-                return true;
-            } else if (challenge instanceof AreYouAHumanChallenge) {
-
-                // recaptch2
-                String parameter = request.getParameterbyKey("session_secret");
-                if (parameter == null) {
-                    throw new WTFException("No Response");
-                }
-                onResponse(parameter);
-
-                response.setResponseCode(ResponseCode.SUCCESS_OK);
-                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
-
-                response.getOutputStream(true).write("You can close the browser now".getBytes("UTF-8"));
-
-                // Close Browser Tab
-                Robot robot = new Robot();
-                robot.keyPress(KeyEvent.VK_CONTROL);
-                robot.keyPress(KeyEvent.VK_W);
-
-                robot.keyRelease(KeyEvent.VK_CONTROL);
-                robot.keyRelease(KeyEvent.VK_W);
-                return true;
-
-            } else if (challenge instanceof RecaptchaV2Challenge) {
-
-                // recaptch2
-                String parameter = request.getParameterbyKey("g-recaptcha-response");
-                if (parameter == null) {
-                    throw new WTFException("No Response");
-                }
-                onResponse(parameter);
-
-                response.setResponseCode(ResponseCode.SUCCESS_OK);
-                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
-
-                response.getOutputStream(true).write("You can close the browser now".getBytes("UTF-8"));
-
+                response.getOutputStream(true).write("Please Close the Browser now".getBytes("UTF-8"));
                 // Close Browser Tab
                 Robot robot = new Robot();
                 robot.keyPress(KeyEvent.VK_CONTROL);
@@ -247,6 +195,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
             } else {
                 return false;
             }
+
         } catch (Throwable e) {
             error(response, e);
             return true;

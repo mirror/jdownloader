@@ -27,6 +27,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
 import org.jdownloader.captcha.blacklist.BlockAllDownloadCaptchasEntry;
@@ -61,6 +62,14 @@ public abstract class RecaptchaV1Challenge extends AbstractBrowserChallenge {
         Rectangle rect = screenResource.getRectangleByColor(0xff9900, 0, 0, 1d, 0, 0);
 
         return new Recaptcha1BrowserViewport(screenResource, rect);
+    }
+
+    @Override
+    public String handleRequest(PostRequest request) throws IOException {
+        String challenge = request.getParameterbyKey("recaptcha_challenge_field");
+        String responseString = request.getParameterbyKey("recaptcha_challenge_field");
+
+        return JSonStorage.serializeToJson(new String[] { challenge, responseString });
     }
 
     public RecaptchaV1Challenge(String siteKey, Plugin pluginForHost) {

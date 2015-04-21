@@ -7,6 +7,7 @@ import jd.plugins.Plugin;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
+import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 
 public abstract class AreYouAHumanChallenge extends AbstractBrowserChallenge {
@@ -24,6 +25,16 @@ public abstract class AreYouAHumanChallenge extends AbstractBrowserChallenge {
             throw new WTFException("Bad SiteKey");
         }
 
+    }
+
+    @Override
+    public String handleRequest(PostRequest request) throws IOException {
+        String parameter = request.getParameterbyKey("session_secret");
+        if (parameter == null) {
+            throw new WTFException("No Response");
+        }
+
+        return parameter;
     }
 
     @Override

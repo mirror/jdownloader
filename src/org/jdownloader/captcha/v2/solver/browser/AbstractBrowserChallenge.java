@@ -1,7 +1,10 @@
 package org.jdownloader.captcha.v2.solver.browser;
 
+import java.io.IOException;
+
 import jd.plugins.Plugin;
 
+import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 
@@ -27,5 +30,7 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
     abstract public String getHTML();
 
     abstract public BrowserViewport getBrowserViewport(BrowserWindow screenResource);
+
+    abstract public String handleRequest(PostRequest request) throws IOException;
 
 }
