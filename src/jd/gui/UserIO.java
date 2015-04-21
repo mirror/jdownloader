@@ -177,7 +177,7 @@ public class UserIO {
 
     /**
      * Checks wether this answerfalg contains the ok option
-     * 
+     *
      * @param answer
      * @return
      */
@@ -187,7 +187,7 @@ public class UserIO {
 
     /**
      * COnverts the flag mask of AW Dialogs to UserIO
-     * 
+     *
      * @param ret
      * @return
      */
@@ -216,7 +216,7 @@ public class UserIO {
 
     /**
      * The flags in org.appwork.utils.swing.dialog.Dialog are different, so we need a converter
-     * 
+     *
      * @param flag
      * @return
      */
@@ -295,7 +295,6 @@ public class UserIO {
             }
 
             ClickCaptchaChallenge c = new ClickCaptchaChallenge(imagefile, title, plugin) {
-
                 @Override
                 public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
                     switch (skipRequest) {
@@ -361,7 +360,7 @@ public class UserIO {
 
     /**
      * Shows a combobox dialog. returns the options id if the user confirmed, or -1 if the user canceled
-     * 
+     *
      * @param flag
      * @param title
      * @param question
@@ -460,7 +459,7 @@ public class UserIO {
 
     /**
      * Requests a FileChooserDialog.
-     * 
+     *
      * @param id
      *            ID of the dialog (used to save and restore the old directory)
      * @param title
@@ -518,7 +517,7 @@ public class UserIO {
     }
 
     /**
-     * 
+     *
      * @param flag
      *            flag
      * @param question
@@ -574,7 +573,7 @@ public class UserIO {
 
     /**
      * Shows a multi-selection dialog.
-     * 
+     *
      * @return indices of selected options or null if user canceled
      */
     public int[] requestMultiSelectionDialog(final int flag, final String title, final String question, final Object[] options, final Icon icon, final String okText, final String cancelText, final ListCellRenderer renderer) {

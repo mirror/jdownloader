@@ -62,7 +62,9 @@ public class GigaSizeCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(downloadLink.getDownloadURL());
-            if (con.getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (con.getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.followConnection();
         } finally {
             try {
@@ -70,11 +72,17 @@ public class GigaSizeCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("limit-download-free")) { return AvailableStatus.UNCHECKABLE; }
-        if (br.containsHTML("<h2 class=\"error\">Download error</h2>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("limit-download-free")) {
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.containsHTML("<h2 class=\"error\">Download error</h2>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         String[] dat = br.getRegex("<strong title=\"(.*?)\".*?File size:.*?>(.*?)<").getRow(0);
-        if (dat.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (dat.length != 2) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(dat[0]);
         downloadLink.setDownloadSize(SizeFormatter.getSize(dat[1]));
         return AvailableStatus.TRUE;
@@ -127,36 +135,50 @@ public class GigaSizeCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("limit-download-free")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Only premium users are entitled to dowload files larger than 1GB from Gigasize"); }
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("limit-download-free")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only premium users are entitled to dowload files larger than 1GB from Gigasize");
+        }
         // Unknown hoster expire time
-        if (br.containsHTML("(?i)(>You've reached your <strong>DOWNLOAD LIMIT<|This file exceeds your allocated download limit)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download limit reached", 1 * 60 * 60 * 1000l);
+        if (br.containsHTML("(?i)(>You've reached your <strong>DOWNLOAD LIMIT<|This file exceeds your allocated download limit)")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download limit reached", 1 * 60 * 60 * 1000l);
+        }
 
         Form captchaForm = br.getFormbyProperty("id", "downloadForm");
         if (br.containsHTML("//api\\.adscaptcha\\.com/")) {
             final PluginForDecrypt adsplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
             final jd.plugins.decrypter.LnkCrptWs.AdsCaptcha ac = ((jd.plugins.decrypter.LnkCrptWs) adsplug).getAdsCaptcha(br);
             captchaForm = ac.getResult();
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_FATAL, "User abort ...");
+            if (captchaForm == null) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "User abort ...");
+            }
         }
         captchaForm.setAction("/getoken");
         captchaForm.setMethod(Form.MethodType.POST);
         captchaForm.put("fileId", getID(downloadLink));
         br.submitForm(captchaForm);
 
-        if (!br.containsHTML("status\":1")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (!br.containsHTML("status\":1")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         sleep(30 * 1000l, downloadLink);
         String token = br.getPage("/formtoken");
         br.postPage("/getoken", "fileId=" + getID(downloadLink) + "&token=" + token + "&rnd=" + System.currentTimeMillis());
         String url = br.getRegex("redirect\":\"(http:.*?)\"").getMatch(0);
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         url = url.replaceAll("\\\\/", "/");
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.getURL().contains("cannot_read_file_from_server") || br.containsHTML("(>Download Error<|GigaSize servers or some storage box has been downed)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);
+            if (br.getURL().contains("cannot_read_file_from_server") || br.containsHTML("(>Download Error<|GigaSize servers or some storage box has been downed)")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);
+            }
             // Other server error
-            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 60 * 1000l);
+            if (br.containsHTML("No htmlCode read")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -168,26 +190,27 @@ public class GigaSizeCom extends PluginForHost {
         login(account);
         br.getPage(parameter.getDownloadURL());
         Form form = br.getForm(2);
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (form == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.submitForm(form);
         br.setFollowRedirects(true);
         String token = br.getPage("http://www.gigasize.com/formtoken");
         br.postPage("http://www.gigasize.com/getoken", "fileId=" + getID(parameter) + "&token=" + token + "&rnd=" + System.currentTimeMillis());
         String url = br.getRegex("redirect\":\"(http:.*?)\"").getMatch(0);
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         url = url.replaceAll("\\\\/", "/");
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.getURL().contains("cannot_read_file_from_server") || br.containsHTML("(>Download Error<|GigaSize servers or some storage box has been downed)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);
+            if (br.getURL().contains("cannot_read_file_from_server") || br.containsHTML("(>Download Error<|GigaSize servers or some storage box has been downed)")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
     }
 
     public void login(Account account) throws Exception {

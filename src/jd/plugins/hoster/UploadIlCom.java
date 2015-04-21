@@ -47,7 +47,9 @@ public class UploadIlCom extends PluginForHost {
     public String findLink() throws Exception {
         String finalLink = null;
         String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (sitelinks == null || sitelinks.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (String alink : sitelinks) {
             alink = Encoding.htmlDecode(alink);
             if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
@@ -73,7 +75,9 @@ public class UploadIlCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        if (br.containsHTML("value=\"Free Users\"")) br.postPage(link.getDownloadURL(), "Free=Free+Users");
+        if (br.containsHTML("value=\"Free Users\"")) {
+            br.postPage(link.getDownloadURL(), "Free=Free+Users");
+        }
         String passCode = null;
         Form captchaform = br.getFormbyProperty("name", "myform");
         if (captchaform == null) {
@@ -83,7 +87,9 @@ public class UploadIlCom extends PluginForHost {
             }
         }
         if (br.containsHTML("(captcha.php|class=textinput name=downloadpw)")) {
-            if (captchaform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (captchaform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             for (int i = 0; i <= 3; i++) {
                 if (br.containsHTML("captcha.php")) {
                     String captchaurl = COOKIE_HOST + "/captcha.php";
@@ -127,10 +133,16 @@ public class UploadIlCom extends PluginForHost {
         if (passCode != null) {
             link.setProperty("pass", passCode);
         }
-        if (br.containsHTML("Due to high demand at the moment, this file is available only to registered users")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.host.UploadIlCom.nofreeslotsavailable", "No free slots available for this file"));
-        if (br.containsHTML("You have got max allowed bandwidth size per hour")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        if (br.containsHTML("Due to high demand at the moment, this file is available only to registered users")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.host.UploadIlCom.nofreeslotsavailable", "No free slots available for this file"));
+        }
+        if (br.containsHTML("You have got max allowed bandwidth size per hour")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        }
         String finalLink = findLink();
-        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (finalLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String waittime = br.getRegex("var timeout='(\\d+)';").getMatch(0);
         int secondsToWait = 80;
         if (waittime != null) {
@@ -146,11 +158,6 @@ public class UploadIlCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
@@ -158,7 +165,9 @@ public class UploadIlCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.setCookie(COOKIE_HOST, "yab_mylang", "en");
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Your requested file is not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<b>File name:</b></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
@@ -176,10 +185,16 @@ public class UploadIlCom extends PluginForHost {
             }
         }
         String filesize = br.getRegex("<b>File size:</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<b>File size:</b></td>[\n\r\t ]+<td class=\"data\">(.*?)</td>").getMatch(0);
-        if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filesize == null) {
+            filesize = br.getRegex("<b>File size:</b></td>[\n\r\t ]+<td class=\"data\">(.*?)</td>").getMatch(0);
+        }
+        if (filename == null || filename.matches("")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         parameter.setFinalFileName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 

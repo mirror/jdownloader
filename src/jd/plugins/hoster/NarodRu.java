@@ -147,11 +147,6 @@ public class NarodRu extends PluginForHost {
         dl.startDownload();
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     public static void prepBR(final Browser br) {
         /*
          * no captcha because of http://userscripts.org/scripts/review/64343

@@ -46,7 +46,9 @@ public class BinGe extends PluginForHost {
     private String findLink() throws Exception {
         String finalLink = null;
         String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (sitelinks == null || sitelinks.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (String alink : sitelinks) {
             alink = Encoding.htmlDecode(alink);
             if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
@@ -72,7 +74,9 @@ public class BinGe extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        if (br.containsHTML("value=\"Free Users\"")) br.postPage(link.getDownloadURL(), "Free=Free+Users");
+        if (br.containsHTML("value=\"Free Users\"")) {
+            br.postPage(link.getDownloadURL(), "Free=Free+Users");
+        }
         String passCode = null;
         Form captchaform = br.getFormbyProperty("name", "myform");
         if (captchaform == null) {
@@ -82,7 +86,9 @@ public class BinGe extends PluginForHost {
             }
         }
         if (br.containsHTML("(captcha.php|class=textinput name=downloadpw)")) {
-            if (captchaform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (captchaform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             for (int i = 0; i <= 3; i++) {
                 if (br.containsHTML("captcha.php")) {
                     String captchaurl = COOKIE_HOST + "/captcha.php";
@@ -126,20 +132,19 @@ public class BinGe extends PluginForHost {
         if (passCode != null) {
             link.setProperty("pass", passCode);
         }
-        if (br.containsHTML("You have got max allowed bandwidth size per hour")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        if (br.containsHTML("You have got max allowed bandwidth size per hour")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        }
         String finalLink = findLink();
-        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (finalLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
     }
 
     @Override
@@ -149,21 +154,29 @@ public class BinGe extends PluginForHost {
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.setCookie(COOKIE_HOST, "yab_mylang", "en");
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Your requested file is not found|No file found)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = getData("File name:");
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
         String filesize = getData("File size:");
-        if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filename.matches("")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         parameter.setFinalFileName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
     private String getData(final String data) {
         String result = br.getRegex(">" + data + "</strong></li>[\t\n\r ]+<li class=\"col\\-w50\">([^<>\"]*?)</li>").getMatch(0);
-        if (result == null) result = br.getRegex("<b>" + data + "</b></td>[\t\n\r ]+<td align=left( width=\\d+px)?>([^<>\"]*?)</td>").getMatch(1);
+        if (result == null) {
+            result = br.getRegex("<b>" + data + "</b></td>[\t\n\r ]+<td align=left( width=\\d+px)?>([^<>\"]*?)</td>").getMatch(1);
+        }
         return result;
     }
 

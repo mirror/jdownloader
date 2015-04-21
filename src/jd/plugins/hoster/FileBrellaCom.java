@@ -55,17 +55,27 @@ public class FileBrellaCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String fileID = new Regex(downloadLink.getDownloadURL(), "filebrella\\.com/download/(.+)").getMatch(0);
-        if (!br.containsHTML(CAPTCHATEXT) || fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!br.containsHTML(CAPTCHATEXT) || fileID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (int i = 0; i <= 3; i++) {
             String postLink = "http://www.filebrella.com/xml/captchaSubmit.php?code=" + getCaptchaCode("http://www.filebrella.com/images/verification.php", downloadLink) + "&fid=" + fileID + "&reqID=%6s" + 100000 + new Random().nextInt(900000);
             br.postPage(postLink, "");
-            if (br.containsHTML(CAPTCHAFAILED)) continue;
+            if (br.containsHTML(CAPTCHAFAILED)) {
+                continue;
+            }
             break;
         }
-        if (br.containsHTML(CAPTCHAFAILED)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML(CAPTCHAFAILED)) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         String dllink = br.getRegex("link=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://download\\d+\\.filebrella\\.com:\\d+/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://download\\d+\\.filebrella\\.com:\\d+/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -74,20 +84,21 @@ public class FileBrellaCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<title>FileBrella \\[File Deleted\\]</title>|<div class=\"title\">File Deleted</div>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<title>FileBrella \\[File Deleted\\]</title>|<div class=\"title\">File Deleted</div>)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<div class=\"title\">.*?</div>[\t\n\r ]+<div>[a-z0-9]+_(.*?)</div>").getMatch(0);
-        if (filename == null || filename.equals("")) filename = br.getRegex("<title>FileBrella \\[[a-z0-9]+_(.*?)\\]</title>").getMatch(0);
+        if (filename == null || filename.equals("")) {
+            filename = br.getRegex("<title>FileBrella \\[[a-z0-9]+_(.*?)\\]</title>").getMatch(0);
+        }
         String filesize = br.getRegex("/> Filesize: (.*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;

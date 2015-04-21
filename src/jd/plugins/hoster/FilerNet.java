@@ -330,11 +330,6 @@ public class FilerNet extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     public void login(final Account account) throws IOException, PluginException, InterruptedException {
         synchronized (LOCK) {
             /** Load cookies */

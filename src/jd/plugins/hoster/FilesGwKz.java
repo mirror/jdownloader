@@ -69,20 +69,30 @@ public class FilesGwKz extends PluginForHost {
                 passCode = downloadLink.getStringProperty("pass", null);
             }
             br.postPage(INDEXPAGE, "check=passtoget&fid=" + fid + "&passtoget=" + passCode);
-            if (br.containsHTML(PWPROTECTED)) throw new PluginException(LinkStatus.ERROR_RETRY);
+            if (br.containsHTML(PWPROTECTED)) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
         } else {
-            if (!br.containsHTML("captcha\\.src") || fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!br.containsHTML("captcha\\.src") || fid == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         boolean failed = true;
         for (int i = 0; i <= 3; i++) {
             br.postPage(INDEXPAGE, "check=captcha&fid=" + fid + "&captcha=" + getCaptchaCode("http://files.gw.kz/captcha.php?rand=" + new Random().nextInt(1000), downloadLink));
-            if (br.containsHTML("button_pass")) continue;
+            if (br.containsHTML("button_pass")) {
+                continue;
+            }
             failed = false;
             break;
         }
-        if (failed) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (failed) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         String dllink = br.getRegex("style=\"display: block; font-size:18px;color:#000000;font-weight:bold;\"><a href=\"(http://.*?)\">Download").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -94,26 +104,29 @@ public class FilesGwKz extends PluginForHost {
         dl.startDownload();
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setCookie("http://files.gw.kz", "gw_lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Запрашиваемый вами файл не найден")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Запрашиваемый вами файл не найден")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("class=\"span-d_name bold px14 p_l_3px\" title=\"(.*?)\"").getMatch(0);
         String filesize = br.getRegex("<b>Size: </b>(.*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         String md5 = br.getRegex("<b>MD5: </b>(.*?)</span>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5.trim());
-        if (br.containsHTML(PWPROTECTED)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesgwkz.passwordprotectedlink", "This link is password protected"));
+        if (md5 != null) {
+            link.setMD5Hash(md5.trim());
+        }
+        if (br.containsHTML(PWPROTECTED)) {
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesgwkz.passwordprotectedlink", "This link is password protected"));
+        }
         return AvailableStatus.TRUE;
     }
 

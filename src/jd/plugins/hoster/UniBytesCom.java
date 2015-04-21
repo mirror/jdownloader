@@ -78,8 +78,12 @@ public class UniBytesCom extends PluginForHost {
         prepBrowser();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<p>File not found or removed</p>|>\\s+Page Not Found\\s+<|File not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(FATALSERVERERROR)) return AvailableStatus.UNCHECKABLE;
+        if (br.containsHTML("(<p>File not found or removed</p>|>\\s+Page Not Found\\s+<|File not found)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML(FATALSERVERERROR)) {
+            return AvailableStatus.UNCHECKABLE;
+        }
         if (br.containsHTML(SECURITYCAPTCHA)) {
             link.getLinkStatus().setStatusText("Can't check status, security captcha...");
             return AvailableStatus.UNCHECKABLE;
@@ -142,17 +146,25 @@ public class UniBytesCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String offer = br.getRegex("<a href=\"/([^\"]+&referer=)").getMatch(0); // Russian only
-        if (offer != null) br.postPage(MAINPAGE + offer, "");
+        if (offer != null) {
+            br.postPage(MAINPAGE + offer, "");
+        }
         if (br.containsHTML(SECURITYCAPTCHA)) {
             final Form captchaForm = br.getForm(0);
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (captchaForm == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final String code = getCaptchaCode("http://www." + this.getHost() + "/captcha/?rnd=", downloadLink);
             captchaForm.put("captcha", code);
             br.submitForm(captchaForm);
-            if (br.containsHTML(SECURITYCAPTCHA)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML(SECURITYCAPTCHA)) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
         }
         String uid = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([a-zA-Z0-9\\-\\.\\_]+)").getMatch(0);
-        if (br.containsHTML(FATALSERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
+        if (br.containsHTML(FATALSERVERERROR)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
+        }
         String dllink = br.getRedirectLocation();
         if (dllink == null || !dllink.contains("fdload/")) {
             dllink = dllink == null ? br.getRegex("<div id=\"exeLink\"><a href=\"(http:[^\"]+)").getMatch(0) : dllink;
@@ -161,29 +173,49 @@ public class UniBytesCom extends PluginForHost {
                 /* Waittime is skippable but maybe forced for russians */
                 int wait = 60;
                 final String waittime = br.getRegex("var nn = (\\d+);").getMatch(0);
-                if (waittime != null) wait = Integer.parseInt(waittime);
+                if (waittime != null) {
+                    wait = Integer.parseInt(waittime);
+                }
                 this.sleep(wait * 1001l, downloadLink);
             } else {
                 // maybe outdated
-                if (br.containsHTML("(showNotUniqueIP\\(\\);|>Somebody else is already downloading using your IP-address<)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
+                if (br.containsHTML("(showNotUniqueIP\\(\\);|>Somebody else is already downloading using your IP-address<)")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
+                }
                 String ipBlockedTime = br.getRegex("guestDownloadDelayValue\">(\\d+)</span>").getMatch(0);
-                if (ipBlockedTime == null) ipBlockedTime = br.getRegex("guestDownloadDelay\\((\\d+)\\);").getMatch(0);
-                if (ipBlockedTime == null) ipBlockedTime = br.getRegex("Wait for\\s+(\\d+)\\s+min").getMatch(0);
-                if (ipBlockedTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(ipBlockedTime) * 60 * 1001l);
+                if (ipBlockedTime == null) {
+                    ipBlockedTime = br.getRegex("guestDownloadDelay\\((\\d+)\\);").getMatch(0);
+                }
+                if (ipBlockedTime == null) {
+                    ipBlockedTime = br.getRegex("Wait for\\s+(\\d+)\\s+min").getMatch(0);
+                }
+                if (ipBlockedTime != null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(ipBlockedTime) * 60 * 1001l);
+                }
                 // step1
                 String stepForward = br.getRegex("\"(/" + uid + "/free\\?step=[^\"]+)").getMatch(0);
-                if (stepForward == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (stepForward == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 br.getPage(stepForward);
                 // links can be found after the first step in some regions!
                 dllink = br.getRegex(freeDlLink).getMatch(0);
                 if (dllink == null) {
                     // step2 - euroland require!
                     stepForward = br.getRegex("\"(/" + uid + "/link\\?step=[^\"]+)").getMatch(0);
-                    if (stepForward == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (stepForward == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     br.getPage(stepForward);
-                    if (br.containsHTML("\">Somebody else is already downloading using")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 2 * 60 * 1001l);
-                    if (ipBlockedTime == null) ipBlockedTime = br.getRegex("Wait for\\s+(\\d+)\\s+min").getMatch(0);
-                    if (ipBlockedTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(ipBlockedTime) * 60 * 1001l);
+                    if (br.containsHTML("\">Somebody else is already downloading using")) {
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 2 * 60 * 1001l);
+                    }
+                    if (ipBlockedTime == null) {
+                        ipBlockedTime = br.getRegex("Wait for\\s+(\\d+)\\s+min").getMatch(0);
+                    }
+                    if (ipBlockedTime != null) {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(ipBlockedTime) * 60 * 1001l);
+                    }
                     dllink = br.getRegex(freeDlLink).getMatch(0);
                     if (dllink == null) {
                         logger.warning("dllink equals null!");
@@ -195,7 +227,9 @@ public class UniBytesCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(FATALSERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
+            if (br.containsHTML(FATALSERVERERROR)) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -208,7 +242,9 @@ public class UniBytesCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRegex("style=\"text\\-align:center; clear: both; padding\\-top: 3em;\"><a href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://st\\d+\\.unibytes\\.com/download/file.*?\\?referer=.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://st\\d+\\.unibytes\\.com/download/file.*?\\?referer=.*?)\"").getMatch(0);
+        }
         if (dllink == null) {
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa != null) {
@@ -220,7 +256,9 @@ public class UniBytesCom extends PluginForHost {
                     ai.setExpired(true);
                 }
                 account.setAccountInfo(ai);
-                if (ai.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (ai.isExpired()) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             }
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -234,17 +272,14 @@ public class UniBytesCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         prepBrowser();
         br.getPage(MAINPAGE);
         br.postPage(MAINPAGE, "lb_login=" + Encoding.urlEncode(account.getUser()) + "&lb_password=" + Encoding.urlEncode(account.getPass()) + "&lb_remember=true");
-        if (br.getCookie(MAINPAGE, "hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie(MAINPAGE, "hash") == null) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     @Override

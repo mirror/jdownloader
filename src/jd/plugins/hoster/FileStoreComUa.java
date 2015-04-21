@@ -39,7 +39,9 @@ public class FileStoreComUa extends PluginForHost {
     private String findLink() throws Exception {
         String finalLink = null;
         String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-        if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (sitelinks == null || sitelinks.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (String alink : sitelinks) {
             alink = Encoding.htmlDecode(alink);
             if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
@@ -68,7 +70,9 @@ public class FileStoreComUa extends PluginForHost {
         for (int i = 0; i <= 3; i++) {
             Form captchaform = br.getFormbyProperty("name", "myform");
             String captchaurl = "http://filestore.com.ua/captcha.php";
-            if (captchaform == null || !br.containsHTML("captcha.php")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (captchaform == null || !br.containsHTML("captcha.php")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (br.containsHTML("downloadpw")) {
                 if (link.getStringProperty("pass", null) == null) {
                     passCode = getUserInput(null, link);
@@ -106,19 +110,22 @@ public class FileStoreComUa extends PluginForHost {
         if (passCode != null) {
             link.setProperty("pass", passCode);
         }
-        if (br.containsHTML("You have got max allowed bandwidth size per hour")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        if (br.containsHTML("You have got max allowed bandwidth size per hour")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        }
         String dllink = findLink();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         String check = br.getURL();
-        if (check.contains("FileNotFound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if ((dl.getConnection().getContentType().contains("html"))) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (check.contains("FileNotFound")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if ((dl.getConnection().getContentType().contains("html"))) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
     }
 
     @Override
@@ -128,12 +135,18 @@ public class FileStoreComUa extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://filestore.com.ua", "filestore_mylang", "en");
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Your requested file is not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         String filesize = br.getRegex("<b>File size:</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         parameter.setName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 

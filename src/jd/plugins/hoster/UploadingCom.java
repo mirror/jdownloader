@@ -526,11 +526,6 @@ public class UploadingCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     public boolean isPremium(Account account, boolean force) throws IOException {
         boolean isPremium = false;
         synchronized (LOCK) {

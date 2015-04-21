@@ -62,13 +62,17 @@ public class TwoSharedCom extends PluginForHost {
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("The file link that you requested is not valid") || br.containsHTML("var msg = \\'")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("The file link that you requested is not valid") || br.containsHTML("var msg = \\'")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = null;
         Form pwform = br.getForm(0);
         if (pwform != null && pwform.containsHTML("password") && !pwform.getAction().contains("paypal")) {
             downloadLink.getLinkStatus().setStatusText("This link is password protected");
             filename = br.getRegex("align=\"center\">Download ([^<>\"]*?)</td>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             downloadLink.setName(Encoding.htmlDecode(filename.trim()));
             return AvailableStatus.TRUE;
         }
@@ -84,7 +88,9 @@ public class TwoSharedCom extends PluginForHost {
         if (filesize == null) {
             filesize = br.getRegex("class=\"bodytitle\">Loading image \\((.*?)\\)\\.\\.\\. Please wait").getMatch(0);
         }
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",|\\.", "")));
         return AvailableStatus.TRUE;
@@ -109,11 +115,15 @@ public class TwoSharedCom extends PluginForHost {
                     break;
                 }
             }
-            if (br.containsHTML("The password you have entered is not valid")) { throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered"); }
+            if (br.containsHTML("The password you have entered is not valid")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            }
         }
         if (br.containsHTML("Your free download limit is over")) {
             final String minutes = br.getRegex("wait <span>(\\d+) minutes</span>\\.").getMatch(0);
-            if (minutes != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(minutes) * 60 * 1001l);
+            if (minutes != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(minutes) * 60 * 1001l);
+            }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
         String finallink = null;
@@ -128,13 +138,17 @@ public class TwoSharedCom extends PluginForHost {
         link = link == null ? br.getRegex("<div style=\"display:none\" id=\"\\w+\">(.*?)</div>").getMatch(0) : link;
         finallink = finallink == null ? link : finallink;
         finallink = finallink == null ? br.getRegex("window\\.location ='(.*?)';").getMatch(0) : finallink;
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (finallink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         finallink = finallink.trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
         if (dl.getConnection().getContentType().contains("html") && dl.getConnection().getURL().getQuery() == null || !dl.getConnection().isContentDisposition()) {
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
-                if (br.containsHTML("id=\"leMsg\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+                if (br.containsHTML("id=\"leMsg\"")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+                }
             }
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -148,11 +162,6 @@ public class TwoSharedCom extends PluginForHost {
             }
         }
         dl.startDownload();
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
     }
 
     @Override

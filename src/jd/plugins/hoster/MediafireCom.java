@@ -357,12 +357,6 @@ public class MediafireCom extends PluginForHost {
             return false;
         }
 
-        // do not add @Override here to keep 0.* compatibility
-        public boolean hasCaptcha() {
-            // Usually not
-            return false;
-        }
-
         abstract protected boolean isCorrect();
 
         public void run() throws Exception {

@@ -51,10 +51,14 @@ public class LinkFileDe extends PluginForHost {
         requestFileInformation(downloadLink);
         String code = getCaptchaCode(br.getBaseURL() + "captcha.php", downloadLink);
         Form captchaForm = br.getForm(0);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (captchaForm == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         captchaForm.put("captcha", code);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, true, 1);
-        if (dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FATAL, "Fataler Serverfehler");
+        if (dl.getConnection().getLongContentLength() == 0) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Fataler Serverfehler");
+        }
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
@@ -62,20 +66,21 @@ public class LinkFileDe extends PluginForHost {
         dl.startDownload();
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
-        if (br.containsHTML("Diese Datei ist nicht mehr verf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Diese Datei ist nicht mehr verf")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String size = br.getRegex("<tbody><tr><td[^>]*>\\s+(.*?)\\s+&nbsp;").getMatch(0);
-        if (size == null) size = br.getRegex("&nbsp; \\((.*?)\\)").getMatch(0);
+        if (size == null) {
+            size = br.getRegex("&nbsp; \\((.*?)\\)").getMatch(0);
+        }
         String name = br.getRegex("Datei: <b>(.*?)</b>").getMatch(0);
-        if (size == null || name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (size == null || name == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setDownloadSize(SizeFormatter.getSize(size));
         downloadLink.setName(name.trim());
         return AvailableStatus.TRUE;

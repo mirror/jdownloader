@@ -52,7 +52,9 @@ public class UsaUplNet extends PluginForHost {
         requestFileInformation(downloadLink);
         for (int i = 0; i <= 3; i++) {
             Form captchaform = br.getFormbyProperty("id", "upload");
-            if (captchaform == null || !br.containsHTML("capt.tu?")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (captchaform == null || !br.containsHTML("capt.tu?")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             String captchaUrl = "http://www.usaupload.net/capt.tu?";
             String code = getCaptchaCode(captchaUrl, downloadLink);
             captchaform.put("scode", code);
@@ -63,33 +65,40 @@ public class UsaUplNet extends PluginForHost {
             }
             break;
         }
-        if (br.containsHTML("(You entered wrong security code|please try again)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("(You entered wrong security code|please try again)")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         String dllink = br.getRegex("unescape\\(\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("file=(.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            dllink = br.getRegex("file=(.*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = Encoding.htmlDecode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             // Check if the error is the limit
-            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Freeusers can only have 1 simultan download!");
+            if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Freeusers can only have 1 simultan download!");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(Sorry, the file you requested is not available|The file was deleted)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Sorry, the file you requested is not available|The file was deleted)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("Name</strong>:(.*?)<br").getMatch(0);
         String filesize = br.getRegex("File size:</strong>(.*?)<br").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;

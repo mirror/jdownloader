@@ -63,7 +63,7 @@ public class AccountCache implements Iterable<CachedAccount> {
         }
 
         public boolean hasCaptcha(DownloadLink link) {
-            return plugin != null && plugin.hasCaptcha(link, account);
+            return plugin != null && Boolean.TRUE.equals(plugin.expectCaptcha(link, account));
         }
 
         public boolean canHandle(DownloadLink link) {
@@ -134,28 +134,28 @@ public class AccountCache implements Iterable<CachedAccount> {
 
     protected final static AccountCache      NA = new AccountCache(null) {
 
-                                                    public java.util.Iterator<CachedAccount> iterator() {
-                                                        return new Iterator<AccountCache.CachedAccount>() {
+        public java.util.Iterator<CachedAccount> iterator() {
+            return new Iterator<AccountCache.CachedAccount>() {
 
-                                                            @Override
-                                                            public boolean hasNext() {
-                                                                return false;
-                                                            }
+                @Override
+                public boolean hasNext() {
+                    return false;
+                }
 
-                                                            @Override
-                                                            public CachedAccount next() {
-                                                                return null;
-                                                            }
+                @Override
+                public CachedAccount next() {
+                    return null;
+                }
 
-                                                            @Override
-                                                            public void remove() {
-                                                                throw new UnsupportedOperationException();
-                                                            }
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException();
+                }
 
-                                                        };
+            };
 
-                                                    };
-                                                };
+        };
+    };
 
     protected final ArrayList<CachedAccount> cache;
     protected final ArrayList<Rules>         rules;

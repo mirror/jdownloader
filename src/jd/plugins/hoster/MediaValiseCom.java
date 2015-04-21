@@ -53,16 +53,22 @@ public class MediaValiseCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (!br.containsHTML("api\\.recaptcha\\.net") && !br.containsHTML("google\\.com/recaptcha/api/")) {
             br.getPage("http://www.mediavalise.com/files/choice");
-            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+            if (br.getRedirectLocation() != null) {
+                br.getPage(br.getRedirectLocation());
+            }
             int wait = 30;
             String waitTime = br.getRegex("var begin_sec = parseInt\\(\"(\\d+)\"\\)").getMatch(0);
             if (waitTime != null) {
                 wait = Integer.parseInt(waitTime);
             } else {
                 waitTime = br.getRegex("<strong id=\"v_timer\">[\t\n\r ]+<span class=\\'red\\'>(\\d+)</span> minutes").getMatch(0);
-                if (waitTime != null) wait = Integer.parseInt(waitTime) * 60;
+                if (waitTime != null) {
+                    wait = Integer.parseInt(waitTime) * 60;
+                }
             }
-            if (wait > 120) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+            if (wait > 120) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+            }
             sleep(wait * 1001l, downloadLink);
             br.getPage(downloadLink.getDownloadURL());
         }
@@ -82,9 +88,13 @@ public class MediaValiseCom extends PluginForHost {
         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
         String c = getCaptchaCode("recaptcha", cf, downloadLink);
         br.postPage(downloadLink.getDownloadURL().replace(".html", "") + ".js", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
-        if (br.containsHTML(">Wrong captcha code<")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML(">Wrong captcha code<")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         String dllink = br.getRegex("id=\"donwload_link\" class=\"center\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?mediavalise\\.com/exp_download/[a-z0-9]+)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://(www\\.)?mediavalise\\.com/exp_download/[a-z0-9]+)\"").getMatch(0);
+        }
         if (dllink == null) {
             logger.warning("dllink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -103,20 +113,19 @@ public class MediaValiseCom extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(due to Terms of Service or deleted by user\\.<|>The requested file has been deleted<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(due to Terms of Service or deleted by user\\.<|>The requested file has been deleted<)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         Regex fileInfo = br.getRegex("class=\"download_block_title\">(.*?)<div>File size: <span>(.*?)</span></div>");
         String filename = fileInfo.getMatch(0);
         String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;

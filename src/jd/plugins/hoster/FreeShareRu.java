@@ -79,7 +79,9 @@ public class FreeShareRu extends PluginForHost {
         rc.getForm().put("sid", sid);
         rc.getForm().setAction(downloadLink.getDownloadURL());
         rc.setCode(c);
-        if (br.containsHTML("неверный код")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("неверный код")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         String dllink = br.getRegex("name=\"sid\".*?<a href=\"(.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(http://frdl[0-9]+\\.free-share\\.ru/[0-9a-z]+/.*?)\"").getMatch(0);
@@ -102,22 +104,21 @@ public class FreeShareRu extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("файл не найден/not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("файл не найден/not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("Имя файла: <b><a style=\"color:.*?\" href=\"http://free-share\\.ru/[0-9]+/[0-9]+/(.*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("\"http://free-share\\.ru/[0-9]+/[0-9]+/.*?\">(.*?)</a>").getMatch(0);
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         link.setName(filename.trim());
         Regex info = br.getRegex("Размер файла.*?<b><strong>(.*?)</strong>(.*?)</b>");
         if (info.getMatch(0) != null && info.getMatch(1) != null) {

@@ -67,7 +67,9 @@ public class FilEarnCom extends PluginForHost {
         final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
         final ScriptEngine engine = manager.getEngineByName("javascript");
         String returnVar = new Regex(fun, "return ([A-Za-z0-9]+);").getMatch(0);
-        if (returnVar == null) return null;
+        if (returnVar == null) {
+            return null;
+        }
         fun = "var iioo = false;" + fun.replace("return " + returnVar + ";", "var lol = " + returnVar + ";");
         try {
             result = engine.eval(fun);
@@ -75,7 +77,9 @@ public class FilEarnCom extends PluginForHost {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (result == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return result.toString();
     }
 
@@ -107,9 +111,13 @@ public class FilEarnCom extends PluginForHost {
     private String getAction() throws Exception {
         String jsCrap = br.getRegex("</span></code>[\t\n\r ]+<div>[\t\n\r ]+<script language=\"javascript\">[\t\n\r ]+function [A-Za-z0-9]+\\(iioo\\) \\{(.*?return .*?;)").getMatch(0);
         String action = br.getRegex("\"(http://(www\\.)?filearn\\.com/files/gen/.*?)\"").getMatch(0);
-        if (jsCrap == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (jsCrap == null || action == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String actionPart = execJS(jsCrap);
-        if (actionPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (actionPart == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return action + "/" + actionPart;
     }
 
@@ -147,10 +155,16 @@ public class FilEarnCom extends PluginForHost {
             dllink = null;
         }
         if (dllink == null) {
-            if (br.containsHTML(">Only premium users can download more than 150 MB in a 3 hour interval\\.<")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-            if (br.containsHTML(TOOMANYSIMLUTANDOWNLOADS)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
+            if (br.containsHTML(">Only premium users can download more than 150 MB in a 3 hour interval\\.<")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            }
+            if (br.containsHTML(TOOMANYSIMLUTANDOWNLOADS)) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
+            }
             String action = getAction();
-            if (action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (action == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             Form dlForm = new Form();
@@ -175,17 +189,27 @@ public class FilEarnCom extends PluginForHost {
             // wait -= passedTime;
             // sleep(wait * 1000, downloadLink);
             rc.setCode(c);
-            if (br.containsHTML(TOOMANYSIMLUTANDOWNLOADS)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>The Captcha you submited was incorrect)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML(TOOMANYSIMLUTANDOWNLOADS)) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
+            }
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>The Captcha you submited was incorrect)")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             dllink = br.getRedirectLocation();
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         // More chunks are possible but i think they cause many server errors
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(TOOMANYSIMLUTANDOWNLOADS)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
-            if (br.containsHTML("(>Download link does not exist|>An Error Was Encountered<)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server problems", 120 * 1000l);
+            if (br.containsHTML(TOOMANYSIMLUTANDOWNLOADS)) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
+            }
+            if (br.containsHTML("(>Download link does not exist|>An Error Was Encountered<)")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server problems", 120 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("dllink", dllink);
@@ -208,7 +232,9 @@ public class FilEarnCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            if (br.containsHTML(">Incorrect or expired download url<")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error (dl link expired, too many simultan downloads)", 30 * 60 * 1000l);
+            if (br.containsHTML(">Incorrect or expired download url<")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error (dl link expired, too many simultan downloads)", 30 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -219,11 +245,6 @@ public class FilEarnCom extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
@@ -231,7 +252,9 @@ public class FilEarnCom extends PluginForHost {
             br.setCookiesExclusive(true);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            if (acmatch) {
+                acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            }
             if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (account.isValid()) {
@@ -270,16 +293,22 @@ public class FilEarnCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(File Link Error<|Your file could not be found\\. Please check the download link\\.<|<title>File: Not Found \\- NoelShare</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(File Link Error<|Your file could not be found\\. Please check the download link\\.<|<title>File: Not Found \\- NoelShare</title>)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<span id=\"name\">[\t\n\r ]+<nobr>(.*?)</nobr>").getMatch(0);
         String filesize = br.getRegex("<span id=\"size\">(.*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = filename.trim();
         // Check if decrypter also gave us a filename
         String videarnName = link.getStringProperty("videarnname");
         if (videarnName != null) {
             String ext = filename.substring(filename.lastIndexOf("."));
-            if (ext == null) ext = "";
+            if (ext == null) {
+                ext = "";
+            }
             filename = videarnName + ext;
         }
         link.setName(filename);

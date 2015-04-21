@@ -71,14 +71,11 @@ public class FilerCx extends PluginForHost {
         }
         String dllink = null;
         dllink = br.getRegex("onclick=\"highlight\\('downloadurl'\\);\" ondblclick=\"ClipBoard\\('downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         dl.startDownload();
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
     }
 
     @Override
@@ -87,7 +84,9 @@ public class FilerCx extends PluginForHost {
         br.getPage(parameter.getDownloadURL());
         String filename = br.getRegex(Pattern.compile("<b>File name:</b></td>.*<td align=left width=150px>(.*?)</td>", Pattern.DOTALL)).getMatch(0);
         String filesize = br.getRegex(Pattern.compile("<td align=left><b>File size:</b></td>.*<td align=left>(.*?)</td>.*<td align=left><b>Downloads:</b>", Pattern.DOTALL)).getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         parameter.setName(filename.trim());
         parameter.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
