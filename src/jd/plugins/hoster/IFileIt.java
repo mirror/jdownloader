@@ -55,8 +55,8 @@ public class IFileIt extends PluginForHost {
     /* TODO: Check/update these limits */
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = -1;
-    private static final int     FREE_MAXDOWNLOADS            = 0;
+    private static final int     FREE_MAXCHUNKS               = 1;
+    private static final int     FREE_MAXDOWNLOADS            = 1;
     private static final boolean ACCOUNT_FREE_RESUME          = true;
     private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
@@ -184,7 +184,7 @@ public class IFileIt extends PluginForHost {
             final String recaptchaV2Response = getRecaptchaV2Response();
             postData += Encoding.urlEncode(recaptchaV2Response);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("http://ezfile.ch/?m=download&a=request", postData);
+            br.postPage("/?m=download&a=request", postData);
             this.dllink = getJson("downloadUrl");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -317,6 +317,16 @@ public class IFileIt extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        if (true) {
+            /* TODO */
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
         final AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
@@ -345,9 +355,9 @@ public class IFileIt extends PluginForHost {
             account.setProperty("free", true);
             try {
                 account.setType(AccountType.FREE);
-                maxPrem.set(1);
-                account.setMaxSimultanDownloads(1);
-                // free accounts can still have captcha.
+                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
+                account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+                /* free accounts can still have captcha. */
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
@@ -359,8 +369,8 @@ public class IFileIt extends PluginForHost {
             ai.setValidUntil(Long.parseLong(getJson("premium_until", br)) * 1000);
             try {
                 account.setType(AccountType.PREMIUM);
-                maxPrem.set(5);
-                account.setMaxSimultanDownloads(5);
+                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
@@ -406,7 +416,7 @@ public class IFileIt extends PluginForHost {
                 maxchunks = 1;
             }
 
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, ACCOUNT_PREMIUM_RESUME, maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 503) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections", 10 * 60 * 1000l);
