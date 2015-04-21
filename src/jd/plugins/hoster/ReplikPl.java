@@ -66,11 +66,6 @@ public class ReplikPl extends PluginForHost {
         return false;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return false;
-    }
-
     /* not used for now - only pl */
     // public void prepBrowser() {
     // br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8"); br.setCookie(MAINPAGE, "lang", "english");
@@ -90,12 +85,15 @@ public class ReplikPl extends PluginForHost {
         Browser brClone = br.cloneBrowser();
         brClone.getPage("http://" + link.getHost() + "/gt/" + node);
         final String token = getJson("token", brClone, false);
-        if (token == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "download token is null!"); }
+        if (token == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "download token is null!");
+        }
         try {
             if (finalLink.contains("http://")) {
                 finalLink = finalLink + "?token=" + token;
-            } else
+            } else {
                 finalLink = "http://" + link.getHost() + finalLink + "?token=" + token;
+            }
 
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, maxChunksForFree.get());
         } catch (Exception e) {
@@ -133,12 +131,15 @@ public class ReplikPl extends PluginForHost {
         Browser brClone = br.cloneBrowser();
         brClone.getPage("http://" + link.getHost() + "/gt/" + node);
         final String token = getJson("token", brClone, false);
-        if (token == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "download token is null!"); }
+        if (token == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "download token is null!");
+        }
         try {
             if (finalLink.contains("http://")) {
                 finalLink = finalLink + "?token=" + token;
-            } else
+            } else {
                 finalLink = "http://" + link.getHost() + finalLink + "?token=" + token;
+            }
 
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, maxChunksForRegistered.get());
         } catch (Exception e) {
@@ -167,12 +168,18 @@ public class ReplikPl extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         // Link offline
-        if (br.containsHTML("Element nie może zostać wyświetlony")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (br.containsHTML("Brak dostępu do strony")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Brak dostępu do strony!"); }
+        if (br.containsHTML("Element nie może zostać wyświetlony")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("Brak dostępu do strony")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Brak dostępu do strony!");
+        }
 
         final String fileName = br.getRegex("<h1 id=\"file_title\">[ \t\n\r\f]+<span>(.*?)</span>").getMatch(0);
         final String fileSize = br.getRegex("<td>Rozmiar:&nbsp;</td>[ \t\n\r\f]+<td>[ \t\n\r\f]+<strong>[ \t\n\r\f]+(.*?)[ \t\n\r\f]+</strong>[ \t\n\r\f]+</td>").getMatch(0);
-        if (fileName == null || fileSize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "filename or filesize not recognized"); }
+        if (fileName == null || fileSize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "filename or filesize not recognized");
+        }
         link.setName(Encoding.htmlDecode(fileName.trim()));
         link.setDownloadSize(SizeFormatter.getSize(fileSize));
         return AvailableStatus.TRUE;
@@ -187,7 +194,9 @@ public class ReplikPl extends PluginForHost {
                 br.setCookie(MAINPAGE, "lang", "pl");
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -211,14 +220,15 @@ public class ReplikPl extends PluginForHost {
                 // br.getPage("/");
                 if (br.containsHTML("form_errors")) {
                     String errMsg = getJson("password", br, true);
-                    if (errMsg != null)
+                    if (errMsg != null) {
                         logger.warning("Server reports:" + errMsg);
-                    else {
+                    } else {
                         errMsg = getJson("username", br, true);
-                        if (errMsg != null)
+                        if (errMsg != null) {
                             logger.warning("Server reports:" + errMsg);
-                        else
+                        } else {
                             logger.warning("Couldn't determine account status!");
+                        }
                     }
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium Account is invalid: it's free or not recognized!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -255,8 +265,9 @@ public class ReplikPl extends PluginForHost {
             ai.setUnlimitedTraffic();
             account.setValid(true);
             ai.setStatus("Registered User");
-        } else
+        } else {
             account.setValid(false);
+        }
         return ai;
     }
 
@@ -283,9 +294,9 @@ public class ReplikPl extends PluginForHost {
 
     public static String getJson(final String parameter, final Browser br2, final boolean loginForm) {
         String result = null;
-        if (loginForm)
+        if (loginForm) {
             result = br2.getRegex(parameter + "\": \"(.*?)\"},").getMatch(0);
-        else {
+        } else {
             result = br2.getRegex(parameter + "\": \"(.*)\"}").getMatch(0);
             // if (result == null) result = br2.getRegex(parameter + "\": \"(.{128})\"}").getMatch(0);
         }

@@ -73,11 +73,6 @@ public class FileFilesNet extends PluginForHost {
         return false;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return false;
-    }
-
     @Override
     public String getAGBLink() {
         return HOST + "/terms.php";

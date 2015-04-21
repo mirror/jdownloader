@@ -49,10 +49,14 @@ public class FilesInCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>File Not Found, may be deleted by user|<title>FilesIn\\.com \\| Upload your files fast,easy and free</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>File Not Found, may be deleted by user|<title>FilesIn\\.com \\| Upload your files fast,easy and free</title>)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.*?) \\| FilesIn\\.com</title>").getMatch(0);
         String filesize = br.getRegex("<div>File size <b>(.*?)</b>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -62,10 +66,14 @@ public class FilesInCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String freeLink = br.getRegex("\"(http://(www\\.)?filesin\\.com/(?!premium)[A-Z0-9]+/[A-Z0-9]+/" + downloadLink.getName() + ".html)\"").getMatch(0);
-        if (freeLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (freeLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage(freeLink);
         final String rcID = br.getRegex("\\?k=([^<>\"\\'/]+)\"").getMatch(0);
-        if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (rcID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.setId(rcID);
@@ -79,14 +87,22 @@ public class FilesInCom extends PluginForHost {
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode("recaptcha", cf, downloadLink);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, freeLink, "download=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, false, 1);
-            if (!dl.getConnection().getContentType().contains("html")) break;
+            if (!dl.getConnection().getContentType().contains("html")) {
+                break;
+            }
             br.followConnection();
-            if (br.containsHTML(RECAPTCHAFAILED)) continue;
+            if (br.containsHTML(RECAPTCHAFAILED)) {
+                continue;
+            }
             break;
         }
-        if (br.containsHTML(RECAPTCHAFAILED)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML(RECAPTCHAFAILED)) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         final String reconnectWait = br.getRegex("try again after \\((\\d+)\\) Minute").getMatch(0);
-        if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(reconnectWait) + 1) * 60 * 1000l);
+        if (reconnectWait != null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(reconnectWait) + 1) * 60 * 1000l);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -102,11 +118,6 @@ public class FilesInCom extends PluginForHost {
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
         return false;
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
     }
 
     @Override

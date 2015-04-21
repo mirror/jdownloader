@@ -132,11 +132,6 @@ public class DeviantClipCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     @Override
     public void reset() {
     }

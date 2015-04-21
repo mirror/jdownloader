@@ -754,11 +754,6 @@ public class ShareFlareNet extends PluginForHost {
         return prepBr;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     @Override
     public void reset() {
     }

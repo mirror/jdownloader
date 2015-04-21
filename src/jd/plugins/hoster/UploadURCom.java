@@ -60,11 +60,6 @@ public class UploadURCom extends PluginForHost {
         return false;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return false;
-    }
-
     @Override
     public String getAGBLink() {
         return HOST + "/help/terms.php";
@@ -77,7 +72,9 @@ public class UploadURCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         checkErrors();
         String[][] fileInfo = br.getRegex("(?i)<div class=\"row2\\-download\\-top\"><.*?> ([^>]+)</.*?><.*?>([\\d\\.]+ (KB|MB|GB|TB))").getMatches();
-        if (fileInfo == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fileInfo == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(fileInfo[0][0].trim()));
         link.setDownloadSize(SizeFormatter.getSize(fileInfo[0][1]));
         return AvailableStatus.TRUE;
@@ -89,11 +86,15 @@ public class UploadURCom extends PluginForHost {
         String freelink = br.getRegex("value=\"Free Download \\( Normal \\)\" id=\"dlbutton\" disabled=\"disabled\" onclick=\"document\\.location=\\'([^\\']+)").getMatch(0);
         if (freelink == null) {
             freelink = br.getRegex("(https?://.+?/get/[^\\']+)").getMatch(0);
-            if (freelink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (freelink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         br.getPage(freelink);
         Form dlForm = br.getForm(1);
-        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlForm == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dlForm.setAction(dlForm.getAction().replace("./get/", "/get/"));
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlForm, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -106,7 +107,9 @@ public class UploadURCom extends PluginForHost {
     }
 
     private void checkErrors() throws PluginException {
-        if (br.containsHTML("<div class=\"file\\-error\"><h1> File not found \\!</h1>|<h2>File have been remove or deleted</h2></div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<div class=\"file\\-error\"><h1> File not found \\!</h1>|<h2>File have been remove or deleted</h2></div>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     @Override

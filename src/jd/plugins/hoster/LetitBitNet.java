@@ -1127,11 +1127,6 @@ public class LetitBitNet extends PluginForHost {
         }
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     private void prepareBrowser(final Browser br) {
         /*
          * last time they did not block the user-agent, we just need this stuff below ;)

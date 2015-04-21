@@ -67,8 +67,12 @@ public class CreaFileCom extends PluginForHost {
         br.setFollowRedirects(true);
         String dllink = null;
         String captchaurl = "http://creafile.com//codeimg.php";
-        if (!br.containsHTML("codeimg.php")) captchaurl = null;
-        if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!br.containsHTML("codeimg.php")) {
+            captchaurl = null;
+        }
+        if (captchaurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String code = getCaptchaCode(captchaurl, downloadLink);
         String hash = new Regex(downloadLink.getDownloadURL(), "/download/(.*)").getMatch(0);
         br.postPage(downarea, "hash=" + hash + "&captcha=" + code);
@@ -78,22 +82,32 @@ public class CreaFileCom extends PluginForHost {
         br2.postPage("http://creafile.com/handlers.php?h=loadiframe", "hash=" + hash + "&advname=market");
         br2.postPage("http://creafile.com/handlers.php?h=loadiframe", "hash=" + hash + "&advname=waiter");
         boolean wait1 = getPluginConfig().getBooleanProperty(WAIT1, true);
-        if (wait1) sleep(60 * 1001l, downloadLink);
+        if (wait1) {
+            sleep(60 * 1001l, downloadLink);
+        }
         br.getPage(downarea);
         String dllink0 = br.getRegex("href=\"(http://creafile.com/d/.*?)\"").getMatch(0);
         Form faster = br.getFormbyProperty("id", "fasters");
-        if (faster == null) faster = br.getForm(0);
+        if (faster == null) {
+            faster = br.getForm(0);
+        }
         if (faster != null) {
             br.submitForm(faster);
             boolean wait2 = getPluginConfig().getBooleanProperty(WAIT2, true);
-            if (wait2) sleep(60 * 1001l, downloadLink);
+            if (wait2) {
+                sleep(60 * 1001l, downloadLink);
+            }
             br.getPage(downarea);
             dllink = br.getRegex("href=\"(http://creafile.com/d/.*?)\"").getMatch(0);
         }
-        if (dllink == null && dllink0 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null && dllink0 == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         int maxchunks = 1;
         boolean chunks = getPluginConfig().getBooleanProperty(CHUNKS, false);
-        if (chunks) maxchunks = 0;
+        if (chunks) {
+            maxchunks = 0;
+        }
         if (dllink == null && dllink0 != null) {
             // Downloading using the slow download link the server doesn't allow
             // more than 1 connection per file
@@ -106,22 +120,23 @@ public class CreaFileCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie("http://creafile.com", "creafile_lang", "en");
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("File not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("File name :</strong></td>.*?<td colspan=\".*?>(.*?)</td>").getMatch(0).trim();
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filesize = br.getRegex("File size :</strong></td>.*?<td colspan=\"[0-9]\">(.*?)</td>").getMatch(0);
-        if (filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         filesize = filesize.replaceAll("Г", "G");
         filesize = filesize.replaceAll("М", "M");
         filesize = filesize.replaceAll("к", "k");

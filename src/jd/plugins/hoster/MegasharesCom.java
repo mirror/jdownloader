@@ -378,11 +378,6 @@ public class MegasharesCom extends PluginForHost {
         }
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     public void loadpage(String url) throws IOException {
         boolean tmp = br.isFollowingRedirects();
         br.setFollowRedirects(false);

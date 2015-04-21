@@ -283,11 +283,6 @@ public class HellSpyCz extends PluginForHost {
         return dllink;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     /** TODO: Maybe add support for time-accounts */
     @SuppressWarnings("deprecation")
     @Override

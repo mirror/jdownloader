@@ -52,8 +52,12 @@ public class UploadSpacePl extends PluginForHost {
 
     public void handleErrors() throws PluginException {
         String time2wait = br.getRegex("function starthtimer\\(\\)\\{.*?timerend=d\\.getTime\\(\\)\\+(\\d+);").getMatch(0);
-        if (time2wait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(time2wait));
-        if (br.containsHTML(">You are currently downloading")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
+        if (time2wait != null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(time2wait));
+        }
+        if (br.containsHTML(">You are currently downloading")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
+        }
     }
 
     @Override
@@ -66,10 +70,14 @@ public class UploadSpacePl extends PluginForHost {
         handleErrors();
         br.setFollowRedirects(false);
         Form dlform = br.getFormbyProperty("name", "plik");
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String time2download = br.getRegex("timerend=d\\.getTime\\(\\)\\+(\\d+);").getMatch(0);
         int dlTime = 60;
-        if (time2download != null) dlTime = Integer.parseInt(time2download);
+        if (time2download != null) {
+            dlTime = Integer.parseInt(time2download);
+        }
         sleep(dlTime + 1000, downloadLink);
         br.submitForm(dlform);
         Form captchaForm = new Form();
@@ -78,7 +86,9 @@ public class UploadSpacePl extends PluginForHost {
         for (int i = 0; i <= 5; i++) {
             String hash = br.getRegex("name=\"hash\" value=\"(.*?)\"").getMatch(0);
             String id = br.getRegex("\\?k=(.*?)\"").getMatch(0);
-            if (hash == null || id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (hash == null || id == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             captchaForm.put("hash", hash);
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -88,10 +98,14 @@ public class UploadSpacePl extends PluginForHost {
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode("recaptcha", cf, downloadLink);
             rc.setCode(c);
-            if (br.containsHTML("api.recaptcha.net")) continue;
+            if (br.containsHTML("api.recaptcha.net")) {
+                continue;
+            }
             break;
         }
-        if (br.containsHTML("api.recaptcha.net")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("api.recaptcha.net")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             handleErrors();
@@ -111,11 +125,6 @@ public class UploadSpacePl extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -123,16 +132,22 @@ public class UploadSpacePl extends PluginForHost {
         String ret = br.getPage("http://uploadspace.pl/api/file.php?id=" + id);
         String[][] info = new Regex(ret, "(\\d+)," + id + ",(.*?),(\\d+)").getMatches();
         if (info != null && info.length == 1 && info[0].length == 3) {
-            if ("0".equals(info[0][0])) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if ("0".equals(info[0][0])) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             link.setFinalFileName(info[0][1]);
             link.setDownloadSize(SizeFormatter.getSize(info[0][2]));
             return AvailableStatus.TRUE;
         }
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(File not found|This file is either removed due to copyright claim or is deleted by the uploader)") || (!br.containsHTML("render.php"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(File not found|This file is either removed due to copyright claim or is deleted by the uploader)") || (!br.containsHTML("render.php"))) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = new Regex(link.getDownloadURL(), "uploadspace\\.pl/plik[a-zA-Z0-9]+/(.*?)\\.htm").getMatch(0);
-        if (filename != null) link.setName(filename);
+        if (filename != null) {
+            link.setName(filename);
+        }
         return AvailableStatus.TRUE;
     }
 

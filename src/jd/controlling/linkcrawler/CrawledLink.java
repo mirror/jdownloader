@@ -112,11 +112,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     /**
      * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info
      * about how to prozess the file afterwards.
-     * 
+     *
      * example:<br>
      * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID
      * different.
-     * 
+     *
      * @return
      */
     public String getLinkID() {
@@ -427,7 +427,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     /**
      * If this Link got filtered by {@link CaptchaHandler}, you can get the matching deny rule here.<br>
      * <br>
-     * 
+     *
      * @return
      */
     public FilterRule getMatchingFilter() {
@@ -474,7 +474,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     /**
      * Returns if this linkc an be handled without manual user captcha input
-     * 
+     *
      * @return
      */
     public boolean hasAutoCaptcha() {
@@ -489,7 +489,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         final PluginForHost plugin = gethPlugin();
         final DownloadLink dlLink = getDownloadLink();
         if (plugin != null && dlLink != null) {
-            return plugin.hasCaptcha(dlLink, acc);
+            return Boolean.TRUE.equals(plugin.expectCaptcha(dlLink, acc));
         }
         return false;
     }

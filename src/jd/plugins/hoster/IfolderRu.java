@@ -288,11 +288,6 @@ public class IfolderRu extends PluginForHost {
         return dllink;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     private void prepareBrowser(Browser br) {
         if (br == null) {
             return;

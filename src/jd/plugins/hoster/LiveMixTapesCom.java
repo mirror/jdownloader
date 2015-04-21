@@ -248,11 +248,6 @@ public class LiveMixTapesCom extends PluginForHost {
         doFree(link);
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     public void login(final Browser br, final Account account) throws Exception {
         this.setBrowserExclusive();
         // br.getPage(MAINPAGE);

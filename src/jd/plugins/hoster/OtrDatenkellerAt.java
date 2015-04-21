@@ -476,11 +476,6 @@ public class OtrDatenkellerAt extends PluginForHost {
         return 1;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return false;
-    }
-
     @Override
     public void reset() {
     }

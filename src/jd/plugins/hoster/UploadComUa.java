@@ -91,29 +91,39 @@ public class UploadComUa extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.containsHTML("Для продолжения скачивания необходимо ввести код подтверждения\\.")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.uploadcomua.nofreedownloadlink", "Download is only possible for premium users"));
+        if (!br.containsHTML("Для продолжения скачивания необходимо ввести код подтверждения\\.")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.uploadcomua.nofreedownloadlink", "Download is only possible for premium users"));
+        }
         // Link zum Captcha (kann bei anderen Hostern auch mit ID sein)
         String captchaurl = "http://upload.com.ua/confirm.php";
         String code = getCaptchaCode(captchaurl, downloadLink);
         Form captchaForm = br.getForm(2);
-        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (captchaForm == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Captcha Usereingabe in die Form einfügen
         captchaForm.put("code", code);
         br.submitForm(captchaForm);
-        if (br.containsHTML("Информация о файле")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("Информация о файле")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         // holt sich den dllink und entfernt danach (dllink) bestimmte
         // Zeichen[+Zeilenumbrüche], die reingesetzt wurden um das Downloaden
         // per Downloadmanager zu erschweren
         String dllink = br.getRegex("new Array\\((.*?)\\);").getMatch(0);
         String osfilename = br.getRegex("id=\"os_filename\" value=\"(.*?)\"").getMatch(0);
-        if (dllink == null || osfilename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null || osfilename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.replaceAll("(,|\"| |\r|\n)", "");
         dllink = "http://dl" + dllink.replace("|", ".upload.com.ua/");
         dllink = dllink + "/" + Encoding.htmlDecode(osfilename);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
-            if (br.containsHTML("503 Service Temporarily Unavailable")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, 5 * 60 * 1001l); }
+            if (br.containsHTML("503 Service Temporarily Unavailable")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, 5 * 60 * 1001l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -128,33 +138,38 @@ public class UploadComUa extends PluginForHost {
         String dllink = br.getRegex("Для начала загрузки файла нажмите на кнопку:<br>.*?<a href=\"(http.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("или воспользуйтесь предлагаемой ссылкой:<br>.*?<a href=\"(http.*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://dl[0-9]+\\.upload\\.com\\.ua/fi1e/.*?/.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://dl[0-9]+\\.upload\\.com\\.ua/fi1e/.*?/.*?)\"").getMatch(0);
+            }
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
         dl.startDownload();
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
     }
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.getPage("http://upload.com.ua/");
         br.postPage("http://upload.com.ua/#", "submit=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        if (br.getCookie("http://upload.com.ua", "premium") == null || !br.getCookie("http://upload.com.ua", "premium").equals("1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie("http://upload.com.ua", "premium") == null || !br.getCookie("http://upload.com.ua", "premium").equals("1")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(Файл не найден|>Файл удален</td>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Файл не найден|>Файл удален</td>)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("\">Скачать (.*?)</a>").getMatch(0);
         String filesize = br.getRegex("file_size\">(.*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String md5 = br.getRegex("<b>Хэш \\(md5\\):</b></td>[\t\r\n ]+<td style=\"font-size: 11px;\">([a-z0-9]+)</td>").getMatch(0);
         if (md5 != null) {
             link.setMD5Hash(md5.trim());

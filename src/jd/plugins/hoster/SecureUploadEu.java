@@ -106,11 +106,6 @@ public class SecureUploadEu extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     private static final AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
     public void prepBrowser(final Browser br) {

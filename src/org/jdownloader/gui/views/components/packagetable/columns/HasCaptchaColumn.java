@@ -27,7 +27,7 @@ import org.jdownloader.images.NewTheme;
 public class HasCaptchaColumn extends ExtIconColumn<AbstractNode> {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
     private Icon              iconNo;
@@ -108,23 +108,16 @@ public class HasCaptchaColumn extends ExtIconColumn<AbstractNode> {
     }
 
     private boolean hasCaptcha(DownloadLink dlink) {
-        PluginForHost plg = dlink.getDefaultPlugin();
-
+        final PluginForHost plg = dlink.getDefaultPlugin();
         boolean hasCaptcha = true;
         if (plg != null) {
-            hasCaptcha = plg.hasCaptcha(dlink, null);
+            hasCaptcha = Boolean.TRUE.equals(plg.expectCaptcha(dlink, null));
             if (hasCaptcha) {
                 List<Account> accs = AccountController.getInstance().getMultiHostAccounts(plg.getHost());
                 if (accs != null) {
                     for (Account acc : accs) {
-
-                        if (acc.isValid() && !acc.isTempDisabled() && acc.isEnabled()) {
-                            if (acc.getPlugin() == null) {
-                                hasCaptcha = plg.hasCaptcha(dlink, acc);
-                            } else {
-                                hasCaptcha = acc.getPlugin().hasCaptcha(dlink, acc);
-
-                            }
+                        if (acc.getPlugin() != null && acc.isValid() && !acc.isTempDisabled() && acc.isEnabled()) {
+                            hasCaptcha = Boolean.TRUE.equals(acc.getPlugin().expectCaptcha(dlink, acc));
                         }
                         if (!hasCaptcha) {
                             break;
@@ -137,24 +130,16 @@ public class HasCaptchaColumn extends ExtIconColumn<AbstractNode> {
                 ArrayList<Account> accs = AccountController.getInstance().list(plg.getHost());
                 if (accs != null) {
                     for (Account acc : accs) {
-                        if (acc.isValid() && !acc.isTempDisabled() && acc.isEnabled()) {
-                            if (acc.getPlugin() == null) {
-                                hasCaptcha = plg.hasCaptcha(dlink, acc);
-                            } else {
-                                hasCaptcha = acc.getPlugin().hasCaptcha(dlink, acc);
-
-                            }
+                        if (acc.getPlugin() != null && acc.isValid() && !acc.isTempDisabled() && acc.isEnabled()) {
+                            hasCaptcha = Boolean.TRUE.equals(acc.getPlugin().expectCaptcha(dlink, acc));
                         }
                         if (!hasCaptcha) {
                             break;
                         }
                     }
-
                 }
             }
-
         }
-
         return hasCaptcha;
     }
 

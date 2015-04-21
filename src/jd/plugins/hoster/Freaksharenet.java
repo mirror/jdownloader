@@ -441,11 +441,6 @@ public class Freaksharenet extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     private static final String COOKIE_HOST = "http://freakshare.com";
 
     public void login(final Account account, final boolean force) throws IOException, PluginException {

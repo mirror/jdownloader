@@ -97,11 +97,6 @@ public class DateiTo extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     @Override
     public void correctDownloadLink(final DownloadLink link) throws MalformedURLException {
         String id = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)\\.html$").getMatch(0);

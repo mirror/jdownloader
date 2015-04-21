@@ -433,11 +433,6 @@ public class SendspaceCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     @Override
     public void init() {
         Browser.setRequestIntervalLimitGlobal(this.getHost(), 750);

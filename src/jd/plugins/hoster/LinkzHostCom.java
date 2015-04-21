@@ -53,11 +53,17 @@ public class LinkzHostCom extends PluginForHost {
         if (br.containsHTML("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = br.getRegex("You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
-            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+            if (tmphrs != null) {
+                hours = Integer.parseInt(tmphrs);
+            }
             String tmpmin = br.getRegex("You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
-            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+            if (tmpmin != null) {
+                minutes = Integer.parseInt(tmpmin);
+            }
             String tmpsec = br.getRegex("You have to wait.*?\\s+(\\d+)\\s+seconds?").getMatch(0);
-            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+            if (tmpsec != null) {
+                seconds = Integer.parseInt(tmpsec);
+            }
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
@@ -71,10 +77,18 @@ public class LinkzHostCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
             } else {
                 int minutes = 0, seconds = 0, hours = 0, days = 0;
-                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                if (tmpdays != null) days = Integer.parseInt(tmpdays);
+                if (tmphrs != null) {
+                    hours = Integer.parseInt(tmphrs);
+                }
+                if (tmpmin != null) {
+                    minutes = Integer.parseInt(tmpmin);
+                }
+                if (tmpsec != null) {
+                    seconds = Integer.parseInt(tmpsec);
+                }
+                if (tmpdays != null) {
+                    days = Integer.parseInt(tmpdays);
+                }
                 int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
@@ -89,7 +103,9 @@ public class LinkzHostCom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
             } else {
@@ -97,7 +113,9 @@ public class LinkzHostCom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
@@ -129,10 +147,14 @@ public class LinkzHostCom extends PluginForHost {
         }
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLForm == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // Ticket Time
         String ttt = br.getRegex("countdown\">.*?(\\d+).*?</span>").getMatch(0);
-        if (ttt == null) ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+        if (ttt == null) {
+            ttt = br.getRegex("id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+        }
         if (ttt != null) {
             logger.info("Waittime detected, waiting " + ttt.trim() + " seconds from now on...");
             int tt = Integer.parseInt(ttt);
@@ -245,7 +267,9 @@ public class LinkzHostCom extends PluginForHost {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
                 checkErrors(downloadLink);
-                if (br.containsHTML("You're using all download slots for IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+                if (br.containsHTML("You're using all download slots for IP")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+                }
                 if (br.containsHTML("(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input|Wrong password)")) {
                     logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                     downloadLink.setProperty("pass", null);
@@ -317,11 +341,6 @@ public class LinkzHostCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
         return true;
     }
 

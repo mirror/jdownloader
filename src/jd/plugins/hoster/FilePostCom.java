@@ -148,7 +148,7 @@ public class FilePostCom extends PluginForHost {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see jd.plugins.PluginForHost#correctDownloadLink(jd.plugins.DownloadLink)
      */
     @Override
@@ -640,11 +640,6 @@ public class FilePostCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
         return true;
     }
 

@@ -287,11 +287,6 @@ public class CrockoCom extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {

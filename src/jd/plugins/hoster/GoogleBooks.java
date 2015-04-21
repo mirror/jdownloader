@@ -78,23 +78,33 @@ public class GoogleBooks extends PluginForHost {
         // jd on first run needs to load previous LinkedHashMap
         LinkedHashMap<String, String> saved = new LinkedHashMap<String, String>();
         saved = (LinkedHashMap<String, String>) getPluginConfig().getProperty("savedSigs");
-        if (saved != null) bookList = saved;
+        if (saved != null) {
+            bookList = saved;
+        }
         this.setBrowserExclusive();
         prepBrowser(br);
         br.setFollowRedirects(true);
 
         String buid = link.getStringProperty("buid", null);
-        if (buid == null) buid = new Regex(link.getDownloadURL(), "(&|\\?)id=([a-zA-Z_\\-]{12})").getMatch(1);
+        if (buid == null) {
+            buid = new Regex(link.getDownloadURL(), "(&|\\?)id=([a-zA-Z_\\-]{12})").getMatch(1);
+        }
         String page = link.getStringProperty("page", null);
-        if (page == null) page = new Regex(link.getDownloadURL(), "(&|\\?)pg=([A-Z]{2}\\d+)").getMatch(1);
+        if (page == null) {
+            page = new Regex(link.getDownloadURL(), "(&|\\?)pg=([A-Z]{2}\\d+)").getMatch(1);
+        }
 
-        if (br.getCookies(link.getDownloadURL()) == null) br.getPage(link.getDownloadURL());
+        if (br.getCookies(link.getDownloadURL()) == null) {
+            br.getPage(link.getDownloadURL());
+        }
 
         String dllink = bookList.get(buid + page);
         if (dllink == null) {
             // when was the last download?? lets prevent more requests if last download was to recent.
             long ran = (new Random().nextInt(10) * 1317) + 9531;
-            if (System.currentTimeMillis() <= sysTime.get() + ran) sleep(ran, link);
+            if (System.currentTimeMillis() <= sysTime.get() + ran) {
+                sleep(ran, link);
+            }
             dllink = getImg(buid, page, link);
             if (dllink == null) {
                 // we have hit some session limit
@@ -117,9 +127,15 @@ public class GoogleBooks extends PluginForHost {
         // Get and set the correct ending of the file!
         String correctEnding = LoadImage.getFileType(link.getDownloadURL(), dl.getConnection().getContentType());
         String wrongEnding = null;
-        if (link.getName().lastIndexOf('.') > 0) wrongEnding = link.getName().substring(link.getName().lastIndexOf('.'));
-        if (correctEnding != null && wrongEnding != null) link.setFinalFileName(link.getName().replace(wrongEnding, correctEnding));
-        if (correctEnding != null && wrongEnding == null) link.setFinalFileName(link.getName() + correctEnding);
+        if (link.getName().lastIndexOf('.') > 0) {
+            wrongEnding = link.getName().substring(link.getName().lastIndexOf('.'));
+        }
+        if (correctEnding != null && wrongEnding != null) {
+            link.setFinalFileName(link.getName().replace(wrongEnding, correctEnding));
+        }
+        if (correctEnding != null && wrongEnding == null) {
+            link.setFinalFileName(link.getName() + correctEnding);
+        }
         dl.startDownload();
         // post download events
         bookList.remove(buid + page);
@@ -135,11 +151,6 @@ public class GoogleBooks extends PluginForHost {
         getPluginConfig().setProperty("cookies", cookies);
         getPluginConfig().setProperty("agent", agent);
         getPluginConfig().save();
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
     }
 
     @Override
@@ -164,7 +175,9 @@ public class GoogleBooks extends PluginForHost {
         // load previous agent, could be referenced with cookie session. (not tested)
 
         // define custom browser headers and language settings.
-        if (agent == null) agent = getPluginConfig().getStringProperty("agent", null);
+        if (agent == null) {
+            agent = getPluginConfig().getStringProperty("agent", null);
+        }
         if (agent == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
@@ -217,7 +230,9 @@ public class GoogleBooks extends PluginForHost {
     private static synchronized String unescape(final String s) {
         /* we have to make sure the youtube plugin is loaded */
         final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-        if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+        if (plugin == null) {
+            throw new IllegalStateException("youtube plugin not found!");
+        }
 
         return jd.plugins.hoster.Youtube.unescape(s);
     }

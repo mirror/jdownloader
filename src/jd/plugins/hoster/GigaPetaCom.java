@@ -188,9 +188,6 @@ public class GigaPetaCom extends PluginForHost {
     }
 
     // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();

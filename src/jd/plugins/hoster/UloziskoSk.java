@@ -50,24 +50,34 @@ public class UloziskoSk extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("Prepáčte, Vaša krajina nie je podporovaná z dôvodu drahého medzinárodnému prenosu dát. Môžete skúsiť")) throw new PluginException(LinkStatus.ERROR_FATAL, "Your country is blocked!");
+        if (br.containsHTML("Prepáčte, Vaša krajina nie je podporovaná z dôvodu drahého medzinárodnému prenosu dát. Môžete skúsiť")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Your country is blocked!");
+        }
         String time = br.getRegex("<span class=\"down1\" id=\"cass\">(.*?)</span>").getMatch(0);
         if (time != null) {
             String wait1 = new Regex(time, "(\\d+):").getMatch(0);
             String wait2 = new Regex(time, ".*?:(\\d+)").getMatch(0);
             int wait1int = 0;
             int wait2int = 0;
-            if (wait1 != null) wait1int = Integer.parseInt(wait1);
-            if (wait2 != null) wait2int = Integer.parseInt(wait2);
+            if (wait1 != null) {
+                wait1int = Integer.parseInt(wait1);
+            }
+            if (wait2 != null) {
+                wait2int = Integer.parseInt(wait2);
+            }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (wait1int * 60 + wait2int) * 1001l);
         }
         br.setFollowRedirects(false);
         for (int i = 0; i <= 3; i++) {
             Form dlform = br.getFormbyProperty("name", "formular");
             String captchaUrl = br.getRegex("</div> <br /><img src=\"(/.*?)\"").getMatch(0);
-            if (captchaUrl == null) captchaUrl = br.getRegex("\"(/obrazky/obrazky\\.php\\?fid=.*?id=.*?)\"").getMatch(0);
+            if (captchaUrl == null) {
+                captchaUrl = br.getRegex("\"(/obrazky/obrazky\\.php\\?fid=.*?id=.*?)\"").getMatch(0);
+            }
             if (dlform == null || captchaUrl == null) {
-                if (br.containsHTML("\\.mp3ky\\.info\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (br.containsHTML("\\.mp3ky\\.info\"")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             captchaUrl = "http://www.ulozisko.sk" + captchaUrl;
@@ -83,19 +93,18 @@ public class UloziskoSk extends PluginForHost {
             logger.info("Code is correct!");
             break;
         }
-        if ((br.getRedirectLocation() != null && br.getRedirectLocation().contains("error")) || br.containsHTML("Neopísali ste správny overovací reťazec")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if ((br.getRedirectLocation() != null && br.getRedirectLocation().contains("error")) || br.containsHTML("Neopísali ste správny overovací reťazec")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        if (br.getRedirectLocation() == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
     }
 
     @Override
@@ -105,8 +114,12 @@ public class UloziskoSk extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
-        if (br.containsHTML("Prepáčte, Vaša krajina nie je podporovaná z dôvodu drahého medzinárodnému prenosu dát. Môžete skúsiť")) return AvailableStatus.UNCHECKABLE;
-        if (br.containsHTML("(or was removed|is not existed|The requested file does not exists|>Zadaný súbor neexistuje z jedného z nasledujúcich dôvodov:<|Bol zmazaný používateľom\\.|Zle ste opísali adresu odkazu. Pozorne opíšte alebo skopírujte adresu odkazu)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Prepáčte, Vaša krajina nie je podporovaná z dôvodu drahého medzinárodnému prenosu dát. Môžete skúsiť")) {
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.containsHTML("(or was removed|is not existed|The requested file does not exists|>Zadaný súbor neexistuje z jedného z nasledujúcich dôvodov:<|Bol zmazaný používateľom\\.|Zle ste opísali adresu odkazu. Pozorne opíšte alebo skopírujte adresu odkazu)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("class=\"down1\">(.*?)<").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=\"down2\">(.*?)</div").getMatch(0);
@@ -122,7 +135,9 @@ public class UloziskoSk extends PluginForHost {
         }
         String filesize = br.getRegex("Veľkosť súboru: <strong>(.*?)</strong").getMatch(0);
         if (filename == null || filesize == null) {
-            if (br.containsHTML("\\.mp3ky\\.info\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("\\.mp3ky\\.info\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(filename.trim());

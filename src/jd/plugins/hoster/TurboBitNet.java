@@ -804,11 +804,6 @@ public class TurboBitNet extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
     /**

@@ -420,11 +420,6 @@ public class DivxDenCom extends PluginForHost {
         return passCode;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     @Override
     public void reset() {
     }

@@ -418,11 +418,6 @@ public class BitShareCom extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     // TODO: Implement API: http://bitshare.com/openAPI.html and maybe use
     // downloadhandling from their tool: http://bitshare.com/tool.html
     @SuppressWarnings("unchecked")

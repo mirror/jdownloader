@@ -58,7 +58,9 @@ public class FiledropperCom extends PluginForHost {
 
         for (int i = 0; i <= 5; i++) {
             captchaForm = br.getForm(0);
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (captchaForm == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
 
             String captchaUrl = br.getRegex("src=\"(securimage/securimage_show\\.php\\?sid=[0-9a-z]{32})\"").getMatch(0);
             String code = getCaptchaCode(captchaUrl, downloadLink);
@@ -74,17 +76,14 @@ public class FiledropperCom extends PluginForHost {
             valid = true;
             break;
         }
-        if (valid == false) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (valid == false) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
         }
         dl.startDownload();
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
     }
 
     @Override

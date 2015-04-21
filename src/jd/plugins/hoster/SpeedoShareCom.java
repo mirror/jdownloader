@@ -70,14 +70,22 @@ public class SpeedoShareCom extends PluginForHost {
         }
         // Some waittimes...
         if (BRBEFORE.contains("You have to wait")) {
-            if (loggedIn) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            if (loggedIn) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
-            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+            if (tmphrs != null) {
+                hours = Integer.parseInt(tmphrs);
+            }
             String tmpmin = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
-            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+            if (tmpmin != null) {
+                minutes = Integer.parseInt(tmpmin);
+            }
             String tmpsec = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+seconds?").getMatch(0);
-            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+            if (tmpsec != null) {
+                seconds = Integer.parseInt(tmpsec);
+            }
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             if (waittime != 0) {
                 logger.info("Detected waittime #1, waiting " + waittime + " milliseconds");
@@ -88,7 +96,9 @@ public class SpeedoShareCom extends PluginForHost {
             }
         }
         if (BRBEFORE.contains("You have reached the download-limit")) {
-            if (loggedIn) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            if (loggedIn) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             String tmphrs = new Regex(BRBEFORE, "\\s+(\\d+)\\s+hours?").getMatch(0);
             String tmpmin = new Regex(BRBEFORE, "\\s+(\\d+)\\s+minutes?").getMatch(0);
             String tmpsec = new Regex(BRBEFORE, "\\s+(\\d+)\\s+seconds?").getMatch(0);
@@ -97,20 +107,32 @@ public class SpeedoShareCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
             } else {
                 int minutes = 0, seconds = 0, hours = 0, days = 0;
-                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                if (tmpdays != null) days = Integer.parseInt(tmpdays);
+                if (tmphrs != null) {
+                    hours = Integer.parseInt(tmphrs);
+                }
+                if (tmpmin != null) {
+                    minutes = Integer.parseInt(tmpmin);
+                }
+                if (tmpsec != null) {
+                    seconds = Integer.parseInt(tmpsec);
+                }
+                if (tmpdays != null) {
+                    days = Integer.parseInt(tmpdays);
+                }
                 int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         }
         if (BRBEFORE.contains("You're using all download slots for IP")) {
-            if (loggedIn) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            if (loggedIn) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
         }
-        if (BRBEFORE.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        if (BRBEFORE.contains("Error happened when generating Download Link")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        }
         // Errorhandling for only-premium links
         if (BRBEFORE.contains(" can download files up to ") || BRBEFORE.contains("Upgrade your account to download bigger files") || BRBEFORE.contains("This file reached max downloads") || BRBEFORE.contains(">Upgrade your account to download larger files")) {
             String filesizelimit = new Regex(BRBEFORE, "You can download files up to(.*?)only").getMatch(0);
@@ -120,7 +142,9 @@ public class SpeedoShareCom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
             } else {
@@ -128,7 +152,9 @@ public class SpeedoShareCom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
@@ -136,7 +162,9 @@ public class SpeedoShareCom extends PluginForHost {
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
-        if (BRBEFORE.contains("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        if (BRBEFORE.contains("No file")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        }
         if (BRBEFORE.contains("File Not Found") || BRBEFORE.contains("<h1>404 Not Found</h1>")) {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -156,7 +184,9 @@ public class SpeedoShareCom extends PluginForHost {
 
             while (c != 0) {
                 c--;
-                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                if (k[c].length() != 0) {
+                    p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                }
             }
 
             decoded = p;
@@ -168,7 +198,9 @@ public class SpeedoShareCom extends PluginForHost {
             finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
             if (finallink == null) {
                 finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
-                if (finallink == null) finallink = new Regex(decoded, "s1\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+                if (finallink == null) {
+                    finallink = new Regex(decoded, "s1\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+                }
             }
         }
         return finallink;
@@ -201,7 +233,9 @@ public class SpeedoShareCom extends PluginForHost {
         }
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
-        if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLForm == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         // // Ticket Time - can be skipped at the moment
         // String ttt = new Regex(BRBEFORE,
         // "countdown\">.*?(\\d+).*?</span>").getMatch(0);
@@ -349,7 +383,9 @@ public class SpeedoShareCom extends PluginForHost {
                     dllink = new Regex(BRBEFORE, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
                         String crypted = br.getRegex("p}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
-                        if (crypted != null) dllink = decodeDownloadLink(crypted);
+                        if (crypted != null) {
+                            dllink = decodeDownloadLink(crypted);
+                        }
                     }
                 }
             }
@@ -382,11 +418,6 @@ public class SpeedoShareCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return true;
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
         return true;
     }
 

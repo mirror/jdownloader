@@ -131,17 +131,25 @@ public class MovReelCom extends PluginForHost {
                 logger.warning("Wrong captcha or wrong password!");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            if (BRBEFORE.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
+            if (BRBEFORE.contains("\">Skipped countdown<")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
+            }
         }
         // Some waittimes...
         if (BRBEFORE.contains("You have to wait")) {
             int minutes = 0, seconds = 0, hours = 0;
             String tmphrs = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
-            if (tmphrs != null) hours = Integer.parseInt(tmphrs);
+            if (tmphrs != null) {
+                hours = Integer.parseInt(tmphrs);
+            }
             String tmpmin = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+minutes?").getMatch(0);
-            if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
+            if (tmpmin != null) {
+                minutes = Integer.parseInt(tmpmin);
+            }
             String tmpsec = new Regex(BRBEFORE, "You have to wait.*?\\s+(\\d+)\\s+seconds?").getMatch(0);
-            if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
+            if (tmpsec != null) {
+                seconds = Integer.parseInt(tmpsec);
+            }
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             if (waittime != 0) {
                 logger.info("Detected waittime #1, waiting " + waittime + " milliseconds");
@@ -160,17 +168,29 @@ public class MovReelCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
             } else {
                 int minutes = 0, seconds = 0, hours = 0, days = 0;
-                if (tmphrs != null) hours = Integer.parseInt(tmphrs);
-                if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
-                if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                if (tmpdays != null) days = Integer.parseInt(tmpdays);
+                if (tmphrs != null) {
+                    hours = Integer.parseInt(tmphrs);
+                }
+                if (tmpmin != null) {
+                    minutes = Integer.parseInt(tmpmin);
+                }
+                if (tmpsec != null) {
+                    seconds = Integer.parseInt(tmpsec);
+                }
+                if (tmpdays != null) {
+                    days = Integer.parseInt(tmpdays);
+                }
                 int waittime = ((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
         }
-        if (BRBEFORE.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
-        if (BRBEFORE.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        if (BRBEFORE.contains("You're using all download slots for IP")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        }
+        if (BRBEFORE.contains("Error happened when generating Download Link")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
+        }
         // Errorhandling for only-premium links
         if (new Regex(BRBEFORE, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file You requested  reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
             String filesizelimit = new Regex(BRBEFORE, "You can download files up to(.*?)only").getMatch(0);
@@ -180,7 +200,9 @@ public class MovReelCom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
             } else {
@@ -188,16 +210,22 @@ public class MovReelCom extends PluginForHost {
                 try {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
                 } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
             }
         }
-        if (BRBEFORE.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        if (BRBEFORE.contains(MAINTENANCE)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        }
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
-        if (BRBEFORE.contains("No file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        if (BRBEFORE.contains("No file")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        }
         if (new Regex(BRBEFORE, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -217,7 +245,9 @@ public class MovReelCom extends PluginForHost {
 
             while (c != 0) {
                 c--;
-                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                if (k[c].length() != 0) {
+                    p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                }
             }
 
             decoded = p;
@@ -229,7 +259,9 @@ public class MovReelCom extends PluginForHost {
             finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
             if (finallink == null) {
                 finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
-                if (finallink == null) finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+                if (finallink == null) {
+                    finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+                }
             }
         }
         return finallink;
@@ -255,7 +287,9 @@ public class MovReelCom extends PluginForHost {
         dllink = getDllink();
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
-            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dlForm == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             long timeBefore = System.currentTimeMillis();
             boolean password = false;
             boolean skipWaittime = false;
@@ -323,8 +357,12 @@ public class MovReelCom extends PluginForHost {
                 // skipWaittime = true;
             }
             /* Captcha END */
-            if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
-            if (!skipWaittime) waitTime(timeBefore, downloadLink);
+            if (password) {
+                passCode = handlePassword(passCode, dlForm, downloadLink);
+            }
+            if (!skipWaittime) {
+                waitTime(timeBefore, downloadLink);
+            }
             br.submitForm(dlForm);
             logger.info("Submitted DLForm");
             doSomething();
@@ -344,7 +382,9 @@ public class MovReelCom extends PluginForHost {
             checkServerErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
         dl.startDownload();
     }
 
@@ -379,7 +419,9 @@ public class MovReelCom extends PluginForHost {
             return ai;
         }
         String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim() + " Mb");
+        if (space != null) {
+            ai.setUsedSpace(space.trim() + " Mb");
+        }
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>(.*?)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             // Who needs half points ? If we have a dot in the points, just
@@ -436,7 +478,9 @@ public class MovReelCom extends PluginForHost {
                                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                                     for (String crypted : cryptedScripts) {
                                         dllink = decodeDownloadLink(crypted);
-                                        if (dllink != null) break;
+                                        if (dllink != null) {
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -467,7 +511,9 @@ public class MovReelCom extends PluginForHost {
 
     public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
         passCode = thelink.getStringProperty("pass", null);
-        if (passCode == null) passCode = Plugin.getUserInput("Password?", thelink);
+        if (passCode == null) {
+            passCode = Plugin.getUserInput("Password?", thelink);
+        }
         pwform.put("password", passCode);
         logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
         return passCode;
@@ -489,8 +535,12 @@ public class MovReelCom extends PluginForHost {
             if (dllink == null) {
                 doSomething();
                 Form DLForm = br.getFormbyProperty("name", "F1");
-                if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (new Regex(BRBEFORE, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, DLForm, link);
+                if (DLForm == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (new Regex(BRBEFORE, PASSWORDTEXT).matches()) {
+                    passCode = handlePassword(passCode, DLForm, link);
+                }
                 br.submitForm(DLForm);
                 doSomething();
                 dllink = br.getRedirectLocation();
@@ -505,7 +555,9 @@ public class MovReelCom extends PluginForHost {
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (passCode != null) link.setProperty("pass", passCode);
+            if (passCode != null) {
+                link.setProperty("pass", passCode);
+            }
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -522,25 +574,28 @@ public class MovReelCom extends PluginForHost {
         return true;
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
-    }
-
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(COOKIE_HOST + "/login.html");
         Form loginform = br.getForm(0);
-        if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (loginform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         loginform.put("login", Encoding.urlEncode(account.getUser()));
         loginform.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(loginform);
-        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         br.getPage(COOKIE_HOST + "/?op=my_account");
         doSomething();
-        if (!new Regex(BRBEFORE, "(Premium-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!new Regex(BRBEFORE, "(Premium-Account expire|>Renew premium<)").matches()) NOPREMIUM = true;
+        if (!new Regex(BRBEFORE, "(Premium-Account expire|Upgrade to premium|>Renew premium<)").matches()) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        if (!new Regex(BRBEFORE, "(Premium-Account expire|>Renew premium<)").matches()) {
+            NOPREMIUM = true;
+        }
     }
 
     @Override
@@ -555,12 +610,16 @@ public class MovReelCom extends PluginForHost {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         // Ticket Time
         String ttt = new Regex(BRBEFORE, "countdown\">.*?(\\d+).*?</span>").getMatch(0);
-        if (ttt == null) ttt = new Regex(BRBEFORE, "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+        if (ttt == null) {
+            ttt = new Regex(BRBEFORE, "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
+        }
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
             logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
-            if (tt > 0) sleep(tt * 1001l, downloadLink);
+            if (tt > 0) {
+                sleep(tt * 1001l, downloadLink);
+            }
         }
     }
 

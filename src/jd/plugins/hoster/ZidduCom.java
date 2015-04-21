@@ -57,13 +57,21 @@ public class ZidduCom extends PluginForHost {
         br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage(Url);
-        if (br.containsHTML(FILEOFFLINE) || br.getURL().contains("msg=File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(FILEOFFLINE) || br.getURL().contains("msg=File not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("top\\.document\\.title=\"Download (.*?) in Ziddu\"").getMatch(0);
-        if (filename == null) filename = br.getRegex("download/\\d+/(.*?)\\.html").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("download/\\d+/(.*?)\\.html").getMatch(0);
+        }
         String filesize = br.getRegex("File Size.*?class=\"fontfamilyverdana normal12black\">([^<>\"]*?)</tr>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(Encoding.htmlDecode(filename));
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         br.setFollowRedirects(false);
         return AvailableStatus.TRUE;
     }
@@ -76,12 +84,20 @@ public class ZidduCom extends PluginForHost {
         Form form = br.getFormbyProperty("name", "dfrm");
         this.sleep(500, downloadLink);
         br.submitForm(form);
-        if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("Is too Busy,Please <br>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
+        if (br.containsHTML(FILEOFFLINE)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.containsHTML("Is too Busy,Please <br>")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
+        }
         form = br.getFormbyProperty("name", "securefrm");
-        if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (form == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String capurl = form.getRegex("(/CaptchaSecurityImages\\.php\\?width=\\d+&height=\\d+&characters=\\d)").getMatch(0);
-        if (capurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (capurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String code = getCaptchaCode("http://downloads.ziddu.com" + capurl, downloadLink);
         form.put("securitycode", code);
         br.setFollowRedirects(true);
@@ -91,7 +107,9 @@ public class ZidduCom extends PluginForHost {
          */
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            if (br.containsHTML("FILEOFFLINE")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!");
+            if (br.containsHTML("FILEOFFLINE")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!");
+            }
             try {
                 invalidateLastChallengeResponse();
             } catch (final Throwable e) {
@@ -103,11 +121,6 @@ public class ZidduCom extends PluginForHost {
         } catch (final Throwable e) {
         }
         dl.startDownload();
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility

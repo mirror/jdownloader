@@ -69,12 +69,18 @@ public class FileFlushCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.setCookie(COOKIE_HOST, "yab_mylang", "en");
         br.getPage(parameter.getDownloadURL());
-        if (br.getURL().contains("&code=DL_FileNotFound") || br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("&code=DL_FileNotFound") || br.containsHTML("(Your requested file is not found|No file found)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h2 class=\"float\\-left\">([^<>\"]*?)</h2>").getMatch(0);
         String filesize = getData("File size");
-        if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filename.matches("")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         parameter.setFinalFileName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -82,27 +88,41 @@ public class FileFlushCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(downloadLink);
-        if (br.containsHTML("value=\"Free Users\""))
+        if (br.containsHTML("value=\"Free Users\"")) {
             br.postPage(downloadLink.getDownloadURL(), "Free=Free+Users");
-        else if (br.getFormbyProperty("name", "entryform1") != null) br.submitForm(br.getFormbyProperty("name", "entryform1"));
+        } else if (br.getFormbyProperty("name", "entryform1") != null) {
+            br.submitForm(br.getFormbyProperty("name", "entryform1"));
+        }
         final String code = getCaptchaCode("mhfstandard", "http://fileflush.com/captcha.php?rand=" + System.currentTimeMillis(), downloadLink);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1&captchacode=" + code);
-        if (br.containsHTML("Captcha number error or expired")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (br.containsHTML("This file is setted ad PREMIUM FILE by uploader")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.fileflushcom.premiumonly", "Only downloadable for premium users"));
+        if (br.containsHTML("Captcha number error or expired")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        if (br.containsHTML("This file is setted ad PREMIUM FILE by uploader")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.fileflushcom.premiumonly", "Only downloadable for premium users"));
+        }
         final String reconnectWaittime = br.getRegex("You must wait (\\d+) mins\\. for next download.").getMatch(0);
-        if (reconnectWaittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 60 * 1001l);
+        if (reconnectWaittime != null) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 60 * 1001l);
+        }
         final String finalLink = findLink();
-        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (finalLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         int wait = 120;
         final String waittime = br.getRegex("countdown\\((\\d+)\\);").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
+        if (waittime != null) {
+            wait = Integer.parseInt(waittime);
+        }
         sleep(wait * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
 
-            if (br.containsHTML(">AccessKey is expired, please request")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL server error, waittime skipped?");
+            if (br.containsHTML(">AccessKey is expired, please request")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL server error, waittime skipped?");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -112,7 +132,9 @@ public class FileFlushCom extends PluginForHost {
         String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+[^<>\"\\']*?)(\"|\\')").getMatch(0);
         if (finalLink == null) {
             String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-            if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (sitelinks == null || sitelinks.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             for (String alink : sitelinks) {
                 alink = Encoding.htmlDecode(alink);
                 if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
@@ -131,7 +153,9 @@ public class FileFlushCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -148,8 +172,12 @@ public class FileFlushCom extends PluginForHost {
                 br.setCookie(COOKIE_HOST, "yab_mylang", "en");
                 br.getPage(COOKIE_HOST + "/login.php");
                 Form form = br.getFormbyProperty("name", "lOGIN");
-                if (form == null) form = br.getForm(0);
-                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (form == null) {
+                    form = br.getForm(0);
+                }
+                if (form == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 form.put("user", Encoding.urlEncode(account.getUser()));
                 form.put("pass", Encoding.urlEncode(account.getPass()));
                 // If the referer is still in the form (and if it is a valid
@@ -160,7 +188,9 @@ public class FileFlushCom extends PluginForHost {
                 form.put("autologin", "0");
                 br.submitForm(form);
                 br.getPage(COOKIE_HOST + "/members.php");
-                if (br.getCookie(COOKIE_HOST, "mfh_passhash") == null || "0".equals(br.getCookie(COOKIE_HOST, "mfh_uid"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(COOKIE_HOST, "mfh_passhash") == null || "0".equals(br.getCookie(COOKIE_HOST, "mfh_uid"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 final String premium = br.getRegex("return overlay\\(this, \\'package_details\\',\\'width=\\d+px,height=\\d+px,center=1,resize=1,scrolling=1\\'\\)\">(Premium)</a>").getMatch(0);
                 if (premium == null) {
                     // Free account
@@ -200,9 +230,11 @@ public class FileFlushCom extends PluginForHost {
         String expired = getData("Expired\\?");
         if (expired != null) {
             expired = expired.trim();
-            if (expired.equalsIgnoreCase("No"))
+            if (expired.equalsIgnoreCase("No")) {
                 ai.setExpired(false);
-            else if (expired.equalsIgnoreCase("Yes")) ai.setExpired(true);
+            } else if (expired.equalsIgnoreCase("Yes")) {
+                ai.setExpired(true);
+            }
         }
         String expires = getData("Package Expire Date");
         if (expires != null) {
@@ -236,12 +268,16 @@ public class FileFlushCom extends PluginForHost {
         if (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("access_key=") || br.getRedirectLocation().contains("getfile.php"))) {
             finalLink = br.getRedirectLocation();
         } else {
-            if (br.containsHTML("You have got max allowed download sessions from the same IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+            if (br.containsHTML("You have got max allowed download sessions from the same IP")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+            }
             String passCode = null;
             if (br.containsHTML("downloadpw")) {
                 logger.info("The file you're trying to download seems to be password protected...");
                 Form pwform = br.getFormbyProperty("name", "myform");
-                if (pwform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (pwform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 if (parameter.getStringProperty("pass", null) == null) {
                     passCode = Plugin.getUserInput("Password?", parameter);
                 } else {
@@ -251,7 +287,9 @@ public class FileFlushCom extends PluginForHost {
                 pwform.put("downloadpw", passCode);
                 br.submitForm(pwform);
             }
-            if (br.containsHTML("You have got max allowed download sessions from the same IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+            if (br.containsHTML("You have got max allowed download sessions from the same IP")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+            }
             if (br.containsHTML("Password Error")) {
                 logger.warning("Wrong password!");
                 parameter.setProperty("pass", null);
@@ -263,7 +301,9 @@ public class FileFlushCom extends PluginForHost {
             }
             finalLink = findLink();
         }
-        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (finalLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, finalLink, true, -5);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -283,11 +323,6 @@ public class FileFlushCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return false;
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
         return false;
     }
 

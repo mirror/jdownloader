@@ -101,18 +101,14 @@ public abstract class RecaptchaV1Challenge extends AbstractBrowserChallenge {
             logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
         }
         final DownloadLink link = plugin.getDownloadLink();
-        String apiKey = siteKey;
-
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(plugin);
         progress.setDisplayInProgressColumnEnabled(false);
-        plugin.setHasCaptchas(true);
-
         try {
             link.addPluginProgress(progress);
 
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
-            RecaptchaV1Challenge c = new RecaptchaV1Challenge(apiKey, plugin) {
+            final RecaptchaV1Challenge c = new RecaptchaV1Challenge(siteKey, plugin) {
 
                 @Override
                 public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
@@ -120,7 +116,7 @@ public abstract class RecaptchaV1Challenge extends AbstractBrowserChallenge {
                         /* we don't want to skip login captcha inside fetchAccountInfo(Thread is AccountCheckerThread) */
                         return false;
                     }
-                    Plugin challengePlugin = Challenge.getPlugin(challenge);
+                    final Plugin challengePlugin = Challenge.getPlugin(challenge);
                     if (challengePlugin != null && !(challengePlugin instanceof PluginForHost)) {
                         /* we only want block PluginForHost captcha here */
                         return false;
@@ -134,7 +130,7 @@ public abstract class RecaptchaV1Challenge extends AbstractBrowserChallenge {
                         return StringUtils.equals(link.getHost(), Challenge.getHost(challenge));
                     case BLOCK_PACKAGE:
                         /* user wants to block captchas from current FilePackage */
-                        DownloadLink lLink = Challenge.getDownloadLink(challenge);
+                        final DownloadLink lLink = Challenge.getDownloadLink(challenge);
                         if (lLink == null || lLink.getDefaultPlugin() == null) {
                             return false;
                         }
@@ -146,11 +142,16 @@ public abstract class RecaptchaV1Challenge extends AbstractBrowserChallenge {
 
             };
             c.setTimeout(plugin.getCaptchaTimeout());
-            if (Thread.currentThread() instanceof AccountCheckerThread || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
+            if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                 /**
                  * account login -> do not use anticaptcha services
                  */
                 c.setAccountLogin(true);
+            } else {
+                final SingleDownloadController controller = link.getDownloadLinkController();
+                if (controller != null) {
+                    plugin.setHasCaptcha(link, controller.getAccount(), true);
+                }
             }
             plugin.invalidateLastChallengeResponse();
             final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
