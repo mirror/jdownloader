@@ -21,7 +21,6 @@ import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map.Entry;
 
 import javax.swing.JOptionPane;
@@ -157,17 +156,17 @@ public class SaveTvDecrypter extends PluginForDecrypt {
              * Let's clean our ID map. TelecastIDs automatically get deleted after 30 days (when this documentation was written) so we do
              * not need to store them longer than that as it will eat up more RAM/space for no reason.
              */
-            final Iterator entries = crawledTelecastIDsMap.entrySet().iterator();
-            while (entries.hasNext()) {
-                Entry thisEntry = (Entry) entries.next();
-                Object value = thisEntry.getValue();
-                final String telecastID = (String) thisEntry.getKey();
-                final long timestamp = ((Number) value).longValue();
-                if (System.currentTimeMillis() - timestamp >= TELECAST_ID_EXPIRE_TIME) {
-                    /* Remove old entries */
-                    crawledTelecastIDsMap.remove(telecastID);
+            synchronized (crawledTelecastIDsMap) {
+                for (Entry<String, Long> entry : crawledTelecastIDsMap.entrySet()) {
+                    final String telecastID = entry.getKey();
+                    final long timestamp = entry.getValue();
+                    if (System.currentTimeMillis() - timestamp >= TELECAST_ID_EXPIRE_TIME) {
+                        /* Remove old entries */
+                        crawledTelecastIDsMap.remove(telecastID);
+                    }
                 }
             }
+
             /* Save telecastID map so later we know what is new and what we crawled before ;) */
             cfg.setProperty(CRAWLER_PROPERTY_TELECASTIDS_ADDED, crawledTelecastIDsMap);
             if (foundLinksNum >= totalLinksNum) {

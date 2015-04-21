@@ -77,7 +77,7 @@ public class AvxHmeW extends PluginForDecrypt {
                     }
                 }
             }
-            final String[] covers = br.getRegex("class=\"image\"><a href=\"(http://pixhst\\.com/pictures/\\d+)\"").getColumn(0);
+            final String[] covers = br.getRegex("\"(http://pi?xhst\\.(com|co)[^<>\"]*?)\"").getColumn(0);
             if (covers != null && covers.length != 0) {
                 for (final String coverlink : covers) {
                     decryptedLinks.add(createDownloadlink(coverlink));

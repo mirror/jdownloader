@@ -48,9 +48,6 @@ public class PremiumaxNet extends antiDDoSForHost {
     private static final String                            MAINPAGE           = "http://premiumax.net";
     private static final String                            NICE_HOST          = "premiumax.net";
     private static final String                            NICE_HOSTproperty  = "premiumaxnet";
-    private static final String[][]                        HOSTS              = { { "lafiles", "lafiles.com" }, { "sendspace", "sendspace.com" }, { "mightyupload", "mightyupload.com" }, { "uploadto.us", "uploadto.us" }, { "mega.co", "mega.co.nz" }, { "datafile", "datafile.com" }, { "1fichier", "1fichier.com" }, { "2shared", "2shared.com" }, { "fileboom", "fileboom.me" }, { "oboom", "oboom.com" }, { "share-online", "share-online.biz" }, { "fileparadox", "fileparadox.in" }, { "4shared", "4shared.com" }, { "bitshare", "bitshare.com" }, { "datafile", "datafile.com," }, { "ddlstorage", "ddlstorage.com" }, { "depfile", "depfile.com" }, { "depositfiles", "depositfiles.com" }, { "easybytez", "easybytez.com" }, { "extmatrix", "extmatrix.com" }, { "fayloobmennik", "fayloobmennik.net" }, { "filecloud", "filecloud.io" }, { "filefactory", "filefactory.com" }, { "filepost", "filepost.com" },
-            { "filesflash", "filesflash.com" }, { "filesmonster", "filesmonster.com" }, { "firedrive", "firedrive.com" }, { "freakshare", "freakshare.com" }, { "hugefiles", "hugefiles.net" }, { "uptobox", "uptobox.com" }, { "k2share", "keep2share.cc" }, { "kingfiles", "kingfiles.net" }, { "letitbit", "letitbit.net" }, { "luckyshare", "luckyshare.net" }, { "lumfile", "lumfile.com" }, { "mediafire", "mediafire.com" }, { "megairon", "megairon.net" }, { "megashares", "megashares.com" }, { "mightyupload", "mightyupload.com" }, { "netload", "netload.in" }, { "novafile", "novafile.com" }, { "putlocker", "putlocker.com" }, { "rapidgator", "rapidgator.net" }, { "ryushare", "ryushare.com" }, { "sendspace", "sendspace.com" }, { "shareflare", "shareflare.net" }, { "terafile", "terafile.co" }, { "turbobit", "turbobit.net" }, { "ultramegabit", "ultramegabit.com" }, { "uploadable", "uploadable.ch" },
-            { "uploaded", "uploaded.net" }, { "uppit", "uppit.com" }, { "videomega", "videomega.tv" }, { "zippyshare", "zippyshare.com" } };
 
     public PremiumaxNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -82,7 +79,7 @@ public class PremiumaxNet extends antiDDoSForHost {
         final String expire = br.getRegex("<span>Premium until: </span><strong>([^<>\"]*?)</strong>").getMatch(0);
         if (expire != null) {
             ac.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy hh:mm", Locale.ENGLISH));
-            ac.setStatus("Premium User");
+            ac.setStatus("Premium account");
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
         } else {
@@ -93,18 +90,24 @@ public class PremiumaxNet extends antiDDoSForHost {
         }
         ac.setUnlimitedTraffic();
         // now let's get a list of all supported hosts:
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
-
         getPage("http://www.premiumax.net/hosts.html");
-        /* Apply supported hosts depending on account type */
-        for (final String[] filehost : HOSTS) {
-            final String crippledHost = filehost[0];
-            final String realHost = filehost[1];
-            final String hostText = br.getRegex("<span>" + crippledHost + "</span>(.*?)</tr>").getMatch(0);
-            if (hostText != null) {
-                final String[] imgs = new Regex(hostText, "src=\"(tmpl/images/[^<>\"]*?)\"").getColumn(0);
-                if (imgs != null && imgs.length >= 4 && imgs[3].equals("tmpl/images/ico_yes.png") && (!is_freeaccount && imgs[2].equals("tmpl/images/ico_yes.png") || is_freeaccount && imgs[1].equals("tmpl/images/ico_yes.png"))) {
-                    supportedHosts.add(realHost);
+        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us" };
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
+        final String[] hostDomainsInfo = br.getRegex("(<img src=\"/assets/images/hosts/.*?)</tr>").getColumn(0);
+        for (String hinfo : hostDomainsInfo) {
+            String crippledhost = new Regex(hinfo, "images/hosts/([a-z0-9\\-\\.]+)\\.png\"").getMatch(0);
+            if (crippledhost == null) {
+                logger.warning("WTF");
+            }
+            crippledhost = crippledhost.trim();
+            crippledhost = crippledhost.toLowerCase();
+            final String[] imgs = new Regex(hinfo, "src=\"(tmpl/images/[^<>\"]*?)\"").getColumn(0);
+            /* Apply supported hosts depending on account type */
+            if (imgs != null && imgs.length >= 4 && imgs[3].equals("tmpl/images/ico_yes.png") && (!is_freeaccount && imgs[2].equals("tmpl/images/ico_yes.png") || is_freeaccount && imgs[1].equals("tmpl/images/ico_yes.png"))) {
+                /* Go insane */
+                for (final String possibledomain : possible_domains) {
+                    final String full_possible_host = crippledhost + "." + possibledomain;
+                    supportedHosts.add(full_possible_host);
                 }
             }
         }

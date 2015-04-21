@@ -73,9 +73,10 @@ import org.jdownloader.DomainInfo;
 public class SaveTv extends PluginForHost {
 
     /* Static information */
-    private final static String  APIKEY                                    = "Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz";
-    @SuppressWarnings("unused")
-    private final String         APIPAGE                                   = "http://api.save.tv/v2/Api.svc?wsdl";
+    /* New key (b64 encoded), used since 21.04.15, Stv DLManager 2.3.0 */
+    private final static String  APIKEY                                    = "U0VCNFNGNjZZNzRSSkFZVkxGbzFBcWplbzhqWDZiUmEvL0k1S1pkS21qY2pMTUdhakMrM2FKbHM1b1UvOXlxeTJpOGJMdy9Lb1RoVDM3elQvYVVRaWJHa2xlS0FMejNLaXNiL203elEzNkoxdlNXM0lsZVRhcm9heThobklWbEJzU0dINys5dFdRREd4Wm0yOWNSdHdIY0lMU2NuMHI0aDJIVlV5S1FuM2FnPQ==";
+    /* Last key (b64encoded), used until 21.04.15: Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz */
+    public static final String   APIPAGE                                   = "https://api.save.tv/v2/Api.svc";
     public static final double   QUALITY_HD_MB_PER_MINUTE                  = 22;
     public static final double   QUALITY_H264_NORMAL_MB_PER_MINUTE         = 12.605;
     public static final double   QUALITY_H264_MOBILE_MB_PER_MINUTE         = 4.64;
@@ -1284,7 +1285,7 @@ public class SaveTv extends PluginForHost {
         br.getHeaders().put("SOAPAction", soapAction);
         br.getHeaders().put("Content-Type", "text/xml");
         final String postdata = "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><" + method + " xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\">" + soapPost + "</" + method + "></v:Body></v:Envelope>";
-        br.postPageRaw("http://api.save.tv/v2/Api.svc", postdata);
+        br.postPageRaw(APIPAGE, postdata);
     }
 
     /**
@@ -1301,14 +1302,14 @@ public class SaveTv extends PluginForHost {
         br.getHeaders().put("SOAPAction", soapAction);
         br.getHeaders().put("Content-Type", "text/xml");
         String postdata = "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><" + method + " xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\">" + "<sessionId i:type=\"d:string\">" + acc.getStringProperty(PROPERTY_ACCOUNT_API_SESSIONID, null) + "</sessionId>" + soapPost + "</" + method + "></v:Body></v:Envelope>";
-        br.postPageRaw("http://api.save.tv/v2/Api.svc", postdata);
+        br.postPageRaw(APIPAGE, postdata);
         /* Check for invalid sessionid --> Refresh if needed & perform request again */
         if (br.containsHTML(">invalid session id</ErrorMessage>")) {
             api_login(br, acc, true);
             postdata = "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><" + method + " xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\">" + "<sessionId i:type=\"d:string\">" + acc.getStringProperty(PROPERTY_ACCOUNT_API_SESSIONID, null) + "</sessionId>" + soapPost + "</" + method + "></v:Body></v:Envelope>";
             br.getHeaders().put("SOAPAction", soapAction);
             br.getHeaders().put("Content-Type", "text/xml");
-            br.postPageRaw("http://api.save.tv/v2/Api.svc", postdata);
+            br.postPageRaw(APIPAGE, postdata);
         }
     }
 
