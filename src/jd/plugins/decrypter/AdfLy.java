@@ -289,48 +289,52 @@ public class AdfLy extends PluginForDecrypt {
          * @author raztoki
          * */
         private String getDefaultProtocol() {
-            if (!supportsHTTPS) {
-                defaultProtocol.set("http://");
+            if (true) {
+                return "https://";
             } else {
-                SubConfiguration config = null;
-                synchronized (LOCK) {
-                    try {
-                        config = SubConfiguration.getConfig("adf.ly", false);
-                        if (isJD2()) {
-                            defaultProtocol.set(config.getStringProperty("savedDefaultProtocol", null));
-                            if (defaultProtocol.get() != null) {
-                                return defaultProtocol.get();
-                            }
-                        }
-                        if (defaultProtocol.get() == null) {
-                            String lng = System.getProperty("user.language");
-                            String message = null;
-                            String title = null;
-                            if ("de".equalsIgnoreCase(lng)) {
-                                title = "Wähle bitte Dein Standard Request Protokoll aus.";
-                                message = "Dies ist eine einmalige Auswahl. Einmal gespeichert, nutzt der JDownloader Dein\r\ngewähltes Standard Protokoll auch für alle zukünftigen Verbindungen zu adf.ly.";
-                            } else {
-                                title = "Please select your default Request Protocol.";
-                                message = "This is a once off choice. Once saved, JDownloader will reuse\r\n your default Protocol for all future requests to adf.ly.";
-                            }
-                            String[] select = new String[] { "http (insecure)", "https (secure)" };
-                            int userSelect = UserIO.getInstance().requestComboDialog(0, JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolTitle", title), JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolMessage", message), select, 0, null, null, null, null);
-                            if (userSelect != -1) {
-                                defaultProtocol.set(userSelect == 0 ? "http://" : "https://");
-                                if (isJD2()) {
-                                    config.setProperty("savedDefaultProtocol", defaultProtocol.get());
-                                    config.save();
+                if (!supportsHTTPS) {
+                    defaultProtocol.set("http://");
+                } else {
+                    SubConfiguration config = null;
+                    synchronized (LOCK) {
+                        try {
+                            config = SubConfiguration.getConfig("adf.ly", false);
+                            if (isJD2()) {
+                                defaultProtocol.set(config.getStringProperty("savedDefaultProtocol", null));
+                                if (defaultProtocol.get() != null) {
+                                    return defaultProtocol.get();
                                 }
-                            } else {
-                                // 'cancelled/closed/time outed' dialog, returns import protocol.
-                                return protocol;
                             }
+                            if (defaultProtocol.get() == null) {
+                                String lng = System.getProperty("user.language");
+                                String message = null;
+                                String title = null;
+                                if ("de".equalsIgnoreCase(lng)) {
+                                    title = "Wähle bitte Dein Standard Request Protokoll aus.";
+                                    message = "Dies ist eine einmalige Auswahl. Einmal gespeichert, nutzt der JDownloader Dein\r\ngewähltes Standard Protokoll auch für alle zukünftigen Verbindungen zu adf.ly.";
+                                } else {
+                                    title = "Please select your default Request Protocol.";
+                                    message = "This is a once off choice. Once saved, JDownloader will reuse\r\n your default Protocol for all future requests to adf.ly.";
+                                }
+                                String[] select = new String[] { "http (insecure)", "https (secure)" };
+                                int userSelect = UserIO.getInstance().requestComboDialog(0, JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolTitle", title), JDL.L("plugins.decrypter.adfly.SelectDefaultProtocolMessage", message), select, 0, null, null, null, null);
+                                if (userSelect != -1) {
+                                    defaultProtocol.set(userSelect == 0 ? "http://" : "https://");
+                                    if (isJD2()) {
+                                        config.setProperty("savedDefaultProtocol", defaultProtocol.get());
+                                        config.save();
+                                    }
+                                } else {
+                                    // 'cancelled/closed/time outed' dialog, returns import protocol.
+                                    return protocol;
+                                }
+                            }
+                        } catch (final Throwable e) {
                         }
-                    } catch (final Throwable e) {
                     }
                 }
+                return defaultProtocol.get();
             }
-            return defaultProtocol.get();
         }
 
         private boolean isJD2() {
