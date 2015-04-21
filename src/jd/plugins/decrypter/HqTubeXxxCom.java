@@ -45,7 +45,9 @@ public class HqTubeXxxCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         String filename = br.getRegex("<h1 class=\"name\">([^<>\"\\']+)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"\\']+) \\-    </title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"\\']+) \\-    </title>").getMatch(0);
+        }
         String externID = br.getRegex("(http://drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
@@ -80,10 +82,12 @@ public class HqTubeXxxCom extends PluginForDecrypt {
         // 2nd handling for tnaflix
         externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf.*?config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)").getMatch(0);
         if (externID != null) {
+            // redirects can happen here
+            br.setFollowRedirects(true);
             br.getPage("http://www.tnaflix.com/embedding_player/" + externID);
-            externID = br.getRegex("start_thumb>http://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg<").getMatch(0);
-            if (externID != null) {
-                decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
+            final String[] eid = br.getRegex("start_thumb>[^\r\n]+(https?)://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg").getRow(0);
+            if (eid != null) {
+                decryptedLinks.add(createDownloadlink(eid[0] + "://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + eid[1]));
                 return decryptedLinks;
             }
         }
