@@ -235,15 +235,15 @@ public class PluginClassLoader extends URLClassLoader {
                                 }
                             }
                         }
-                        // }
-                        for (final String missingField : knownFields) {
-                            if (logger == null) {
-                                logger = LogController.CL(false);
-                            }
-                            logger.info("Class " + currentClassName + " no longer has static field: " + missingField);
-                            sharedPluginObjects.remove(missingField);
-                        }
                     }
+                    for (final String missingField : knownFields) {
+                        if (logger == null) {
+                            logger = LogController.CL(false);
+                        }
+                        logger.info("Class " + currentClassName + " no longer has static field: " + missingField);
+                        sharedPluginObjects.remove(missingField);
+                    }
+                    // }
                 } catch (final Throwable e) {
                     if (logger == null) {
                         logger = LogController.CL(false);
