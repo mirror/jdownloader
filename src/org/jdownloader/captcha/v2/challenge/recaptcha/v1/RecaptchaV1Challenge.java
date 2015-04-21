@@ -67,7 +67,7 @@ public abstract class RecaptchaV1Challenge extends AbstractBrowserChallenge {
     @Override
     public String handleRequest(PostRequest request) throws IOException {
         String challenge = request.getParameterbyKey("recaptcha_challenge_field");
-        String responseString = request.getParameterbyKey("recaptcha_challenge_field");
+        String responseString = request.getParameterbyKey("recaptcha_response_field");
 
         return JSonStorage.serializeToJson(new String[] { challenge, responseString });
     }
