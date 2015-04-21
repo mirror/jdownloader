@@ -127,7 +127,7 @@ public class PremiumaxNet extends antiDDoSForHost {
         if (dllink == null) {
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            postPage("http://www.premiumax.net/direct_link.html?rand=0." + System.currentTimeMillis(), "captcha=&key=indexKEY&urllist=" + Encoding.urlEncode(link.getDownloadURL()));
+            postPage("http://www.premiumax.net/direct_link.html?rand=0." + System.currentTimeMillis(), "captcka=&key=indexKEY&urllist=" + Encoding.urlEncode(link.getDownloadURL()));
             if (br.containsHTML("temporary problem")) {
                 logger.info("Current hoster is temporarily not available via premiumax.net -> Disabling it");
                 tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
