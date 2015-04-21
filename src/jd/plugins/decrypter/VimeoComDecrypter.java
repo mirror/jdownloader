@@ -519,10 +519,11 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                 try {
                     br.submitForm(pwForm);
                 } catch (Throwable e) {
+                    /* HTTP/1.1 418 I'm a teapot --> lol */
                     if (br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 418) {
                         logger.warning("Wrong password for Link: " + param.toString());
                         if (i < 2) {
-                            br.getPage(param.toString());
+                            br.getPage(br.getURL());
                             continue;
                         } else {
                             logger.warning("Exausted password retry count. " + param.toString());
