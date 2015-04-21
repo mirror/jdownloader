@@ -222,7 +222,6 @@ public class HighWayMe extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.setConstants(account, link);
         this.br = newBrowser();
 
         /*
@@ -235,6 +234,7 @@ public class HighWayMe extends PluginForHost {
                 this.fetchAccountInfo(account);
             }
         }
+        this.setConstants(account, link);
 
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
