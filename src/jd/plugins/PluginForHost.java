@@ -33,6 +33,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.WeakHashMap;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import javax.swing.JComponent;
@@ -141,13 +143,13 @@ import org.jdownloader.updatev2.UpdateController;
 
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien herunterladen koennen
- * 
+ *
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
     private static final String      COPY_MOVE_FILE = "CopyMoveFile";
 
-    private static Pattern[]         PATTERNS       = new Pattern[] {
+    private static final Pattern[]   PATTERNS       = new Pattern[] {
 
                                                     /**
                                                      * these patterns should split filename and fileextension (extension must include the
@@ -164,13 +166,7 @@ public abstract class PluginForHost extends Plugin {
      */
     protected transient SolverJob<?> lastSolverJob  = null;
 
-    private boolean                  hasCaptchas    = false;
-
-    public void setHasCaptchas(boolean hasCaptchas) {
-        this.hasCaptchas = hasCaptchas;
-    }
-
-    private boolean dlSet = false;
+    private boolean                  dlSet          = false;
 
     public void setLastSolverJob(SolverJob<?> job) {
         this.lastSolverJob = job;
@@ -294,7 +290,7 @@ public abstract class PluginForHost extends Plugin {
      * will auto find api key, based on google default &lt;div&gt;, @Override getRecaptchaV2ApiKey(String) to make customised finder. <br />
      * will auto retry x times, as google verifies token before sending it back to host. This will avoid wait time issues, etc, down the
      * track
-     * 
+     *
      * @author raztoki
      * @since JD2
      * @return
@@ -342,12 +338,10 @@ public abstract class PluginForHost extends Plugin {
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
-        this.hasCaptchas = true;
         try {
             link.addPluginProgress(progress);
-
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
-            RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, this) {
+            final RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, this) {
 
                 @Override
                 public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
@@ -355,7 +349,7 @@ public abstract class PluginForHost extends Plugin {
                         /* we don't want to skip login captcha inside fetchAccountInfo(Thread is AccountCheckerThread) */
                         return false;
                     }
-                    Plugin challengePlugin = Challenge.getPlugin(challenge);
+                    final Plugin challengePlugin = Challenge.getPlugin(challenge);
                     if (challengePlugin != null && !(challengePlugin instanceof PluginForHost)) {
                         /* we only want block PluginForHost captcha here */
                         return false;
@@ -369,7 +363,7 @@ public abstract class PluginForHost extends Plugin {
                         return StringUtils.equals(link.getHost(), Challenge.getHost(challenge));
                     case BLOCK_PACKAGE:
                         /* user wants to block captchas from current FilePackage */
-                        DownloadLink lLink = Challenge.getDownloadLink(challenge);
+                        final DownloadLink lLink = Challenge.getDownloadLink(challenge);
                         if (lLink == null || lLink.getDefaultPlugin() == null) {
                             return false;
                         }
@@ -378,14 +372,18 @@ public abstract class PluginForHost extends Plugin {
                         return false;
                     }
                 }
-
             };
             c.setTimeout(getCaptchaTimeout());
-            if (Thread.currentThread() instanceof AccountCheckerThread || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
+            if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                 /**
                  * account login -> do not use anticaptcha services
                  */
                 c.setAccountLogin(true);
+            } else {
+                final SingleDownloadController controller = link.getDownloadLinkController();
+                if (controller != null) {
+                    setHasCaptcha(link, controller.getAccount(), true);
+                }
             }
             invalidateLastChallengeResponse();
             final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
@@ -455,8 +453,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * 
-     * 
+     *
+     *
      * @author raztoki
      * @since JD2
      * @return
@@ -467,7 +465,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * will auto find api key, based on google default &lt;div&gt;, @Override to make customised finder.
-     * 
+     *
      * @author raztoki
      * @since JD2
      * @return
@@ -495,7 +493,7 @@ public abstract class PluginForHost extends Plugin {
      * will auto find api key, based on google default &lt;div&gt;, @Override getRecaptchaV2ApiKey(String) to make customised finder. <br />
      * will auto retry x times, as google verifies token before sending it back to host. This will avoid wait time issues, etc, down the
      * track
-     * 
+     *
      * @author raztoki
      * @since JD2
      * @return
@@ -543,12 +541,10 @@ public abstract class PluginForHost extends Plugin {
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
-        this.hasCaptchas = true;
         try {
             link.addPluginProgress(progress);
-
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
-            AreYouAHumanChallenge c = new AreYouAHumanChallenge(apiKey, this) {
+            final AreYouAHumanChallenge c = new AreYouAHumanChallenge(apiKey, this) {
 
                 @Override
                 public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
@@ -556,7 +552,7 @@ public abstract class PluginForHost extends Plugin {
                         /* we don't want to skip login captcha inside fetchAccountInfo(Thread is AccountCheckerThread) */
                         return false;
                     }
-                    Plugin challengePlugin = Challenge.getPlugin(challenge);
+                    final Plugin challengePlugin = Challenge.getPlugin(challenge);
                     if (challengePlugin != null && !(challengePlugin instanceof PluginForHost)) {
                         /* we only want block PluginForHost captcha here */
                         return false;
@@ -570,7 +566,7 @@ public abstract class PluginForHost extends Plugin {
                         return StringUtils.equals(link.getHost(), Challenge.getHost(challenge));
                     case BLOCK_PACKAGE:
                         /* user wants to block captchas from current FilePackage */
-                        DownloadLink lLink = Challenge.getDownloadLink(challenge);
+                        final DownloadLink lLink = Challenge.getDownloadLink(challenge);
                         if (lLink == null || lLink.getDefaultPlugin() == null) {
                             return false;
                         }
@@ -587,11 +583,16 @@ public abstract class PluginForHost extends Plugin {
 
             };
             c.setTimeout(getCaptchaTimeout());
-            if (Thread.currentThread() instanceof AccountCheckerThread || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
+            if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                 /**
                  * account login -> do not use anticaptcha services
                  */
                 c.setAccountLogin(true);
+            } else {
+                final SingleDownloadController controller = link.getDownloadLinkController();
+                if (controller != null) {
+                    setHasCaptcha(link, controller.getAccount(), true);
+                }
             }
             invalidateLastChallengeResponse();
             final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
@@ -661,8 +662,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * 
-     * 
+     *
+     *
      * @author raztoki
      * @since JD2
      * @return
@@ -673,7 +674,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * will auto find api key, based on google default &lt;div&gt;, @Override to make customised finder.
-     * 
+     *
      * @author raztoki
      * @since JD2
      * @return
@@ -702,14 +703,12 @@ public abstract class PluginForHost extends Plugin {
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
-        this.hasCaptchas = true;
         try {
             link.addPluginProgress(progress);
-            String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
+            final String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
             if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
                 file = new File(orgCaptchaImage);
             }
-
             File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
             copy.deleteOnExit();
             copy.getParentFile().mkdirs();
@@ -728,7 +727,7 @@ public abstract class PluginForHost extends Plugin {
                         /* we don't want to skip login captcha inside fetchAccountInfo(Thread is AccountCheckerThread) */
                         return false;
                     }
-                    Plugin challengePlugin = Challenge.getPlugin(challenge);
+                    final Plugin challengePlugin = Challenge.getPlugin(challenge);
                     if (challengePlugin != null && !(challengePlugin instanceof PluginForHost)) {
                         /* we only want block PluginForHost captcha here */
                         return false;
@@ -742,7 +741,7 @@ public abstract class PluginForHost extends Plugin {
                         return StringUtils.equals(link.getHost(), Challenge.getHost(challenge));
                     case BLOCK_PACKAGE:
                         /* user wants to block captchas from current FilePackage */
-                        DownloadLink lLink = Challenge.getDownloadLink(challenge);
+                        final DownloadLink lLink = Challenge.getDownloadLink(challenge);
                         if (lLink == null || lLink.getDefaultPlugin() == null) {
                             return false;
                         }
@@ -753,11 +752,16 @@ public abstract class PluginForHost extends Plugin {
                 }
             };
             c.setTimeout(getCaptchaTimeout());
-            if (Thread.currentThread() instanceof AccountCheckerThread || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
+            if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                 /**
                  * account login -> do not use anticaptcha services
                  */
                 c.setAccountLogin(true);
+            } else {
+                final SingleDownloadController controller = link.getDownloadLinkController();
+                if (controller != null) {
+                    setHasCaptcha(link, controller.getAccount(), true);
+                }
             }
             invalidateLastChallengeResponse();
             final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
@@ -944,7 +948,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList
      * zurueckgeliefert
-     * 
+     *
      * @param data
      *            Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
      * @return Ein ArrayList mit den gefundenen Downloadlinks
@@ -1004,7 +1008,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * Holt Informationen zu einem Link. z.B. dateigroeße, Dateiname, verfuegbarkeit etc.
-     * 
+     *
      * @param parameter
      * @return true/false je nach dem ob die Datei noch online ist (verfuegbar)
      * @throws IOException
@@ -1021,7 +1025,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * this method returns absolut numbers of max allowed downloads for given plugin/link/account combination
-     * 
+     *
      * @param link
      * @param account
      * @return
@@ -1078,7 +1082,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * By overriding this method, a plugin is able to return a HostPluginInfoGenerator. <br>
      * <b>Attention: Until next stable update, we have to return Object here.</b>
-     * 
+     *
      * @return
      */
     // @Override DO NEVER USE OVERRIDE ON THIS METHOD BEFORE NEXT STABLE UPDATE.
@@ -1106,7 +1110,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * return if we can download given downloadLink via given account with this pluginForHost
-     * 
+     *
      * @param downloadLink
      * @param account
      * @return
@@ -1117,7 +1121,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * return if the given downloadLink can be downloaded via given pluginForHost
-     * 
+     *
      * @param downloadLink
      * @param plugin
      * @return
@@ -1125,7 +1129,7 @@ public abstract class PluginForHost extends Plugin {
     public boolean allowHandle(DownloadLink downloadLink, PluginForHost plugin) {
         /**
          * example: only allow original host plugin
-         * 
+         *
          * return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
          */
         return true;
@@ -1430,7 +1434,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * JD2 only
-     * 
+     *
      * @return
      */
     public boolean isAbort() {
@@ -1476,7 +1480,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * Gibt die Url zurueck, unter welcher ein PremiumAccount gekauft werden kann
-     * 
+     *
      * @return
      */
     public String getBuyPremiumUrl() {
@@ -1672,12 +1676,65 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
-    /* can we expect a captcha if we try to load link with acc */
+    /**
+     *
+     * can we expect a captcha if we try to load link with acc
+     *
+     *
+     * use within plugin only
+     *
+     * @param link
+     * @param acc
+     * @return
+     */
     public boolean hasCaptcha(DownloadLink link, Account acc) {
-        /* you must distinguish between different acc types! */
-        /* acc=null is no account */
-        /* best save the information in accountinformation! */
-        return hasCaptchas;
+        return false;
+    }
+
+    private static WeakHashMap<Account, HashMap<String, Boolean>> AUTOCAPTCHAMAP = new WeakHashMap<Account, HashMap<String, Boolean>>();
+
+    public Boolean expectCaptcha(DownloadLink link, Account acc) {
+        synchronized (AUTOCAPTCHAMAP) {
+            final HashMap<String, Boolean> map = AUTOCAPTCHAMAP.get(acc);
+            if (map != null) {
+                final String ID = getHost() + "_" + link.getHost();
+                final Boolean captcha = map.get(ID);
+                if (captcha != null) {
+                    return captcha;
+                }
+            }
+            return hasCaptcha(link, acc);
+        }
+    }
+
+    public void setHasCaptcha(DownloadLink link, Account acc, Boolean hasCaptcha) {
+        synchronized (AUTOCAPTCHAMAP) {
+            if (hasCaptcha != null && hasCaptcha != hasCaptcha(link, acc)) {
+                final SingleDownloadController controller = link.getDownloadLinkController();
+                final Logger logger;
+                if (controller != null) {
+                    logger = controller.getLogger();
+                } else {
+                    logger = getLogger();
+                }
+                logger.info("Outdated hasCaptcha detected:" + getHost());
+            }
+            HashMap<String, Boolean> map = AUTOCAPTCHAMAP.get(acc);
+            if (map == null && Boolean.TRUE.equals(hasCaptcha)) {
+                map = new HashMap<String, Boolean>();
+                AUTOCAPTCHAMAP.put(acc, map);
+            }
+            if (map != null) {
+                final String ID = getHost() + "_" + link.getHost();
+                if (hasCaptcha == null) {
+                    if (map.remove(ID) && map.size() == 0) {
+                        AUTOCAPTCHAMAP.remove(acc);
+                    }
+                } else {
+                    map.put(ID, hasCaptcha);
+                }
+            }
+        }
     }
 
     /* do we have anticaptcha available for this host */
@@ -1688,7 +1745,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * plugins may change the package identifier used for auto package matching. some hosters replace chars, shorten filenames...
-     * 
+     *
      * @param packageIdentifier
      * @return
      */
@@ -1699,7 +1756,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect
      * this based on other downloadlinks
-     * 
+     *
      * @param cache
      *            TODO
      * @param downloadable
@@ -1945,7 +2002,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * Some hoster manipulate the filename after upload. rapidshare for example, replaces special chars and spaces with _
-     * 
+     *
      * @return
      */
     public boolean isHosterManipulatesFilenames() {
@@ -1954,7 +2011,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * If a plugin want's to define it's one premium info dialog or premiuminfo panel. overwrite this methods
-     * 
+     *
      * @param dialog
      * @return
      */
@@ -1964,7 +2021,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * Can be overridden to support special accounts like login tokens instead of username/password
-     * 
+     *
      * @return
      */
     public AccountFactory getAccountFactory() {
@@ -2169,9 +2226,9 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * JD2 ONLY
-     * 
+     *
      * sort accounts for best order to download downloadLink
-     * 
+     *
      * @param accounts
      * @param downloadLink
      * @return
@@ -2182,9 +2239,9 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * JD2 ONLY
-     * 
+     *
      * sort downloadLinks for best order to download via account
-     * 
+     *
      * @param accounts
      * @param downloadLink
      * @return
@@ -2195,7 +2252,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * THIS IS JDOWNLOADER 2 ONLY!
-     * 
+     *
      * @param domain
      * @throws DialogCanceledException
      * @throws DialogClosedException
@@ -2241,7 +2298,7 @@ public abstract class PluginForHost extends Plugin {
      * Do not call directly. This method is called from the DownloadWatchdog.rename method only. The DownloadWatchdog assures, that the
      * method is not called during a processing download, but afterwards. Avoid to override this method. if possible, try to override
      * #listFilePairsToMove instead
-     * 
+     *
      * @param link
      * @param string2
      * @param string
@@ -2493,7 +2550,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * plugins may set a mirrorid to help the mirror detector. You have to ensure, that two mirrors either get the same mirror id, or no
      * mirrorid(null)
-     * 
+     *
      * @return
      */
 
