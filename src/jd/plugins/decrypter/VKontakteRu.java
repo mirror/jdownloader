@@ -932,7 +932,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
             } else {
                 br.postPage("https://vk.com/al_video.php", "act=load_videos_silent&al=1&offset=" + totalCounter + "&oid=" + albumID);
-                videos = br.getRegex("\\[\"((\\-)?\\d+\",\"\\d+)\",\"").getColumn(0);
+                videos = br.getRegex("\\[(?:\")?((\\-)?\\d+(?:\")?,(?:\")?\\d+)(?:\")?,\"").getColumn(0);
             }
             if (videos == null || videos.length == 0) {
                 break;
@@ -950,6 +950,9 @@ public class VKontakteRu extends PluginForDecrypt {
                     singleVideo = singleVideo.replace(",", "_");
                     singleVideo = singleVideo.replace(" ", "");
                     singleVideo = singleVideo.replace("\"", "");
+                    if (totalCounter == 28) {
+                        logger.info("Wtf");
+                    }
                     logger.info("Decrypting video " + totalCounter + " / " + numberOfEntrys);
                     final String completeVideolink = "https://vk.com/video" + singleVideo;
                     try {
