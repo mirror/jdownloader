@@ -471,6 +471,7 @@ public abstract class PluginForHost extends Plugin {
      * @return
      */
     protected String getRecaptchaV2ApiKey(final String source) {
+        String apiKey = null;
         if (source == null) {
             return null;
         }
@@ -479,14 +480,20 @@ public abstract class PluginForHost extends Plugin {
         if (divs != null) {
             for (final String div : divs) {
                 if (new Regex(div, "class=('|\")g-recaptcha\\1").matches()) {
-                    final String apiKey = new Regex(div, "data-sitekey=('|\")([\\w-]+)\\1").getMatch(1);
+                    apiKey = new Regex(div, "data-sitekey=('|\")([\\w-]+)\\1").getMatch(1);
                     if (apiKey != null) {
-                        return apiKey;
+                        break;
                     }
                 }
             }
         }
-        return null;
+        if (apiKey == null) {
+            final String jssource = new Regex(source, "grecaptcha\\.render\\(\\'recaptchaFld\\', \\{(.*?)\\}\\);").getMatch(0);
+            if (jssource != null) {
+                apiKey = new Regex(jssource, "\\'sitekey\\'[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"\\']*?)\\'").getMatch(0);
+            }
+        }
+        return apiKey;
     }
 
     /**

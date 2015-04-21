@@ -109,6 +109,7 @@ public class Uploadedto extends PluginForHost {
     private boolean                        avoidHTTPS                                = false;
 
     private static final String            CURRENT_DOMAIN                            = "http://uploaded.net/";
+    private static final String            HTML_MAINTENANCE                          = ">uploaded\\.net \\- Maintenance|Dear User, Uploaded is in maintenance mode|Lieber Kunde, wir führen kurze Wartungsarbeiten durch";
 
     private String getProtocol() {
         if (avoidHTTPS) {
@@ -162,9 +163,7 @@ public class Uploadedto extends PluginForHost {
             String name = br.getRegex("(.*?)(\r|\n)").getMatch(0);
             String size = br.getRegex("[\r\n]([0-9\\, TGBMK]+)").getMatch(0);
             if (name == null || size == null) {
-                if (br.containsHTML("<title>uploaded.net - Maintenance")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
-                }
+                checkGeneralErrors();
                 return AvailableStatus.UNCHECKABLE;
             }
             name = name.trim();
@@ -385,7 +384,7 @@ public class Uploadedto extends PluginForHost {
                         return false;
                     }
                     postPage(br, getProtocol() + "uploaded.net/api/filemultiple", sb.toString());
-                    if (br.containsHTML("<title>uploaded.net - Maintenance")) {
+                    if (br.containsHTML(HTML_MAINTENANCE)) {
                         return false;
                     }
                     if (br.getHttpConnection().getLongContentLength() != 20) {
@@ -954,9 +953,7 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         }
-        if (br.containsHTML("<title>uploaded\\.net \\- Maintenance")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
-        }
+        checkGeneralErrors();
 
     }
 
@@ -1049,6 +1046,7 @@ public class Uploadedto extends PluginForHost {
         if (br.containsHTML("No connection to database")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
         }
+        checkGeneralErrors();
         if (throwPluginDefect) {
             logger.info("ErrorCode: unknown\r\n" + br);
             if (usePremiumAPI.get() && preferAPI(acc)) {
@@ -1058,6 +1056,12 @@ public class Uploadedto extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
+    }
+
+    private void checkGeneralErrors() throws PluginException {
+        if (br.containsHTML(HTML_MAINTENANCE)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
+        }
     }
 
     // Attention!! Do not use Override here for stable compatibility reasons
@@ -1301,9 +1305,7 @@ public class Uploadedto extends PluginForHost {
                     logger.info("Changed uploaded.net used protocol from " + getProtocol() + " to " + ul_forced_protocol);
                     br.getPage(br.getRedirectLocation());
                 }
-                if (br.containsHTML("<title>uploaded.net - Maintenance")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
-                }
+                checkGeneralErrors();
                 if (br.containsHTML("<h2>Authentification</h2>")) {
                     logger.info("Password protected link");
                     passCode = getPassword(downloadLink);
@@ -1641,9 +1643,7 @@ public class Uploadedto extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (br.containsHTML("<title>uploaded.net - Maintenance")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
-                }
+                checkGeneralErrors();
                 if (br.getCookie("http://uploaded.net", "auth") == null && br.getCookie("https://uploaded.net", "auth") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);

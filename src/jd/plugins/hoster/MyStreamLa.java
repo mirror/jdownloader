@@ -46,10 +46,12 @@ public class MyStreamLa extends PluginForHost {
         return "http://mystream.la/terms-of-service";
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("/external/", "/watch/").toLowerCase());
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -62,27 +64,30 @@ public class MyStreamLa extends PluginForHost {
             }
             throw e;
         }
-        if (!br.containsHTML("class=\"video\\-a\"")) {
+        if (br.containsHTML(">File Not Found<|The file you were looking for could not be found|>The file was deleted by administration because")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
-        if (filename == null) {
+        String filename = br.getRegex("<b>Filename:</b></td><td nowrap>([^<>\"]*?)</td>").getMatch(0);
+        final String filesize = br.getRegex(">\\((\\d+) bytes\\)<").getMatch(0);
+        if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
         downloadLink.setFinalFileName(filename);
+        downloadLink.setDownloadSize(Long.parseLong(filesize));
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
             br.getPage("http://www.mystream.la/external/" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
-            DLLINK = br.getRegex("file:\\'(http://[^<>\"]*?)\\'").getMatch(0);
+            DLLINK = br.getRegex("file:[\t\n\r ]*?(?:\\'|\")(http://[^<>\"\\']*?)(?:\\'|\")").getMatch(0);
             if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

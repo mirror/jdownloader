@@ -16,9 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,7 +24,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
@@ -43,31 +40,41 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecloud.io", "ifile.it" }, urls = { "https?://(www\\.)?(ifile\\.it|filecloud\\.io)/[a-z0-9]+", "fhrfzjnerhfDELETEMEdhzrnfdgvfcas4378zhb" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ezfile.ch", "filecloud.io" }, urls = { "https?://(www\\.)?(filecloud\\.io|ezfile\\.ch)/[a-z0-9]+", "fhrfzjnerhfDELETEMEdhzrnfdgvfcas4378zhb" }, flags = { 2, 0 })
 public class IFileIt extends PluginForHost {
 
-    private final String         useragent                = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0";
+    private final String         useragent                    = "JDownloader";
     /* must be static so all plugins share same lock */
-    private static Object        LOCK                     = new Object();
-    private final int            MAXFREECHUNKS            = 1;
-    private final int            MAXPREMIUMCHUNKS         = -2;
-    private static final String  ONLY4REGISTERED          = "\"message\":\"signup\"";
-    private static final String  ONLY4REGISTEREDUSERTEXT  = JDL.LF("plugins.hoster.ifileit.only4registered", "Wait or register to download the files");
-    private static final String  NOCHUNKS                 = "NOCHUNKS";
-    private static final String  NORESUME                 = "NORESUME";
-    public static final String   MAINPAGE                 = "https://filecloud.io";
-    private static AtomicInteger maxPrem                  = new AtomicInteger(1);
-    private static AtomicBoolean UNDERMAINTENANCE         = new AtomicBoolean(false);
-    private static final String  UNDERMAINTENANCEUSERTEXT = "The site is under maintenance!";
+    private static Object        LOCK                         = new Object();
+    private final int            MAXPREMIUMCHUNKS             = -2;
 
-    private static final String  NICE_HOST                = "filecloud.io";
-    private String               dllink                   = null;
-    private boolean              webMethod                = false;
+    /* TODO: Check/update these limits */
+    /* Connection stuff */
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = -1;
+    private static final int     FREE_MAXDOWNLOADS            = 0;
+    private static final boolean ACCOUNT_FREE_RESUME          = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+
+    private static final String  NOCHUNKS                     = "NOCHUNKS";
+    private static final String  NORESUME                     = "NORESUME";
+    public static final String   MAINPAGE                     = "https://ezfile.ch";
+    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private static AtomicBoolean UNDERMAINTENANCE             = new AtomicBoolean(false);
+    private static final String  UNDERMAINTENANCEUSERTEXT     = "The site is under maintenance!";
+
+    /* Completely useless API: https://ezfile.ch/?m=apidoc */
+    private static final String  NICE_HOST                    = "ezfile.ch";
+    private static final String  APIKEY                       = "o4hdfne7z19qt8cy5l2m";
+    private String               dllink                       = null;
 
     public IFileIt(final PluginWrapper wrapper) {
         super(wrapper);
@@ -76,7 +83,7 @@ public class IFileIt extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("ifile.it/", "filecloud.io/"));
+        link.setUrlDownload(link.getDownloadURL().replace("filecloud.io/", "ezfile.ch/"));
     }
 
     /**
@@ -87,218 +94,121 @@ public class IFileIt extends PluginForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        if ("filecloud.io".equals(getHost())) {
+            if (host == null || "filecloud.io".equals(host)) {
+                return "ezfile.ch";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
+    @Override
+    public String getAGBLink() {
+        return MAINPAGE + "/?m=help&a=tos";
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        /* Correct old links */
+        correctDownloadLink(downloadLink);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser(br);
-        boolean failed = true;
+        final boolean isfollowingRedirect = br.isFollowingRedirects();
+        // clear old browser
+        br = prepBrowser(new Browser());
+        // can be direct link!
+        URLConnectionAdapter con = null;
+        br.setFollowRedirects(true);
         try {
-            final String fid = getFid(downloadLink);
-            final Account aa = AccountController.getInstance().getValidAccount(this);
-            String apikey = null;
-            // First try API via apikey from account
-            if (aa != null) {
-                try {
-                    apikey = getUrlEncodedAPIkey(aa, this, br);
-                    br.postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_file_details.api", "akey=" + apikey + "&ukey=" + fid);
-                    failed = false;
-                } catch (final BrowserException e) {
-                } catch (final ConnectException e) {
+            con = br.openGetConnection(downloadLink.getDownloadURL());
+            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getResponseCode() == 503) {
+                    // they are using cloudflare these days!
+                    // downloadLink.getLinkStatus().setStatusText(UNDERMAINTENANCEUSERTEXT);
+                    // UNDERMAINTENANCE.set(true);
+                    return AvailableStatus.UNCHECKABLE;
                 }
+                br.followConnection();
             } else {
-                failed = true;
-            }
-            // If API via account fails, try public check API
-            if (failed) {
-                this.getPluginConfig().setProperty("apikey", Property.NULL);
-                this.getPluginConfig().setProperty("username", Property.NULL);
-                this.getPluginConfig().setProperty("password", Property.NULL);
-                br.postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-check_file.api", "ukey=" + fid);
-                failed = false;
-            }
-
-        } catch (final BrowserException e) {
-            failed = true;
-        } catch (final ConnectException e) {
-            failed = true;
-        }
-        this.getPluginConfig().save();
-        // Check without API if everything fails
-        if (br.containsHTML("\"message\":\"no such user\"") || failed) {
-            logger.warning("API key is invalid, jumping in other handling...");
-            final boolean isfollowingRedirect = br.isFollowingRedirects();
-            // clear old browser
-            br = prepBrowser(new Browser());
-            // can be direct link!
-            URLConnectionAdapter con = null;
-            br.setFollowRedirects(true);
-            try {
-                con = br.openGetConnection(downloadLink.getDownloadURL());
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    if (con.getResponseCode() == 503) {
-                        // they are using cloudflare these days!
-                        // downloadLink.getLinkStatus().setStatusText(UNDERMAINTENANCEUSERTEXT);
-                        // UNDERMAINTENANCE.set(true);
-                        return AvailableStatus.UNCHECKABLE;
-                    }
-                    br.followConnection();
-                } else {
-                    downloadLink.setName(getFileNameFromHeader(con));
-                    try {
-                        // @since JD2
-                        downloadLink.setVerifiedFileSize(con.getLongContentLength());
-                    } catch (final Throwable t) {
-                        downloadLink.setDownloadSize(con.getLongContentLength());
-                    }
-                    // lets also set dllink
-                    dllink = br.getURL();
-                    // set constants so we can save link, no point wasting this link!
-                    return AvailableStatus.TRUE;
-                }
-            } finally {
-                webMethod = true;
-                br.setFollowRedirects(isfollowingRedirect);
+                downloadLink.setName(getFileNameFromHeader(con));
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    // @since JD2
+                    downloadLink.setVerifiedFileSize(con.getLongContentLength());
+                } catch (final Throwable t) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
                 }
+                // lets also set dllink
+                dllink = br.getURL();
+                // set constants so we can save link, no point wasting this link!
+                return AvailableStatus.TRUE;
             }
-            final String filesize = getAb1Downloadsize();
-            if (filesize == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } finally {
+            br.setFollowRedirects(isfollowingRedirect);
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
             }
-            if ("0".equals(filesize)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        } else {
-            // Check with API
-            final String status = getJson("status", br);
-            if (status == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (!"ok".equals(getJson("status", br))) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final String filename = getJson("name", br);
-            final String filesize = getJson("size", br);
-            if (filename == null || filesize == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
-            downloadLink.setDownloadSize(Long.parseLong(filesize));
         }
+        if (br.containsHTML("The file at this URL was either removed or")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Regex finfo = br.getRegex("class=\"fa fa-file[a-z0-9\\- ]+\"></i>\\&nbsp;([^<>\"]*?) \\[(\\d+(?:,\\d+)?(?:\\.\\d{1,2})? [A-Za-z]{1,5})\\]</span>");
+        String filename = finfo.getMatch(0);
+        String filesize = finfo.getMatch(1);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = Encoding.htmlDecode(filename).trim();
+        filesize = filesize.replace(",", "");
+        downloadLink.setName(filename);
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink, boolean viaAccount) throws Exception, PluginException {
+        final String fid = getFid(downloadLink);
         if (dllink == null) {
-            // since linkcheck can be done via api-api or web-api or web-web. this is still needed here for when api linkchecking has
-            // happened! We don't need to do it again when webmethod isn't directlink!
-            if (!webMethod) {
-                br.setFollowRedirects(true);
-                URLConnectionAdapter con = null;
-                try {
-                    con = br.openGetConnection(downloadLink.getDownloadURL());
-                    if (!con.getContentType().contains("html")) {
-                        logger.info("Link is a direct link");
-                        dllink = br.getURL();
-                    } else {
-                        logger.info("Link is no direct link");
-                        br.followConnection();
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (Throwable e) {
-                    }
-                }
+            dllink = checkDirectLink(downloadLink, "free_directlink");
+        }
+        if (dllink == null) {
+            final String f1 = br.getRegex("\\'f1\\':[\t\n\r ]*?\\'([^<>\"\\']*?)\\'").getMatch(0);
+            final String f2 = br.getRegex("\\'f2\\':[\t\n\r ]*?\\'([^<>\"\\']*?)\\'").getMatch(0);
+            if (f1 == null || f2 == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            String postData = "fkey=" + fid + "&f1=" + f1 + "&f2=" + f2 + "&r=";
+            final String recaptchaV2Response = getRecaptchaV2Response();
+            postData += Encoding.urlEncode(recaptchaV2Response);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage("http://ezfile.ch/?m=download&a=request", postData);
+            this.dllink = getJson("downloadUrl");
             if (dllink == null) {
-                final String ab1 = br.getRegex("if\\( __ab1 == \\'([^<>\"]*?)\\'").getMatch(0);
-                if (ab1 == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.setFollowRedirects(true);
-                // Br2 is our xml browser now!
-                final Browser br2 = br.cloneBrowser();
-                br2.setReadTimeout(40 * 1000);
-                final String ukey = new Regex(downloadLink.getDownloadURL(), "filecloud\\.io/(.+)").getMatch(0);
-                xmlrequest(br2, "/download-request.json", "ukey=" + ukey + "&__ab1=" + Encoding.urlEncode(ab1));
-                if (br.containsHTML("message\":\"invalid request\"")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-                }
-                if (!viaAccount && br2.containsHTML(ONLY4REGISTERED)) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l);
-                }
-                if (br2.containsHTML("\"message\":\"gopremium\"")) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
-                }
-                if (br2.containsHTML("\"captcha\":1")) {
-                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2);
-                    // Semi-automatic reCaptcha handling
-                    final String k = br.getRegex("recaptcha_public.*?=.*?\\'([^<>\"]*?)\\';").getMatch(0);
-                    if (k == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    rc.setId(k);
-                    rc.load();
-                    for (int i = 0; i <= 5; i++) {
-                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                        xmlrequest(br2, "/download-request.json", "ukey=" + ukey + "&__ab1=" + ab1 + "&ctype=recaptcha&recaptcha_response=" + Encoding.urlEncode_light(c) + "&recaptcha_challenge=" + rc.getChallenge());
-                        if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) {
-                            rc.reload();
-                            continue;
-                        }
-                        break;
-                    }
-                }
-                if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                if (br2.containsHTML("\"message\":\"signup\"")) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l);
-                }
-                br.getPage("/download.html");
-                dllink = br.getRegex("id=\"requestBtnHolder\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = br2.getRegex("\"(http://s\\d+\\.filecloud\\.io/[a-z0-9]+/\\d+/[^<>\"/]*?)\"").getMatch(0);
-                }
-                if (dllink == null) {
-                    if (br.containsHTML("in order to download any publicly shared file, please enter its unique download URL")) {
-                        int timesFailed = downloadLink.getIntegerProperty("timesfailedfilecloudit_dllinknull", 0);
-                        downloadLink.getLinkStatus().setRetryCount(0);
-                        if (timesFailed <= 2) {
-                            timesFailed++;
-                            downloadLink.setProperty("timesfailedfilecloudit_dllinknull", timesFailed);
-                            throw new PluginException(LinkStatus.ERROR_RETRY, "Download could not be started");
-                        } else {
-                            downloadLink.setProperty("timesfailedfilecloudit_dllinknull", Property.NULL);
-                            logger.info(NICE_HOST + ": dllink is null --> Plugin broken");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                    }
-                    logger.info("last try getting dllink failed, plugin must be defect!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         br.setFollowRedirects(false);
-        int chunks = MAXFREECHUNKS;
-        boolean resume = true;
+        int chunks = FREE_MAXCHUNKS;
+        boolean resume = FREE_RESUME;
+        if (viaAccount) {
+            chunks = ACCOUNT_FREE_MAXCHUNKS;
+            resume = ACCOUNT_FREE_RESUME;
+        }
         if (downloadLink.getBooleanProperty(IFileIt.NOCHUNKS, false) || resume == false) {
             chunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Possible cloudflare failure", 10 * 60 * 1000l);
             }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty("free_directlink", dllink);
         if (!this.dl.startDownload()) {
             try {
                 if (dl.externalDownloadStop()) {
@@ -322,56 +232,22 @@ public class IFileIt extends PluginForHost {
         }
     }
 
-    private String getAb1Downloadsize() {
-        String ab1 = br.getRegex("var __ab1 = (\\d+);").getMatch(0);
-        if (ab1 == null) {
-            ab1 = br.getRegex("\\$\\(\\'#fsize\\'\\)\\.empty\\(\\)\\.append\\( toMB\\( (\\d+) \\) \\);").getMatch(0);
-        }
-        return ab1;
-    }
-
-    @Override
-    public String getAGBLink() {
-        return MAINPAGE + "/misc-tos.html";
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        /* Tested 12.01.15, trying more than one will result in empty page on download-try of finallink */
-        return 1;
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         if (UNDERMAINTENANCE.get()) {
             throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
-        }
-        if (dllink == null) {
-            br.setRequestIntervalLimit(getHost(), 250);
-            simulateBrowser();
         }
         doFree(downloadLink, false);
     }
 
     @SuppressWarnings("unchecked")
-    private void login(final Account account) throws Exception {
-        br.setFollowRedirects(true);
-        prepBrowser(br);
-        final String apikey = getUrlEncodedAPIkey(account, this, br);
-        if (apikey == null) {
-            logger.info("Couldn't find akey (APIKEY) -> Account must be invalid!");
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void loginOldWay(final Account account, final boolean force) throws Exception {
+    private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -392,42 +268,29 @@ public class IFileIt extends PluginForHost {
                         return;
                     }
                 }
+                String csrftoken = null;
                 br.setFollowRedirects(true);
                 prepBrowser(br);
+                br.postPage("https://ezfile.ch/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.getPage("https://ezfile.ch/?m=user&a=enter");
+                br.getPage("https://login.persona.org/communication_iframe");
+                br.getPage("https://login.persona.org/wsapi/session_context");
+                csrftoken = getJson("csrf_token");
+                br.getPage("https://login.persona.org/sign_in");
+                br.getPage("https://login.persona.org/wsapi/session_context");
+                br.getPage("https://login.persona.org/wsapi/address_info?email=psp%40jdownloader.org&issuer=default");
+                // br.getPage("https://login.persona.org/wsapi/list_emails");
+                br.postPageRaw("https://login.persona.org/wsapi/authenticate_user", "");
+                br.postPageRaw("https://login.persona.org/wsapi/prolong_session", "{\"csrf\":\"" + csrftoken + "\"}");
+                /* Example postdata: http://jdownloader.net:8081/pastebin/133630 */
+                br.postPageRaw("https://login.persona.org/wsapi/cert_key", "");
+                /* Example assertion value: http://jdownloader.net:8081/pastebin/133631 */
+                br.postPage("https://ezfile.ch/?m=user&a=persona", "assertion=");
                 br.getPage(MAINPAGE + "/user-login.html");
                 // We don't know if a captcha is needed so first we try without,
                 // if we get an errormessage we know a captcha is needed
                 boolean accountValid = false;
                 boolean captchaNeeded = false;
-                for (int i = 0; i <= 2; i++) {
-                    final String rcID = br.getRegex("var.*?recaptcha_public.*?=.*?\\'([^<>\"]*?)\\';").getMatch(0);
-                    if (captchaNeeded) {
-                        if (rcID == null) {
-                            logger.warning("recaptcha ID not found, stoping!");
-                            break;
-                        }
-                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                        rc.setId(rcID);
-                        rc.load();
-                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "filecloud.io", "http://filecloud.io", true);
-                        final String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                        br.postPage("/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
-                    } else {
-                        br.postPage("/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                    }
-                    if (br.getURL().contains("\\$\\(\\'#alertFld\\'\\)\\.empty\\(\\)\\.append\\( \\'incorrect reCaptcha entered, try again\\'") || br.getURL().contains("error=RECAPTCHA__INCORRECT")) {
-                        captchaNeeded = true;
-                        logger.info("Wrong captcha and/or username/password entered!");
-                        continue;
-                    }
-                    if (!br.containsHTML("</i> you have successfully logged in")) {
-                        continue;
-                    }
-                    accountValid = true;
-                    break;
-                }
                 if (!accountValid) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -451,21 +314,33 @@ public class IFileIt extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
-            // Use cookies, check and refresh if needed
-            login(account);
-            br.postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_account_details.api", "akey=" + getUrlEncodedAPIkey(account, this, br));
+            login(account, true);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
+        br.getPage("/?m=user&a=account");
+        long traffic_left_long = 0;
+        final String traffic_left = br.getRegex("Traffic Allowance: <a href=\"[^\"]+\" style=\"[^\"]+\">([^<>\"]*?)</a>").getMatch(0);
+        if (traffic_left == null) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        traffic_left_long = SizeFormatter.getSize(traffic_left);
         // Only free acc support till now
-        if ("0".equals(getJson("is_premium", br))) {
+        if (traffic_left_long == 0) {
             ai.setStatus("Registered (free) account");
             account.setProperty("free", true);
             try {
@@ -476,8 +351,10 @@ public class IFileIt extends PluginForHost {
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
+            /* No premium traffic means unlimited fre traffic */
+            ai.setUnlimitedTraffic();
         } else {
-            ai.setStatus("Premium Account");
+            ai.setStatus("Premium account");
             account.setProperty("free", false);
             ai.setValidUntil(Long.parseLong(getJson("premium_until", br)) * 1000);
             try {
@@ -487,6 +364,7 @@ public class IFileIt extends PluginForHost {
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
+            ai.setTrafficLeft(traffic_left_long);
         }
         ai.setUnlimitedTraffic();
         return ai;
@@ -498,9 +376,13 @@ public class IFileIt extends PluginForHost {
         if (UNDERMAINTENANCE.get()) {
             throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
         }
-        login(account);
+        login(account, false);
         if (!account.getBooleanProperty("free", false)) {
-            final String apikey = getUrlEncodedAPIkey(account, this, br);
+            /* TODO */
+            if (true) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String apikey = null;
             final String fid = getFid(link);
             if (apikey == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -519,7 +401,7 @@ public class IFileIt extends PluginForHost {
             }
             finallink = finallink.replace("\\", "");
 
-            int maxchunks = MAXPREMIUMCHUNKS;
+            int maxchunks = ACCOUNT_PREMIUM_MAXCHUNKS;
             if (link.getBooleanProperty(NOCHUNKS, false)) {
                 maxchunks = 1;
             }
@@ -547,29 +429,56 @@ public class IFileIt extends PluginForHost {
             }
         } else {
             br.setFollowRedirects(true);
-            loginOldWay(account, false);
             doFree(link, true);
         }
     }
 
-    public static String getUrlEncodedAPIkey(final Account aa, final PluginForHost plu, final Browser br) throws IOException {
-        String apikey = plu.getPluginConfig().getStringProperty("apikey", null);
-        final String username = plu.getPluginConfig().getStringProperty("username", null);
-        final String password = plu.getPluginConfig().getStringProperty("password", null);
-        // Check if we already have an apikey and if it's the correct one
-        if (apikey == null || username == null || password == null || !aa.getUser().equals(username) || !aa.getPass().equals(password)) {
-            plu.getPluginConfig().setProperty("apikey", Property.NULL);
-            plu.getPluginConfig().setProperty("username", Property.NULL);
-            plu.getPluginConfig().setProperty("password", Property.NULL);
-            br.postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_apikey.api", "username=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()));
-            apikey = getJson("akey", br);
-            if (apikey != null) {
-                plu.getPluginConfig().setProperty("apikey", apikey);
-                plu.getPluginConfig().setProperty("username", aa.getUser());
-                plu.getPluginConfig().setProperty("password", aa.getPass());
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                con = openConnection(br2, dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
-        return Encoding.urlEncode(apikey);
+        return dllink;
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
+        }
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override
@@ -589,10 +498,6 @@ public class IFileIt extends PluginForHost {
 
     private String getFid(final DownloadLink downloadLink) {
         return new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
-    }
-
-    private void simulateBrowser() throws IOException {
-        br.cloneBrowser().getPage("/ads/adframe.js");
     }
 
     private void xmlrequest(final Browser br, final String url, final String postData) throws IOException {

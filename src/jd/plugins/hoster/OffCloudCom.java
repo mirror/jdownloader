@@ -235,9 +235,9 @@ public class OffCloudCom extends PluginForHost {
                 } while (System.currentTimeMillis() - timeStarted < CLOUD_MAX_WAITTIME && "downloading".equals(status));
                 filename = getJson("fileName");
                 if (!"downloaded".equals(status)) {
-                    /* Possible error-states discovered until now: "Error during connection with downloader.", "Error" */
                     logger.warning("Cloud failed");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    /* Should never happen but will happen */
+                    handleErrorRetries("cloud_download_failed_reason_unknown", 20, 5 * 60 * 1000l);
                 }
                 /* Filename needed in URL or server will return bad filenames! */
                 dllink = "https://offcloud.com/cloud/download/" + requestID + "/" + Encoding.urlEncode(filename);
@@ -796,6 +796,9 @@ public class OffCloudCom extends PluginForHost {
         if (error == null) {
             error = getJson("not_available");
         }
+        if (error == null) {
+            error = getJson("not_available");
+        }
         if (error != null) {
             if (error.equals("Please enter a valid email address.")) {
                 statuscode = 1;
@@ -827,6 +830,8 @@ public class OffCloudCom extends PluginForHost {
                 statuscode = 14;
             } else if (error.matches("We are sorry but .*? links are supported only via Cloud downloading\\.")) {
                 statuscode = 15;
+            } else if (error.matches("Error during downloading .+")) {
+                statuscode = 16;
             } else if (error.equals("premium")) {
                 statuscode = 100;
             } else {
@@ -959,6 +964,15 @@ public class OffCloudCom extends PluginForHost {
                 statusMessage = "This host is only supported via cloud downloading";
                 cloudOnlyHosts.add(this.currDownloadLink.getHost());
                 throw new PluginException(LinkStatus.ERROR_RETRY, "This host is only supported via cloud downloading");
+            case 16:
+                /*
+                 * Current host is only supported via cloud downloading --> Add to Cloud-Array and try again
+                 *
+                 * This should only happen if e.g. a user starts JD and starts downloads right away before the cloudOnlyHosts array gets
+                 * updated. This cann be considered as a small workaround.
+                 */
+                statusMessage = "Cloud download failed 'Error during downloading'";
+                handleErrorRetries("clouddownload_error_during_downloading", 15, 5 * 60 * 1000l);
             case 100:
                 /* Free account limits reached -> permanently disable account */
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {

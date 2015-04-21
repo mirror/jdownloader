@@ -36,7 +36,7 @@ import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "http://(www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/d\\d+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "atv.at" }, urls = { "http://(www\\.)?atv\\.at/[a-z0-9\\-_]+/[a-z0-9\\-_]+/(?:d|v)\\d+/" }, flags = { 0 })
 public class AtvAt extends PluginForDecrypt {
 
     public AtvAt(PluginWrapper wrapper) {
@@ -112,9 +112,7 @@ public class AtvAt extends PluginForDecrypt {
             if (br.containsHTML("#EXT-X-STREAM-INF")) {
                 for (String line : Regex.getLines(br.toString())) {
                     if (!line.startsWith("#")) {
-
                         DownloadLink link = createDownloadlink(br.getBaseURL() + line);
-
                         link.setContainerUrl(parameter);
 
                         try {
