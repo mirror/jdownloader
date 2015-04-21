@@ -40,6 +40,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imxd.net" }, urls = { "http://(www\\.)?imxd\\.(net|us)/file\\?id=[A-Z0-9]+" }, flags = { 2 })
 public class ImXdNet extends PluginForHost {
 
+    private static final boolean all_offline = true;
+
     public ImXdNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
@@ -50,13 +52,19 @@ public class ImXdNet extends PluginForHost {
         return "http://imxd.us/";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
         link.setUrlDownload(link.getDownloadURL().replace("imxd.us", "imxd.us"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (all_offline) {
+            /* Display all as offline until we have news about this host. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         correctDownloadLink(link);
         br.setFollowRedirects(true);

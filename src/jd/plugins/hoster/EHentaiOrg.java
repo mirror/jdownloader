@@ -48,7 +48,10 @@ public class EHentaiOrg extends PluginForHost {
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
 
+    private static final long    minimal_filesize  = 1000;
+
     private String               DLLINK            = null;
+    private final boolean        ENABLE_RANDOM_UA  = true;
 
     @Override
     public String getAGBLink() {
@@ -61,6 +64,13 @@ public class EHentaiOrg extends PluginForHost {
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        if (ENABLE_RANDOM_UA) {
+            /*
+             * Using a different UA for every download might be a bit obvious but at the moment, this fixed the error-server responses as it
+             * tricks it into thinking that we re a lot of users and not only one.
+             */
+            br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+        }
         br.getPage(downloadLink.getStringProperty("individual_link", null));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -93,13 +103,14 @@ public class EHentaiOrg extends PluginForHost {
             if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            final long conlength = con.getLongContentLength();
+            if (!con.getContentType().contains("html") && conlength > minimal_filesize) {
+                downloadLink.setDownloadSize(conlength);
+                downloadLink.setProperty("directlink", DLLINK);
+                return AvailableStatus.TRUE;
             } else {
                 return AvailableStatus.UNCHECKABLE;
             }
-            downloadLink.setProperty("directlink", DLLINK);
-            return AvailableStatus.TRUE;
         } finally {
             if (con != null) {
                 if (con.getRequest() instanceof HeadRequest) {
@@ -114,10 +125,14 @@ public class EHentaiOrg extends PluginForHost {
         }
     }
 
-   
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (downloadLink.getDownloadSize() < minimal_filesize) {
+            /* E.h. "403 picture" is smaller than 1 KB */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - file is too small", 2 * 60 * 1000l);
+        }
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         } catch (final BrowserException ebr) {
