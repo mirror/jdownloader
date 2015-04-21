@@ -49,8 +49,13 @@ public class UploadableChFolder extends PluginForDecrypt {
         String fpName = br.getRegex("class=\"folder\"><span>\\&nbsp;</span>([^<>\"]*?)</div>").getMatch(0);
         final String[] links = br.getRegex("(https?://(www\\.)?uploadable\\.ch/[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
+            if (fpName != null) {
+                // empty folder doesn't mean plugin defect. see: https://svn.jdownloader.org/issues/64770
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
+
         }
         for (final String singleLink : links) {
             decryptedLinks.add(createDownloadlink(singleLink));
