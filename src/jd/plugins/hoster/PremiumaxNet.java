@@ -121,6 +121,7 @@ public class PremiumaxNet extends antiDDoSForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
+    @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         login(acc, true);
         String dllink = checkDirectLink(link, "premiumaxnetdirectlink");
@@ -326,7 +327,11 @@ public class PremiumaxNet extends antiDDoSForHost {
                     }
                 }
                 final DownloadLink dummyLink = new DownloadLink(this, "Account", "premiumax.net", "http://premiumax.net", true);
-                final String code = getCaptchaCode("http://www.premiumax.net/veriword.php", dummyLink);
+                String captchaURL = br.getRegex("<td><a href=\"http://(?:www\\.)?premiumax\\.net//#login_re\"><img src=\"(http://[^<>\"]*?)\"").getMatch(0);
+                if (captchaURL == null) {
+                    captchaURL = "http://www.premiumax.net/veriword.php";
+                }
+                final String code = getCaptchaCode(captchaURL, dummyLink);
                 postPage("http://www.premiumax.net/", "serviceButtonValue=login&service=login&stayloggedin=" + stayin + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&formcode=" + code);
                 if (br.getCookie(MAINPAGE, "WebLoginPE") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
