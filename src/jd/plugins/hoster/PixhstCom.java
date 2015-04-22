@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixhst.com" }, urls = { "http://(www\\.)?pixhst\\.com/pictures/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pixhst.com" }, urls = { "http://(www\\.)?(pixhst\\.com|pxhst\\.co)/pictures/\\d+" }, flags = { 0 })
 public class PixhstCom extends PluginForHost {
 
     public PixhstCom(PluginWrapper wrapper) {

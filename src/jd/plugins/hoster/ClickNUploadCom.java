@@ -57,7 +57,7 @@ public class ClickNUploadCom extends PluginForHost {
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(clicknupload\\.com|clicknupload\\.net|clicknupload\\.me)";
+    private static final String            DOMAINS                      = "(clicknupload\\.com|clicknupload\\.net|clicknupload\\.me|clicknupload\\.org)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -528,7 +528,10 @@ public class ClickNUploadCom extends PluginForHost {
             }
         }
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "onClick=\"href=\'(http://[^<>\']+)\'").getMatch(0);
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?[^/]+)/d/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            if (dllink == null) {
+                dllink = new Regex(correctedBR, "onClick=\"href=\'(http://[^<>\']+)\'").getMatch(0);
+            }
         }
         return dllink;
     }
