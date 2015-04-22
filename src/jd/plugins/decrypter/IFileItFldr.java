@@ -65,7 +65,7 @@ public class IFileItFldr extends PluginForDecrypt {
             if (true) {
                 return decryptedLinks;
             }
-            final String akey = "";// ((jd.plugins.hoster.IFileIt) hostPlugin).getUrlEncodedAPIkey(aa, hostPlugin, br);
+            String akey = "";// ((jd.plugins.hoster.IFileIt) hostPlugin).getUrlEncodedAPIkey(aa, hostPlugin, br);
             br.postPage(jd.plugins.hoster.IFileIt.MAINPAGE + "/api-fetch_tag_details.api", "akey=" + akey + "&tkey=" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
             fpName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
             final String[][] linkinformation = br.getRegex("\"size\":\"(\\d+)\",\"name\":\"([^<>\"]*?)\",\"ukey\":\"([^<>\"]*?)\"").getMatches();
