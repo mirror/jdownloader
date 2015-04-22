@@ -662,12 +662,12 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     /**
      * *
-     *
+     * 
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     *
+     * 
      * @return
      * @throws IOException
      * @throws PluginException
@@ -985,10 +985,10 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             apiBrowser.getPage(this.base + "/embed/" + vid.videoID);
             apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&eurl=" + Encoding.urlEncode("https://youtube.googleapis.com/v/" + vid.videoID) + "&sts=16511");
             if (!apiBrowser.containsHTML("url_encoded_fmt_stream_map")) {
-                StatsManager.I().track("youtube/vInfo1");
+                // StatsManager.I().track("youtube/vInfo1");
                 apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=detailpage&ps=default&eurl=&gl=US&hl=en");
                 if (!apiBrowser.containsHTML("url_encoded_fmt_stream_map")) {
-                    StatsManager.I().track("youtube/vInfo2");
+                    // StatsManager.I().track("youtube/vInfo2");
                     // example https://www.youtube.com/v/p7S_u5TzI-I
                     // age protected
                     apiBrowser.getPage(this.base + "/get_video_info?video_id=" + vid.videoID + "&hl=en&gl=US&el=embedded&ps=default&eurl=&gl=US&hl=en");
