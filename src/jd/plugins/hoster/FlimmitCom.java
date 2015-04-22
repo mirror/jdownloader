@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.controlling.AccountController;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -36,7 +35,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flimmit.com" }, urls = { "https?://(www\\.)?flimmit\\.com/video/stream/play/order_item/\\d+" }, flags = { 32 })
+import org.jdownloader.downloader.hls.HLSDownloader;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flimmit.com" }, urls = { "http://flimmit.com/\\d+" }, flags = { 2 })
 public class FlimmitCom extends PluginForHost {
 
     public FlimmitCom(PluginWrapper wrapper) {
@@ -49,16 +50,10 @@ public class FlimmitCom extends PluginForHost {
         return "http://www.flimmit.com/agb/";
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        /* Forced https */
-        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
-    }
-
     /* Connection stuff */
     private static final int     FREE_MAXDOWNLOADS            = 20;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final boolean rtmpe_supported              = false;
 
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
@@ -66,24 +61,31 @@ public class FlimmitCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null) {
-            link.getLinkStatus().setStatusText("Only downloadable for registered/premium users");
-            return AvailableStatus.UNCHECKABLE;
+        if (true) {
+            return AvailableStatus.FALSE;
         }
-        this.login(aa, false);
-        br.getPage(link.getDownloadURL());
-        if (!br.getURL().contains("/play/")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("<h1 class=\"title\">([^<>]*?)</h1>").getMatch(0);
+        // this.setBrowserExclusive();
+        // final Account aa = AccountController.getInstance().getValidAccount(this);
+        // if (aa == null) {
+        // link.getLinkStatus().setStatusText("Only downloadable for registered/premium users");
+        // return AvailableStatus.UNCHECKABLE;
+        // }
+        // this.login(aa, false);
+        // br.setFollowRedirects(true);
+        // br.getPage(link.getDownloadURL());
+        // if (!br.getURL().contains("/play/")) {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
+
+        String filename = link.getStringProperty("filename", null);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename).trim();
         filename = encodeUnicode(filename);
-        link.setFinalFileName(filename + ".mp4");
+        final String vid = link.getStringProperty("vid", null);
+        final String res = link.getStringProperty("res", null);
+        link.setFinalFileName(vid + " - " + filename + "-" + res + "p" + ".mp4");
         return AvailableStatus.TRUE;
     }
 
@@ -109,7 +111,7 @@ public class FlimmitCom extends PluginForHost {
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -201,36 +203,20 @@ public class FlimmitCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-        final String smil_url = br.getRegex("\"file\":\"(http://(www\\.)?flimmit\\.com/video/jwplayer/smil[^<>\"]*?)\"").getMatch(0);
-        if (smil_url == null) {
+        // hls stuff.
+        final String dllink = link.getStringProperty("m3u", null);
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage(smil_url);
-        String rtmpurl = br.getRegex("<meta base=\"(rtmp[^<>\"]*?)\"/>").getMatch(0);
-        /* Chose highest quality available (first link) */
-        String playpath = br.getRegex("src=\"(mp4:[^<>\"]*?)\"").getMatch(0);
-        if (rtmpurl == null || playpath == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        checkFFmpeg(link, "Download a HLS Stream");
+        if (link.getBooleanProperty("encrypted")) {
+
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
         }
-        if (!rtmpe_supported) {
-            rtmpurl = rtmpurl.replace("rtmpe://", "rtmp://");
-        }
-        rtmpurl = Encoding.htmlDecode(rtmpurl);
-        playpath = Encoding.htmlDecode(playpath);
-        try {
-            dl = new RTMPDownload(this, link, rtmpurl);
-        } catch (final NoClassDefFoundError e) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
-        }
-        /* Setup rtmp connection */
-        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setPageUrl(br.getURL());
-        rtmp.setUrl(rtmpurl);
-        rtmp.setPlayPath(playpath);
-        rtmp.setSwfVfy("http://www.flimmit.com/skin/frontend/base/default/video/jw/jwplayer.flash.swf");
-        rtmp.setResume(ACCOUNT_PREMIUM_RESUME);
-        ((RTMPDownload) dl).startDownload();
+        // requestFileInformation(downloadLink);
+        dl = new HLSDownloader(link, br, dllink);
+        dl.startDownload();
+
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
