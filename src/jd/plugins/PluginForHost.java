@@ -488,9 +488,9 @@ public abstract class PluginForHost extends Plugin {
             }
         }
         if (apiKey == null) {
-            final String jssource = new Regex(source, "grecaptcha\\.render\\(\\'recaptchaFld\\', \\{(.*?)\\}\\);").getMatch(0);
+            final String jssource = new Regex(source, "grecaptcha\\.render\\('recaptchaFld', \\{(.*?)\\}\\);").getMatch(0);
             if (jssource != null) {
-                apiKey = new Regex(jssource, "\\'sitekey\\'[\t\n\r ]*?:[\t\n\r ]*?\\'([^<>\"\\']*?)\\'").getMatch(0);
+                apiKey = new Regex(jssource, "'sitekey'\\s*:\\s*'([\\w-]+)'").getMatch(0);
             }
         }
         return apiKey;
