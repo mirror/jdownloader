@@ -152,7 +152,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             }
             for (final LinkInfo linkInfo : tmp.linkInfos.values()) {
                 if (linkInfo.bytesTotal >= 0) {
-                    tmp.newSize += size;
+                    tmp.newSize += linkInfo.bytesTotal;
                 } else {
                     tmp.newUnknownFileSizes++;
                 }
@@ -219,11 +219,11 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     private final static Comparator<DomainInfo> DOMAININFOCOMPARATOR = new Comparator<DomainInfo>() {
 
-        @Override
-        public int compare(DomainInfo o1, DomainInfo o2) {
-            return o1.getTld().compareTo(o2.getTld());
-        }
-    };
+                                                                         @Override
+                                                                         public int compare(DomainInfo o1, DomainInfo o2) {
+                                                                             return o1.getTld().compareTo(o2.getTld());
+                                                                         }
+                                                                     };
 
     @Override
     public void setItems(List<DownloadLink> updatedItems) {
@@ -232,32 +232,32 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         synchronized (this) {
             /* this is called for tablechanged, so update everything for given items */
             final Temp tmp = new Temp();
-                    final boolean readL = fp.getModifyLock().readLock();
-                    try {
-                        tmp.children = fp.getChildren().size();
-                        for (final DownloadLink link : fp.getChildren()) {
-                            tmp.newInfos.add(link.getDomainInfo());
-                            addLinkToTemp(tmp, link);
-                        }
-                    } finally {
-                        fp.getModifyLock().readUnlock(readL);
-                    }
-                    for (final LinkInfo linkInfo : tmp.linkInfos.values()) {
-                        if (linkInfo.bytesTotal >= 0) {
-                            tmp.newSize += size;
-                        } else {
-                            tmp.newUnknownFileSizes++;
-                        }
-                        if (linkInfo.bytesDone >= 0) {
-                            tmp.newDone += linkInfo.bytesDone;
-                        }
-                    }
-                    writeTempToFields(tmp);
-                    items = updatedItems;
-                    updatesDone = lupdatesRequired;
-                    final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.newInfos);
-                    Collections.sort(lst, DOMAININFOCOMPARATOR);
-                    infos = lst.toArray(new DomainInfo[tmp.newInfos.size()]);
+            final boolean readL = fp.getModifyLock().readLock();
+            try {
+                tmp.children = fp.getChildren().size();
+                for (final DownloadLink link : fp.getChildren()) {
+                    tmp.newInfos.add(link.getDomainInfo());
+                    addLinkToTemp(tmp, link);
+                }
+            } finally {
+                fp.getModifyLock().readUnlock(readL);
+            }
+            for (final LinkInfo linkInfo : tmp.linkInfos.values()) {
+                if (linkInfo.bytesTotal >= 0) {
+                    tmp.newSize += linkInfo.bytesTotal;
+                } else {
+                    tmp.newUnknownFileSizes++;
+                }
+                if (linkInfo.bytesDone >= 0) {
+                    tmp.newDone += linkInfo.bytesDone;
+                }
+            }
+            writeTempToFields(tmp);
+            items = updatedItems;
+            updatesDone = lupdatesRequired;
+            final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.newInfos);
+            Collections.sort(lst, DOMAININFOCOMPARATOR);
+            infos = lst.toArray(new DomainInfo[tmp.newInfos.size()]);
         }
     }
 
