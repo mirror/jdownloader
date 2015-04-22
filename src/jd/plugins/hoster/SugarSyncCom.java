@@ -46,18 +46,33 @@ public class SugarSyncCom extends PluginForHost {
         return 10;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("https://www.sugarsync.com/", "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("class=\"pf\\-down\\-unshared\\-main\\-message pf\\-down\\-unshared\\-unavailable\\-file\\-message\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("class=\"pf\\-down\\-unshared\\-main\\-message pf\\-down\\-unshared\\-unavailable\\-file\\-message\"") || br.containsHTML("class=\"pf-error-icon\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<span class=\"displayFileName\" title=\"(.*?)\"></span>").getMatch(0);
-        if (filename == null) filename = br.getRegex("name : \\'(.*?)\\'\\,").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("class=\"displayFileName\">([^<>\"]*?)<").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("name : \\'(.*?)\\'\\,").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String filesize = br.getRegex("<span class=\"fileSize\">\\((.*?)\\)</span>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("size : \\'(.*?)\\'\\,").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("class=\"pf-down-file-size\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
+        }
+        if (filesize == null) {
+            filesize = br.getRegex("size : \\'(.*?)\\'\\,").getMatch(0);
+        }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;

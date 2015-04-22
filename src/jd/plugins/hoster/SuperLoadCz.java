@@ -271,6 +271,7 @@ public class SuperLoadCz extends PluginForHost {
         return dllink;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -282,6 +283,7 @@ public class SuperLoadCz extends PluginForHost {
         } catch (Throwable e) {
             logger.info("Could not updateCredits fetchAccountInfo!");
             logger.info(e.toString());
+            throw e;
         }
         account.setValid(true);
         account.setConcurrentUsePossible(true);

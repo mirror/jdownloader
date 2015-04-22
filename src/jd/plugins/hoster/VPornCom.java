@@ -92,52 +92,53 @@ public class VPornCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?) \\- Vporn Video</title>").getMatch(0);
         }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = Encoding.htmlDecode(filename).trim() + ".mp4";
+        downloadLink.setFinalFileName(filename);
+        final Browser br2 = br.cloneBrowser();
+        // In case the link redirects to the finallink
+        br2.setFollowRedirects(true);
+        int foundlinks = 0;
+        boolean failed = true;
+        URLConnectionAdapter con = null;
         /* videoUrlHD2 = usually only available via account, downloadUrl = Only available via account also == videoUrlLow(2) */
         final String[] quals = { "videoUrlHD2", "videoUrlMedium2", "videoUrlLow2", "videoUrlHD", "videoUrlMedium", "videoUrlLow", "downloadUrl" };
         for (final String qual : quals) {
             DLLINK = br.getRegex("flashvars\\." + qual + "[\r\n\t ]*?=[\r\n\t ]*?\"(http://[^<>\"]*?)\"").getMatch(0);
             if (DLLINK != null) {
-                break;
+                foundlinks++;
+                DLLINK = Encoding.htmlDecode(DLLINK);
+                try {
+                    if (isJDStable()) {
+                        /* @since JD2 */
+                        con = br2.openHeadConnection(DLLINK);
+                    } else {
+                        /* Not supported in old 0.9.581 Stable */
+                        con = br2.openGetConnection(DLLINK);
+                    }
+                    if (!con.getContentType().contains("html")) {
+                        failed = false;
+                        downloadLink.setDownloadSize(con.getLongContentLength());
+                        break;
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
+                }
             }
         }
-        /* Try to get download-link */
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("initDownload\\(\\'\\', \\'(http://[^<>\"]*?)\\'\\)\"").getMatch(0);
-        }
-        if (filename == null || DLLINK == null) {
+        if (foundlinks == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
+        /* No working downloadlink available --> */
+        if (failed) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            if (isJDStable()) {
-                /* @since JD2 */
-                con = br2.openHeadConnection(DLLINK);
-            } else {
-                /* Not supported in old 0.9.581 Stable */
-                con = br2.openGetConnection(DLLINK);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+        return AvailableStatus.TRUE;
     }
 
     @Override

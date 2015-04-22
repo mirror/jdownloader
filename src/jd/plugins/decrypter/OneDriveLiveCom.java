@@ -96,10 +96,20 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             } else if (parameter.matches(TYPE_SKYDRIVE_SHORT)) {
                 br.getPage(parameter);
                 String redirect = br.getRedirectLocation();
+                if (redirect == null) {
+                    return null;
+                }
+                redirect = Encoding.htmlDecode(redirect);
                 if (!redirect.contains("live")) {
                     br.getPage(redirect);
                     redirect = br.getRedirectLocation();
+                    if (redirect == null) {
+                        return null;
+                    }
                 }
+                redirect = Encoding.htmlDecode(redirect);
+                /* Don't set redirect url as original source - we need the correct current url as source! */
+                original_link = redirect;
                 cid = new Regex(redirect, "cid=([A-Za-z0-9]*)").getMatch(0);
                 if (cid == null) {
                     cid = new Regex(redirect, "resid=([A-Z0-9]+)").getMatch(0);
@@ -260,12 +270,13 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         if (filename == null) {
             throw new DecrypterException("Decrypter broken");
         }
-        final String linkid = id + "_" + filename;
+        String linkid = null;
         final DownloadLink dl = createDownloadlink("http://onedrivedecrypted.live.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
         /* Files without extension == possible */
         if (extension != null) {
             filename += extension;
         }
+        linkid = id + "_" + filename;
         dl.setDownloadSize(size);
         totalSize += size;
         dl.setFinalFileName(filename);
@@ -350,13 +361,13 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
     }
 
+    /* TODO: Once it breaks down next time: Simply make a hashMap that contains the needed post data... */
     public static void accessItems_API(final Browser br, final String original_link, final String cid, final String id, final String additional) throws IOException {
-        final boolean disable_inthint_handling = true;
         final String v = "0.10707631620552516";
         String data = null;
-        if (original_link.contains("ithint=") && !disable_inthint_handling) {
+        if (original_link.contains("ithint=") && id != null) {
             data = "&cid=" + Encoding.urlEncode(cid) + additional;
-            br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?id=root&group=0&qt=&ft=&sb=1&sd=1&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data);
+            br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?id=" + id + "&group=0&qt=&ft=&sb=1&sd=1&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&si=0&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data);
         } else if (id == null && original_link.matches(TYPE_ONEDRIVE_ROOT)) {
             /* Access root-dir */
             data = "&cid=" + Encoding.urlEncode(cid);
