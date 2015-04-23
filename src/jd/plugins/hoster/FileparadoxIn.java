@@ -33,6 +33,7 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -353,14 +354,17 @@ public class FileparadoxIn extends PluginForHost {
         // cloudflare initial support is within getPage.. otherwise not needed.
         alt.getPage(COOKIE_HOST.replaceFirst("https?://", getProtocol()) + "/?op=checkfiles");
         alt.postPage("/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + downloadLink.getDownloadURL());
-        String[] linkInformation = alt.getRegex(">" + downloadLink.getDownloadURL() + "</td><td style=\"color:[^;]+;\">(\\w+)</td><td>([^<>]+)?</td>").getRow(0);
+        String[] linkInformation = alt.getRegex(">" + Pattern.quote(downloadLink.getDownloadURL()) + "</td><td style=\"color:[^;]+;\">([\\w! ]+)</td><td>([^<>]+)?</td>").getRow(0);
         if (linkInformation != null && linkInformation[0].equalsIgnoreCase("found")) {
             downloadLink.setAvailable(true);
             if (!inValidate(linkInformation[1]) && inValidate(fileInfo[1])) {
                 fileInfo[1] = linkInformation[1];
             }
+        } else if (linkInformation != null && linkInformation[0].contains("Not found")) {
+            // we trust this
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            // not found! <td>link</td><td style="color:red;">Not found!</td><td></td>
+            // untrusted
             downloadLink.setAvailable(false);
         }
         if (!inValidate(fuid) && inValidate(fileInfo[0])) {
