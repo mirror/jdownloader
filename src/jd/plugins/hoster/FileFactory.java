@@ -56,6 +56,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
@@ -692,6 +693,9 @@ public class FileFactory extends PluginForHost {
         if (finalLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (Application.getJavaVersion() < Application.JAVA17) {
+            finalLink = finalLink.replaceFirst("https", "http");
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
@@ -954,6 +958,14 @@ public class FileFactory extends PluginForHost {
         return fuid;
     }
 
+    private String getApi() {
+        if (Application.getJavaVersion() < Application.JAVA17) {
+            return "http://api.filefactory.com/v1";
+        } else {
+            return "https://api.filefactory.com/v1";
+        }
+    }
+
     private boolean checkLinks_API(final DownloadLink[] urls, Account account) {
         if (account == null) {
             ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(this.getHost());
@@ -998,7 +1010,7 @@ public class FileFactory extends PluginForHost {
                 }
                 // lets remove last ","
                 sb.replace(sb.length() - 1, sb.length(), "");
-                getPage(br, api + "/getFileInfo?" + sb, account);
+                getPage(br, getApi() + "/getFileInfo?" + sb, account);
                 for (final DownloadLink dl : links) {
                     // password is last value in fuid response, needed because filenames or other values could contain }. It then returns
                     // invalid response.
@@ -1043,7 +1055,6 @@ public class FileFactory extends PluginForHost {
         return true;
     }
 
-    private final String        api     = "https://api.filefactory.com/v1";
     private final AtomicBoolean useAPI  = new AtomicBoolean(true);
 
     private String              fuid    = null;
@@ -1107,7 +1118,7 @@ public class FileFactory extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password", 1 * 60 * 1001);
                 }
             }
-            getPage(br, api + "/getDownloadLink?file=" + fuid + (!inValidate(passCode) ? "&password=" + Encoding.urlEncode(passCode) : ""), account);
+            getPage(br, getApi() + "/getDownloadLink?file=" + fuid + (!inValidate(passCode) ? "&password=" + Encoding.urlEncode(passCode) : ""), account);
             if (br.containsHTML("\"type\":\"error\"") && br.containsHTML("\"code\":701")) {
                 // {"type":"error","message":"Error generating download link.  Please try again","code":701}
                 // TODO: remove this when retry count comes back!
@@ -1245,7 +1256,7 @@ public class FileFactory extends PluginForHost {
         synchronized (apiAccLock) {
             final Browser nbr = new Browser();
             prepApiBrowser(nbr);
-            nbr.getPage(api + "/getSessionKey?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            nbr.getPage(getApi() + "/getSessionKey?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             final String apiKey = getJson(nbr, "key");
             if (apiKey != null) {
                 account.setProperty("apiKey", apiKey);
@@ -1278,12 +1289,12 @@ public class FileFactory extends PluginForHost {
         if (account != null) {
             synchronized (apiAccLock) {
                 String apiKey = getApiKey(account);
-                ibr.getPage(url + (url.matches("(" + api + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
+                ibr.getPage(url + (url.matches("(" + getApi() + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
                 if (sessionKeyInValid(account, ibr)) {
                     apiKey = getApiKey(account);
                     if (apiKey != null) {
                         // can't sessionKeyInValid because getApiKey/loginKey return String, and loginKey uses a new Browser.
-                        ibr.getPage(url + (url.matches("(" + api + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
+                        ibr.getPage(url + (url.matches("(" + getApi() + ")?/[a-zA-Z0-9]+\\?[a-zA-Z0-9]+.+") ? "&" : "?") + "key=" + apiKey);
                     } else {
                         // failure occurred.
                         throw new PluginException(LinkStatus.ERROR_FATAL);
@@ -1334,7 +1345,7 @@ public class FileFactory extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        getPage(br, api + "/getMemberInfo", account);
+        getPage(br, getApi() + "/getMemberInfo", account);
         String expire = getJson("expiryMs");
         String type = getJson("accountType");
         if ("premium".equalsIgnoreCase(type)) {
