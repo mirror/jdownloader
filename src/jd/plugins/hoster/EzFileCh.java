@@ -136,7 +136,7 @@ public class EzFileCh extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        if (br.containsHTML("The file at this URL was either removed or")) {
+        if (br.containsHTML("The file at this URL was either removed or") || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex finfo = br.getRegex("class=\"fa fa-file[a-z0-9\\- ]+\"></i>\\&nbsp;([^<>\"]*?) \\[(\\d+(?:,\\d+)?(?:\\.\\d{1,2})? [A-Za-z]{1,5})\\]</span>");

@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -1778,12 +1779,14 @@ public class Uploadedto extends PluginForHost {
     private long getPluginSavedLastDownloadTimestamp() {
         long lastdownload = 0;
         synchronized (blockedIPsMap) {
-            for (Entry<String, Long> ipentry : blockedIPsMap.entrySet()) {
+            final Iterator<Entry<String, Long>> it = blockedIPsMap.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, Long> ipentry = it.next();
                 final String ip = ipentry.getKey();
                 final long timestamp = ipentry.getValue();
                 if (System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT) {
                     /* Remove old entries */
-                    blockedIPsMap.remove(ip);
+                    it.remove();
                 }
                 if (ip.equals(currentIP.get())) {
                     lastdownload = timestamp;

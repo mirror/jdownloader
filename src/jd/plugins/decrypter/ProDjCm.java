@@ -372,6 +372,7 @@ public class ProDjCm extends PluginForDecrypt {
     }
 
     private void handlePrelisten(ArrayList<DownloadLink> ret, HashSet<String> filter, String grabThis) {
+        final String fid = new Regex(grabThis, "prelisten/(\\d+)").getMatch(0);
         final String url_filename = new Regex(grabThis, "prelisten/\\d+/(.+)").getMatch(0);
         // dl wont start unless you have trailing /
         grabThis += "/";
@@ -397,6 +398,7 @@ public class ProDjCm extends PluginForDecrypt {
         } catch (Exception e) {
             link.setAvailable(false);
         }
+        link.setLinkID(fid);
         ret.add(link);
     }
 
