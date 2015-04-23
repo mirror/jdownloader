@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2015  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -62,10 +62,7 @@ public class IFileItFldr extends PluginForDecrypt {
         }
         // Id we have an account we can use the API, if not we have to do it over the site
         if (aa != null) {
-            if (true) {
-                return decryptedLinks;
-            }
-            String akey = "";// ((jd.plugins.hoster.IFileIt) hostPlugin).getUrlEncodedAPIkey(aa, hostPlugin, br);
+            final String akey = ((jd.plugins.hoster.IFileIt) hostPlugin).getUrlEncodedAPIkey(aa, hostPlugin, br);
             br.postPage(jd.plugins.hoster.IFileIt.MAINPAGE + "/api-fetch_tag_details.api", "akey=" + akey + "&tkey=" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
             fpName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
             final String[][] linkinformation = br.getRegex("\"size\":\"(\\d+)\",\"name\":\"([^<>\"]*?)\",\"ukey\":\"([^<>\"]*?)\"").getMatches();
