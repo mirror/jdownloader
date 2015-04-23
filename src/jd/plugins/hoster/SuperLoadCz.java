@@ -280,7 +280,7 @@ public class SuperLoadCz extends PluginForHost {
         account.setProperty("token", Property.NULL);
         try {
             updateCredits(ai, account);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             logger.info("Could not updateCredits fetchAccountInfo!");
             logger.info(e.toString());
             throw e;
