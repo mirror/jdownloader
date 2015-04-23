@@ -788,7 +788,7 @@ public class FileparadoxIn extends PluginForHost {
             getPage(myAccount);
         }
         // what type of account?
-        if (!cbr.containsHTML("(Premium(-| )Account expire|>Renew premium<)")) {
+        if (!cbr.containsHTML("(Premium(-| )Account expire|>Renew premium<|>Extend Premium)")) {
             account.setProperty("free", true);
         } else {
             account.setProperty("free", false);

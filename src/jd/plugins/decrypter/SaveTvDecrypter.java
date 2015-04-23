@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map.Entry;
 
 import javax.swing.JOptionPane;
@@ -157,12 +158,13 @@ public class SaveTvDecrypter extends PluginForDecrypt {
              * not need to store them longer than that as it will eat up more RAM/space for no reason.
              */
             synchronized (crawledTelecastIDsMap) {
-                for (Entry<String, Long> entry : crawledTelecastIDsMap.entrySet()) {
-                    final String telecastID = entry.getKey();
+                final Iterator<Entry<String, Long>> it = crawledTelecastIDsMap.entrySet().iterator();
+                while (it.hasNext()) {
+                    final Entry<String, Long> entry = it.next();
                     final long timestamp = entry.getValue();
                     if (System.currentTimeMillis() - timestamp >= TELECAST_ID_EXPIRE_TIME) {
                         /* Remove old entries */
-                        crawledTelecastIDsMap.remove(telecastID);
+                        it.remove();
                     }
                 }
             }
