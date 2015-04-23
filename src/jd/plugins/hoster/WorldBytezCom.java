@@ -406,10 +406,11 @@ public class WorldBytezCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
+                    // you should only do this when you KNOW password was wrong, maybe something else is broken....
+                    // try {
+                    // invalidateLastChallengeResponse();
+                    // } catch (final Throwable e) {
+                    // }
                     continue;
                 } else {
                     try {
@@ -836,6 +837,9 @@ public class WorldBytezCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
+        if (!br.getURL().contains("/?op=my_account")) {
+            getPage("/?op=my_account");
+        }
         final String space[] = new Regex(correctedBR, ">\\s*Used space:\\s*(?:<[^>]+>)*([0-9\\.]+)\\s*of \\d+ (KB|MB|GB|TB)?\\s*<").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             // free users it's provided by default
@@ -847,7 +851,7 @@ public class WorldBytezCom extends PluginForHost {
         account.setValid(true);
         String availabletraffic = new Regex(correctedBR, "glyphicon-signal\"></span>([^<>\"\\']+)</div>").getMatch(0);
         if (availabletraffic == null) {
-            availabletraffic = new Regex(correctedBR, ">\\s*Traffic available today:\\s*(?:<[^>]+>)*(-?[0-9\\.]+\\s*(KB|MB|GB|TB)?)\\s*<").getMatch(0);
+            availabletraffic = new Regex(correctedBR, ">\\s*Traffic available today:\\s*(?:<[^>]+>)*(-?[0-9\\.]+\\s*(KB|MB|GB|TB)?|Unlimited)\\s*<").getMatch(0);
         }
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             availabletraffic.trim();
@@ -866,8 +870,9 @@ public class WorldBytezCom extends PluginForHost {
         if (expire != null) {
             expiretime = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
-        if (account.getBooleanProperty("nopremium") && (expiretime - System.currentTimeMillis()) <= 0 || expire == null) {
+        if (expiretime - System.currentTimeMillis() <= 0 || expire == null) {
             ai.setStatus("Free Account");
+            account.setProperty("nopremium", true);
             try {
                 maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 // free accounts can still have captcha.
@@ -879,6 +884,7 @@ public class WorldBytezCom extends PluginForHost {
             }
         } else {
             ai.setValidUntil(expiretime);
+            account.setProperty("nopremium", false);
             try {
                 maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setMaxSimultanDownloads(maxPrem.get());
@@ -934,14 +940,6 @@ public class WorldBytezCom extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                }
-                if (!br.getURL().contains("/?op=my_account")) {
-                    getPage("/?op=my_account");
-                }
-                if (new Regex(correctedBR, "uppercase; font\\-size:14px;\">Free</span>").matches()) {
-                    account.setProperty("nopremium", true);
-                } else {
-                    account.setProperty("nopremium", false);
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
