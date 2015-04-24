@@ -271,12 +271,12 @@ public class VimeoCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (LOCK) {
             final AccountInfo ai = new AccountInfo();
-            if (!new Regex(account.getUser(), ".+@.+\\..+").matches()) {
-                account.setProperty("cookies", null);
-                account.setValid(false);
-                ai.setStatus("Invalid email address");
-                return ai;
-
+            if (!account.getUser().matches(".+@.+\\..+")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             }
             try {
                 login(account, true);
@@ -325,7 +325,7 @@ public class VimeoCom extends PluginForHost {
                         return;
                     }
                 }
-                br.getPage("https://vimeo.com/log_in");
+                br.getPage("https://www.vimeo.com/log_in");
                 final String xsrft = getXsrft(br);
                 // static post are bad idea, always use form.
                 final Form login = br.getFormbyProperty("id", "login_form");
@@ -356,7 +356,10 @@ public class VimeoCom extends PluginForHost {
     }
 
     public final String getXsrft(Browser br) throws PluginException {
-        final String xsrft = br.getRegex("vimeo\\.xsrft\\s*=\\s*('|\"|)([a-f0-9\\.]{32,})\\1").getMatch(1);
+        String xsrft = br.getRegex("vimeo\\.xsrft\\s*=\\s*('|\"|)([a-f0-9\\.]{32,})\\1").getMatch(1);
+        if (xsrft == null) {
+            xsrft = br.getRegex("\"xsrft\"[\t\n\r ]*?:[\t\n\r ]*?\"([^<>\"]*?)\"").getMatch(0);
+        }
         if (xsrft == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

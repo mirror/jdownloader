@@ -31,16 +31,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "collectionofbestporn.com" }, urls = { "http://(www\\.)?collectionofbestporn\\.com/video/[a-z0-9\\-]+\\.html" }, flags = { 0 })
-public class CollectionofbestpornCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornfun.com" }, urls = { "http://(www\\.)?pornfun\\.com/videos/\\d+/[a-z0-9\\-]+/" }, flags = { 0 })
+public class PornFunCom extends PluginForHost {
 
-    public CollectionofbestpornCom(PluginWrapper wrapper) {
+    public PornFunCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
     // Porn_get_file_/videos/_basic Version 0.2
-    // Tags:
+    // Tags: Script, template
+    // mods:
     // protocol: no https
     // other:
 
@@ -55,7 +56,7 @@ public class CollectionofbestpornCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://collectionofbestporn.com/tos";
+        return "";
     }
 
     @SuppressWarnings("deprecation")
@@ -65,32 +66,23 @@ public class CollectionofbestpornCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getURL().contains("404.php") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("class=\"header icon1\"><h1>([^<>\"]*?)</h1>").getMatch(0);
+        String filename = br.getRegex("class=\"video_info\">[\t\n\r ]+<h2>([^<>]*?)</h2>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)\\- Collection Of Best Porn \\- HD Porn Tube</title>").getMatch(0);
+            filename = br.getRegex("target=\"_blank\" style=\"color: #fff;\">([^<>]*?)<").getMatch(0);
         }
-        final String[] possibleQualities = { "1080p", "720p", "540p", "360p", "240p" };
-        for (final String qual : possibleQualities) {
-            DLLINK = br.getRegex("url:[\t\n\r ]*?(?:\\'|\")(http://[^<>\"\\']*?)(?:\\'|\"),[\t\n\r ]*?title:[\t\n\r ]*?(?:\\'|\")" + qual + "(?:\\'|\")").getMatch(0);
-            if (DLLINK != null) {
-                break;
-            }
+        if (filename == null) {
+            filename = br.getRegex("<h1 style=\"font\\-size:\\d+px;\">([^<>]*?)</h1>").getMatch(0);
         }
-        if (DLLINK == null) {
-            final String[] possibleQualities2 = { "HD", "SD" };
-            for (final String qual : possibleQualities2) {
-                DLLINK = br.getRegex("file:[\t\n\r ]*?(?:\\'|\")(http://[^<>\"\\']*?)(?:\\'|\"),[\t\n\r ]+label:[\t\n\r ]*?(?:\\'|\")" + qual + "(?:\\'|\")").getMatch(0);
-                if (DLLINK != null) {
-                    break;
-                }
-            }
+        if (filename == null) {
+            filename = br.getRegex("<h3>([^<>\"]*?)</h3>").getMatch(0);
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/dl/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
+        DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -113,7 +105,13 @@ public class CollectionofbestpornCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, DLLINK);
+                try {
+                    /* @since JD2 */
+                    con = br.openHeadConnection(DLLINK);
+                } catch (final Throwable t) {
+                    /* Not supported in old 0.9.581 Stable */
+                    con = br.openGetConnection(DLLINK);
+                }
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -143,10 +141,6 @@ public class CollectionofbestpornCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -158,7 +152,11 @@ public class CollectionofbestpornCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = openConnection(br2, dllink);
+                if (isJDStable()) {
+                    con = br2.openGetConnection(dllink);
+                } else {
+                    con = br2.openHeadConnection(dllink);
+                }
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -195,16 +193,6 @@ public class CollectionofbestpornCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
     }
 
     private boolean isJDStable() {

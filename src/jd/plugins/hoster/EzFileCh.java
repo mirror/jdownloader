@@ -59,10 +59,10 @@ public class EzFileCh extends PluginForHost {
     private static final int     FREE_MAXDOWNLOADS            = 1;
     private static final boolean ACCOUNT_FREE_RESUME          = true;
     private static final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
 
     private static final String  NOCHUNKS                     = "NOCHUNKS";
     private static final String  NORESUME                     = "NORESUME";
@@ -159,6 +159,16 @@ public class EzFileCh extends PluginForHost {
             dllink = checkDirectLink(downloadLink, "free_directlink");
         }
         if (dllink == null) {
+            if (br.containsHTML("You do not have enough traffic to continue<")) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            }
             final String f1 = br.getRegex("\\'f1\\':[\t\n\r ]*?\\'([^<>\"\\']*?)\\'").getMatch(0);
             final String f2 = br.getRegex("\\'f2\\':[\t\n\r ]*?\\'([^<>\"\\']*?)\\'").getMatch(0);
             if (f1 == null || f2 == null) {

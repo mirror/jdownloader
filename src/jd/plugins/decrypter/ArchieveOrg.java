@@ -20,15 +20,15 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "https?://(www\\.)?archive\\.org/details/(?!copyrightrecords)[A-Za-z0-9_\\-\\.]+" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "https?://(www\\.)?archive\\.org/(?:details|download)/(?!copyrightrecords)[A-Za-z0-9_\\-\\.]+" }, flags = { 0 })
 public class ArchieveOrg extends PluginForDecrypt {
 
     public ArchieveOrg(PluginWrapper wrapper) {
@@ -37,7 +37,7 @@ public class ArchieveOrg extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("://www.", "://");
+        String parameter = param.toString().replace("://www.", "://").replace("/details/", "/download/");
         br.getPage(parameter);
         if (br.containsHTML(">The item is not available")) {
             logger.info("Link offline: " + parameter);
@@ -47,36 +47,25 @@ public class ArchieveOrg extends PluginForDecrypt {
             logger.info("Maybe invalid link or nothing there to download: " + parameter);
             return decryptedLinks;
         }
-        String[] links = null;
-        final String dlOverview = br.getRegex("<b>All Files: </b><a href=\"(https://[^<>\"]*?)\"").getMatch(0);
-        if (dlOverview != null) {
-            br.setFollowRedirects(true);
-            // New way
-            br.getPage(Encoding.htmlDecode(dlOverview));
-            links = br.getRegex("<a href=\"([^<>\"/]*?)\"").getColumn(0);
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (String singleLink : links) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + br.getURL() + singleLink);
-                dl.setAvailable(true);
-                decryptedLinks.add(dl);
-            }
-        } else {
-            // Old way
-            links = br.getRegex("\"(/download/.*?/.*?)\"").getColumn(0);
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (String singleLink : links) {
-                decryptedLinks.add(createDownloadlink("directhttp://http://archive.org" + singleLink));
-            }
+        final String fpName = br.getRegex("<h1>Index of [^<>\"]+/([^<>\"/]+)/?</h1>").getMatch(0);
+        br.setFollowRedirects(true);
+        // New way
+        final String[][] finfo = br.getRegex("<a href=\"([^<>\"]*?)\">[^<>\"]*?</a>[^<>\"]*?(\\d+\\.\\d+(?:K|M))").getMatches();
+        for (final String[] finfosingle : finfo) {
+            final String filename = finfosingle[0];
+            String fsize = finfosingle[1];
+            final DownloadLink fina = createDownloadlink("directhttp://" + br.getURL() + "/" + filename);
+            fsize += "b";
+            fina.setDownloadSize(SizeFormatter.getSize(fsize));
+            fina.setAvailable(true);
+            fina.setFinalFileName(filename);
+            decryptedLinks.add(fina);
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(new Regex(parameter, "archive\\.org/details/(.+)").getMatch(0).trim());
-        fp.addLinks(decryptedLinks);
+        if (fpName != null) {
+            fp.setName(fpName);
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
     }
 
