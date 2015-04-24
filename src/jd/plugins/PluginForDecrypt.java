@@ -437,14 +437,51 @@ public abstract class PluginForDecrypt extends Plugin {
         return lastSolverJob != null;
     }
 
-    protected String getRecaptchaV2Token(int flag, final CryptedLink link, String siteKey) throws Exception {
+    /**
+     * will auto find api key, based on google default &lt;div&gt;, @Override getRecaptchaV2ApiKey(String) to make customised finder. <br />
+     * will auto retry x times, as google verifies token before sending it back to host. This will avoid wait time issues, etc, down the
+     * track
+     *
+     * @author raztoki
+     * @since JD2
+     * @return
+     * @throws Exception
+     */
+    protected String getRecaptchaV2Response(final CryptedLink link) throws Exception {
+        // call a BrowserSolver.recaptchav2 advanced config setting here. ??
+        final int captchaWeePeat = 3;
+        int captchaI = 0;
+        String captchaResponse = null;
+        while (captchaI <= captchaWeePeat) {
+            captchaResponse = getRecaptchaV2Response(0, link, null);
+            // refresh or timeouts creates a "" result.
+            if ("".equals(captchaResponse)) {
+                if (captchaI + 1 == captchaWeePeat) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                captchaI++;
+                continue;
+            }
+            break;
+        }
+        return captchaResponse;
+    }
+
+    protected String getRecaptchaV2Response(int flag, final CryptedLink link, final String siteKey) throws Exception {
         if (Thread.currentThread() instanceof SingleDownloadController) {
             logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");
+        }
+        String apiKey = siteKey;
+        if (apiKey == null) {
+            apiKey = getRecaptchaV2ApiKey();
+            if (apiKey == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "RecaptchaV2 API Key can not be found");
+            }
         }
 
         final LinkCrawler currentCrawler = getCrawler();
         final CrawledLink currentOrigin = getCurrentLink().getOriginLink();
-        RecaptchaV2Challenge c = new RecaptchaV2Challenge(siteKey, this) {
+        RecaptchaV2Challenge c = new RecaptchaV2Challenge(apiKey, this) {
             @Override
             public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
                 Plugin challengePlugin = Challenge.getPlugin(challenge);
@@ -520,6 +557,50 @@ public abstract class PluginForDecrypt extends Plugin {
         }
         return c.getResult().getValue();
 
+    }
+
+    /**
+     *
+     *
+     * @author raztoki
+     * @since JD2
+     * @return
+     */
+    protected String getRecaptchaV2ApiKey() {
+        return getRecaptchaV2ApiKey(br != null ? br.toString() : null);
+    }
+
+    /**
+     * will auto find api key, based on google default &lt;div&gt;, @Override to make customised finder.
+     *
+     * @author raztoki
+     * @since JD2
+     * @return
+     */
+    protected String getRecaptchaV2ApiKey(final String source) {
+        String apiKey = null;
+        if (source == null) {
+            return null;
+        }
+        // lets look for default
+        final String[] divs = new Regex(source, "<div[^>]*>.*?</div>").getColumn(-1);
+        if (divs != null) {
+            for (final String div : divs) {
+                if (new Regex(div, "class=('|\")g-recaptcha\\1").matches()) {
+                    apiKey = new Regex(div, "data-sitekey=('|\")([\\w-]+)\\1").getMatch(1);
+                    if (apiKey != null) {
+                        break;
+                    }
+                }
+            }
+        }
+        if (apiKey == null) {
+            final String jssource = new Regex(source, "grecaptcha\\.render\\(('|\")\\w+\\1, \\{(.*?)\\}\\)").getMatch(1);
+            if (jssource != null) {
+                apiKey = new Regex(jssource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)([\\w-]+)\\1").getMatch(2);
+            }
+        }
+        return apiKey;
     }
 
     /**

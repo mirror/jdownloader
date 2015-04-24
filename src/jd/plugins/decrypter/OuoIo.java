@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2015  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -27,9 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ouo.io" }, urls = { "http://ouo\\.io/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ouo.io" }, urls = { "http://ouo\\.io/[A-Za-z0-9]+" }, flags = { 0 })
 public class OuoIo extends PluginForDecrypt {
 
     public OuoIo(PluginWrapper wrapper) {
@@ -42,40 +39,16 @@ public class OuoIo extends PluginForDecrypt {
         final String fid = parameter.substring(parameter.lastIndexOf("/") + 1);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (!br.containsHTML("class=\"content\"")) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String token = br.getRegex("name=\"_token\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-        final String sitekey = br.getRegex("sitekey: \"([^<>\"]*?)\"").getMatch(0);
-        if (token == null || sitekey == null) {
-            return null;
-        }
-        boolean success = false;
-        String responseToken = null;
-        for (int i = 0; i <= 5; i++) {
-            Recaptcha2Helper rchelp = new Recaptcha2Helper();
-            rchelp.init(this.br, sitekey, this.getHost());
-            final File outputFile = rchelp.loadImageFile();
-            final String code = getCaptchaCode("recaptcha", outputFile, param);
-            success = rchelp.sendResponse(code);
-            if (!success) {
-                continue;
-            }
-            responseToken = rchelp.getResponseToken();
-        }
-        br.postPage("http://ouo.io/go/" + fid, "_token=" + Encoding.urlEncode(token) + "&g-recaptcha-response=" + Encoding.urlEncode(responseToken));
+        final String recaptchaV2Response = getRecaptchaV2Response(param);
+        br.postPage("http://ouo.io/go/" + fid, "_token=" + Encoding.urlEncode(token) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
         final String finallink = br.getRegex("\"(http://[^<>\"]*?)\" id=\"btn-main\"").getMatch(0);
         if (finallink == null) {
             return null;

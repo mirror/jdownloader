@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2015  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -38,6 +38,11 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+/**
+ *
+ * @author raztoki
+ *
+ */
 @DecrypterPlugin(revision = "$Revision: 29087 $", interfaceVersion = 2, names = { "flimmit.com" }, urls = { "https?://(?:www\\.)?flimmit\\.com/(?:catalog/product/view/id/|video/stream/play/(?:product_id/|order_item/))(\\d+)" }, flags = { 2 })
 public class FlimmitCom extends PluginForDecrypt {
 

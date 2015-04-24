@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2015  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -115,7 +115,7 @@ public class CloudZillaTo extends PluginForHost {
         if (source == null) {
             return null;
         }
-        final String apiKey = br.getRegex("var grecaptcha_key = \"([^<>\"]*?)\";").getMatch(0);
+        final String apiKey = br.getRegex("var grecaptcha_key = \"([\\w-]+)\";").getMatch(0);
         return apiKey;
     }
 
