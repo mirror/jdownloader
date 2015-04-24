@@ -35,6 +35,10 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
         return String.class;
     }
 
+    // final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+    // final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(browser);
+    // rc.setId(siteKey);
+    // rc.load();
     public void enqueue(SolverJob<String> job) {
         if (job.getChallenge() instanceof BasicCaptchaChallenge) {
             super.enqueue(job);

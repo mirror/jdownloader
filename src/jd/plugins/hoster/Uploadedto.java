@@ -816,6 +816,29 @@ public class Uploadedto extends PluginForHost {
             if (!br.containsHTML("\\{succ:true\\}")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+
+            // final int fwait=fwait;
+            // final long timebefore = System.currentTimeMillis();
+            //
+            // final String fbaseURL = baseURL;
+            // new RecaptchaV1Handler(rcID, this, br) {
+            //
+            // @Override
+            // protected boolean sendResponse(int retry, Browser br, String challenge, String response) throws IOException, PluginException,
+            // InterruptedException {
+            // int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
+            // if (retry == 0 && passedTime < fwait) {
+            // sleep((fwait - passedTime) * 1001l, downloadLink);
+            // }
+            // postPage(br, fbaseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" +
+            // Encoding.urlEncode(challenge) + "&recaptcha_response_field=" + Encoding.urlEncode(response));
+            //
+            // return !br.containsHTML("\"err\":\"captcha\"");
+            // }
+            //
+            // }.run();
+            //
+
             final long timebefore = System.currentTimeMillis();
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -1844,7 +1867,7 @@ public class Uploadedto extends PluginForHost {
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
      * English.
-     *
+     * 
      * @param key
      * @return
      */

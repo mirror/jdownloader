@@ -433,7 +433,7 @@ public abstract class Plugin implements ActionListener {
      */
     public abstract String getHost();
 
-    protected File getLocalCaptchaFile() {
+    public File getLocalCaptchaFile() {
         return this.getLocalCaptchaFile(".jpg");
     }
 
