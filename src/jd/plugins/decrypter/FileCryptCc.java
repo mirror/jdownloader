@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2015  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -40,8 +40,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.captcha.utils.recaptcha.api2.Recaptcha2Helper;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10})\\.html" }, flags = { 0 })
 public class FileCryptCc extends PluginForDecrypt {
@@ -129,22 +127,8 @@ public class FileCryptCc extends PluginForDecrypt {
                 captchaForm.put("button.y", String.valueOf(p.y));
                 submitForm(captchaForm);
             } else if (captchaForm != null && captchaForm.containsHTML("=\"g-recaptcha\"")) {
-                // recaptcha v2
-                boolean success = false;
-                String responseToken = null;
-                do {
-                    Recaptcha2Helper rchelp = new Recaptcha2Helper();
-                    rchelp.init(this.br);
-                    final File outputFile = rchelp.loadImageFile();
-                    String code = getCaptchaCode("recaptcha", outputFile, param);
-                    success = rchelp.sendResponse(code);
-                    responseToken = rchelp.getResponseToken();
-                    counter++;
-                } while (!success && counter <= retry);
-                if (!success) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
-                }
-                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(responseToken));
+                final String recaptchaV2Response = getRecaptchaV2Response(param);
+                captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 submitForm(captchaForm);
             } else if (captcha != null) {
                 // they use recaptcha response field key for non recaptcha.. math sum and text =

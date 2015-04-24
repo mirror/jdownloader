@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2015  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -37,6 +37,11 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
+/**
+ *
+ * @author raztoki
+ *
+ */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flimmit.com" }, urls = { "http://flimmit.com/\\d+" }, flags = { 2 })
 public class FlimmitCom extends PluginForHost {
 

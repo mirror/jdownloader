@@ -410,7 +410,7 @@ public class FilesMonsterCom extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account is banned. Please contact the filesmonster support.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
-                } else if (br.getRegex("Your membership type: <span class=\"[A-Za-z0-9 ]+\">(Premium)</span>").getMatch(0) == null) {
+                } else if (!br.containsHTML("Your membership type: <span class=\"[A-Za-z0-9 ]+\">(Premium)</span>")) {
                     try {
                         account.setType(AccountType.FREE);
                     } catch (final Throwable e) {
