@@ -597,7 +597,7 @@ public abstract class PluginForDecrypt extends Plugin {
         if (apiKey == null) {
             final String jssource = new Regex(source, "grecaptcha\\.render\\(('|\")\\w+\\1, \\{(.*?)\\}\\)").getMatch(1);
             if (jssource != null) {
-                apiKey = new Regex(jssource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)([\\w-]+)\\1").getMatch(2);
+                apiKey = new Regex(jssource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)([\\w-]+)\\2").getMatch(2);
             }
         }
         return apiKey;
