@@ -42,16 +42,14 @@ public class PurevolumeComDecrypter extends PluginForDecrypt {
 
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("id=\"page_not_found\"")) {
+        if (br.containsHTML("id=\"page_not_found\"") || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (br.getURL().contains("purevolume.com/login") || parameter.matches(INVALIDLINKS)) {
             logger.info("Invalid link: " + parameter);
-            return decryptedLinks;
-        }
-        if (br.getRequest().getHttpConnection().getResponseCode() == 403) {
-            logger.info("Link offline (server error): " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String type = "Artist";
@@ -79,8 +77,12 @@ public class PurevolumeComDecrypter extends PluginForDecrypt {
 
         String artist = br.getRegex("\'album_name\'\\s?:\\s?\'([^\']+)'").getMatch(0);
         String album = br.getRegex("\'artist_name\'\\s?:\\s?\'([^\']+)'").getMatch(0);
-        if (artist == null) artist = "Unknown";
-        if (album == null) album = "Unknown";
+        if (artist == null) {
+            artist = "Unknown";
+        }
+        if (album == null) {
+            album = "Unknown";
+        }
 
         fp.setName(Encoding.htmlDecode(album.trim() + "@" + artist.trim()).replaceAll("\\\\", ""));
 
@@ -90,7 +92,10 @@ public class PurevolumeComDecrypter extends PluginForDecrypt {
             DownloadLink link = createDownloadlink(parameter + "&songId=" + item[0]);
             link.setProperty("SONGID", item[0]);
             link.setFinalFileName(Encoding.htmlDecode(item[1].trim()) + ".mp3");
-            if (!getPluginConfig().getBooleanProperty("FILESIZECHECK", false)) link.setAvailable(true);
+            if (!getPluginConfig().getBooleanProperty("FILESIZECHECK", false)) {
+                link.setAvailable(true);
+            }
+            link.setContentUrl(br.getURL());
             fp.add(link);
             try {
                 distribute(link);

@@ -49,16 +49,18 @@ public class AhMeCom extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload("http://www.ah-me.com/videos/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.getURL().contains("ah-me.com/videos/") || br.containsHTML("This video has been deleted<")) {
+        if (!br.getURL().contains("ah-me.com/videos/") || br.containsHTML("This video has been deleted<") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);

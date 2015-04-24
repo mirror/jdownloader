@@ -39,7 +39,7 @@ public class AhMeComGallery extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("class=\"gal_thumbs spec_right\">[\t\n\r ]+</div>")) {
+        if (br.containsHTML("class=\"gal_thumbs spec_right\">[\t\n\r ]+</div>") || br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
             offline.setAvailable(false);

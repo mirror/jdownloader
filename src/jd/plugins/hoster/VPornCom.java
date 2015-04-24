@@ -131,6 +131,10 @@ public class VPornCom extends PluginForHost {
                 }
             }
         }
+        /* js cars equals "" or just a number --> Video is not evcen playable via browser */
+        if (foundlinks == 0 && br.containsHTML("flashvars\\.videoUrlLow[\t\n\r ]*?=[\t\n\r ]*?\"\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (foundlinks == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
