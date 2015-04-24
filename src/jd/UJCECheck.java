@@ -79,7 +79,7 @@ public class UJCECheck {
 
     /**
      * http://stackoverflow.com/questions/1179672/how-to-avoid-installing-unlimited-strength-jce-policy-files-when-deploying-an
-     * 
+     *
      * http://stackoverflow.com/questions/18435227/java-patching-client-side-security-policy-from-applet-for-aes256
      */
     private static void removeCryptographyRestrictions() {
@@ -88,46 +88,74 @@ public class UJCECheck {
             return;
         }
         try {
-            /*
-             * Do the following, but with reflection to bypass access checks:
-             * 
-             * JceSecurity.isRestricted = false; JceSecurity.defaultPolicy.perms.clear();
-             * JceSecurity.defaultPolicy.add(CryptoAllPermission.INSTANCE);
-             */
-            Field isRestrictedField;
-            Class<?> jceSecurity = null;
             try {
-                jceSecurity = Class.forName("javax.crypto.JceSecurity");
-                isRestrictedField = jceSecurity.getDeclaredField("isRestricted");
+                final Class<?> jceSecurity = Class.forName("javax.crypto.JceSecurity");
+                final Field isRestrictedField = jceSecurity.getDeclaredField("isRestricted");
+
+                /**
+                 * JceSecurity.isRestricted = false;
+                 */
+                isRestrictedField.setAccessible(true);
+                isRestrictedField.set(null, false);
+
+                final Field defaultPolicyField = jceSecurity.getDeclaredField("defaultPolicy");
+                defaultPolicyField.setAccessible(true);
+                final PermissionCollection defaultPolicy = (PermissionCollection) defaultPolicyField.get(null);
+
+                /**
+                 * JceSecurity.defaultPolicy.perms.clear();
+                 */
+                final Class<?> cryptoPermissions = Class.forName("javax.crypto.CryptoPermissions");
+                final Field perms = cryptoPermissions.getDeclaredField("perms");
+                perms.setAccessible(true);
+                ((Map<?, ?>) perms.get(defaultPolicy)).clear();
+
+                /**
+                 * JceSecurity.defaultPolicy.add(CryptoAllPermission.INSTANCE);
+                 */
+                final Class<?> cryptoAllPermission = Class.forName("javax.crypto.CryptoAllPermission");
+                final Field instance = cryptoAllPermission.getDeclaredField("INSTANCE");
+                instance.setAccessible(true);
+                defaultPolicy.add((Permission) instance.get(null));
             } catch (final ClassNotFoundException e) {
                 try {
                     // Java 6 has obfuscated JCE classes
-                    jceSecurity = Class.forName("javax.crypto.SunJCE_b");
-                    isRestrictedField = jceSecurity.getDeclaredField("g");
+                    final Class<?> jceSecurity = Class.forName("javax.crypto.SunJCE_b");
+                    final Field isRestrictedField = jceSecurity.getDeclaredField("g");
+
+                    /**
+                     * JceSecurity.isRestricted = false;
+                     */
+                    isRestrictedField.setAccessible(true);
+                    isRestrictedField.set(null, false);
+
+                    final Field defaultPolicyField = jceSecurity.getDeclaredField("c");
+                    defaultPolicyField.setAccessible(true);
+                    final PermissionCollection defaultPolicy = (PermissionCollection) defaultPolicyField.get(null);
+
+                    /**
+                     * JceSecurity.defaultPolicy.perms.clear();
+                     */
+                    final Class<?> cryptoPermissions = Class.forName("javax.crypto.SunJCE_d");
+                    final Field perms = cryptoPermissions.getDeclaredField("a");
+                    perms.setAccessible(true);
+                    ((Map<?, ?>) perms.get(defaultPolicy)).clear();
+
+                    /**
+                     * JceSecurity.defaultPolicy.add(CryptoAllPermission.INSTANCE);
+                     */
+                    final Class<?> cryptoAllPermission = Class.forName("javax.crypto.SunJCE_k");
+                    final Field instance = cryptoAllPermission.getDeclaredField("b");
+                    instance.setAccessible(true);
+                    defaultPolicy.add((Permission) instance.get(null));
                 } catch (final ClassNotFoundException e2) {
                     throw e;
                 }
             }
-            isRestrictedField.setAccessible(true);
-            isRestrictedField.set(null, false);
-
-            final Class<?> cryptoPermissions = Class.forName("javax.crypto.CryptoPermissions");
-            final Class<?> cryptoAllPermission = Class.forName("javax.crypto.CryptoAllPermission");
-            final Field defaultPolicyField = jceSecurity.getDeclaredField("defaultPolicy");
-            defaultPolicyField.setAccessible(true);
-            final PermissionCollection defaultPolicy = (PermissionCollection) defaultPolicyField.get(null);
-
-            final Field perms = cryptoPermissions.getDeclaredField("perms");
-            perms.setAccessible(true);
-            ((Map<?, ?>) perms.get(defaultPolicy)).clear();
-
-            final Field instance = cryptoAllPermission.getDeclaredField("INSTANCE");
-            instance.setAccessible(true);
-            defaultPolicy.add((Permission) instance.get(null));
-
             System.out.println("Successfully removed cryptography restrictions");
         } catch (final Throwable e) {
             System.out.println("Failed to remove cryptography restrictions:" + e);
         }
     }
+
 }
