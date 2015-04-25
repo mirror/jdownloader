@@ -43,7 +43,7 @@ public class HighWayMe extends PluginForHost {
 
     /** General API information: According to admin we can 'hammer' the API every 60 seconds */
 
-    private static final String                            DOMAIN                  = "https://high-way.me/api.php";
+    private static final String                            DOMAIN                  = "http://http.high-way.me/api.php";
     private static final String                            NICE_HOST               = "high-way.me";
     private static final String                            NICE_HOSTproperty       = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NOCHUNKS                = NICE_HOSTproperty + "NOCHUNKS";
@@ -241,7 +241,7 @@ public class HighWayMe extends PluginForHost {
             /* request creation of downloadlink */
             br.setFollowRedirects(true);
             postAPISafe(DOMAIN + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
-            this.getAPISafe("https://high-way.me/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()));
+            this.getAPISafe("http://http.high-way.me/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()));
             dllink = getJson("download");
             if (dllink == null) {
                 // handleErrorRetries("dllinknull", 5, 60 * 60 * 1000l);

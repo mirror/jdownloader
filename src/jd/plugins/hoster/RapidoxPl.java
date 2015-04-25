@@ -313,7 +313,7 @@ public class RapidoxPl extends PluginForHost {
         account.setValid(true);
         /* Only add hosts which are listed as 'on' (working) */
         this.getAPISafe("http://rapidox.pl/panel/status_hostingow");
-        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl" };
+        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "cc" };
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String hosttable = br.getRegex("</tr></thead><tr>(.*?)</tr></table>").getMatch(0);
         final String[] hostDomainsInfo = hosttable.split("<td width=\"50px\"");
