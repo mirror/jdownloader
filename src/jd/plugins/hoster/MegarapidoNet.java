@@ -253,7 +253,7 @@ public class MegarapidoNet extends PluginForHost {
             account.setType(AccountType.PREMIUM);
         }
         account.setValid(true);
-        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us" };
+        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] hostDomainsInfo = br.getRegex("class=\"has\\-tip\" title=\"([^<>\"]*?)\"").getColumn(0);
         for (final String domain : hostDomainsInfo) {

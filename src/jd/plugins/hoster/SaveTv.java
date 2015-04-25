@@ -73,9 +73,7 @@ import org.jdownloader.DomainInfo;
 public class SaveTv extends PluginForHost {
 
     /* Static information */
-    /* New key (b64 encoded), used since 21.04.15, Stv DLManager 2.3.0 */
-    private final static String  APIKEY                                    = "U0VCNFNGNjZZNzRSSkFZVkxGbzFBcWplbzhqWDZiUmEvL0k1S1pkS21qY2pMTUdhakMrM2FKbHM1b1UvOXlxeTJpOGJMdy9Lb1RoVDM3elQvYVVRaWJHa2xlS0FMejNLaXNiL203elEzNkoxdlNXM0lsZVRhcm9heThobklWbEJzU0dINys5dFdRREd4Wm0yOWNSdHdIY0lMU2NuMHI0aDJIVlV5S1FuM2FnPQ==";
-    /* Last key (b64encoded), used until 21.04.15: Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz */
+    private final static String  APIKEY                                    = "Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz";
     public static final String   APIPAGE                                   = "https://api.save.tv/v2/Api.svc";
     public static final double   QUALITY_HD_MB_PER_MINUTE                  = 22;
     public static final double   QUALITY_H264_NORMAL_MB_PER_MINUTE         = 12.605;
@@ -170,9 +168,9 @@ public class SaveTv extends PluginForHost {
     public SaveTv(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.save.tv/stv/s/obj/registration/RegPage1.cfm");
-        if (!isJDStable()) {
-            setConfigElements();
-        }
+        // if (!isJDStable()) {
+        setConfigElements();
+        // }
     }
 
     private boolean isJDStable() {
@@ -956,6 +954,15 @@ public class SaveTv extends PluginForHost {
             api_prepBrowser(br);
             api_doSoapRequest(br, "http://tempuri.org/ISession/CreateSession", "<apiKey>" + Encoding.Base64Decode(APIKEY) + "</apiKey>");
             api_sessionid = br.getRegex("<a:SessionId>([^<>\"]*?)</a:SessionId>").getMatch(0);
+            final String errorcode = br.getRegex("<ErrorCodeID xmlns=\"http://schemas\\.datacontract\\.org/2004/07/SmilingBits\\.Data\\.BusinessLayer\\.Stv\\.Api\\.Contract\\.Common\">(\\d+)</ErrorCodeID>").getMatch(0);
+            if ("1400".equals(errorcode)) {
+                /* Should never ever happen! */
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt (API-Key ungültig), bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken (API key invalid), please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
             if (api_sessionid == null) {
                 if ("de".equalsIgnoreCase(lang)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);

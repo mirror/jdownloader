@@ -348,7 +348,7 @@ public class Grab8Com extends PluginForHost {
             ai.setTrafficLeft(0);
         }
         account.setValid(true);
-        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us" };
+        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] hostDomainsInfo = br.getRegex("<li><span>(.*?)</span></li>").getColumn(0);
         for (String crippledhost : hostDomainsInfo) {
