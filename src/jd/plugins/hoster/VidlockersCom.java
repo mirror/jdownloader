@@ -48,18 +48,18 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidlockers.com" }, urls = { "https?://(www\\.)?vidlockers\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidlockers.ag", "vidlockers.com" }, urls = { "https?://(www\\.)?vidlockers\\.(com|ag)/(embed\\-)?[a-z0-9]{12}", "REGEX_NOT_POSSIBLE_RANDOM" }, flags = { 0, 0 })
 public class VidlockersCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://vidlockers.com";
+    private static final String            COOKIE_HOST                  = "http://vidlockers.ag";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(vidlockers\\.com)";
+    private static final String            DOMAINS                      = "(vidlockers\\.com|vidlockers\\.ag)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -101,9 +101,8 @@ public class VidlockersCom extends PluginForHost {
     // mods:
     // limit-info:
     // protocol: no https
-    // captchatype: null 4dignum solvemedia recaptcha
+    // captchatype: null
     // other:
-    // TODO: Add case maintenance + alternative filesize check
 
     @SuppressWarnings("deprecation")
     @Override
@@ -115,6 +114,7 @@ public class VidlockersCom extends PluginForHost {
         } else if (SUPPORTSHTTPS && SUPPORTSHTTPS_FORCED) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
         }
+        link.setUrlDownload(link.getDownloadURL().replace("vidlockers.com/", "vidlockers.ag/"));
     }
 
     @Override
@@ -248,23 +248,24 @@ public class VidlockersCom extends PluginForHost {
             /* Link of the box without filesize */
             fileInfo[0] = new Regex(correctedBR, "<h2[^>]+>Watch ([^<>\"]*?)</h2>").getMatch(0);
         }
-        if (fileInfo[1] == null) {
-            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-            if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                // next two are details from sharing box
-                if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
-                    if (fileInfo[1] == null) {
-                        fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
-                        // generic failover.
-                        if (fileInfo[1] == null) {
-                            fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(?:B(?:ytes?)?|KB|MB|GB))").getMatch(0);
-                        }
-                    }
-                }
-            }
-        }
+        /* Filesize not given */
+        // if (fileInfo[1] == null) {
+        // fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+        // if (fileInfo[1] == null) {
+        // fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+        // // next two are details from sharing box
+        // if (fileInfo[1] == null) {
+        // fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
+        // if (fileInfo[1] == null) {
+        // fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
+        // // generic failover.
+        // if (fileInfo[1] == null) {
+        // fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(?:B(?:ytes?)?|KB|MB|GB))").getMatch(0);
+        // }
+        // }
+        // }
+        // }
+        // }
         if (fileInfo[2] == null) {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }

@@ -17,11 +17,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map.Entry;
+import java.util.LinkedHashMap;
 import java.util.Random;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,8 +32,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com" }, urls = { "http://(www\\.)?dl\\.(dbank|vmall)\\.com/[a-z0-9]+" }, flags = { 0 })
 public class DBankComFolder extends PluginForDecrypt {
 
@@ -44,6 +39,7 @@ public class DBankComFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
@@ -52,6 +48,12 @@ public class DBankComFolder extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("vmall.com/linknotexist.html") || br.getURL().contains("vmall.com/netdisk/search.html") || br.containsHTML("(>抱歉，此外链不存在。|1、你输入的地址错误；<br/>|2、外链中含非法内容；<br />|3、创建外链的文件还没有上传到服务器，请稍后再试。<br /><br />)")) {
             logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        } else if (br.getURL().contains("authorize?")) {
+            /* Account needed */
+            logger.info("Account needed to add this url: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         } else if (br.getURL().contains("dl.vmall.com/m_forbidsave.html")) {
             // Link can only be accessed if a specified Referer is set
@@ -71,7 +73,9 @@ public class DBankComFolder extends PluginForDecrypt {
             }
             final int pickRandom = new Random().nextInt(whitelistedDomains.length - 1);
             String randomWhitelistedDomain = whitelistedDomains[pickRandom].replace("\"", "");
-            if (!randomWhitelistedDomain.startsWith("http://")) randomWhitelistedDomain = "http://" + randomWhitelistedDomain;
+            if (!randomWhitelistedDomain.startsWith("http://")) {
+                randomWhitelistedDomain = "http://" + randomWhitelistedDomain;
+            }
             br.getHeaders().put("Referer", randomWhitelistedDomain);
             br.getPage(parameter);
         }
@@ -88,49 +92,56 @@ public class DBankComFolder extends PluginForDecrypt {
                     break;
                 }
             }
-            if (!br.getRegex("\"retcode\":\"0000\"").matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
+            if (!br.getRegex("\"retcode\":\"0000\"").matches()) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
             br.getPage(parameter);
         }
 
-        String fpName = br.getRegex("<h1  id=\"link_title\">([^<>\"]*?)</h1>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<h2[ ]*id=('|\")link_title('|\") title=('|\")(.*?)('|\")").getMatch(3);
-        if (fpName == null) fpName = parameter;
+        String fpName = null;
 
-        String globalLinkData = br.getRegex("var globallinkdata = \\{.*?\"resource\":\\{(.*?)\\}\\;").getMatch(0);
-        if (globalLinkData == null) br.getRegex("var globallinkdata = \\{(.*?)\\}\\;").getMatch(0);
-        String links = new Regex(globalLinkData, "\"files\":\\[(.*?)\\]\\}").getMatch(0);
-        if (links == null) links = new Regex(globalLinkData, "\"files\":\\[(.*?)\\],").getMatch(0);
+        final String json = br.getRegex("var globallinkdata = (\\{.+\\})\\;").getMatch(0);
+        if (json == null) {
+            return null;
+        }
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        entries = (LinkedHashMap<String, Object>) entries.get("data");
+        entries = (LinkedHashMap<String, Object>) entries.get("resource");
+        fpName = (String) entries.get("title");
+        if (fpName == null) {
+            fpName = parameter;
+        }
+        final ArrayList<Object> ressourcelist = (ArrayList) entries.get("files");
+        for (final Object o : ressourcelist) {
+            final LinkedHashMap<String, Object> finfomap = (LinkedHashMap<String, Object>) o;
+            final String filename = (String) finfomap.get("name");
+            final long filesize = getLongValue(finfomap.get("size"));
+            final long fid = getLongValue(finfomap.get("id"));
+            final String type = (String) finfomap.get("type");
+            if (!type.equals("File")) {
+                /* TODO */
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink("http://vmalldecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            if (passCode != null) {
+                dl.setProperty("password", passCode);
+            }
+            dl.setProperty("mainlink", parameter);
+            dl.setProperty("id", fid);
+            dl.setContentUrl(parameter);
+            dl.setDownloadSize(filesize);
+            dl.setName(filename);
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
+        }
+        String links = new Regex(json, "\"files\":\\[(.*?)\\]\\}").getMatch(0);
+        if (links == null) {
+            links = new Regex(json, "\"files\":\\[(.*?)\\],").getMatch(0);
+        }
 
         if (links == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
-        }
-
-        HashMap<String, String> linkParameter = new HashMap<String, String>();
-
-        for (String[] all : new Regex(links, "\\{(.*?)\\}").getMatches()) {
-            if (passCode != null) linkParameter.put("password", passCode);
-            for (String[] single : new Regex(all[0].replaceAll("\\\\/", "/"), "\"([^\",]+)\":\"?([^\"?,]+)").getMatches()) {
-                linkParameter.put(single[0], single[1]);
-            }
-            DownloadLink dl = createDownloadlink("http://vmalldecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-            for (final Entry<String, String> next : linkParameter.entrySet()) {
-                dl.setProperty(next.getKey(), next.getValue());
-            }
-            dl.setProperty("mainlink", parameter);
-            try {
-                dl.setDownloadSize(SizeFormatter.getSize(dl.getStringProperty("size") + "b"));
-            } catch (Throwable e) {
-            }
-            dl.setName(Encoding.htmlDecode(decodeUnicode(dl.getStringProperty("name", "UnknownTitle" + System.currentTimeMillis()))));
-            dl.setAvailable(true);
-            try {
-                distribute(dl);
-            } catch (final Throwable e) {
-                /* does not exist in 09581 */
-            }
-            decryptedLinks.add(dl);
-            linkParameter.clear();
         }
 
         if (fpName != null) {
@@ -141,14 +152,14 @@ public class DBankComFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String decodeUnicode(final String s) {
-        final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
-        String res = s;
-        final Matcher m = p.matcher(res);
-        while (m.find()) {
-            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
+    private long getLongValue(final Object o) {
+        long lo = -1;
+        if (o instanceof Long) {
+            lo = ((Long) o).longValue();
+        } else {
+            lo = ((Integer) o).intValue();
         }
-        return res;
+        return lo;
     }
 
     /* NO OVERRIDE!! */

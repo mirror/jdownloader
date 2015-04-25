@@ -62,7 +62,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(finallink));
             } else if (parameter.matches(".+tumblr\\.com/post/\\d+")) {
                 // Single posts
-                br.setFollowRedirects(true);
+                br.setFollowRedirects(false);
                 URLConnectionAdapter con = null;
                 try {
                     con = br.openGetConnection(parameter);
@@ -76,6 +76,15 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                         con.disconnect();
                     } catch (Throwable e) {
                     }
+                }
+                /* Workaround for bad redirects --> Redirectloop */
+                String redirect = br.getRedirectLocation();
+                if (br.getRedirectLocation() != null) {
+                    final String redirect_remove = new Regex(redirect, "(#.+)").getMatch(0);
+                    if (redirect_remove != null) {
+                        redirect = redirect.replace(redirect_remove, "");
+                    }
+                    br.getPage(redirect);
                 }
                 String fpName = br.getRegex("<title>([^/\"]*?)</title>").getMatch(0);
                 if (fpName == null) {
