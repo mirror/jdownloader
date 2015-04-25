@@ -434,13 +434,20 @@ public class PremiumizeMe extends PluginForHost {
             int status = Integer.parseInt(statusCode);
             switch (status) {
             case 0:
-                /* DB cnnection problem */
-                if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
-                    /* Retried enough times --> Temporarily disable account! */
-                    globalDB.compareAndSet(5, 0);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                // 20150425
+                // {"result":null,"statusmessage":"Daily limit reached for this host!","status":0}
+                if (statusMessage == null) {
+                    statusMessage = "Download limit reached for this host!";
                 }
-                throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
+                tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000);
+                break;
+                /* DB cnnection problem */
+                // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
+                // /* Retried enough times --> Temporarily disable account! */
+                // globalDB.compareAndSet(5, 0);
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                // }
+                // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
             case 2:
                 /* E.g. Error: file_get_contents[...] */
                 logger.info("Errorcode 2: Strange error");
