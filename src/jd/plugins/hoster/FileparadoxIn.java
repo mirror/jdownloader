@@ -713,11 +713,11 @@ public class FileparadoxIn extends PluginForHost {
         }
         /** Error handling for account based restrictions */
         // non account && free account (you would hope..)
-        final String an = "( can download files up to |This file reached max downloads limit|>The file you requested reached max downloads limit for Free Users)";
+        final String an = "( can download files up to |This file reached max downloads limit|>The file you requested reached max downloads limit for Free Users|)";
         // these errors imply an account been used already. So we assume (Free Account), which is the case for most sites.
         final String fa = "(Upgrade your account to download (bigger|larger) files)";
         // these errors imply (Premium Required) from the outset.
-        final String pr = "(Please Buy Premium To download this file<|>This file is available for Premium Users only\\.<|<td id=\"errormsg\">[\r\n\t ]+Upgrade to premium account to download this file\\.)";
+        final String pr = "(Please Buy Premium To download this file<|>This file is available for Premium Users only\\.<|<td id=\"errormsg\">[\r\n\t ]+Upgrade to premium account to download this file\\.|>\\s*Upgrade to premium account to download this file\\.\\s*<)";
         // let the fun begin!
         if (cbr.containsHTML(an + "|" + fa + "|" + pr)) {
             String msg = null;
