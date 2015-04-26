@@ -54,7 +54,7 @@ public class IFileItFldr extends PluginForDecrypt {
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("filecloud.io");
         final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
         String fpName = null;
-        ((jd.plugins.hoster.IFileIt) hostPlugin).prepBrowser(br);
+        // ((jd.plugins.hoster.IFileIt) hostPlugin).prepBrowser(br, null);
         try {
             /* Grab extremely big folderlinks */
             br.setLoadLimit(br.getLoadLimit() * 8);

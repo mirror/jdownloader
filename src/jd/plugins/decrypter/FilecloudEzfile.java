@@ -46,7 +46,7 @@ public class FilecloudEzfile extends PluginForDecrypt {
         final String protocol = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(2);
         // filecloud links are still valid but might be available on ezfile also, so we will add the other link to cover our bases.
-        decryptedLinks.add(createDownloadlink(protocol + "decryptedezfile.ch/" + uid));
+        decryptedLinks.add(createDownloadlink(protocol + "ezfile.ch/" + uid));
         // now add the original link!
         decryptedLinks.add(createDownloadlink(parameter.replace("filecloud.io/", "decryptedfilecloud.io/")));
         // return links
