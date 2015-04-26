@@ -370,7 +370,7 @@ public class ProDjCm extends PluginForDecrypt {
     private void handlePrelisten(ArrayList<DownloadLink> ret, HashSet<String> filter, String grabThis) {
         final String fid = new Regex(grabThis, "prelisten/(\\d+)").getMatch(0);
         // dl wont start unless you have trailing /
-        if (!grabThis.endsWith(".mp3")) {
+        if (!grabThis.matches(".+/prelisten/\\d+/.+\\.mp3.*")) {
             grabThis += "/";
         }
         DownloadLink link = createDownloadlink("directhttp://" + grabThis);
@@ -380,7 +380,7 @@ public class ProDjCm extends PluginForDecrypt {
             if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                 link.setAvailable(false);
             } else {
-                String filename = "Prelisten_" + fid + "-" + new Regex(grabThis, "/prelisten/\\d+/(.+)").getMatch(0);
+                String filename = "Prelisten_" + fid + "-" + new Regex(grabThis, "/prelisten/\\d+/([^\\?]+)").getMatch(0);
                 link.setFinalFileName(filename);
                 link.setDownloadSize(con.getLongContentLength());
                 link.setAvailable(true);
