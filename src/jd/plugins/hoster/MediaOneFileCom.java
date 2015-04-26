@@ -57,6 +57,7 @@ import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -72,7 +73,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "media1fire.com" }, urls = { "https?://(www\\.)?up\\.media1fire\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "media1fire.com" }, urls = { "https?://(www\\.)?up\\.media1fire\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class MediaOneFileCom extends PluginForHost {
 
@@ -102,7 +103,7 @@ public class MediaOneFileCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.8.4
+    // XfileShare Version 3.0.8.5
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: 4dignum
     // other: no redirects
@@ -1426,9 +1427,9 @@ public class MediaOneFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String code = null;
-            for (String link : sitelinks) {
+            for (final String link : sitelinks) {
                 if (link.matches("(https?.+" + DOMAINS + ")?/captchas/[a-z0-9]{18,}\\.jpg")) {
-                    Browser testcap = br.cloneBrowser();
+                    final Browser testcap = br.cloneBrowser();
                     URLConnectionAdapter con = null;
                     try {
                         con = testcap.openGetConnection(link);
@@ -1438,16 +1439,19 @@ public class MediaOneFileCom extends PluginForHost {
                                 break;
                             }
                         }
-                    } catch (Exception e) {
+                    } catch (final Exception e) {
+                        if (e instanceof CaptchaException) {
+                            throw e;
+                        }
                         continue;
                     }
                 }
             }
             if (inValidate(code)) {
-                logger.warning("Standard captcha captchahandling broken!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.warning("User Aborted");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            form.put("code", code);
+            form.put("code", Encoding.urlEncode(code));
         } else if (form.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             logger.info("Detected captcha method \"Re Captcha\"");
             final Browser captcha = br.cloneBrowser();
