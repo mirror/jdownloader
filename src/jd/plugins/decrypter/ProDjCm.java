@@ -32,13 +32,17 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
-// Please do not mess with the following Regex!
-// Do not use lazy regex. Make regex to support the features you need. Lazy regex will pick up false positives in other areas of the plugin.
-// "old style" , "new style", "redirect url shorting service"
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "promodj.com" }, urls = { "https?://((www\\.)?(((([\\w\\-\\.]+\\.(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com)))|(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com))(/[\\w\\-\\.]+)?)/(?!top100|podsafe)(foto/(all|\\d+)/?(#(foto|full|list|biglist|middlelist)\\d+)?(\\d+(\\.html)?(#(foto|full|list|biglist|middlelist)\\d+)?)?|(acapellas|groups|mixes|prelisten|podcasts|promos|radioshows|realtones|remixes|samples|tracks|videos)/\\d+(?:/.+)?|prelisten_m3u/\\d+/[\\w]+\\.m3u|(download|source)/\\d+/[^\r\n\"'<>]+))|pdj\\.cc/\\w+))|http://xml\\.maases\\.com/audio/\\d+\\.json" }, flags = { 0 })
+/**
+ * Please do not mess with the following Regex! <br />
+ * Do not use lazy regex. Make regex to support the features you need. Lazy regex will pick up false positives in other areas of the plugin. <br />
+ *
+ * @author raztoki
+ *
+ *         "old style" , "new style", "redirect url shorting service", "some json crap".
+ */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "promodj.com" }, urls = { "https?://((www\\.)?(((([\\w\\-\\.]+\\.(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com)))|(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com))(/[\\w\\-\\.]+)?)/(?!top100|podsafe)(foto/(all|\\d+)/?(#(foto|full|list|biglist|middlelist)\\d+)?(\\d+(\\.html)?(#(foto|full|list|biglist|middlelist)\\d+)?)?|(acapellas|groups|mixes|podcasts|promos|radioshows|realtones|remixes|samples|tracks|videos)/\\d+|prelisten/\\d+/.+|prelisten_m3u/\\d+/[\\w]+\\.m3u|(download|source)/\\d+/[^\r\n\"'<>]*))|pdj\\.cc/\\w+))|http://xml\\.maases\\.com/audio/\\d+\\.json" }, flags = { 0 })
 public class ProDjCm extends PluginForDecrypt {
 
     // DEV NOTES
@@ -51,9 +55,6 @@ public class ProDjCm extends PluginForDecrypt {
     /* This is the important part of embedded links. Such links are very rare and are only sometimes added e.g. by the vk.com decrypter. */
     private static final String type_json = "http://xml\\.maases\\.com/audio/\\d+\\.json";
 
-    /**
-     * @author raztoki
-     * */
     public ProDjCm(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -74,33 +75,27 @@ public class ProDjCm extends PluginForDecrypt {
         br.setFollowRedirects(true);
 
         // these types here need to be done before first page grab!! as they could be files prelisten links are direct links!
-        if (parameter.matches(".+/prelisten/.+")) {
+        if (parameter.matches(".+/prelisten/\\d+(?:/.+)?")) {
             handlePrelisten(decryptedLinks, filter, parameter);
+        } else if (parameter.matches("^.+/(download|source)/\\d+/.*")) {
+            // downloads urls sometimes onsite or offsite.. these links are direct downloadable.
+            decryptedLinks.add(createDownloadlink("directhttp://" + parameter));
         } else {
             br.getPage(parameter);
-            if (br.getURL().matches(".+/(download|source)/\\d+/.+")) {
+            if (br.getURL().matches(".+/(download|source)/\\d+/.*")) {
                 // downloads urls sometimes onsite or offsite
                 decryptedLinks.add(createDownloadlink("directhttp://" + parameter));
-            } else {
-                // back to normal!
-                br.getPage(parameter);
-                if (br.containsHTML("(<title>404 &ndash;.*?</title>|<h1>Page not found :\\(</h1>)") || br.toString().length() < 10) {
-                    if (parameter.contains("/download/")) {
-                        logger.warning("Offline URL : " + parameter);
-                    } else {
-                        logger.warning("Invalid URL: " + parameter);
-                    }
-                    try {
-                        decryptedLinks.add(this.createOfflinelink(parameter));
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
-                    }
-                    return decryptedLinks;
+            } else if (br.containsHTML("(<title>404 &ndash;.*?</title>|<h1>Page not found :\\(</h1>)") || br.toString().length() < 10) {
+                if (parameter.contains("/download/")) {
+                    logger.warning("Offline URL : " + parameter);
+                } else {
+                    logger.warning("Invalid URL: " + parameter);
                 }
-
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            } else {
                 // this is needed because /groups/ can contain all sorts of link types. This is instead of returning back to the plugin.
-                // Only
-                // downside it reduces the threading ability, but positively controls connections all within one instance.
+                // Only downside it reduces the threading ability, but positively controls connections all within one instance.
                 passItOn(decryptedLinks, filter, parameter);
             }
         }
@@ -128,7 +123,7 @@ public class ProDjCm extends PluginForDecrypt {
             ret.add(createDownloadlink(br.getURL()));
         } else if (grabThis.matches(".+/prelisten/\\d+")) {
             handlePrelisten(ret, filter, grabThis);
-        } else if (grabThis.matches(".+/(download|source)/\\d+/.+")) {
+        } else if (grabThis.matches(".+/(download|source)/\\d+/.*")) {
             // downloads urls sometimes onsite or offsite
             ret.add(createDownloadlink("directhttp://" + grabThis));
         } else if (grabThis.matches(".*/foto/(all#foto\\d+|\\d+(/\\d+(\\.html)?)?(#foto|full)\\d+)") && !grabThis.matches(".*foto#(list|biglist|middlelist)")) {
@@ -198,7 +193,7 @@ public class ProDjCm extends PluginForDecrypt {
                 return;
             }
             if (dllink == null) {
-                dllink = br.getRegex("#EXTINF:\\-1,[^<>\"/]+(http[^<>\"]*?\\.mp3)").getMatch(0);
+                dllink = br.getRegex("#EXTINF:\\-1,[^<>\"/]+(http[^<>\"]+\\.mp3)").getMatch(0);
             }
             if (dllink == null) {
                 logger.warning("Decrypter broken for link: " + grabThis);
@@ -212,7 +207,7 @@ public class ProDjCm extends PluginForDecrypt {
         }
 
         if (fpName != null) {
-            fpName = fpName.replaceAll("\\&quot\\;", "'");
+            fpName = fpName.replaceAll("&quot;", "'");
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName).trim());
             fp.setProperty("ALLOW_MERGE", true);
@@ -242,10 +237,11 @@ public class ProDjCm extends PluginForDecrypt {
             }
             if (dllink == null || dllink.endsWith(".mp3")) {
                 // lets look for wav!
-                dllink = br.getRegex("href=\"(https?://" + HOSTS + "/(source|download)/[^\"]+\\.wav)\"").getMatch(0);
-                if (dllink != null) {
-                    linksFound.add(dllink);
+                final String dl = br.getRegex("href=\"(https?://" + HOSTS + "/(source|download)/[^\"]+\\.wav)\"").getMatch(0);
+                if (dl != null) {
+                    dllink = dl;
                 }
+                linksFound.add(dl);
             }
         } else if (dllink == null && grabThis.contains("/videos/")) {
             // this type seems to have advertised links escaped but not always download/able! Need to switch to alternative method.
@@ -373,9 +369,10 @@ public class ProDjCm extends PluginForDecrypt {
 
     private void handlePrelisten(ArrayList<DownloadLink> ret, HashSet<String> filter, String grabThis) {
         final String fid = new Regex(grabThis, "prelisten/(\\d+)").getMatch(0);
-        final String url_filename = new Regex(grabThis, "prelisten/\\d+/(.+)").getMatch(0);
         // dl wont start unless you have trailing /
-        grabThis += "/";
+        if (!grabThis.endsWith(".mp3")) {
+            grabThis += "/";
+        }
         DownloadLink link = createDownloadlink("directhttp://" + grabThis);
         try {
             Browser br2 = br.cloneBrowser();
@@ -383,12 +380,8 @@ public class ProDjCm extends PluginForDecrypt {
             if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                 link.setAvailable(false);
             } else {
-                /* Prefer url_filename */
-                if (url_filename != null) {
-                    link.setFinalFileName(Encoding.htmlDecode(url_filename));
-                } else {
-                    link.setFinalFileName(Plugin.getFileNameFromHeader(con));
-                }
+                String filename = "Prelisten_" + fid + "-" + new Regex(grabThis, "/prelisten/\\d+/(.+)").getMatch(0);
+                link.setFinalFileName(filename);
                 link.setDownloadSize(con.getLongContentLength());
                 link.setAvailable(true);
                 // links seem to generate each time you hit downloadlink! I will assume short time to live!

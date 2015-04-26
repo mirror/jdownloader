@@ -39,6 +39,7 @@ import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -53,7 +54,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadboy.com" }, urls = { "https?://(www\\.)?uploadboy\\.com/(vidembed\\-)?[a-z0-9]{12}(\\.html)?(\\?ref=[a-zA-Z0-9\\%\\.]+)?$" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadboy.com" }, urls = { "https?://(www\\.)?uploadboy\\.com/(vidembed\\-)?[a-z0-9]{12}(\\.html)?(\\?ref=[a-zA-Z0-9\\%\\.]+)?$" }, flags = { 2 })
 public class UploadBoyCom extends antiDDoSForHost {
 
     private String               correctedBR                  = "";
@@ -1003,9 +1004,9 @@ public class UploadBoyCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String code = null;
-            for (String link : sitelinks) {
+            for (final String link : sitelinks) {
                 if (link.matches("(https?.+" + DOMAINS + ")?/captchas/[a-z0-9]{18,}\\.jpg")) {
-                    Browser testcap = br.cloneBrowser();
+                    final Browser testcap = br.cloneBrowser();
                     URLConnectionAdapter con = null;
                     try {
                         con = testcap.openGetConnection(link);
@@ -1015,16 +1016,19 @@ public class UploadBoyCom extends antiDDoSForHost {
                                 break;
                             }
                         }
-                    } catch (Exception e) {
+                    } catch (final Exception e) {
+                        if (e instanceof CaptchaException) {
+                            throw e;
+                        }
                         continue;
                     }
                 }
             }
             if (inValidate(code)) {
-                logger.warning("Standard captcha captchahandling broken!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.warning("User Aborted");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            form.put("code", code);
+            form.put("code", Encoding.urlEncode(code));
         } else if (form.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             logger.info("Detected captcha method \"Re Captcha\"");
             final Browser captcha = br.cloneBrowser();

@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -27,7 +29,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "play44.net" }, urls = { "http://(www\\.)?play44\\.net/embed\\.php\\?.+|http://gateway\\d*\\.play44\\.net/(?:at|videos)/.+" }, flags = { 0 })
+import org.appwork.utils.StringUtils;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "play44.net" }, urls = { "http://(www\\.)?play44\\.net/embed\\.php\\?.+|http://gateway\\d*\\.play44\\.net/(?:at|videos)/.+" }, flags = { 0 })
 public class PlayFourtyFourNet extends antiDDoSForHost {
 
     // raztoki embed video player template.
@@ -61,35 +65,22 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
         // Offline links should also have nice filenames
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "play44\\.net/embed\\.php\\?(.+)").getMatch(0));
         this.setBrowserExclusive();
-        final String link = downloadLink.getDownloadURL();
+        dllink = downloadLink.getDownloadURL();
         URLConnectionAdapter con = null;
-        if (link.matches(".+://gateway\\d*\\.play44\\.net/.+")) {
+        if (dllink.matches(".+://gateway\\d*\\.play44\\.net/.+")) {
             // In case the link are directlinks! current cloudflare implementation will actually open them!
             br.setFollowRedirects(true);
             try {
-                if (isNewJD()) {
-                    con = br.openHeadConnection(link);
-                    if (!con.getContentType().contains("html")) {
-                        // is file
-                        downloadLink.setFinalFileName(getFileNameFromHeader(con));
-                        downloadLink.setDownloadSize(con.getLongContentLength());
-                        return AvailableStatus.TRUE;
-                    } else {
-                        // is html
-                        con = br.openGetConnection(link);
-                        br.followConnection();
-                    }
+                con = getConnection(br, downloadLink);
+                if (!con.getContentType().contains("html")) {
+                    // is file
+                    downloadLink.setFinalFileName(getFileNameFromHeader(con));
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    return AvailableStatus.TRUE;
                 } else {
-                    con = br.openGetConnection(link);
-                    if (!con.getContentType().contains("html")) {
-                        // is file
-                        downloadLink.setFinalFileName(getFileNameFromHeader(con));
-                        downloadLink.setDownloadSize(con.getLongContentLength());
-                        return AvailableStatus.TRUE;
-                    } else {
-                        // is html
-                        br.followConnection();
-                    }
+                    // is html
+                    con = br.openGetConnection(dllink);
+                    br.followConnection();
                 }
             } finally {
                 try {
@@ -100,7 +91,7 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
         } else {
             // standard links which are like gogoanime type of embed links. though these seem to always return gateway.play44.net so safe to
             // keep here.
-            getPage(link);
+            getPage(dllink);
         }
         // only way to check for made up links... or offline is here
         final int rc = (br.getHttpConnection() != null ? br.getHttpConnection().getResponseCode() : -1);
@@ -117,31 +108,16 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
             }
             dllink = Encoding.urlDecode(dllink, false);
         }
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
         con = null;
         try {
-            if (isNewJD()) {
-                con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    // is file
-                    downloadLink.setFinalFileName(getFileNameFromHeader(con));
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                    return AvailableStatus.TRUE;
-                } else {
-                    // is html
-                }
+            con = getConnection(br, downloadLink);
+            if (!con.getContentType().contains("html")) {
+                // is file
+                downloadLink.setFinalFileName(getFileNameFromHeader(con));
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                return AvailableStatus.TRUE;
             } else {
-                con = br.openGetConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    // is file
-                    downloadLink.setFinalFileName(getFileNameFromHeader(con));
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                    return AvailableStatus.TRUE;
-                } else {
-                    // is html
-                }
+                // is html
             }
             // only way to check for made up links... or offline is here
             if (con.getResponseCode() == 404) {
@@ -154,6 +130,59 @@ public class PlayFourtyFourNet extends antiDDoSForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    private boolean preferHeadRequest = true && isNewJD();
+
+    private URLConnectionAdapter getConnection(final Browser br, final DownloadLink downloadLink) throws IOException {
+        URLConnectionAdapter urlConnection = null;
+        boolean rangeHeader = false;
+        try {
+            if (downloadLink.getProperty("streamMod") != null) {
+                rangeHeader = true;
+                br.getHeaders().put("Range", "bytes=" + 0 + "-");
+            }
+            if (downloadLink.getStringProperty("post", null) != null) {
+                urlConnection = br.openPostConnection(dllink, downloadLink.getStringProperty("post", null));
+            } else {
+                try {
+                    if (!preferHeadRequest || "GET".equals(downloadLink.getStringProperty("requestType", null))) {
+                        urlConnection = br.openGetConnection(dllink);
+                    } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
+                        urlConnection = br.openHeadConnection(dllink);
+                        if (urlConnection.getResponseCode() == 404 && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"), "must-revalidate") && urlConnection.getHeaderField("Via") != null) {
+                            urlConnection.disconnect();
+                            urlConnection = br.openGetConnection(dllink);
+                        } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
+                            // no head support?
+                            urlConnection.disconnect();
+                            urlConnection = br.openGetConnection(dllink);
+                        } else if (urlConnection.getContentType().contains("html")) {
+                            urlConnection.disconnect();
+                            urlConnection = br.openGetConnection(dllink);
+                        }
+                    } else {
+                        urlConnection = br.openGetConnection(dllink);
+                    }
+                } catch (final IOException e) {
+                    if (urlConnection != null) {
+                        urlConnection.disconnect();
+                    }
+                    if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
+                        /* some servers do not allow head requests */
+                        urlConnection = br.openGetConnection(dllink);
+                        downloadLink.setProperty("requestType", "GET");
+                    } else {
+                        throw e;
+                    }
+                }
+            }
+        } finally {
+            if (rangeHeader) {
+                br.getHeaders().remove("Range");
+            }
+        }
+        return urlConnection;
     }
 
     @Override
