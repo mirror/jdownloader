@@ -22,7 +22,6 @@ import java.net.ConnectException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -49,7 +48,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecloud.io", "ifile.it" }, urls = { "https?://(www\\.)?decryptedfilecloud\\.io/[a-z0-9]+", "fhrfzjnerhfDELETEMEdhzrnfdgvfcas4378zhb" }, flags = { 2, 0 })
-public class IFileIt extends PluginForHost {
+public class IFileIt extends antiDDoSForHost {
 
     private final String         useragent                = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0";
     /* must be static so all plugins share same lock */
@@ -61,7 +60,6 @@ public class IFileIt extends PluginForHost {
     private static final String  NOCHUNKS                 = "NOCHUNKS";
     private static final String  NORESUME                 = "NORESUME";
     public static final String   MAINPAGE                 = "https://filecloud.io";
-    private static AtomicInteger maxPrem                  = new AtomicInteger(1);
     private static AtomicBoolean UNDERMAINTENANCE         = new AtomicBoolean(false);
     private static final String  UNDERMAINTENANCEUSERTEXT = "The site is under maintenance!";
 
@@ -87,10 +85,9 @@ public class IFileIt extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        prepBrowser(br);
         boolean failed = true;
         try {
             final String fid = getFid(downloadLink);
@@ -99,8 +96,8 @@ public class IFileIt extends PluginForHost {
             // First try API via apikey from account
             if (aa != null) {
                 try {
-                    apikey = getUrlEncodedAPIkey(aa, this, br);
-                    br.postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_file_details.api", "akey=" + apikey + "&ukey=" + fid);
+                    apikey = getUrlEncodedAPIkey(aa, br);
+                    postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_file_details.api", "akey=" + apikey + "&ukey=" + fid);
                     failed = false;
                 } catch (final BrowserException e) {
                 } catch (final ConnectException e) {
@@ -113,7 +110,7 @@ public class IFileIt extends PluginForHost {
                 this.getPluginConfig().setProperty("apikey", Property.NULL);
                 this.getPluginConfig().setProperty("username", Property.NULL);
                 this.getPluginConfig().setProperty("password", Property.NULL);
-                br.postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-check_file.api", "ukey=" + fid);
+                postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-check_file.api", "ukey=" + fid);
                 failed = false;
             }
 
@@ -128,7 +125,7 @@ public class IFileIt extends PluginForHost {
             logger.warning("API key is invalid, jumping in other handling...");
             final boolean isfollowingRedirect = br.isFollowingRedirects();
             // clear old browser
-            br = prepBrowser(new Browser());
+            br = new Browser();
             // can be direct link!
             URLConnectionAdapter con = null;
             br.setFollowRedirects(true);
@@ -173,15 +170,15 @@ public class IFileIt extends PluginForHost {
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         } else {
             // Check with API
-            final String status = getJson("status", br);
+            final String status = getJson("status");
             if (status == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (!"ok".equals(getJson("status", br))) {
+            if (!"ok".equals(getJson("status"))) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String filename = getJson("name", br);
-            final String filesize = getJson("size", br);
+            final String filename = getJson("name");
+            final String filesize = getJson("size");
             if (filename == null || filesize == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -227,14 +224,20 @@ public class IFileIt extends PluginForHost {
                 xmlrequest(br2, "/download-request.json", "ukey=" + ukey + "&__ab1=" + Encoding.urlEncode(ab1));
                 if (br.containsHTML("message\":\"invalid request\"")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-                }
-                if (!viaAccount && br2.containsHTML(ONLY4REGISTERED)) {
+                } else if (!viaAccount && br2.containsHTML(ONLY4REGISTERED)) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l);
-                }
-                if (br2.containsHTML("\"message\":\"gopremium\"")) {
+                } else if (br2.containsHTML("\"message\":\"gopremium\"")) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
-                }
-                if (br2.containsHTML("\"captcha\":1")) {
+                } else if ("2".equals(getJson("dl"))) {
+                    // download is only available in ezfile.ch
+                    // if( response.dl == 2 ){
+                    // window.location = __ezfileUrl;
+                    // }
+                    // else if( response.dl == 1 ){
+                    // window.location = __downloadUrl;
+                    // }
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable on ezfile.ch");
+                } else if (br2.containsHTML("\"captcha\":1")) {
                     PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2);
                     // Semi-automatic reCaptcha handling
@@ -261,7 +264,7 @@ public class IFileIt extends PluginForHost {
                 if (br2.containsHTML("\"message\":\"signup\"")) {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l);
                 }
-                br.getPage("/download.html");
+                getPage("/download.html");
                 dllink = br.getRegex("id=\"requestBtnHolder\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
                     dllink = br2.getRegex("\"(http://s\\d+\\.filecloud\\.io/[a-z0-9]+/\\d+/[^<>\"/]*?)\"").getMatch(0);
@@ -358,8 +361,7 @@ public class IFileIt extends PluginForHost {
     @SuppressWarnings("unchecked")
     private void login(final Account account) throws Exception {
         br.setFollowRedirects(true);
-        prepBrowser(br);
-        final String apikey = getUrlEncodedAPIkey(account, this, br);
+        final String apikey = getUrlEncodedAPIkey(account, br);
         if (apikey == null) {
             logger.info("Couldn't find akey (APIKEY) -> Account must be invalid!");
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -393,8 +395,7 @@ public class IFileIt extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                prepBrowser(br);
-                br.getPage(MAINPAGE + "/user-login.html");
+                getPage(MAINPAGE + "/user-login.html");
                 // We don't know if a captcha is needed so first we try without,
                 // if we get an errormessage we know a captcha is needed
                 boolean accountValid = false;
@@ -413,9 +414,9 @@ public class IFileIt extends PluginForHost {
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                         final DownloadLink dummyLink = new DownloadLink(this, "Account", "filecloud.io", "http://filecloud.io", true);
                         final String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                        br.postPage("/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+                        postPage("/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
                     } else {
-                        br.postPage("/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                        postPage("/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     }
                     if (br.getURL().contains("\\$\\('#alertFld'\\)\\.empty\\(\\)\\.append\\( 'incorrect reCaptcha entered, try again'") || br.getURL().contains("error=RECAPTCHA__INCORRECT")) {
                         captchaNeeded = true;
@@ -455,38 +456,27 @@ public class IFileIt extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         try {
             // Use cookies, check and refresh if needed
             login(account);
-            br.postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_account_details.api", "akey=" + getUrlEncodedAPIkey(account, this, br));
+            postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_account_details.api", "akey=" + getUrlEncodedAPIkey(account, br));
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
         // Only free acc support till now
-        if ("0".equals(getJson("is_premium", br))) {
-            ai.setStatus("Registered (free) account");
-            account.setProperty("free", true);
-            try {
-                account.setType(AccountType.FREE);
-                maxPrem.set(1);
-                account.setMaxSimultanDownloads(1);
-                // free accounts can still have captcha.
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-            }
+        if ("0".equals(getJson("is_premium"))) {
+            ai.setStatus("Free Account");
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(1);
+            // free accounts can still have captcha.
+            account.setConcurrentUsePossible(false);
         } else {
             ai.setStatus("Premium Account");
-            account.setProperty("free", false);
-            ai.setValidUntil(Long.parseLong(getJson("premium_until", br)) * 1000);
-            try {
-                account.setType(AccountType.PREMIUM);
-                maxPrem.set(5);
-                account.setMaxSimultanDownloads(5);
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-            }
+            ai.setValidUntil(Long.parseLong(getJson("premium_until")) * 1000);
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(5);
+            account.setConcurrentUsePossible(true);
         }
         ai.setUnlimitedTraffic();
         return ai;
@@ -499,88 +489,80 @@ public class IFileIt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
         }
         login(account);
-        if (!account.getBooleanProperty("free", false)) {
-            final String apikey = getUrlEncodedAPIkey(account, this, br);
-            final String fid = getFid(link);
-            if (apikey == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            try {
-                br.postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_download_url.api", "akey=" + apikey + "&ukey=" + fid);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-            }
-            if (br.containsHTML("\"message\":\"no such file\"")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            String finallink = getJson("download_url", br);
-            if (finallink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            finallink = finallink.replace("\\", "");
-
-            int maxchunks = MAXPREMIUMCHUNKS;
-            if (link.getBooleanProperty(NOCHUNKS, false)) {
-                maxchunks = 1;
-            }
-
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, maxchunks);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections", 10 * 60 * 1000l);
-                }
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                }
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(IFileIt.NOCHUNKS, false) == false) {
-                    link.setProperty(IFileIt.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        } else {
+        if (account.getType().equals(AccountType.FREE)) {
             br.setFollowRedirects(true);
             loginOldWay(account, false);
             doFree(link, true);
+            return;
+        }
+        final String apikey = getUrlEncodedAPIkey(account, br);
+        final String fid = getFid(link);
+        if (apikey == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        try {
+            postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_download_url.api", "akey=" + apikey + "&ukey=" + fid);
+        } catch (final BrowserException e) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+        }
+        if (br.containsHTML("\"message\":\"no such file\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String finallink = getJson("download_url");
+        if (finallink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        int maxchunks = MAXPREMIUMCHUNKS;
+        if (link.getBooleanProperty(NOCHUNKS, false)) {
+            maxchunks = 1;
+        }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, maxchunks);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections", 10 * 60 * 1000l);
+            }
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) {
+                    return;
+                }
+            } catch (final Throwable e) {
+            }
+            /* unknown error, we disable multiple chunks */
+            if (link.getBooleanProperty(IFileIt.NOCHUNKS, false) == false) {
+                link.setProperty(IFileIt.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
         }
     }
 
-    public static String getUrlEncodedAPIkey(final Account aa, final PluginForHost plu, final Browser br) throws IOException {
-        String apikey = plu.getPluginConfig().getStringProperty("apikey", null);
-        final String username = plu.getPluginConfig().getStringProperty("username", null);
-        final String password = plu.getPluginConfig().getStringProperty("password", null);
+    public String getUrlEncodedAPIkey(final Account aa, final Browser br) throws Exception {
+        String apikey = getPluginConfig().getStringProperty("apikey", null);
+        final String username = getPluginConfig().getStringProperty("username", null);
+        final String password = getPluginConfig().getStringProperty("password", null);
         // Check if we already have an apikey and if it's the correct one
         if (apikey == null || username == null || password == null || !aa.getUser().equals(username) || !aa.getPass().equals(password)) {
-            plu.getPluginConfig().setProperty("apikey", Property.NULL);
-            plu.getPluginConfig().setProperty("username", Property.NULL);
-            plu.getPluginConfig().setProperty("password", Property.NULL);
-            br.postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_apikey.api", "username=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()));
-            apikey = getJson("akey", br);
+            getPluginConfig().setProperty("apikey", Property.NULL);
+            getPluginConfig().setProperty("username", Property.NULL);
+            getPluginConfig().setProperty("password", Property.NULL);
+            postPage(br, (br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_apikey.api", "username=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()));
+            apikey = getJson(br, "akey");
             if (apikey != null) {
-                plu.getPluginConfig().setProperty("apikey", apikey);
-                plu.getPluginConfig().setProperty("username", aa.getUser());
-                plu.getPluginConfig().setProperty("password", aa.getPass());
+                getPluginConfig().setProperty("apikey", apikey);
+                getPluginConfig().setProperty("username", aa.getUser());
+                getPluginConfig().setProperty("password", aa.getPass());
             }
         }
         return Encoding.urlEncode(apikey);
     }
 
     @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return maxPrem.get();
-    }
-
-    public Browser prepBrowser(Browser br) {
-        if (br == null) {
-            br = new Browser();
-        }
+    protected Browser prepBrowser(final Browser br, final String host) {
+        super.prepBrowser(br, host);
         br.getHeaders().put("User-Agent", useragent);
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
         br.setCookie("http://filecloud.io/", "lang", "en");
@@ -595,21 +577,13 @@ public class IFileIt extends PluginForHost {
         br.cloneBrowser().getPage("/ads/adframe.js");
     }
 
-    private void xmlrequest(final Browser br, final String url, final String postData) throws IOException {
+    private void xmlrequest(final Browser br, final String url, final String postData) throws Exception {
         br.getHeaders().put("User-Agent", useragent);
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        br.postPage(url, postData);
+        postPage(br, url, postData);
         br.getHeaders().remove("X-Requested-With");
-    }
-
-    public static String getJson(final String parameter, final Browser br) {
-        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) {
-            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
-        }
-        return result;
     }
 
     @Override
@@ -626,7 +600,7 @@ public class IFileIt extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (acc.getType().equals(AccountType.FREE)) {
             /* free accounts also have captchas */
             return true;
         }

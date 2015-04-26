@@ -62,7 +62,7 @@ public class IFileItFldr extends PluginForDecrypt {
         }
         // Id we have an account we can use the API, if not we have to do it over the site
         if (aa != null) {
-            final String akey = ((jd.plugins.hoster.IFileIt) hostPlugin).getUrlEncodedAPIkey(aa, hostPlugin, br);
+            final String akey = ((jd.plugins.hoster.IFileIt) hostPlugin).getUrlEncodedAPIkey(aa, br);
             br.postPage(jd.plugins.hoster.IFileIt.MAINPAGE + "/api-fetch_tag_details.api", "akey=" + akey + "&tkey=" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
             fpName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
             final String[][] linkinformation = br.getRegex("\"size\":\"(\\d+)\",\"name\":\"([^<>\"]*?)\",\"ukey\":\"([^<>\"]*?)\"").getMatches();
