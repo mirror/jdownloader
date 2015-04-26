@@ -106,7 +106,7 @@ public class FileparadoxIn extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.8.4
+    // XfileShare Version 3.0.8.5
     // last XfileSharingProBasic compare :: 2.6.2.1
     // captchatype: solvemedia??
     // other: no redirects
@@ -1477,7 +1477,7 @@ public class FileparadoxIn extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String code = null;
-            for (String link : sitelinks) {
+            for (final String link : sitelinks) {
                 if (link.matches("(https?.+" + DOMAINS + ")?/captchas/[a-z0-9]{18,}\\.jpg")) {
                     final Browser testcap = br.cloneBrowser();
                     URLConnectionAdapter con = null;

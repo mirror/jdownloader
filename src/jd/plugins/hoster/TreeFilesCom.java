@@ -57,6 +57,7 @@ import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -72,7 +73,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "treefiles.com" }, urls = { "https?://(www\\.)?((treefiles|treesfile)\\.com|treefile\\.org)/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "treefiles.com" }, urls = { "https?://(www\\.)?((treefiles|treesfile)\\.com|treefile\\.org)/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
 public class TreeFilesCom extends PluginForHost {
 
@@ -102,7 +103,7 @@ public class TreeFilesCom extends PluginForHost {
     private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
 
     // DEV NOTES
-    // XfileShare Version 3.0.8.4
+    // XfileShare Version 3.0.8.5
     // last XfileSharingProBasic compare :: 2.6.2.1
     // protocol: no https
     // captchatype: null
@@ -162,7 +163,7 @@ public class TreeFilesCom extends PluginForHost {
 
     /**
      * @author raztoki
-     * 
+     *
      * @category 'Experimental', Mods written July 2012 - 2013
      * */
     public TreeFilesCom(PluginWrapper wrapper) {
@@ -332,7 +333,7 @@ public class TreeFilesCom extends PluginForHost {
     /**
      * Provides alternative linkchecking method for a single link at a time. Can be used as generic failover, though kinda pointless as this
      * method doesn't give filename...
-     * 
+     *
      * */
     private String[] altAvailStat(final DownloadLink downloadLink, final String[] fileInfo) throws Exception {
         Browser alt = new Browser();
@@ -479,7 +480,7 @@ public class TreeFilesCom extends PluginForHost {
             }
         }
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") !=null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
+            if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
                 controlSimHost(account);
                 controlHost(account, downloadLink, false);
 
@@ -512,7 +513,7 @@ public class TreeFilesCom extends PluginForHost {
 
     /**
      * Removes patterns which could break the plugin due to fake/hidden HTML, or false positives caused by HTML comments.
-     * 
+     *
      * @throws Exception
      * @author raztoki
      */
@@ -984,7 +985,7 @@ public class TreeFilesCom extends PluginForHost {
                 }
             }
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") !=null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
+                if (dl.getConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("nginx")) {
                     controlSimHost(account);
                     controlHost(account, downloadLink, false);
 
@@ -1055,7 +1056,7 @@ public class TreeFilesCom extends PluginForHost {
 
     /**
      * Rules to prevent new downloads from commencing
-     * 
+     *
      * */
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (downloadLink.getBooleanProperty("requiresPremiumAccount", false) && (account == null || account.getBooleanProperty("free", false))) {
@@ -1088,7 +1089,7 @@ public class TreeFilesCom extends PluginForHost {
      * Corrects downloadLink.urlDownload().<br/>
      * <br/>
      * The following code respect the hoster supported protocols via plugin boolean settings and users config preference
-     * 
+     *
      * @author raztoki
      * */
     @SuppressWarnings("unused")
@@ -1164,7 +1165,7 @@ public class TreeFilesCom extends PluginForHost {
     /**
      * Gets page <br />
      * - natively supports silly cloudflare anti DDoS crapola
-     * 
+     *
      * @author raztoki
      */
     private void getPage(final String page) throws Exception {
@@ -1178,7 +1179,7 @@ public class TreeFilesCom extends PluginForHost {
                 throw (PluginException) e;
             }
             // should only be picked up now if not JD2
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") !=null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
                 logger.warning("Cloudflare anti DDoS measures enabled, your version of JD can not support this. In order to go any further you will need to upgrade to JDownloader 2");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cloudflare anti DDoS measures enabled");
             } else {
@@ -1186,7 +1187,7 @@ public class TreeFilesCom extends PluginForHost {
             }
         }
         // prevention is better than cure
-        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") !=null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
+        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 503 && br.getHttpConnection().getHeaderField("server") != null && br.getHttpConnection().getHeaderField("server").toLowerCase(Locale.ENGLISH).contains("cloudflare-nginx")) {
             String host = new Regex(page, "https?://([^/]+)(:\\d+)?/").getMatch(0);
             Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
             if (cloudflare == null) {
@@ -1309,7 +1310,7 @@ public class TreeFilesCom extends PluginForHost {
     /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
-     * 
+     *
      * @version 0.2
      * @author raztoki
      * */
@@ -1395,7 +1396,7 @@ public class TreeFilesCom extends PluginForHost {
 
     /**
      * captcha processing can be used download/login/anywhere assuming the submit values are the same (they usually are)...
-     * 
+     *
      * @author raztoki
      * */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
@@ -1428,9 +1429,9 @@ public class TreeFilesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String code = null;
-            for (String link : sitelinks) {
+            for (final String link : sitelinks) {
                 if (link.matches("(https?.+" + DOMAINS + ")?/captchas/[a-z0-9]{18,}\\.jpg")) {
-                    Browser testcap = br.cloneBrowser();
+                    final Browser testcap = br.cloneBrowser();
                     URLConnectionAdapter con = null;
                     try {
                         con = testcap.openGetConnection(link);
@@ -1440,16 +1441,19 @@ public class TreeFilesCom extends PluginForHost {
                                 break;
                             }
                         }
-                    } catch (Exception e) {
+                    } catch (final Exception e) {
+                        if (e instanceof CaptchaException) {
+                            throw e;
+                        }
                         continue;
                     }
                 }
             }
             if (inValidate(code)) {
-                logger.warning("Standard captcha captchahandling broken!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.warning("User Aborted");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            form.put("code", code);
+            form.put("code", Encoding.urlEncode(code));
         } else if (form.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             logger.info("Detected captcha method \"Re Captcha\"");
             final Browser captcha = br.cloneBrowser();
@@ -1570,13 +1574,13 @@ public class TreeFilesCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlSlot
      *            (+1|-1)
      * */
@@ -1597,9 +1601,9 @@ public class TreeFilesCom extends PluginForHost {
     /**
      * ControlSimHost, On error it will set the upper mark for 'max sim dl per host'. This will be the new 'static' setting used going
      * forward. Thus prevents new downloads starting when not possible and is self aware and requires no coder interaction.
-     * 
+     *
      * @param account
-     * 
+     *
      * @category 'Experimental', Mod written February 2013
      * */
     private void controlSimHost(final Account account) {
@@ -1636,7 +1640,7 @@ public class TreeFilesCom extends PluginForHost {
      * This matches dllink against an array of used 'host' servers. Use this when site have multiple download servers and they allow x
      * connections to ip/host server. Currently JD allows a global connection controller and doesn't allow for handling of different
      * hosts/IP setup. This will help with those situations by allowing more connection when possible.
-     * 
+     *
      * @param Account
      *            Account that's been used, can be null
      * @param DownloadLink
@@ -1741,7 +1745,7 @@ public class TreeFilesCom extends PluginForHost {
 
     /**
      * Sets Key and Values to respective Account stored within hostMap
-     * 
+     *
      * @param account
      *            Account that's been used, can be null
      * @param x
@@ -1786,7 +1790,7 @@ public class TreeFilesCom extends PluginForHost {
 
     /**
      * Returns String key from Account@usedHost from hostMap
-     * 
+     *
      * @param account
      *            Account that's been used, can be null
      * */
@@ -1808,7 +1812,7 @@ public class TreeFilesCom extends PluginForHost {
 
     /**
      * Returns integer value from Account@usedHost from hostMap
-     * 
+     *
      * @param account
      *            Account that's been used, can be null
      * */
@@ -1830,7 +1834,7 @@ public class TreeFilesCom extends PluginForHost {
 
     /**
      * Returns true if hostMap contains 'key'
-     * 
+     *
      * @param account
      *            Account that's been used, can be null
      * @param key
@@ -1855,7 +1859,7 @@ public class TreeFilesCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -1872,7 +1876,7 @@ public class TreeFilesCom extends PluginForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      *            name
      * @param value
@@ -1902,9 +1906,9 @@ public class TreeFilesCom extends PluginForHost {
     /**
      * If form contain both " and ' quotation marks within input fields it can return null values, thus you submit wrong/incorrect data re:
      * InputField parse(final String data). Affects revision 19688 and earlier!
-     * 
+     *
      * TODO: remove after JD2 goes stable!
-     * 
+     *
      * @author raztoki
      * */
     private Form cleanForm(Form form) {
@@ -1934,7 +1938,7 @@ public class TreeFilesCom extends PluginForHost {
     /**
      * This allows backward compatibility for design flaw in setHtmlCode(), It injects updated html into all browsers that share the same
      * request id. This is needed as request.cloneRequest() was never fully implemented like browser.cloneBrowser().
-     * 
+     *
      * @param ibr
      *            Import Browser
      * @param t
