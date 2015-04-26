@@ -14,7 +14,6 @@ import jd.http.URLConnectionAdapter;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.download.Downloadable;
-import jd.plugins.download.raf.OldRAFDownload;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
@@ -517,7 +516,7 @@ public class RAFChunk extends Thread {
                 }
                 if (startByte > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
                     dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_rangeheaders()));
-                    logger.severe("ERROR Chunk (no range header response)" + getID() + connection.toString());
+                    logger.severe("ERROR Chunk (no range header response)" + getID() + "\r\n" + connection.toString());
                     // logger.finest(connection.toString());
                     return;
                 }
@@ -543,7 +542,7 @@ public class RAFChunk extends Thread {
                          * rangeless first Request
                          */
                     } else {
-                        logger.severe("ERROR Chunk (range header parse error)" + getID() + connection.toString());
+                        logger.severe("ERROR Chunk (range header parse error)" + getID() + "\r\n" + connection.toString());
                         dl.error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_rangeheaderparseerror() + connection.getHeaderField("Content-Range")));
                         return;
                     }
