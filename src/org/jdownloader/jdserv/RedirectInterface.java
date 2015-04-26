@@ -18,6 +18,8 @@ public interface RedirectInterface extends RemoteAPIInterface {
 
     void redirect(String url, RemoteAPIResponse response);
 
+    void enabledBanner(RemoteAPIRequest request, RemoteAPIResponse response, boolean b);
+
     void banner(RemoteAPIRequest request, RemoteAPIResponse response, String md5, String sig, String uid, String pid, String source, String lng, boolean hasUploaded, boolean hasOthers);
 
     void submitKayakoTicket(String email, String name, String subject, String text) throws RemoteAPIException;

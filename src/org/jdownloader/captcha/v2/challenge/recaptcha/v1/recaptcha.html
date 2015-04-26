@@ -13,94 +13,7 @@ iframe {
 </style>
 <script src='http://www.google.com/recaptcha/api.js' async defer></script>
 <script type="text/javascript">
-	function GetScreenCordinates(obj) {
-		var p = {};
-		p.x = obj.offsetLeft;
-		p.y = obj.offsetTop;
-		while (obj.offsetParent) {
-			p.x = p.x + obj.offsetParent.offsetLeft;
-			p.y = p.y + obj.offsetParent.offsetTop;
-			if (obj == document.getElementsByTagName("body")[0]) {
-				break;
-			} else {
-				obj = obj.offsetParent;
-			}
-		}
-		return p;
-	}
-	function success() {
-		document.send.submit();
-	}
-
-	function getOffsetSum(elem) {
-		var top = 0, left = 0
-		while (elem) {
-			top = top + parseInt(elem.offsetTop)
-			left = left + parseInt(elem.offsetLeft)
-			elem = elem.offsetParent
-		}
-
-		return {
-			top : top,
-			left : left
-		}
-	}
-
-	function getOffsetRect(elem) {
-		var box = elem.getBoundingClientRect()
-
-		var body = document.body
-		var docElem = document.documentElement
-
-		var scrollTop = window.pageYOffset || docElem.scrollTop
-				|| body.scrollTop
-		var scrollLeft = window.pageXOffset || docElem.scrollLeft
-				|| body.scrollLeft
-
-		var clientTop = docElem.clientTop || body.clientTop || 0
-		var clientLeft = docElem.clientLeft || body.clientLeft || 0
-
-		var top = box.top + scrollTop - clientTop
-		var left = box.left + scrollLeft - clientLeft
-
-		return {
-			top : Math.round(top),
-			left : Math.round(left)
-		}
-	}
-
-	function getOffset(elem) {
-		if (elem.getBoundingClientRect) {
-			return getOffsetRect(elem)
-		} else {
-			return getOffsetSum(elem)
-		}
-	}
-	function init() {
-
-		//document.getElementById("elementID").offsetTop;
-		//document.getElementById("elementID").offsetLeft;
-		var rc = document.getElementById("rc");
-		var xmlHttp = null;
-		var p = getOffset(rc);
-		xmlHttp = new XMLHttpRequest();
-		var w = Math.max(document.documentElement.clientWidth,
-				window.innerWidth || 0)
-		var h = Math.max(document.documentElement.clientHeight,
-				window.innerHeight || 0)
-		/* 
-		If the browser does not support screenX and screen Y, 
-		use screenLeft and screenTop instead (and vice versa)
-		 */
-		var winLeft = window.screenLeft ? window.screenLeft : window.screenX;
-		var winTop = window.screenTop ? window.screenTop : window.screenY;
-
-		xmlHttp.open("GET", "?do=loaded&x=" + winLeft + "&y=" + winTop + "&w="
-				+ window.outerWidth + "&h=" + window.outerHeight + "&vw=" + w
-				+ "&vh=" + h, false);
-		xmlHttp.send(null);
-
-	}
+	
 </script>
 </head>
 <body onload="init()">
@@ -108,7 +21,7 @@ iframe {
 
 		<script type="text/javascript">
 			var RecaptchaOptions = {
-				
+
 				tabindex : 1,
 				theme : 'custom',
 				custom_theme_widget : 'recaptcha_widget'
@@ -116,20 +29,60 @@ iframe {
 		</script>
 		<div id="recaptcha_widget" style="display: none">
 			<div id="recaptcha_image"></div>
-		
-			<span class="recaptcha_only_if_image">Please Enter: </span><input type="text" id="recaptcha_response_field"
+
+			<span class="recaptcha_only_if_image">Please Enter: </span><input
+				type="text" id="recaptcha_response_field"
 				name="recaptcha_response_field">
-		
+
 			<script type="text/javascript"
 				src="http://www.google.com/recaptcha/api/challenge?k=%%%sitekey%%%"></script>
-		
+
 		</div>
 		<input id="challenge" type="hidden" name="challenge" value="">
 		<script type="text/javascript">
-		document.getElementById("challenge").value=RecaptchaState.challenge; 
+			function refresh() {
+
+				try {
+					var xmlHttp = new XMLHttpRequest();
+
+					xmlHttp.open("GET", window.location.href + "&do=canClose",
+							false);
+					xmlHttp.send();
+					console.log(xmlHttp.responseText);
+					if (xmlHttp.responseText == "true") {
+						//works in chrome
+						window.open('', '_self', '');
+						window.close();
+						console.log("Close");
+						return;
+					}
+				} catch (err) {
+					//works in chrome
+					window.open('', '_self', '');
+					window.close();
+
+					return;
+				}
+				// make Ajax call here, inside the callback call:
+				setTimeout(refresh, 500);
+				// ...
+
+			}
+
+			document.getElementById("challenge").value = RecaptchaState.challenge;
+
 			window.onload = function() {
 				Recaptcha.focus_response_field();
+				var xmlHttp = new XMLHttpRequest();
+
+				xmlHttp.open("GET", window.location.href
+						+ "&do=setChallenge&challenge="
+						+ RecaptchaState.challenge, true);
+				xmlHttp.send();
+				//setTimeout(refresh, 500)
 			}
+
+			// initial call, or just call refresh directly
 		</script>
 		<table cellspacing="0" cellpadding="4" border="0"
 			style="font-family: Helvetica, sans-serif; color: #000000; font-size: 12px;">

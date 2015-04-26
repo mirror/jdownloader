@@ -846,7 +846,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
         browserReference = new BrowserReference(challenge) {
 
             @Override
-            void onResponse(String parameter) {
+            public void onResponse(String parameter) {
                 responseCode = parameter;
                 new EDTRunner() {
 
