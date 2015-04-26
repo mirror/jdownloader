@@ -1,22 +1,42 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v1;
 
+import java.awt.AWTException;
 import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.event.KeyEvent;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
+import jd.controlling.captcha.SkipRequest;
+import jd.http.Browser;
 import jd.plugins.Plugin;
+import jd.plugins.hoster.DirectHTTP.Recaptcha;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
+import org.appwork.utils.net.httpserver.responses.HttpResponse;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
+import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
+import org.jdownloader.captcha.v2.solverjob.ResponseList;
+import org.jdownloader.controlling.UniqueAlltimeID;
 
 public abstract class RecaptchaV1Challenge extends AbstractBrowserChallenge {
 
-    private String siteKey;
+    private String                        siteKey;
+    private BasicCaptchaChallengeDelegate basicCaptchaChallenge;
 
     public String getSiteKey() {
         return siteKey;
@@ -31,11 +51,43 @@ public abstract class RecaptchaV1Challenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public String handleRequest(PostRequest request) throws IOException {
+    public boolean onPostRequest(BrowserReference browserReference, PostRequest request, HttpResponse response) throws IOException {
         String challenge = request.getParameterbyKey("recaptcha_challenge_field");
         String responseString = request.getParameterbyKey("recaptcha_response_field");
 
-        return JSonStorage.serializeToJson(new String[] { challenge, responseString });
+        if (StringUtils.isNotEmpty(challenge) && StringUtils.isNotEmpty(responseString)) {
+            browserReference.onResponse(JSonStorage.serializeToJson(new String[] { challenge, responseString }));
+            response.setResponseCode(ResponseCode.SUCCESS_OK);
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
+
+            response.getOutputStream(true).write("Please Close the Browser now".getBytes("UTF-8"));
+            // Close Browser Tab
+            Robot robot;
+            try {
+                robot = new Robot();
+
+                robot.keyPress(KeyEvent.VK_CONTROL);
+                robot.keyPress(KeyEvent.VK_W);
+
+                robot.keyRelease(KeyEvent.VK_CONTROL);
+                robot.keyRelease(KeyEvent.VK_W);
+            } catch (AWTException e) {
+                e.printStackTrace();
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean onGetRequest(BrowserReference browserReference, GetRequest request, HttpResponse response) throws IOException {
+        String pDo = request.getParameterbyKey("do");
+        if (pDo.equals("setChallenge")) {
+            String challenge = request.getParameterbyKey("challenge");
+
+            response.getOutputStream(true).write("Thanks".getBytes("UTF-8"));
+        }
+        return super.onGetRequest(browserReference, request, response);
     }
 
     public RecaptchaV1Challenge(String siteKey, Plugin pluginForHost) {
@@ -57,6 +109,73 @@ public abstract class RecaptchaV1Challenge extends AbstractBrowserChallenge {
             html = html.replace("%%%sitekey%%%", siteKey);
             return html;
         } catch (IOException e) {
+            throw new WTFException(e);
+        }
+    }
+
+    public static class BasicCaptchaChallengeDelegate extends BasicCaptchaChallenge {
+
+        private RecaptchaV1Challenge actualChallenge;
+        private String               challengeKey;
+
+        public BasicCaptchaChallengeDelegate(RecaptchaV1Challenge recaptchaV1Challenge, File captchaFile, String challenge) {
+            super("recaptcha", captchaFile, null, null, recaptchaV1Challenge.getPlugin(), 0);
+            this.actualChallenge = recaptchaV1Challenge;
+            this.challengeKey = challenge;
+        }
+
+        public String getChallengeKey() {
+            return challengeKey;
+        }
+
+        //
+        @Override
+        public UniqueAlltimeID getId() {
+            return actualChallenge.getId();
+        }
+
+        @Override
+        public void setResult(ResponseList<String> result) {
+            actualChallenge.setResult(result);
+        }
+
+        @Override
+        public int getTimeout() {
+            return actualChallenge.getTimeout();
+        }
+
+        @Override
+        public boolean isAccountLogin() {
+            return actualChallenge.isAccountLogin();
+        }
+
+        @Override
+        public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
+            return actualChallenge.canBeSkippedBy(skipRequest, solver, challenge);
+        }
+    }
+
+    public synchronized BasicCaptchaChallengeDelegate getBasicCaptchaChallenge() {
+        if (basicCaptchaChallenge != null) {
+            return basicCaptchaChallenge;
+        }
+        try {
+            File captchaFile = getPlugin().getLocalCaptchaFile();
+
+            // final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            Browser br = new Browser();
+            final Recaptcha rc = new Recaptcha(br);
+            rc.setId(siteKey);
+
+            rc.load();
+
+            rc.downloadCaptcha(captchaFile);
+            basicCaptchaChallenge = new BasicCaptchaChallengeDelegate(this, captchaFile, rc.getChallenge()) {
+
+            };
+            return basicCaptchaChallenge;
+        } catch (Exception e) {
+            e.printStackTrace();
             throw new WTFException(e);
         }
     }

@@ -453,7 +453,7 @@ public abstract class Plugin implements ActionListener {
      * @param plugin
      * @return Gibt einen Pfad zurück der für die nächste Captchadatei reserviert ist
      */
-    protected File getLocalCaptchaFile(String extension) {
+    public File getLocalCaptchaFile(String extension) {
         if (extension == null) {
             extension = ".jpg";
         }

@@ -1,7 +1,5 @@
 package org.jdownloader.captcha.v2.solver.browser;
 
-import java.awt.Robot;
-import java.awt.event.KeyEvent;
 import java.io.IOException;
 
 import org.appwork.exceptions.WTFException;
@@ -111,6 +109,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
     // }
 
     public void dispose() {
+
         if (handlerInfo != null) {
             DeprecatedAPIHttpServerController.getInstance().unregisterRequestHandler(handlerInfo);
         }
@@ -125,15 +124,19 @@ public abstract class BrowserReference implements HttpRequestHandler {
     @Override
     public boolean onGetRequest(GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
 
-        if (!StringUtils.equals(request.getRequestedURL(), "/" + Hash.getMD5(this.challenge.getPlugin().getClass().getName()) + "?id=" + id.getID()) && !StringUtils.contains(request.getRequestedURL(), "?do=loaded")) {
+        if (!StringUtils.equals(request.getRequestedPath(), "/" + Hash.getMD5(this.challenge.getPlugin().getClass().getName()))) {
             return false;
         }
 
         try {
+            String pDo = request.getParameterbyKey("do");
+            String id = request.getParameterbyKey("id");
+            if (!StringUtils.equals(id, this.id.getID() + "")) {
+                return false;
+            }
             response.setResponseCode(ResponseCode.SUCCESS_OK);
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
 
-            String pDo = request.getParameterbyKey("do");
             if ("loaded".equals(pDo)) {
 
                 browserWindow = new BrowserWindow(Integer.parseInt(request.getParameterbyKey("x")), Integer.parseInt(request.getParameterbyKey("y")), Integer.parseInt(request.getParameterbyKey("w")), Integer.parseInt(request.getParameterbyKey("h")), Integer.parseInt(request.getParameterbyKey("vw")), Integer.parseInt(request.getParameterbyKey("vh")));
@@ -141,16 +144,20 @@ public abstract class BrowserReference implements HttpRequestHandler {
 
                     this.viewport = challenge.getBrowserViewport(browserWindow);
                     viewport.onLoaded();
-                    response.setResponseCode(ResponseCode.SUCCESS_OK);
-                    response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
 
                     response.getOutputStream(true).write("ok".getBytes("UTF-8"));
 
                 }
                 return true;
-            }
+            } else if ("canClose".equals(pDo)) {
+                response.getOutputStream(true).write("false".getBytes("UTF-8"));
+            } else if (pDo == null) {
 
-            response.getOutputStream(true).write(challenge.getHTML().getBytes("UTF-8"));
+                response.getOutputStream(true).write(challenge.getHTML().getBytes("UTF-8"));
+            } else {
+                return challenge.onGetRequest(this, request, response);
+
+            }
             return true;
         } catch (Throwable e) {
             error(response, e);
@@ -173,28 +180,17 @@ public abstract class BrowserReference implements HttpRequestHandler {
 
     @Override
     public boolean onPostRequest(PostRequest request, HttpResponse response) throws BasicRemoteAPIException {
-        if (!StringUtils.equals(request.getRequestedURL(), "/" + Hash.getMD5(this.challenge.getPlugin().getClass().getName()) + "?id=" + id.getID())) {
+        if (!StringUtils.equals(request.getRequestedPath(), "/" + Hash.getMD5(this.challenge.getPlugin().getClass().getName()))) {
             return false;
         }
+
         try {
-            String responseString = challenge.handleRequest(request);
-            if (responseString != null) {
-                onResponse(responseString);
-                response.setResponseCode(ResponseCode.SUCCESS_OK);
-                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
-
-                response.getOutputStream(true).write("Please Close the Browser now".getBytes("UTF-8"));
-                // Close Browser Tab
-                Robot robot = new Robot();
-                robot.keyPress(KeyEvent.VK_CONTROL);
-                robot.keyPress(KeyEvent.VK_W);
-
-                robot.keyRelease(KeyEvent.VK_CONTROL);
-                robot.keyRelease(KeyEvent.VK_W);
-                return true;
-            } else {
+            String pDo = request.getParameterbyKey("do");
+            String id = request.getParameterbyKey("id");
+            if (!StringUtils.equals(id, this.id.getID() + "")) {
                 return false;
             }
+            return challenge.onPostRequest(this, request, response);
 
         } catch (Throwable e) {
             error(response, e);
@@ -203,6 +199,6 @@ public abstract class BrowserReference implements HttpRequestHandler {
 
     }
 
-    abstract void onResponse(String request);
+    public abstract void onResponse(String request);
 
 }

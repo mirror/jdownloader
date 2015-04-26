@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -70,6 +69,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1Handler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/(file/|\\?id=)?[\\w]+|ul\\.to/(file/|\\?id=)?[\\w]+)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
@@ -817,56 +817,54 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
-            // final int fwait=fwait;
-            // final long timebefore = System.currentTimeMillis();
-            //
-            // final String fbaseURL = baseURL;
-            // new RecaptchaV1Handler(rcID, this, br) {
-            //
-            // @Override
-            // protected boolean sendResponse(int retry, Browser br, String challenge, String response) throws IOException, PluginException,
-            // InterruptedException {
-            // int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
-            // if (retry == 0 && passedTime < fwait) {
-            // sleep((fwait - passedTime) * 1001l, downloadLink);
-            // }
-            // postPage(br, fbaseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" +
-            // Encoding.urlEncode(challenge) + "&recaptcha_response_field=" + Encoding.urlEncode(response));
-            //
-            // return !br.containsHTML("\"err\":\"captcha\"");
-            // }
-            //
-            // }.run();
-            //
-
+            final int fwait = wait;
             final long timebefore = System.currentTimeMillis();
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.setId(rcID);
-            rc.load();
-            for (int i = 0; i <= 5; i++) {
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
-                if (i == 0 && passedTime < wait) {
-                    sleep((wait - passedTime) * 1001l, downloadLink);
-                }
-                postPage(br, baseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
-                if (br.containsHTML("\"err\":\"captcha\"")) {
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
+
+            final String fbaseURL = baseURL;
+            new RecaptchaV1Handler(rcID, this, br) {
+
+                @Override
+                protected boolean sendResponse(int retry, Browser br, String challenge, String response) throws IOException, PluginException, InterruptedException {
+                    int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
+                    if (retry == 0 && passedTime < fwait) {
+                        sleep((fwait - passedTime) * 1001l, downloadLink);
                     }
-                    rc.reload();
-                    continue;
-                } else {
-                    try {
-                        validateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
+                    postPage(br, fbaseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + Encoding.urlEncode(challenge) + "&recaptcha_response_field=" + Encoding.urlEncode(response));
+
+                    return !br.containsHTML("\"err\":\"captcha\"");
                 }
-                break;
-            }
+
+            }.run();
+
+            // final long timebefore = System.currentTimeMillis();
+            // final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            // final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            // rc.setId(rcID);
+            // rc.load();
+            // for (int i = 0; i <= 5; i++) {
+            // final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            // final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+            // int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
+            // if (i == 0 && passedTime < wait) {
+            // sleep((wait - passedTime) * 1001l, downloadLink);
+            // }
+            // postPage(br, baseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + rc.getChallenge() +
+            // "&recaptcha_response_field=" + c);
+            // if (br.containsHTML("\"err\":\"captcha\"")) {
+            // try {
+            // invalidateLastChallengeResponse();
+            // } catch (final Throwable e) {
+            // }
+            // rc.reload();
+            // continue;
+            // } else {
+            // try {
+            // validateLastChallengeResponse();
+            // } catch (final Throwable e) {
+            // }
+            // }
+            // break;
+            // }
             generalFreeErrorhandling(account);
             if (br.containsHTML("limit\\-parallel")) {
                 freeDownloadlimitReached("You're already downloading");
