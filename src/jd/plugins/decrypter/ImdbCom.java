@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "http://(www\\.)?imdb\\.com/((name|title)/(nm|tt)\\d+/mediaindex|media/index/rg\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "http://(www\\.)?imdb\\.com/((name|title)/(nm|tt)\\d+/mediaindex|media/index/rg\\d+|title/tt\\d+/videogallery)" }, flags = { 0 })
 public class ImdbCom extends PluginForDecrypt {
 
     public ImdbCom(PluginWrapper wrapper) {
@@ -38,6 +38,7 @@ public class ImdbCom extends PluginForDecrypt {
     private static final String TYPE_ARTIST = "http://(www\\.)?imdb\\.com/media/index/rg\\d+";
     private static final String TYPE_TITLE  = "http://(www\\.)?imdb\\.com/name|title/tt\\d+/mediaindex";
     private static final String TYPE_NAME   = "http://(www\\.)?imdb\\.com/name/nm\\d+/mediaindex";
+    private static final String TYPE_VIDEO  = "http://(www\\.)?imdb\\.com/title/tt\\d+/videogallery";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -77,33 +78,44 @@ public class ImdbCom extends PluginForDecrypt {
             if (i > 1) {
                 br.getPage(parameter + "?page=" + i);
             }
-            final String[][] links = br.getRegex("\"(/media/rm\\d+/(nm|tt|rg)\\d+)([^<>\"/]+)?\"( title=\"([^<>\"]*?)\")?").getMatches();
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (final String linkinfo[] : links) {
-                final String link = "http://imdb.com" + linkinfo[0];
-                final DownloadLink dl = createDownloadlink(link);
-                final String id = new Regex(link, "rm(\\d+)").getMatch(0);
-                fp.add(dl);
-                final String subtitle = Encoding.htmlDecode(linkinfo[4]);
-                if (subtitle != null) {
-                    dl.setName(fpName + "_" + id + "_" + Encoding.htmlDecode(subtitle.trim()) + ".jpg");
-                } else {
-                    dl.setName(fpName + "_" + id + "_" + ".jpg");
+            if (parameter.matches(TYPE_VIDEO)) {
+                final String[] links = br.getRegex("\"(/video/imdb/vi\\d+)").getColumn(0);
+                if (links == null || links.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
                 }
-                dl.setAvailable(true);
-                try {
-                    distribute(dl);
-                } catch (final Throwable e) {
-                    // Not available in old 0.9.581 Stable
+                for (final String link : links) {
+                    final DownloadLink dl = createDownloadlink("http://www.imdb.com" + link);
+                    decryptedLinks.add(dl);
                 }
-                decryptedLinks.add(dl);
+            } else {
+                final String[][] links = br.getRegex("\"(/media/rm\\d+/(?:nm|tt|rg)\\d+)([^<>\"/]+)?\"( title=\"([^<>\"]*?)\")?").getMatches();
+                if (links == null || links.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                for (final String linkinfo[] : links) {
+                    final String link = "http://imdb.com" + linkinfo[0];
+                    final DownloadLink dl = createDownloadlink(link);
+                    final String id = new Regex(link, "rm(\\d+)").getMatch(0);
+                    fp.add(dl);
+                    final String subtitle = Encoding.htmlDecode(linkinfo[4]);
+                    if (subtitle != null) {
+                        dl.setName(fpName + "_" + id + "_" + Encoding.htmlDecode(subtitle.trim()) + ".jpg");
+                    } else {
+                        dl.setName(fpName + "_" + id + "_" + ".jpg");
+                    }
+                    dl.setAvailable(true);
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                        // Not available in old 0.9.581 Stable
+                    }
+                    decryptedLinks.add(dl);
+                }
             }
         }
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
-
 }

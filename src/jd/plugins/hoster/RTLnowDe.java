@@ -257,13 +257,17 @@ public class RTLnowDe extends PluginForHost {
             ((RTMPDownload) dl).startDownload();
 
         } else {
+            /* TODO */
+            if (true) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type / encrypted HDS");
+            }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (dllink.matches(this.HDSTYPE_NEW)) {
                 logger.info("2nd attempt to get final hds url");
                 /* TODO */
                 if (true) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type / encrypted HDS");
                 }
                 final XPath xPath = xmlParser(dllink);
                 final NodeList nl = (NodeList) xPath.evaluate("/manifest/media", doc, XPathConstants.NODESET);

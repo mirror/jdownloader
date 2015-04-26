@@ -107,21 +107,42 @@ public class DBankCom extends PluginForHost {
         String key = br.getRegex("\"encryKey\":\"([^\"]+)").getMatch(0);
         String downloadurl = null;
 
-        final String json = br.getRegex("var globallinkdata = (\\{.+\\})\\;").getMatch(0);
+        String json = br.getRegex("var globallinkdata = (\\{[^<]+\\});").getMatch(0);
         if (json == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            json = br.getRegex("var globallinkdata = (\\{.*?\\});").getMatch(0);
         }
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
         entries = (LinkedHashMap<String, Object>) entries.get("data");
         entries = (LinkedHashMap<String, Object>) entries.get("resource");
         final ArrayList<Object> ressourcelist = (ArrayList) entries.get("files");
         final long thisfid = getLongProperty(downloadLink, "id", -1);
+        boolean done = false;
         for (final Object o : ressourcelist) {
             final LinkedHashMap<String, Object> finfomap = (LinkedHashMap<String, Object>) o;
-            final long fid = getLongValue(finfomap.get("id"));
-            if (fid == thisfid) {
-                /* get fresh encrypted url string */
-                downloadurl = (String) finfomap.get("downloadurl");
+            final String type = (String) finfomap.get("type");
+            if (type.equals("File")) {
+                final long fid = getLongValue(finfomap.get("id"));
+                if (fid == thisfid) {
+                    /* get fresh encrypted url string */
+                    downloadurl = (String) finfomap.get("downloadurl");
+                    done = true;
+                    break;
+                }
+            } else {
+                /* Subfolder */
+                final ArrayList<Object> ressourcelist_subfolder = (ArrayList) finfomap.get("childList");
+                for (final Object filesub : ressourcelist_subfolder) {
+                    final LinkedHashMap<String, Object> finfomapsub = (LinkedHashMap<String, Object>) filesub;
+                    final long fid = getLongValue(finfomapsub.get("id"));
+                    if (fid == thisfid) {
+                        /* get fresh encrypted url string */
+                        downloadurl = (String) finfomapsub.get("downloadurl");
+                        done = true;
+                        break;
+                    }
+                }
+            }
+            if (done) {
                 break;
             }
         }

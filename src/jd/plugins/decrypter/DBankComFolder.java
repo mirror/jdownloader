@@ -39,12 +39,15 @@ public class DBankComFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private String parameter = null;
+    private String passCode  = null;
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-        String parameter = param.toString().replace("dbank.com/", "vmall.com/");
+        parameter = param.toString().replace("dbank.com/", "vmall.com/");
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("vmall.com/linknotexist.html") || br.getURL().contains("vmall.com/netdisk/search.html") || br.containsHTML("(>抱歉，此外链不存在。|1、你输入的地址错误；<br/>|2、外链中含非法内容；<br />|3、创建外链的文件还没有上传到服务器，请稍后再试。<br /><br />)")) {
             logger.info("Link offline: " + parameter);
@@ -80,7 +83,6 @@ public class DBankComFolder extends PluginForDecrypt {
             br.getPage(parameter);
         }
         /* Password protected links */
-        String passCode = null;
         if (br.getURL().contains("/m_accessPassword.html")) {
             String id = new Regex(br.getURL(), "id=(\\w+)$").getMatch(0);
             id = id == null ? parameter.substring(parameter.lastIndexOf("/") + 1) : id;
@@ -100,7 +102,10 @@ public class DBankComFolder extends PluginForDecrypt {
 
         String fpName = null;
 
-        final String json = br.getRegex("var globallinkdata = (\\{.+\\})\\;").getMatch(0);
+        String json = br.getRegex("var globallinkdata = (\\{[^<]+\\});").getMatch(0);
+        if (json == null) {
+            json = br.getRegex("var globallinkdata = (\\{.*?\\});").getMatch(0);
+        }
         if (json == null) {
             return null;
         }
@@ -114,25 +119,15 @@ public class DBankComFolder extends PluginForDecrypt {
         final ArrayList<Object> ressourcelist = (ArrayList) entries.get("files");
         for (final Object o : ressourcelist) {
             final LinkedHashMap<String, Object> finfomap = (LinkedHashMap<String, Object>) o;
-            final String filename = (String) finfomap.get("name");
-            final long filesize = getLongValue(finfomap.get("size"));
-            final long fid = getLongValue(finfomap.get("id"));
             final String type = (String) finfomap.get("type");
-            if (!type.equals("File")) {
-                /* TODO */
-                return null;
+            if (type.equals("File")) {
+                decryptedLinks.add(crawlFile(o));
+            } else {
+                final ArrayList<Object> ressourcelist_subfolder = (ArrayList) finfomap.get("childList");
+                for (final Object filesub : ressourcelist_subfolder) {
+                    decryptedLinks.add(crawlFile(filesub));
+                }
             }
-            final DownloadLink dl = createDownloadlink("http://vmalldecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-            if (passCode != null) {
-                dl.setProperty("password", passCode);
-            }
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("id", fid);
-            dl.setContentUrl(parameter);
-            dl.setDownloadSize(filesize);
-            dl.setName(filename);
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
         }
         String links = new Regex(json, "\"files\":\\[(.*?)\\]\\}").getMatch(0);
         if (links == null) {
@@ -150,6 +145,24 @@ public class DBankComFolder extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private DownloadLink crawlFile(final Object o) {
+        final LinkedHashMap<String, Object> finfomap = (LinkedHashMap<String, Object>) o;
+        final String filename = (String) finfomap.get("name");
+        final long fid = getLongValue(finfomap.get("id"));
+        final DownloadLink dl = createDownloadlink("http://vmalldecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
+        final long filesize = getLongValue(finfomap.get("size"));
+        if (passCode != null) {
+            dl.setProperty("password", passCode);
+        }
+        dl.setProperty("mainlink", parameter);
+        dl.setProperty("id", fid);
+        dl.setContentUrl(parameter);
+        dl.setDownloadSize(filesize);
+        dl.setName(filename);
+        dl.setAvailable(true);
+        return dl;
     }
 
     private long getLongValue(final Object o) {

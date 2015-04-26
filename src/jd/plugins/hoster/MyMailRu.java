@@ -40,7 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "http://my\\.mail\\.ru/jdeatme\\d+|http://my\\.mail\\.ru/[^<>\"]*?video/(top#video=/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+|[^<>\"]*?/\\d+\\.html)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "http://my\\.mail\\.ru/jdeatme\\d+|http://my\\.mail\\.ru/[^<>\"]*?video/(top#video=/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+|[^<>\"]*?/\\d+\\.html)|http://videoapi\\.my\\.mail\\.ru/videos/embed/mail/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+\\.html" }, flags = { 2 })
 public class MyMailRu extends PluginForHost {
 
     public MyMailRu(PluginWrapper wrapper) {
@@ -57,8 +57,20 @@ public class MyMailRu extends PluginForHost {
     private static final String TYPE_VIDEO_ALL = "http://my\\.mail\\.ru/[^<>\"]*?video/(top#video=/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+|[^<>\"]*?/\\d+\\.html)";
     private static final String TYPE_VIDEO_1   = "http://my\\.mail\\.ru/[^<>\"]*?video/top#video=/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+";
     private static final String TYPE_VIDEO_2   = "http://my\\.mail\\.ru/[^<>\"]*?video/[a-z0-9\\-_]+/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+\\.html";
+    private static final String TYPE_VIDEO_3   = "http://videoapi\\.my\\.mail\\.ru/videos/embed/mail/[a-z0-9\\-_]+/[a-z0-9\\-_]+/\\d+\\.html";
 
     private static final String html_private   = ">Access to video denied<";
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        final String addedlink = link.getDownloadURL();
+        if (addedlink.matches(TYPE_VIDEO_3)) {
+            final Regex urlregex = new Regex(addedlink, "videos/embed/mail/([a-z0-9\\-_]+)/([a-z0-9\\-_]+/\\d+\\.html)");
+            final String user = urlregex.getMatch(0);
+            final String urlpart = urlregex.getMatch(1);
+            link.setUrlDownload("http://my.mail.ru/mail/" + user + "/video/" + urlpart);
+        }
+    }
 
     @SuppressWarnings("deprecation")
     @Override
