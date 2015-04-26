@@ -98,7 +98,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     private boolean                      crawler_DialogsDisabled             = false;
     private boolean                      api_enabled                         = false;
     private boolean                      only_grab_new_entries               = false;
-    /* If this != null, API can be used */
+
+    /* If this != null, API is currently used */
     private boolean                      fast_linkcheck                      = false;
     private String                       parameter                           = null;
 
@@ -117,7 +118,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         return 1;
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "deprecation", "unchecked" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         time_crawl_started = System.currentTimeMillis();
         parameter = param.toString();

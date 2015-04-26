@@ -73,7 +73,9 @@ import org.jdownloader.DomainInfo;
 public class SaveTv extends PluginForHost {
 
     /* Static information */
-    private final static String  APIKEY                                    = "Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz";
+    private static final String  APIKEY_android_1_9_2                      = "Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz";
+    /* Date: 02.02.2015 */
+    // private static final String APIKEY_android_2_1_0 = "QTJGQ0YyNjQtMDBCNS00QkZELUE5RUQtNTlENDdGRDE5M0VF";
     public static final String   APIPAGE                                   = "https://api.save.tv/v2/Api.svc";
     public static final double   QUALITY_HD_MB_PER_MINUTE                  = 22;
     public static final double   QUALITY_H264_NORMAL_MB_PER_MINUTE         = 12.605;
@@ -107,9 +109,10 @@ public class SaveTv extends PluginForHost {
     private final String[]       formats                                   = new String[] { "HD", "H.264 HQ", "H.264 MOBILE" };
 
     /* Crawler settings */
-    private final static String  CRAWLER_ONLY_ADD_NEW_IDS                  = "CRAWLER_ONLY_ADD_NEW_IDS";
+    private static final String  CRAWLER_ONLY_ADD_NEW_IDS                  = "CRAWLER_ONLY_ADD_NEW_IDS";
     private static final String  ACTIVATE_BETA_FEATURES                    = "ACTIVATE_BETA_FEATURES";
     private static final String  USEAPI                                    = "USEAPI";
+    private static final String  CONFIGURED_APIKEY                         = "CONFIGURED_APIKEY";
     private static final String  CRAWLER_ACTIVATE                          = "CRAWLER_ACTIVATE";
     private static final String  CRAWLER_ENABLE_FASTER                     = "CRAWLER_ENABLE_FASTER_2";
     private static final String  CRAWLER_DISABLE_DIALOGS                   = "CRAWLER_DISABLE_DIALOGS";
@@ -945,6 +948,7 @@ public class SaveTv extends PluginForHost {
 
     }
 
+    @SuppressWarnings("deprecation")
     public static String api_login(final Browser br, final Account account, final boolean force) throws IOException, PluginException {
         final String lang = System.getProperty("user.language");
         String api_sessionid = account.getStringProperty(PROPERTY_ACCOUNT_API_SESSIONID, null);
@@ -952,15 +956,24 @@ public class SaveTv extends PluginForHost {
         /* Only generate new sessionID if we have none or it's older than 6 hours */
         if (api_sessionid == null || (System.currentTimeMillis() - lastUse) > 360000 || force) {
             api_prepBrowser(br);
-            api_doSoapRequest(br, "http://tempuri.org/ISession/CreateSession", "<apiKey>" + Encoding.Base64Decode(APIKEY) + "</apiKey>");
+            api_doSoapRequest(br, "http://tempuri.org/ISession/CreateSession", "<apiKey>" + api_getAPIKey() + "</apiKey>");
             api_sessionid = br.getRegex("<a:SessionId>([^<>\"]*?)</a:SessionId>").getMatch(0);
             final String errorcode = br.getRegex("<ErrorCodeID xmlns=\"http://schemas\\.datacontract\\.org/2004/07/SmilingBits\\.Data\\.BusinessLayer\\.Stv\\.Api\\.Contract\\.Common\">(\\d+)</ErrorCodeID>").getMatch(0);
             if ("1400".equals(errorcode)) {
-                /* Should never ever happen! */
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt (API-Key ungültig), bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (SubConfiguration.getConfig("save.tv").getStringProperty(SaveTv.CONFIGURED_APIKEY, SaveTv.defaultCONFIGURED_APIKEY) == SaveTv.defaultCONFIGURED_APIKEY) {
+                    /* Should never ever happen! */
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAPI-Key ungültig, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAPI key invalid, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken (API key invalid), please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    /* User used invalid custom API key. */
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAPI-Key ungültig, bitte die Standardeinstellung verwenden oder einen gültigen API-Key eingeben!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAPI key invalid, please use the standard setting or enter a valid API-Key!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
             }
             if (api_sessionid == null) {
@@ -1320,6 +1333,19 @@ public class SaveTv extends PluginForHost {
         }
     }
 
+    /** Returns the (user-defined) API key which is used for the login process. */
+    @SuppressWarnings("deprecation")
+    public static String api_getAPIKey() {
+        String apikey;
+        final String configuredKey = SubConfiguration.getConfig("save.tv").getStringProperty(CONFIGURED_APIKEY, defaultCONFIGURED_APIKEY).trim();
+        if (configuredKey.equals(defaultCONFIGURED_APIKEY)) {
+            apikey = Encoding.Base64Decode(SaveTv.APIKEY_android_1_9_2);
+        } else {
+            apikey = configuredKey;
+        }
+        return apikey;
+    }
+
     private static void saveCookies(final Browser br, final Account acc) {
         /* Save cookies */
         final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -1545,7 +1571,6 @@ public class SaveTv extends PluginForHost {
         return formattedFilename;
     }
 
-    @SuppressWarnings("deprecation")
     private static String getEpisodeNumber(final DownloadLink dl) {
         /* Old way TODO: Remove after 11.2014 */
         String episodenumber = Long.toString(getLongProperty(dl, "episodenumber", 0l));
@@ -1563,7 +1588,6 @@ public class SaveTv extends PluginForHost {
     /**
      * @return true: DownloadLink is a series false: DownloadLink is no series based on existing information.
      */
-    @SuppressWarnings("deprecation")
     private static boolean isSeries(final DownloadLink dl) {
         final String customStringForEmptyTags = getCustomStringForEmptyTags();
         /* For series */
@@ -1735,6 +1759,9 @@ public class SaveTv extends PluginForHost {
     private static final boolean defaultPreferAdsFree                       = true;
     private static final boolean defaultUseOriginalFilename                 = false;
     private static final String  defaultCustomDate                          = "dd.MM.yyyy";
+    private static final boolean defaultACTIVATE_BETA_FEATURES              = false;
+    private static final boolean defaultUSEAPI                              = false;
+    private static final String  defaultCONFIGURED_APIKEY                   = "JDDEFAULT";
     private static final boolean defaultDeleteTelecastIDAfterDownload       = false;
     private static final boolean defaultDeleteTelecastIDIfFileAlreadyExists = false;
 
@@ -1833,12 +1860,14 @@ public class SaveTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
 
         /* Advanced settings */
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Erweiterte Einstellungen:\r\n<html><p style=\"color:#F62817\"><b>Warnung: Ändere diese Einstellungen nur, wenn du weißt was du tust!</b></p></html>"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Erweiterte Einstellungen:\r\n<html><p style=\"color:#F62817\"><b>Warnung: Ändere die folgenden Einstellungen nur, wenn du weißt was du tust!\r\nMit einem Klick auf den gelben Pfeil rechts oben kannst du jederzeit zu den Standardeinstellungen zurück.</b></p></html>"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.ACTIVATE_BETA_FEATURES, JDL.L("plugins.hoster.SaveTv.ActivateBETAFeatures", "Aktiviere BETA-Features?\r\nINFO: Was diese Features sind und ob es aktuell welche gibt steht im Support Forum.")).setEnabled(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.ACTIVATE_BETA_FEATURES, JDL.L("plugins.hoster.SaveTv.ActivateBETAFeatures", "Aktiviere BETA-Features?\r\nINFO: Was diese Features sind und ob es aktuell welche gibt steht im Support Forum.")).setEnabled(defaultACTIVATE_BETA_FEATURES));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nINFO: Aktiviert man die API, sind einige Features wie folgt betroffen:\r\n-ENTFÄLLT: Option 'Nur Aufnahmen mit angewandter Schnittliste laden'\r\n-ENTFÄLLT: Anzeigen der Account Details in der Account-Verwaltung (Account Typ, Ablaufdatum, ...)\r\n-EINGESCHRÄNKT NUTZBAR: Benutzerdefinierte Dateinamen")));
+        final ConfigEntry api = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.USEAPI, JDL.L("plugins.hoster.SaveTv.UseAPI", "API verwenden?\r\nINFO: Aktiviert man die API, sind einige Features wie folgt betroffen:\r\n-ENTFÄLLT: Option 'Nur Aufnahmen mit angewandter Schnittliste laden'\r\n-ENTFÄLLT: Anzeigen der Account Details in der Account-Verwaltung (Account Typ, Ablaufdatum, ...)\r\n-EINGESCHRÄNKT NUTZBAR: Benutzerdefinierte Dateinamen")).setDefaultValue(defaultUSEAPI);
+        getConfig().addEntry(api);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CONFIGURED_APIKEY, JDL.L("plugins.hoster.SaveTv.apikey", "Benutzerdefinierten API-Key eingeben:\r\n<html><p style=\"color:#F62817\"><b>Warnung:</b> Die API ist nur mit gültigem API-Key (in der Regel mit den Standardeinstellungen) nutzbar!</p></html>")).setDefaultValue(defaultCONFIGURED_APIKEY).setEnabledCondidtion(api, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SaveTv.DISABLE_LINKCHECK, JDL.L("plugins.hoster.SaveTv.DisableLinkcheck", "Linkcheck deaktivieren <html><b>[Nicht empfohlen]</b>?\r\n<p style=\"color:#F62817\"><b>Vorteile:\r\n</b>-Links landen schneller im Linkgrabber und können auch bei Serverproblemen oder wenn die save.tv Seite komplett offline ist gesammelt werden\r\n<b>Nachteile:\r\n</b>-Im Linkgrabber werden zunächst nur die telecastIDs als Dateinamen angezeigt\r\n-Die endgültigen Dateinamen werden erst beim Downloadstart angezeigt</p></html>")).setDefaultValue(defaultDisableLinkcheck));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
