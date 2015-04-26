@@ -37,7 +37,7 @@ names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "filetobox.com", "
 urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multfile\\.com/files/[0-9A-Za-z]{1,15}", "http://(www\\.)?filetobox\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?exzip\\.net/download/[0-9A-Z]{8}", "http://(www\\.)?uploadseeds\\.com/(download\\.php\\?uid=|download/)[0-9A-Z]{8}", "http://(www\\.)?indirbindir\\.biz/files/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "http://(www\\.)?3ll3\\.in/(files|dl)/\\w{14,18}", "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}",
         "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" },
 
-        flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
@@ -118,8 +118,11 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(getOffline(parameter));
                 return decryptedLinks;
             }
+            // we apparently need a filename
+            final String filename = br.getRegex("<title>Download (.*?)</title>").getMatch(0);
             // if (br.containsHTML("golink")) br.postPage(br.getURL(), "golink=Access+Links");
-            br.getPage("http://go4up.com/download/gethosts/" + new Regex(parameter, "(\\w{1,15})/?$").getMatch(0));
+            br.getPage("http://go4up.com/download/gethosts/" + id + "/" + filename);
+            br.getRequest().setHtmlCode(br.toString().replaceAll("\\\\/", "/").replaceAll("\\\\\"", "\""));
         } else if (parameter.matches("(?i).+multiupfile\\.com/.+")) {
             // use standard page, status.php doesn't exist
             // br.getHeaders().put("Accept-Encoding", "identity");
@@ -194,7 +197,11 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             }
             if (dllink == null || dllink.equals("")) {
                 // Continue away, randomised pages can cause failures.
-                logger.warning("Possible plugin error: " + param.toString());
+                if (brc.containsHTML("Error link not available")) {
+                    logger.info("No link Available");
+                } else {
+                    logger.warning("Possible plugin error: " + param.toString());
+                }
                 logger.warning("Continuing...");
                 continue;
             }
