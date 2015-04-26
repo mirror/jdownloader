@@ -358,7 +358,7 @@ public class VimeoCom extends PluginForHost {
     public final String getXsrft(Browser br) throws PluginException {
         String xsrft = br.getRegex("vimeo\\.xsrft\\s*=\\s*('|\"|)([a-f0-9\\.]{32,})\\1").getMatch(1);
         if (xsrft == null) {
-            xsrft = br.getRegex("\"xsrft\"[\t\n\r ]*?:[\t\n\r ]*?\"([^<>\"]*?)\"").getMatch(0);
+            xsrft = br.getRegex("\"xsrft\"\\s*:\\s*\"([a-f0-9\\.]{32,})\"").getMatch(0);
         }
         if (xsrft == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

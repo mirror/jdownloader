@@ -499,7 +499,12 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         logger.warning("vimeo.com: Wrong password for Link: " + param.toString());
                     }
                     if (br.getHttpConnection().getResponseCode() == 418) {
-                        br.getPage(param.toString());
+                        // video id not parma.tostring.. this can be a channel page which is then converted internally.
+                        String parameter = param.toString();
+                        if (!parameter.matches("^https?://(?:www\\.)?vimeo\\.com/\\d+$")) {
+                            parameter = new Regex(param.toString(), "https?://[^/]+/").getMatch(-1) + new Regex(param.toString(), "(\\d+)$").getMatch(0);
+                        }
+                        br.getPage(parameter);
                     }
                 }
             }
