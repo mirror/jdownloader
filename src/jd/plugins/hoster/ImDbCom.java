@@ -43,9 +43,12 @@ public class ImDbCom extends PluginForHost {
         super(wrapper);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().matches(TYPE_VIDEO)) link.setUrlDownload("http://www.imdb.com/video/screenplay/" + new Regex(link.getDownloadURL(), IDREGEX).getMatch(0));
+        if (link.getDownloadURL().matches(TYPE_VIDEO)) {
+            link.setUrlDownload("http://www.imdb.com/video/screenplay/" + new Regex(link.getDownloadURL(), IDREGEX).getMatch(0));
+        }
     }
 
     @Override
@@ -67,13 +70,19 @@ public class ImDbCom extends PluginForHost {
         String ending = null;
         String filename = null;
         if (downloadURL.matches(TYPE_PHOTO)) {
-            if (!br.containsHTML("\"spinner\\-container\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (!br.containsHTML("\"spinner\\-container\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             DLLINK = br.getRegex("id=\"primary\\-img\"[^\t\n\r]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
             filename = br.getRegex("<div id=\"photo\\-caption\">([^<>\"]*?)</div>").getMatch(0);
-            if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null || DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (DLLINK.contains("@@")) {
                 final String qualityPart = DLLINK.substring(DLLINK.lastIndexOf("@@") + 2);
-                if (qualityPart != null) DLLINK = DLLINK.replace(qualityPart, "");
+                if (qualityPart != null) {
+                    DLLINK = DLLINK.replace(qualityPart, "");
+                }
             }
             filename = Encoding.htmlDecode(filename.trim());
             final String fid = new Regex(downloadLink.getDownloadURL(), "rm(\\d+)").getMatch(0);
@@ -84,22 +93,34 @@ public class ImDbCom extends PluginForHost {
                 filename = fid + "_" + filename;
             }
             ending = DLLINK.substring(DLLINK.lastIndexOf("."));
-            if (ending == null || ending.length() > 5) ending = ".jpg";
+            if (ending == null || ending.length() > 5) {
+                ending = ".jpg";
+            }
         } else {
             /*
              * get the fileName from main download link page because fileName on the /player subpage may be wrong
              */
             filename = br.getRegex("<title>(.*?) \\- IMDb</title>").getMatch(0);
             br.getPage(downloadURL + "/player");
-            if (br.containsHTML("(<title>IMDb Video Player: </title>|This video is not available\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (filename == null) filename = br.getRegex("<title>IMDb Video Player: (.*?)</title>").getMatch(0);
-            if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (br.containsHTML("(<title>IMDb Video Player: </title>|This video is not available\\.)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (filename == null) {
+                filename = br.getRegex("<title>IMDb Video Player: (.*?)</title>").getMatch(0);
+            }
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.getPage("http://www.imdb.com/video/imdb/" + new Regex(downloadLink.getDownloadURL(), IDREGEX).getMatch(0) + "/player?uff=3");
             DLLINK = br.getRegex("addVariable\\(\"file\", \"((http|rtmp).*?)\"\\)").getMatch(0);
-            if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (DLLINK.startsWith("rtmp")) {
                 final String playPath = br.getRegex("addVariable\\(\"id\", \"(.*?)\"\\)").getMatch(0);
-                if (playPath == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (playPath == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 DLLINK = DLLINK + "#" + playPath;
             }
             DLLINK = Encoding.htmlDecode(DLLINK);
@@ -116,7 +137,7 @@ public class ImDbCom extends PluginForHost {
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = openConnection(br2, DLLINK);
                 if (!con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                 } else {
@@ -133,11 +154,27 @@ public class ImDbCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
+        }
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (DLLINK.startsWith("rtmp")) {
-            if (isStableEnviroment()) { throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!"); }
+            if (isStableEnviroment()) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!");
+            }
             dl = new RTMPDownload(this, downloadLink, DLLINK);
             final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
@@ -150,7 +187,9 @@ public class ImDbCom extends PluginForHost {
             ((RTMPDownload) dl).startDownload();
         } else {
             int maxChunks = 0;
-            if (downloadLink.getDownloadURL().matches(TYPE_VIDEO)) maxChunks = 1;
+            if (downloadLink.getDownloadURL().matches(TYPE_VIDEO)) {
+                maxChunks = 1;
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, maxChunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
@@ -168,7 +207,9 @@ public class ImDbCom extends PluginForHost {
             prev = prev.replaceAll(",|\\.", "");
         }
         final int rev = Integer.parseInt(prev);
-        if (rev < 10000) { return true; }
+        if (rev < 10000) {
+            return true;
+        }
         return false;
     }
 

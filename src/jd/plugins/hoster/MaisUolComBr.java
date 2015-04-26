@@ -78,7 +78,7 @@ public class MaisUolComBr extends PluginForHost {
             for (final Object o : ressourcelist) {
                 final LinkedHashMap<String, Object> format = (LinkedHashMap<String, Object>) o;
                 final int id = ((Number) format.get("id")).intValue();
-                if (id == 9) {
+                if (id == 9 || id == 2) {
                     DLLINK = (String) format.get("url");
                     break;
                 }

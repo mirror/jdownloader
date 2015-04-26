@@ -186,6 +186,9 @@ public class DrTuberCom extends PluginForHost {
                 if (filename == null) {
                     filename = br.getRegex("class=\"hd_title\" style=\"text-align:left;\">([^<>\"]*?)</h1>").getMatch(0);
                 }
+                if (filename == null) {
+                    filename = br.getRegex("<title>([^<>\"]*?) \\- \\d+ \\- DrTuber\\.com</title>").getMatch(0);
+                }
                 if (allow_uncrypted_downloadlink) {
                     DLLINK = getUncryptedFinallink();
                 }
@@ -194,7 +197,7 @@ public class DrTuberCom extends PluginForHost {
                     if (new_handling) {
                         /*
                          * Very very very very bad js workaround
-                         *
+                         * 
                          * IMPORTANT: If we find no other way to fix this in the future, switch to /embed/ links, old handling still works
                          * fine for them
                          */

@@ -182,7 +182,8 @@ public class SaveTv extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://free.save.tv/STV/S/misc/miscShowTermsConditionsInMainFrame.cfm";
+        /* Old: http://free.save.tv/STV/S/misc/miscShowTermsConditionsInMainFrame.cfm */
+        return "http://www.save.tv/STV/S/misc/terms.cfm";
     }
 
     @SuppressWarnings("deprecation")
@@ -220,6 +221,15 @@ public class SaveTv extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         link.setProperty("type", EXTENSION);
+        try {
+            /* Set linkID for correct dupe-check */
+            if (link.getLinkID() == null || !link.getLinkID().matches("\\d+")) {
+                link.setLinkID(getTelecastId(link));
+            }
+        } catch (final Throwable e) {
+            /* Not available in old 0.9.581 Stable */
+            /* TODO: Use getLinkID() instead of getTelecastId(DownloadLink) once JD1 is dead */
+        }
         /* Show telecast-ID + extension as dummy name for all error cases */
         if (link.getName() != null && (link.getName().contains(getTelecastId(link)) && !link.getName().endsWith(EXTENSION) || link.getName().contains("VideoArchiveDetails.cfm"))) {
             link.setName(getTelecastId(link) + EXTENSION);
