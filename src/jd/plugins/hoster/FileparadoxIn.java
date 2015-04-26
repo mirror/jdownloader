@@ -59,6 +59,7 @@ import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -74,7 +75,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidsonic.com", "fileparadox.com", "fileparadox.in" }, urls = { "https?://(www\\.)?(fileparadox\\.(in|com)|rapidsonic\\.com)/((vid)?embed-)?[a-z0-9]{12}", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidsonic.com", "fileparadox.com", "fileparadox.in" }, urls = { "https?://(www\\.)?(fileparadox\\.(in|com)|rapidsonic\\.com)/((vid)?embed-)?[a-z0-9]{12}", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0, 0 })
 @SuppressWarnings("deprecation")
 public class FileparadoxIn extends PluginForHost {
 
@@ -713,7 +714,7 @@ public class FileparadoxIn extends PluginForHost {
         }
         /** Error handling for account based restrictions */
         // non account && free account (you would hope..)
-        final String an = "( can download files up to |This file reached max downloads limit|>The file you requested reached max downloads limit for Free Users|)";
+        final String an = "( can download files up to |This file reached max downloads limit|>The file you requested reached max downloads limit for Free Users)";
         // these errors imply an account been used already. So we assume (Free Account), which is the case for most sites.
         final String fa = "(Upgrade your account to download (bigger|larger) files)";
         // these errors imply (Premium Required) from the outset.
@@ -1478,7 +1479,7 @@ public class FileparadoxIn extends PluginForHost {
             String code = null;
             for (String link : sitelinks) {
                 if (link.matches("(https?.+" + DOMAINS + ")?/captchas/[a-z0-9]{18,}\\.jpg")) {
-                    Browser testcap = br.cloneBrowser();
+                    final Browser testcap = br.cloneBrowser();
                     URLConnectionAdapter con = null;
                     try {
                         con = testcap.openGetConnection(link);
@@ -1488,16 +1489,19 @@ public class FileparadoxIn extends PluginForHost {
                                 break;
                             }
                         }
-                    } catch (Exception e) {
+                    } catch (final Exception e) {
+                        if (e instanceof CaptchaException) {
+                            throw e;
+                        }
                         continue;
                     }
                 }
             }
             if (inValidate(code)) {
-                logger.warning("Standard captcha captchahandling broken!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.warning("User Aborted");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            form.put("code", code);
+            form.put("code", Encoding.urlEncode(code));
         } else if (form.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             logger.info("Detected captcha method \"Re Captcha\"");
             final Browser captcha = br.cloneBrowser();
