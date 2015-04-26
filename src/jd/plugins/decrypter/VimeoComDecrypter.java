@@ -84,7 +84,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         }
         if (parameter.matches(LINKTYPE_USER)) {
             br.getPage(parameter);
-            if (br.containsHTML(">We couldn't find that page")) {
+            if (br.containsHTML(">\\s*We couldn(?:'|&rsquo;)t find that page")) {
                 final DownloadLink link = createDownloadlink("decryptedforVimeoHosterPlugin1://vimeo\\.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
                 link.setAvailable(false);
                 link.setProperty("offline", true);
