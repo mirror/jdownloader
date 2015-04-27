@@ -19,10 +19,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -112,6 +112,7 @@ public class CollectionofbestpornCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
+            br2.getHeaders().put("Range", "bytes=" + 0 + "-");
             try {
                 con = openConnection(br2, DLLINK);
             } catch (final BrowserException e) {
@@ -126,7 +127,15 @@ public class CollectionofbestpornCom extends PluginForHost {
             return AvailableStatus.TRUE;
         } finally {
             try {
-                con.disconnect();
+                try {
+                    if (con instanceof HeadRequest) {
+                        br2.followConnection();
+                    }
+                } finally {
+                    if (con != null) {
+                        con.disconnect();
+                    }
+                }
             } catch (final Throwable e) {
             }
         }
@@ -135,6 +144,7 @@ public class CollectionofbestpornCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
@@ -150,30 +160,6 @@ public class CollectionofbestpornCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = openConnection(br2, dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
     }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */
