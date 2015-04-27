@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -28,8 +29,8 @@ import jd.plugins.DownloadLink;
 
 /**
  * NOTE: <br />
- * - regex pattern seems to be case sensitive, our url listener is case insensitive by default... so we need to ENFORCE case sensitivity.
- * -raztoki 20150308 <br />
+ * - contains recaptchav2, and uids are not case senstive any longer -raztoki 20150427 - regex pattern seems to be case sensitive, our url
+ * listener is case insensitive by default... so we need to ENFORCE case sensitivity. -raztoki 20150308 <br />
  * - uid seems to be fixed to 5 chars (at this time) -raztoki 20150308 <br />
  * - uses cloudflare -raztoki 20150308 <br />
  *
@@ -37,7 +38,7 @@ import jd.plugins.DownloadLink;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shink.in" }, urls = { "http://(www\\.)?shink\\.in/(?-i)[A-Z0-9]{5}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shink.in" }, urls = { "http://(www\\.)?shink\\.in/(?-i)[a-zA-Z0-9]{5}" }, flags = { 0 })
 public class ShinkIn extends antiDDoSForDecrypt {
 
     public ShinkIn(PluginWrapper wrapper) {
@@ -62,6 +63,11 @@ public class ShinkIn extends antiDDoSForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        // can contain recaptchav2
+        if (dform.containsHTML("class=(\"|')g-recaptcha\\1")) {
+            final String recaptchaV2Response = getRecaptchaV2Response(param);
+            dform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+        }
         submitForm(dform);
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
@@ -71,6 +77,14 @@ public class ShinkIn extends antiDDoSForDecrypt {
         decryptedLinks.add(createDownloadlink(finallink));
 
         return decryptedLinks;
+    }
+
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
+    }
+
+    public boolean hasAutoCaptcha() {
+        return false;
     }
 
 }
