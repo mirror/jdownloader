@@ -418,12 +418,15 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                         final String response = getCaptchaCode("recaptcha", cf, param);
+                        if (inValidate(response)) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
                         cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
                         cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                         ibr.submitForm(cloudflare);
                         if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
-                            logger.warning("Possible plugin error within cloudflare handling");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            logger.warning("Wrong captcha");
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
                         // if it works, there should be a redirect.
                         if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
@@ -445,10 +448,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
                     Thread.sleep(5500);
                     ibr.submitForm(cloudflare);
-                    if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
-                        logger.warning("Possible plugin error within cloudflare handling");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
                     // if it works, there should be a redirect.
                     if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
                         ibr.getPage(ibr.getRedirectLocation());
@@ -672,6 +671,68 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         } else {
             return false;
         }
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    protected final String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    protected final String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from provided Browser.
+     *
+     * @author raztoki
+     * */
+    protected final String getJson(final Browser ibr, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response provided String source.
+     *
+     * @author raztoki
+     * */
+    protected final String getJsonArray(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    protected final String getJsonArray(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return String[] value from provided JSon Array
+     *
+     * @author raztoki
+     * @param source
+     * @return
+     */
+    protected final String[] getJsonResultsFromArray(final String source) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     /**
