@@ -52,7 +52,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static Object         LOCK                            = new Object();
     private static final String   FACEBOOKMAINPAGE                = "http://www.facebook.com";
     private int                   DIALOGRETURN                    = -1;
-    private static final String   FASTLINKCHECK_PICTURES          = "FASTLINKCHECK_PICTURES";
 
     private static final String   TYPE_FBSHORTLINK                = "http(s)?://(www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
     private static final String   TYPE_FB_REDIRECT_TO_EXTERN_SITE = "https?://l\\.facebook\\.com/l/[^/]+/.+";
@@ -81,7 +80,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     private static final String   CONTENTUNAVAILABLE              = ">Dieser Inhalt ist derzeit nicht verfügbar|>This content is currently unavailable<";
     private String                PARAMETER                       = null;
-    private boolean               FASTLINKCHECK_PICTURES_ENABLED  = false;
+    private boolean               fastLinkcheckPictures           = jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;                                              ;
     private boolean               logged_in                       = false;
     final ArrayList<DownloadLink> decryptedLinks                  = new ArrayList<DownloadLink>();
 
@@ -94,6 +93,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         String parameter = param.toString().replace("#!/", "");
         PARAMETER = parameter;
+        fastLinkcheckPictures = getPluginConfig().getBooleanProperty(jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES, jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT);
         if (PARAMETER.matches(TYPE_SINGLE_VIDEO_MANY_TYPES) || PARAMETER.matches(TYPE_SINGLE_VIDEO_EMBED) || PARAMETER.matches(TYPE_SINGLE_VIDEO_VIDEOS) || PARAMETER.contains("/video.php?v=")) {
             String id;
             if (PARAMETER.matches(TYPE_SINGLE_VIDEO_VIDEOS)) {
@@ -117,7 +117,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
         br.getHeaders().put("User-Agent", jd.plugins.hoster.FaceBookComVideos.Agent);
         br.setFollowRedirects(false);
-        FASTLINKCHECK_PICTURES_ENABLED = SubConfiguration.getConfig("facebook.com").getBooleanProperty(FASTLINKCHECK_PICTURES, false);
         try {
             if (parameter.matches(TYPE_FBSHORTLINK)) {
                 br.getPage(parameter);
@@ -830,7 +829,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     if (!logged_in) {
                         dl.setProperty("nologin", true);
                     }
-                    if (FASTLINKCHECK_PICTURES_ENABLED) {
+                    if (fastLinkcheckPictures) {
                         dl.setAvailable(true);
                     }
                     try {/* JD2 only */
@@ -1044,7 +1043,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         if (!logged_in) {
             dl.setProperty("nologin", true);
         }
-        if (FASTLINKCHECK_PICTURES_ENABLED) {
+        if (fastLinkcheckPictures) {
             dl.setAvailable(true);
         }
         // Set temp name, correct name will be set in hosterplugin later
