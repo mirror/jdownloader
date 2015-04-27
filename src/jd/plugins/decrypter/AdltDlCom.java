@@ -147,9 +147,12 @@ public class AdltDlCom extends PluginForDecrypt {
         }
     }
 
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return true;
+    }
+
+    public boolean hasAutoCaptcha() {
+        return false;
     }
 
 }
