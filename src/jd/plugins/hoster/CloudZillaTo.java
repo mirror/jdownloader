@@ -142,6 +142,8 @@ public class CloudZillaTo extends PluginForHost {
             br.followConnection();
             if (br.containsHTML("Invalid or expired download ticket")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Invalid or expired download ticket'", 1 * 60 * 1000l);
+            } else if (br.toString().equals("No htmlCode read")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Server error, data not received as expected");
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
