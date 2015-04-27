@@ -43,7 +43,7 @@ public abstract class RecaptchaV1Challenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public BrowserViewport getBrowserViewport(BrowserWindow screenResource) {
+    public BrowserViewport getBrowserViewport(BrowserWindow screenResource, Rectangle elementBounds) {
 
         Rectangle rect = screenResource.getRectangleByColor(0xff9900, 0, 0, 1d, 0, 0);
 
@@ -167,9 +167,71 @@ public abstract class RecaptchaV1Challenge extends AbstractBrowserChallenge {
             final Recaptcha rc = new Recaptcha(br);
             rc.setId(siteKey);
 
-            rc.load();
+            AbstractBrowserChallenge dummyChallenge = new AbstractBrowserChallenge("recaptcha", getPlugin()) {
+
+                @Override
+                public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
+                    return false;
+                }
+
+                @Override
+                public String getHTML() {
+                    String html;
+                    try {
+                        URL url = RecaptchaV1Challenge.class.getResource("recaptchaGetChallenge.html");
+                        html = IO.readURLToString(url);
+
+                        html = html.replace("%%%sitekey%%%", siteKey);
+                        return html;
+                    } catch (IOException e) {
+                        throw new WTFException(e);
+                    }
+                }
+
+                @Override
+                public boolean onGetRequest(BrowserReference browserReference, GetRequest request, HttpResponse response) throws IOException {
+                    String pDo = request.getParameterbyKey("do");
+                    if (pDo.equals("setChallenge")) {
+                        String url = request.getParameterbyKey("url");
+                        rc.setChallenge(url);
+                        response.getOutputStream(true).write("true".getBytes("UTF-8"));
+                        synchronized (rc) {
+                            rc.notifyAll();
+                        }
+                        return true;
+                    }
+                    return super.onGetRequest(browserReference, request, response);
+                }
+
+                @Override
+                public BrowserViewport getBrowserViewport(BrowserWindow screenResource, Rectangle elementBounds) {
+                    return null;
+                }
+            };
+            BrowserReference ref = new BrowserReference(dummyChallenge) {
+
+                @Override
+                public void onResponse(String request) {
+                }
+
+            };
+            ref.open();
+            try {
+                synchronized (rc) {
+                    rc.wait(10000);
+                }
+            } finally {
+                ref.dispose();
+            }
+            if (rc.getChallenge() == null) {
+                rc.load();
+
+            } else {
+                rc.setCaptchaAddress(rc.getChallenge());
+            }
 
             rc.downloadCaptcha(captchaFile);
+
             basicCaptchaChallenge = new BasicCaptchaChallengeDelegate(this, captchaFile, rc.getChallenge()) {
 
             };
@@ -179,5 +241,4 @@ public abstract class RecaptchaV1Challenge extends AbstractBrowserChallenge {
             throw new WTFException(e);
         }
     }
-
 }

@@ -688,10 +688,11 @@ public abstract class PluginForDecrypt extends Plugin {
                 default:
                     return false;
                 }
+
             }
 
             @Override
-            public BrowserViewport getBrowserViewport(BrowserWindow screenResource) {
+            public BrowserViewport getBrowserViewport(BrowserWindow screenResource, java.awt.Rectangle elementBounds) {
                 return null;
             }
         };

@@ -1,3 +1,4 @@
+
 <!doctype html>
 <!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
 <!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
@@ -15,53 +16,15 @@
 <link rel="stylesheet" href="resource?style.css" type="text/css" />
 <link
 	href='https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz:400,700'
-	rel='stylesheet' type='text/css' />
+	rel='stylesheet' type='text/css'/>
 <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro'
-	rel='stylesheet' type='text/css' />
+	rel='stylesheet' type='text/css'/>
 <link rel="shortcut icon" href="resource?favicon.ico"
 	type="image/x-icon" />
-<style type="text/css">
-iframe {
-	border-width: 1px;
-	border-style: solid;
-	border-color: #ff9900;
-}
-</style>
 
-<script src='http://www.google.com/recaptcha/api.js' async defer></script>
-<script src='resource?browserCaptcha.js'></script>
-<script type="text/javascript">
-    function success() {
-        // document.send.submit();
-        // closeWindowOrTab();
-
-        var xhr = new XMLHttpRequest();
-        xhr.ontimeout = function() {
-            console.error("The request for " + url + " timed out.");
-        };
-        xhr.onload = function() {
-            closeWindowOrTab();
-        };
-        xhr.open("GET", window.location.href + "&do=solve&response=" + document.getElementById("g-recaptcha-response").value, true);
-        xhr.send();
-
-    }
-    window.onload = function() {
-
-        if (document.getElementsByTagName('iframe').length > 0) {
-       
-            init(document.getElementsByTagName('iframe')[0]);
-        } else {
-
-            setTimeout(window.onload, 100);
-        }
-    }
-</script>
 <!-- <script src="http://beta.jdownloader.org/js/modernizr-2.6.2.min.js?cdn=4"></script>-->
 </head>
 <body id="support">
-
-
 	<!--[if lte IE 7]><p class=chromeframe>Your browser is <em>ancient!</em> <a href="http://browsehappy.com/">Upgrade to a different browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to experience this site.</p><![endif]-->
 	<header>
 		<div class="wrap">
@@ -78,30 +41,43 @@ iframe {
 
 	<div id=main>
 
-		<div class=wrap style="height: 350px">
-			<article>
-				<h2>Please solve this Captcha challenge:</h2>
-				<div class="sample-form"">
-
-					<form name="send" method="POST">
-
-						<div class="">
-							<!-- BEGIN: ReCAPTCHA implementation example. -->
-							<div data-callback="success" id="rc" class="g-recaptcha"
-								data-sitekey="%%%sitekey%%%"></div>
-							<!-- Optional noscript fallback. -->
-							<noscript>
-								<p>Javascript is required!</p>
-							</noscript>
-							<!-- END: ReCAPTCHA implementation example. -->
-						</div>
-
-					</form>
-				</div>
-			</article>
+		<div class=wrap>
+		<article class="teaser">%%%html%%%</article>
 		</div>
 	</div>
-	<footer style="height: 20px"> </footer>
+	<footer>
+		<div class=wrap>
+
+			<nav>
+				<ul>
+					<li><span>AppWork</span>
+						<ul>
+							<li><a href="http://wemakeyourappwork.com/#contact">Contact
+									us</a>
+							<li><a href="http://wemakeyourappwork.com/#about">About
+									us</a>
+							<li><a href="http://wemakeyourappwork.com/#jobs">Jobs</a>
+						</ul>
+					<li><span>JDownloader</span>
+						<ul>
+							<li><a href="//board.jdownloader.org/?langid=6">Forums</a>
+							<li><a href="http://wemakeyourappwork.com/#contact"">Imprint</a>
+						</ul>
+					<li><span>Find us on</span>
+						<ul class="social">
+							<li><span class=facebook></span><a
+								href="//www.facebook.com/jdownloader">Facebook</a>
+							<li><span class=twitter></span><a
+								href="//www.twitter.com/jdownloader">Twitter</a>
+							<li><span class=googleplus></span><a
+								href="https://plus.google.com/103152842847117988112/">Google+</a>
+						</ul>
+				</ul>
+			</nav>
+			<span id="copyright">AppWork GmbH Copyright 2011-2015. All
+				Rights Reserved. </span>
+		</div>
+	</footer>
 	<!-- JavaScript at the bottom for fast page loading -->
 
 	<!-- Grab Google CDN's jQuery, with a protocol relative URL; fall back to local if offline -->

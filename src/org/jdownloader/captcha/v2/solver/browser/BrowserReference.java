@@ -1,13 +1,18 @@
 package org.jdownloader.captcha.v2.solver.browser;
 
+import java.awt.Rectangle;
 import java.io.IOException;
+import java.net.URL;
+import java.util.HashMap;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.HttpHandlerInfo;
@@ -32,12 +37,45 @@ public abstract class BrowserReference implements HttpRequestHandler {
     private double                   scale;
     private BrowserWindow            browserWindow;
     private BrowserViewport          viewport;
+    private HashMap<String, URL>     resourceIds;
+    private HashMap<String, String>  types;
+    {
+        resourceIds = new HashMap<String, URL>();
+        resourceIds.put("style.css", BrowserReference.class.getResource("html/style.css"));
+        resourceIds.put("plax-1.png", BrowserReference.class.getResource("html/plax-1.png"));
+        resourceIds.put("plax-2.png", BrowserReference.class.getResource("html/plax-2.png"));
+        resourceIds.put("plax-3.png", BrowserReference.class.getResource("html/plax-3.png"));
+        resourceIds.put("plax-4.png", BrowserReference.class.getResource("html/plax-4.png"));
+        resourceIds.put("plax-5.png", BrowserReference.class.getResource("html/plax-5.png"));
+        resourceIds.put("plax-6.png", BrowserReference.class.getResource("html/plax-6.png"));
+        resourceIds.put("script.min.js", BrowserReference.class.getResource("html/script.min.js"));
+        resourceIds.put("teaser.png", BrowserReference.class.getResource("html/teaser.png"));
+        resourceIds.put("body-bg.jpg", BrowserReference.class.getResource("html/body-bg.jpg"));
+        resourceIds.put("header-bg.jpg", BrowserReference.class.getResource("html/header-bg.jpg"));
+        resourceIds.put("logo.png", BrowserReference.class.getResource("html/logo.png"));
+        resourceIds.put("mediumblue-bg.jpg", BrowserReference.class.getResource("html/mediumblue-bg.jpg"));
+        resourceIds.put("social.png", BrowserReference.class.getResource("html/social.png"));
+        resourceIds.put("twitterbird.png", BrowserReference.class.getResource("html/twitterbird.png"));
+        resourceIds.put("fuuuu.png", BrowserReference.class.getResource("html/fuuuu.png"));
+        resourceIds.put("favicon.ico", BrowserReference.class.getResource("html/favicon.ico"));
+        resourceIds.put("browserCaptcha.js", BrowserReference.class.getResource("html/browserCaptcha.js"));
+        resourceIds.put("jquery-1.9.1-min.js", BrowserReference.class.getResource("html/jquery-1.9.1-min.js"));
+
+        types = new HashMap<String, String>();
+        types.put("html", "text/html; charset=utf-8");
+        types.put("css", "text/css; charset=utf-8");
+        types.put("png", "image/png");
+        types.put("js", "text/javascript; charset=utf-8");
+        types.put("jpg", "image/jpeg");
+        types.put("ico", "image/x-icon");
+    }
 
     public BrowserReference(AbstractBrowserChallenge challenge) {
         this.challenge = challenge;
         id = new UniqueAlltimeID();
         // this should get setter in advanced.
         this.port = 12345;
+
     }
 
     public void open() throws IOException {
@@ -124,11 +162,22 @@ public abstract class BrowserReference implements HttpRequestHandler {
     @Override
     public boolean onGetRequest(GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
 
-        if (!StringUtils.equals(request.getRequestedPath(), "/" + Hash.getMD5(this.challenge.getPlugin().getClass().getName()))) {
-            return false;
-        }
-
         try {
+            if ("/resource".equals(request.getRequestedPath())) {
+                String resourceID = request.getRequestedURLParameters().get(0).value;
+                URL resource = resourceIds.get(resourceID);
+                if (resource != null) {
+                    response.setResponseCode(ResponseCode.SUCCESS_OK);
+                    response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, types.get(Files.getExtension(resourceID))));
+                    response.getOutputStream(true).write(IO.readURL(resource));
+
+                    return true;
+                }
+            }
+            if (!StringUtils.equals(request.getRequestedPath(), "/" + Hash.getMD5(this.challenge.getPlugin().getClass().getName()))) {
+                return false;
+            }
+
             String pDo = request.getParameterbyKey("do");
             String id = request.getParameterbyKey("id");
             if (!StringUtils.equals(id, this.id.getID() + "")) {
@@ -139,13 +188,22 @@ public abstract class BrowserReference implements HttpRequestHandler {
 
             if ("loaded".equals(pDo)) {
 
-                browserWindow = new BrowserWindow(Integer.parseInt(request.getParameterbyKey("x")), Integer.parseInt(request.getParameterbyKey("y")), Integer.parseInt(request.getParameterbyKey("w")), Integer.parseInt(request.getParameterbyKey("h")), Integer.parseInt(request.getParameterbyKey("vw")), Integer.parseInt(request.getParameterbyKey("vh")));
+                HTTPHeader ua = request.getRequestHeaders().get("User-Agent");
+
+                browserWindow = new BrowserWindow(ua == null ? null : ua.getValue(), (int) Double.parseDouble(request.getParameterbyKey("x")), (int) Double.parseDouble(request.getParameterbyKey("y")), (int) Double.parseDouble(request.getParameterbyKey("w")), (int) Double.parseDouble(request.getParameterbyKey("h")), (int) Double.parseDouble(request.getParameterbyKey("vw")), (int) Double.parseDouble(request.getParameterbyKey("vh")));
                 if (BrowserSolverService.getInstance().getConfig().isAutoClickEnabled()) {
+                    Rectangle elementBounds = null;
+                    try {
+                        elementBounds = new Rectangle((int) Double.parseDouble(request.getParameterbyKey("eleft")), (int) Double.parseDouble(request.getParameterbyKey("etop")), (int) Double.parseDouble(request.getParameterbyKey("ew")), (int) Double.parseDouble(request.getParameterbyKey("eh")));
+                    } catch (Throwable e) {
 
-                    this.viewport = challenge.getBrowserViewport(browserWindow);
-                    viewport.onLoaded();
+                    }
+                    this.viewport = challenge.getBrowserViewport(browserWindow, elementBounds);
+                    if (viewport != null) {
+                        viewport.onLoaded();
+                    }
 
-                    response.getOutputStream(true).write("ok".getBytes("UTF-8"));
+                    response.getOutputStream(true).write("Thanks".getBytes("UTF-8"));
 
                 }
                 return true;
@@ -160,6 +218,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
             }
             return true;
         } catch (Throwable e) {
+            e.printStackTrace();
             error(response, e);
             return true;
         }

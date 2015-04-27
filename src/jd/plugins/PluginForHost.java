@@ -17,6 +17,7 @@
 package jd.plugins;
 
 import java.awt.Component;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -584,7 +585,7 @@ public abstract class PluginForHost extends Plugin {
                 }
 
                 @Override
-                public BrowserViewport getBrowserViewport(BrowserWindow screenResource) {
+                public BrowserViewport getBrowserViewport(BrowserWindow screenResource, Rectangle elementBounds) {
                     return null;
                 }
 

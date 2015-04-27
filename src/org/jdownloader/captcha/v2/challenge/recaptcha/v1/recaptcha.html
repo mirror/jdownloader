@@ -40,35 +40,7 @@ iframe {
 		</div>
 		<input id="challenge" type="hidden" name="challenge" value="">
 		<script type="text/javascript">
-			function refresh() {
-
-				try {
-					var xmlHttp = new XMLHttpRequest();
-
-					xmlHttp.open("GET", window.location.href + "&do=canClose",
-							false);
-					xmlHttp.send();
-					console.log(xmlHttp.responseText);
-					if (xmlHttp.responseText == "true") {
-						//works in chrome
-						window.open('', '_self', '');
-						window.close();
-						console.log("Close");
-						return;
-					}
-				} catch (err) {
-					//works in chrome
-					window.open('', '_self', '');
-					window.close();
-
-					return;
-				}
-				// make Ajax call here, inside the callback call:
-				setTimeout(refresh, 500);
-				// ...
-
-			}
-
+			
 			document.getElementById("challenge").value = RecaptchaState.challenge;
 
 			window.onload = function() {
