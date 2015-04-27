@@ -870,7 +870,6 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             requestFileInformation(link);
             doFree(link);
         } else {
-            // linkcheck otherwise users get banned ip when trying to download offline content. jdlog://3063296763241/
             requestFileInformation(link);
             final boolean preferHttps = userPrefersHttps() && !StringUtils.equalsIgnoreCase(account.getStringProperty("group", null), "VIP");
             final String linkID = getID(link);
@@ -893,7 +892,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             loadAPIWorkAround(br);
             br.setFollowRedirects(true);
             br.setKeepResponseContentBytes(true);
-            getPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=linkdata&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&lid=" + linkID);
+            br.getPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=linkdata&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&lid=" + linkID);
             final byte[] responseBytes = br.getRequest().getResponseBytes();
             final String responseUTF8 = new String(responseBytes, "UTF-8");
             final String responseISO88591 = new String(responseBytes, "ISO-8859-1");
@@ -1074,7 +1073,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     /* Used for API request - also handles (server) errors */
     private String apiGetPage(final String link) throws Exception {
         loadAPIWorkAround(br);
-        getPage(link);
+        br.getPage(link);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
         }

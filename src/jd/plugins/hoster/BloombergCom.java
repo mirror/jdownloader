@@ -33,36 +33,42 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video.cnbc.com" }, urls = { "http://video\\.cnbc\\.comdecrypted\\d+" }, flags = { 2 })
-public class CnbcCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bloomberg.com" }, urls = { "http://bloomberg\\.comdecrypted\\d+" }, flags = { 2 })
+public class BloombergCom extends PluginForHost {
 
     /** Settings stuff */
     private static final String             FAST_LINKCHECK = "FAST_LINKCHECK";
 
     public static HashMap<String, String[]> formats        = new HashMap<String, String[]>() {
-        {
-            /*
-             * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec,
-             * audioBitrate
-             */
-            put("mpeg4_200000_Download", new String[] { null, null, "400x224", "AAC", null });
-            put("mpeg4_500000_Download", new String[] { null, null, "534x300", "AAC", null });
-            put("mpeg4_600000_Download", new String[] { null, null, "480x270", "AAC", null });
-            put("mpeg4_1100000_Download", new String[] { null, null, "704x396", "AAC", null });
+                                                               {
+                                                                   /*
+                                                                    * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec,
+                                                                    * audioBitrate
+                                                                    */
+                                                                   put("mpg2_720x480_mpg2", new String[] { "mpg2", null, "720x480", "mpg2", null });
+                                                                   put("h264_320x180_150_aac_16", new String[] { "h264", "150", "320x180", "AAC", "16" });
+                                                                   put("h264_240x140_150_aac_64", new String[] { "h264", "150", "240x140", "AAC", "64" });
+                                                                   put("h264_320x180_240_aac_64", new String[] { "h264", "240", "320x180", "AAC", "64" });
+                                                                   put("h264_640x360_440_aac_64", new String[] { "h264", "440", "640x360", "AAC", "64" });
+                                                                   put("h264_640x360_700_aac_64", new String[] { "h264", "700", "640x360", "AAC", "64" });
+                                                                   put("h264_1280x720_1200_aac_64", new String[] { "h264", "1200", "1280x720", "AAC", "64" });
+                                                                   put("h264_1280x720_1800_aac_64", new String[] { "h264", "1800", "1280x720", "AAC", "64" });
+                                                                   put("h264_1280x720_2400_aac_64", new String[] { "h264", "2400", "1280x720", "AAC", "64" });
+
         }
-    };
+                                                           };
 
     private String                          DLLINK         = null;
 
     @SuppressWarnings("deprecation")
-    public CnbcCom(final PluginWrapper wrapper) {
+    public BloombergCom(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.cnbc.com/id/15837353/";
+        return "http://www.bloomberg.com/tos";
     }
 
     @Override
@@ -133,11 +139,14 @@ public class CnbcCom extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's CNBC plugin helps downloading videoclips from video.cnbc.com.";
+        return "JDownloader's Bloomberg plugin helps downloading videoclips from bloomberg.com.";
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.CnbcCom.FastLinkcheck", "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(false));
+        /* Currently not needed as we get the filesize from the XML */
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK,
+        // JDL.L("plugins.hoster.BloombergCom.FastLinkcheck",
+        // "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(false));
         final Iterator<Entry<String, String[]>> it = formats.entrySet().iterator();
         while (it.hasNext()) {
             /*
@@ -173,7 +182,7 @@ public class CnbcCom extends PluginForHost {
             if (usertext.endsWith(" ")) {
                 usertext = usertext.substring(0, usertext.lastIndexOf(" "));
             }
-            final ConfigEntry vidcfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), internalname, JDL.L("plugins.hoster.CnbcCom.ALLOW_" + internalname, usertext)).setDefaultValue(true);
+            final ConfigEntry vidcfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), internalname, JDL.L("plugins.hoster.BloombergCom.ALLOW_" + internalname, usertext)).setDefaultValue(true);
             getConfig().addEntry(vidcfg);
         }
     }

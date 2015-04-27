@@ -48,6 +48,7 @@ public class ClpfshD extends PluginForDecrypt {
 
     /* Tags: rtl-interactive.de */
 
+    @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink cryptedLink, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -72,7 +73,7 @@ public class ClpfshD extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        if (!br.containsHTML("CFAdBrandedPlayer\\.js") && !br.containsHTML("CFPlayerBasic\\.js")) {
+        if (!br.containsHTML("CFAdBrandedPlayer\\.js") && !br.containsHTML("CFPlayerBasic(\\.min)?\\.js")) {
             logger.info("Link offline/unsupported: " + parameter);
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
