@@ -415,12 +415,15 @@ public abstract class antiDDoSForHost extends PluginForHost {
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                         final String response = getCaptchaCode("recaptcha", cf, dllink);
+                        if (inValidate(response)) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
                         cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
                         cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                         ibr.submitForm(cloudflare);
                         if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
-                            logger.warning("Possible plugin error within cloudflare handling");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            logger.warning("Wrong captcha");
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
                         // if it works, there should be a redirect.
                         if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
@@ -442,10 +445,6 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
                     Thread.sleep(5500);
                     ibr.submitForm(cloudflare);
-                    if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
-                        logger.warning("Possible plugin error within cloudflare handling");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
                     // if it works, there should be a redirect.
                     if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
                         ibr.getPage(ibr.getRedirectLocation());
