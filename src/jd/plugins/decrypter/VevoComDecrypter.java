@@ -84,6 +84,7 @@ public class VevoComDecrypter extends PluginForDecrypt {
         String dupeid = null;
         LinkedHashMap<String, Object> entries = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        LinkedHashMap<String, Object> videoinfo = null;
         boolean rtmpAvailable = false;
         JDUtilities.getPluginForHost("vevo.com");
 
@@ -121,30 +122,48 @@ public class VevoComDecrypter extends PluginForDecrypt {
         if (br.containsHTML("THIS PAGE IS CURRENTLY UNAVAILABLE IN YOUR REGION")) {
             geoblock_1 = true;
         } else {
-            final String apijson = br.getRegex("apiResults:[\t\n\r ]*?(\\{.*?\\});").getMatch(0);
-            if (apijson == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            String apijson = br.getRegex("apiResults:[\t\n\r ]*?(\\{.*?\\});").getMatch(0);
+            if (apijson != null) {
+                /* Old */
+                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(apijson);
+                final ArrayList<Object> videos = (ArrayList) entries.get("videos");
+                if (videos == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                videoinfo = (LinkedHashMap<String, Object>) videos.get(0);
+            } else {
+                /* New */
+                apijson = br.getRegex("(\\{\"vevo\":.*?)\\};<").getMatch(0);
+                if (apijson == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(apijson);
+                entries = (LinkedHashMap<String, Object>) entries.get("vevo");
+                final ArrayList<Object> videos = (ArrayList) entries.get("items");
+                if (videos == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                videoinfo = (LinkedHashMap<String, Object>) videos.get(videos.size() - 1);
+                videoinfo = (LinkedHashMap<String, Object>) videoinfo.get("data");
             }
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(apijson);
-            final ArrayList<Object> videos = (ArrayList) entries.get("videos");
-            if (videos == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            final LinkedHashMap<String, Object> videoinfo = (LinkedHashMap<String, Object>) videos.get(0);
             if (videoinfo == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            final String year = Integer.toString(((Number) videoinfo.get("year")).intValue());
-            final String artistsInfo = (String) videoinfo.get("artistsInfo");
+            final String year = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(videoinfo.get("year"), -1));
+            String artist = (String) videoinfo.get("artistsInfo");
+            if (artist == null) {
+                artist = (String) videoinfo.get("artistName");
+            }
             title = (String) videoinfo.get("title");
-            if (title == null || artistsInfo == null) {
+            if (title == null || artist == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            title = year + "_" + artistsInfo + " - " + title;
+            title = year + "_" + artist + " - " + title;
             title = Encoding.htmlDecode(title);
             title = title.trim();
             title = encodeUnicode(title);

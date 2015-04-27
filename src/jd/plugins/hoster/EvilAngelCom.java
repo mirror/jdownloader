@@ -38,7 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com" }, urls = { "http://(www\\.)?members\\.evilangel.com/en/[A-Za-z0-9\\-_]+/(download/\\d+/\\d+p|film/\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com" }, urls = { "http://(www\\.)?members\\.evilangel.com/(en/)?[A-Za-z0-9\\-_]+/(download/\\d+/\\d+p|film/\\d+)" }, flags = { 2 })
 public class EvilAngelCom extends PluginForHost {
 
     public EvilAngelCom(PluginWrapper wrapper) {
@@ -181,14 +181,26 @@ public class EvilAngelCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
 
+                final String csrftoken = br.getRegex("name=\"csrfToken\" value=\"([^<>\"]*?)\"").getMatch(0);
+                final String back = br.getRegex("name=\"back\" value=\"([^<>\"]*?)\"").getMatch(0);
+                if (csrftoken == null || back == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+
                 final Date d = new Date();
                 SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
                 final String date = sd.format(d);
                 sd = new SimpleDateFormat("k:mm");
                 final String time = sd.format(d);
                 final String captcha = br.getRegex("name=\"captcha\\[id\\]\" value=\"([a-z0-9]{32})\"").getMatch(0);
-                String postData = "submit=Click+here+to+login&mOffset=1&back&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&mDate=" + Encoding.urlEncode(date) + "&mTime=" + Encoding.urlEncode(time);
-                // Handly stupid login captcha
+                String postData = "csrfToken=" + csrftoken + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Click+here+to+login&mDate=&mTime=&mOffset=&back=" + Encoding.urlEncode(back);
+                // Handle stupid login captcha
                 if (captcha != null) {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", "evilangel.com", "http://evilangel.com", true);
                     final String code = getCaptchaCode("http://www.evilangel.com/en/captcha/" + captcha, dummyLink);
@@ -200,10 +212,16 @@ public class EvilAngelCom extends PluginForHost {
                     ai.setStatus("Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.");
                     logger.info("Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.");
                     account.setAccountInfo(ai);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (br.getCookie(MAINPAGE, "save_login") == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
