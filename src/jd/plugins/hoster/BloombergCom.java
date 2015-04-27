@@ -45,15 +45,15 @@ public class BloombergCom extends PluginForHost {
                                                                     * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec,
                                                                     * audioBitrate
                                                                     */
-                                                                   put("mpg2_720x480_mpg2", new String[] { "mpg2", null, "720x480", "mpg2", null });
-                                                                   put("h264_320x180_150_aac_16", new String[] { "h264", "150", "320x180", "AAC", "16" });
-                                                                   put("h264_240x140_150_aac_64", new String[] { "h264", "150", "240x140", "AAC", "64" });
-                                                                   put("h264_320x180_240_aac_64", new String[] { "h264", "240", "320x180", "AAC", "64" });
-                                                                   put("h264_640x360_440_aac_64", new String[] { "h264", "440", "640x360", "AAC", "64" });
-                                                                   put("h264_640x360_700_aac_64", new String[] { "h264", "700", "640x360", "AAC", "64" });
-                                                                   put("h264_1280x720_1200_aac_64", new String[] { "h264", "1200", "1280x720", "AAC", "64" });
-                                                                   put("h264_1280x720_1800_aac_64", new String[] { "h264", "1800", "1280x720", "AAC", "64" });
-                                                                   put("h264_1280x720_2400_aac_64", new String[] { "h264", "2400", "1280x720", "AAC", "64" });
+                                                                   put("mpg2_720x480_mpg2", new String[] { "MPEG-2 Video", "6000", "720x480", "MPEG-1 Audio layer 2", "192" });
+                                                                   put("h264_320x180_150_aac_16", new String[] { "MPEG-4 Visual", "150", "320x180", "AAC LC", "45,6" });
+                                                                   put("h264_240x140_150_aac_64", new String[] { "AVC", "150", "240x140", "AAC LC", "128" });
+                                                                   put("h264_320x180_240_aac_64", new String[] { "AVC", "240", "320x180", "AAC LC", "128" });
+                                                                   put("h264_640x360_440_aac_64", new String[] { "AVC", "440", "640x360", "AAC LC", "128" });
+                                                                   put("h264_640x360_700_aac_64", new String[] { "AVC", "700", "640x360", "AAC LC", "128" });
+                                                                   put("h264_1280x720_1200_aac_64", new String[] { "AVC", "1200", "1280x720", "AAC LC", "128" });
+                                                                   put("h264_1280x720_1800_aac_64", new String[] { "AVC", "1800", "1280x720", "AAC LC", "128" });
+                                                                   put("h264_1280x720_2400_aac_64", new String[] { "AVC", "2400", "1280x720", "AAC LC", "128" });
 
         }
                                                            };

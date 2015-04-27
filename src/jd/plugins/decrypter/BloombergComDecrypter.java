@@ -134,25 +134,35 @@ public class BloombergComDecrypter extends PluginForDecrypt {
             /* Finally we have a full (downloadable) http url */
             url = url.replace("origin:/", cdn_server);
             ext = ext.toLowerCase();
+            /* Small fix for mpeg formats (usually only 1 available) */
+            if (ext.equals("mpg2")) {
+                ext = "mpeg2";
+            }
             final String videoresolution = width + "x" + height;
 
             /*
              * formatstring_half is e.g. needed for the mpg2 formats as their resolutions- and bitrates vary while the ones of the other
              * formats are always predictable.
              */
-            final String formatstring_half = videocodec + "_" + videoresolution + "_" + audioCodec;
-            String formatstring_full = videocodec + "_";
-            formatstring_full += videoresolution + "_";
-            formatstring_full += videoBitrate + "_";
-            formatstring_full += audioCodec + "_";
-            formatstring_full += audioBitrate;
-            if (formatstring_full.endsWith("_")) {
-                formatstring_full = formatstring_full.substring(0, formatstring_full.lastIndexOf("_"));
+            final String formatstring_site_half = videocodec + "_" + videoresolution + "_" + audioCodec;
+            String formatstring_site_full = videocodec + "_";
+            formatstring_site_full += videoresolution + "_";
+            formatstring_site_full += videoBitrate + "_";
+            formatstring_site_full += audioCodec + "_";
+            formatstring_site_full += audioBitrate;
+            if (formatstring_site_full.endsWith("_")) {
+                formatstring_site_full = formatstring_site_full.substring(0, formatstring_site_full.lastIndexOf("_"));
             }
 
-            if ((formats.containsKey(formatstring_full) && cfg.getBooleanProperty(formatstring_full, false)) || (formats.containsKey(formatstring_half) && cfg.getBooleanProperty(formatstring_half, false))) {
+            if ((formats.containsKey(formatstring_site_full) && cfg.getBooleanProperty(formatstring_site_full, false)) || (formats.containsKey(formatstring_site_half) && cfg.getBooleanProperty(formatstring_site_half, false))) {
                 final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                final String filename = title + "_" + formatstring_full + "." + ext;
+                final String[] realFormatString;
+                if (formats.containsKey(formatstring_site_full)) {
+                    realFormatString = formats.get(formatstring_site_full);
+                } else {
+                    realFormatString = formats.get(formatstring_site_half);
+                }
+                final String filename = title + "_" + getFormatString(realFormatString) + "." + ext;
 
                 try {
                     dl.setContentUrl(parameter);
@@ -164,8 +174,8 @@ public class BloombergComDecrypter extends PluginForDecrypt {
                     /* Not available in old 0.9.581 Stable */
                 }
                 dl._setFilePackage(fp);
-                dl.setProperty("format", formatstring_full);
-                dl.setProperty("format_half", formatstring_half);
+                dl.setProperty("format", formatstring_site_full);
+                dl.setProperty("format_half", formatstring_site_half);
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("directlink", url);
                 dl.setProperty("directfilename", filename);
@@ -186,6 +196,34 @@ public class BloombergComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         return decryptedLinks;
+    }
+
+    private String getFormatString(final String[] formatinfo) {
+        String formatString = "";
+        final String videoCodec = formatinfo[0];
+        final String videoBitrate = formatinfo[1];
+        final String videoResolution = formatinfo[2];
+        final String audioCodec = formatinfo[3];
+        final String audioBitrate = formatinfo[4];
+        if (videoCodec != null) {
+            formatString += videoCodec + "_";
+        }
+        if (videoResolution != null) {
+            formatString += videoResolution + "_";
+        }
+        if (videoBitrate != null) {
+            formatString += videoBitrate + "_";
+        }
+        if (audioCodec != null) {
+            formatString += audioCodec + "_";
+        }
+        if (audioBitrate != null) {
+            formatString += audioBitrate;
+        }
+        if (formatString.endsWith("_")) {
+            formatString = formatString.substring(0, formatString.lastIndexOf("_"));
+        }
+        return formatString;
     }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */

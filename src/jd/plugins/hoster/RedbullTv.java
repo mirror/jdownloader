@@ -33,8 +33,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video.cnbc.com" }, urls = { "http://video\\.cnbc\\.comdecrypted\\d+" }, flags = { 2 })
-public class CnbcCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "redbull.tv" }, urls = { "http://redbull\\.tvdecrypted\\d+" }, flags = { 2 })
+public class RedbullTv extends PluginForHost {
 
     /** Settings stuff */
     private static final String             FAST_LINKCHECK = "FAST_LINKCHECK";
@@ -45,29 +45,32 @@ public class CnbcCom extends PluginForHost {
              * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec,
              * audioBitrate
              */
-            /*
-             * We could also add audio- and videobitrate but from my tests they
-             * looked quite variable so we prefer not to use wrong information here
-             * as it will be used for the filenames later too!
-             */
-            put("mpeg4_200000_Download", new String[] { "AVC", null, "400x224", "AAC LC", null });
-            put("mpeg4_500000_Download", new String[] { "AVC", null, "534x300", "AAC LC", null });
-            put("mpeg4_600000_Download", new String[] { "AVC", null, "480x270", "AAC LC", null });
-            put("mpeg4_1100000_Download", new String[] { "AVC", null, "704x396", "AAC LC", null });
+            put("64", new String[] { "AVC", "64", "0x0", "AAC LC", "64" });
+            put("296", new String[] { "AVC", "296", "384x216", "AAC LC", "75,3" });
+            put("496", new String[] { "AVC", "496", "384x216", "AAC LC", "75,3" });
+            put("856", new String[] { "AVC", "856", "384x216", "AAC LC", "75,3" });
+            put("1200", new String[] { "AVC", "1200", "640x360", "AAC LC", "75,3" });
+            put("1800", new String[] { "AVC", "1800", "960x540", "AAC LC", "75,3" });
+            put("2500", new String[] { "AVC", "2500", "1280x720", "AAC LC", "75,3" });
+            put("3528", new String[] { "AVC", "3528", "1280x720", "AAC LC", "75,3" });
+            put("4500", new String[] { "AVC", "4500", "1280x720", "AAC LC", "75,3" });
+            put("6500", new String[] { "AVC", "6500", "1920x1080", "AAC LC", "75,3" });
+            put("8500", new String[] { "AVC", "8500", "1920x1080", "AAC LC", "75,3" });
+
         }
     };
 
     private String                          DLLINK         = null;
 
     @SuppressWarnings("deprecation")
-    public CnbcCom(final PluginWrapper wrapper) {
+    public RedbullTv(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.cnbc.com/id/15837353/";
+        return "http://www.redbull.tv/information/terms";
     }
 
     @Override
@@ -138,11 +141,11 @@ public class CnbcCom extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's CNBC plugin helps downloading videoclips from video.cnbc.com.";
+        return "JDownloader's Red Bull plugin helps downloading videoclips from redbull.tv. You can chose between different video qualities.";
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.CnbcCom.FastLinkcheck", "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.RedbullTv.FastLinkcheck", "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(false));
         final Iterator<Entry<String, String[]>> it = formats.entrySet().iterator();
         while (it.hasNext()) {
             /*
@@ -178,7 +181,7 @@ public class CnbcCom extends PluginForHost {
             if (usertext.endsWith(" ")) {
                 usertext = usertext.substring(0, usertext.lastIndexOf(" "));
             }
-            final ConfigEntry vidcfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), internalname, JDL.L("plugins.hoster.CnbcCom.ALLOW_" + internalname, usertext)).setDefaultValue(true);
+            final ConfigEntry vidcfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), internalname, JDL.L("plugins.hoster.RedbullTv.ALLOW_" + internalname, usertext)).setDefaultValue(true);
             getConfig().addEntry(vidcfg);
         }
     }
