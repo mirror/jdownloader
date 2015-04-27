@@ -130,8 +130,8 @@ public class OBoomCom extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
 
-        String premium = infos.get("premium_unix");
-        if (premium != null) {
+        final String premium = infos.get("premium_unix");
+        if (premium != null && !"null".equalsIgnoreCase(premium.trim())) {
             long premiumUntil = Long.parseLong(premium) * 1000l;
             ai.setValidUntil(premiumUntil);
             try {

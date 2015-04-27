@@ -96,6 +96,12 @@ public class DeviantArtCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("deviantartdecrypted.com/", "deviantart.com/"));
     }
 
+    @Override
+    public void init() {
+        super.init();
+        Browser.setRequestIntervalLimitGlobal(getHost(), 250);
+    }
+
     /**
      * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
      */
@@ -360,9 +366,6 @@ public class DeviantArtCom extends PluginForHost {
         }
         if (DLLINK == null) {
             getDllink();
-        }
-        synchronized (LOCK) {
-            this.sleep(2500l, downloadLink);
         }
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         /* Disable chunks as we only download pictures or small files */
