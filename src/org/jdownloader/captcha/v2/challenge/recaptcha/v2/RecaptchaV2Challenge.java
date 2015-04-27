@@ -1,9 +1,6 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
-import java.awt.AWTException;
 import java.awt.Rectangle;
-import java.awt.Robot;
-import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.URL;
 
@@ -13,9 +10,8 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.net.httpserver.requests.PostRequest;
+import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
@@ -31,11 +27,13 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public BrowserViewport getBrowserViewport(BrowserWindow screenResource) {
+    public BrowserViewport getBrowserViewport(BrowserWindow screenResource, Rectangle elementBounds) {
 
-        Rectangle rect = screenResource.getRectangleByColor(0xff9900, 0, 0, 1d, 0, 0);
-
-        return new Recaptcha2BrowserViewport(screenResource, rect);
+        Rectangle rect = screenResource.getRectangleByColor(0xff9900, 0, 0, 1d, elementBounds.x, elementBounds.y);
+        if (rect == null) {
+            return null;
+        }
+        return new Recaptcha2BrowserViewport(screenResource, rect, elementBounds);
     }
 
     public RecaptchaV2Challenge(String siteKey, Plugin pluginForHost) {
@@ -48,28 +46,16 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public boolean onPostRequest(BrowserReference browserReference, PostRequest request, HttpResponse response) throws IOException {
-        String parameter = request.getParameterbyKey("g-recaptcha-response");
+    public boolean onGetRequest(BrowserReference browserReference, GetRequest request, HttpResponse response) throws IOException {
+        String pDo = request.getParameterbyKey("do");
+        if ("solve".equals(pDo)) {
+            String responsetoken = request.getParameterbyKey("response");
 
-        if (StringUtils.isNotEmpty(parameter)) {
-            browserReference.onResponse(parameter);
+            browserReference.onResponse(responsetoken);
             response.setResponseCode(ResponseCode.SUCCESS_OK);
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
 
             response.getOutputStream(true).write("Please Close the Browser now".getBytes("UTF-8"));
-            // Close Browser Tab
-            Robot robot;
-            try {
-                robot = new Robot();
-
-                robot.keyPress(KeyEvent.VK_CONTROL);
-                robot.keyPress(KeyEvent.VK_W);
-
-                robot.keyRelease(KeyEvent.VK_CONTROL);
-                robot.keyRelease(KeyEvent.VK_W);
-            } catch (AWTException e) {
-                e.printStackTrace();
-            }
             return true;
         }
         return false;

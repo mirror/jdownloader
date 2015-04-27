@@ -21,7 +21,7 @@ public class BrowserSolver extends AbstractBrowserSolver {
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-        if (Application.isJared(null)) {
+        if (Application.isJared(null) || true) {
             // Not ready yet
             if (c instanceof RecaptchaV1Challenge) {
                 return false;

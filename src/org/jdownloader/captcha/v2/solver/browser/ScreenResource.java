@@ -65,7 +65,7 @@ public abstract class ScreenResource {
             Point point = null;
             step: while (true) {
                 blockRadius++;
-                if (blockRadius * blockSize > 200) {
+                if (blockRadius * blockSize > 500) {
                     break;
                 }
                 int xblockmax = xstartBlock + blockRadius - 1;
@@ -75,7 +75,7 @@ public abstract class ScreenResource {
                 for (int xblock = xstartBlock; xblock <= xblockmax; xblock++) {
 
                     block = getBlock(xblock * blockSize, yblockmax * blockSize);
-                    // showImage(block.getImage());
+                    // showImage(block.getImage(), blockRadius + ":" + xblock + "x" + yblockmax + "=" + block);
                     if (block != null) {
                         hasBlock = true;
 
@@ -90,8 +90,8 @@ public abstract class ScreenResource {
                 }
                 for (int yblock = ystartBlock; yblock < yblockmax; yblock++) {
 
-                    block = getBlock(xblockmax * blockSize, yblock);
-
+                    block = getBlock(xblockmax * blockSize, yblock * blockSize);
+                    // showImage(block.getImage(), blockRadius + ":" + xblockmax + "x" + yblock + "=" + block);
                     if (block != null) {
                         hasBlock = true;
 
@@ -116,7 +116,7 @@ public abstract class ScreenResource {
 
                 BufferedImage xStrip = getRobot().createScreenCapture(new Rectangle(this.x + point.x, this.y + point.y, this.x + getWidth() - point.x, 1));
 
-                // showImage(xStrip);
+                // showImage(xStrip, null);
 
                 for (int x = wmin; x < xStrip.getWidth(); x++) {
                     int col = xStrip.getRGB(x, 0);
@@ -130,7 +130,7 @@ public abstract class ScreenResource {
 
                 BufferedImage yStrip = getRobot().createScreenCapture(new Rectangle(this.x + point.x, this.y + point.y, 1, this.y + getHeight() - point.y));
 
-                // showImage(yStrip);
+                // showImage(yStrip, null);
 
                 for (int y = hmin; y < yStrip.getHeight(); y++) {
                     int col = yStrip.getRGB(0, y);
@@ -294,6 +294,11 @@ public abstract class ScreenResource {
             return getImage().getWidth();
         }
 
+        @Override
+        public String toString() {
+            return "Block " + x + "." + y + " " + getWidth() + "x" + getHeight();
+        }
+
         public int getRGB(int x2, int y2) {
             return getImage().getRGB(x2 - x, y2 - y);
         }
@@ -333,9 +338,9 @@ public abstract class ScreenResource {
         return block.getRGB(x, y);
     }
 
-    public void showImage(BufferedImage img) {
+    public void showImage(BufferedImage img, String title) {
 
-        ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, "", "", new ImageIcon(img), null, null);
+        ConfirmDialog d = new ConfirmDialog(0, title, "", new ImageIcon(img), null, null);
         d.setTimeout(5000);
         UIOManager.I().show(null, d);
     }

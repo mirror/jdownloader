@@ -1,5 +1,6 @@
 package org.jdownloader.captcha.v2.solver.browser;
 
+import java.awt.Rectangle;
 import java.io.IOException;
 
 import jd.plugins.Plugin;
@@ -31,7 +32,7 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
 
     abstract public String getHTML();
 
-    abstract public BrowserViewport getBrowserViewport(BrowserWindow screenResource);
+    abstract public BrowserViewport getBrowserViewport(BrowserWindow screenResource, Rectangle elementBounds);
 
     public boolean onGetRequest(BrowserReference browserReference, GetRequest request, HttpResponse response) throws IOException {
         return false;
