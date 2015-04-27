@@ -228,10 +228,11 @@ public abstract class RecaptchaV1Challenge extends AbstractBrowserChallenge {
 
             } else {
                 rc.setCaptchaAddress(rc.getChallenge());
+
             }
 
             rc.downloadCaptcha(captchaFile);
-
+            rc.setChallenge(rc.getChallenge().substring(rc.getChallenge().indexOf("c=") + 2));
             basicCaptchaChallenge = new BasicCaptchaChallengeDelegate(this, captchaFile, rc.getChallenge()) {
 
             };
