@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -51,8 +52,9 @@ public class EvilAngelCom extends PluginForHost {
         return "http://www.evilangel.com/en/terms";
     }
 
-    private static final String FILMLINK = "http://(www\\.)?members\\.evilangel.com/en/[A-Za-z0-9\\-_]+/film/\\d+";
-    private String              DLLINK   = null;
+    private static final String HTML_LOGOUT = "id=\"headerLinkLogout\"";
+    private static final String FILMLINK    = "http://(www\\.)?members\\.evilangel.com/en/[A-Za-z0-9\\-_]+/film/\\d+";
+    private String              DLLINK      = null;
 
     /**
      * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
@@ -65,6 +67,7 @@ public class EvilAngelCom extends PluginForHost {
      * NOTE: While making the plugin, the testaccount was banned temporarily and we didn't get new password/username from the user->Plugin
      * isn't 100% done yet! http://svn.jdownloader.org/issues/6793
      */
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -106,7 +109,7 @@ public class EvilAngelCom extends PluginForHost {
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = openConnection(br2, DLLINK);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
                     if (filename == null) {
@@ -141,7 +144,7 @@ public class EvilAngelCom extends PluginForHost {
                 throw (PluginException) e;
             }
         }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Links can only be chacked and downloaded via account!");
+        throw new PluginException(LinkStatus.ERROR_FATAL, "Links can only be checked and downloaded via account!");
     }
 
     private static final String MAINPAGE = "http://evilangel.com";
@@ -172,7 +175,9 @@ public class EvilAngelCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("http://www.evilangel.com/en/login");
+                /* We re over 18 */
+                br.setCookie("www.evilangel.com", "enterSite", "en");
+                br.getPage("http://members.evilangel.com/en");
                 if (br.containsHTML(">We are experiencing some problems\\!<")) {
                     final AccountInfo ai = new AccountInfo();
                     ai.setStatus("Your IP is banned. Please re-connect to get a new IP to be able to log-in!");
@@ -181,9 +186,9 @@ public class EvilAngelCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
 
-                final String csrftoken = br.getRegex("name=\"csrfToken\" value=\"([^<>\"]*?)\"").getMatch(0);
+                final String[] csrftokens = br.getRegex("name=\"csrfToken\" value=\"([^<>\"]*?)\"").getColumn(0);
                 final String back = br.getRegex("name=\"back\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (csrftoken == null || back == null) {
+                if (csrftokens == null || csrftokens.length == 0 || back == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -192,12 +197,22 @@ public class EvilAngelCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                final String csrftoken = csrftokens[csrftokens.length - 1];
 
                 final Date d = new Date();
                 SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
                 final String date = sd.format(d);
                 sd = new SimpleDateFormat("k:mm");
                 final String time = sd.format(d);
+                final String timedatestring = date + " " + time;
+                br.setCookie(MAINPAGE, "mDateTime", Encoding.urlEncode(timedatestring));
+                br.setCookie(MAINPAGE, "mOffset", "2");
+                br.setCookie(MAINPAGE, "origin", "promo");
+                br.setCookie(MAINPAGE, "timestamp", Long.toString(System.currentTimeMillis()));
+                br.setCookie(MAINPAGE, "_gat_tracker1", "1");
+                br.setCookie(MAINPAGE, "_gat_tracker2", "1");
+                br.setCookie(MAINPAGE, "_gat_tracker3", "1");
+                br.setCookie(MAINPAGE, "_gat_tracker4", "1");
                 final String captcha = br.getRegex("name=\"captcha\\[id\\]\" value=\"([a-z0-9]{32})\"").getMatch(0);
                 String postData = "csrfToken=" + csrftoken + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Click+here+to+login&mDate=&mTime=&mOffset=&back=" + Encoding.urlEncode(back);
                 // Handle stupid login captcha
@@ -214,7 +229,7 @@ public class EvilAngelCom extends PluginForHost {
                     account.setAccountInfo(ai);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                if (br.getCookie(MAINPAGE, "save_login") == null) {
+                if (!br.containsHTML(HTML_LOGOUT)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -239,26 +254,28 @@ public class EvilAngelCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
             // Prevent direct login to prevent login captcha
             login(account, false);
-            br.getPage("http://members.evilangel.com/");
-            if (!br.containsHTML("Welcome back, <strong>")) {
+            br.getPage("http://members.evilangel.com/en");
+            if (!br.containsHTML(HTML_LOGOUT)) {
                 login(account, true);
             }
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        ai.setStatus("Premium User");
+        ai.setStatus("Premium account");
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -270,6 +287,20 @@ public class EvilAngelCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
+        }
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

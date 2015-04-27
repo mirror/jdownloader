@@ -32,7 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video.cnbc.com" }, urls = { "http://video.cnbc.com/gallery/\\?video=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video.cnbc.com" }, urls = { "http://video\\.cnbc\\.com/gallery/\\?video=\\d+" }, flags = { 0 })
 public class CnbcComDecrypter extends PluginForDecrypt {
 
     public CnbcComDecrypter(PluginWrapper wrapper) {
