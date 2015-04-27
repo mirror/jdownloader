@@ -113,31 +113,8 @@ public class CnbcComDecrypter extends PluginForDecrypt {
             final String url = urlinfo[1];
             if (formats.containsKey(qualinfo) && cfg.getBooleanProperty(qualinfo, false)) {
                 final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                String filename = title + "_";
                 final String[] vidinfo = formats.get(qualinfo);
-                final String videoCodec = vidinfo[0];
-                final String videoBitrate = vidinfo[1];
-                final String videoResolution = vidinfo[2];
-                final String audioCodec = vidinfo[3];
-                final String audioBitrate = vidinfo[4];
-                if (videoCodec != null) {
-                    filename += videoCodec + "_";
-                }
-                if (videoResolution != null) {
-                    filename += videoResolution + "_";
-                }
-                if (videoBitrate != null) {
-                    filename += videoBitrate + "_";
-                }
-                if (audioCodec != null) {
-                    filename += audioCodec + "_";
-                }
-                if (audioBitrate != null) {
-                    filename += audioBitrate;
-                }
-                if (filename.endsWith("_")) {
-                    filename = filename.substring(0, filename.lastIndexOf("_"));
-                }
+                String filename = title + "_" + getFormatString(vidinfo);
                 filename += ".mp4";
 
                 try {
@@ -166,6 +143,34 @@ public class CnbcComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         return decryptedLinks;
+    }
+
+    private String getFormatString(final String[] formatinfo) {
+        String formatString = "";
+        final String videoCodec = formatinfo[0];
+        final String videoBitrate = formatinfo[1];
+        final String videoResolution = formatinfo[2];
+        final String audioCodec = formatinfo[3];
+        final String audioBitrate = formatinfo[4];
+        if (videoCodec != null) {
+            formatString += videoCodec + "_";
+        }
+        if (videoResolution != null) {
+            formatString += videoResolution + "_";
+        }
+        if (videoBitrate != null) {
+            formatString += videoBitrate + "_";
+        }
+        if (audioCodec != null) {
+            formatString += audioCodec + "_";
+        }
+        if (audioBitrate != null) {
+            formatString += audioBitrate;
+        }
+        if (formatString.endsWith("_")) {
+            formatString = formatString.substring(0, formatString.lastIndexOf("_"));
+        }
+        return formatString;
     }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */
