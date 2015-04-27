@@ -122,11 +122,11 @@ public class DmaxDe extends PluginForHost {
             final Object oheigth = vdata.get("frameHeight");
             long fsize = -1;
             if (owidth != null && oheigth != null) {
-                width = getLongValue(owidth);
-                height = getLongValue(oheigth);
+                width = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(owidth, -1);
+                height = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(oheigth, -1);
             }
             if (size != null) {
-                fsize = getLongValue(size);
+                fsize = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(size, -1);
             }
             if (fsize > foundFilesize) {
                 foundFilesize = fsize;
@@ -192,16 +192,6 @@ public class DmaxDe extends PluginForHost {
             con = br.openHeadConnection(directlink);
         }
         return con;
-    }
-
-    private long getLongValue(final Object o) {
-        long lo = -1;
-        if (o instanceof Long) {
-            lo = ((Long) o).longValue();
-        } else {
-            lo = ((Integer) o).intValue();
-        }
-        return lo;
     }
 
     @Override

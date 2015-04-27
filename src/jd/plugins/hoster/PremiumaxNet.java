@@ -49,6 +49,9 @@ public class PremiumaxNet extends antiDDoSForHost {
     private static final String                            NICE_HOST          = "premiumax.net";
     private static final String                            NICE_HOSTproperty  = "premiumaxnet";
 
+    private Account                                        currAcc            = null;
+    private DownloadLink                                   currDownloadLink   = null;
+
     public PremiumaxNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.premiumax.net/premium.html");
@@ -59,8 +62,14 @@ public class PremiumaxNet extends antiDDoSForHost {
         return "http://www.premiumax.net/more/terms-and-conditions.html";
     }
 
+    private void setConstants(final Account acc, final DownloadLink dl) {
+        this.currAcc = acc;
+        this.currDownloadLink = dl;
+    }
+
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        setConstants(account, null);
         final AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
@@ -123,6 +132,7 @@ public class PremiumaxNet extends antiDDoSForHost {
     /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+        setConstants(acc, link);
         login(acc, true);
         String dllink = checkDirectLink(link, "premiumaxnetdirectlink");
         if (dllink == null) {
@@ -131,47 +141,23 @@ public class PremiumaxNet extends antiDDoSForHost {
             postPage("http://www.premiumax.net/direct_link.html?rand=0." + System.currentTimeMillis(), "captcka=&key=indexKEY&urllist=" + Encoding.urlEncode(link.getDownloadURL()));
             if (br.containsHTML("temporary problem")) {
                 logger.info("Current hoster is temporarily not available via premiumax.net -> Disabling it");
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(60 * 60 * 1000l);
             } else if (br.containsHTML("You do not have the rights to download from")) {
                 logger.info("Current hoster is not available via this premiumax.net account -> Disabling it");
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(60 * 60 * 1000l);
             } else if (br.containsHTML("We do not support your link")) {
                 logger.info("Current hoster is not supported by premiumax.net -> Disabling it");
-                tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
+                tempUnavailableHoster(3 * 60 * 60 * 1000l);
             } else if (br.containsHTML("You only can download")) {
                 /* We're too fast - usually this should not happen */
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Too many connections active, try again in some seconds...");
             } else if (br.containsHTML("> Our server can\\'t connect to")) {
-                logger.info(NICE_HOST + ": cantconnect");
-                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_cantconnect", 0);
-                link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 10) {
-                    timesFailed++;
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_cantconnect", timesFailed);
-                    logger.info(NICE_HOST + ": cantconnect -> Retrying");
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "cantconnect");
-                } else {
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_cantconnect", Property.NULL);
-                    logger.info(NICE_HOST + ": cantconnect - disabling current host!");
-                    tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
-                }
+                handleErrorRetries("cantconnect", 20, 5 * 60 * 1000l);
             }
 
             dllink = br.getRegex("\"(http://(www\\.)?premiumax\\.net/dl/[a-z0-9]+/?)\"").getMatch(0);
             if (dllink == null) {
-                logger.info(NICE_HOST + ": dllinknullerror");
-                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_dllinknullerror", 0);
-                link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 2) {
-                    timesFailed++;
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_dllinknullerror", timesFailed);
-                    logger.info(NICE_HOST + ": dllinknullerror -> Retrying");
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "dllinknullerror");
-                } else {
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_dllinknullerror", Property.NULL);
-                    logger.info(NICE_HOST + ": dllinknullerror - disabling current host!");
-                    tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
-                }
+                handleErrorRetries("dllinknullerror", 50, 5 * 60 * 1000l);
             }
         }
 
@@ -183,7 +169,7 @@ public class PremiumaxNet extends antiDDoSForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 404) {
-                handleErrors(acc, link, "404servererror", 10);
+                handleErrorRetries("404servererror", 10, 5 * 60 * 1000l);
             }
             br.followConnection();
             logger.info("Unhandled download error on premiumax.net: " + br.toString());
@@ -248,28 +234,26 @@ public class PremiumaxNet extends antiDDoSForHost {
     }
 
     /**
-     * Is intended to handle errors which might occur seldom by re-tring a couple of times before we temporarily remove the host from the
-     * host list.
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
+     * from the host list.
      *
-     * @param dl
-     *            : The DownloadLink
      * @param error
      *            : The name of the error
      * @param maxRetries
      *            : Max retries before out of date error is thrown
      */
-    private void handleErrors(final Account acc, final DownloadLink dl, final String error, final int maxRetries) throws PluginException {
-        int timesFailed = dl.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        dl.getLinkStatus().setRetryCount(0);
+    private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
+        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        this.currDownloadLink.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
             logger.info(NICE_HOST + ": " + error + " -> Retrying");
             timesFailed++;
-            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         } else {
-            dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
+            tempUnavailableHoster(disableTime);
         }
     }
 
@@ -357,18 +341,18 @@ public class PremiumaxNet extends antiDDoSForHost {
         }
     }
 
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) {
+    private void tempUnavailableHoster(final long timeout) throws PluginException {
+        if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
+                hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
             /* wait to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }

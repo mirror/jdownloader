@@ -111,11 +111,11 @@ public class EzFileCh extends PluginForHost {
         if (useFilecheckAPI) {
             br.getPage("https://ezfile.ch/?m=api&a=check_file&fkey=" + downloadLink.getLinkID());
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final Object filesizeo = entries.get("fsize");
             final String status = (String) entries.get("status");
             final String message = (String) entries.get("message");
             final String ftype = (String) entries.get("ftype");
             filename = (String) entries.get("fname");
-            filesize = (String) entries.get("fsize");
             if (message != null && message.equals("private file")) {
                 /* We cannot get filename/size for this case but we know that the file is online. */
                 isPrivateFile = true;
@@ -123,11 +123,11 @@ public class EzFileCh extends PluginForHost {
                 return AvailableStatus.TRUE;
             } else if (!"ok".equals(status)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (filename == null || filesize == null || ftype == null) {
+            } else if (filename == null || filesizeo == null || ftype == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             downloadLink.setFinalFileName(filename);
-            downloadLink.setDownloadSize(Long.parseLong(filesize));
+            downloadLink.setDownloadSize(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(filesizeo, -1));
             /* 0=normal, 2=directdownload */
             if (ftype.equals("2")) {
                 dllink = downloadLink.getDownloadURL();

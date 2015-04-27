@@ -74,6 +74,8 @@ public class DevArtCm extends PluginForDecrypt {
     private static final String   LINKTYPE_JOURNAL = "https?://[\\w\\.\\-]*?deviantart\\.com/journal/[\\w\\-]+/?";
     private static final String   TYPE_BLOG        = "https?://[\\w\\.\\-]*?deviantart\\.com/blog/(\\?offset=\\d+)?";
 
+    // private static final String TYPE_INVALID = "https?://[\\w\\.\\-]*?deviantart\\.com/stats/*?";
+
     final ArrayList<DownloadLink> decryptedLinks   = new ArrayList<DownloadLink>();
 
     private String                PARAMETER        = null;
@@ -93,7 +95,7 @@ public class DevArtCm extends PluginForDecrypt {
             PARAMETER = PARAMETER.replace(replace, "");
         }
         /* Fix journallinks: http://xx.deviantart.com/journal/poll/xx/ */
-        PARAMETER = PARAMETER.replace("/poll/", "/");
+        PARAMETER = PARAMETER.replaceAll("/(poll|stats)/", "/");
         if (PARAMETER.matches(LINKTYPE_JOURNAL)) {
             final DownloadLink journal = createDownloadlink(PARAMETER.replace("deviantart.com/", "deviantartdecrypted.com/"));
             journal.setName(new Regex(PARAMETER, "deviantart\\.com/journal/([\\w\\-]+)").getMatch(0));
@@ -141,7 +143,15 @@ public class DevArtCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    @SuppressWarnings("deprecation")
     private void decryptJournals() throws DecrypterException, IOException {
+        if (br.containsHTML("class=\"empty\\-state journal\"")) {
+            try {
+                this.decryptedLinks.add(this.createOfflinelink(PARAMETER));
+            } catch (final Throwable e) {
+            }
+            return;
+        }
         String username = getSiteUsername();
         if (username == null) {
             username = getURLUsername();
@@ -193,7 +203,8 @@ public class DevArtCm extends PluginForDecrypt {
                     dl.setAvailable(true);
                 }
                 /* No reason to hide their single links */
-                try {/* JD2 only */
+                try {
+                    /* JD2 only */
                     dl.setContentUrl(link);
                 } catch (Throwable e) {/* Stable */
                     dl.setBrowserUrl(link);
@@ -281,7 +292,7 @@ public class DevArtCm extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     private void decryptStandard() throws DecrypterException, IOException {
-        if (br.containsHTML("class=\"empty\\-state gallery\"")) {
+        if (br.containsHTML("class=\"empty\\-state gallery\"|class=\"empty\\-state faves\"")) {
             try {
                 this.decryptedLinks.add(this.createOfflinelink(PARAMETER));
             } catch (final Throwable e) {

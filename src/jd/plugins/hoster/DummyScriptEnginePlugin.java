@@ -67,7 +67,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
     /**
      * ExternalScriptable is an implementation of Scriptable backed by a JSR 223 ScriptContext instance.
-     * 
+     *
      * @author Mike Grogan
      * @author A. Sundararajan
      * @since 1.6
@@ -122,9 +122,9 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
         /**
          * Returns the value of the named property or NOT_FOUND.
-         * 
+         *
          * If the property was created using defineProperty, the appropriate getter method is called.
-         * 
+         *
          * @param name
          *            the name of the property
          * @param start
@@ -157,7 +157,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
         /**
          * Returns the value of the indexed property or NOT_FOUND.
-         * 
+         *
          * @param index
          *            the numeric index for the property
          * @param start
@@ -175,7 +175,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
         /**
          * Returns true if the named property is defined.
-         * 
+         *
          * @param name
          *            the name of the property
          * @param start
@@ -194,7 +194,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
         /**
          * Returns true if the property index is defined.
-         * 
+         *
          * @param index
          *            the numeric index for the property
          * @param start
@@ -208,7 +208,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
         /**
          * Sets the value of the named property, creating it if need be.
-         * 
+         *
          * @param name
          *            the name of the property
          * @param start
@@ -238,7 +238,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
         /**
          * Sets the value of the indexed property, creating it if need be.
-         * 
+         *
          * @param index
          *            the numeric index for the property
          * @param start
@@ -258,9 +258,9 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
         /**
          * Removes a named property from the object.
-         * 
+         *
          * If the property is not found, no action is taken.
-         * 
+         *
          * @param name
          *            the name of the property
          */
@@ -279,9 +279,9 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
         /**
          * Removes the indexed property from the object.
-         * 
+         *
          * If the property is not found, no action is taken.
-         * 
+         *
          * @param index
          *            the numeric index for the property
          */
@@ -291,7 +291,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
         /**
          * Get the prototype of the object.
-         * 
+         *
          * @return the prototype
          */
         public Scriptable getPrototype() {
@@ -300,7 +300,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
         /**
          * Set the prototype of the object.
-         * 
+         *
          * @param prototype
          *            the prototype to set
          */
@@ -310,7 +310,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
         /**
          * Get the parent scope of the object.
-         * 
+         *
          * @return the parent scope
          */
         public Scriptable getParentScope() {
@@ -319,7 +319,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
         /**
          * Set the parent scope of the object.
-         * 
+         *
          * @param parent
          *            the parent scope to set
          */
@@ -329,9 +329,9 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
         /**
          * Get an array of property ids.
-         * 
+         *
          * Not all property ids need be returned. Those properties whose ids are not returned are considered non-enumerable.
-         * 
+         *
          * @return an array of Objects. Each entry in the array is either a java.lang.String or a java.lang.Number
          */
         public synchronized Object[] getIds() {
@@ -351,11 +351,11 @@ public class DummyScriptEnginePlugin extends PluginForHost {
          * Get the default value of the object with a given hint. The hints are String.class for type String, Number.class for type Number,
          * Scriptable.class for type Object, and Boolean.class for type Boolean.
          * <p>
-         * 
+         *
          * A <code>hint</code> of null means "no hint".
-         * 
+         *
          * See ECMA 8.6.2.6.
-         * 
+         *
          * @param hint
          *            the type hint
          * @return the default value
@@ -430,11 +430,11 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
         /**
          * Implements the instanceof operator.
-         * 
+         *
          * @param instance
          *            The value that appeared on the LHS of the instanceof operator
          * @return true if "this" appears in value's prototype chain
-         * 
+         *
          */
         public boolean hasInstance(Scriptable instance) {
             // Default for JS objects (other than Function) is to do prototype
@@ -485,9 +485,9 @@ public class DummyScriptEnginePlugin extends PluginForHost {
                 /*
                  * script may use Java primitive wrapper type objects (such as java.lang.Integer, java.lang.Boolean etc) explicitly. If we
                  * unwrap, then these script objects will become script primitive types. For example,
-                 * 
+                 *
                  * var x = new java.lang.Double(3.0); print(typeof x);
-                 * 
+                 *
                  * will print 'number'. We don't want that to happen.
                  */
                 Object obj = njb.unwrap();
@@ -507,7 +507,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
     /**
      * This class serves as top level scope for Rhino. This class adds 3 top level functions (bindings, scope, sync) and two constructors
      * (JSAdapter, JavaAdapter).
-     * 
+     *
      * @author A. Sundararajan
      * @since 1.6
      */
@@ -541,7 +541,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
         /**
          * The bindings function takes a JavaScript scope object of type ExternalScriptable and returns the underlying Bindings instance.
-         * 
+         *
          * var page = scope(pageBindings); with (page) { // code that uses page scope } var b = bindings(page); // operate on bindings here.
          */
         public static Object bindings(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
@@ -563,7 +563,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
          * The scope function creates a new JavaScript scope object with given Bindings object as backing store. This can be used to create
          * a script scope based on arbitrary Bindings instance. For example, in webapp scenario, a 'page' level Bindings instance may be
          * wrapped as a scope and code can be run in JavaScripe 'with' statement:
-         * 
+         *
          * var page = scope(pageBindings); with (page) { // code that uses page scope }
          */
         public static Object scope(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
@@ -607,7 +607,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
     /**
      * Represents compiled JavaScript code.
-     * 
+     *
      * @author Mike Grogan
      * @since 1.6
      */
@@ -705,7 +705,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
 
     /**
      * Implementation of <code>ScriptEngine</code> using the Mozilla Rhino interpreter.
-     * 
+     *
      * @author Mike Grogan
      * @author A. Sundararajan
      * @since 1.6
@@ -1198,6 +1198,26 @@ public class DummyScriptEnginePlugin extends PluginForHost {
                 throw new Exception("JavaScript to Java failed: " + string);
             }
         }
+    }
+
+    /**
+     * Converts single json parser Objects to long. Works around 2 issues: 1. Often people use Strings instead of number data types in json.
+     * 2. Our parser decides whether to use Long or Integer but most times we need Long also we always need more code to ensure to get the
+     * connect data type. This makes it easier.
+     */
+    public static long toLong(final Object o, final long defaultvalue) {
+        long lo = defaultvalue;
+        try {
+            if (o instanceof String) {
+                lo = Long.parseLong((String) o);
+            } else if (o instanceof Long) {
+                lo = ((Long) o).longValue();
+            } else {
+                lo = ((Integer) o).intValue();
+            }
+        } catch (final Throwable e) {
+        }
+        return lo;
     }
 
     public static Object toMap(Object obj) {
