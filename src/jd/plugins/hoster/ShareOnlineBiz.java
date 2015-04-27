@@ -870,6 +870,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             requestFileInformation(link);
             doFree(link);
         } else {
+            // linkcheck otherwise users get banned ip when trying to download offline content. jdlog://3063296763241/
             requestFileInformation(link);
             final boolean preferHttps = userPrefersHttps() && !StringUtils.equalsIgnoreCase(account.getStringProperty("group", null), "VIP");
             final String linkID = getID(link);
@@ -1073,7 +1074,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     /* Used for API request - also handles (server) errors */
     private String apiGetPage(final String link) throws Exception {
         loadAPIWorkAround(br);
-        br.getPage(link);
+        getPage(link);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
         }
