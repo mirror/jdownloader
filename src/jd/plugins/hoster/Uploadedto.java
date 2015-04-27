@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -66,6 +67,7 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
@@ -110,7 +112,7 @@ public class Uploadedto extends PluginForHost {
     private boolean                        avoidHTTPS                                = false;
 
     private static final String            CURRENT_DOMAIN                            = "http://uploaded.net/";
-    private static final String            HTML_MAINTENANCE                          = ">uploaded\\.net \\- Maintenance|Dear User, Uploaded is in maintenance mode|Lieber Kunde, wir führen kurze Wartungsarbeiten durch";
+    private static final String            HTML_MAINTENANCE                          = ">uploaded\\.net - Maintenance|Dear User, Uploaded is in maintenance mode|Lieber Kunde, wir führen kurze Wartungsarbeiten durch";
 
     private String getProtocol() {
         if (avoidHTTPS) {
@@ -795,7 +797,7 @@ public class Uploadedto extends PluginForHost {
             }
             // free account might not have captcha...
             if (dllink == null) {
-                dllink = br.getRegex("(\"|\\')(https?://[a-z0-9\\-]+\\.(uploaded\\.net|uploaded\\.to)/dl/[a-z0-9\\-]+)(\"|\\')").getMatch(1);
+                dllink = br.getRegex("(\"|')(https?://[a-z0-9\\-]+\\.(uploaded\\.net|uploaded\\.to)/dl/[a-z0-9\\-]+)\\1").getMatch(1);
             }
             final Browser brc = br.cloneBrowser();
             getPage(brc, baseURL + "js/download.js");
@@ -817,63 +819,57 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
-            final int fwait = wait;
-            final long timebefore = System.currentTimeMillis();
+            if (!Application.isJared(null)) {
 
-            final String fbaseURL = baseURL;
-            new RecaptchaV1Handler(rcID, this, br) {
+                final int fwait = wait;
 
-                @Override
-                protected boolean sendResponse(int retry, Browser br, String challenge, String response) throws IOException, PluginException, InterruptedException {
-                    int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
-                    if (retry == 0 && passedTime < fwait) {
-                        sleep((fwait - passedTime) * 1001l, downloadLink);
+                final long timebefore = System.currentTimeMillis();
+
+                final String fbaseURL = baseURL;
+                new RecaptchaV1Handler(rcID, this, br) {
+
+                    @Override
+                    protected boolean sendResponse(int retry, Browser br, String challenge, String response) throws IOException, PluginException, InterruptedException {
+                        int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
+                        if (retry == 0 && passedTime < fwait) {
+                            sleep((fwait - passedTime) * 1001l, downloadLink);
+                        }
+                        postPage(br, fbaseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + Encoding.urlEncode(challenge) + "&recaptcha_response_field=" + Encoding.urlEncode(response));
+
+                        return !br.containsHTML("\"err\":\"captcha\"");
                     }
-                    postPage(br, fbaseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + Encoding.urlEncode(challenge) + "&recaptcha_response_field=" + Encoding.urlEncode(response));
 
-                    return !br.containsHTML("\"err\":\"captcha\"");
+                }.run();
+            } else {
+                final long timebefore = System.currentTimeMillis();
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.setId(rcID);
+                rc.load();
+                for (int i = 0; i <= 5; i++) {
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                    int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
+                    if (i == 0 && passedTime < wait) {
+                        sleep((wait - passedTime) * 1001l, downloadLink);
+                    }
+                    postPage(br, baseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+                    if (br.containsHTML("\"err\":\"captcha\"")) {
+                        rc.reload();
+                        continue;
+                    }
+                    break;
                 }
-
-            }.run();
-
-            // final long timebefore = System.currentTimeMillis();
-            // final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            // final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            // rc.setId(rcID);
-            // rc.load();
-            // for (int i = 0; i <= 5; i++) {
-            // final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            // final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-            // int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
-            // if (i == 0 && passedTime < wait) {
-            // sleep((wait - passedTime) * 1001l, downloadLink);
-            // }
-            // postPage(br, baseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + rc.getChallenge() +
-            // "&recaptcha_response_field=" + c);
-            // if (br.containsHTML("\"err\":\"captcha\"")) {
-            // try {
-            // invalidateLastChallengeResponse();
-            // } catch (final Throwable e) {
-            // }
-            // rc.reload();
-            // continue;
-            // } else {
-            // try {
-            // validateLastChallengeResponse();
-            // } catch (final Throwable e) {
-            // }
-            // }
-            // break;
-            // }
+            }
             generalFreeErrorhandling(account);
-            if (br.containsHTML("limit\\-parallel")) {
+            if (br.containsHTML("limit-parallel")) {
                 freeDownloadlimitReached("You're already downloading");
             }
-            dllink = br.getRegex("url:\\'(http.*?)\\'").getMatch(0);
+            dllink = br.getRegex("url:'(http.*?)'").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("url:\\'(dl/.*?)\\'").getMatch(0);
+                dllink = br.getRegex("url:'(dl/.*?)'").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("(\"|\\')(https?://[a-z0-9\\-]+\\.(uploaded\\.net|uploaded\\.to)/dl/[a-z0-9\\-]+)(\"|\\')").getMatch(1);
+                    dllink = br.getRegex("(\"|')(https?://[a-z0-9\\-]+\\.(uploaded\\.net|uploaded\\.to)/dl/[a-z0-9\\-]+)\\1").getMatch(1);
                     if (dllink == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -917,7 +913,7 @@ public class Uploadedto extends PluginForHost {
             if (br.containsHTML("try again later")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             }
-            if (br.containsHTML("All of our free\\-download capacities are")) {
+            if (br.containsHTML("All of our free-download capacities are")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All of our free-download capacities are exhausted currently", 10 * 60 * 1000l);
             }
             if (br.containsHTML("File not found!")) {
@@ -965,7 +961,7 @@ public class Uploadedto extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Internal error'", 5 * 60 * 1000l);
         }
         /* "err" strings end */
-        if (br.containsHTML("You have reached the max\\. number of possible free downloads|err\":\"limit\\-dl\"")) {
+        if (br.containsHTML("You have reached the max\\. number of possible free downloads|err\":\"limit-dl\"")) {
             if (account == null) {
                 logger.info("Limit reached, throwing reconnect exception");
                 freeDownloadlimitReached(null);
@@ -1578,7 +1574,7 @@ public class Uploadedto extends PluginForHost {
                 // shown in html of the download server, 'You used too many different IPs, Downloads have been blocked for today.'
                 logger.warning("Your account has been disabled due account access from too many different IP addresses, Please contact " + this.getHost() + " support for resolution.");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account has been disabled due account access from too many different IP addresses, Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (br.containsHTML("We\\'re sorry but your download ticket couldn\\'t have been found")) {
+            } else if (br.containsHTML("We're sorry but your download ticket couldn't have been found")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 5 * 60 * 1000l);
             }
             // unknown error/defect, lets try next time with web method!
@@ -1865,7 +1861,7 @@ public class Uploadedto extends PluginForHost {
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
      * English.
-     * 
+     *
      * @param key
      * @return
      */
