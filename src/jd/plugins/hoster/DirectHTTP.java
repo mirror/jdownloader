@@ -819,7 +819,7 @@ public class DirectHTTP extends PluginForHost {
                 }
             }
             final String streamMod = urlConnection.getHeaderField("X-Mod-H264-Streaming");
-            if (streamMod != null) {
+            if (streamMod != null && downloadLink.getProperty("streamMod") == null) {
                 downloadLink.setProperty("streamMod", streamMod);
                 if (urlConnection.getRequest() instanceof HeadRequest) {
                     br.followConnection();
@@ -984,7 +984,7 @@ public class DirectHTTP extends PluginForHost {
 
     /**
      * update this map to your needs
-     * 
+     *
      * @param mimeType
      * @return
      */
