@@ -57,6 +57,7 @@ public class UstreamTv extends PluginForHost {
     @SuppressWarnings({ "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        errormessage = null;
         setBrowserExclusive();
         getFID(link);
         LinkedHashMap<String, Object> entries = null;
