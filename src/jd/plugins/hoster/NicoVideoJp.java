@@ -26,6 +26,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -78,6 +79,12 @@ public class NicoVideoJp extends PluginForHost {
         super(wrapper);
         this.enablePremium("https://secure.nicovideo.jp/secure/register");
         setConfigElements();
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
 
     /**
@@ -312,7 +319,7 @@ public class NicoVideoJp extends PluginForHost {
         }
 
         int maxChunks = ACCOUNT_FREE_MAXCHUNKS;
-        if (link.getBooleanProperty(NOCHUNKS, false)) {
+        if (link.getBooleanProperty(NOCHUNKS, false) && getPluginConfig().getBooleanProperty(NOCHUNKS, true)) {
             maxChunks = 1;
         }
 
@@ -479,7 +486,8 @@ public class NicoVideoJp extends PluginForHost {
         sb.append("*ext* = the extension of the file, in this case usually '.flv'");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NicoVideoJp.AVOID_ECONOMY_MODE, JDL.L("plugins.hoster.MicoVideoJp.AvoidEconomy mode", "Avoid economy mode - only download higher quality .mp4 videos?\r\n<html><b>Important: The default extension of all filenames is " + default_extension + ". It will be corrected once the downloads start if either this setting is active or the nicovideo site is in normal (NOT economy) mode!\r\nIf this setting is active and nicovideo is in economy mode, JDownloader will wait " + economy_active_wait_minutes + " minutes and try again afterwards.</b></html>")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NicoVideoJp.AVOID_ECONOMY_MODE, JDL.L("plugins.hoster.MicoVideoJp.AvoidEconomymode", "Avoid economy mode - only download higher quality .mp4 videos?\r\n<html><b>Important: The default extension of all filenames is " + default_extension + ". It will be corrected once the downloads start if either this setting is active or the nicovideo site is in normal (NOT economy) mode!\r\nIf this setting is active and nicovideo is in economy mode, JDownloader will wait " + economy_active_wait_minutes + " minutes and try again afterwards.</b></html>")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), NicoVideoJp.NOCHUNKS, JDL.L("plugins.hoster.MicoVideoJp.NoChunk", "Enable Chunk Workaround")).setDefaultValue(true));
     }
 
     @Override
