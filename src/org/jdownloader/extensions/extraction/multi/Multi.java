@@ -219,59 +219,16 @@ public class Multi extends IExtraction {
         return false;
     }
 
-    @Override
-    public boolean isAvailable() {
+    private boolean initLibrary(final String libID) {
         File tmp = null;
-        String libID = System.getProperty("sevenzipLibID");
         try {
-            if (StringUtils.isEmpty(libID)) {
-                libID = null;
-                switch (CrossSystem.OS.getFamily()) {
-                case LINUX:
-                    switch (CrossSystem.getARCHFamily()) {
-                    case ARM:
-                        if (useARMPiLibrary()) {
-                            libID = "Linux-armpi";
-                        } else {
-                            libID = "Linux-arm";
-                        }
-                        break;
-                    case X86:
-                        if (Application.is64BitJvm()) {
-                            libID = "Linux-amd64";
-                        } else {
-                            libID = "Linux-i386";
-                        }
-                        break;
-                    default:
-                        return false;
-                    }
-                    break;
-                case MAC:
-                    if (Application.is64BitJvm()) {
-                        libID = "Mac-x86_64";
-                    } else {
-                        libID = "Mac-i386";
-                    }
-                    break;
-                case WINDOWS:
-                    if (Application.is64BitJvm()) {
-                        libID = "Windows-amd64";
-                    } else {
-                        libID = "Windows-x86";
-                    }
-                    break;
-                default:
-                    return false;
-                }
-            }
-            logger.finer("Lib ID: " + libID);
+            logger.finer("Try Lib ID: " + libID);
             tmp = Application.getTempResource("7zip");
             try {
                 org.appwork.utils.Files.deleteRecursiv(tmp);
             } catch (final Throwable e) {
             }
-            logger.finer("Lib Path: " + tmp);
+            logger.finer("Try Lib Path: " + tmp);
             tmp.mkdirs();
             SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
         } catch (Throwable e) {
@@ -296,19 +253,67 @@ public class Multi extends IExtraction {
                 org.appwork.utils.Files.deleteRecursiv(tmp);
             } catch (final Throwable e1) {
             }
-            logger.log(e);
             logger.warning("Could not initialize Multiunpacker #1");
+            logger.log(e);
             try {
-                String s2 = System.getProperty("java.io.tmpdir");
+                final String s2 = System.getProperty("java.io.tmpdir");
                 logger.finer("Lib Path: " + (tmp = new File(s2)));
                 SevenZip.initSevenZipFromPlatformJAR(tmp);
             } catch (Throwable e2) {
-                logger.log(e2);
                 logger.warning("Could not initialize Multiunpacker #2");
+                logger.log(e2);
                 return false;
             }
         }
         return SevenZip.isInitializedSuccessfully();
+    }
+
+    @Override
+    public boolean isAvailable() {
+        final String customLibID = System.getProperty("sevenzipLibID");
+        if (StringUtils.isNotEmpty(customLibID)) {
+            return initLibrary(customLibID);
+        }
+        switch (CrossSystem.OS.getFamily()) {
+        case LINUX:
+            switch (CrossSystem.getARCHFamily()) {
+            case ARM:
+                final ArrayList<String> libIDs = new ArrayList<String>();
+                if (useARMPiLibrary()) {
+                    libIDs.add("Linux-armpi");
+                }
+                libIDs.add("Linux-arm2");
+                libIDs.add("Linux-arm");
+                for (String libID : libIDs) {
+                    if (initLibrary(libID)) {
+                        return true;
+                    }
+                }
+                return false;
+            case X86:
+                if (Application.is64BitJvm()) {
+                    return initLibrary("Linux-amd64");
+                } else {
+                    return initLibrary("Linux-i386");
+                }
+            default:
+                return false;
+            }
+        case MAC:
+            if (Application.is64BitJvm()) {
+                return initLibrary("Mac-x86_64");
+            } else {
+                return initLibrary("Mac-i386");
+            }
+        case WINDOWS:
+            if (Application.is64BitJvm()) {
+                return initLibrary("Windows-amd64");
+            } else {
+                return initLibrary("Windows-x86");
+            }
+        default:
+            return false;
+        }
     }
 
     @Override
