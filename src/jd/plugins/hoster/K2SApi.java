@@ -555,7 +555,7 @@ public abstract class K2SApi extends PluginForHost {
                     }
                     String r = arg;
                     if (!r.contains("captcha_challenge")) {
-                        r = arg.replaceFirst("\\}$", "") + "\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + JSonUtils.escape(code) + "\"}";
+                        r = arg.replaceFirst("\\}$", "") + ",\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + JSonUtils.escape(code) + "\"}";
                     } else {
                         final String jchallenge = getJson(r, "captcha_challenge");
                         final String jresponse = getJson(r, "captcha_response");
