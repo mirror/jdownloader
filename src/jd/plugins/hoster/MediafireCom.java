@@ -53,6 +53,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" }, flags = { 32 })
 public class MediafireCom extends PluginForHost {
@@ -70,7 +71,7 @@ public class MediafireCom extends PluginForHost {
     /**
      * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
      * access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
-     *
+     * 
      * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
      */
     public static String stringUserAgent() {
@@ -194,7 +195,7 @@ public class MediafireCom extends PluginForHost {
     /**
      * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from
      * httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
-     *
+     * 
      * @return eg. "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
      */
     public static String portableUserAgent() {
@@ -260,7 +261,7 @@ public class MediafireCom extends PluginForHost {
      * Returns a random User-Agent String (from a HbbTV supported device) of specified array. This array contains current user agents
      * gathered from httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid. Source:
      * https://udger.com/resources/ua-list/device-detail?device=Smart+TV
-     *
+     * 
      * @return eg. "Opera/9.80 (Linux mips ; U; hbbtv/1.1.1 (;Philips;;;; ) CE-HTML/1.0 NETTV/3.0.0; en) Presto/2.6.33 Version/10.70"
      */
     public static String hbbtvUserAgent() {
@@ -584,7 +585,7 @@ public class MediafireCom extends PluginForHost {
                             }
                         }
                     } else if (freeArea != null && freeArea.contains("g-recaptcha-response")) {
-                        final String recaptchaV2Response = getRecaptchaV2Response();
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                         form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                         br.submitForm(form);
                     }

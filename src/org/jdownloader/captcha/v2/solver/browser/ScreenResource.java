@@ -62,10 +62,11 @@ public abstract class ScreenResource {
 
         int blockRadius = 0;
         try {
+
             Point point = null;
             step: while (true) {
                 blockRadius++;
-                if (blockRadius * blockSize > 500) {
+                if (blockRadius * blockSize > 300) {
                     break;
                 }
                 int xblockmax = xstartBlock + blockRadius - 1;

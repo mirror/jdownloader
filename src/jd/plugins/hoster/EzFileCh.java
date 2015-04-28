@@ -44,6 +44,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision: 29998 $", interfaceVersion = 3, names = { "ezfile.ch" }, urls = { "https?://(www\\.)?ezfile\\.ch/[a-z0-9]+" }, flags = { 2 })
 public class EzFileCh extends PluginForHost {
@@ -224,7 +225,7 @@ public class EzFileCh extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String postData = "fkey=" + fid + "&f1=" + f1 + "&f2=" + f2 + "&r=";
-            final String recaptchaV2Response = getRecaptchaV2Response();
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             postData += Encoding.urlEncode(recaptchaV2Response);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("/?m=download&a=request", postData);
@@ -533,7 +534,7 @@ public class EzFileCh extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {

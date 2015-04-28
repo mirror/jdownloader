@@ -28,10 +28,21 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
     @Override
     public BrowserViewport getBrowserViewport(BrowserWindow screenResource, Rectangle elementBounds) {
+        Rectangle rect = null;
+        int sleep = 500;
+        for (int i = 0; i < 3; i++) {
+            try {
+                Thread.sleep(sleep);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            rect = screenResource.getRectangleByColor(0xff9900, 0, 0, 1d, elementBounds.x, elementBounds.y);
+            if (rect == null) {
+                sleep *= 2;
 
-        Rectangle rect = screenResource.getRectangleByColor(0xff9900, 0, 0, 1d, elementBounds.x, elementBounds.y);
-        if (rect == null) {
-            return null;
+                continue;
+            }
+            break;
         }
         return new Recaptcha2BrowserViewport(screenResource, rect, elementBounds);
     }

@@ -27,16 +27,18 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 /**
  * NOTE: <br />
  * - contains recaptchav2, and uids are not case senstive any longer -raztoki 20150427 - regex pattern seems to be case sensitive, our url
  * listener is case insensitive by default... so we need to ENFORCE case sensitivity. -raztoki 20150308 <br />
  * - uid seems to be fixed to 5 chars (at this time) -raztoki 20150308 <br />
  * - uses cloudflare -raztoki 20150308 <br />
- *
+ * 
  * @author psp
  * @author raztoki
- *
+ * 
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shink.in" }, urls = { "http://(www\\.)?shink\\.in/(?-i)[a-zA-Z0-9]{5}" }, flags = { 0 })
 public class ShinkIn extends antiDDoSForDecrypt {
@@ -65,7 +67,7 @@ public class ShinkIn extends antiDDoSForDecrypt {
         }
         // can contain recaptchav2
         if (dform.containsHTML("class=(\"|')g-recaptcha\\1")) {
-            final String recaptchaV2Response = getRecaptchaV2Response(param);
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
             dform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         }
         submitForm(dform);

@@ -41,6 +41,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10})\\.html" }, flags = { 0 })
 public class FileCryptCc extends PluginForDecrypt {
 
@@ -127,7 +129,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 captchaForm.put("button.y", String.valueOf(p.y));
                 submitForm(captchaForm);
             } else if (captchaForm != null && captchaForm.containsHTML("=\"g-recaptcha\"")) {
-                final String recaptchaV2Response = getRecaptchaV2Response(param);
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 submitForm(captchaForm);
             } else if (captcha != null) {

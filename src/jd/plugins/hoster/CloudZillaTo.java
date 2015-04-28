@@ -42,6 +42,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "neodrive.co", "cloudzilla.to" }, urls = { "http://(www\\.)?(cloudzilla\\.to|neodrive\\.co)/share/file/[A-Za-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM" }, flags = { 2, 0 })
 public class CloudZillaTo extends PluginForHost {
@@ -110,21 +111,12 @@ public class CloudZillaTo extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    @Override
-    protected String getRecaptchaV2ApiKey(final String source) {
-        if (source == null) {
-            return null;
-        }
-        final String apiKey = br.getRegex("var grecaptcha_key = \"([\\w-]+)\";").getMatch(0);
-        return apiKey;
-    }
-
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            final String recaptchaV2Response = getRecaptchaV2Response();
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, br.getRegex("var grecaptcha_key = \"([\\w-]+)\";").getMatch(0)).getToken();
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("X-Requested-With   XMLHttpRequest", "XMLHttpRequest");
             br.postPage("/generateticket/", "key=&file_id=" + fid + "&captcha=" + Encoding.urlEncode(recaptchaV2Response));

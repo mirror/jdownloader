@@ -39,6 +39,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megarapido.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class MegarapidoNet extends PluginForHost {
 
@@ -322,7 +324,7 @@ public class MegarapidoNet extends PluginForHost {
 
                 final DownloadLink dummyLink = new DownloadLink(this, "Account", "megarapido.net", DOMAIN, true);
                 this.setDownloadLink(dummyLink);
-                final String recaptchaV2Response = getRecaptchaV2Response();
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                 postData += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
 
                 this.postAPISafe("/painel_user/ajax/ajax.php", postData);
@@ -418,7 +420,7 @@ public class MegarapidoNet extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     *
+     * 
      * @param error
      *            : The name of the error
      * @param maxRetries
