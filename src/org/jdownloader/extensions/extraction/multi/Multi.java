@@ -884,6 +884,18 @@ public class Multi extends IExtraction {
         final Archive archive = getArchive();
         final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
         try {
+            if (ArchiveFormat.RAR == archive.getArchiveType().getArchiveFormat()) {
+                /* check for unsupported rar5 */
+                try {
+                    final String signatureString = FileSignatures.readFileSignature(new File(firstArchiveFile.getFilePath()), 8);
+                    if (signatureString.length() >= 16 && StringUtils.startsWithCaseInsensitive(signatureString, "526172211a070100")) {
+                        logger.severe("Rar5 is not supported!");
+                        return false;
+                    }
+                } catch (IOException e) {
+                    logger.log(e);
+                }
+            }
             final String[] patternStrings = config.getBlacklistPatterns();
             filter.clear();
             if (patternStrings != null && patternStrings.length > 0) {
