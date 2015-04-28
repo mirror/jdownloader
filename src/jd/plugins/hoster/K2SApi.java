@@ -67,6 +67,7 @@ public abstract class K2SApi extends PluginForHost {
     private final String    lng                    = getLanguage();
     private final String    AUTHTOKEN              = "auth_token";
     private int             authTokenFail          = 0;
+    private int             loginCaptchaFail       = -1;
 
     // plugin config definition
     protected final String  USE_API                = "USE_API_2";
@@ -312,12 +313,12 @@ public abstract class K2SApi extends PluginForHost {
                         if ("premium".equalsIgnoreCase(access)) {
                             try {
                                 dl.setComment(getErrorMessage(7));
-                            } catch (final Throwable e) {
+                            } catch (final Throwable t) {
                             }
                         } else if ("private".equalsIgnoreCase(access)) {
                             try {
                                 dl.setComment(getErrorMessage(8));
-                            } catch (final Throwable e) {
+                            } catch (final Throwable t) {
                             }
                         }
                     }
@@ -325,7 +326,7 @@ public abstract class K2SApi extends PluginForHost {
                         dl.setAvailable(false);
                         try {
                             dl.setComment(getErrorMessage(23));
-                        } catch (final Throwable e) {
+                        } catch (final Throwable t) {
                         }
                     }
                     setFUID(dl);
@@ -529,6 +530,41 @@ public abstract class K2SApi extends PluginForHost {
                 con = ibr.openPostConnection(getApiUrl() + url, arg);
                 readConnection(con, ibr);
                 antiDDoS(ibr);
+                // only do captcha stuff on the login page.
+                if (url.endsWith("/login") && loginRequiresCaptcha(ibr)) {
+                    loginCaptchaFail++;
+                    if (loginCaptchaFail > 1) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    // we can assume that the previous user:pass is wrong, prompt user for new one!
+
+                    Browser cbr = new Browser();
+                    postPageRaw(cbr, "/requestcaptcha", "", account);
+                    final String challenge = getJson(cbr, "challenge");
+                    final String captcha_url = getJson(cbr, "captcha_url");
+                    // Dependency
+                    if (inValidate(challenge) || inValidate(captcha_url)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    // final dummy
+                    final DownloadLink dummyLink = new DownloadLink(null, "Account", getDomain(), br.getURL(), true);
+                    final String code = getCaptchaCode(captcha_url, dummyLink);
+                    if (inValidate(code)) {
+                        // captcha can't be blank! Why we don't return null I don't know!
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    String r = arg;
+                    if (!r.contains("captcha_challenge")) {
+                        r = arg.replaceFirst("\\}$", "") + "\"captcha_challenge\":\"" + challenge + "\",\"captcha_response\":\"" + JSonUtils.escape(code) + "\"}";
+                    } else {
+                        final String jchallenge = getJson(r, "captcha_challenge");
+                        final String jresponse = getJson(r, "captcha_response");
+                        r = r.replace(jchallenge, challenge);
+                        r = r.replace(jresponse, JSonUtils.escape(code));
+                    }
+                    postPageRaw(ibr, url, r, account);
+                    return;
+                }
                 if (sessionTokenInvalid(account, ibr)) {
                     // we retry once after failure!
                     if (authTokenFail > 1) {
@@ -611,6 +647,16 @@ public abstract class K2SApi extends PluginForHost {
                 is.close();
             } catch (final Throwable e) {
             }
+        }
+    }
+
+    private boolean loginRequiresCaptcha(final Browser ibr) {
+        final String status = getJson(ibr, "status");
+        final String errorCode = getJson(ibr, "errorCode");
+        if ("error".equalsIgnoreCase(status) && ("30".equalsIgnoreCase(errorCode))) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -778,6 +824,9 @@ public abstract class K2SApi extends PluginForHost {
                     // This is actually a IP restriction!
                     // 30min wait time.... since wait time isn't respected (throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, time)),
                     // we need to set value like this and then throw temp disable.
+                    // new one
+                    // {"message":"Login attempt was exceed, please wait or verify your request via captcha challenge","status":"error","code":406,"errorCode":71}
+                    // ^^^ OLD they now switched to 30
                     account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 31 * 60 * 1000l);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + msg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 case 73:
@@ -1575,12 +1624,19 @@ public abstract class K2SApi extends PluginForHost {
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                         final String response = getCaptchaCode("recaptcha", cf, dllink);
+                        if (inValidate(response)) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
                         cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
                         cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
                         ibr.submitForm(cloudflare);
                         if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
-                            logger.warning("Possible plugin error within cloudflare handling");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            logger.warning("Wrong captcha");
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        // if it works, there should be a redirect.
+                        if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
+                            ibr.getPage(ibr.getRedirectLocation());
                         }
                     }
                 } else if (responseCode == 503 && cloudflare != null) {
@@ -1598,10 +1654,6 @@ public abstract class K2SApi extends PluginForHost {
                     cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
                     Thread.sleep(5500);
                     ibr.submitForm(cloudflare);
-                    if (ibr.getFormbyProperty("id", "ChallengeForm") != null || ibr.getFormbyProperty("id", "challenge-form") != null) {
-                        logger.warning("Possible plugin error within cloudflare handling");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
                     // if it works, there should be a redirect.
                     if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
                         ibr.getPage(ibr.getRedirectLocation());
