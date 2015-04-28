@@ -99,7 +99,7 @@ public class DeviantArtCom extends PluginForHost {
     @Override
     public void init() {
         super.init();
-        Browser.setRequestIntervalLimitGlobal(getHost(), 250);
+        Browser.setRequestIntervalLimitGlobal(getHost(), 750);
     }
 
     /**
