@@ -17,7 +17,6 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
@@ -73,7 +72,7 @@ public class BloombergComDecrypter extends PluginForDecrypt {
         String xmlsource = null;
         LinkedHashMap<String, Object> entries = null;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final HashMap<String, String[]> formats = jd.plugins.hoster.BloombergCom.formats;
+        final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.BloombergCom.formats;
         final String nicehost = new Regex(parameter, "http://(?:www\\.)?([^/]+)").getMatch(0);
         final String decryptedhost = "http://" + nicehost + "decrypted";
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);

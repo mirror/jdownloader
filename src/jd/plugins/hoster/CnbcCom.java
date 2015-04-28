@@ -16,8 +16,8 @@
 
 package jd.plugins.hoster;
 
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
@@ -37,27 +37,27 @@ import jd.utils.locale.JDL;
 public class CnbcCom extends PluginForHost {
 
     /** Settings stuff */
-    private static final String             FAST_LINKCHECK = "FAST_LINKCHECK";
+    private static final String                   FAST_LINKCHECK = "FAST_LINKCHECK";
 
-    public static HashMap<String, String[]> formats        = new HashMap<String, String[]>() {
-        {
-            /*
-             * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec,
-             * audioBitrate
-             */
-            /*
-             * We could also add audio- and videobitrate but from my tests they
-             * looked quite variable so we prefer not to use wrong information here
-             * as it will be used for the filenames later too!
-             */
-            put("mpeg4_200000_Download", new String[] { "AVC", null, "400x224", "AAC LC", null });
-            put("mpeg4_500000_Download", new String[] { "AVC", null, "534x300", "AAC LC", null });
-            put("mpeg4_600000_Download", new String[] { "AVC", null, "480x270", "AAC LC", null });
-            put("mpeg4_1100000_Download", new String[] { "AVC", null, "704x396", "AAC LC", null });
-        }
-    };
+    public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>() {
+                                                                     {
+                                                                         /*
+                                                                          * Format-name:videoCodec, videoBitrate, videoResolution,
+                                                                          * audioCodec, audioBitrate
+                                                                          */
+                                                                         /*
+                                                                          * We could also add audio- and videobitrate but from my tests they
+                                                                          * looked quite variable so we prefer not to use wrong information
+                                                                          * here as it will be used for the filenames later too!
+                                                                          */
+                                                                         put("mpeg4_200000_Download", new String[] { "AVC", null, "400x224", "AAC LC", null });
+                                                                         put("mpeg4_500000_Download", new String[] { "AVC", null, "534x300", "AAC LC", null });
+                                                                         put("mpeg4_600000_Download", new String[] { "AVC", null, "480x270", "AAC LC", null });
+                                                                         put("mpeg4_1100000_Download", new String[] { "AVC", null, "704x396", "AAC LC", null });
+                                                                     }
+                                                                 };
 
-    private String                          DLLINK         = null;
+    private String                                DLLINK         = null;
 
     @SuppressWarnings("deprecation")
     public CnbcCom(final PluginWrapper wrapper) {

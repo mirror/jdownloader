@@ -16,13 +16,10 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
 import jd.parser.Regex;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
@@ -31,14 +28,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDHexUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ustream.tv" }, urls = { "http://(www\\.)?ustream\\.tv/recorded/\\d+(/highlight/\\d+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ustream.tv" }, urls = { "http://(www\\.)?ustream\\.tv/recorded/\\d+(/highlight/\\d+)?" }, flags = { 0 })
 public class UstreamTv extends PluginForHost {
 
-    private String  DLLINK       = null;
-
-    private boolean NOTFORSTABLE = false;
+    private String DLLINK = null;
 
     public UstreamTv(final PluginWrapper wrapper) {
         super(wrapper);
@@ -54,130 +48,66 @@ public class UstreamTv extends PluginForHost {
         return -1;
     }
 
-    private String beautifierString(final Browser amf) {
-        final StringBuffer sb = new StringBuffer();
-        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
-        for (final byte element : amf.toString().getBytes()) {
-            if (element < 127) {
-                if (element > 31) {
-                    sb.append((char) element);
-                } else {
-                    sb.append("#");
-                }
-            }
-        }
-        if (sb == null || sb.length() == 0) {
-            return null;
-        }
-        return sb.toString().replaceAll("#+", "#");
-    }
+    private static final String MESSAGETOKEN_PRIVATEVIDEO = "errorVideoPrivated";
 
-    private byte[] createAMFRequest(String url, String vid) {
-        if (vid == null) {
-            return null;
-        }
-        String rpin = "rpin" + String.valueOf(Math.random() * Math.random()).substring(1);
-        String data = "0A000000010300077061676555726C0200";
-        data += getHexLength(url) + JDHexUtils.getHexString(url);
-        data += "00086175746F706C617901010007766964656F49640200";
-        data += getHexLength(vid) + JDHexUtils.getHexString(vid);
-        data += "00066C6F63616C65020005656E5F555300047270696E0200";
-        data += getHexLength(rpin) + JDHexUtils.getHexString(rpin);
-        data += "00076272616E64496402000131000009";
-        return JDHexUtils.getByteArray("000000000001000F5669657765722E676574566964656F00022F31000000" + getHexLength(JDHexUtils.toString(data)) + data);
-    }
+    private String              errormessage              = null;
 
-    private String getHexLength(final String s) {
-        String result = Integer.toHexString(s.length());
-        return result.length() % 2 > 0 ? "0" + result : result;
-    }
-
+    /* Thanks goes to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/ustream.py */
+    /* Last revision containing the "old" AMF-handling: 26193 */
+    @SuppressWarnings({ "unchecked" })
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Sorry, the page you requested cannot be found")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String pageUrl = downloadLink.getDownloadURL();
-        final String videoId = new Regex(pageUrl, "recorded/(\\d+)").getMatch(0);
-
-        Browser amf = new Browser();
-        getAMFRequest(amf, createAMFRequest(pageUrl, videoId));
-        /** Private video -> Can't watch! */
-        if (amf.containsHTML("This video was made private by the owner")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String result = beautifierString(amf);
-        HashMap<String, String> values = new HashMap<String, String>();
-        for (String[] s : new Regex(result == null ? "" : result, "#(title|flv|liveHttpUrl|smoothStreamingUrl)#.([^<>#]+)").getMatches()) {
-            values.put(s[0], s[1]);
-        }
-
-        String ext = ".mp4";
-        String filename = values.get("title");
-        if (filename == null) {
-            filename = br.getRegex("<meta name=\"title\" content=\"(.*?), Recorded on ").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>(.*?),.*?</title>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?), Recorded on ").getMatch(0);
-                }
+        getFID(link);
+        LinkedHashMap<String, Object> entries = null;
+        final String fid = link.getLinkID();
+        /* Offline links should have nice filenames as well. */
+        link.setName(fid + ".mp4");
+        this.br.setFollowRedirects(true);
+        /* 2nd possibility: http://api.ustream.tv/json/video/<fid>/listAllVideos?key=laborautonomo&limit=1 */
+        final String getJsonURL = "http://cdngw.ustream.tv/rgwjson/Viewer.getVideo/%7B%22brandId%22:1,%22videoId%22:" + fid + ",%22autoplay%22:false%7D";
+        br.getPage(getJsonURL);
+        entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        /* If !success the video is probably offline for some reason */
+        if (!((Boolean) entries.get("success")).booleanValue()) {
+            entries = (LinkedHashMap<String, Object>) entries.get("error");
+            errormessage = (String) entries.get("messageToken");
+            if (errormessage != null && errormessage.equals(MESSAGETOKEN_PRIVATEVIDEO)) {
+                link.getLinkStatus().setStatusText("This is a private video which only the owner can watch/download");
+                return AvailableStatus.TRUE;
             }
-        }
-        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
-        DLLINK = values.get("liveHttpUrl");
-        if (DLLINK != null && DLLINK.matches("http://tcdn\\.ustream\\.tv/video/\\d+\\?preset_id=\\d+\\&e=\\d+\\&h=[a-z0-9]+")) {
-            /* Important step or we will only get the audio and not the video - preset_id=1 = video, preset_id=2 = audio only */
-            final String e = new Regex(DLLINK, "e=(\\d+)").getMatch(0);
-            final String h = new Regex(DLLINK, "h=([a-z0-9]+)").getMatch(0);
-            br.getPage("http://tcdn.ustream.tv/video/" + videoId + "?preset_id=1&e=" + e + "&h=" + h + "&noredirect=1&ri=0&rs=0");
-            DLLINK = br.toString();
-            if (!DLLINK.startsWith("http") || DLLINK.length() > 500) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (DLLINK.contains(".flv")) {
-                ext = ".flv";
-            }
-        } else {
-            if (DLLINK == null) {
-                DLLINK = values.get("smoothStreamingUrl");
-                if (DLLINK == null) {
-                    DLLINK = values.get("flv");
-                    ext = ".flv";
-                }
-            }
-        }
-        if (NOTFORSTABLE) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "JDownloader2 is needed!");
-        }
+        DLLINK = (String) entries.get("smoothStreamingUrl");
         if (DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            /* Sometimes only lower quality flv's are available! */
+            DLLINK = (String) entries.get("flv");
         }
+        entries = (LinkedHashMap<String, Object>) entries.get("moduleConfig");
+        entries = (LinkedHashMap<String, Object>) entries.get("meta");
+        final String channel = (String) entries.get("channelUrl");
+        final String user = (String) entries.get("userName");
+        String title = (String) entries.get("title");
+        if (DLLINK == null || channel == null || user == null || title == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        title = encodeUnicode(title);
 
-        downloadLink.setName(filename.trim() + ext);
+        final String ext;
+        if (DLLINK.contains(".mp4")) {
+            ext = ".mp4";
+        } else {
+            ext = ".flv";
+        }
+        final String filename = channel + " - " + user + " - " + fid + " - " + title + ext;
 
-        // In case the link redirects to the finallink
-        amf.setFollowRedirects(true);
+        link.setFinalFileName(filename);
+
         URLConnectionAdapter con = null;
         try {
-            con = amf.openGetConnection(DLLINK);
+            con = br.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -191,6 +121,45 @@ public class UstreamTv extends PluginForHost {
     }
 
     @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (errormessage != null && errormessage.equals(MESSAGETOKEN_PRIVATEVIDEO)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This is a private video which only the owner can watch/download");
+        }
+        dl = BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    /* Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink dl) {
+        final String fid = new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
+        if (dl.getLinkID() == null || !dl.getLinkID().matches("\\d+")) {
+            dl.setLinkID(fid);
+        }
+        return fid;
+    }
+
+    @Override
     public void reset() {
     }
 
@@ -200,19 +169,6 @@ public class UstreamTv extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    private void getAMFRequest(final Browser amf, final byte[] b) {
-        amf.getHeaders().put("Content-Type", "application/x-amf");
-        try {
-            PostRequest request = (PostRequest) amf.createPostRequest("http://rgw.ustream.tv/gateway.php", (String) null);
-            request.setPostBytes(b);
-            amf.openRequestConnection(request);
-            amf.loadConnection(null);
-        } catch (Throwable e) {
-            /* does not exist in 09581 */
-            NOTFORSTABLE = true;
-        }
     }
 
 }
