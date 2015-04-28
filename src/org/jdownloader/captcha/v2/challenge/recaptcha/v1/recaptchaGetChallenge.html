@@ -11,7 +11,6 @@ iframe {
 	border-color: #ff9900;
 }
 </style>
-<script src='http://www.google.com/recaptcha/api.js' async defer></script>
 
 </head>
 <body onload="init()">
@@ -81,17 +80,20 @@ iframe {
             custom_theme_widget : 'recaptcha_widget'
         };
     </script>
-	<div id="recaptcha_widget" style="display: none">
-		<div id="recaptcha_image"></div>
 
-		<span class="recaptcha_only_if_image">Please Enter: </span><input
-			type="text" id="recaptcha_response_field"
-			name="recaptcha_response_field">
 
-		<script type="text/javascript"
-			src="http://www.google.com/recaptcha/api/challenge?k=%%%sitekey%%%"></script>
+    <div id="recaptcha_widget" style="display: none">
+        <div id="recaptcha_image"></div>
+JDownloader Captcha Helper. This window should close itself after several seconds.
+        <span style="visibility: hidden;" class="recaptcha_only_if_image">Please Enter: </span><input style="visibility: hidden;" 
+            type="text" id="recaptcha_response_field"
+            name="recaptcha_response_field"></input>
 
-	</div>
+        <script type="text/javascript"
+            src="http://www.google.com/recaptcha/api/challenge?k=%%%sitekey%%%"></script>
+
+    </div>
+
 
 	<script type="text/javascript">
         window.onload = function() {

@@ -11,7 +11,6 @@ import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Files;
-import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
@@ -74,13 +73,13 @@ public abstract class BrowserReference implements HttpRequestHandler {
         this.challenge = challenge;
         id = new UniqueAlltimeID();
         // this should get setter in advanced.
-        this.port = 12345;
+        this.port = BrowserSolverService.getInstance().getConfig().getLocalHttpPort();
 
     }
 
     public void open() throws IOException {
         handlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, this);
-        openURL("http://127.0.0.1:" + port + "/" + Hash.getMD5(this.challenge.getPlugin().getClass().getName()) + "?id=" + id.getID());
+        openURL("http://127.0.0.1:" + port + "/jd?id=" + id.getID());
     }
 
     private void openURL(String url) {
@@ -174,7 +173,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
                     return true;
                 }
             }
-            if (!StringUtils.equals(request.getRequestedPath(), "/" + Hash.getMD5(this.challenge.getPlugin().getClass().getName()))) {
+            if (!StringUtils.equals(request.getRequestedPath(), "/jd")) {
                 return false;
             }
 
@@ -239,7 +238,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
 
     @Override
     public boolean onPostRequest(PostRequest request, HttpResponse response) throws BasicRemoteAPIException {
-        if (!StringUtils.equals(request.getRequestedPath(), "/" + Hash.getMD5(this.challenge.getPlugin().getClass().getName()))) {
+        if (!StringUtils.equals(request.getRequestedPath(), "/jd")) {
             return false;
         }
 

@@ -2,6 +2,7 @@ package org.jdownloader.captcha.v2.solver.browser;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 
@@ -23,5 +24,11 @@ public interface BrowserCaptchaSolverConfig extends ChallengeSolverConfig {
     String[] getBrowserCommandline();
 
     void setBrowserCommandline(String[] cmd);
+
+    @DefaultIntValue(24613)
+    @AboutConfig
+    int getLocalHttpPort();
+
+    void setLocalHttpPort(int port);
 
 }
