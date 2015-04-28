@@ -49,7 +49,9 @@ iframe {
     window.onload = function() {
 
         if (document.getElementsByTagName('iframe').length > 0) {
-       
+            document.getElementsByTagName('iframe')[0].onLoad=    document.getElementsByTagName('iframe')[0].onload=function(){
+                alert("Onload");
+            };
             init(document.getElementsByTagName('iframe')[0]);
         } else {
 

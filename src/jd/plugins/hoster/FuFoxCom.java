@@ -40,6 +40,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision: $", interfaceVersion = 3, names = { "fufox.net" }, urls = { "https?://(?:www\\.)?fufox\\.(?:com|net)/dl/[A-Za-z0-9]{14}" }, flags = { 2 })
 /**
@@ -103,7 +104,7 @@ public class FuFoxCom extends PluginForHost {
         if (download == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String recaptchaV2Response = getRecaptchaV2Response();
+        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
         download.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         br.submitForm(download);
         final String dllink = br.getRegex("<a href=\"([^\"]+)[^\r\n]+Save on computer</a>").getMatch(0);

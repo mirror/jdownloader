@@ -31,6 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filehorse.com" }, urls = { "http://(www\\.)?(mac\\.)?filehorse\\.com/download\\-[a-z0-9\\-]+/(\\d+/)?" }, flags = { 0 })
 public class FileHorseCom extends PluginForHost {
@@ -90,7 +91,7 @@ public class FileHorseCom extends PluginForHost {
             Form d = br.getFormBySubmitvalue(Encoding.urlEncode("Download Now"));
             // NEW, recaptchav2
             if (d != null && d.containsHTML("google\\.com/recaptcha/")) {
-                final String recaptchaV2Response = getRecaptchaV2Response();
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                 d.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 br.submitForm(d);
                 dllink = br.getRegex("<a href=\"(https?://(\\w+\\.)?filehorse\\.com/download/file/[^\"]+)").getMatch(0);

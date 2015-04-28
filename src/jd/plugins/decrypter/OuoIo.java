@@ -26,6 +26,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ouo.io" }, urls = { "http://ouo\\.io/[A-Za-z0-9]+" }, flags = { 0 })
 public class OuoIo extends PluginForDecrypt {
 
@@ -47,7 +49,7 @@ public class OuoIo extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String token = br.getRegex("name=\"_token\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-        final String recaptchaV2Response = getRecaptchaV2Response(param);
+        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
         br.postPage("http://ouo.io/go/" + fid, "_token=" + Encoding.urlEncode(token) + "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
         final String finallink = br.getRegex("\"(http://[^<>\"]*?)\" id=\"btn-main\"").getMatch(0);
         if (finallink == null) {

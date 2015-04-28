@@ -36,6 +36,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hostuje.net" }, urls = { "http://[\\w\\.]*?hostuje\\.net/file\\.php\\?id=[a-zA-Z0-9]+" }, flags = { 0 })
 public class HostUjeNet extends PluginForHost {
@@ -173,7 +174,7 @@ public class HostUjeNet extends PluginForHost {
         }
         if (br.containsHTML("'sitekey'\\s*:\\s*'[\\w+]+'") && br.containsHTML("document\\.getElementById\\('pobierz'\\)\\.disabled=false")) {
             // recaptcha v2
-            final String recaptchaV2Response = getRecaptchaV2Response();
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
             f.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         }
 

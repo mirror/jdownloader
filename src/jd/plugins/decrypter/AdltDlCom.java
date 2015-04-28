@@ -38,6 +38,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "adultddl.ws" }, urls = { "http://(www\\.)?adultddl\\.(com|ws)/\\d{4}/\\d{2}/\\d{2}/[^<>\"'/]+" }, flags = { 0 })
 public class AdltDlCom extends PluginForDecrypt {
 
@@ -114,7 +116,8 @@ public class AdltDlCom extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (br2.containsHTML("class=\"g-recaptcha\"") && br2.containsHTML("google\\.com/recaptcha")) {
-                final String recaptchaV2Response = getRecaptchaV2Response(param);
+
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br2).getToken();
                 captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             } else if (br2.containsHTML("google\\.com/recaptcha")) {
                 // recaptcha v1

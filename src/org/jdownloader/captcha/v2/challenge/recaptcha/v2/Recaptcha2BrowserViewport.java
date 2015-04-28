@@ -34,7 +34,7 @@ public class Recaptcha2BrowserViewport extends BrowserViewport {
         Point oldloc = MouseInfo.getPointerInfo().getLocation();
         int clickX = recaptchaIframe.x + scale(22) + scale(Math.random() * 20);
         int clickY = recaptchaIframe.y + scale(32) + scale(Math.random() * 20);
-
+        System.out.println("Press " + clickX + ":" + clickY);
         getRobot().mouseMove(clickX, clickY);
 
         getRobot().mousePress(InputEvent.BUTTON1_MASK);
@@ -105,14 +105,14 @@ public class Recaptcha2BrowserViewport extends BrowserViewport {
 
     }
 
-    protected Rectangle find() {
-        Rectangle spoken = getRectangleByColor(0xCCCCCC, scale(48), scale(48), 1d, scale(22), scale(32));
-
-        if (spoken != null && spoken.height > scale(48) && spoken.width > scale(48)) {
-            return spoken;
-        }
-        return null;
-    }
+    // protected Rectangle find() {
+    // Rectangle spoken = getRectangleByColor(0xCCCCCC, scale(48), scale(48), 1d, scale(22), scale(32));
+    //
+    // if (spoken != null && spoken.height > scale(48) && spoken.width > scale(48)) {
+    // return spoken;
+    // }
+    // return null;
+    // }
 
     public Recaptcha2BrowserViewport(BrowserWindow screenResource, Rectangle rect, Rectangle elementBounds) {
         super(screenResource);

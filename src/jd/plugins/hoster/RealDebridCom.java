@@ -53,6 +53,7 @@ import jd.plugins.download.HashInfo;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+\\.(?:real\\-debrid\\.com|rdb\\.so)/dl?/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends PluginForHost {
@@ -641,15 +642,6 @@ public class RealDebridCom extends PluginForHost {
         return ai;
     }
 
-    @Override
-    protected String getRecaptchaV2ApiKey(final String source) {
-        if (source == null) {
-            return null;
-        }
-        final String apiKey = getJson("recaptcha_public_key");
-        return apiKey;
-    }
-
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
@@ -680,7 +672,7 @@ public class RealDebridCom extends PluginForHost {
                         } else if (br.containsHTML("\"captcha\":1")) {
                             DownloadLink dummyLink = new DownloadLink(this, "Account", mProt + mName, mProt + mName, true);
                             this.setDownloadLink(dummyLink);
-                            final String recaptchaV2Response = getRecaptchaV2Response();
+                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, getJson("recaptcha_public_key")).getToken();
                             br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(account.getPass()) + "&captcha_response=" + Encoding.urlEncode(recaptchaV2Response) + "&time=" + System.currentTimeMillis() + "&pin_challenge=&pin_answer=");
                             if (br.containsHTML("\"captcha\":1")) {
                                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nError either captcha is incorrect or your user:password is incorrect", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -803,7 +795,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -813,7 +805,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -823,7 +815,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -833,7 +825,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJsonArray(final String source, final String key) {
@@ -843,7 +835,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
@@ -853,7 +845,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return String[] value from provided JSon Array
-     *
+     * 
      * @author raztoki
      * @param source
      * @return

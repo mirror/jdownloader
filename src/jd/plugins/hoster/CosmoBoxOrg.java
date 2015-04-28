@@ -46,6 +46,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cosmobox.org" }, urls = { "https?://(www\\.)?cosmobox\\.org/[A-Za-z0-9]+" }, flags = { 2 })
 public class CosmoBoxOrg extends PluginForHost {
@@ -222,7 +223,7 @@ public class CosmoBoxOrg extends PluginForHost {
                     final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
                     if (br.containsHTML("data\\-sitekey=")) {
                         captcha = true;
-                        final String recaptchaV2Response = getRecaptchaV2Response();
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                         success = true;
                         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + recaptchaV2Response, resume, maxchunks);
                     } else if (rcID != null) {
@@ -388,7 +389,7 @@ public class CosmoBoxOrg extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
