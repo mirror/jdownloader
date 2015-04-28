@@ -1381,10 +1381,10 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                 private Point loc;
 
                 private Timer mArrayTimer = new Timer(1000, new ActionListener() {
-                                              public void actionPerformed(ActionEvent e) {
-                                                  marray(loc);
-                                              }
-                                          });
+                    public void actionPerformed(ActionEvent e) {
+                        marray(loc);
+                    }
+                });
 
                 @Override
                 public void mouseDragged(final MouseEvent e) {
@@ -2122,6 +2122,7 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                 Thread.sleep(500);
                 br.clearCookies(parameter);
                 getPage(parameter);
+                continue;
             }
         }
         System.out.println("TextX " + br.containsHTML("TextX"));
@@ -2158,28 +2159,22 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
         }
 
         // Different captcha types
-        boolean valid = true;
-        boolean done = false;
-        if (br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
+        if (br.containsHTML("<!-- KeyCAPTCHA code")) {
+            boolean done = false;
             KeyCaptcha kc;
 
             // START solve keycaptcha automatically
             for (int i = 0; i < 3; i++) {
                 kc = new KeyCaptcha(br);
                 final String result = kc.autoSolve(parameter);
-
-                if ("CANCEL".equals(result)) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
-                }
-
                 postPage(parameter, "capcode=" + Encoding.urlEncode(result));
-                if (!br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
+                if (!br.containsHTML("<!-- KeyCAPTCHA code")) {
                     done = true;
                     break;
                 }
             }
-            // START solve keycaptcha automatically
             if (!done) {
+                // manual failover
                 for (int i = 0; i <= 3; i++) {
                     kc = new KeyCaptcha(br);
                     final String result = kc.showDialog(parameter);
@@ -2190,16 +2185,17 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                         throw new DecrypterException(DecrypterException.CAPTCHA);
                     }
                     postPage(parameter, "capcode=" + Encoding.urlEncode(result));
-                    if (!br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
+                    if (!br.containsHTML("<!-- KeyCAPTCHA code")) {
                         break;
                     }
                 }
+                if (br.containsHTML("<!-- KeyCAPTCHA code")) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
             }
         }
-        if (br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
-        }
         if (br.containsHTML("CaptX|TextX")) {
+            boolean valid = true;
             final int max_attempts = 4;
             for (int attempts = 0; attempts < max_attempts; attempts++) {
                 if (valid && attempts > 0) {
@@ -2245,9 +2241,9 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                     }
                 }
             }
-        }
-        if (!valid) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+            if (!valid) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
         }
         return true;
     }
@@ -2929,23 +2925,23 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
          */
         Comparator<Integer> isElementColor = new Comparator<Integer>() {
 
-                                               public int compare(Integer o1, Integer o2) {
-                                                   int c = o1;
-                                                   int c2 = o2;
-                                                   if (isBackground(o1) || isBackground(o2)) {
-                                                       return 0;
-                                                   }
-                                                   if (c == 0x000000 || c2 == 0x000000) {
-                                                       return c == c2 ? 1 : 0;
-                                                   }
-                                                   int[] hsvC = Colors.rgb2hsv(c);
-                                                   int[] hsvC2 = Colors.rgb2hsv(c2);
-                                                   // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
-                                                   // Is it a typo? Was a different comparison meant in the second place?
-                                                   return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
-                                               }
+            public int compare(Integer o1, Integer o2) {
+                int c = o1;
+                int c2 = o2;
+                if (isBackground(o1) || isBackground(o2)) {
+                    return 0;
+                }
+                if (c == 0x000000 || c2 == 0x000000) {
+                    return c == c2 ? 1 : 0;
+                }
+                int[] hsvC = Colors.rgb2hsv(c);
+                int[] hsvC2 = Colors.rgb2hsv(c2);
+                // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
+                        // Is it a typo? Was a different comparison meant in the second place?
+                                return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
+            }
 
-                                           };
+        };
 
         private boolean equalElements(int c, int c2) {
             return isElementColor.compare(c, c2) == 1;
