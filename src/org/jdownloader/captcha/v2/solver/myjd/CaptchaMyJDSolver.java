@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import jd.plugins.Plugin;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -22,6 +23,7 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
+import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
@@ -78,8 +80,16 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-        if (validateLogins() && c instanceof BasicCaptchaChallenge && MyJDownloaderController.getInstance().isRemoteCaptchaServiceEnabled() && super.canHandle(c)) {
+        boolean myEn = MyJDownloaderController.getInstance().isRemoteCaptchaServiceEnabled();
+        if (validateLogins() && c instanceof BasicCaptchaChallenge && myEn && super.canHandle(c)) {
+            boolean isRecaptchaV1 = "recaptcha".equals(((BasicCaptchaChallenge) c).getTypeID());
+            if (isRecaptchaV1) {
+                if (!Application.isHeadless() && BrowserSolverService.getInstance().getConfig().isBrowserLoopEnabled()) {
+                    // our myjd autosolver currently cannot solve these "easier" types
+                    return false;
+                }
 
+            }
             Plugin plg = ((BasicCaptchaChallenge) c).getPlugin();
             if (plg != null) {
                 final String id = plg.getHost();

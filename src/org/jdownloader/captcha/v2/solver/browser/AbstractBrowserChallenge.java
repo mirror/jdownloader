@@ -3,7 +3,14 @@ package org.jdownloader.captcha.v2.solver.browser;
 import java.awt.Rectangle;
 import java.io.IOException;
 
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.plugins.Account;
 import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
 
 import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
@@ -28,6 +35,9 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
 
         super(method, null);
         this.plugin = pluginForHost;
+        if (pluginForHost == null) {
+            plugin = getPluginFromThread();
+        }
     }
 
     abstract public String getHTML();
@@ -42,6 +52,38 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
 
         return false;
 
+    }
+
+    private Plugin getPluginFromThread() {
+        final Thread thread = Thread.currentThread();
+        if (thread instanceof AccountCheckerThread) {
+            final AccountCheckJob job = ((AccountCheckerThread) thread).getJob();
+            if (job != null) {
+                final Account account = job.getAccount();
+                return account.getPlugin();
+            }
+        } else if (thread instanceof LinkCheckerThread) {
+            final PluginForHost plg = ((LinkCheckerThread) thread).getPlugin();
+            if (plg != null) {
+                return plg;
+            }
+        } else if (thread instanceof SingleDownloadController) {
+            return ((SingleDownloadController) thread).getDownloadLinkCandidate().getCachedAccount().getPlugin();
+        } else if (thread instanceof LinkCrawlerThread) {
+            final Object owner = ((LinkCrawlerThread) thread).getCurrentOwner();
+            if (owner instanceof Plugin) {
+                return (Plugin) owner;
+            }
+        }
+        return null;
+    }
+
+    public String getHttpPath() {
+        if (plugin != null) {
+            return plugin.getHost();
+        }
+        Thread th = Thread.currentThread();
+        return "jd";
     }
 
 }

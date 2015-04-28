@@ -79,7 +79,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
 
     public void open() throws IOException {
         handlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, this);
-        openURL("http://127.0.0.1:" + port + "/jd?id=" + id.getID());
+        openURL("http://127.0.0.1:" + port + "/" + challenge.getHttpPath() + "?id=" + id.getID());
     }
 
     private void openURL(String url) {
@@ -173,7 +173,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
                     return true;
                 }
             }
-            if (!StringUtils.equals(request.getRequestedPath(), "/jd")) {
+            if (!StringUtils.equals(request.getRequestedPath(), "/" + challenge.getHttpPath() + "")) {
                 return false;
             }
 
@@ -238,7 +238,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
 
     @Override
     public boolean onPostRequest(PostRequest request, HttpResponse response) throws BasicRemoteAPIException {
-        if (!StringUtils.equals(request.getRequestedPath(), "/jd")) {
+        if (!StringUtils.equals(request.getRequestedPath(), "/" + challenge.getHttpPath() + "")) {
             return false;
         }
 

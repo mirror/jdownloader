@@ -25,6 +25,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -44,6 +45,7 @@ import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
+import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
@@ -241,7 +243,12 @@ public abstract class RecaptchaV1Handler {
     }
 
     public static String load(Browser rcBr, final String siteKey) throws IOException, InterruptedException {
-
+        if (Application.isHeadless()) {
+            return null;
+        }
+        if (!BrowserSolverService.getInstance().getConfig().isBrowserLoopEnabled()) {
+            return null;
+        }
         final AtomicReference<String> url = new AtomicReference<String>();
 
         AbstractBrowserChallenge dummyChallenge = new AbstractBrowserChallenge("recaptcha", null) {
