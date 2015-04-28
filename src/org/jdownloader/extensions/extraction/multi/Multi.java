@@ -281,9 +281,10 @@ public class Multi extends IExtraction {
                 final ArrayList<String> libIDs = new ArrayList<String>();
                 if (useARMPiLibrary()) {
                     libIDs.add("Linux-armpi");
+                } else {
+                    libIDs.add("Linux-arm2");
+                    libIDs.add("Linux-arm");
                 }
-                libIDs.add("Linux-arm2");
-                libIDs.add("Linux-arm");
                 for (String libID : libIDs) {
                     if (initLibrary(libID)) {
                         return true;
