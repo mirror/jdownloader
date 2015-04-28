@@ -31,4 +31,11 @@ public interface BrowserCaptchaSolverConfig extends ChallengeSolverConfig {
 
     void setLocalHttpPort(int port);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("If enabled, JD will use your default browser to improve the captcha detection.")
+    boolean isBrowserLoopEnabled();
+
+    void setBrowserLoopEnabled(boolean b);
+
 }
