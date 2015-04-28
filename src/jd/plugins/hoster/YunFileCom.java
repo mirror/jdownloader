@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -338,11 +339,22 @@ public class YunFileCom extends PluginForHost {
         if (account.getBooleanProperty("freeacc", false)) {
             doFree(link);
         } else {
-            final String vid1 = br.getRegex("\"vid1\", \"([a-z0-9]+)\"").getMatch(0);
-            String dllink = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("<td align=center>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
+            final Map<String, String> dllinkVidMap = new HashMap<String, String>();
+
+            // get download links, sites with different language have different links (servers)
+            for (String language : new String[] { "zh_cn", "en_au" }) {
+                br.setCookie(MAINPAGE, "language", language);
+                br.getPage(link.getDownloadURL());
+                final String vid1 = br.getRegex("\"vid1\", \"([a-z0-9]+)\"").getMatch(0);
+                for (String dllink : br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/[^<>\"]*?)\"").getColumn(0)) {
+                    dllinkVidMap.put(dllink, vid1);
+                }
+                if (dllinkVidMap.size() == 0) { // try to login if not found
+                    login(account, true, link.getDownloadURL());
+                }
+                // dllink = br.getRegex("<td align=center>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
             }
+
             final String[] counter = br.getRegex("document.getElementById\\(\\'.*?\\'\\)\\.src = \"([^\"]+)").getColumn(0);
             if (counter != null && counter.length > 0) {
                 String referer = br.getURL();
@@ -355,19 +367,30 @@ public class YunFileCom extends PluginForHost {
                     }
                 }
             }
-            if (dllink == null || vid1 == null) {
+            if (dllinkVidMap.size() == 0) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.setCookie(MAINPAGE, "vid1", vid1);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
-                handleServerErrors();
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+            final java.util.List<String> dllinks = new ArrayList<String>(dllinkVidMap.keySet());
+            java.util.Collections.shuffle(dllinks); // Shuffle for load balancing
+            for (String dllink : dllinks) {
+                br.setCookie(MAINPAGE, "vid1", dllinkVidMap.get(dllink));
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+                if (dl.getConnection().getResponseCode() == 503 || dl.getConnection().getResponseCode() == 404) {
+                    logger.warning("server is busy, try next one");
+                } else if (dl.getConnection().getContentType().contains("html")) {
+                    handleServerErrors();
+                    logger.warning("The final dllink seems not to be a file!");
+                    br.followConnection();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else { // success
+                    dl.startDownload();
+                    return;
+                }
             }
-            dl.startDownload();
+
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 1 * 60 * 1001l);
         }
     }
 
