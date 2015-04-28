@@ -225,6 +225,9 @@ public class NowVideoEu extends PluginForHost {
         if (br.containsHTML("error=1&error_msg=The video is converting")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster Issue: Video still Converting", 30 * 60 * 1000);
         }
+        if (br.containsHTML("error_msg=The video has failed to convert")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'The video has failed to convert'", 60 * 60 * 1000l);
+        }
         String dllink = br.getRegex("url=(http://[^<>\"]*?\\.flv)\\&title").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

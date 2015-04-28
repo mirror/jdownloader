@@ -34,6 +34,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "r8link.com" }, urls = { "http://(www\\.)?r8link\\.com/[A-Za-z0-9]+" }, flags = { 0 })
 public class R8LinkCom extends PluginForDecrypt {
 
@@ -76,6 +78,9 @@ public class R8LinkCom extends PluginForDecrypt {
                 } else {
                     break;
                 }
+            } else if (br.containsHTML("class=\"g\\-recaptcha\"")) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, this.br).getToken();
+                br.postPage(br.getURL(), "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
             }
         }
         final String finallink = br.getRegex("HTTP-EQUIV='Refresh'[^>]*CONTENT='\\d+;URL=(http://[^<>\"]*?)'").getMatch(0);
