@@ -939,13 +939,10 @@ public class SecondLevelLaunch {
                                             @Override
                                             public void run() {
                                                 if (!DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE)) {
-                                                    // maybe downloads have been
-                                                    // started by another
-                                                    // instance
-                                                    // or user input
+                                                    // maybe downloads have been started by another instance or user input
                                                     return;
                                                 }
-                                                boolean autoStart = JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads() || JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() > 0 && CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS.isEnabled();
+                                                boolean autoStart = JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads() || JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() >= 0;
                                                 if (autoStart) {
                                                     final GeneralSettings generalSettings = JsonConfig.create(GeneralSettings.class);
                                                     if (generalSettings.getAutoStartCountdownSeconds() > 0 && CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS.isEnabled()) {
