@@ -129,10 +129,12 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
 
     }
 
+    @SuppressWarnings("deprecation")
     public TeleFiveDeDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -281,9 +283,11 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                 final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=" + KalturaFlavorAsset.get("bitrate") + "&vId=" + KalturaFlavorAsset.get("id"));
                 link.setAvailable(true);
                 link.setFinalFileName(filename);
-                try {/* JD2 only */
+                try {
+                    /* JD2 only */
                     link.setContentUrl(parameter);
-                } catch (Throwable e) {/* Stable */
+                } catch (Throwable e) {
+                    /* Stable */
                     link.setBrowserUrl(parameter);
                 }
                 link.setDownloadSize(SizeFormatter.getSize(KalturaFlavorAsset.get("size") + "kb"));

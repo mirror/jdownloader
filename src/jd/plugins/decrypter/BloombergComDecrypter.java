@@ -186,8 +186,6 @@ public class BloombergComDecrypter extends PluginForDecrypt {
                 dl.setAvailable(true);
                 dl.setDownloadSize(Long.parseLong(filesize));
                 decryptedLinks.add(dl);
-            } else {
-                logger.warning("WTF");
             }
         }
         if (decryptedLinks.size() == 0) {
