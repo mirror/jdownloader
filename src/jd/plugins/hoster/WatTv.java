@@ -39,18 +39,30 @@ public class WatTv extends PluginForHost {
         super(wrapper);
     }
 
-    private String getTS(long ts) {
-        int t = (int) Math.floor(ts / 1000);
-        return Integer.toString(t, 36);
-    }
+    // private String getTS(long ts) {
+    // int t = (int) Math.floor(ts / 1000);
+    // return Integer.toString(t, 36);
+    // }
 
-    private String computeToken(String id, final String ts) {
-        String salt = String.valueOf(Integer.toHexString(Integer.parseInt(ts, 36)));
-        while (salt.length() < 8) {
-            salt = "0" + salt;
+    private static final boolean enable_hds_workaround = true;
+
+    private String computeToken(String quality, final String videoID) {
+        quality += videoID;
+        // String salt = String.valueOf(Integer.toHexString(Integer.parseInt(ts, 36)));
+        // while (salt.length() < 8) {
+        // salt = "0" + salt;
+        // }
+        long timestamp = System.currentTimeMillis();
+        try {
+            final Browser br2 = br.cloneBrowser();
+            br2.getPage("http://www.wat.tv/servertime?" + videoID);
+            timestamp = Long.parseLong(br2.toString().split("\\|")[0]);
+        } catch (final Throwable e) {
+            logger.warning("Failed to get server timestamp");
         }
+        final String timestamp_hex = Long.toHexString(timestamp);
         final String key = "9b673b13fa4682ed14c3cfa5af5310274b514c4133e9b3a81e6e3aba009l2564";
-        return JDHash.getMD5(key + id + salt) + "/" + salt;
+        return JDHash.getMD5(key + quality + timestamp_hex) + "/" + timestamp_hex;
     }
 
     @Override
@@ -58,6 +70,7 @@ public class WatTv extends PluginForHost {
         return "http://www.wat.tv/cgu";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
@@ -82,11 +95,12 @@ public class WatTv extends PluginForHost {
             filename = filename.replaceFirst(" \\- $", "");
         }
         filename = Encoding.htmlDecode(filename.trim());
-        downloadLink.setName(filename + ".flv");
+        downloadLink.setName(filename + ".mp4");
         return AvailableStatus.TRUE;
     }
 
     public String getFinalLink() throws Exception {
+        String videolink = null;
         // 8 digit id, located at the end of some fields
         String videoID = br.getRegex("<meta property=\"og:video(:secure_url)?\" content=\"[^\"]+(\\d{8})\">").getMatch(1);
         if (videoID == null) {
@@ -95,45 +109,40 @@ public class WatTv extends PluginForHost {
         if (videoID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
-        final Browser br2 = br.cloneBrowser();
-        String getVideoLink = null;
-        br2.setFollowRedirects(false);
-        String swfLoaderUrl = br.getRegex("<meta property=\"og:video\" content=\"(.*?)\"").getMatch(0);
-
-        if (swfLoaderUrl != null) {
-            br2.getPage(swfLoaderUrl);
-            swfLoaderUrl = br2.getRedirectLocation() == null ? null : br2.getRedirectLocation();
-            if (swfLoaderUrl != null) {
-                String query = "&sitepage=WAT%2Ftv%2Ft%2Fcatchup%2Ftf1%2Fnos-chers-voisins-tf1";// SD
-                br2.getPage("http://www.wat.tv/interface/contentv4/" + videoID);
-                String quality = "/web/", country = "DE";
-                if (br2.containsHTML("\"hasHD\":true")) {
-                    quality = "/webhd/";
-                    query = "&sitepage=WAT%2Ftv%2Ft%2Finedit%2Ftf1%2Flciwat";
+        if (enable_hds_workaround) {
+            /* Thanks to: https://github.com/rg3/youtube-dl/blob/master/youtube_dl/extractor/wat.py */
+            /* Android devices get http urls. This can also be used to avoid GEO-blocks! */
+            videolink = "http://wat.tv/get/android5/" + videoID + ".mp4";
+        } else {
+            final Browser br2 = br.cloneBrowser();
+            /* Contentv4 is used on the website but it returns information that we don't need */
+            br2.getPage("http://www.wat.tv/interface/contentv3/" + videoID);
+            String quality = "/web/", country = "DE";
+            if (br2.containsHTML("\"hasHD\":true")) {
+                quality = "/webhd/";
+            }
+            if (br2.containsHTML("\"geolock\":true")) {
+                country = "FR";
+            }
+            final String token = computeToken(quality, videoID);
+            final String getpage = "http://www.wat.tv/get" + quality + videoID + "?token=" + token + "&domain=www.wat.tv&refererURL=wat.tv&revision=04.00.759%0A&synd=0&helios=1&context=playerWat&pub=1&country=" + country + "&sitepage=WAT%2Fhumour%2Fp%2Fle-comte-de-bouderbala&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=WIN%2017,0,0,169";
+            br2.getPage(getpage);
+            if (br2.containsHTML("No htmlCode read")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Video not available in your country!");
+            }
+            videolink = br2.toString();
+            if (videolink == null || !videolink.startsWith("http") && !videolink.startsWith("rtmp")) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            videolink = Encoding.htmlDecode(videolink.trim());
+            if (videolink.startsWith("http")) {
+                final URLConnectionAdapter con = br2.openGetConnection(videolink);
+                if (con.getResponseCode() == 404 || con.getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.WatTv.CountryBlocked", "This video isn't available in your country!"));
                 }
-                if (br2.containsHTML("\"geolock\":true")) {
-                    country = "FR";
-                }
-                final String token = computeToken(quality + videoID, getTS(System.currentTimeMillis()));
-                br2.getPage("http://www.wat.tv/get" + quality + videoID + "?token=" + token + "&domain=www.wat.tv&refererURL=www.wat.tv&revision=04.00.131%0A&synd=0&helios=1&context=playerWat&pub=5&country=" + country + query + "&lieu=wat&playerContext=CONTEXT_WAT&getURL=1&version=LNX%2011,2,202,291");
-                if (br2.containsHTML("No htmlCode read")) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Video not available in your country!");
-                }
-                getVideoLink = br2.toString();
             }
         }
-        if (getVideoLink == null || !getVideoLink.startsWith("http") && !getVideoLink.startsWith("rtmp")) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        getVideoLink = Encoding.htmlDecode(getVideoLink.trim());
-        if (getVideoLink.startsWith("http")) {
-            final URLConnectionAdapter con = br2.openGetConnection(getVideoLink);
-            if (con.getResponseCode() == 404 || con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.WatTv.CountryBlocked", "This video isn't available in your country!"));
-            }
-        }
-        return getVideoLink;
+        return videolink;
     }
 
     @Override
@@ -146,6 +155,7 @@ public class WatTv extends PluginForHost {
         requestFileInformation(downloadLink);
         String finallink = getFinalLink();
         if (finallink.startsWith("rtmp")) {
+            /* Old */
             if (isStableEnviroment()) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!");
             }
@@ -171,6 +181,8 @@ public class WatTv extends PluginForHost {
 
             ((RTMPDownload) dl).startDownload();
         } else {
+            // dl = new HDSDownloader(downloadLink, br, finallink);
+            // dl.startDownload();
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
