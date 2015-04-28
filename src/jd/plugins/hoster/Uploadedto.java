@@ -67,11 +67,9 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1Handler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/(file/|\\?id=)?[\\w]+|ul\\.to/(file/|\\?id=)?[\\w]+)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
@@ -819,47 +817,32 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
-            if (!Application.isJared(null)) {
-
-                final int fwait = wait;
-
-                final long timebefore = System.currentTimeMillis();
-
-                final String fbaseURL = baseURL;
-                new RecaptchaV1Handler(rcID, this, br) {
-
-                    @Override
-                    protected boolean sendResponse(int retry, Browser br, String challenge, String response) throws IOException, PluginException, InterruptedException {
-                        int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
-                        if (retry == 0 && passedTime < fwait) {
-                            sleep((fwait - passedTime) * 1001l, downloadLink);
-                        }
-                        postPage(br, fbaseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + Encoding.urlEncode(challenge) + "&recaptcha_response_field=" + Encoding.urlEncode(response));
-
-                        return !br.containsHTML("\"err\":\"captcha\"");
-                    }
-
-                }.run();
-            } else {
-                final long timebefore = System.currentTimeMillis();
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.setId(rcID);
-                rc.load();
-                for (int i = 0; i <= 5; i++) {
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                    int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
-                    if (i == 0 && passedTime < wait) {
-                        sleep((wait - passedTime) * 1001l, downloadLink);
-                    }
-                    postPage(br, baseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
-                    if (br.containsHTML("\"err\":\"captcha\"")) {
-                        rc.reload();
-                        continue;
-                    }
-                    break;
+            final long timebefore = System.currentTimeMillis();
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId(rcID);
+            rc.load();
+            for (int i = 0; i <= 5; i++) {
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                if (c == null || c.length() == 0) {
+                    rc.reload();
+                    continue;
                 }
+                int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
+                if (i == 0 && passedTime < wait) {
+                    sleep((wait - passedTime) * 1001l, downloadLink);
+                }
+                postPage(br, baseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+                if (br.containsHTML("\"err\":\"captcha\"")) {
+                    rc.reload();
+                    continue;
+                }
+                break;
+            }
+            if (br.containsHTML("\\{succ:true\\}") || br.containsHTML("\"err\":\"captcha\"")) {
+
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             generalFreeErrorhandling(account);
             if (br.containsHTML("limit-parallel")) {
@@ -1861,7 +1844,7 @@ public class Uploadedto extends PluginForHost {
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
      * English.
-     *
+     * 
      * @param key
      * @return
      */

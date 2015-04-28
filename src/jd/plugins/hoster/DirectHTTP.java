@@ -207,20 +207,30 @@ public class DirectHTTP extends PluginForHost {
 
         public void load() throws IOException, PluginException {
             prepRcBr();
-
-            /* follow redirect needed as google redirects to another domain */
-            this.rcBr.setFollowRedirects(true);
-            // new primary. 20141211
-            this.rcBr.getPage("http://www.google.com/recaptcha/api/challenge?k=" + this.id);
-            // old
-            // this.rcBr.getPage("http://api.recaptcha.net/challenge?k=" + this.id);
-            this.challenge = this.rcBr.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
-            this.server = this.rcBr.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
-            if (this.challenge == null || this.server == null) {
-                System.out.println("Recaptcha Module fails: " + this.rcBr.getHttpConnection());
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            try {
+                challenge = org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1Handler.load(rcBr, id);
+                if (challenge != null) {
+                    server = "http://www.google.com/recaptcha/api/";
+                    this.captchaAddress = this.server + "image?c=" + this.challenge;
+                }
+            } catch (Throwable e) {
+                e.printStackTrace();
             }
-            this.captchaAddress = this.server + "image?c=" + this.challenge;
+            if (challenge == null) {
+                /* follow redirect needed as google redirects to another domain */
+                this.rcBr.setFollowRedirects(true);
+                // new primary. 20141211
+                this.rcBr.getPage("http://www.google.com/recaptcha/api/challenge?k=" + this.id);
+                // old
+                // this.rcBr.getPage("http://api.recaptcha.net/challenge?k=" + this.id);
+                this.challenge = this.rcBr.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
+                this.server = this.rcBr.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
+                if (this.challenge == null || this.server == null) {
+                    System.out.println("Recaptcha Module fails: " + this.rcBr.getHttpConnection());
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                this.captchaAddress = this.server + "image?c=" + this.challenge;
+            }
         }
 
         public void parse() throws IOException, PluginException {
@@ -290,14 +300,24 @@ public class DirectHTTP extends PluginForHost {
         }
 
         public void reload() throws IOException, PluginException {
+            String newChallenge = null;
+            try {
+                newChallenge = org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1Handler.load(rcBr, id);
 
-            this.rcBr.getPage("http://www.google.com/recaptcha/api/reload?c=" + this.challenge + "&k=" + this.id + "&reason=r&type=image&lang=en");
-            this.challenge = this.rcBr.getRegex("Recaptcha\\.finish\\_reload\\(\\'(.*?)\\'\\, \\'image\\'").getMatch(0);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+            if (newChallenge == null) {
+                this.rcBr.getPage("http://www.google.com/recaptcha/api/reload?c=" + this.challenge + "&k=" + this.id + "&reason=r&type=image&lang=en");
+                newChallenge = this.rcBr.getRegex("Recaptcha\\.finish\\_reload\\(\\'(.*?)\\'\\, \\'image\\'").getMatch(0);
 
-            if (this.challenge == null) {
+            }
+
+            if (newChallenge == null) {
                 System.out.println("Recaptcha Module fails: " + this.rcBr.getHttpConnection());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            challenge = newChallenge;
             this.captchaAddress = this.server + "image?c=" + this.challenge;
         }
 
@@ -964,7 +984,7 @@ public class DirectHTTP extends PluginForHost {
 
     /**
      * update this map to your needs
-     *
+     * 
      * @param mimeType
      * @return
      */
