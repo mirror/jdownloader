@@ -605,7 +605,7 @@ public class FileparadoxIn extends PluginForHost {
             ttt = cbr.getRegex(">(\\d+)</span></span><span id=\"second\"").getMatch(0);
         }
         if (inValidate(ttt)) {
-            ttt = cbr.getRegex(">Please Wait <span id=\"[a-z0-9]+\">(\\d+)</span> seconds").getMatch(0);
+            ttt = cbr.getRegex(">\\s*Please Wait\\s*<span id=\"[a-z0-9]+\">\\s*(\\d+)\\s*</span>\\s*seconds").getMatch(0);
         }
         if (!inValidate(ttt)) {
             // remove one second from past, to prevent returning too quickly.
