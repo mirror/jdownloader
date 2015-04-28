@@ -16,8 +16,8 @@
 
 package jd.plugins.hoster;
 
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
@@ -37,30 +37,30 @@ import jd.utils.locale.JDL;
 public class RedbullTv extends PluginForHost {
 
     /** Settings stuff */
-    private static final String             FAST_LINKCHECK = "FAST_LINKCHECK";
+    private static final String                   FAST_LINKCHECK = "FAST_LINKCHECK";
 
-    public static HashMap<String, String[]> formats        = new HashMap<String, String[]>() {
-        {
-            /*
-             * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec,
-             * audioBitrate
-             */
-            put("64", new String[] { "AVC", "64", "0x0", "AAC LC", "64" });
-            put("296", new String[] { "AVC", "296", "384x216", "AAC LC", "75,3" });
-            put("496", new String[] { "AVC", "496", "384x216", "AAC LC", "75,3" });
-            put("856", new String[] { "AVC", "856", "384x216", "AAC LC", "75,3" });
-            put("1200", new String[] { "AVC", "1200", "640x360", "AAC LC", "75,3" });
-            put("1800", new String[] { "AVC", "1800", "960x540", "AAC LC", "75,3" });
-            put("2500", new String[] { "AVC", "2500", "1280x720", "AAC LC", "75,3" });
-            put("3528", new String[] { "AVC", "3528", "1280x720", "AAC LC", "75,3" });
-            put("4500", new String[] { "AVC", "4500", "1280x720", "AAC LC", "75,3" });
-            put("6500", new String[] { "AVC", "6500", "1920x1080", "AAC LC", "75,3" });
-            put("8500", new String[] { "AVC", "8500", "1920x1080", "AAC LC", "75,3" });
+    public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>() {
+                                                                     {
+                                                                         /*
+                                                                          * Format-name:videoCodec, videoBitrate, videoResolution,
+                                                                          * audioCodec, audioBitrate
+                                                                          */
+                                                                         put("64", new String[] { "AVC", "64", "0x0", "AAC LC", "64" });
+                                                                         put("296", new String[] { "AVC", "296", "384x216", "AAC LC", "75,3" });
+                                                                         put("496", new String[] { "AVC", "496", "384x216", "AAC LC", "75,3" });
+                                                                         put("856", new String[] { "AVC", "856", "384x216", "AAC LC", "75,3" });
+                                                                         put("1200", new String[] { "AVC", "1200", "640x360", "AAC LC", "75,3" });
+                                                                         put("1800", new String[] { "AVC", "1800", "960x540", "AAC LC", "75,3" });
+                                                                         put("2500", new String[] { "AVC", "2500", "1280x720", "AAC LC", "75,3" });
+                                                                         put("3528", new String[] { "AVC", "3528", "1280x720", "AAC LC", "75,3" });
+                                                                         put("4500", new String[] { "AVC", "4500", "1280x720", "AAC LC", "75,3" });
+                                                                         put("6500", new String[] { "AVC", "6500", "1920x1080", "AAC LC", "75,3" });
+                                                                         put("8500", new String[] { "AVC", "8500", "1920x1080", "AAC LC", "75,3" });
 
-        }
-    };
+                                                                     }
+                                                                 };
 
-    private String                          DLLINK         = null;
+    private String                                DLLINK         = null;
 
     @SuppressWarnings("deprecation")
     public RedbullTv(final PluginWrapper wrapper) {
