@@ -66,8 +66,8 @@ public class UpleaCom extends PluginForHost {
         if (br.containsHTML(">You followed an invalid or expired link")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("class=\"agmd size18\">([^<>\"]*?)<").getMatch(0);
-        String filesize = br.getRegex("class=\"label label\\-info agmd size14\">([^<>\"]*?)</span>").getMatch(0);
+        final String filename = br.getRegex("class=\"(agmd size18|gold-text)\">([^<>\"]*?)<").getMatch(1);
+        String filesize = br.getRegex("class=\"label label\\-info agmd( size14)?\">([^<>\"]*?)</span>").getMatch(1);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
