@@ -280,8 +280,9 @@
 				<exclude name="**/test/**" />
 			</fileset>
 			<fileset dir="src">			             
-			                <include name="**/*.js" />			
-			     <include name="**/*.html" />     
+			                <include name="**/*.js" />		
+				<include name="org/jdownloader/captcha/v2/solver/browser/html/**/*" />
+			   
 			</fileset>
 			<fileset dir="${cls}">
 				<include name="jd/plugins/hoster/RTMPDownload.class" />
