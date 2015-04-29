@@ -158,7 +158,9 @@ function refresh() {
 
         }
         xhr.onLoad = function() {
-            if (xhr.responseText == "true") {
+            if(xhr.status==0){
+                closeWindowOrTab();   
+            }else if (xhr.responseText == "true") {
                 closeWindowOrTab();
 
                 return;
@@ -174,6 +176,9 @@ function refresh() {
 
         xhr.open("GET", window.location.href + "&do=canClose", true);
         xhr.send();
+        
+        
+  
     } catch (err) {
         closeWindowOrTab();
         return;
