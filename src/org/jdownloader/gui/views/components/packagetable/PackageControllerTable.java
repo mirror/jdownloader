@@ -38,6 +38,7 @@ import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
 import org.appwork.utils.NullsafeAtomicReference;
+import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
@@ -237,6 +238,11 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                                 @Override
                                 public List<? extends AbstractNode> getRawSelection() {
                                     return tableData;
+                                }
+
+                                @Override
+                                protected void aggregate(Queue queue) {
+                                    super.aggregate(getModel().getController().getQueue());
                                 }
 
                                 @Override

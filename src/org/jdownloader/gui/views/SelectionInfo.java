@@ -15,6 +15,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
@@ -128,7 +129,15 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                 final PackageControllerTableModelData<PackageType, ChildrenType> tableData = table.getModel().getTableData();
                 childrenFilters = tableData.getChildrenFilters();
             }
-            table.getController().getQueue().addWait(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
+            aggregate(table.getController().getQueue());
+        } else {
+            aggregate(null);
+        }
+    }
+
+    protected void aggregate(Queue queue) {
+        if (queue != null) {
+            queue.addWait(new QueueAction<Void, RuntimeException>(QueuePriority.HIGH) {
 
                 @Override
                 protected Void run() throws RuntimeException {
