@@ -1,8 +1,5 @@
 package org.jdownloader.captcha.v2.challenge.areyouahuman;
 
-import java.awt.AWTException;
-import java.awt.Robot;
-import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.URL;
 
@@ -14,6 +11,7 @@ import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
@@ -37,30 +35,23 @@ public abstract class AreYouAHumanChallenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public boolean onPostRequest(BrowserReference browserReference, PostRequest request, HttpResponse response) throws IOException {
-
-        String parameter = request.getParameterbyKey("session_secret");
+    public boolean onGetRequest(BrowserReference browserReference, GetRequest request, HttpResponse response) throws IOException {
+        String parameter = request.getParameterbyKey("response");
         if (StringUtils.isNotEmpty(parameter)) {
             browserReference.onResponse(parameter);
             response.setResponseCode(ResponseCode.SUCCESS_OK);
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
 
             response.getOutputStream(true).write("Please Close the Browser now".getBytes("UTF-8"));
-            // Close Browser Tab
-            Robot robot;
-            try {
-                robot = new Robot();
 
-                robot.keyPress(KeyEvent.VK_CONTROL);
-                robot.keyPress(KeyEvent.VK_W);
-
-                robot.keyRelease(KeyEvent.VK_CONTROL);
-                robot.keyRelease(KeyEvent.VK_W);
-            } catch (AWTException e) {
-                e.printStackTrace();
-            }
             return true;
         }
+        return super.onGetRequest(browserReference, request, response);
+    }
+
+    @Override
+    public boolean onPostRequest(BrowserReference browserReference, PostRequest request, HttpResponse response) throws IOException {
+
         return false;
 
     }
@@ -69,7 +60,7 @@ public abstract class AreYouAHumanChallenge extends AbstractBrowserChallenge {
     public String getHTML() {
         String html;
         try {
-            URL url = AreYouAHumanChallenge.class.getResource("areyouahuman.html");
+            URL url = AreYouAHumanChallenge.class.getResource("areyouahumanchallenge.html");
             html = IO.readURLToString(url);
 
             html = html.replace("%%%sitekey%%%", siteKey);
