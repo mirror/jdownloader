@@ -43,8 +43,8 @@
 	<!-- Compiles the code -->
 	<target name="compile" depends="clean">
 		<mkdir dir="${cls}" />
-		
-		
+
+
 
 		<!-- Build dependencies -->
 
@@ -80,10 +80,10 @@
 			<classpath refid="classpath" />
 
 		</javac>
-		
-		  <javac srcdir="${dep.jdc}/src" debug="${debug}" verbose="false" excludes="**/test/**" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
-		            <classpath refid="classpath" />
-		   </javac>
+
+		<javac srcdir="${dep.jdc}/src" debug="${debug}" verbose="false" excludes="**/test/**" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+			<classpath refid="classpath" />
+		</javac>
 		<echo message="Finished." />
 
 
@@ -132,7 +132,7 @@
 		<copy todir="${dist}">
 			<fileset dir="${res}" includes="*.html, *.txt, *.exe, *.bat, *.properties" />
 		</copy>
-	
+
 		<mkdir dir="${dist}/java" />
 		<mkdir dir="${dist}/tmp" />
 
@@ -253,8 +253,8 @@
 			<fileset dir="${cls}">
 				<include name="**/*.class" />
 				<include name="**/*.txt" />
-			    <include name="**/*.dat" />
-	
+				<include name="**/*.dat" />
+
 				<exclude name="jd/controlling/reconnect/plugins/*/**/*" />
 				<exclude name="jd/captcha/**" />
 				<exclude name="org/appwork/**/*" />
@@ -279,10 +279,12 @@
 				<exclude name="tests/**" />
 				<exclude name="**/test/**" />
 			</fileset>
-			<fileset dir="src">			             
-			                <include name="**/*.js" />		
+			<fileset dir="src">
+				<include name="**/*.js" />
+				<include name="**/*.html" />
+				<include name="**/*.css" />
 				<include name="org/jdownloader/captcha/v2/solver/browser/html/**/*" />
-			   
+
 			</fileset>
 			<fileset dir="${cls}">
 				<include name="jd/plugins/hoster/RTMPDownload.class" />
@@ -409,7 +411,7 @@
 	<target name="jarOptionals" description="Creates the Optional Plugins">
 		<manifest file="${dist}/Manifest.MF">
 			<attribute name="Created-By" value="JD-Team and Friends" />
-		</manifest>	
+		</manifest>
 		<buildAddon package="EventScripter" include="eventscripter" />
 		<buildAddon package="JDChat" include="chat" />
 		<buildAddon package="infobar" include="infobar" />
@@ -418,7 +420,7 @@
 		<buildAddon package="JDShutdown" include="shutdown" />
 
 
-		
+
 		<buildAddon package="JDGrowl" include="growl" />
 		<buildAddon package="AntiShutdown" include="antistandby" />
 		<buildAddon package="Extraction" include="extraction" />
