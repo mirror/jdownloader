@@ -39,6 +39,7 @@ import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.sweetcaptcha.CaptchaHelperCrawlerPluginSweetCaptcha;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "adultddl.ws" }, urls = { "http://(www\\.)?adultddl\\.(com|ws)/\\d{4}/\\d{2}/\\d{2}/[^<>\"'/]+" }, flags = { 0 })
 public class AdltDlCom extends PluginForDecrypt {
@@ -115,8 +116,17 @@ public class AdltDlCom extends PluginForDecrypt {
             if (captcha == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (br2.containsHTML("class=\"g-recaptcha\"") && br2.containsHTML("google\\.com/recaptcha")) {
-
+            if (br2.containsHTML("sweetcaptcha\\.com/api/v\\d+/apps/")) {
+                final String a = new CaptchaHelperCrawlerPluginSweetCaptcha(this, br2).getToken();
+                if (a != null) {
+                    // put JSON String[][] inputfields
+                    String[][] args = new Regex(a, "\\[\\s*\"(.*?)\"\\s*,\\s*\"(.*?)\"\\s*\\]").getMatches();
+                    for (final String[] arg : args) {
+                        captcha.put(arg[0], Encoding.urlEncode(arg[1]));
+                    }
+                }
+                System.out.println("sucess");
+            } else if (br2.containsHTML("class=\"g-recaptcha\"") && br2.containsHTML("google\\.com/recaptcha")) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br2).getToken();
                 captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             } else if (br2.containsHTML("google\\.com/recaptcha")) {
