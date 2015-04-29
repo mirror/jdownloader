@@ -26,13 +26,13 @@ public enum ArchiveType {
      */
 
     /**
-     * Multipart RAR Archive (.part01.rar, .part02.rar...)
+     * Multipart RAR Archive (.part01.rar, .part02.rar...), 0-999 -> max 1000 parts
      */
     RAR_MULTI {
         /**
          * naming, see http://www.win-rar.com/press/downloads/Split_Files.pdf and http://kb.winzip.com/kb/entry/154/
          */
-        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.(part|p)(\\.?)(\\d+)(\\..*?|)\\.rar$");
+        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.(part|p)(\\.?)(\\d{1,3})(\\..*?|)\\.rar$");
 
         @Override
         public ArchiveFormat getArchiveFormat() {
@@ -101,7 +101,7 @@ public enum ArchiveType {
 
     },
     /**
-     * Multipart RAR Archive (.000.rar, .001.rar...)
+     * Multipart RAR Archive (.000.rar, .001.rar...) 000-999 -> max 1000 parts
      */
     RAR_MULTI2 {
 
@@ -190,10 +190,10 @@ public enum ArchiveType {
 
     },
     /**
-     * Multipart RAR Archive (.rar, .r00, .r01...)
+     * Multipart RAR Archive (.rar, .r00, .r01...) 00-999 -> max 1000 parts
      */
     RAR_MULTI3 {
-        private final Pattern patternPart  = Pattern.compile("(?i)(.*)\\.r(\\d{2,})$");
+        private final Pattern patternPart  = Pattern.compile("(?i)(.*)\\.r(\\d{2,3})$");
 
         private final Pattern patternStart = Pattern.compile("(?i)(.*)\\.rar$");
 
@@ -422,10 +422,10 @@ public enum ArchiveType {
     },
 
     /**
-     * Multipart 7Zip Archive (.7z.001, 7z.002...)
+     * Multipart 7Zip Archive (.7z.001, 7z.002...) 0-9999 -> max 1000 parts
      */
     SEVENZIP_PARTS {
-        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.7z\\.(\\d{1,4})$");
+        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.7z\\.(\\d{1,3})$");
 
         @Override
         public ArchiveFormat getArchiveFormat() {
@@ -489,10 +489,10 @@ public enum ArchiveType {
     },
 
     /**
-     * Multipart Zip Archive (.zip.001, .zip.002...)
+     * Multipart Zip Archive (.zip.001, .zip.002...) 0-999 -> max 1000 parts
      */
     ZIP_MULTI {
-        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.zip\\.(\\d{1,4})$");
+        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.zip\\.(\\d{1,3})$");
 
         @Override
         public ArchiveFormat getArchiveFormat() {
@@ -1147,7 +1147,7 @@ public enum ArchiveType {
     },
 
     /**
-     * Multipart RAR Archive Archive (.001, .002 ...) MUST BE LAST ONE!! DO NOT CHANGE ORDER
+     * Multipart RAR Archive Archive (.001, .002 ...) MUST BE LAST ONE!! DO NOT CHANGE ORDER 000-999 -> max 1000 parts
      */
     RAR_MULTI4 {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.([0-9]{3})$");

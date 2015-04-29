@@ -906,9 +906,9 @@ public class SecondLevelLaunch {
                                     }.start();
                                 }
                             });
-                            AutoDownloadStartOption doRestartRunninfDownloads = JsonConfig.create(GeneralSettings.class).getAutoStartDownloadOption();
-                            boolean closedRunning = JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads();
-                            if (doRestartRunninfDownloads == AutoDownloadStartOption.ALWAYS || (closedRunning && doRestartRunninfDownloads == AutoDownloadStartOption.ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS)) {
+                            final AutoDownloadStartOption doRestartRunninfDownloads = JsonConfig.create(GeneralSettings.class).getAutoStartDownloadOption();
+                            final boolean closedWithRunningDownload = JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads();
+                            if (AutoDownloadStartOption.ALWAYS == doRestartRunninfDownloads || (closedWithRunningDownload && AutoDownloadStartOption.ONLY_IF_EXIT_WITH_RUNNING_DOWNLOADS == doRestartRunninfDownloads)) {
                                 DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                                     @Override
@@ -916,10 +916,10 @@ public class SecondLevelLaunch {
                                         /*
                                          * we do this check inside IOEQ because initDownloadLinks also does its final init in IOEQ
                                          */
-                                        List<DownloadLink> dlAvailable = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                                        final List<DownloadLink> dlAvailable = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
                                             @Override
-                                            public boolean acceptNode(DownloadLink node) {
+                                            public boolean acceptNode(final DownloadLink node) {
                                                 return node.isEnabled() && node.getFinalLinkState() == null;
                                             }
 
@@ -929,42 +929,31 @@ public class SecondLevelLaunch {
                                             }
 
                                         });
-                                        if (dlAvailable.size() == 0) {
-                                            /*
-                                             * no downloadlinks available to autostart
-                                             */
-                                            return null;
-                                        }
-                                        new Thread("AutostartDialog") {
-                                            @Override
-                                            public void run() {
-                                                if (!DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE)) {
-                                                    // maybe downloads have been started by another instance or user input
-                                                    return;
-                                                }
-                                                boolean autoStart = JsonConfig.create(GeneralSettings.class).isClosedWithRunningDownloads() || JsonConfig.create(GeneralSettings.class).getAutoStartCountdownSeconds() >= 0;
-                                                if (autoStart) {
+                                        if (dlAvailable.size() > 0) {
+                                            new Thread("AutostartDialog") {
+                                                @Override
+                                                public void run() {
+                                                    if (!DownloadWatchDog.getInstance().getStateMachine().isState(DownloadWatchDog.IDLE_STATE)) {
+                                                        // maybe downloads have been started by another instance or user input
+                                                        return;
+                                                    }
                                                     final GeneralSettings generalSettings = JsonConfig.create(GeneralSettings.class);
                                                     if (generalSettings.getAutoStartCountdownSeconds() > 0 && CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS.isEnabled()) {
-                                                        final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _JDT._.Main_run_autostart_(), _JDT._.Main_run_autostart_msg(), NewTheme.I().getIcon("start", 32), _JDT._.Mainstart_now(), null);
+                                                        final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.Main_run_autostart_(), _JDT._.Main_run_autostart_msg(), NewTheme.I().getIcon("start", 32), _JDT._.Mainstart_now(), null);
                                                         d.setTimeout(generalSettings.getAutoStartCountdownSeconds() * 1000);
                                                         try {
-                                                            autoStart = false;
                                                             UIOManager.I().show(ConfirmDialogInterface.class, d);
                                                             d.throwCloseExceptions();
-                                                            autoStart = true;
                                                         } catch (DialogNoAnswerException e) {
-                                                            if (e.isCausedByTimeout()) {
-                                                                autoStart = true;
+                                                            if (!e.isCausedByTimeout()) {
+                                                                return;
                                                             }
                                                         }
                                                     }
-                                                    if (autoStart) {
-                                                        DownloadWatchDog.getInstance().startDownloads();
-                                                    }
+                                                    DownloadWatchDog.getInstance().startDownloads();
                                                 }
-                                            }
-                                        }.start();
+                                            }.start();
+                                        }
                                         return null;
                                     }
                                 });
