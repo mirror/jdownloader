@@ -25,10 +25,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ebook-hell.to" }, urls = { "http://(www\\.)?ebook\\-hell\\.to/(category/[A-Za-z0-9\\-]+/[A-Za-z0-9\\-]+\\.html|\\?id=\\d+)" }, flags = { 0 })
-public class EbkHellTo extends PluginForDecrypt {
+public class EbkHellTo extends antiDDoSForDecrypt {
 
     public EbkHellTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,7 +38,7 @@ public class EbkHellTo extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.containsHTML(">Es existiert kein Eintrag mit der ID") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             try {
