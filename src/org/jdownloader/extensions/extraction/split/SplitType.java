@@ -22,10 +22,10 @@ import org.jdownloader.logging.LogController;
 public enum SplitType {
 
     /**
-     * Multipart XtremSplit Archive (.001.xtm, .002.xtm ...)
+     * Multipart XtremSplit Archive (.001.xtm, .002.xtm ...), 000-999 -> max 1000 parts
      */
     XTREMSPLIT {
-        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.(\\d+)\\.xtm$");
+        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.(\\d{1,3})\\.xtm$");
 
         @Override
         public boolean matches(String filePathOrName) {
@@ -77,7 +77,7 @@ public enum SplitType {
     },
 
     /**
-     * Multipart Unix-Split Archive (.aa, .ab ...)
+     * Multipart Unix-Split Archive (.aa, .ab ...), aa-zz -> max 676 parts
      */
     UNIX_SPLIT {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.((?-i)[a-z][a-z])$");
@@ -166,7 +166,7 @@ public enum SplitType {
     },
 
     /**
-     * Multipart HJ-Split Archive (.001, .002 ...)
+     * Multipart HJ-Split Archive (.001, .002 ...), 000-999 -> max 1000 parts
      */
     HJ_SPLIT {
         private final Pattern pattern = Pattern.compile("(?i)(.*)\\.([0-9]{3})$");
@@ -272,10 +272,10 @@ public enum SplitType {
     },
 
     /**
-     * Multipart Hacha-Split Archive (.0, .1 ...)
+     * Multipart Hacha-Split Archive (.0, .1 ...), 0-999 -> max 1000 parts
      */
     HACHA_SPLIT {
-        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.(\\d+)$");
+        private final Pattern pattern = Pattern.compile("(?i)(.*)\\.(\\d{1,3})$");
 
         @Override
         public boolean matches(String filePathOrName) {
@@ -284,7 +284,7 @@ public enum SplitType {
 
         @Override
         protected String buildIDPattern(String[] matches) {
-            return "\\.\\d+";
+            return "\\.\\d{1,3}";
         }
 
         @Override
