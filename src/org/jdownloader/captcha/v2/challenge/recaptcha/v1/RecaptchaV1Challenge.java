@@ -93,7 +93,7 @@ public abstract class RecaptchaV1Challenge extends AbstractBrowserChallenge {
     public RecaptchaV1Challenge(String siteKey, Plugin pluginForHost) {
         super("recaptchav1", pluginForHost);
 
-        if (siteKey == null || !siteKey.trim().matches("^[\\w]+$")) {
+        if (siteKey == null || !siteKey.trim().matches("^[\\w-]+$")) {
             throw new WTFException("Bad SiteKey");
         }
         this.siteKey = siteKey.trim();
