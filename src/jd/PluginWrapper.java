@@ -26,6 +26,7 @@ public abstract class PluginWrapper {
 
     public PluginWrapper(final LazyPlugin<?> lazy) {
         this.lazy = lazy;
+        //
     }
 
     public LazyPlugin<?> getLazy() {
@@ -35,7 +36,9 @@ public abstract class PluginWrapper {
     @Deprecated
     public static PluginWrapper getWrapper(String name) {
         LazyHostPlugin ret = HostPluginController.getInstance().get("DirectHTTP");
-        if (ret != null) return ret.getPluginWrapper();
+        if (ret != null) {
+            return ret.getPluginWrapper();
+        }
         return null;
     }
 
