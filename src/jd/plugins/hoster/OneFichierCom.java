@@ -399,7 +399,10 @@ public class OneFichierCom extends PluginForHost {
             logger.info("1fichier.com: API login try 1 / " + i);
             try {
                 br.getPage("https://1fichier.com/console/account.pl?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(account.getPass()));
-            } catch (final ConnectException e) {
+            } catch (final ConnectException c) {
+                if (i + 1 == 3) {
+                    throw c;
+                }
                 logger.info("1fichier.com: API login try 1 / " + i + " FAILED, trying again...");
                 Thread.sleep(3 * 1000l);
                 continue;
@@ -421,16 +424,15 @@ public class OneFichierCom extends PluginForHost {
                 account.setValid(false);
                 throw e;
             }
-            ai.setStatus("Free User (Credits available)");
+            ai.setStatus("Free Account (Credits available)");
             account.setValid(true);
             maxPrem.set(maxdownloads_free);
+            account.setProperty("free", true);
             try {
                 account.setType(AccountType.FREE);
                 account.setMaxSimultanDownloads(maxdownloads_free);
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                account.setProperty("free", true);
             }
             account.setProperty("freeAPIdisabled", true);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -452,14 +454,13 @@ public class OneFichierCom extends PluginForHost {
                     ai.setStatus("Free Account (No credits available)");
                 }
                 ai.setTrafficLeft(SizeFormatter.getSize(freeCredits + " GB"));
+                account.setProperty("free", true);
+                maxPrem.set(maxdownloads_free);
                 try {
                     account.setType(AccountType.FREE);
-                    maxPrem.set(maxdownloads_free);
                     account.setMaxSimultanDownloads(maxdownloads_free);
                     account.setConcurrentUsePossible(false);
                 } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                    account.setProperty("free", true);
                 }
                 account.setProperty("freeAPIdisabled", false);
             }
@@ -470,14 +471,13 @@ public class OneFichierCom extends PluginForHost {
             ai.setValidUntil(Long.parseLong(timeStamp) * 1000l + (24 * 60 * 60 * 1000l));
             /* Premiumusers have no (daily) trafficlimits */
             ai.setUnlimitedTraffic();
+            maxPrem.set(maxdownloads_account_premium);
+            account.setProperty("free", false);
             try {
                 account.setType(AccountType.PREMIUM);
-                maxPrem.set(maxdownloads_account_premium);
                 account.setMaxSimultanDownloads(maxdownloads_account_premium);
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-                account.setProperty("free", false);
             }
             return ai;
         }
@@ -574,15 +574,22 @@ public class OneFichierCom extends PluginForHost {
                  */
                 final String url = getDownloadlinkOLD(link) + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + JDHash.getMD5(account.getPass());
                 URLConnectionAdapter con = null;
-                try {
-                    con = openConnection(this.br, url);
-                } catch (final Throwable e) {
-                } finally {
+                for (int i = 0; i != 2; i++) {
                     try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
+                        con = openConnection(this.br, url);
+                    } catch (final ConnectException c) {
+                        if (i + 1 == 2) {
+                            throw c;
+                        }
+                        continue;
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (final Throwable e) {
+                        }
                     }
                 }
+
                 if (con.getResponseCode() == 401) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -625,6 +632,9 @@ public class OneFichierCom extends PluginForHost {
                         if (br.containsHTML("\">Warning \\! Without premium status, you can download only")) {
                             logger.info("Seems like this is no premium account or it's vot valid anymore -> Disabling it");
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else if (br.containsHTML("Warning ! You can use your Premium account for downloading from 1 Internet access at a time")) {
+                            logger.warning("Your using account on multiple IP addresses at once");
+                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Account been used on another Internet connection");
                         } else {
                             logger.warning("Final downloadlink 'dllink' is null");
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -637,7 +647,7 @@ public class OneFichierCom extends PluginForHost {
                 try {
                     logger.info("Connecting to " + dllink);
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks_account_premium);
-                } catch (final ConnectException e) {
+                } catch (final ConnectException c) {
                     logger.info("Download failed because connection timed out, NOT a JD issue!");
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection timed out", 60 * 60 * 1000l);
                 } catch (final Exception e) {
