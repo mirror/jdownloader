@@ -888,7 +888,11 @@ public class LetitBitNet extends PluginForHost {
                     check = br.getCookie(COOKIE_HOST, "pas");
                 }
                 if (check == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);
@@ -906,6 +910,7 @@ public class LetitBitNet extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -919,12 +924,20 @@ public class LetitBitNet extends PluginForHost {
         }
         try {
             login(account, true);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         postPage(this.br, "http://letitbit.net/ajax/get_attached_passwords.php", "act=get_attached_passwords");
+        if (br.containsHTML("There are no attached premium accounts found")) {
+            logger.info("No attached premium accounts/codes --> No traffic --> Account cannot be used in JDownloader");
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp (free Account)!\r\nDieser Account enthält keine(n) gültige(n) letitbit premium Keys und kann somit nicht zum Herunterladen im premium Modus verwendet werden.\r\nFalls du einen gültigen letitbit premium Key hast, füge diesen entweder zu deinem Account hinzu oder trage in JDownloader NUR den Key und NICHT Benutzername & Passwort ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type (free account)!\r\nYour account does not have any valid letitbit premium keys/accounts attached to it and thus cannot be used to download in premium mode.\r\nIf you own a valid letitbit premium key, either attach it to your account or add the key to JDownloader but only the key, NOT username & password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
         final String[] data = br.getRegex("<td>([^<>\"]*?)</td>").getColumn(0);
         if (data != null && data.length >= 3) {
             // 1 point = 1 GB
