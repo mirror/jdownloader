@@ -204,6 +204,14 @@ public class ShareFlareNet extends PluginForHost {
                 login(account, true);
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.postPage("http://shareflare.net/ajax/get_attached_passwords.php", "act=get_attached_passwords");
+                if (br.containsHTML("There are no attached premium accounts found")) {
+                    logger.info("No attached premium accounts/codes --> No traffic --> Account cannot be used in JDownloader");
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp (free Account)!\r\nDieser Account enthält keine(n) gültige(n) shareflare premium Keys und kann somit nicht zum Herunterladen im premium Modus verwendet werden.\r\nFalls du einen gültigen shareflare premium Key hast, füge diesen entweder zu deinem Account hinzu oder trage in JDownloader NUR den Key und NICHT Benutzername & Passwort ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type (free account)!\r\nYour account does not have any valid shareflare premium keys/accounts attached to it and thus cannot be used to download in premium mode.\r\nIf you own a valid shareflare premium key, either attach it to your account or add the key to JDownloader but only the key, NOT username & password!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 final String availableTraffic = br.getRegex("<td>(\\d+\\.\\d+)</td>").getMatch(0);
                 final String expire = br.getRegex("<td>(\\d{4}\\-\\d{2}\\-\\d{2})</td>").getMatch(0);
                 if (availableTraffic == null || expire == null) {
@@ -257,7 +265,11 @@ public class ShareFlareNet extends PluginForHost {
                     check = br.getCookie(COOKIE_HOST, "pas");
                 }
                 if (check == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);
@@ -320,6 +332,7 @@ public class ShareFlareNet extends PluginForHost {
         return res.size() == 1 ? res.get(0) : null;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -357,6 +370,7 @@ public class ShareFlareNet extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     private String handleFreeFallback(final DownloadLink downloadLink) throws Exception {
         prepBrowser(br);
         br.setFollowRedirects(true);
@@ -545,6 +559,7 @@ public class ShareFlareNet extends PluginForHost {
         return true;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         String dlUrl = null;

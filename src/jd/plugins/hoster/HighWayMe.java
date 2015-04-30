@@ -46,7 +46,6 @@ public class HighWayMe extends PluginForHost {
     private static final String                            DOMAIN                  = "http://http.high-way.me/api.php";
     private static final String                            NICE_HOST               = "high-way.me";
     private static final String                            NICE_HOSTproperty       = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                            NOCHUNKS                = NICE_HOSTproperty + "NOCHUNKS";
     private static final String                            NORESUME                = NICE_HOSTproperty + "NORESUME";
     private static final int                               ERRORHANDLING_MAXLOGINS = 2;
 
@@ -159,10 +158,6 @@ public class HighWayMe extends PluginForHost {
                 }
             }
         }
-        /* Check if chunkload failed before. TODO: Remove this! */
-        if (link.getBooleanProperty(NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
 
         if (hostResumeMap != null) {
             final String thishost = link.getHost();
@@ -188,30 +183,11 @@ public class HighWayMe extends PluginForHost {
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            // handleErrorRetries("unknowndlerror", 5, 5 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            handleErrorRetries("unknowndlerror", 5, 5 * 60 * 1000l);
         }
         try {
             controlSlot(+1);
-            try {
-                if (!this.dl.startDownload()) {
-                    try {
-                        if (dl.externalDownloadStop()) {
-                            return;
-                        }
-                    } catch (final Throwable e) {
-                    }
-                }
-            } catch (final PluginException e) {
-                link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
-                // New V2 errorhandling
-                /* unknown error, we disable multiple chunks */
-                if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(HighWayMe.NOCHUNKS, false) == false) {
-                    link.setProperty(HighWayMe.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                throw e;
-            }
+            this.dl.startDownload();
         } finally {
             // remove usedHost slot from hostMap
             // remove download slot
@@ -244,8 +220,8 @@ public class HighWayMe extends PluginForHost {
             this.getAPISafe("http://http.high-way.me/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()));
             dllink = getJson("download");
             if (dllink == null) {
-                // handleErrorRetries("dllinknull", 5, 60 * 60 * 1000l);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.warning("Final downloadlink is null");
+                handleErrorRetries("dllinknull", 5, 60 * 60 * 1000l);
             }
             dllink = Encoding.htmlDecode(dllink);
         }
@@ -620,9 +596,7 @@ public class HighWayMe extends PluginForHost {
                 /* Unknown error */
                 statusMessage = "Unknown error";
                 logger.info(NICE_HOST + ": Unknown API error");
-                // handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknownapierror", 5, 30 * 60 * 1000l);
-                /* TODO: Remove plugin defects once plugin is in a stable state */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 5, 5 * 60 * 1000l);
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
