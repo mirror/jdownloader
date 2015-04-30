@@ -37,7 +37,7 @@ public class FileSignatures {
         FileInputStream reader = null;
         try {
             final StringBuilder sig = new StringBuilder();
-            if (length > 0) {
+            if (length > 0 && f.exists()) {
                 reader = new FileInputStream(f);
                 for (int i = 0; i < length; i++) {
                     final int h = reader.read();
