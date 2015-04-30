@@ -115,7 +115,7 @@ public abstract class ScreenResource {
             int height = 0;
             if (point != null) {
 
-                BufferedImage xStrip = getRobot().createScreenCapture(new Rectangle(this.x + point.x, this.y + point.y, this.x + getWidth() - point.x, 1));
+                BufferedImage xStrip = getRobot().createScreenCapture(new Rectangle(this.x + point.x, this.y + point.y, getWidth() - (this.x - point.x), 1));
 
                 // showImage(xStrip, null);
 
@@ -129,7 +129,7 @@ public abstract class ScreenResource {
                     }
                 }
 
-                BufferedImage yStrip = getRobot().createScreenCapture(new Rectangle(this.x + point.x, this.y + point.y, 1, this.y + getHeight() - point.y));
+                BufferedImage yStrip = getRobot().createScreenCapture(new Rectangle(this.x + point.x, this.y + point.y, 1, getHeight() - (this.y - point.y)));
 
                 // showImage(yStrip, null);
 

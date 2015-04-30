@@ -28,6 +28,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -766,7 +768,27 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             // images[0].getHeight(null) + headerPanel.getPreferredSize().height));
         }
         if (BrowserSolverService.getInstance().getConfig().isAutoOpenBrowserEnabled()) {
-            openBrowser();
+
+            if (CFG_GUI.CFG.getNewDialogFrameState() != FrameState.TO_BACK) {
+
+                openBrowser();
+
+            } else {
+
+                getDialog().addWindowFocusListener(new WindowFocusListener() {
+
+                    @Override
+                    public void windowLostFocus(WindowEvent e) {
+
+                    }
+
+                    @Override
+                    public void windowGainedFocus(WindowEvent e) {
+                        openBrowser();
+                        getDialog().removeWindowFocusListener(this);
+                    }
+                });
+            }
         }
         return panel;
     }
