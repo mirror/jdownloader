@@ -38,4 +38,16 @@ public interface BrowserCaptchaSolverConfig extends ChallengeSolverConfig {
 
     void setBrowserLoopEnabled(boolean b);
 
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("If enabled, JD will use the browserloop even if it is in silentmode")
+    boolean isBrowserLoopDuringSilentModeEnabled();
+
+    void setBrowserLoopDuringSilentModeEnabled(boolean b);
+
+    @DefaultBooleanValue(false)
+    boolean isBrowserLoopUserConfirmed();
+
+    void setBrowserLoopUserConfirmed(boolean b);
+
 }

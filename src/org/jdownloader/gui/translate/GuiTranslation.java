@@ -5907,4 +5907,19 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Open Browser" })
     String BrowserCaptchaDialog_getOKButtonText_open_browser();
+
+    @Default(lngs = { "en" }, values = { "New Feature: Browser Loop" })
+    String RecaptchaV1Handler_load_help__title();
+
+    @Default(lngs = { "en" }, values = { "JDownloader just opened your browser, did some captcha magic and closed it a few seconds later. Thanks to this 'Browser Loop', JD is able to show you captchas that are much easier to read and solve. If you do not want to use this new feature, click [Disable Browser Loop]. You can enable or disable the browser loop at any time in the advanced options." })
+    String RecaptchaV1Handler_load_help_msg();
+
+    @Default(lngs = { "en" }, values = { "Keep Browser Loop enabled" })
+    String RecaptchaV1Handler_ok();
+
+    @Default(lngs = { "en" }, values = { "Disable Browser Loop" })
+    String RecaptchaV1Handler_disable();
+
+    @Default(lngs = { "en" }, values = { "More Information..." })
+    String RecaptchaV1Handler_load_help_();
 }
