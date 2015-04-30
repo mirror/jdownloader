@@ -272,6 +272,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                     fileInfo.put("categories", fName);
                 }
                 final String filename = fileInfo.get("categories") + "__" + fileInfo.get("name").replaceAll("\\|", "-") + "_" + KalturaFlavorAsset.get("width") + "x" + KalturaFlavorAsset.get("height") + "@" + KalturaFlavorAsset.get("bitrate") + "Kbps." + KalturaFlavorAsset.get("fileExt");
+                /* Always access rtmp urls as this way we get all qualities/formats --> Then build http urls out of them --> :) */
                 String vidlink = "http://api.medianac.com/p/" + v.get("partnerId") + "/sp/" + v.get("subpId") + "/playManifest/entryId/" + v.get("entryId") + "/format/rtmp/protocol/rtmp/cdnHost/api.medianac.com";
                 vidlink += (v.containsKey("storageId") ? "/storageId/" + v.get("storageId") : "");
                 vidlink += (v.containsKey("ks") ? "/ks/" + v.get("ks") : "") + "/referrer/" + Encoding.Base64Encode(parameter) + (v.containsKey("token") ? "/token/" + v.get("token") : "") + "/a/a.f4m";
