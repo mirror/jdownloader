@@ -183,7 +183,7 @@ public class HighWayMe extends PluginForHost {
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            handleErrorRetries("unknowndlerror", 5, 5 * 60 * 1000l);
+            handleErrorRetries("unknowndlerror", 10, 5 * 60 * 1000l);
         }
         try {
             controlSlot(+1);
@@ -221,7 +221,7 @@ public class HighWayMe extends PluginForHost {
             dllink = getJson("download");
             if (dllink == null) {
                 logger.warning("Final downloadlink is null");
-                handleErrorRetries("dllinknull", 5, 60 * 60 * 1000l);
+                handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
             }
             dllink = Encoding.htmlDecode(dllink);
         }
@@ -596,7 +596,7 @@ public class HighWayMe extends PluginForHost {
                 /* Unknown error */
                 statusMessage = "Unknown error";
                 logger.info(NICE_HOST + ": Unknown API error");
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 5, 5 * 60 * 1000l);
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 10, 5 * 60 * 1000l);
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);

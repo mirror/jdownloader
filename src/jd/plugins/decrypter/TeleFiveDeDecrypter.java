@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.zip.Inflater;
 
 import jd.PluginWrapper;
@@ -43,7 +44,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "http://(www\\.)?tele5\\.de/[\\w/\\-]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "http://(www\\.)?tele5\\.de/[\\w/\\-]+\\.html" }, flags = { 0 })
 public class TeleFiveDeDecrypter extends PluginForDecrypt {
     // we cannot do core updates right now, and should keep this class internal until we can do core updates
     public class SWFDecompressor {
@@ -134,10 +135,13 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* Example http url: http://dl.mnac-p-000000102.c.nmdn.net/mnac-p-000000102/12345678/0/0_moyme6yj_0_tfjmbp2l_2.mp4 */
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        final String nicehost = new Regex(parameter, "http://(?:www\\.)?([^/]+)").getMatch(0);
+        final String decryptedhost = "http://" + nicehost + "decrypted";
         br.setFollowRedirects(true);
         br.getPage(parameter);
 
@@ -261,48 +265,64 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             /* creating downloadLinks */
             for (Entry<String, HashMap<String, String>> next : KalturaMediaEntry.entrySet()) {
                 KalturaFlavorAsset = new HashMap<String, String>(next.getValue());
+                final String bitrate = KalturaFlavorAsset.get("bitrate");
                 String fName = fileInfo.get("categories");
                 if (isEmpty(fName)) {
                     fName = br.getRegex("<div id=\"headline\" class=\"grid_\\d+\"><h1>(.*?)</h1><").getMatch(0);
                     fileInfo.put("categories", fName);
                 }
-                String filename = fileInfo.get("categories") + "__" + fileInfo.get("name").replaceAll("\\|", "-") + "_" + KalturaFlavorAsset.get("width") + "x" + KalturaFlavorAsset.get("height") + "@" + KalturaFlavorAsset.get("bitrate") + "Kbps." + KalturaFlavorAsset.get("fileExt");
-                String dllink = "http://" + v.get("host") + "/p/" + v.get("partnerId") + "/sp/" + v.get("subpId") + "/playManifest/entryId/" + v.get("entryId");
-                dllink += ("http".equals(streamerType) && KalturaFlavorAsset.containsKey("id") ? "/flavorId/" + KalturaFlavorAsset.get("id") : "") + "/format/" + v.get("streamerType");
-                dllink += "/protocol/" + v.get("streamerType") + (v.containsKey("cdnHost") ? "/cdnHost/" + v.get("cdnHost") : "") + (v.containsKey("storageId") ? "/storageId/" + v.get("storageId") : "");
-                dllink += (v.containsKey("ks") ? "/ks/" + v.get("ks") : "") + "/referrer/" + Encoding.Base64Encode(parameter) + (v.containsKey("token") ? "/token/" + v.get("token") : "") + "/a/a.f4m";
-                if (dllink.contains("null")) {
+                final String filename = fileInfo.get("categories") + "__" + fileInfo.get("name").replaceAll("\\|", "-") + "_" + KalturaFlavorAsset.get("width") + "x" + KalturaFlavorAsset.get("height") + "@" + KalturaFlavorAsset.get("bitrate") + "Kbps." + KalturaFlavorAsset.get("fileExt");
+                String vidlink = "http://api.medianac.com/p/" + v.get("partnerId") + "/sp/" + v.get("subpId") + "/playManifest/entryId/" + v.get("entryId") + "/format/rtmp/protocol/rtmp/cdnHost/api.medianac.com";
+                vidlink += (v.containsKey("storageId") ? "/storageId/" + v.get("storageId") : "");
+                vidlink += (v.containsKey("ks") ? "/ks/" + v.get("ks") : "") + "/referrer/" + Encoding.Base64Encode(parameter) + (v.containsKey("token") ? "/token/" + v.get("token") : "") + "/a/a.f4m";
+                vidlink += "?referrer=" + Encoding.Base64Encode(parameter);
+                if (vidlink.contains("null")) {
                     logger.warning("tele5 Decrypter: null in API Antwort entdeckt!");
-                    logger.warning("tele5 Decrypter: " + dllink);
+                    logger.warning("tele5 Decrypter: " + vidlink);
                 }
                 if (r) {
-                    br2.getPage(dllink);
+                    br2.getPage(vidlink);
                 }
+                final String rtmp_base_server = br2.getRegex("<baseURL>rtmp://rtmp.(mnac\\-p\\-\\d+).c.nmdn.net/mnac-p-000000102</baseURL>").getMatch(0);
                 /* make dllink */
-                dllink = br2.getRegex("<media url=\"([^\"]+" + KalturaFlavorAsset.get("id") + ".*?)\"").getMatch(0);
-                final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=" + KalturaFlavorAsset.get("bitrate") + "&vId=" + KalturaFlavorAsset.get("id"));
-                link.setAvailable(true);
-                link.setFinalFileName(filename);
+                vidlink = br2.getRegex("<media url=\"mp4:([^<>\"]*?)\" bitrate=\"" + bitrate + "\"").getMatch(0);
+                if (vidlink != null) {
+                    /* rtmp --> http */
+                    if (rtmp_base_server == null) {
+                        return null;
+                    }
+                    vidlink = "http://dl." + rtmp_base_server + ".c.nmdn.net/" + rtmp_base_server + "/" + vidlink + ".mp4";
+                } else {
+                    logger.warning("Undefined case, assigned quality might be wrong!");
+                    vidlink = br2.getRegex("<media url=\"(http[^\"]+" + KalturaFlavorAsset.get("id") + ".*?)\"").getMatch(0);
+                }
+                if (vidlink == null) {
+                    return null;
+                }
+                final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                dl.setAvailable(true);
+                dl.setFinalFileName(filename);
                 try {
                     /* JD2 only */
-                    link.setContentUrl(parameter);
+                    dl.setLinkID(filename);
+                    dl.setContentUrl(parameter);
                 } catch (Throwable e) {
                     /* Stable */
-                    link.setBrowserUrl(parameter);
+                    dl.setBrowserUrl(parameter);
                 }
-                link.setDownloadSize(SizeFormatter.getSize(KalturaFlavorAsset.get("size") + "kb"));
-                link.setProperty("streamerType", v.get("streamerType"));
-                link.setProperty("directURL", dllink);
+                dl.setDownloadSize(SizeFormatter.getSize(KalturaFlavorAsset.get("size") + "kb"));
+                dl.setProperty("streamerType", v.get("streamerType"));
+                dl.setProperty("directURL", vidlink);
                 if (isRtmp) {
                     r = false;
-                    String baseUrl = br2.getRegex("<baseURL>(.*?)</baseURL").getMatch(0);
+                    String baseUrl = br2.getRegex("<baseURL>(rtmp.*?)</baseURL").getMatch(0);
                     if (baseUrl == null) {
                         logger.warning("tele5 Decrypter: baseUrl regex broken!");
                         continue;
                     }
-                    link.setProperty("directURL", baseUrl + "@" + dllink);
+                    dl.setProperty("directRTMPURL", baseUrl + "@" + vidlink);
                 }
-                newRet.add(link);
+                newRet.add(dl);
             }
 
             if (newRet.size() > 1) {
@@ -316,6 +336,34 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             break;
         }
         return decryptedLinks;
+    }
+
+    private String getFormatString(final String[] formatinfo) {
+        String formatString = "";
+        final String videoCodec = formatinfo[0];
+        final String videoBitrate = formatinfo[1];
+        final String videoResolution = formatinfo[2];
+        final String audioCodec = formatinfo[3];
+        final String audioBitrate = formatinfo[4];
+        if (videoCodec != null) {
+            formatString += videoCodec + "_";
+        }
+        if (videoResolution != null) {
+            formatString += videoResolution + "_";
+        }
+        if (videoBitrate != null) {
+            formatString += videoBitrate + "_";
+        }
+        if (audioCodec != null) {
+            formatString += audioCodec + "_";
+        }
+        if (audioBitrate != null) {
+            formatString += audioBitrate;
+        }
+        if (formatString.endsWith("_")) {
+            formatString = formatString.substring(0, formatString.lastIndexOf("_"));
+        }
+        return formatString;
     }
 
     private String getUrlValues(String s) throws UnsupportedEncodingException {

@@ -17,8 +17,15 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.http.Browser.BrowserException;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -26,21 +33,31 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "decrypted://(www\\.)?tele5\\.de/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "http://tele5\\.dedecrypted\\d+" }, flags = { 2 })
 public class TeleFiveDe extends PluginForHost {
 
-    private String  DLLINK       = null;
+    /** Settings stuff */
+    private static final String                   FAST_LINKCHECK = "FAST_LINKCHECK";
 
-    private boolean NOTFORSTABLE = false;
+    public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>() {
+                                                                     {
+                                                                         /*
+                                                                          * Format-name:videoCodec, videoBitrate, videoResolution,
+                                                                          * audioCodec, audioBitrate
+                                                                          */
+                                                                         put("4_4", new String[] { "AVC", "400", null, "AAC LC", "64" });
+                                                                         put("6_6", new String[] { "AVC", "600", null, "AAC LC", "64" });
+                                                                         put("6_9", new String[] { "AVC", "900", null, "AAC LC", "64" });
+
+                                                                     }
+                                                                 };
+
+    private String                                DLLINK         = null;
 
     public TeleFiveDe(final PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    @Override
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("decrypted://", "http://"));
     }
 
     @Override
@@ -51,6 +68,39 @@ public class TeleFiveDe extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = downloadLink.getStringProperty("directURL");
+        if (DLLINK == null) {
+            DLLINK = downloadLink.getStringProperty("directRTMPURL");
+        }
+        if (DLLINK.startsWith("http")) {
+            URLConnectionAdapter con = null;
+            try {
+                try {
+                    con = this.br.openHeadConnection(DLLINK);
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                downloadLink.setProperty("directlink", DLLINK);
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        // downloadLink.setProperty("FLVFIXER", true);
+
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -97,10 +147,53 @@ public class TeleFiveDe extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = downloadLink.getStringProperty("directURL");
-        // downloadLink.setProperty("FLVFIXER", true);
-        return AvailableStatus.TRUE;
+    public String getDescription() {
+        return "JDownloader's Tele5 plugin helps downloading videoclips from tele5.de.";
+    }
+
+    private void setConfigElements() {
+        /* Fast linkcheck not needed as we get the filesize via API inside the decrypter. */
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK,
+        // JDL.L("plugins.hoster.TeleFiveDe.FastLinkcheck",
+        // "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(false));
+        final Iterator<Entry<String, String[]>> it = formats.entrySet().iterator();
+        while (it.hasNext()) {
+            /*
+             * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate
+             */
+            String usertext = "Load ";
+            final Entry<String, String[]> videntry = it.next();
+            final String internalname = videntry.getKey();
+            final String[] vidinfo = videntry.getValue();
+            final String videoCodec = vidinfo[0];
+            final String videoBitrate = vidinfo[1];
+            final String videoResolution = vidinfo[2];
+            final String audioCodec = vidinfo[3];
+            final String audioBitrate = vidinfo[4];
+            if (videoCodec != null) {
+                usertext += videoCodec + " ";
+            }
+            if (videoBitrate != null) {
+                usertext += videoBitrate + " ";
+            }
+            if (videoResolution != null) {
+                usertext += videoResolution + " ";
+            }
+            if (audioCodec != null || audioBitrate != null) {
+                usertext += "with audio ";
+                if (audioCodec != null) {
+                    usertext += audioCodec + " ";
+                }
+                if (audioBitrate != null) {
+                    usertext += audioBitrate;
+                }
+            }
+            if (usertext.endsWith(" ")) {
+                usertext = usertext.substring(0, usertext.lastIndexOf(" "));
+            }
+            final ConfigEntry vidcfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), internalname, JDL.L("plugins.hoster.TeleFiveDe.ALLOW_" + internalname, usertext)).setDefaultValue(true);
+            getConfig().addEntry(vidcfg);
+        }
     }
 
     @Override
