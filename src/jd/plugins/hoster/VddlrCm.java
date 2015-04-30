@@ -88,7 +88,9 @@ public class VddlrCm extends PluginForHost {
         String sid = "ec_expire=" + localTime;
         sid = "ec_secure=" + String.format("%03d", sid.length() + 14) + "&" + sid;
         final byte[] finaldecrypt = getBlowfish(KEY2, sid.getBytes(), false);
-        if (decrypted == null || decrypted.length == 0) { return null; }
+        if (decrypted == null || decrypted.length == 0) {
+            return null;
+        }
         final String dllink = new String(decrypted) + "?" + JDHexUtils.getHexString(finaldecrypt);
         return dllink;
     }
@@ -101,7 +103,9 @@ public class VddlrCm extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestVideo(downloadLink);
-        if (DLURL == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (DLURL == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLURL, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
@@ -138,17 +142,25 @@ public class VddlrCm extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(dllink);
         if (!new Regex(dllink, "/(player|simple)/").matches()) {
-            if (br.containsHTML("Video not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML("Video not found") || br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = br.getRegex("<meta content=\"([^<>]+)\"\\s?property=\"og:title\"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex(" <h2 id=\"single\\-title\">(.*?)</h2>").getMatch(0);
             }
-            key = br.getRegex("<iframe id=\"([0-9a-f]+)\"").getMatch(0);
-            value = br.getRegex("viewToken=(.*?)\\&").getMatch(0);
+            if (br.getURL().matches(".+/v/\\w+")) {
+                key = br.getRegex("/player/(\\w+)").getMatch(0);
+            } else {
+                key = br.getRegex("<iframe id=\"([0-9a-f]+)\"").getMatch(0);
+                value = br.getRegex("viewToken=(.*?)\\&").getMatch(0);
+            }
         } else {
             key = new Regex(dllink, "(player|simple)/(\\w+)/?").getMatch(1);
         }
-        if (key == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (key == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         final String postdata = getAMFRequest(key, value);
         final String url = "http://www.viddler.com/amfgateway.action";
@@ -156,18 +168,26 @@ public class VddlrCm extends PluginForHost {
         br.postPageRaw(url, postdata);
         /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
         final byte[] raw = br.toString().getBytes();
-        if (raw == null || raw.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (raw == null || raw.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (int i = 0; i < raw.length; i++) {
             if (raw[i] < 32 || raw[i] > 127) {
                 raw[i] = 35; // #
             }
         }
+        final String a = new String(raw, "UTF-8");
         if (filename == null) {
-            filename = new Regex(new String(raw, "UTF-8"), "title[#]+(.*?)[#]+").getMatch(0);
+            filename = new Regex(a, "title[#]+(.*?)[#]+").getMatch(0);
         }
-        final String path = new Regex(new String(raw, "UTF-8"), "path[#]+\\??(.*?)[#]+").getMatch(0);
+        final String path = new Regex(a, "path[#]+\\??(.*?)[#]+").getMatch(0);
         DLURL = getLink(path);
-        if (DLURL == null || !br.containsHTML("onResult") || filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (DLURL == null || !br.containsHTML("onResult") || filename == null) {
+            if (new Regex(a, "errorCode#@\\d+").matches()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setName(filename + ".flv");
         return AvailableStatus.TRUE;
     }
