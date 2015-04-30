@@ -42,8 +42,6 @@ import jd.utils.JDUtilities;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debrid-link.fr" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class DebridLinkFr extends PluginForHost {
 
-    private static final String                            NOCHUNKS           = "NOCHUNKS";
-
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static Map<Account, Map<String, String>>       accountInfo        = new HashMap<Account, Map<String, String>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
@@ -513,9 +511,6 @@ public class DebridLinkFr extends PluginForHost {
         if (chunk != null && !"0".equals(chunk)) {
             maxChunks = -Integer.parseInt(chunk);
         }
-        if (downloadLink.getBooleanProperty(DebridLinkFr.NOCHUNKS, false)) {
-            maxChunks = 1;
-        }
         if (resume != null) {
             resumes = Boolean.parseBoolean(resume);
         }
@@ -538,29 +533,7 @@ public class DebridLinkFr extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         }
-        try {
-            if (!this.dl.startDownload()) {
-                try {
-                    if (dl.externalDownloadStop()) {
-                        return;
-                    }
-                } catch (final Throwable e) {
-                }
-                /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(DebridLinkFr.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(DebridLinkFr.NOCHUNKS, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-            }
-        } catch (final PluginException e) {
-            // New V2 chunk errorhandling
-            /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(DebridLinkFr.NOCHUNKS, false) == false) {
-                downloadLink.setProperty(DebridLinkFr.NOCHUNKS, Boolean.valueOf(true));
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            }
-            throw e;
-        }
+        dl.startDownload();
     }
 
     @Override
