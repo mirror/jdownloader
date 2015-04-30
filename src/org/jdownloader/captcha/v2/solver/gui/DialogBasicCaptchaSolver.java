@@ -4,13 +4,10 @@ import jd.controlling.captcha.BasicCaptchaDialogHandler;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1Challenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1Challenge.BasicCaptchaChallengeDelegate;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
@@ -41,8 +38,6 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
     public void enqueue(SolverJob<String> job) {
         if (job.getChallenge() instanceof BasicCaptchaChallenge) {
             super.enqueue(job);
-        } else if (job.getChallenge() instanceof RecaptchaV1Challenge) {
-            super.enqueue(job);
         }
     }
 
@@ -67,13 +62,6 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
                 String result = solveBasicCaptchaChallenge(job, captchaChallenge);
                 if (result != null) {
                     job.addAnswer(new CaptchaResponse(captchaChallenge, this, result, 100));
-                }
-            } else if (job.getChallenge() instanceof RecaptchaV1Challenge) {
-
-                BasicCaptchaChallengeDelegate captchaChallenge = ((RecaptchaV1Challenge) job.getChallenge()).getBasicCaptchaChallenge();
-                String result = solveBasicCaptchaChallenge(job, captchaChallenge);
-                if (result != null) {
-                    job.addAnswer(new CaptchaResponse(job.getChallenge(), this, JSonStorage.serializeToJson(new String[] { captchaChallenge.getChallengeKey(), result }), 100));
                 }
             }
         }
