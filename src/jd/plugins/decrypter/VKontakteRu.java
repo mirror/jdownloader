@@ -48,6 +48,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc|picturelink|audiolink|videolink).+" }, flags = { 0 })
@@ -150,6 +151,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private boolean                 fastcheck_audio                         = false;
 
     private ArrayList<DownloadLink> decryptedLinks                          = null;
+    private boolean                 https                                   = false;
 
     @Override
     protected DownloadLink createDownloadlink(String link) {
@@ -167,6 +169,7 @@ public class VKontakteRu extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         this.CRYPTEDLINK_ORIGINAL = param.toString();
         this.CRYPTEDLINK = param;
+        https = StringUtils.startsWithCaseInsensitive(CRYPTEDLINK_ORIGINAL, "https");
         this.decryptedLinks = new ArrayList<DownloadLink>() {
             @Override
             public boolean add(DownloadLink e) {
@@ -260,7 +263,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     newLink = MAINPAGE + "/albums" + new Regex(CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
                 } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_WALL_LOOPBACK_LINK)) {
                     /* Remove loopback-part as it only contains information which we need later but not in the link */
-                    newLink = new Regex(CRYPTEDLINK_FUNCTIONAL, "(http://(www\\.)?vk\\.com/wall(\\-)?\\d+)").getMatch(0);
+                    newLink = new Regex(CRYPTEDLINK_FUNCTIONAL, "(https?://(www\\.)?vk\\.com/wall(\\-)?\\d+)").getMatch(0);
                 } else if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_ALBUMS_USERNAME_Z)) {
                     /* Change PATTERN_PHOTO_ALBUMS_USERNAME_Z --> PATTERN_PHOTO_ALBUMS */
                     newLink = "https://vk.com/albums" + new Regex(CRYPTEDLINK_FUNCTIONAL, "albums(\\d+)").getMatch(0);
@@ -633,7 +636,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String[] ids = findVideoIDs(parameter);
         final String oid = ids[0];
         final String id = ids[1];
-        apiGetPageSafe("http://vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
+        apiGetPageSafe(getProtocoll() + "vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
         if (br.containsHTML("NO_ACCESS") || br.containsHTML("No htmlCode read")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
@@ -720,10 +723,10 @@ public class VKontakteRu extends PluginForDecrypt {
 
                     try {
                         /* JD2 only */
-                        dl.setContentUrl("https://vk.com/video" + oid + "_" + id);
+                        dl.setContentUrl(getProtocoll() + "vk.com/video" + oid + "_" + id);
                     } catch (Throwable e) {
                         /* Stable */
-                        dl.setBrowserUrl("https://vk.com/video" + oid + "_" + id);
+                        dl.setBrowserUrl(getProtocoll() + "vk.com/video" + oid + "_" + id);
                     }
 
                     String ext = finallink.substring(finallink.lastIndexOf("."));
@@ -782,7 +785,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private void decryptPhotoAlbum() throws Exception {
         final String type = "singlephotoalbum";
         if (this.CRYPTEDLINK_FUNCTIONAL.contains("#/album")) {
-            this.CRYPTEDLINK_FUNCTIONAL = "http://vk.com/album" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "#/album((\\-)?\\d+_\\d+)").getMatch(0);
+            this.CRYPTEDLINK_FUNCTIONAL = getProtocoll() + "vk.com/album" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "#/album((\\-)?\\d+_\\d+)").getMatch(0);
         } else if (this.CRYPTEDLINK_FUNCTIONAL.matches(".*?vk\\.com/(photos|id)(?:\\-)?\\d+")) {
             this.CRYPTEDLINK_FUNCTIONAL = this.CRYPTEDLINK_FUNCTIONAL.replaceAll("vk\\.com/(?:photos|id)(?:\\-)?", "vk.com/album") + "_0";
         }
@@ -830,6 +833,14 @@ public class VKontakteRu extends PluginForDecrypt {
         }
     }
 
+    private String getProtocoll() {
+        if (https) {
+            return "https://";
+        } else {
+            return "http://";
+        }
+    }
+
     @SuppressWarnings("deprecation")
     private DownloadLink getSinglePhotoDownloadLink(final String photoID) throws IOException {
         final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/picturelink/" + photoID);
@@ -840,10 +851,10 @@ public class VKontakteRu extends PluginForDecrypt {
         dl.setName(photoID);
 
         try {/* JD2 only */
-            dl.setContentUrl("http://vk.com/photo" + photoID);
+            dl.setContentUrl(getProtocoll() + "vk.com/photo" + photoID);
         } catch (Throwable e) {
             /* Stable */
-            dl.setBrowserUrl("http://vk.com/photo" + photoID);
+            dl.setBrowserUrl(getProtocoll() + "vk.com/photo" + photoID);
         }
 
         return dl;
@@ -858,7 +869,7 @@ public class VKontakteRu extends PluginForDecrypt {
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
         final String type = "multiplephotoalbums";
         if (this.CRYPTEDLINK_FUNCTIONAL.matches(".*?vk\\.com/id\\d+\\?z=albums\\d+")) {
-            this.CRYPTEDLINK_FUNCTIONAL = "http://vk.com/albums" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
+            this.CRYPTEDLINK_FUNCTIONAL = getProtocoll() + "vk.com/albums" + new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
             if (!this.CRYPTEDLINK_FUNCTIONAL.equalsIgnoreCase(br.getURL())) {
                 getPage(br, this.CRYPTEDLINK_FUNCTIONAL);
             }
@@ -883,7 +894,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final ArrayList<String> decryptedData = decryptMultiplePages(type, numberOfEntrys, regexesPage1, regexesAllOthers, Integer.parseInt(startOffset), 12, 18, this.CRYPTEDLINK_FUNCTIONAL, "al=1&part=1&offset=");
         if (decryptedData != null && decryptedData.size() != 0) {
             for (String element : decryptedData) {
-                final String decryptedLink = "http://vk.com/" + element;
+                final String decryptedLink = getProtocoll() + "vk.com/" + element;
                 decryptedLinks.add(createDownloadlink(decryptedLink));
             }
         }
@@ -954,7 +965,7 @@ public class VKontakteRu extends PluginForDecrypt {
                         logger.info("Wtf");
                     }
                     logger.info("Decrypting video " + totalCounter + " / " + numberOfEntrys);
-                    final String completeVideolink = "https://vk.com/video" + singleVideo;
+                    final String completeVideolink = getProtocoll() + "vk.com/video" + singleVideo;
                     try {
                         getPage(br, completeVideolink);
                         decryptSingleVideo(completeVideolink);
@@ -1151,7 +1162,7 @@ public class VKontakteRu extends PluginForDecrypt {
         this.getPageSafe(this.CRYPTEDLINK_FUNCTIONAL);
         final String communityAlbumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
         final String type = "communityvideoalbum";
-        if (br.getURL().equals("http://vk.com/video")) {
+        if (br.getURL().equals("http://vk.com/video") || br.getURL().equals("https://vk.com/video")) {
             logger.info("Empty Community Video Album: " + this.CRYPTEDLINK_FUNCTIONAL);
             return;
         }
@@ -1163,7 +1174,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final String[][] regexesPage1 = { { "id=\"video_cont((\\-)?\\d+_\\d+)\"", "0" } };
         final String[][] regexesAllOthers = { { "\\[((\\-)?\\d+, \\d+), \\'http", "0" } };
-        final ArrayList<String> decryptedData = decryptMultiplePagesCommunityVideo(this.CRYPTEDLINK_FUNCTIONAL, type, numberOfEntrys, regexesPage1, regexesAllOthers, 12, 12, 12, "http://vk.com/al_video.php", "act=load_videos_silent&al=1&oid=-" + communityAlbumID + "&offset=12");
+        final ArrayList<String> decryptedData = decryptMultiplePagesCommunityVideo(this.CRYPTEDLINK_FUNCTIONAL, type, numberOfEntrys, regexesPage1, regexesAllOthers, 12, 12, 12, getProtocoll() + "vk.com/al_video.php", "act=load_videos_silent&al=1&oid=-" + communityAlbumID + "&offset=12");
         final int numberOfFoundVideos = decryptedData.size();
         logger.info("Found " + numberOfFoundVideos + " videos...");
         /**
@@ -1172,7 +1183,7 @@ public class VKontakteRu extends PluginForDecrypt {
          */
         for (String singleVideo : decryptedData) {
             singleVideo = singleVideo.replace(", ", "_");
-            final String completeVideolink = "http://vk.com/video" + singleVideo.replace(", ", "");
+            final String completeVideolink = getProtocoll() + "vk.com/video" + singleVideo.replace(", ", "");
             decryptedLinks.add(createDownloadlink(completeVideolink));
         }
     }
@@ -1265,7 +1276,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     final String album_id = typeObject.get("aid").toString();
                     final String owner_id = typeObject.get("owner_id").toString();
                     final String content_id = typeObject.get("pid").toString();
-                    final String wall_single_photo_content_url = "http://vk.com/" + wall_ID + "?own=1&z=photo" + owner_id + "_" + content_id + "/" + wall_list_id;
+                    final String wall_single_photo_content_url = getProtocoll() + "vk.com/" + wall_ID + "?own=1&z=photo" + owner_id + "_" + content_id + "/" + wall_list_id;
 
                     final DownloadLink dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
                     /* Ovverride previously set content URL as this really is the direct link to the picture which works fine via browser. */
@@ -1341,7 +1352,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     final String owner_id = typeObject.get("owner_id").toString();
                     final String content_id = typeObject.get("vid").toString();
 
-                    final DownloadLink dl = createDownloadlink("https://vk.com/video" + owner_id + "_" + content_id);
+                    final DownloadLink dl = createDownloadlink(getProtocoll() + "vk.com/video" + owner_id + "_" + content_id);
                     fp.add(dl);
                     decryptedLinks.add(dl);
                 } else if (type.equals("album") && wall_grabalbums) {
@@ -1349,7 +1360,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     final String album_id = typeObject.get("aid").toString();
                     final String owner_id = typeObject.get("owner_id").toString();
 
-                    final DownloadLink dl = createDownloadlink("https://vk.com/album" + owner_id + "_" + album_id);
+                    final DownloadLink dl = createDownloadlink(getProtocoll() + "vk.com/album" + owner_id + "_" + album_id);
                     fp.add(dl);
                     decryptedLinks.add(dl);
                 } else if (type.equals("poll")) {
@@ -2038,7 +2049,7 @@ public class VKontakteRu extends PluginForDecrypt {
      */
     private void prepCryptedLink() {
         /* Correct encoding, domain and protocol. */
-        CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(CRYPTEDLINK_ORIGINAL).replaceAll("vkontakte\\.(ru|com)/", "vk.com/").replace("https://", "http://");
+        CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(CRYPTEDLINK_ORIGINAL).replaceAll("vkontakte\\.(ru|com)/", "vk.com/");
         /* We cannot simply remove all parameters which we usually don't need because...we do sometimes need em! */
         if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS)) {
             this.CRYPTEDLINK_ORIGINAL = removeParamsFromURL(CRYPTEDLINK_ORIGINAL);
