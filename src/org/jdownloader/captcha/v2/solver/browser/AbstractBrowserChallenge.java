@@ -8,8 +8,10 @@ import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkCheckerThread;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.net.httpserver.requests.GetRequest;
@@ -20,10 +22,15 @@ import org.jdownloader.captcha.v2.solverjob.ResponseList;
 
 public abstract class AbstractBrowserChallenge extends Challenge<String> {
 
-    private Plugin plugin;
+    private Plugin  plugin;
+    private Browser br;
 
     public Plugin getPlugin() {
         return plugin;
+    }
+
+    public Browser getBr() {
+        return br;
     }
 
     public boolean isSolved() {
@@ -38,6 +45,11 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
         if (pluginForHost == null) {
             plugin = getPluginFromThread();
         }
+        if (pluginForHost instanceof PluginForHost) {
+            this.br = ((PluginForHost) pluginForHost).getBrowser();
+        } else if (pluginForHost instanceof PluginForDecrypt) {
+            this.br = ((PluginForDecrypt) pluginForHost).getBrowser();
+        }
     }
 
     abstract public String getHTML();
@@ -48,10 +60,16 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
         return false;
     }
 
-    public boolean onPostRequest(BrowserReference browserReference, PostRequest request, HttpResponse response) throws IOException {
-
+    public boolean onPostRequest(BrowserReference browserReference, PostRequest request, HttpResponse response) throws IOException, Exception {
         return false;
+    }
 
+    public boolean onPostRequestCustom(final BrowserReference browserRefefence, final PostRequest request, final HttpResponse response) throws IOException {
+        return false;
+    }
+
+    public boolean onGetRequestCustom(final BrowserReference browserReference, final GetRequest request, final HttpResponse response) {
+        return false;
     }
 
     private Plugin getPluginFromThread() {
