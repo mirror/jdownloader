@@ -202,7 +202,7 @@ public class DirectHTTP extends PluginForHost {
                     this.rcBr.setRequest(null);
                 }
                 try {
-                    org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1Handler.fillCookies(rcBr);
+                    org.jdownloader.captcha.v2.solver.service.BrowserSolverService.fillCookies(rcBr);
 
                 } catch (Throwable e) {
                     e.printStackTrace();

@@ -200,10 +200,4 @@ public abstract class RecaptchaV1Handler {
 
         return urlString.substring(urlString.indexOf("c=") + 2);
     }
-
-    public static void fillCookies(Browser rcBr) {
-        rcBr.setCookie("http://google.com", "SID", BrowserSolverService.getInstance().getConfig().getGoogleComCookieValueSID());
-        rcBr.setCookie("http://google.com", "HSID", BrowserSolverService.getInstance().getConfig().getGoogleComCookieValueHSID());
-
-    }
 }
