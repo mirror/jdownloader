@@ -119,7 +119,7 @@ public abstract class RecaptchaV1Handler {
             ref.dispose();
         }
         ;
-        if (!BrowserSolverService.getInstance().getConfig().isBrowserLoopUserConfirmed()) {
+        if (!BrowserSolverService.getInstance().getConfig().isBrowserLoopUserConfirmed() || true) {
             ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _GUI._.RecaptchaV1Handler_load_help__title(), _GUI._.RecaptchaV1Handler_load_help_msg(), new AbstractIcon(IconKey.ICON_OCR, 32), _GUI._.RecaptchaV1Handler_ok(), _GUI._.RecaptchaV1Handler_disable()) {
                 {
 
@@ -177,7 +177,7 @@ public abstract class RecaptchaV1Handler {
                     return 700;
                 };
             };
-
+            d.setTimeout(120000);
             UIOManager.I().show(ConfirmDialogInterface.class, d);
             try {
                 d.throwCloseExceptions();
