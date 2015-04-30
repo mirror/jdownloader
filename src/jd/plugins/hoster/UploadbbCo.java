@@ -24,6 +24,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadbb.co" }, urls = { "http://(www\\.)?uploadbb\\.co/v/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadbb.co" }, urls = { "http://(www\\.)?uploadbb\\.co/(v/)?[A-Za-z0-9]+" }, flags = { 0 })
 public class UploadbbCo extends PluginForHost {
 
     public UploadbbCo(PluginWrapper wrapper) {
@@ -56,6 +57,12 @@ public class UploadbbCo extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://uploadbb.co/terms.html";
+    }
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        final String linkid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        link.setUrlDownload("http://uploadbb.co/v/" + linkid);
     }
 
     @SuppressWarnings("deprecation")
