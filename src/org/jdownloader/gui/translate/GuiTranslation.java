@@ -5922,4 +5922,13 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "More Information..." })
     String RecaptchaV1Handler_load_help_();
+
+    @Default(lngs = { "en" }, values = { "Recaptcha Cookie Tester" })
+    String Recaptcha_cookie_help_title();
+
+    @Default(lngs = { "en" }, values = { "Please compare the captchas on the left. The Easy captcha should be easier to read and solve. If not, you did not use a validated Google Session, or the entered cookies are invalid." })
+    String Recaptcha_cookie_help_msg();
+
+    @Default(lngs = { "en" }, values = { "For this feature, 2 advanced options are required:\r\nBrowserCaptchaSolver: Google Com Cookie Value HSID\r\n*BrowserCaptchaSolver: Google Com Cookie Value SID\r\n\r\nPlease enter both." })
+    String Recaptcha_cookie_help_msg_both_cookies();
 }
