@@ -21,7 +21,9 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -32,7 +34,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gca.sh" }, urls = { "http://(www\\.)?gca\\.sh/[A-Za-z0-9]+" }, flags = { 0 })
+import org.jdownloader.captcha.v2.challenge.confidentcaptcha.CaptchaHelperCrawlerPluginConfidentCaptcha;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gca.sh" }, urls = { "http://(www\\.)?gca\\.sh/[A-Za-z0-9]+" }, flags = { 0 })
 public class GcaSh extends PluginForDecrypt {
 
     public GcaSh(PluginWrapper wrapper) {
@@ -43,43 +47,62 @@ public class GcaSh extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(false);
+        // german for german users, english for the rest.
+        if (!"de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            br.setHeader("Accept-Language", "en-gb, en;q=0.8");
+        }
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=\"captcha-dialog\"")) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        boolean captchafailed = true;
-        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        /* ID 22.04.25: 6LcQedQSAAAAAH_O6lQcp-X-lrMa77g8TrNfxN-d */
-        /* Params when reCaptcha is in use: last_key=9,i=fallback,captcha=captchaad,submit=Daten absenden */
-        rc.findID();
-        rc.load();
-        for (int i = 0; i <= 5; i++) {
-            final Form dlForm = br.getFormbyKey("captcha");
-            if (dlForm == null) {
-                return null;
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            /* ID 22.04.25: 6LcQedQSAAAAAH_O6lQcp-X-lrMa77g8TrNfxN-d */
+            /* Params when reCaptcha is in use: last_key=9,i=fallback,captcha=captchaad,submit=Daten absenden */
+            rc.findID();
+            rc.load();
+            final int retry = 3;
+            for (int i = 0; i <= retry; i++) {
+                final Browser br2 = br.cloneBrowser();
+                final Form dlForm = br2.getFormbyKey("captcha");
+                if (dlForm == null) {
+                    return null;
+                }
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode("recaptcha", cf, param);
+                dlForm.put("recaptcha_challenge_field", rc.getChallenge());
+                dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
+                dlForm.put("submit", "Daten absenden");
+                br2.submitForm(dlForm);
+                if (br2.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    if (i + 1 == retry) {
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    }
+                    rc.reload();
+                    continue;
+                }
+                br = br2;
+                break;
             }
-            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode("recaptcha", cf, param);
-            dlForm.put("recaptcha_challenge_field", rc.getChallenge());
-            dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
-            dlForm.put("submit", "Daten absenden");
-            br.submitForm(dlForm);
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                rc.reload();
-                continue;
+        } else if (br.containsHTML("confidenttechnologies\\.com/")) {
+            final Form con = br.getForm(0);
+            final String xy = new CaptchaHelperCrawlerPluginConfidentCaptcha(this, br).getToken();
+            final String[][] inputs = new Regex(xy, "\\[\\s*\"(.*?)\",\\s\"(.*?)\"\\s*\\]").getMatches();
+            // we have bugs, this should work around them
+            Form newForm = new Form();
+            newForm.setAction(con.getAction());
+            newForm.setMethod(con.getMethod());
+            for (final String[] input : inputs) {
+                newForm.put(input[0], Encoding.urlEncode(input[1]));
             }
-            captchafailed = false;
-            break;
+            newForm.put("submit", "Submit");
+            // say this isn't needed.
+            br.setCookie(br.getHost(), "arp_scroll_position", "0");
+            br.submitForm(newForm);
         }
-        if (captchafailed) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
-        }
+
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
             return null;

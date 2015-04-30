@@ -4,6 +4,7 @@ import java.awt.Rectangle;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -79,7 +80,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
 
     public void open() throws IOException {
         handlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, this);
-        openURL("http://127.0.0.1:" + port + "/" + challenge.getHttpPath() + "?id=" + id.getID());
+        openURL("http://127.0.0.1:" + port + "/" + challenge.getHttpPath() + "/?id=" + id.getID());
     }
 
     private void openURL(String url) {
@@ -173,8 +174,14 @@ public abstract class BrowserReference implements HttpRequestHandler {
                     return true;
                 }
             }
-            if (!StringUtils.equals(request.getRequestedPath(), "/" + challenge.getHttpPath() + "")) {
+            if (request.getRequestedPath() != null && !request.getRequestedPath().matches("^/" + Pattern.quote(challenge.getHttpPath()) + "/.*$")) {
                 return false;
+            }
+
+            // custom
+            boolean custom = challenge.onGetRequestCustom(this, request, response);
+            if (custom) {
+                return true;
             }
 
             String pDo = request.getParameterbyKey("do");
@@ -209,7 +216,6 @@ public abstract class BrowserReference implements HttpRequestHandler {
             } else if ("canClose".equals(pDo)) {
                 response.getOutputStream(true).write("false".getBytes("UTF-8"));
             } else if (pDo == null) {
-
                 response.getOutputStream(true).write(challenge.getHTML().getBytes("UTF-8"));
             } else {
                 return challenge.onGetRequest(this, request, response);
@@ -238,11 +244,17 @@ public abstract class BrowserReference implements HttpRequestHandler {
 
     @Override
     public boolean onPostRequest(PostRequest request, HttpResponse response) throws BasicRemoteAPIException {
-        if (!StringUtils.equals(request.getRequestedPath(), "/" + challenge.getHttpPath() + "")) {
+        if (request.getRequestedPath() != null && !request.getRequestedPath().matches("^/" + Pattern.quote(challenge.getHttpPath()) + "/.*$")) {
             return false;
         }
 
         try {
+            // custom
+            boolean custom = challenge.onPostRequestCustom(this, request, response);
+            if (custom) {
+                return true;
+            }
+
             String pDo = request.getParameterbyKey("do");
             String id = request.getParameterbyKey("id");
             if (!StringUtils.equals(id, this.id.getID() + "")) {
