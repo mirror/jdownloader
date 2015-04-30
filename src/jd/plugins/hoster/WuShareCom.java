@@ -118,6 +118,9 @@ public class WuShareCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.toString().equals("free members do not allows parallel downloads!")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your IP has been reported as still downloading", 10 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("directlink", dllink);
