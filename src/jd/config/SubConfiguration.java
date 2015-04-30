@@ -56,15 +56,21 @@ public class SubConfiguration extends Property implements Serializable {
     protected static final byte[]                               KEY              = new byte[] { 0x01, 0x02, 0x11, 0x01, 0x01, 0x54, 0x01, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 };
     protected static final DelayedRunnable                      SAVEDELAYER      = new DelayedRunnable(5000, 30000) {
 
-                                                                                     @Override
-                                                                                     public void delayedrun() {
-                                                                                         saveAll();
-                                                                                     }
-                                                                                 };
+        @Override
+        public void delayedrun() {
+            saveAll();
+        }
+    };
 
     static {
 
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+            @Override
+            public long getMaxDuration() {
+                return 90000l;
+            }
+
             @Override
             public String toString() {
                 return "ShutdownEvent: SaveAllSubconfigurations";
