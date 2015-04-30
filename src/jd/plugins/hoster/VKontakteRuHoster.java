@@ -211,7 +211,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         this.postPageSafe(aa, link, "https://vk.com/audio", getAudioAlbumPostString(this.mainlink, this.ownerID));
@@ -324,7 +324,6 @@ public class VKontakteRuHoster extends PluginForHost {
                 getHighestQualityPic(downloadLink);
                 downloadLink.setProperty("picturedirectlink", this.finalUrl);
             }
-            photo_correctLink();
         }
         br.getHeaders().put("Accept-Encoding", "identity");
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, this.finalUrl, true, this.MAXCHUNKS);
@@ -537,6 +536,8 @@ public class VKontakteRuHoster extends PluginForHost {
         /* In case the link redirects to the finallink */
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
+        /* Correct final URLs according to users' plugin settings. */
+        photo_correctLink();
         try {
             br2.getHeaders().put("Accept-Encoding", "identity");
             try {
