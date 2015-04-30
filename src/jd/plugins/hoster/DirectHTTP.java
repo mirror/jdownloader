@@ -201,6 +201,13 @@ public class DirectHTTP extends PluginForHost {
                 if (this.clearReferer) {
                     this.rcBr.setRequest(null);
                 }
+                try {
+                    org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1Handler.fillCookies(rcBr);
+
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+
                 // end of privacy protection
             }
         }
@@ -984,7 +991,7 @@ public class DirectHTTP extends PluginForHost {
 
     /**
      * update this map to your needs
-     *
+     * 
      * @param mimeType
      * @return
      */

@@ -50,4 +50,16 @@ public interface BrowserCaptchaSolverConfig extends ChallengeSolverConfig {
 
     void setBrowserLoopUserConfirmed(boolean b);
 
+    @AboutConfig
+    @DescriptionForConfigEntry("Easier Captchas: Get your current google.com SID and HSID Cookie value from your default browser and enter id here.")
+    String getGoogleComCookieValueSID();
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Easier Captchas: Get your current google.com SID and HSID Cookie value from your default browser and enter id here.")
+    String getGoogleComCookieValueHSID();
+
+    void setGoogleComCookieValueSID(String s);
+
+    void setGoogleComCookieValueHSID(String s);
+
 }
