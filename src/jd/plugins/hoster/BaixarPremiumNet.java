@@ -43,7 +43,7 @@ public class BaixarPremiumNet extends PluginForHost {
     private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static final String                            MAINPAGE           = "http://baixarpremium.net";
     private static final String[][]                        HOSTS              = { { "uploaded", "uploaded.to" }, { "bitshare", "bitshare.com" }, { "jumbofiles", "jumbofiles.org" }, { "4shared", "4shared.com" }, { "turbobit", "turbobit.net" }, { "2shared", "2shared.com" }, { "ifilez", "depfile.com" }, { "freakshare", "freakshare.com" }, { "rapidgator", "rapidgator.net" }, { "uploading", "uploading.com" }, { "netload", "netload.in" }, { "ryushare", "ryushare.com" }, { "easyshare", "crocko.com" }, { "mediafire", "mediafire.com" }, { "filefactory", "filefactory.com" }, { "filepost", "filepost.com" }, { "videobb", "videobb.com" }, { "megashares", "megashares.com" }, { "filevelocity", "filevelocity.com" }, { "sendspace", "sendspace.com" }, { "cloudnator", "cloudnator.com" }, { "uptobox", "uptobox.com" }, { "filereactor", "filereactor.com" }, { "putlocker", "putlocker.com" },
-        { "ifile", "filecloud.io" }, { "share-online", "share-online.biz" }, { "glumbouploads", "glumbouploads.com" } };
+            { "ifile", "filecloud.io" }, { "share-online", "share-online.biz" }, { "glumbouploads", "glumbouploads.com" } };
 
     public BaixarPremiumNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -129,7 +129,7 @@ public class BaixarPremiumNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Now we know that it is a premium account. */
-        acc.getAccountInfo().setStatus("Premium User");
+        acc.getAccountInfo().setStatus("Premium account");
         try {
             if (!this.dl.startDownload()) {
                 try {
