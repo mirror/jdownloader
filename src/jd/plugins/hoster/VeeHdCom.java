@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,10 +33,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veehd.com" }, urls = { "http://(www\\.)?veehd\\.com/video/\\d+" }, flags = { 2 })
-public class VeeHdCom extends PluginForHost {
+public class VeeHdCom extends antiDDoSForHost {
 
     public VeeHdCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,11 +52,11 @@ public class VeeHdCom extends PluginForHost {
     private static final boolean registered_only   = true;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://veehd.com/", "pref", "1.1");
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         if (br.containsHTML(">This is a private video") || br.getURL().contains("/?removed=") || br.containsHTML("This video has been removed due")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -98,22 +96,22 @@ public class VeeHdCom extends PluginForHost {
             // br.cloneBrowser().postPage("http://veehd.com/xhrp", "v=c2&p=1&ts=" + Encoding.urlEncode(ts) + "&sgn=" +
             // Encoding.urlEncode(sign));
             /* Count as view */
-            br.cloneBrowser().getPage("http://veehd.com/xhr?h=views." + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + ".0");
+            getPage(br.cloneBrowser(), "http://veehd.com/xhr?h=views." + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + ".0");
         }
         String dllink = null;
         String way_download = br.getRegex("\"(/vpi\\?[^<>\"/]*?\\&do=d[^<>\"]*?)\"").getMatch(0);
         if (way_download != null) {
             synchronized (LOCK) {
-                br.getPage("http://veehd.com" + way_download);
+                getPage("http://veehd.com" + way_download);
                 final String iframe = br.getRegex("<iframe id=\"iframe\" src=\"(/va/[^<>\"]*?)\"").getMatch(0);
                 if (iframe != null) {
                     /*
                      * Seems to be some kind of ad-stuff - happens one time every time a user has a NEW ip and logs into his account for the
                      * first time
                      */
-                    br.getPage(iframe);
+                    getPage(iframe);
                     /* Access downloadlink again - final link should now be in the HTML code */
-                    br.getPage("http://veehd.com" + way_download);
+                    getPage("http://veehd.com" + way_download);
                 }
             }
             dllink = getDirectlink();
@@ -122,7 +120,7 @@ public class VeeHdCom extends PluginForHost {
             if (frame == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage("http://veehd.com" + frame);
+            getPage("http://veehd.com" + frame);
             if (br.containsHTML("Too Many Requests")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections - wait before starting new downloads", 5 * 60 * 1000l);
             }
@@ -203,7 +201,7 @@ public class VeeHdCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.postPage("http://veehd.com/login", "submit=Login&terms=on&remember_me=on&login_invisible=on&ref=http%3A%2F%2Fveehd.com%2F&uname=" + Encoding.urlEncode(account.getUser()) + "&pword=" + Encoding.urlEncode(account.getPass()));
+                postPage("http://veehd.com/login", "submit=Login&terms=on&remember_me=on&login_invisible=on&ref=http%3A%2F%2Fveehd.com%2F&uname=" + Encoding.urlEncode(account.getUser()) + "&pword=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "remember") == null || br.getCookie(MAINPAGE, "remember").equals("0")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -245,7 +243,7 @@ public class VeeHdCom extends PluginForHost {
         } catch (final Throwable e) {
             /* not available in old Stable 0.9.581 */
         }
-        ai.setStatus("Registered (free) user");
+        ai.setStatus("Free Account");
         account.setValid(true);
         return ai;
     }
@@ -255,7 +253,7 @@ public class VeeHdCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL());
         doFree(link, account);
     }
 
