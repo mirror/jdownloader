@@ -255,10 +255,19 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 for (final Object o : vsr_quals) {
                     foundFormatsNum++;
                     final LinkedHashMap<String, Object> qualitymap = (LinkedHashMap<String, Object>) o;
+                    final Object widtho = qualitymap.get("width");
+                    final Object heighto = qualitymap.get("height");
+                    String videoresolution = "";
+                    String width = "";
+                    String height = "";
                     final String protocol = "http";
                     final int videoBitrate = ((Number) qualitymap.get("bitrate")).intValue();
-                    final int width = ((Number) qualitymap.get("width")).intValue();
-                    final int height = ((Number) qualitymap.get("height")).intValue();
+                    if (widtho != null && heighto != null) {
+                        /* These parameters are available in 95+% of all cases! */
+                        width = "" + ((Number) qualitymap.get("width")).intValue();
+                        height = "" + ((Number) qualitymap.get("height")).intValue();
+                        videoresolution = width + "x" + height;
+                    }
                     final String versionCode = (String) qualitymap.get("versionCode");
                     final String versionLibelle = (String) qualitymap.get("versionLibelle");
                     final String versionShortLibelle = (String) qualitymap.get("versionShortLibelle");
@@ -268,7 +277,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     final String short_lang_current = get_short_lang_from_format_code(format_code);
                     final String quality_intern = selectedLanguage + "_" + get_intern_format_code_from_format_code(format_code) + "_" + protocol + "_" + videoBitrate;
                     final String linkid = fid + "_" + quality_intern;
-                    final String filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(format_code) + "_" + width + "x" + height + "_" + videoBitrate + ".mp4";
+                    final String filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(format_code) + "_" + videoresolution + "_" + videoBitrate + ".mp4";
                     /* Ignore HLS/RTMP versions */
                     if (!url.startsWith("http") || url.contains(".m3u8")) {
                         logger.info("Skipping " + filename + " because it is not a supported streaming format");

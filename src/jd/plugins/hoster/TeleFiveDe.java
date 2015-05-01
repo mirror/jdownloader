@@ -42,22 +42,27 @@ public class TeleFiveDe extends PluginForHost {
     private static final String                   FAST_LINKCHECK = "FAST_LINKCHECK";
 
     public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>() {
-                                                                     {
-                                                                         /*
-                                                                          * Format-name:videoCodec, videoBitrate, videoResolution,
-                                                                          * audioCodec, audioBitrate
-                                                                          */
-                                                                         put("4_4", new String[] { "AVC", "400", null, "AAC LC", "64" });
-                                                                         put("6_6", new String[] { "AVC", "600", null, "AAC LC", "64" });
-                                                                         put("6_9", new String[] { "AVC", "900", null, "AAC LC", "64" });
+        {
+            /*
+             * Format-name:videoCodec, videoBitrate, videoResolution,
+             * audioCodec, audioBitrate
+             */
+            /*
+             * Video-bitrates and resultions here are not exact as they vary.
+             * Correct values will be in the filenames!
+             */
+            put("4_4", new String[] { "AVC", "400", "480x250", "AAC LC", "64" });
+            put("6_6", new String[] { "AVC", "600", "640x350", "AAC LC", "64" });
+            put("6_9", new String[] { "AVC", "900", "640x350", "AAC LC", "64" });
 
-                                                                     }
-                                                                 };
+        }
+    };
 
     private String                                DLLINK         = null;
 
     public TeleFiveDe(final PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     @Override
