@@ -158,7 +158,10 @@ public class OneFichierCom extends PluginForHost {
                 for (final DownloadLink dllink : links) {
                     // final String addedLink = dllink.getDownloadURL();
                     final String addedlink_id = this.getFID(dllink);
-                    if (br.containsHTML(addedlink_id + "[^;]*;;;(NOT FOUND|BAD LINK)")) {
+                    if (addedlink_id == null) {
+                        // invalid uid
+                        dllink.setAvailable(false);
+                    } else if (br.containsHTML(addedlink_id + "[^;]*;;;(NOT FOUND|BAD LINK)")) {
                         dllink.setAvailable(false);
                         dllink.setName(addedlink_id);
                     } else if (br.containsHTML(addedlink_id + "[^;]*;;;PRIVATE")) {
@@ -248,14 +251,13 @@ public class OneFichierCom extends PluginForHost {
         boolean retried = false;
         while (true) {
             i++;
-            br.setFollowRedirects(true);
             // redirect log 2414663166931
             if (i > 1) {
+                br.setFollowRedirects(true);
                 // no need to do this link twice as it's been done above.
                 br.getPage(this.getDownloadlinkNEW(downloadLink));
+                br.setFollowRedirects(false);
             }
-            br.setFollowRedirects(false);
-
             errorHandling(downloadLink, br);
             if (pwProtected) {
                 handlePassword();
@@ -333,6 +335,10 @@ public class OneFichierCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 15 * 60 * 1000l);
         } else if (responsecode == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
+        } else if (br.containsHTML("<h1>Select files to send :</h1>")) {
+            // for some reason they linkcheck correct, then show upload page. re: jdlog://3895673179241
+            // https://svn.jdownloader.org/issues/65003
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster issue?", 60 * 60 * 1000l);
         } else if (ibr.containsHTML(">Software error:<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Software error'", 10 * 60 * 1000l);
         } else if (ibr.containsHTML(">Connexion à la base de données impossible<|>Can\\'t connect DB")) {
