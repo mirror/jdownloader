@@ -14,6 +14,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
+import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
@@ -56,19 +57,19 @@ public abstract class AbstractBrowserChallenge extends Challenge<String> {
 
     abstract public BrowserViewport getBrowserViewport(BrowserWindow screenResource, Rectangle elementBounds);
 
-    public boolean onGetRequest(BrowserReference browserReference, GetRequest request, HttpResponse response) throws IOException {
+    public boolean onGetRequest(BrowserReference browserReference, GetRequest request, HttpResponse response) throws IOException, RemoteAPIException {
         return false;
     }
 
-    public boolean onPostRequest(BrowserReference browserReference, PostRequest request, HttpResponse response) throws IOException, Exception {
+    public boolean onPostRequest(BrowserReference browserReference, PostRequest request, HttpResponse response) throws IOException, RemoteAPIException {
         return false;
     }
 
-    public boolean onPostRequestCustom(final BrowserReference browserRefefence, final PostRequest request, final HttpResponse response) throws IOException {
+    public boolean onRawPostRequest(final BrowserReference browserRefefence, final PostRequest request, final HttpResponse response) throws IOException, RemoteAPIException {
         return false;
     }
 
-    public boolean onGetRequestCustom(final BrowserReference browserReference, final GetRequest request, final HttpResponse response) {
+    public boolean onRawGetRequest(final BrowserReference browserReference, final GetRequest request, final HttpResponse response) throws IOException, RemoteAPIException {
         return false;
     }
 

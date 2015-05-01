@@ -21,6 +21,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.appwork.swing.MigPanel;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -59,7 +60,9 @@ public abstract class RecaptchaV1Handler {
         if (!BrowserSolverService.getInstance().getConfig().isBrowserLoopDuringSilentModeEnabled() && JDGui.getInstance().isSilentModeActive()) {
             return null;
         }
-
+        if (StringUtils.isNotEmpty(rcBr.getCookie("google.com", "SID")) && StringUtils.isNotEmpty(rcBr.getCookie("google.com", "HSID"))) {
+            return null;
+        }
         final AtomicReference<String> url = new AtomicReference<String>();
 
         AbstractBrowserChallenge dummyChallenge = new AbstractBrowserChallenge("recaptcha", null) {
@@ -84,7 +87,7 @@ public abstract class RecaptchaV1Handler {
             }
 
             @Override
-            public boolean onGetRequest(BrowserReference browserReference, GetRequest request, HttpResponse response) throws IOException {
+            public boolean onGetRequest(BrowserReference browserReference, GetRequest request, HttpResponse response) throws IOException, RemoteAPIException {
                 String pDo = request.getParameterbyKey("do");
                 if (pDo.equals("setChallenge")) {
                     url.set(request.getParameterbyKey("url"));

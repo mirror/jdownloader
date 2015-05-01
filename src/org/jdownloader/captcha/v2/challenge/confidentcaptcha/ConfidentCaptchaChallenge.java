@@ -12,6 +12,8 @@ import jd.plugins.Plugin;
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
+import org.appwork.remoteapi.exceptions.BadRequestException;
+import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.IO;
 import org.appwork.utils.net.HTTPHeader;
@@ -38,7 +40,7 @@ public abstract class ConfidentCaptchaChallenge extends AbstractBrowserChallenge
     }
 
     @Override
-    public boolean onPostRequest(BrowserReference browserReference, PostRequest request, HttpResponse response) throws Exception {
+    public boolean onPostRequest(BrowserReference browserReference, PostRequest request, HttpResponse response) throws IOException, RemoteAPIException {
         List<KeyValuePair> params = request.getPostParameter();
         ArrayList<String[]> t = new ArrayList<String[]>();
         if (params != null) {
@@ -51,7 +53,7 @@ public abstract class ConfidentCaptchaChallenge extends AbstractBrowserChallenge
 
         if (t.size() == 0) {
             // some exception
-            throw new Exception("Missing 'confidentcaptcha' values!");
+            throw new BadRequestException("Missing 'confidentcaptcha' values!");
         }
         String[][] output = new String[t.size()][2];
         for (int i = 0; i != t.size(); i++) {
@@ -66,7 +68,7 @@ public abstract class ConfidentCaptchaChallenge extends AbstractBrowserChallenge
     }
 
     @Override
-    public boolean onPostRequestCustom(final BrowserReference browserReference, final PostRequest request, final HttpResponse response) throws IOException {
+    public boolean onRawPostRequest(final BrowserReference browserReference, final PostRequest request, final HttpResponse response) throws IOException, RemoteAPIException {
         if (request.getRequestedURL().endsWith("/confidentincludes/callback.php")) {
             // we need to send this in jd as the referrer info in browser will be wrong!
             Browser c = getBr().cloneBrowser();

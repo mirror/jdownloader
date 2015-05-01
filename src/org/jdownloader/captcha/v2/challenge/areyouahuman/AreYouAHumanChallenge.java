@@ -8,6 +8,7 @@ import jd.plugins.Plugin;
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
+import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
@@ -35,7 +36,7 @@ public abstract class AreYouAHumanChallenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public boolean onGetRequest(BrowserReference browserReference, GetRequest request, HttpResponse response) throws IOException {
+    public boolean onGetRequest(BrowserReference browserReference, GetRequest request, HttpResponse response) throws IOException, RemoteAPIException {
         String parameter = request.getParameterbyKey("response");
         if (StringUtils.isNotEmpty(parameter)) {
             browserReference.onResponse(parameter);
@@ -50,7 +51,7 @@ public abstract class AreYouAHumanChallenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public boolean onPostRequest(BrowserReference browserReference, PostRequest request, HttpResponse response) throws IOException {
+    public boolean onPostRequest(BrowserReference browserReference, PostRequest request, HttpResponse response) throws IOException, RemoteAPIException {
 
         return false;
 

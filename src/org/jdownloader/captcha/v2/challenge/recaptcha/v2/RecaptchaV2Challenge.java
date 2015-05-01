@@ -9,6 +9,7 @@ import jd.plugins.Plugin;
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
+import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.appwork.utils.IO;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
@@ -57,7 +58,7 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public boolean onGetRequest(BrowserReference browserReference, GetRequest request, HttpResponse response) throws IOException {
+    public boolean onGetRequest(BrowserReference browserReference, GetRequest request, HttpResponse response) throws IOException, RemoteAPIException {
         String pDo = request.getParameterbyKey("do");
         if ("solve".equals(pDo)) {
             String responsetoken = request.getParameterbyKey("response");

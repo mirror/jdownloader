@@ -179,7 +179,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
             }
 
             // custom
-            boolean custom = challenge.onGetRequestCustom(this, request, response);
+            boolean custom = challenge.onRawGetRequest(this, request, response);
             if (custom) {
                 return true;
             }
@@ -250,7 +250,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
 
         try {
             // custom
-            boolean custom = challenge.onPostRequestCustom(this, request, response);
+            boolean custom = challenge.onRawPostRequest(this, request, response);
             if (custom) {
                 return true;
             }
