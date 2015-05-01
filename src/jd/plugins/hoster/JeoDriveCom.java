@@ -23,6 +23,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jeodrive.com" }, urls = { "https?://(www\\.)?jeodrive\\.com/(download|go)/[a-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jeodrive.com" }, urls = { "https?://(?:www\\.)?jeodrive\\.com/(?:download|go)/([a-z0-9\\-]+)" }, flags = { 0 })
 public class JeoDriveCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
@@ -47,8 +48,13 @@ public class JeoDriveCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        final String fid = link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/") + 1);
-        link.setUrlDownload("https://www.jeodrive.com/download/" + fid + "/");
+        // redirect away from https
+        link.setUrlDownload("http://www.jeodrive.com/download/" + getFUID(link) + "/");
+    }
+
+    private String getFUID(DownloadLink link) {
+        final String fid = new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
+        return fid;
     }
 
     /* Connection stuff */
@@ -70,15 +76,17 @@ public class JeoDriveCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(false);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>JeoDrive \\- Download ([^<>\"]*?)</title>").getMatch(0);
+        String filename = br.getRegex("<title>JeoDrive - Download (.*?)</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("class=\"infos\\-file\">([^<>\"]*?)</span>").getMatch(0);
+            filename = br.getRegex("class=\"infos-file\">(.*?)</span>").getMatch(0);
         }
-        String filesize = br.getRegex("class=\"file\\-size\">([^<>\"]*?)</span>").getMatch(0);
+        String filesize = br.getRegex("class=\"file-size\">(.*?)</span>").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -97,8 +105,8 @@ public class JeoDriveCom extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            br.getPage(downloadLink.getDownloadURL().replace("/download/", "/go/"));
-            final String gen_url = br.getRegex("\"(/generate/download/[^<>\"]*?)\"").getMatch(0);
+            br.getPage("/go/" + getFUID(downloadLink) + "/");
+            final String gen_url = br.getRegex("\"(/generate/download/[^\"]+)\"").getMatch(0);
             if (gen_url == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
