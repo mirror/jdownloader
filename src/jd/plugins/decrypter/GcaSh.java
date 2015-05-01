@@ -23,18 +23,17 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
-
-import org.jdownloader.captcha.v2.challenge.confidentcaptcha.CaptchaHelperCrawlerPluginConfidentCaptcha;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gca.sh" }, urls = { "http://(www\\.)?gca\\.sh/[A-Za-z0-9]+" }, flags = { 0 })
 public class GcaSh extends PluginForDecrypt {
@@ -87,20 +86,22 @@ public class GcaSh extends PluginForDecrypt {
                 break;
             }
         } else if (br.containsHTML("confidenttechnologies\\.com/")) {
-            final Form con = br.getForm(0);
-            final String xy = new CaptchaHelperCrawlerPluginConfidentCaptcha(this, br).getToken();
-            final String[][] inputs = new Regex(xy, "\\[\\s*\"(.*?)\",\\s\"(.*?)\"\\s*\\]").getMatches();
-            // we have bugs, this should work around them
-            Form newForm = new Form();
-            newForm.setAction(con.getAction());
-            newForm.setMethod(con.getMethod());
-            for (final String[] input : inputs) {
-                newForm.put(input[0], Encoding.urlEncode(input[1]));
-            }
-            newForm.put("submit", "Submit");
-            // say this isn't needed.
-            br.setCookie(br.getHost(), "arp_scroll_position", "0");
-            br.submitForm(newForm);
+            // todo: review confidentialcaptcha and fix buildblock.
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // final Form con = br.getForm(0);
+            // final String xy = new CaptchaHelperCrawlerPluginConfidentCaptcha(this, br).getToken();
+            // final String[][] inputs = new Regex(xy, "\\[\\s*\"(.*?)\",\\s\"(.*?)\"\\s*\\]").getMatches();
+            // // we have bugs, this should work around them
+            // Form newForm = new Form();
+            // newForm.setAction(con.getAction());
+            // newForm.setMethod(con.getMethod());
+            // for (final String[] input : inputs) {
+            // newForm.put(input[0], Encoding.urlEncode(input[1]));
+            // }
+            // newForm.put("submit", "Submit");
+            // // say this isn't needed.
+            // br.setCookie(br.getHost(), "arp_scroll_position", "0");
+            // br.submitForm(newForm);
         }
 
         final String finallink = br.getRedirectLocation();
