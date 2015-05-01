@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viddler.com" }, urls = { "http://(www\\.)?viddler\\.com/(explore/\\w+/videos/\\d+|(player|simple)/\\w+(/)?(.+)?)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "viddler.com" }, urls = { "http://(www\\.)?viddler\\.com/(explore/\\w+/videos/\\d+|(player|simple)/\\w+(/)?(.+)?)" }, flags = { 0 })
 public class VddlrCm extends PluginForHost {
 
     private String              DLURL = null;
@@ -140,6 +140,7 @@ public class VddlrCm extends PluginForHost {
         String filename = null, key = null, value = null;
         br.setDebug(true);
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(405);
         br.getPage(dllink);
         if (!new Regex(dllink, "/(player|simple)/").matches()) {
             if (br.containsHTML("Video not found") || br.getHttpConnection().getResponseCode() == 404) {
@@ -166,6 +167,9 @@ public class VddlrCm extends PluginForHost {
         final String url = "http://www.viddler.com/amfgateway.action";
         br.getHeaders().put("Content-Type", "application/x-amf");
         br.postPageRaw(url, postdata);
+        if (br.getHttpConnection().getResponseCode() == 405) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
         final byte[] raw = br.toString().getBytes();
         if (raw == null || raw.length == 0) {
@@ -183,7 +187,7 @@ public class VddlrCm extends PluginForHost {
         final String path = new Regex(a, "path[#]+\\??(.*?)[#]+").getMatch(0);
         DLURL = getLink(path);
         if (DLURL == null || !br.containsHTML("onResult") || filename == null) {
-            if (new Regex(a, "errorCode#@\\d+").matches()) {
+            if (new Regex(a, "errorCode#@\\d+").matches() || br.getHttpConnection().getCompleteContentLength() <= 100) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
