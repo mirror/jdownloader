@@ -22,12 +22,14 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.zip.Inflater;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -47,6 +49,8 @@ import org.w3c.dom.NodeList;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "http://(www\\.)?tele5\\.de/[\\w/\\-]+\\.html" }, flags = { 0 })
 public class TeleFiveDeDecrypter extends PluginForDecrypt {
     // we cannot do core updates right now, and should keep this class internal until we can do core updates
+    private static final String DOMAIN = "tele5.de";
+
     public class SWFDecompressor {
         public SWFDecompressor() {
             super();
@@ -138,18 +142,24 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
     /* Example http url: http://dl.mnac-p-000000102.c.nmdn.net/mnac-p-000000102/12345678/0/0_moyme6yj_0_tfjmbp2l_2.mp4 */
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        /* Load sister-host plugin */
+        JDUtilities.getPluginForHost("tele5.de");
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         final String nicehost = new Regex(parameter, "http://(?:www\\.)?([^/]+)").getMatch(0);
         final String decryptedhost = "http://" + nicehost + "decrypted";
+        final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
+        final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.TeleFiveDe.formats;
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final Throwable e) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
 
         if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("kaltura_player_")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
 
@@ -261,6 +271,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
 
             ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
             boolean r = true;
+            boolean gotPage = false;
 
             /* creating downloadLinks */
             for (Entry<String, HashMap<String, String>> next : KalturaMediaEntry.entrySet()) {
@@ -271,7 +282,34 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                     fName = br.getRegex("<div id=\"headline\" class=\"grid_\\d+\"><h1>(.*?)</h1><").getMatch(0);
                     fileInfo.put("categories", fName);
                 }
-                final String filename = fileInfo.get("categories") + "__" + fileInfo.get("name").replaceAll("\\|", "-") + "_" + KalturaFlavorAsset.get("width") + "x" + KalturaFlavorAsset.get("height") + "@" + KalturaFlavorAsset.get("bitrate") + "Kbps." + KalturaFlavorAsset.get("fileExt");
+                String formatString = "";
+                final String videoBitrate = KalturaFlavorAsset.get("bitrate");
+                final String videoResolution = KalturaFlavorAsset.get("width") + "x" + KalturaFlavorAsset.get("height");
+                final String qualityInfo = videoResolution.substring(0, 1) + "_" + videoBitrate.substring(0, 1);
+                final String[] formatinfo = formats.get(qualityInfo);
+                final String audioCodec = formatinfo[3];
+                final String audioBitrate = formatinfo[4];
+                final String videoCodec = formatinfo[0];
+                if (videoCodec != null) {
+                    formatString += videoCodec + "_";
+                }
+                if (videoResolution != null) {
+                    formatString += videoResolution + "_";
+                }
+                if (videoBitrate != null) {
+                    formatString += videoBitrate + "_";
+                }
+                if (audioCodec != null) {
+                    formatString += audioCodec + "_";
+                }
+                if (audioBitrate != null) {
+                    formatString += audioBitrate;
+                }
+                if (formatString.endsWith("_")) {
+                    formatString = formatString.substring(0, formatString.lastIndexOf("_"));
+                }
+                final String filename = fileInfo.get("categories") + "_" + fileInfo.get("name").replaceAll("\\|", "-") + "_" + formatString + "." + KalturaFlavorAsset.get("fileExt");
+
                 /* Always access rtmp urls as this way we get all qualities/formats --> Then build http urls out of them --> :) */
                 String vidlink = "http://api.medianac.com/p/" + v.get("partnerId") + "/sp/" + v.get("subpId") + "/playManifest/entryId/" + v.get("entryId") + "/format/rtmp/protocol/rtmp/cdnHost/api.medianac.com";
                 vidlink += (v.containsKey("storageId") ? "/storageId/" + v.get("storageId") : "");
@@ -281,7 +319,9 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                     logger.warning("tele5 Decrypter: null in API Antwort entdeckt!");
                     logger.warning("tele5 Decrypter: " + vidlink);
                 }
-                if (r) {
+                if (r && !gotPage) {
+                    /* We only need to access this page once, at least if we use rtmp as streaming protocol. */
+                    gotPage = true;
                     br2.getPage(vidlink);
                 }
                 final String rtmp_base_server = br2.getRegex("<baseURL>rtmp://rtmp.(mnac\\-p\\-\\d+).c.nmdn.net/mnac-p-000000102</baseURL>").getMatch(0);
@@ -323,7 +363,9 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
                     }
                     dl.setProperty("directRTMPURL", baseUrl + "@" + vidlink);
                 }
-                newRet.add(dl);
+                if (cfg.getBooleanProperty(qualityInfo, false)) {
+                    newRet.add(dl);
+                }
             }
 
             if (newRet.size() > 1) {
