@@ -7,6 +7,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.imageio.ImageIO;
 import javax.swing.Icon;
@@ -17,6 +18,7 @@ import javax.swing.JLabel;
 import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.plugins.components.GoogleHelper;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
@@ -42,6 +44,7 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 
 public class BrowserSolverService extends AbstractSolverService {
+
     public static final String                ID       = "browser";
     private static final BrowserSolverService INSTANCE = new BrowserSolverService();
     static {
@@ -49,67 +52,74 @@ public class BrowserSolverService extends AbstractSolverService {
 
             @Override
             public void onConfigValueModified(KeyHandler<String> keyHandler, String newValue) {
-                String sid = CFG_BROWSER_CAPTCHA_SOLVER.GOOGLE_COM_COOKIE_VALUE_SID.getValue();
-                String hsid = CFG_BROWSER_CAPTCHA_SOLVER.GOOGLE_COM_COOKIE_VALUE_HSID.getValue();
+                {
+                    String sid = CFG_BROWSER_CAPTCHA_SOLVER.GOOGLE_COM_COOKIE_VALUE_SID.getValue();
+                    String hsid = CFG_BROWSER_CAPTCHA_SOLVER.GOOGLE_COM_COOKIE_VALUE_HSID.getValue();
+                    final AtomicReference<BufferedImage> niceOrg = new AtomicReference<BufferedImage>();
+                    final AtomicReference<BufferedImage> badOrg = new AtomicReference<BufferedImage>();
+                    if (StringUtils.isNotEmpty(sid) && StringUtils.isNotEmpty(hsid)) {
 
-                if (StringUtils.isNotEmpty(sid) && StringUtils.isNotEmpty(hsid)) {
+                        ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _GUI._.Recaptcha_cookie_help_title(), _GUI._.Recaptcha_cookie_help_msg(), new AbstractIcon(IconKey.ICON_OCR, 32), null, _GUI._.lit_close()) {
 
-                    ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _GUI._.Recaptcha_cookie_help_title(), _GUI._.Recaptcha_cookie_help_msg(), new AbstractIcon(IconKey.ICON_OCR, 32), null, _GUI._.lit_close()) {
+                            @Override
+                            protected JComponent getIconComponent() {
 
-                        @Override
-                        protected JComponent getIconComponent() {
+                                URLConnectionAdapter con;
+                                try {
 
-                            URLConnectionAdapter con;
-                            try {
+                                    String siteKey = "6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-";
+                                    Browser br = new Browser();
+                                    BrowserSolverService.fillCookies(br);
 
-                                String siteKey = "6Le-wvkSAAAAAPBMRTvw0Q4Muexq9bi0DJwx_mJ-";
-                                Browser br = new Browser();
-                                BrowserSolverService.fillCookies(br);
-                                br.getPage("http://www.google.com/recaptcha/api/challenge?k=" + siteKey);
+                                    br.getPage("http://www.google.com/recaptcha/api/challenge?k=" + siteKey);
 
-                                String challenge = br.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
-                                String server = br.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
+                                    String challenge = br.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
+                                    String server = br.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
+                                    niceOrg.set(ImageIO.read(br.openGetConnection(server + "image?c=" + challenge).getInputStream()));
+                                    BufferedImage niceImage = IconIO.toBufferedImage(niceOrg.get());
 
-                                BufferedImage niceImage = IconIO.toBufferedImage(ImageIO.read(br.openGetConnection(server + "image?c=" + challenge).getInputStream()));
+                                    br = new Browser();
+                                    br.getPage("http://www.google.com/recaptcha/api/challenge?k=" + siteKey);
 
-                                br = new Browser();
-                                br.getPage("http://www.google.com/recaptcha/api/challenge?k=" + siteKey);
+                                    challenge = br.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
+                                    server = br.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
+                                    badOrg.set(ImageIO.read(br.openGetConnection(server + "image?c=" + challenge).getInputStream()));
+                                    BufferedImage badImage = IconIO.toBufferedImage(badOrg.get());
 
-                                challenge = br.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
-                                server = br.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
+                                    Graphics2D niceGraphics = (Graphics2D) niceImage.getGraphics();
+                                    Graphics2D badGraphics = (Graphics2D) badImage.getGraphics();
+                                    Font font = new Font("Arial", Font.BOLD, 18);
 
-                                BufferedImage badImage = IconIO.toBufferedImage(ImageIO.read(br.openGetConnection(server + "image?c=" + challenge).getInputStream()));
+                                    niceGraphics.setColor(Color.GREEN);
+                                    niceGraphics.setFont(font);
+                                    niceGraphics.drawString("Easy Captcha :-) ", 4, niceImage.getHeight() - 4);
 
-                                Graphics2D niceGraphics = (Graphics2D) niceImage.getGraphics();
-                                Graphics2D badGraphics = (Graphics2D) badImage.getGraphics();
-                                Font font = new Font("Arial", Font.BOLD, 18);
-
-                                niceGraphics.setColor(Color.GREEN);
-                                niceGraphics.setFont(font);
-                                niceGraphics.drawString("Easy Captcha :-)", 4, niceImage.getHeight() - 4);
-
-                                badGraphics.setColor(Color.RED);
-                                badGraphics.setFont(font);
-                                badGraphics.drawString("Hard Captcha :´(", 4, badImage.getHeight() - 4);
-                                MigPanel ret = new MigPanel("ins 0,wrap 1", "[]", "[][]");
-                                ret.add(new JLabel(new ImageIcon(niceImage)));
-                                ret.add(new JLabel(new ImageIcon(badImage)));
-                                return ret;
-                            } catch (IOException e) {
-                                e.printStackTrace();
+                                    badGraphics.setColor(Color.RED);
+                                    badGraphics.setFont(font);
+                                    badGraphics.drawString("Hard Captcha :´( ", 4, badImage.getHeight() - 4);
+                                    MigPanel ret = new MigPanel("ins 0,wrap 1", "[]", "[][]");
+                                    ret.add(new JLabel(new ImageIcon(niceImage)));
+                                    ret.add(new JLabel(new ImageIcon(badImage)));
+                                    return ret;
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                                return super.getIconComponent();
                             }
-                            return super.getIconComponent();
-                        }
 
-                        protected int getPreferredWidth() {
-                            return 700;
+                            protected int getPreferredWidth() {
+                                return 700;
+                            };
                         };
-                    };
-                    d.setTimeout(120000);
-                    UIOManager.I().show(ConfirmDialogInterface.class, d);
+                        d.setTimeout(120000);
+                        UIOManager.I().show(ConfirmDialogInterface.class, d);
 
-                } else {
-                    UIOManager.I().showMessageDialog(_GUI._.Recaptcha_cookie_help_msg_both_cookies());
+                        if (niceOrg.get() == null || niceOrg.get().getType() == 10) {
+                            return;
+                        }
+                    } else {
+                        UIOManager.I().showMessageDialog(_GUI._.Recaptcha_cookie_help_msg_both_cookies());
+                    }
                 }
 
             }
@@ -217,8 +227,14 @@ public class BrowserSolverService extends AbstractSolverService {
     }
 
     public static void fillCookies(Browser rcBr) {
-        rcBr.setCookie("http://google.com", "SID", getInstance().getConfig().getGoogleComCookieValueSID());
-        rcBr.setCookie("http://google.com", "HSID", getInstance().getConfig().getGoogleComCookieValueHSID());
+        if (StringUtils.isNotEmpty(getInstance().getConfig().getGoogleComCookieValueSID()) && StringUtils.isNotEmpty(getInstance().getConfig().getGoogleComCookieValueHSID())) {
+            rcBr.setCookie("http://google.com", "SID", getInstance().getConfig().getGoogleComCookieValueSID());
+            rcBr.setCookie("http://google.com", "HSID", getInstance().getConfig().getGoogleComCookieValueHSID());
+        } else {
+            GoogleHelper helper = new GoogleHelper(rcBr);
+            helper.setCacheEnabled(true);
+            helper.login();
+        }
 
     }
 

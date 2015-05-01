@@ -8,6 +8,7 @@ import jd.plugins.Plugin;
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
+import org.appwork.remoteapi.exceptions.RemoteAPIException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -40,7 +41,7 @@ public abstract class SweetCaptchaChallenge extends AbstractBrowserChallenge {
     }
 
     @Override
-    public boolean onPostRequest(BrowserReference browserReference, PostRequest request, HttpResponse response) throws IOException {
+    public boolean onPostRequest(BrowserReference browserReference, PostRequest request, HttpResponse response) throws IOException, RemoteAPIException {
 
         final String sckey = request.getParameterbyKey("sckey");
         final String scvalue = request.getParameterbyKey("scvalue");
