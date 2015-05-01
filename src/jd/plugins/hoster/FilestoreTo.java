@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -86,9 +87,15 @@ public class FilestoreTo extends PluginForHost {
             } catch (final Exception e) {
                 continue;
             }
-            if (br.containsHTML(">Download-Datei wurde nicht gefunden<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            if (br.containsHTML(">Download-Datei wurde gesperrt<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            if (br.containsHTML("Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML(">Download-Datei wurde nicht gefunden<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (br.containsHTML(">Download-Datei wurde gesperrt<")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (br.containsHTML("Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             haveFun();
             downloadName = new Regex(aBrowser, "\\s*(File:|Filename:?)\\s*(.*?)\\s*(Dateigr??e|(File)?size|Gr??e):?\\s*(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(1);
             if (downloadName == null) {
@@ -98,8 +105,12 @@ public class FilestoreTo extends PluginForHost {
             if (downloadSize == null) {
                 downloadSize = new Regex(aBrowser, "(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(0);
             }
-            if (downloadName != null) downloadLink.setName(Encoding.htmlDecode(downloadName.trim()));
-            if (downloadSize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(downloadSize.replaceAll(",", "\\.").trim()));
+            if (downloadName != null) {
+                downloadLink.setName(Encoding.htmlDecode(downloadName.trim()));
+            }
+            if (downloadSize != null) {
+                downloadLink.setDownloadSize(SizeFormatter.getSize(downloadSize.replaceAll(",", "\\.").trim()));
+            }
             return AvailableStatus.TRUE;
 
         }
@@ -109,20 +120,32 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        // lets check they at times have issues
+        if (br.containsHTML(Pattern.quote(">Der Download ist nicht bereit !</span><br />Die Datei wird noch auf die Server verteilt.<br />Bitte versuche es in ein paar Minuten erneut.<"))) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+        }
         String js = br.getRegex("(script/\\d+\\.js)").getMatch(0);
-        if (js == null) js = br.getRegex("(script/main\\.js)").getMatch(0);
-        if (js == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (js == null) {
+            js = br.getRegex("(script/main\\.js)").getMatch(0);
+        }
+        if (js == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         Browser bjs = br.cloneBrowser();
         bjs.getPage("/" + js);
         String id = bjs.getRegex("data:\\s*'(\\w+=\\w+)'").getMatch(0);
-        if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (id == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String jcount = bjs.getRegex("var countdown = \"(\\d+)\";").getMatch(0);
         String pwnage[] = new String[4];
         String newbull = null;
         // find startDownload, usually within primary controlling js
         String startDl = bjs.getRegex("(function startDownload\\(\\)([^\n]+\n){10})").getMatch(0);
         // at times he places in base html source
-        if (startDl == null) startDl = br.getRegex("(function startDownload\\(\\)([^\n]+\n){10})").getMatch(0);
+        if (startDl == null) {
+            startDl = br.getRegex("(function startDownload\\(\\)([^\n]+\n){10})").getMatch(0);
+        }
         // find the value' we need
         String[] data = new Regex(startDl, "data\\s*:\\s*(\"|')(.*?)\\1\\+\\$\\((\"|').(\\w+)\\3\\)\\.attr\\((\"|')(\\w+)\\5\\),").getRow(0);
         if (data != null && data.length == 6) {
@@ -159,19 +182,25 @@ public class FilestoreTo extends PluginForHost {
                     newbull = br.getRegex("var\\s*(?-i)" + data[2] + "\\s*=\\s*(\"|')([a-zA-Z0-9]+)\\1").getMatch(1);
                 }
                 String[] var = null;
-                if (data != null && data.length != 1) var = new Regex(startDl, "var\\s*(?-i)" + data[2] + "(?i)\\s*=\\s*\\$\\((\"|').(\\w+)\\1\\)\\.attr\\((\"|')(\\w+)\\3\\)").getRow(0);
+                if (data != null && data.length != 1) {
+                    var = new Regex(startDl, "var\\s*(?-i)" + data[2] + "(?i)\\s*=\\s*\\$\\((\"|').(\\w+)\\1\\)\\.attr\\((\"|')(\\w+)\\3\\)").getRow(0);
+                }
                 if (var != null && var.length == 4) {
                     pwnage[0] = data[1];
                     pwnage[1] = var[1];
                     pwnage[2] = var[3];
-                    if (data[4] != null) pwnage[3] = data[4];
+                    if (data[4] != null) {
+                        pwnage[3] = data[4];
+                    }
                 } else if ((var == null || var.length != 4) && data.length == 1) {
                     var = new Regex(startDl, "var\\s*(?-i)" + data[0] + "(?i)\\s*=\\s*(\"|')(\\w+=)\\1\\+\\$\\((\"|').(\\w+)\\3\\)\\.attr\\((\"|')(\\w+)\\5\\)(\\+(\"|')([\\w&=]+)\\8)?(,|;)").getRow(0);
                     if (var != null && var.length >= 5) {
                         pwnage[0] = var[1];
                         pwnage[1] = var[3];
                         pwnage[2] = var[5];
-                        if (var[8] != null) pwnage[3] = var[8];
+                        if (var[8] != null) {
+                            pwnage[3] = var[8];
+                        }
                     }
                 }
             }
@@ -179,9 +208,11 @@ public class FilestoreTo extends PluginForHost {
         final String waittime = br.getRegex("Bitte warte (\\d+) Sekunden und starte dann").getMatch(0);
         final String ajax = "http://filestore.to/ajax/download.php?";
         int wait = 10;
-        if (jcount != null && Integer.parseInt(jcount) < 61)
+        if (jcount != null && Integer.parseInt(jcount) < 61) {
             wait = Integer.parseInt(jcount);
-        else if (waittime != null && Integer.parseInt(waittime) < 61) wait = Integer.parseInt(waittime);
+        } else if (waittime != null && Integer.parseInt(waittime) < 61) {
+            wait = Integer.parseInt(waittime);
+        }
         sleep(wait * 1001l, downloadLink);
         Browser br2 = br.cloneBrowser();
         prepAjax(br2);
@@ -194,17 +225,23 @@ public class FilestoreTo extends PluginForHost {
         if (pwnage != null && pwnage[1] != null && pwnage[2] != null) {
             code = br.getRegex("=\"" + pwnage[1] + "\"\\s*" + pwnage[2] + "=\"([A-Z0-9]+)\"").getMatch(0);
         }
-        if (code == null && (pwnage != null && pwnage[2] != null)) code = br.getRegex(pwnage[2] + "=\"([A-Z0-9]+)\"\\s*").getMatch(0);
+        if (code == null && (pwnage != null && pwnage[2] != null)) {
+            code = br.getRegex(pwnage[2] + "=\"([A-Z0-9]+)\"\\s*").getMatch(0);
+        }
         if (code == null && newbull != null) {
             code = newbull;
         }
-        if (code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (code == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         Browser brd = br.cloneBrowser();
         prepAjax(brd);
         brd.getPage(ajax + pwnage[0] + code + (pwnage[3] != null ? pwnage[3] : ""));
         br.setFollowRedirects(true);
         final String dllink = brd.toString().replaceAll("%0D%0A", "").trim();
-        if (!dllink.startsWith("http://")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (!dllink.startsWith("http://")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
