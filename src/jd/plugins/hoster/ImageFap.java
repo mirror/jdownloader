@@ -130,10 +130,10 @@ public class ImageFap extends PluginForHost {
         } else {
             // final String gallery_name = getGalleryName(downloadLink);
             // String imagelink = br.getRegex("\"(http://fap\\.to/images/(full/)?\\d+/\\d+/.*?)\"").getMatch(0);
-            String imagelink = br.getRegex("name=\"mainPhoto\".*src=\"(http://fap\\.to/images/\\d+/.*?)\"").getMatch(0);
+            String imagelink = br.getRegex("name=\"mainPhoto\".*src=\"(http://img\\.imagefapusercontent\\.com/images/\\d+/.*?)\"").getMatch(0);
             if (imagelink == null) {
                 String ID = new Regex(downloadLink.getDownloadURL(), "(\\d+)").getMatch(0);
-                imagelink = br.getRegex("href=\"http://fap.to/images/full/\\d+/\\d+/" + ID + "\\.jpe?g\" original=\"(http://fap.to/images/full/\\d+/\\d+/" + ID + "\\.jpe?g)\"").getMatch(0);
+                imagelink = br.getRegex("href=\"http://img\\.imagefapusercontent\\.com/images/full/\\d+/\\d+/" + ID + "\\.jpe?g\" original=\"(http://fap.to/images/full/\\d+/\\d+/" + ID + "\\.jpe?g)\"").getMatch(0);
             }
             if (imagelink == null) {
                 final String returnID = new Regex(br, Pattern.compile("return lD\\(\\'(\\S+?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
