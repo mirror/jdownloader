@@ -48,11 +48,13 @@ public class ImageNetzDe extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
         Form dlform = br.getForm(0);
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -61,15 +63,20 @@ public class ImageNetzDe extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Diese Datei existiert nicht mehr")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Diese Datei existiert nicht mehr")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         Regex fileInfo = br.getRegex("<td height=\"22\" class=\"main\"><div align=\"left\"></div>[\t\n\r ]+<div align=\"left\">(.*?)</div></td>[\t\n\r ]+<td height=\"22\" class=\"main\"><div align=\"center\">(.*?)</div></td>");
         String filename = fileInfo.getMatch(0);
         String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;

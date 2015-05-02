@@ -152,20 +152,6 @@ public class OffCloudCom extends PluginForHost {
             /* without account its not possible to download the link */
             return false;
         }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         /* Make sure that we do not start more than the allowed number of max simultan downloads for the current host. */
         synchronized (hostRunningDlsNumMap) {
             final String currentHost = correctHost(downloadLink.getHost());
@@ -176,11 +162,6 @@ public class OffCloudCom extends PluginForHost {
                     return false;
                 }
             }
-        }
-        /* Now check if maybe the link itself is unavailable for this multihost for a certain time. */
-        final long linktempunavailable = downloadLink.getLongProperty(NICE_HOST + "linktemporarilyunavailable", -1);
-        if (System.currentTimeMillis() < linktempunavailable) {
-            return false;
         }
         return true;
     }
@@ -203,6 +184,22 @@ public class OffCloudCom extends PluginForHost {
         String filename = null;
         String requestID = null;
         this.br = newBrowser();
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
 
         /*
          * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
@@ -761,8 +758,7 @@ public class OffCloudCom extends PluginForHost {
         if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
-        this.currDownloadLink.setProperty(NICE_HOST + "linktemporarilyunavailable", System.currentTimeMillis() + timeout);
-        throw new PluginException(LinkStatus.ERROR_RETRY);
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This link is temporarily unavailable via " + this.getHost());
     }
 
     private String getAPISafe(final String accesslink) throws IOException, PluginException {

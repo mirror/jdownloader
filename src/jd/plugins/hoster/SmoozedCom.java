@@ -435,6 +435,13 @@ public class SmoozedCom extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster temporary not available");
                     }
+                } else if (StringUtils.equalsIgnoreCase(message, "Temporary not available")) {
+                    // File temporary not available
+                    if (seconds != null) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporary not available", seconds.intValue() * 1000);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporary not available");
+                    }
                 } else if (StringUtils.equalsIgnoreCase(message, "No traffic available")) {
                     // No traffic available
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No traffic available");
