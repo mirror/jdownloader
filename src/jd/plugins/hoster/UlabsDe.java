@@ -84,13 +84,30 @@ public class UlabsDe extends PluginForHost {
     }
 
     /* no override to keep plugin compatible to old stable */
-    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
         String dllink = checkDirectLink(link, NICE_HOST + "directlink");
         if (dllink == null) {
             if (this.useAPI()) {
-                dllink = api_get_dllink(link, acc);
+                dllink = api_get_dllink(link, account);
             } else {
-                dllink = site_get_dllink(link, acc);
+                dllink = site_get_dllink(link, account);
             }
         }
         int maxChunks = 1;
@@ -101,7 +118,7 @@ public class UlabsDe extends PluginForHost {
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, maxChunks);
         } catch (final SocketTimeoutException e) {
-            handlePluginBroken(acc, link, "timeout_dlstart", 5);
+            handlePluginBroken(account, link, "timeout_dlstart", 5);
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -111,25 +128,25 @@ public class UlabsDe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid registration/account", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if ("2".equals(errorcode)) {
                 logger.info("Invalid URL --> Temporarily remove current host from hostlist");
-                tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000);
+                tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000);
             } else if ("3".equals(errorcode)) {
                 logger.info("Not enough traffic to download file --> Temporarily remove current host from hostlist");
-                tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000);
+                tempUnavailableHoster(account, link, 1 * 60 * 60 * 1000);
             } else if ("4".equals(errorcode)) {
                 logger.info("Downloadlink seems to be offline");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if ("5".equals(errorcode)) {
                 logger.info("An unknown error happened");
-                tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000);
+                tempUnavailableHoster(account, link, 1 * 60 * 60 * 1000);
             } else if ("6".equals(errorcode)) {
                 logger.info("An 'API error' happened");
-                tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000);
+                tempUnavailableHoster(account, link, 1 * 60 * 60 * 1000);
             } else if ("7".equals(errorcode)) {
                 logger.info("The host whose downloadlink you tried is not supported by this multihost  --> Temporarily remove current host from hostlist");
-                tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000);
+                tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000);
             } else if ("8".equals(errorcode)) {
                 logger.info("There are no available host-accounts at the moment  --> Temporarily remove current host from hostlist");
-                tempUnavailableHoster(acc, link, 15 * 60 * 60 * 1000);
+                tempUnavailableHoster(account, link, 15 * 60 * 60 * 1000);
             } else if ("10".equals(errorcode)) {
                 logger.info("Your account is banned at the moment --> Disable it");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Banned account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -137,7 +154,7 @@ public class UlabsDe extends PluginForHost {
                 logger.warning("Unhandled errorcode: " + errorcode);
             }
             logger.info("Unhandled download error on " + NICE_HOST + ": " + br.toString());
-            handlePluginBroken(acc, link, "unknown_server_error", 5);
+            handlePluginBroken(account, link, "unknown_server_error", 5);
         }
         link.setProperty(NICE_HOST + "directlink", dllink);
         try {
@@ -367,20 +384,6 @@ public class UlabsDe extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         return true;
     }
 
