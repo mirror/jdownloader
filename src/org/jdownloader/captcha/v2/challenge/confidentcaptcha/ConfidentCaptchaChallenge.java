@@ -71,16 +71,35 @@ public abstract class ConfidentCaptchaChallenge extends AbstractBrowserChallenge
     public boolean onRawPostRequest(final BrowserReference browserReference, final PostRequest request, final HttpResponse response) throws IOException, RemoteAPIException {
         if (request.getRequestedURL().endsWith("/confidentincludes/callback.php")) {
             // we need to send this in jd as the referrer info in browser will be wrong!
-            Browser c = getBr().cloneBrowser();
-            for (HTTPHeader r : request.getRequestHeaders()) {
+            final Browser c = new Browser();
+            c.getHeaders().put("Referer", getBr().getURL());
+            for (final HTTPHeader header1 : getBr().getRequest().getHeaders()) {
                 // we just want the headers that sends in request.. we do this with our session browser for validation
-                if (!r.getKey().equalsIgnoreCase(c.getHeaders().get(r.getKey()))) {
-                    c.getHeaders().remove(r.getKey());
+                // first add all existing browser headers
+                final String h1K = header1.getKey();
+                final String h1V = header1.getValue();
+                c.getHeaders().put(h1K, h1V);
+            }
+            // now put what's in user browser back into next request.
+            for (final HTTPHeader header2 : request.getRequestHeaders()) {
+                final String h2K = header2.getKey();
+                final String h2V = header2.getValue();
+                final String hcV = c.getHeaders().get(h2K);
+                if (!h2V.contains("127.0.0.1") && !h2K.equals("User-Agent") && !h2K.equals("Connection") && !h2K.equals("Content-Length")) {
+                    if (!h2K.equals(hcV)) {
+                        c.getHeaders().put(h2K, h2V);
+                    }
                 }
             }
-            // we want to add ajax stuff
-            c.setHeader("Accept", "*/*");
-            c.setHeader("X-Requested-With", "XMLHttpRequest");
+            // now delete stuff that shouldn't be present in c
+            for (final HTTPHeader header3 : c.getHeaders()) {
+                final String h3K = header3.getKey();
+                final String r3V = request.getRequestHeaders().getValue(h3K);
+                if (r3V == null) {
+                    c.getHeaders().remove(h3K);
+                }
+            }
+
             String postargs = "";
             final List<KeyValuePair> params = request.getPostParameter();
             for (final KeyValuePair param : params) {
@@ -89,7 +108,7 @@ public abstract class ConfidentCaptchaChallenge extends AbstractBrowserChallenge
                 postargs += key + "=" + Encoding.urlEncode(value) + "&";
             }
             postargs = (String) postargs.subSequence(0, postargs.length() - 1);
-            c.postPage("/confidentincludes/callback.php", postargs);
+            c.postPage(getBr().getBaseURL() + "confidentincludes/callback.php", postargs);
             response.setResponseCode(ResponseCode.SUCCESS_OK);
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
             response.getOutputStream(true).write(c.getRequest().getHtmlCode().getBytes("UTF-8"));
