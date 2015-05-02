@@ -1581,6 +1581,28 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
         // debug
 
+        accounts = AccountController.getInstance().getAllAccounts("google.com");
+        if (accounts != null && accounts.size() != 0) {
+            final Iterator<Account> it = accounts.iterator();
+            while (it.hasNext()) {
+                final Account n = it.next();
+                if (n.isEnabled() && n.isValid()) {
+
+                    try {
+
+                        this.login(n, refresh, showDialog);
+                        if (n.isValid()) {
+                            return;
+                        }
+                    } catch (final Exception e) {
+
+                        n.setValid(false);
+                        return;
+                    }
+
+                }
+            }
+        }
         accounts = AccountController.getInstance().getAllAccounts("youtube.jd");
         if (accounts != null && accounts.size() != 0) {
             final Iterator<Account> it = accounts.iterator();

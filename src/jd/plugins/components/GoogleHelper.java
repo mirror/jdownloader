@@ -18,6 +18,7 @@ import jd.plugins.Account;
 
 public class GoogleHelper {
 
+    private static final String COOKIES2                                      = "googleComCookies";
     private static final String META_HTTP_EQUIV_REFRESH_CONTENT_D_S_URL_39_39 = "<meta\\s+http-equiv=\"refresh\"\\s+content\\s*=\\s*\"(\\d+)\\s*;\\s*url\\s*=\\s*([^\"]+)";
     private Browser             br;
     private boolean             cacheEnabled                                  = false;
@@ -153,11 +154,9 @@ public class GoogleHelper {
             this.br.clearCookies(null);
 
             br.setCookie("http://google.com", "PREF", "hl=en-GB");
-            if (isCacheEnabled() && account.getProperty("cookies") != null) {
+            if (isCacheEnabled() && account.getProperty(COOKIES2) != null) {
                 @SuppressWarnings("unchecked")
-                HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty("cookies");
-                // cookies = null;
-                // https://accounts.google.com/CheckCookie?hl=en&checkedDomains=youtube&checkConnection=youtube%3A210%3A1&pstMsg=1&chtml=LoginDoneHtml&service=youtube&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue&gidl=CAA
+                HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty(COOKIES2);
 
                 if (cookies != null) {
                     if (cookies.containsKey("SID") && cookies.containsKey("HSID")) {
@@ -167,7 +166,7 @@ public class GoogleHelper {
                             this.br.setCookie("google.com", key, value);
                         }
 
-                        getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=youtube&checkConnection=youtube%3A210%3A1&pstMsg=1&chtml=LoginDoneHtml&service=youtube&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue&gidl=CAA");
+                        getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");
                         if (br.containsHTML("accounts/SetSID")) {
                             return true;
                         }
@@ -178,20 +177,20 @@ public class GoogleHelper {
             this.br.setFollowRedirects(true);
             /* first call to google */
 
-            getPageFollowRedirects(br, "https://accounts.google.com/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252Findex&hl=en_US&ltmpl=sso");
+            getPageFollowRedirects(br, "https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
 
             LinkedHashMap<String, String> post = new LinkedHashMap<String, String>();
 
             post.put("GALX", br.getCookie("http://google.com", "GALX"));
-            post.put("continue", "https://www.youtube.com/signin?action_handle_signin=true&app=desktop&feature=sign_in_button&next=%2F&hl=en");
-            post.put("service", "youtube");
+            post.put("continue", getService().continueAfterServiceLoginAuth);
+            post.put("service", getService().serviceName);
             post.put("hl", "en");
             post.put("utf8", "☃");
             post.put("pstMsg", "1");
             post.put("dnConn", "");
-            post.put("checkConnection", "youtube:210:1");
+            post.put("checkConnection", getService().checkConnectionString);
 
-            post.put("checkedDomains", "youtube");
+            post.put("checkedDomains", getService().serviceName);
             post.put("Email", account.getUser());
             post.put("Passwd", account.getPass());
             post.put("signIn", "Sign in");
@@ -204,14 +203,24 @@ public class GoogleHelper {
             for (final Cookie c : cYT.getCookies()) {
                 cookies.put(c.getKey(), c.getValue());
             }
-            account.setProperty("cookies", cookies);
+            account.setProperty(COOKIES2, cookies);
             return br.containsHTML("accounts/SetSID");
         } catch (IOException e) {
 
-            account.setProperty("cookies", null);
+            account.setProperty(COOKIES2, null);
             throw e;
         }
 
+    }
+
+    private GoogleService service = GoogleService.YOUTUBE;
+
+    public GoogleService getService() {
+        return service;
+    }
+
+    public void setService(GoogleService service) {
+        this.service = service;
     }
 
     private boolean isCacheEnabled() {
