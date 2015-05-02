@@ -21,7 +21,7 @@ public class GoogleHelper {
     private static final String COOKIES2                                      = "googleComCookies";
     private static final String META_HTTP_EQUIV_REFRESH_CONTENT_D_S_URL_39_39 = "<meta\\s+http-equiv=\"refresh\"\\s+content\\s*=\\s*\"(\\d+)\\s*;\\s*url\\s*=\\s*([^\"]+)";
     private Browser             br;
-    private boolean             cacheEnabled                                  = false;
+    private boolean             cacheEnabled                                  = true;
 
     public void setCacheEnabled(boolean cacheEnabled) {
         this.cacheEnabled = cacheEnabled;
