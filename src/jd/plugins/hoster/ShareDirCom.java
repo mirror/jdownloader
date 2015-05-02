@@ -218,7 +218,6 @@ public class ShareDirCom extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         prepBr(this.br);
-        login(account, false);
 
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
@@ -236,6 +235,7 @@ public class ShareDirCom extends PluginForHost {
             }
         }
 
+        login(account, false);
         final String dllink = "http://dl.sharedir.com/?i=" + Encoding.urlEncode(link.getDownloadURL());
         handleDl(link, account, dllink, false);
     }
