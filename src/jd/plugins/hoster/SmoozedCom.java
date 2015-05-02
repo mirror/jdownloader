@@ -422,7 +422,7 @@ public class SmoozedCom extends PluginForHost {
                 } else if (StringUtils.equalsIgnoreCase(message, "No traffic available")) {
                     // No traffic available
                     if (session_Key != null) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No traffic available");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No traffic available", 5 * 60 * 1000l);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }

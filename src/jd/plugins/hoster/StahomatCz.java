@@ -55,6 +55,8 @@ public class StahomatCz extends PluginForHost {
     private static final String                            NICE_HOSTproperty  = mName.replaceAll("(/|\\.)", "");
 
     private static Object                                  LOCK               = new Object();
+    private Account                                        currAcc            = null;
+    private DownloadLink                                   currDownloadLink   = null;
     private String                                         TOKEN              = null;
 
     public StahomatCz(PluginWrapper wrapper) {
@@ -74,6 +76,14 @@ public class StahomatCz extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(3 * 60 * 1000);
         br.setReadTimeout(3 * 60 * 1000);
+    }
+
+    private void setConstants(final Account acc, final DownloadLink dl) throws IOException, PluginException {
+        this.currAcc = acc;
+        this.currDownloadLink = dl;
+        if (acc != null) {
+            this.getToken();
+        }
     }
 
     /**
@@ -205,11 +215,13 @@ public class StahomatCz extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
+    @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink downloadLink, final Account account) throws Exception {
+        setConstants(account, downloadLink);
         prepBrowser();
         br.setFollowRedirects(true);
         final String pass = downloadLink.getStringProperty("pass", null);
-        TOKEN = account.getStringProperty("token", null);
+        this.getToken();
         if (TOKEN == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -224,7 +236,7 @@ public class StahomatCz extends PluginForHost {
             }
             if (br.containsHTML("\"error\":\"invalidLink\"")) {
                 logger.info("Superload.cz says 'invalid link', disabling real host for 1 hour.");
-                tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
+                tempUnavailableHoster(60 * 60 * 1000l);
             } else if (br.containsHTML("\"error\":\"temporarilyUnsupportedServer\"")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temp. Error. Try again later", 5 * 60 * 1000l);
             } else if (br.containsHTML("\"error\":\"fileNotFound\"")) {
@@ -234,7 +246,7 @@ public class StahomatCz extends PluginForHost {
                 // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("\"error\":\"unsupportedServer\"")) {
                 logger.info("Superload.cz says 'unsupported server', disabling real host for 1 hour.");
-                tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
+                tempUnavailableHoster(60 * 60 * 1000l);
             } else if (br.containsHTML("\"error\":\"Lack of credits\"")) {
                 logger.info("Superload.cz says 'Lack of credits', temporarily disabling account.");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -272,7 +284,7 @@ public class StahomatCz extends PluginForHost {
         } else {
             dl.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(acc, dl, 1 * 60 * 60 * 1000l);
+            tempUnavailableHoster(1 * 60 * 60 * 1000l);
         }
     }
 
@@ -295,8 +307,10 @@ public class StahomatCz extends PluginForHost {
         return dllink;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        setConstants(account, null);
         AccountInfo ai = new AccountInfo();
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
@@ -319,7 +333,7 @@ public class StahomatCz extends PluginForHost {
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(5);
         ai.setValidUntil(-1);
-        ai.setStatus("Premium User");
+        ai.setStatus("Premium account");
         try {
             // get the supported host list,
             String hostsSup = br.cloneBrowser().postPage(mAPI + "/get-supported-hosts", "token=" + TOKEN);
@@ -339,11 +353,10 @@ public class StahomatCz extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
             TOKEN = getJson("token");
-            if (TOKEN != null) {
-                acc.setProperty("token", TOKEN);
-            } else {
+            if (TOKEN == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            acc.setProperty("token", TOKEN);
         }
     }
 
@@ -351,16 +364,16 @@ public class StahomatCz extends PluginForHost {
         link.getLinkStatus().setStatusText(message);
     }
 
-    private AccountInfo updateCredits(AccountInfo ai, Account account) throws PluginException, IOException {
+    private AccountInfo updateCredits(AccountInfo ai, final Account account) throws PluginException, IOException {
         if (ai == null) {
             ai = new AccountInfo();
         }
-        String token = account.getStringProperty("token", null);
-        if (token == null) {
+        this.getToken();
+        if (TOKEN == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.postPage(mAPI + "/get-status-bar", "token=" + token);
-        Integer credits = Integer.parseInt(getJson("credits"));
+        br.postPage(mAPI + "/get-status-bar", "token=" + TOKEN);
+        final Integer credits = Integer.parseInt(getJson("credits"));
         if (credits != null) {
             // 1000 credits = 1 GB, convert back into 1024 (Bytes)
             // String expression = "(" + credits + " / 1000) * 1073741824";
@@ -370,18 +383,26 @@ public class StahomatCz extends PluginForHost {
         return ai;
     }
 
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) {
+    private String getToken() throws IOException, PluginException {
+        TOKEN = getJson("token");
+        if (TOKEN == null) {
+            login(this.currAcc);
+        }
+        return TOKEN;
+    }
+
+    private void tempUnavailableHoster(long timeout) throws PluginException {
+        if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
+                hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
             /* wait 'long timeout' to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
