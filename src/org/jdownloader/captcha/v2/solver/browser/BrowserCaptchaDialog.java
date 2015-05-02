@@ -40,7 +40,6 @@ import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.KeyStroke;
 
 import jd.gui.swing.dialog.AbstractCaptchaDialog;
 import jd.gui.swing.dialog.DialogType;
@@ -353,40 +352,42 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
 
         final DefaultButtonPanel ret = new DefaultButtonPanel("ins 0", "[]", "0[grow,fill]0") {
 
-            @Override
-            public void addOKButton(JButton okButton) {
-                final ExtButton refreshBtn = new ExtButton(new AppAction() {
-                    {
-                        setSmallIcon(NewTheme.I().getIcon("refresh", 18));
-                        setTooltipText(_GUI._.CaptchaDialog_layoutDialogContent_refresh());
-                        KeyStroke ks = KeyStroke.getKeyStroke(CFG_GUI.CFG.getShortcutForCaptchaDialogRefresh());
-                        if (ks == null) {
-                            ks = KeyStroke.getKeyStroke("pressed F5");
-                        }
-                        setAccelerator(ks);
+            // refresh button shouldn't be needed, since you f5 in browser, or in flash tool refresh/get a new image
 
-                    }
-
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        refresh = true;
-                        setReturnmask(false);
-                        dispose();
-                    }
-                }) {
-
-                    @Override
-                    public int getTooltipDelay(Point mousePositionOnScreen) {
-                        return 500;
-                    }
-
-                };
-                //
-                refreshBtn.setRolloverEffectEnabled(true);
-                super.add(refreshBtn, "alignx right,width 28!");
-                super.addOKButton(okButton);
-
-            }
+            // @Override
+            // public void addOKButton(JButton okButton) {
+            // final ExtButton refreshBtn = new ExtButton(new AppAction() {
+            // {
+            // setSmallIcon(NewTheme.I().getIcon("refresh", 18));
+            // setTooltipText(_GUI._.CaptchaDialog_layoutDialogContent_refresh());
+            // KeyStroke ks = KeyStroke.getKeyStroke(CFG_GUI.CFG.getShortcutForCaptchaDialogRefresh());
+            // if (ks == null) {
+            // ks = KeyStroke.getKeyStroke("pressed F5");
+            // }
+            // setAccelerator(ks);
+            //
+            // }
+            //
+            // @Override
+            // public void actionPerformed(ActionEvent e) {
+            // refresh = true;
+            // setReturnmask(false);
+            // dispose();
+            // }
+            // }) {
+            //
+            // @Override
+            // public int getTooltipDelay(Point mousePositionOnScreen) {
+            // return 500;
+            // }
+            //
+            // };
+            // //
+            // refreshBtn.setRolloverEffectEnabled(true);
+            // super.add(refreshBtn, "alignx right,width 28!");
+            // super.addOKButton(okButton);
+            //
+            // }
 
             @Override
             public void addCancelButton(final JButton cancelButton) {
