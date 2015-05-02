@@ -667,7 +667,7 @@ hr {
 }
 
 #main {
-	overflow: auto
+	overflow: visible
 }
 
 .wrap {
