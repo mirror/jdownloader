@@ -473,9 +473,10 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * Returns if this linkc an be handled without manual user captcha input
+     * Returns if this link an be handled without manual user captcha input
      *
      * @return
+     * @since JD2
      */
     public boolean hasAutoCaptcha() {
         final PluginForHost plugin = gethPlugin();
