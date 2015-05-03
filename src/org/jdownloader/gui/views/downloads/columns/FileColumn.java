@@ -152,6 +152,9 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
                     new OpenFileAction(LinkTreeUtils.getDownloadDirectory(((DownloadLink) contextObject).getParentNode())).actionPerformed(null);
                 }
                 break;
+            case OPEN_PROPERTIES_PANEL:
+                CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.setValue(CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.getValue() ? false : true);
+                break;
             case RENAME:
                 startEditing(contextObject);
                 break;
@@ -170,6 +173,9 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
                 if (CrossSystem.isOpenFileSupported()) {
                     new OpenFileAction(LinkTreeUtils.getDownloadDirectory(((CrawledLink) contextObject).getParentNode())).actionPerformed(null);
                 }
+                break;
+            case OPEN_PROPERTIES_PANEL:
+                CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.setValue(CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.getValue() ? false : true);
                 break;
             case RENAME:
                 startEditing(contextObject);
@@ -192,6 +198,13 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
             case OPEN_FOLDER:
                 if (CrossSystem.isOpenFileSupported()) {
                     new OpenFileAction(LinkTreeUtils.getDownloadDirectory(contextObject)).actionPerformed(null);
+                }
+                break;
+            case OPEN_PROPERTIES_PANEL:
+                if (((AbstractPackageNode) contextObject).getControlledBy().equals(jd.controlling.downloadcontroller.DownloadController.getInstance())) {
+                    CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.setValue(CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.getValue() ? false : true);
+                } else if (((AbstractPackageNode) contextObject).getControlledBy().equals(jd.controlling.linkcollector.LinkCollector.getInstance())) {
+                    CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.setValue(CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.getValue() ? false : true);
                 }
                 break;
             case RENAME:

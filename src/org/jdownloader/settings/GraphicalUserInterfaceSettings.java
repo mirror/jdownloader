@@ -52,7 +52,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many ms the speedmeter shall show/record. Please note that big Timeframes and high fps values may cause high CPU usage
-     * 
+     *
      * @return
      */
     @AboutConfig
@@ -63,7 +63,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     /**
      * How many refreshes and datasamples the speedmeter uses. Please note that big Timeframes and high fps values may cause high CPU usage
-     * 
+     *
      * @return
      */
     @AboutConfig
@@ -652,6 +652,8 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         OPEN_FOLDER,
         @EnumLabel("Rename package")
         RENAME,
+        @EnumLabel("Open Link or Package Properties Panel")
+        OPEN_PROPERTIES_PANEL,
         @EnumLabel("Do nothing")
         NOTHING
     }
@@ -670,6 +672,8 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         OPEN_FILE,
         @EnumLabel("Rename File")
         RENAME,
+        @EnumLabel("Open Link or Package Properties Panel")
+        OPEN_PROPERTIES_PANEL,
         @EnumLabel("Do nothing")
         NOTHING
     }
