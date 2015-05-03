@@ -148,10 +148,27 @@ public class MultihostersCom extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
-    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
-        setConstants(acc, link);
-        final String user = Encoding.urlEncode(acc.getUser());
-        final String pw = Encoding.urlEncode(acc.getPass());
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+        setConstants(account, link);
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
+        final String user = Encoding.urlEncode(account.getUser());
+        final String pw = Encoding.urlEncode(account.getPass());
         final String url = Encoding.urlEncode(link.getDownloadURL());
         final String dllink = "http://www.multihosters.com/jDownloader.ashx?cmd=generatedownloaddirect&login=" + user + "&pass=" + pw + "&olink=" + url + "&FilePass=";
 

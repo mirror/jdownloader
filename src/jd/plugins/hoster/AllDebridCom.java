@@ -239,14 +239,31 @@ public class AllDebridCom extends PluginForHost {
     /** TODO: Replace errorhandling stuff with new API statuscode-errorhamdling */
     /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
-    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
-        setConstants(acc, link);
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+        setConstants(account, link);
         prepBrowser(br);
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
         showMessage(link, "Phase 1/2: Generating link");
 
         String host_downloadlink = link.getDownloadURL();
         /* here we can get a 503 error page, which causes an exception */
-        final String genlink = this.br.getPage("https://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink) + "&view=1");
+        final String genlink = this.br.getPage("https://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink) + "&view=1");
 
         if (genlink == null || !genlink.matches("https?://.+")) {
             logger.severe("Error: " + genlink);
@@ -258,7 +275,7 @@ public class AllDebridCom extends PluginForHost {
             updatestatuscode();
             handleAPIErrors(this.br);
         }
-        handleDL(acc, link, genlink);
+        handleDL(account, link, genlink);
     }
 
     private Browser prepBrowser(Browser prepBr) {
@@ -446,20 +463,6 @@ public class AllDebridCom extends PluginForHost {
         if (isDirectLink(downloadLink)) {
             // generated links do not require an account to download
             return true;
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
         }
         return true;
     }

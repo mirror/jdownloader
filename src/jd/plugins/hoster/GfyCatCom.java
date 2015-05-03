@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -33,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "http://(www\\.)?gfycat\\.com/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gfycat.com" }, urls = { "https?://(www\\.)?gfycat\\.com/[A-Za-z0-9]+" }, flags = { 0 })
 public class GfyCatCom extends PluginForHost {
 
     public GfyCatCom(PluginWrapper wrapper) {
@@ -45,21 +44,28 @@ public class GfyCatCom extends PluginForHost {
         return "http://gfycat.com/terms";
     }
 
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
+    }
+
     /* Using API: http://gfycat.com/api */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage("http://gfycat.com/cajax/get/" + getFID(link));
-        if (br.containsHTML("\"error\"")) {
+        this.br.getHeaders().put("User-Agent", "JDownloader");
+        br.getPage("https://gfycat.com/cajax/get/" + getFID(link));
+        if (br.containsHTML("\"error\"") || br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().contains("json")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = getJson(br.toString(), "gfyName");
-        final String filesize = getJson(br.toString(), "webmSize");
-        if (filename == null || filesize == null) {
+        final String username = getJson("userName");
+        final String filename = getJson("gfyName");
+        final String filesize = getJson("webmSize");
+        if (username == null || filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".webm");
+        link.setFinalFileName(username + " - " + filename + ".webm");
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -69,16 +75,22 @@ public class GfyCatCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            dllink = getJson(br.toString(), "webmUrl");
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = dllink.replace("\\", "");
+            dllink = getJson("webmUrl");
         }
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = dllink.replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* We use their API so nothing can really go wrong! */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 3 * 60 * 1000l);
         }
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
@@ -87,32 +99,60 @@ public class GfyCatCom extends PluginForHost {
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                con = openConnection(br2, dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return dllink;
     }
 
+    @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "gfycat\\.com/([A-Za-z0-9]+)").getMatch(0);
+        final String fid = new Regex(dl.getDownloadURL(), "gfycat\\.com/([A-Za-z0-9]+)").getMatch(0);
+        try {
+            dl.setLinkID(fid);
+        } catch (final Throwable e) {
+            /* Not available for 0.9.581 Stable */
+        }
+        return fid;
     }
 
-    private String getJson(final String source, final String parameter) {
-        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
         }
-        return result;
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
