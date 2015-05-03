@@ -170,7 +170,7 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
                 currentpage = maxPage;
                 parameter = parameter.substring(0, parameter.lastIndexOf(","));
             } else {
-                final String[] pageNums = br.getRegex("rel=\"(\\d+)\" title=\"página seguinte").getColumn(0);
+                final String[] pageNums = br.getRegex(",(\\d+)\" class=\"\" rel=\"\\d+\" title=\"\\d+\">\\d+</a>").getColumn(0);
                 for (final String pageNum : pageNums) {
                     final int curpgnum = Integer.parseInt(pageNum);
                     if (curpgnum > maxPage) {
@@ -199,6 +199,9 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
                 String[] linkinfo = br.getRegex(" class=\"fileinfo tab\">(.*?)<span class=\"filedescription\"").getColumn(0);
                 if (linkinfo == null || linkinfo.length == 0) {
                     linkinfo = br.getRegex("class=\"filename\">(.*?)class=\"directFileLink\"").getColumn(0);
+                }
+                if (linkinfo == null || linkinfo.length == 0) {
+                    linkinfo = br.getRegex("class=\"filerow fileItemContainer\"(.*?)class=\"fileCommentsAction\"").getColumn(0);
                 }
                 if (linkinfo == null || linkinfo.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);

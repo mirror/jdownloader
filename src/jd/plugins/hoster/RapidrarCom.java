@@ -79,7 +79,7 @@ public class RapidrarCom extends PluginForHost {
     private static final boolean           SUPPORTSHTTPS                = false;
     private static final boolean           SUPPORTSHTTPS_FORCED         = false;
     private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
-    private final boolean                  ENABLE_RANDOM_UA             = false;
+    private final boolean                  ENABLE_RANDOM_UA             = true;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Waittime stuff */
     private static final boolean           WAITFORCED                   = false;
@@ -335,7 +335,10 @@ public class RapidrarCom extends PluginForHost {
         /* Fourth, continue like normal */
         if (dllink == null) {
             checkErrors(downloadLink, false);
-            final Form download1 = getFormByKey("op", "download1");
+            Form download1 = getFormByKey("op", "download1");
+            if (download1 == null) {
+                download1 = br.getFormbyKey("usr_login");
+            }
             if (download1 != null) {
                 download1.remove("method_premium");
                 /* stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable! */
