@@ -695,7 +695,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 // free accounts can still have captcha.
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
+                account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
         } else {
