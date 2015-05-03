@@ -139,20 +139,6 @@ public class RealDebridCom extends PluginForHost {
             // no non account handleMultiHost support.
             return false;
         } else {
-            synchronized (hostUnavailableMap) {
-                HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-                if (unavailableMap != null) {
-                    Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                    if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                        return false;
-                    } else if (lastUnavailable != null) {
-                        unavailableMap.remove(downloadLink.getHost());
-                        if (unavailableMap.size() == 0) {
-                            hostUnavailableMap.remove(account);
-                        }
-                    }
-                }
-            }
             return true;
         }
     }
@@ -371,7 +357,24 @@ public class RealDebridCom extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
         // work around
         if (link.getBooleanProperty("hasFailed", false)) {
             final int hasFailedInt = link.getIntegerProperty("hasFailedWait", 60);
@@ -382,7 +385,7 @@ public class RealDebridCom extends PluginForHost {
         }
 
         prepBrowser(br);
-        login(acc, false);
+        login(account, false);
         showMessage(link, "Task 1: Generating Link");
         /* request Download */
         String dllink = link.getDownloadURL();
@@ -450,7 +453,7 @@ public class RealDebridCom extends PluginForHost {
                 // from rd
                 // 1: Happy hours activated BUT the concerned hoster is not included => Upgrade to Premium to use it
                 logger.info("This Hoster isn't supported in Happy Hour!");
-                tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 30 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (br.containsHTML("\"error\":2,")) {
                 // from rd
@@ -475,23 +478,23 @@ public class RealDebridCom extends PluginForHost {
             } else if (br.containsHTML("error\":6,")) {
                 // {"error":6,"message":"Ihr Tages-Limit wurde erreicht."}
                 // {"error":6,"message":"Daily limit exceeded."}
-                errNoHosterTrafficLeft(acc, link);
+                errNoHosterTrafficLeft(account, link);
             } else if (br.containsHTML("error\":7,")) {
                 // {"error":7,"message":"F\u00fcr den Hoster ist kein Server vorhanden."}
                 // Für den Hoster ist kein Server vorhanden.
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (br.containsHTML("error\":10,")) {
                 logger.info("File's hoster is in maintenance. Try again later");
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (br.containsHTML("error\":11,")) {
                 logger.info("Host seems buggy, remove it from list");
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (br.containsHTML("error\":12,")) {
                 /* You have too many simultaneous downloads */
-                errTooManySimCon(acc, link);
+                errTooManySimCon(account, link);
             } else if (br.containsHTML("error\":(13|9),")) {
                 String num = "";
                 String err = "";
@@ -537,7 +540,7 @@ public class RealDebridCom extends PluginForHost {
                 } else {
                     link.setProperty("timesfailedrealdebridcom_unknown1", Property.NULL);
                     logger.info(this.getHost() + ": Unknown error1 - disabling current host!");
-                    tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
                 }
             }
         }
@@ -548,7 +551,7 @@ public class RealDebridCom extends PluginForHost {
         link.setProperty("retry_913", Property.NULL);
         showMessage(link, "Task 2: Download begins!");
         try {
-            handleDL(acc, link, genLnk);
+            handleDL(account, link, genLnk);
             return;
         } catch (PluginException e1) {
             try {
@@ -557,7 +560,7 @@ public class RealDebridCom extends PluginForHost {
             }
             if (br.containsHTML("An error occurr?ed while generating a premium link, please contact an Administrator")) {
                 logger.info("Error while generating premium link, removing host from supported list");
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
             if (br.containsHTML("An error occurr?ed while attempting to download the file.")) {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -795,7 +798,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -805,7 +808,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -815,7 +818,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -825,7 +828,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJsonArray(final String source, final String key) {
@@ -835,7 +838,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
@@ -845,7 +848,7 @@ public class RealDebridCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return String[] value from provided JSon Array
-     * 
+     *
      * @author raztoki
      * @param source
      * @return
