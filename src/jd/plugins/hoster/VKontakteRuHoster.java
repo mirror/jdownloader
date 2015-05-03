@@ -133,6 +133,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     if (filename == null) {
                         filename = getFileNameFromHeader(con);
                     }
+                    // String test = new String(filename.getBytes("cp1251"));
                     filename = Encoding.htmlDecode(filename).trim();
                     link.setFinalFileName(filename);
                     link.setDownloadSize(con.getLongContentLength());
@@ -538,6 +539,11 @@ public class VKontakteRuHoster extends PluginForHost {
         URLConnectionAdapter con = null;
         /* Correct final URLs according to users' plugin settings. */
         photo_correctLink();
+
+        /* Ignore invalid urls. Usually if we have such an url the picture is serverside temporarily unavailable. */
+        if (this.finalUrl.contains("_null_")) {
+            return false;
+        }
         try {
             br2.getHeaders().put("Accept-Encoding", "identity");
             try {
