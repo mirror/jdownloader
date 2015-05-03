@@ -19,6 +19,7 @@ package jd.plugins;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import jd.config.Property;
@@ -253,8 +254,9 @@ public class AccountInfo extends Property {
         if (multiHostSupport != null && multiHostSupport.size() > 0) {
             Collections.sort(multiHostSupport, new NaturalOrderComparator());
             final LinkedHashSet<String> supportedHostsSet = new LinkedHashSet<String>();
-            for (final String host : multiHostSupport) {
+            for (String host : multiHostSupport) {
                 if (host != null) {
+                    host = host.toLowerCase(Locale.ENGLISH);
                     final String assignedHost;
                     if (pluginFinder == null) {
                         assignedHost = host;
