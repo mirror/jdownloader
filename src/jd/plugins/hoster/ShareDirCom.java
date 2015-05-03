@@ -60,6 +60,8 @@ public class ShareDirCom extends PluginForHost {
     /* Max. downloadable filesize for freeusers in MB, checked/set 28.12.14 */
     private static final long                              default_free_account_filesize_max_mb = 150;
 
+    private Account                                        currAcc                              = null;
+    private DownloadLink                                   currDownloadLink                     = null;
     private int                                            STATUSCODE                           = 0;
 
     public ShareDirCom(PluginWrapper wrapper) {
@@ -88,6 +90,11 @@ public class ShareDirCom extends PluginForHost {
      */
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
+    }
+
+    private void setConstants(final Account acc, final DownloadLink dl) {
+        this.currAcc = acc;
+        this.currDownloadLink = dl;
     }
 
     @SuppressWarnings("deprecation")
@@ -125,6 +132,7 @@ public class ShareDirCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        setConstants(account, null);
         prepBr(this.br);
         final AccountInfo ac = new AccountInfo();
         this.login(account, false);
@@ -186,16 +194,16 @@ public class ShareDirCom extends PluginForHost {
     }
 
     private void safeAPIRequest(final String requestUrl, final Account acc, final DownloadLink dl) throws PluginException, IOException {
-        br.getPage(requestUrl);
+        this.br.getPage(requestUrl);
         updatestatuscode();
-        handleAPIErrors(this.br, acc, dl);
+        handleAPIErrors(this.br);
     }
 
     @SuppressWarnings("unused")
     private void safeAPIPostRequest(final String requestUrl, final String postData, final Account acc, final DownloadLink dl) throws PluginException, IOException {
         br.postPage(requestUrl, "postData");
         updatestatuscode();
-        handleAPIErrors(this.br, acc, dl);
+        handleAPIErrors(this.br);
     }
 
     @Override
@@ -218,7 +226,7 @@ public class ShareDirCom extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         prepBr(this.br);
-
+        setConstants(account, link);
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap != null) {
@@ -240,8 +248,10 @@ public class ShareDirCom extends PluginForHost {
         handleDl(link, account, dllink, false);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        setConstants(account, link);
         requestFileInformation(link);
         login(account, false);
         handleDl(link, account, link.getDownloadURL(), true);
@@ -257,35 +267,13 @@ public class ShareDirCom extends PluginForHost {
         final String content_type = con.getContentType();
         /* Maybe server sends a wrong file */
         if (con.getLongContentLength() <= 500 && "application/octet-stream".equalsIgnoreCase(content_type)) {
-            int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_size_mismatch_errorpremium", 0);
-            link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 2) {
-                logger.info(NICE_HOST + ": Size mismatch download error -> Retrying");
-                timesFailed++;
-                link.setProperty(NICE_HOSTproperty + "failedtimes_size_mismatch_errorpremium", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown download error");
-            } else {
-                logger.info(NICE_HOST + ": Size mismatch download error -> Disabling current host");
-                link.setProperty(NICE_HOSTproperty + "failedtimes_size_mismatch_errorpremium", Property.NULL);
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-            }
+            handleErrorRetries("failedtimes_size_mismatch_errorpremium", 5, 5 * 60 * 1000l);
         }
         if (content_type != null && content_type.contains("html")) {
             br.followConnection();
             updatestatuscode();
-            this.handleAPIErrors(this.br, account, link);
-            int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "failedtimes_unknowndlerrorpremium", 0);
-            link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 2) {
-                logger.info(NICE_HOST + ": Unknown download error -> Retrying");
-                timesFailed++;
-                link.setProperty(NICE_HOSTproperty + "failedtimes_unknowndlerrorpremium", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown download error");
-            } else {
-                logger.info(NICE_HOST + ": Unknown download error -> Disabling current host");
-                link.setProperty(NICE_HOSTproperty + "failedtimes_unknowndlerrorpremium", Property.NULL);
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-            }
+            this.handleAPIErrors(this.br);
+            handleErrorRetries("failedtimes_unknowndlerrorpremium", 5, 5 * 60 * 1000l);
         }
         link.setProperty(NICE_HOSTproperty + "finallink", dllink);
         try {
@@ -306,18 +294,7 @@ public class ShareDirCom extends PluginForHost {
             /* This may happen if the downloads stops somewhere - a few retries usually help in this case - otherwise disable host */
             if (e.getLinkStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
                 logger.info(NICE_HOST + ": DOWNLOAD_INCOMPLETE");
-                int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", 0);
-                link.getLinkStatus().setRetryCount(0);
-                if (timesFailed <= 5) {
-                    timesFailed++;
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", timesFailed);
-                    logger.info(NICE_HOST + ": UDOWNLOAD_INCOMPLETE - Retrying!");
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "timesfailed_dl_incomplete");
-                } else {
-                    link.setProperty(NICE_HOSTproperty + "timesfailed_dl_incomplete", Property.NULL);
-                    logger.info(NICE_HOST + ": UDOWNLOAD_INCOMPLETE - disabling current host!");
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                }
+                handleErrorRetries("timesfailed_dl_incomplete", 5, 5 * 60 * 1000l);
             }
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
@@ -401,7 +378,7 @@ public class ShareDirCom extends PluginForHost {
         }
     }
 
-    private void handleAPIErrors(final Browser br, final Account account, final DownloadLink downloadLink) throws PluginException {
+    private void handleAPIErrors(final Browser br) throws PluginException {
         String statusMessage = null;
         try {
             switch (STATUSCODE) {
@@ -421,17 +398,21 @@ public class ShareDirCom extends PluginForHost {
                 statusMessage = "Error 500";
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 666:
-                /* File too big for free accounts -> Use next download candidate */
+                /*
+                 * File too big for free accounts -> Use next download candidate. This should never happen as it is also covered in
+                 * canHandle
+                 */
                 statusMessage = "Error: This file is only downloadable via premium account (filesize > 150 MB)";
-                downloadLink.setProperty("sharedircom_" + account.getUser() + "_downloadallowed", false);
+                this.currDownloadLink.setProperty("sharedircom_" + this.currAcc.getUser() + "_downloadallowed", false);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "This file is only downloadable via premium account (filesize > " + default_free_account_filesize_max_mb + " MB)");
             case 667:
                 /* No traffic available to download current file -> disable current host */
-                tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
+                tempUnavailableHoster(60 * 60 * 1000l);
             case 668:
                 /* File too big for free accounts -> show errormessage / try without account (or use other available account(s)) */
                 statusMessage = "Error: The current host is only available for premium users";
-                tempUnavailableHoster(account, downloadLink, 3 * 60 * 60 * 1000l);
+                this.currAcc.getAccountInfo().getMultiHostSupport().remove(this.currDownloadLink.getHost());
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Host is not supported by multihost");
             default:
                 /* Unknown errorcode -> disable account */
                 statusMessage = "Unknown errorcode";
@@ -444,24 +425,48 @@ public class ShareDirCom extends PluginForHost {
         }
     }
 
-    private void tempUnavailableHoster(final Account account, final DownloadLink downloadLink, final long timeout) throws PluginException {
-        if (downloadLink == null) {
+    private void tempUnavailableHoster(final long timeout) throws PluginException {
+        if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
         // This should never happen
-        if (downloadLink.getHost().equals("sharedir.com")) {
+        if (this.currDownloadLink.getHost().equals("sharedir.com")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "FATAL Server error");
         }
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
+                hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
             /* wait to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
+    }
+
+    /**
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
+     * from the host list.
+     *
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
+        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        this.currDownloadLink.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            timesFailed++;
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        } else {
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
+            tempUnavailableHoster(disableTime);
+        }
     }
 
     @SuppressWarnings("deprecation")
