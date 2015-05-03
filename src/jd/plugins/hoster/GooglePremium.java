@@ -8,7 +8,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.GoogleHelper;
+//import jd.plugins.components.GoogleHelper;
 
 import org.appwork.exceptions.WTFException;
 
@@ -24,11 +24,11 @@ public class GooglePremium extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            GoogleHelper helper = new GoogleHelper(br);
-            if (!helper.login(account)) {
-                account.setValid(false);
-                return ai;
-            }
+            // GoogleHelper helper = new GoogleHelper(br);
+            // if (!helper.login(account)) {
+            // account.setValid(false);
+            // return ai;
+            // }
 
         } catch (final Exception e) {
             account.setValid(false);
