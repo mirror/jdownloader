@@ -353,6 +353,8 @@ public class AllDebridCom extends PluginForHost {
                 if (error.equals("Invalid link")) {
                     /* complete html example: 1,;,https://tusfiles.net/xxxxxxxxxxxx : <span style='color:#a00;'>Invalid link</span>,;,0 */
                     statuscode = 101;
+                } else if (error.equals("Link is dead")) {
+                    statuscode = 102;
                 } else {
                     statuscode = 666;
                 }
@@ -381,6 +383,9 @@ public class AllDebridCom extends PluginForHost {
             case 101:
                 statusMessage = "Invalid link --> Probably unsupported host";
                 tempUnavailableHoster(4 * 60 * 60 * 1000l);
+            case 102:
+                statusMessage = "'Link is dead' --> We don't trust this serverside error --> Retry";
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "alldebrid API says 'link is dead''", 60 * 1000l);
             default:
                 /* Unknown error */
                 statusMessage = "Unknown error";

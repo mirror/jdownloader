@@ -40,14 +40,16 @@ public class OnfCa extends PluginForHost {
         return "https://www.nfb.ca/about/important-notices/";
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
     }
 
     private static final String app = "a8908/v5";
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
@@ -62,11 +64,21 @@ public class OnfCa extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.getPage(br.getURL() + "/player_config");
+        if (br.toString().equals("No htmlCode read")) {
+            /* Media is only available as paid-version. */
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        }
         final String[] playpaths = br.getRegex("<url>(mp4:[^<>\"]*?)</url>").getColumn(0);
         if (playpaths == null || playpaths.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

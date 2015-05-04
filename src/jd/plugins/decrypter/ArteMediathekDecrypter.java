@@ -37,15 +37,16 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/(de|fr)/\\d+\\-\\d+/[a-z0-9\\-_]+", "http://concert\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+", "http://creative\\.arte\\.tv/(de|fr)/(?!scald_dmcloud_json)[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://future\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?" }, flags = { 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+/[a-z0-9\\-_]+", "http://concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+", "http://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json)[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?" }, flags = { 0, 0, 0, 0, 0 })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private static final String EXCEPTION_LINKOFFLINE      = "EXCEPTION_LINKOFFLINE";
 
-    private static final String TYPE_CONCERT               = "http://(www\\.)?concert\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+";
-    private static final String TYPE_CREATIVE              = "http://(www\\.)?creative\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
-    private static final String TYPE_FUTURE                = "http://(www\\.)?future\\.arte\\.tv/(de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
-    private static final String TYPE_GUIDE                 = "http://www\\.arte\\.tv/guide/(de|fr)/\\d+\\-\\d+/[a-z0-9\\-_]+";
+    private static final String TYPE_CONCERT               = "http://(www\\.)?concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+";
+    private static final String TYPE_CREATIVE              = "http://(www\\.)?creative\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
+    private static final String TYPE_FUTURE                = "http://(www\\.)?future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
+    private static final String TYPE_GUIDE                 = "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+/[a-z0-9\\-_]+";
+    private static final String TYPE_CINEMA                = "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
 
     private static final String V_NORMAL                   = "V_NORMAL";
     private static final String V_SUBTITLED                = "V_SUBTITLED";
@@ -62,6 +63,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String FAST_LINKCHECK             = "FAST_LINKCHECK";
 
     final String[]              formats                    = { http_300, http_800, http_1500, http_2200 };
+
+    private static final String LANG_DE                    = "de";
+    private static final String LANG_FR                    = "de";
 
     private int                 languageVersion            = 1;
     private String              parameter;
@@ -101,6 +105,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         try {
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+            }
             /* First we need to have some basic data - this part is link-specific. */
             if (parameter.matches(TYPE_CONCERT)) {
                 if (!br.containsHTML("id=\"section\\-player\"")) {
@@ -195,8 +202,12 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
                 fid = br.getRegex("\"http://future\\.arte\\.tv/[a-z]{2}/player/(\\d+)").getMatch(0);
                 hybridAPIUrl = "http://future.arte.tv/%s/player/%s";
-            } else {
-                logger.warning("Unknown linkformat");
+            } else if (parameter.matches(TYPE_CINEMA)) {
+                if (!br.containsHTML("class=\"arte-video-wrapper\"")) {
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                }
+                fid = br.getRegex("api\\.arte\\.tv/api/player/v1/config/(?:de|fr)/([A-Za-z0-9\\-]+)").getMatch(0);
+                hybridAPIUrl = "https://api.arte.tv/api/player/v1/config/%s/%s?vector=CINEMA&autostart=1";
             }
             if (fid == null) {
                 return null;
@@ -208,11 +219,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             if (cfg.getBooleanProperty(LOAD_LANGUAGE_URL, true)) {
                 selectedLanguages.add(this.getUrlLang());
             } else {
-                if (cfg.getBooleanProperty(LOAD_LANGUAGE_GERMAN, true)) {
-                    selectedLanguages.add("de");
+                if (cfg.getBooleanProperty(LOAD_LANGUAGE_GERMAN, true) && !selectedLanguages.contains(LANG_DE)) {
+                    selectedLanguages.add(LANG_DE);
                 }
-                if (cfg.getBooleanProperty(LOAD_LANGUAGE_FRENCH, true)) {
-                    selectedLanguages.add("fr");
+                if (cfg.getBooleanProperty(LOAD_LANGUAGE_FRENCH, true) && !selectedLanguages.contains(LANG_FR)) {
+                    selectedLanguages.add(LANG_FR);
                 }
             }
             /* Finally, grab all we can get (in the selected language(s)) */
@@ -233,7 +244,10 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 if (json_title != null) {
                     title = encodeUnicode(json_title);
                 }
-                final String description = (String) videoJsonPlayer.get("VDE");
+                String description = (String) videoJsonPlayer.get("VDE");
+                if (description == null) {
+                    description = (String) videoJsonPlayer.get("V7T");
+                }
                 final String errormessage = (String) entries.get("msg");
                 if (errormessage != null) {
                     final DownloadLink offline = createofflineDownloadLink(parameter);
@@ -425,8 +439,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     /* Collection of possible values */
-    private final String[] versionCodes             = { "VO", "VO-STA", "VOF-STMF", "VA-STMA", "VOF-STA", "VOA-STMA", "VAAUD", "VE", "VF-STMF" };
-    private final String[] versionShortLibelleCodes = { "DE", "VA", "VE", "FR", "VF", "OmU", "VO", "VOF", "VOSTF" };
+    private final String[] versionCodes             = { "VO", "VO-STA", "VOF-STMF", "VA-STMA", "VOF-STA", "VOA-STMA", "VAAUD", "VE", "VF-STMF", "VE[ANG]" };
+    private final String[] versionShortLibelleCodes = { "DE", "VA", "VE", "FR", "VF", "OmU", "VO", "VOF", "VOSTF", "VE[ANG]" };
 
     /* Non-subtitled versions, 3 = Subtitled versions, 4 = Subtitled versions for disabled people, 5 = Audio descriptions */
     private int getFormatCode(final String versionShortLibelle, final String versionCode) throws DecrypterException {
@@ -446,7 +460,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             lint = 4;
         } else if (versionCode.equals("VAAUD")) {
             lint = 5;
-        } else if (versionShortLibelle.equals("OmU") || versionShortLibelle.equals("VO") || versionShortLibelle.equals("VE") || versionCode.equals("VE")) {
+        } else if (versionShortLibelle.equals("OmU") || versionShortLibelle.equals("VO") || versionShortLibelle.equals("VE") || versionCode.equals("VE") || versionShortLibelle.equals("VE[ANG]") || versionCode.equals("VE[ANG]")) {
             /* VE Actually means English but there is no specified selection for this. */
             /* Without language --> So it simply is our current language */
             lint = languageVersion;
@@ -454,7 +468,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             /* German */
             lint = 1;
         } else if (versionShortLibelle.equals("FR") || versionShortLibelle.equals("VF") || versionShortLibelle.equals("VOF") || versionShortLibelle.equals("VOSTF") || versionCode.equals("VF-STMF")) {
-            /* French - use same number than for german as the handling has changed. */
+            /* French */
             lint = 2;
         } else {
             /* Unknown - use language inside the link */
@@ -611,7 +625,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     private String getUrlLang() {
-        final String lang = new Regex(parameter, "((?:concert|creative|future)\\.arte\\.tv|guide)/(\\w+)/.+").getMatch(1);
+        final String lang = new Regex(parameter, "(?:[a-z]+\\.arte\\.tv|/guide)/(\\w+)/.+").getMatch(0);
         return lang;
     }
 
