@@ -29,7 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/(?:(?:iframe|cdn)\\.php)?\\?ref=[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/(?:(?:(?:iframe|cdn|view)\\.php)?\\?ref=|validatehash\\.php\\?hashkey=)[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoMegaTv extends antiDDoSForHost {
 
     public VideoMegaTv(PluginWrapper wrapper) {
@@ -41,8 +41,16 @@ public class VideoMegaTv extends antiDDoSForHost {
         return "http://videomega.tv/terms.html";
     }
 
+    private static final String TYPE_HASH   = "http://(www\\.)?videomega\\.tv/(?:view\\.php\\?ref=|validatehash\\.php\\?hashkey=)[A-Za-z0-9]+";
+    private static final String TYPE_NORMAL = "http://(www\\.)?videomega\\.tv/(?:(?:iframe|cdn)\\.php)?\\?ref=[A-Za-z0-9]+";
+
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload("http://videomega.tv/?ref=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        if (link.getDownloadURL().matches(TYPE_NORMAL)) {
+            link.setUrlDownload("http://videomega.tv/?ref=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        } else {
+            link.setUrlDownload("http://videomega.tv/?ref=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        }
     }
 
     @Override
@@ -56,28 +64,41 @@ public class VideoMegaTv extends antiDDoSForHost {
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         br = new Browser();
+        fuid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        fuid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
-        final String page = "http://videomega.tv/?ref=" + fuid + "&width=595&height=340";
-        getPage(page);
-        String redirect = br.getRedirectLocation();
-        if (redirect != null) {
-            if (redirect.contains("google.com/")) {
-                // without referer it will most likely redirect to google
-                br.getHeaders().put("Referer", page);
-                getPage(page);
-                redirect = br.getRedirectLocation();
-            }
-            if (!redirect.contains("videomega.tv/")) {
+        if (link.getDownloadURL().matches(TYPE_HASH)) {
+            br.setCookie("http://videomega.tv/", "_gat", "1");
+            br.setCookie("http://videomega.tv/", "vid_mainpu", "true");
+            br.setCookie("http://videomega.tv/", "vid_subpu", "1");
+            br.setCookie("http://videomega.tv/", "hashopen", "1");
+            // br.getPage("http://videomega.tv/validatehash.php?hashkey=" + fuid);
+            br.getPage("http://videomega.tv/iframe.php?ref=" + fuid + "&width=863&height=430");
+            if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        }
-        if (br.containsHTML(">VIDEO NOT FOUND")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            final String page = "http://videomega.tv/?ref=" + fuid + "&width=595&height=340";
+            getPage(page);
+            String redirect = br.getRedirectLocation();
+            if (redirect != null) {
+                if (redirect.contains("google.com/")) {
+                    // without referer it will most likely redirect to google
+                    br.getHeaders().put("Referer", page);
+                    getPage(page);
+                    redirect = br.getRedirectLocation();
+                }
+                if (!redirect.contains("videomega.tv/")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            }
+            if (br.containsHTML(">VIDEO NOT FOUND")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         link.setFinalFileName(fuid + ".mp4");
         return AvailableStatus.TRUE;

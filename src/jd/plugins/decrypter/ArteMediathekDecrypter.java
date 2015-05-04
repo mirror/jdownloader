@@ -625,7 +625,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     private String getUrlLang() {
-        final String lang = new Regex(parameter, "(?:[a-z]+\\.arte\\.tv|/guide)/(\\w+)/.+").getMatch(0);
+        final String lang = new Regex(parameter, ".+(?:[a-z]+\\.arte\\.tv|/guide)/(\\w+)/.+").getMatch(0);
         return lang;
     }
 

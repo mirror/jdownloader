@@ -539,7 +539,7 @@ public class HighWayMe extends PluginForHost {
             case 4:
                 /* Too many simultaneous downloads */
                 statusMessage = "Too many simultaneous downloads";
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, statusMessage);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 1 * 60 * 1000l);
             case 5:
                 /* Login or password missing -> disable account */
                 if ("de".equalsIgnoreCase(lang)) {
@@ -564,7 +564,7 @@ public class HighWayMe extends PluginForHost {
                 tempUnavailableHoster(1 * 60 * 1000l);
             case 9:
                 /* No account found -> Disable host for 30 minutes */
-                statusMessage = "No account found";
+                statusMessage = "File not found";
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 10:
                 /* Host offline or invalid url -> Disable for 5 minutes */
@@ -573,7 +573,7 @@ public class HighWayMe extends PluginForHost {
             case 11:
                 /* Host itself is currently unavailable (maintenance) -> Disable host */
                 statusMessage = "Host itself is currently unavailable";
-                tempUnavailableHoster(2 * 60 * 60 * 1000l);
+                tempUnavailableHoster(10 * 60 * 1000l);
             case 12:
                 /* MOCH itself is under maintenance */
                 if ("de".equalsIgnoreCase(lang)) {

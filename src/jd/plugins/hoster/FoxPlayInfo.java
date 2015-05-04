@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "foxplay.info" }, urls = { "http://(www\\.)?foxplay\\.info/preload\\.php\\?get=[A-Za-z0-9=]+?\\&name.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "foxplay.info" }, urls = { "http://(www\\.)?foxplay\\.info/preloader/[A-Za-z0-9=]+?/" }, flags = { 0 })
 public class FoxPlayInfo extends PluginForHost {
 
     public FoxPlayInfo(PluginWrapper wrapper) {
@@ -45,37 +44,53 @@ public class FoxPlayInfo extends PluginForHost {
         return 7;
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("\\&song=(.*?)\"").getMatch(0);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!filename.endsWith(".mp3")) {
+            filename += ".mp3";
+        }
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
-        String dllink = br.getRegex("Wait and you download mp3<div id=\\'digits\\'>\\d+</div>[\t\n\r ]+<br>[\t\n\r ]+<a href=\\'(download[^\"]*?)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\\'(download\\.php\\?get=[A-Za-z0-9=]+\\&name=[^\"]*?)\\'").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://foxplay.info/" + Encoding.urlEncode_light(dllink);
+        br.setFollowRedirects(true);
+        String dllink = br.getRegex("(/download/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = "http://foxplay.info" + dllink;
         // Can be skipped
         // int wait = 30;
-        // final String waittime =
-        // br.getRegex("id=\\'digits\\'>(\\d+)</div>").getMatch(0);
-        // if (waittime != null) wait = Integer.parseInt(waittime);
+        // final String waittime = br.getRegex("class=\\'counter_digits\\'>(\\d+)</div>").getMatch(0);
+        // if (waittime != null) {
+        // wait = Integer.parseInt(waittime);
+        // }
         // sleep(wait * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!dl.startDownload()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("download\\.php\\?get=\\&name=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = new Regex(link.getDownloadURL(), "\\&name=(.+)").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        return AvailableStatus.TRUE;
+        /* Remove tags inside server filenames */
+        String finalfilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        finalfilename = finalfilename.replace("(foxplay.info)", "");
+        downloadLink.setFinalFileName(finalfilename);
+        if (!dl.startDownload()) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+        }
     }
 
     @Override
