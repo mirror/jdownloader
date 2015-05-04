@@ -122,7 +122,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 if (!br.containsHTML("class=\"video\\-container\"")) {
                     throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                 }
-                fid = br.getRegex("\"http://concert\\.arte\\.tv/[a-z]{2}/player/(\\d+)").getMatch(0);
+                this.example_arte_vp_url = getArteVPUrl();
+                if (this.example_arte_vp_url == null) {
+                    return null;
+                }
+                fid = new Regex(this.example_arte_vp_url, "http://concert\\.arte\\.tv/[a-z]{2}/player/(\\d+)").getMatch(0);
                 hybridAPIUrl = "http://concert.arte.tv/%s/player/%s";
             } else if (parameter.matches(TYPE_CREATIVE)) {
                 scanForExternalUrls();
@@ -158,7 +162,11 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 if (video_section == null) {
                     return null;
                 }
-                fid = new Regex(video_section, "/stream/player/[A-Za-z]{1,5}/([^<>\"/]*?)/").getMatch(0);
+                this.example_arte_vp_url = getArteVPUrl(video_section);
+                if (this.example_arte_vp_url == null) {
+                    return null;
+                }
+                fid = new Regex(example_arte_vp_url, "/stream/player/[A-Za-z]{1,5}/([^<>\"/]*?)/").getMatch(0);
                 if (fid == null) {
                     if (!br.containsHTML("arte_vp_config=")) {
                         throw new DecrypterException(EXCEPTION_LINKOFFLINE);
@@ -177,7 +185,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                  * first "ALL" can e.g. be replaced with "HBBTV" to only get the HBBTV qualities. Also possible:
                  * https://api.arte.tv/api/player/v1/config/fr/051939-015-A?vector=CINEMA
                  */
-                hybridAPIUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/%s/%s/ALL/ALL.json";
+                hybridAPIUrl = "http://arte.tv/papi/tvguide/videos/stream/player/%s/%s/ALL/ALL.json";
             } else if (parameter.matches(TYPE_FUTURE)) {
                 scanForExternalUrls();
                 if (decryptedLinks.size() > 0) {
@@ -196,14 +204,14 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 if (!br.containsHTML("class=\"video\\-container\"")) {
                     throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                 }
-                example_arte_vp_url = br.getRegex("arte_vp_url=\"(http[^<>\"]*?)\"").getMatch(0);
+                example_arte_vp_url = getArteVPUrl();
                 if (example_arte_vp_url == null) {
                     return null;
                 }
                 if (example_arte_vp_url.matches(API_TYPE_GUIDE)) {
                     /* Same API-urls as for "normal" arte.tv urls. Most likely used for complete movies. */
                     fid = new Regex(example_arte_vp_url, "/player/[^/]+/([A-Za-z0-9\\-_]+)").getMatch(0);
-                    hybridAPIUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/%s/%s/ALL/ALL.json";
+                    hybridAPIUrl = "http://arte.tv/papi/tvguide/videos/stream/player/%s/%s/ALL/ALL.json";
                 } else {
                     fid = new Regex(example_arte_vp_url, "api\\.arte\\.tv/api/player/v1/config/(?:de|fr)/([A-Za-z0-9\\-]+)").getMatch(0);
                     final String vector = new Regex(example_arte_vp_url, "vector=([A-Za-z0-9]+)").getMatch(0);
@@ -458,6 +466,14 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
             }
         }
+    }
+
+    private String getArteVPUrl() {
+        return getArteVPUrl(this.br.toString());
+    }
+
+    private String getArteVPUrl(final String source) {
+        return new Regex(source, "arte_vp_url=(?:\"|\\')(http[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
     }
 
     /* Collection of possible values */
