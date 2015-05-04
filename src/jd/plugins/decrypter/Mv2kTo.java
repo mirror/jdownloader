@@ -30,15 +30,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie2k.to" }, urls = { "http://(www\\.)?movie(2|4)k\\.to//?(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+|\\d+\\-[^<>\"/]*?)(\\.html)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie2k.to" }, urls = { "https?://(www\\.)?movie(2|4)k\\.to//?(?!movies\\-(all|genre)|tvshows\\-season)(tvshows\\-\\d+\\-[^<>\"/]*?\\.html|[^<>\"/]*\\-\\d+|\\d+\\-[^<>\"/]*?)(\\.html)?" }, flags = { 0 })
 public class Mv2kTo extends PluginForDecrypt {
 
     public Mv2kTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS  = "http://(www\\.)?movie4k\\.to//?[a-z0-9\\-_]+\\-all\\-\\d+\\.html";
-    private static final String INVALIDLINKS2 = "http://(www\\.)?movie4k\\.to//?tvshows\\-episode[a-z0-9\\-]+\\.html";
+    private static final String INVALIDLINKS  = "https?://(www\\.)?movie4k\\.to//?[a-z0-9\\-_]+\\-all\\-\\d+\\.html";
+    private static final String INVALIDLINKS2 = "https?://(www\\.)?movie4k\\.to//?tvshows\\-episode[a-z0-9\\-]+\\.html";
 
     /**
      * Description of regex array: 1= nowvideo.co, streamcloud.com 2=flashx.tv, vidbux.com, xvidstage.com, vidstream.in, hostingbulk.com,
@@ -89,29 +89,29 @@ public class Mv2kTo extends PluginForDecrypt {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(Encoding.htmlDecode(fpName.trim() + (mirror > 1 ? "@Mirror " + i : "")));
                 for (int j = 1; j <= part; j++) {
-                    final String[][] regexes = { { "width=\"\\d+\" height=\"\\d+\" frameborder=\"0\"( scrolling=\"no\")? src=\"(http://[^<>\"]*?)\"", "1" }, { "<a target=\"_blank\" href=\"((http://)?[^<>\"]*?)\"", "0" }, { "<IFRAME SRC=\"(http://[^<>\"]*?)\"", "0" }, { "<iframe width=\\d+% height=\\d+px frameborder=\"0\" scrolling=\"no\" src=\"(http://embed\\.stream2k\\.com/[^<>\"]*?)\"", "0" }, { "\"(http://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+)", "0" }, { "\\'(http://(www\\.)?novamov\\.com/embed\\.php\\?v=[^<>\"/]*?)\\'", "0" }, { "\"(http://(www\\.)?video\\.google\\.com/googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=\\d+)", "0" }, { "(http://embed\\.yesload\\.net/[\\w\\?]+)", "0" }, { "\"(http://(www\\.)?videoweed\\.es/embed\\.php\\?v=[a-z0-9]+)\"", "0" } };
+                    final String[][] regexes = { { "width=\"\\d+\" height=\"\\d+\" frameborder=\"0\"( scrolling=\"no\")? src=\"(http://[^<>\"]*?)\"", "1" }, { "<a target=\"_blank\" href=\"((https?://)?[^<>\"]*?)\"", "0" }, { "<IFRAME SRC=\"(https?://[^<>\"]*?)\"", "0" }, { "<iframe width=\\d+% height=\\d+px frameborder=\"0\" scrolling=\"no\" src=\"(https?://embed\\.stream2k\\.com/[^<>\"]*?)\"", "0" }, { "\"(https?://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+)", "0" }, { "\\'(https?://(www\\.)?novamov\\.com/embed\\.php\\?v=[^<>\"/]*?)\\'", "0" }, { "\"(https?://(www\\.)?video\\.google\\.com/googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=\\d+)", "0" }, { "(https?://embed\\.yesload\\.net/[\\w\\?]+)", "0" }, { "\"(https?://(www\\.)?videoweed\\.es/embed\\.php\\?v=[a-z0-9]+)\"", "0" } };
                     for (String[] regex : regexes) {
                         String finallink = br.getRegex(Pattern.compile(regex[0], Pattern.CASE_INSENSITIVE)).getMatch(Integer.parseInt(regex[1]));
                         if (finallink != null) {
                             if (finallink.contains("facebook.com/")) {
                                 continue;
-                            } else if (finallink.matches("http://embed\\.stream2k\\.com/[^<>\"]+")) {
+                            } else if (finallink.matches("https?://embed\\.stream2k\\.com/[^<>\"]+")) {
                                 br2.getPage(finallink);
-                                finallink = br2.getRegex("file: \\'(http://[^<>\"]*?)\\',").getMatch(0);
+                                finallink = br2.getRegex("file: \\'(https?://[^<>\"]*?)\\',").getMatch(0);
                                 if (finallink == null) {
-                                    finallink = br2.getRegex("\\'(http://server\\d+\\.stream2k\\.com/dl\\d+/[^<>\"/]*?)\\'").getMatch(0);
+                                    finallink = br2.getRegex("\\'(https?://server\\d+\\.stream2k\\.com/dl\\d+/[^<>\"/]*?)\\'").getMatch(0);
                                 }
                                 if (finallink != null) {
                                     finallink = "directhttp://" + finallink;
                                 }
-                            } else if (finallink.matches("http://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+")) {
+                            } else if (finallink.matches("https?://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+")) {
                                 br2.setFollowRedirects(true);
                                 br2.getPage(finallink);
                                 if (br2.containsHTML(">Video not found or deleted<")) {
                                     logger.info("Video not found or deleted");
                                     return decryptedLinks;
                                 }
-                                finallink = br2.getRegex("\"(http://flashx\\.tv/video/[A-Z0-9]+/)").getMatch(0);
+                                finallink = br2.getRegex("\"(https?://flashx\\.tv/video/[A-Z0-9]+/)").getMatch(0);
                             }
                             if (finallink != null) {
                                 DownloadLink dl = createDownloadlink(finallink);

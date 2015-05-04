@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -133,8 +134,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     if (filename == null) {
                         filename = getFileNameFromHeader(con);
                     }
-                    // String test = new String(filename.getBytes("cp1251"));
-                    filename = Encoding.htmlDecode(filename).trim();
+                    filename = URLDecoder.decode(filename, "cp1251");
                     link.setFinalFileName(filename);
                     link.setDownloadSize(con.getLongContentLength());
                 } else {
