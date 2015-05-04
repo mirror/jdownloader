@@ -43,7 +43,7 @@ public class BaixarPremiumNet extends PluginForHost {
     private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static final String                            MAINPAGE           = "http://baixarpremium.net";
     private static final String[][]                        HOSTS              = { { "uploaded", "uploaded.to" }, { "bitshare", "bitshare.com" }, { "jumbofiles", "jumbofiles.org" }, { "4shared", "4shared.com" }, { "turbobit", "turbobit.net" }, { "2shared", "2shared.com" }, { "ifilez", "depfile.com" }, { "freakshare", "freakshare.com" }, { "rapidgator", "rapidgator.net" }, { "uploading", "uploading.com" }, { "netload", "netload.in" }, { "ryushare", "ryushare.com" }, { "easyshare", "crocko.com" }, { "mediafire", "mediafire.com" }, { "filefactory", "filefactory.com" }, { "filepost", "filepost.com" }, { "videobb", "videobb.com" }, { "megashares", "megashares.com" }, { "filevelocity", "filevelocity.com" }, { "sendspace", "sendspace.com" }, { "cloudnator", "cloudnator.com" }, { "uptobox", "uptobox.com" }, { "filereactor", "filereactor.com" }, { "putlocker", "putlocker.com" },
-            { "ifile", "filecloud.io" }, { "share-online", "share-online.biz" }, { "glumbouploads", "glumbouploads.com" } };
+        { "ifile", "filecloud.io" }, { "share-online", "share-online.biz" }, { "glumbouploads", "glumbouploads.com" } };
 
     public BaixarPremiumNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -103,12 +103,29 @@ public class BaixarPremiumNet extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
-    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
         int maxChunks = 0;
         if (link.getBooleanProperty(BaixarPremiumNet.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-        login(acc, false);
+        login(account, false);
         final String keypass = br.getCookie(MAINPAGE, "utmhb");
         final String dllink = "http://srv3.baixarpremium.net/?link=" + b16encode(link.getDownloadURL()) + "&pass=&keypass=" + keypass;
 
@@ -118,7 +135,7 @@ public class BaixarPremiumNet extends PluginForHost {
             /* Free accounts are not supported */
             if (br.containsHTML("Erro 404 \\- Página Não encontrada")) {
                 logger.info("Free accounts are not supported");
-                acc.getAccountInfo().setTrafficLeft(0);
+                account.getAccountInfo().setTrafficLeft(0);
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
@@ -129,7 +146,7 @@ public class BaixarPremiumNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Now we know that it is a premium account. */
-        acc.getAccountInfo().setStatus("Premium account");
+        account.getAccountInfo().setStatus("Premium account");
         try {
             if (!this.dl.startDownload()) {
                 try {
@@ -243,20 +260,6 @@ public class BaixarPremiumNet extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         return true;
     }
 
