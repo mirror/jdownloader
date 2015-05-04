@@ -195,6 +195,12 @@ public class YoutubeDashV2 extends PluginForHost {
     }
 
     public static interface YoutubeConfig extends ConfigInterface {
+        @DefaultBooleanValue(false)
+        @AboutConfig
+        boolean isAndroidSupportEnabled();
+
+        void setAndroidSupportEnabled(boolean b);
+
         @DefaultBooleanValue(true)
         @AboutConfig
         boolean isCreateBestVideoVariantLinkEnabled();
@@ -810,8 +816,8 @@ public class YoutubeDashV2 extends PluginForHost {
             // _JDT._.CountryIPBlockException_createCandidateResult(), 1 * 24 * 60 * 60 * 100l);
             // }
             if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error,/*
-             * 15.12.2014
-             */"This video is not available.")) {
+                                                                                                                                 * 15.12.2014
+                                                                                                                                 */"This video is not available.")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.CountryIPBlockException_createCandidateResult());
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
