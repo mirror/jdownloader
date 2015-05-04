@@ -41,9 +41,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesflash.com" }, urls = { "http://(www\\.)?(filesflash\\.(com|net)|173\\.231\\.61\\.130)(:8001)?/[a-z0-9]+" }, flags = { 2 })
 public class FilesFlashCom extends PluginForHost {
 
-    private final String ipBlocked  = "(>Your IP address is already downloading another link|Please wait for that download to finish\\.|Free users may only download one file at a time\\.)";
-    private final String mainDomain = "http://filesflash.com/";
-    private String       userDomain = "filesflash.com";
+    private final String html_ipBlocked       = "(>Your IP address is already downloading another link|Please wait for that download to finish\\.|Free users may only download one file at a time\\.)";
+    private final String html_tempunavailable = ">The server which has this file is currently not available";
+    private final String mainDomain           = "http://filesflash.com/";
+    private String       userDomain           = "filesflash.com";
 
     public FilesFlashCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -110,6 +111,10 @@ public class FilesFlashCom extends PluginForHost {
         if (br.containsHTML(">403 Forbidden<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (br.containsHTML(html_tempunavailable)) {
+            link.getLinkStatus().setStatusText("The server on which this file is is currently unavailable");
+            return AvailableStatus.TRUE;
+        }
         final String filename = br.getRegex(">Filename: (.*?)<br").getMatch(0);
         final String filesize = br.getRegex("Size: (.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) {
@@ -175,12 +180,13 @@ public class FilesFlashCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        handleGeneralErrors();
         final String token = br.getRegex("<input type=\"hidden\" name=\"token\" value=\"(.*?)\"/>").getMatch(0);
         if (token == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.postPage("/freedownload.php", "token=" + token + "&freedl=+Start+free+download+");
-        if (br.containsHTML(ipBlocked)) {
+        if (br.containsHTML(html_ipBlocked)) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP already downloading", 10 * 60 * 1000l);
         }
         if (br.containsHTML("(>That file is too big for free downloading.| Max allowed size for free downloads is)")) {
@@ -225,7 +231,7 @@ public class FilesFlashCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(ipBlocked)) {
+            if (br.containsHTML(html_ipBlocked)) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP already downloading", 10 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -237,6 +243,7 @@ public class FilesFlashCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        handleGeneralErrors();
         login(account);
         br.setFollowRedirects(false);
         br.getPage(link.getStringProperty("userEndURL", link.getDownloadURL()));
@@ -252,6 +259,12 @@ public class FilesFlashCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void handleGeneralErrors() throws PluginException {
+        if (br.containsHTML(html_tempunavailable)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The server on which this file is is currently unavailable");
+        }
     }
 
     private void login(final Account account) throws Exception {

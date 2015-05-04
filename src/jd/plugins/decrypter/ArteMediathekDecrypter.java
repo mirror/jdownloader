@@ -40,35 +40,40 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+/[a-z0-9\\-_]+", "http://concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+", "http://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json)[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?" }, flags = { 0, 0, 0, 0, 0 })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
 
-    private static final String EXCEPTION_LINKOFFLINE      = "EXCEPTION_LINKOFFLINE";
+    private static final String     EXCEPTION_LINKOFFLINE      = "EXCEPTION_LINKOFFLINE";
 
-    private static final String TYPE_CONCERT               = "http://(www\\.)?concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+";
-    private static final String TYPE_CREATIVE              = "http://(www\\.)?creative\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
-    private static final String TYPE_FUTURE                = "http://(www\\.)?future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
-    private static final String TYPE_GUIDE                 = "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+/[a-z0-9\\-_]+";
-    private static final String TYPE_CINEMA                = "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
+    private static final String     TYPE_CONCERT               = "http://(www\\.)?concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+";
+    private static final String     TYPE_CREATIVE              = "http://(www\\.)?creative\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
+    private static final String     TYPE_FUTURE                = "http://(www\\.)?future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
+    private static final String     TYPE_GUIDE                 = "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+/[a-z0-9\\-_]+";
+    private static final String     TYPE_CINEMA                = "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
 
-    private static final String V_NORMAL                   = "V_NORMAL";
-    private static final String V_SUBTITLED                = "V_SUBTITLED";
-    private static final String V_SUBTITLE_DISABLED_PEOPLE = "V_SUBTITLE_DISABLED_PEOPLE";
-    private static final String V_AUDIO_DESCRIPTION        = "V_AUDIO_DESCRIPTION";
-    private static final String http_300                   = "http_300";
-    private static final String http_800                   = "http_800";
-    private static final String http_1500                  = "http_1500";
-    private static final String http_2200                  = "http_2200";
-    private static final String LOAD_LANGUAGE_URL          = "LOAD_LANGUAGE_URL";
-    private static final String LOAD_LANGUAGE_GERMAN       = "LOAD_LANGUAGE_GERMAN";
-    private static final String LOAD_LANGUAGE_FRENCH       = "LOAD_LANGUAGE_FRENCH";
-    private static final String THUMBNAIL                  = "THUMBNAIL";
-    private static final String FAST_LINKCHECK             = "FAST_LINKCHECK";
+    private static final String     API_TYPE_GUIDE             = "^http://(www\\.)?arte\\.tv/papi/tvguide/videos/stream/player/(?:F|D)/.+\\.json$";
+    private static final String     API_TYPE_CINEMA            = "^https?://api\\.arte\\.tv/api/player/v1/config/(?:de|fr)/([A-Za-z0-9\\-]+)\\?vector=.+";
 
-    final String[]              formats                    = { http_300, http_800, http_1500, http_2200 };
+    private static final String     V_NORMAL                   = "V_NORMAL";
+    private static final String     V_SUBTITLED                = "V_SUBTITLED";
+    private static final String     V_SUBTITLE_DISABLED_PEOPLE = "V_SUBTITLE_DISABLED_PEOPLE";
+    private static final String     V_AUDIO_DESCRIPTION        = "V_AUDIO_DESCRIPTION";
+    private static final String     http_300                   = "http_300";
+    private static final String     http_800                   = "http_800";
+    private static final String     http_1500                  = "http_1500";
+    private static final String     http_2200                  = "http_2200";
+    private static final String     LOAD_LANGUAGE_URL          = "LOAD_LANGUAGE_URL";
+    private static final String     LOAD_LANGUAGE_GERMAN       = "LOAD_LANGUAGE_GERMAN";
+    private static final String     LOAD_LANGUAGE_FRENCH       = "LOAD_LANGUAGE_FRENCH";
+    private static final String     THUMBNAIL                  = "THUMBNAIL";
+    private static final String     FAST_LINKCHECK             = "FAST_LINKCHECK";
 
-    private static final String LANG_DE                    = "de";
-    private static final String LANG_FR                    = "de";
+    final String[]                  formats                    = { http_300, http_800, http_1500, http_2200 };
 
-    private int                 languageVersion            = 1;
-    private String              parameter;
+    private static final String     LANG_DE                    = "de";
+    private static final String     LANG_FR                    = "de";
+
+    private int                     languageVersion            = 1;
+    private String                  parameter;
+    private ArrayList<DownloadLink> decryptedLinks             = new ArrayList<DownloadLink>();
+    private String                  example_arte_vp_url        = null;
 
     @SuppressWarnings("deprecation")
     public ArteMediathekDecrypter(final PluginWrapper wrapper) {
@@ -85,9 +90,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         /* Load host plugin to access some static methods later */
         JDUtilities.getPluginForHost("arte.tv");
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         int foundFormatsNum = 0;
         parameter = param.toString();
+        this.example_arte_vp_url = null;
         ArrayList<String> selectedFormats = new ArrayList<String>();
         ArrayList<String> selectedLanguages = new ArrayList<String>();
         HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
@@ -120,16 +125,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 fid = br.getRegex("\"http://concert\\.arte\\.tv/[a-z]{2}/player/(\\d+)").getMatch(0);
                 hybridAPIUrl = "http://concert.arte.tv/%s/player/%s";
             } else if (parameter.matches(TYPE_CREATIVE)) {
-                /* Return external links if existant */
-                final String[] externURLsRegexes = { "data\\-url=\"(http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+)", "src=\"(https?://(?:www\\.)?youtube\\.com/embed/[^<>\"]*?)\"" };
-                for (final String externURLRegex : externURLsRegexes) {
-                    final String[] externURLs = br.getRegex(externURLRegex).getColumn(0);
-                    if (externURLs != null && externURLs.length > 0) {
-                        for (final String externURL : externURLs) {
-                            decryptedLinks.add(createDownloadlink(externURL));
-                        }
-                    }
-                }
+                scanForExternalUrls();
                 if (decryptedLinks.size() > 0) {
                     return decryptedLinks;
                 }
@@ -183,17 +179,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                  */
                 hybridAPIUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/%s/%s/ALL/ALL.json";
             } else if (parameter.matches(TYPE_FUTURE)) {
-                /* Return external links if existant */
-                /* TODOI: Check if future.arte.tv can also have these external stream urls, see creative.arte.tv 'scald_dmcloud_json' */
-                final String[] externURLsRegexes = { "src=\"(https?://(?:www\\.)?youtube\\.com/embed/[^<>\"]*?)\"" };
-                for (final String externURLRegex : externURLsRegexes) {
-                    final String[] externURLs = br.getRegex(externURLRegex).getColumn(0);
-                    if (externURLs != null && externURLs.length > 0) {
-                        for (final String externURL : externURLs) {
-                            decryptedLinks.add(createDownloadlink(externURL));
-                        }
-                    }
-                }
+                scanForExternalUrls();
                 if (decryptedLinks.size() > 0) {
                     return decryptedLinks;
                 }
@@ -203,11 +189,26 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 fid = br.getRegex("\"http://future\\.arte\\.tv/[a-z]{2}/player/(\\d+)").getMatch(0);
                 hybridAPIUrl = "http://future.arte.tv/%s/player/%s";
             } else if (parameter.matches(TYPE_CINEMA)) {
-                if (!br.containsHTML("class=\"arte-video-wrapper\"")) {
+                scanForExternalUrls();
+                if (decryptedLinks.size() > 0) {
+                    return decryptedLinks;
+                }
+                if (!br.containsHTML("class=\"video\\-container\"")) {
                     throw new DecrypterException(EXCEPTION_LINKOFFLINE);
                 }
-                fid = br.getRegex("api\\.arte\\.tv/api/player/v1/config/(?:de|fr)/([A-Za-z0-9\\-]+)").getMatch(0);
-                hybridAPIUrl = "https://api.arte.tv/api/player/v1/config/%s/%s?vector=CINEMA&autostart=1";
+                example_arte_vp_url = br.getRegex("arte_vp_url=\"(http[^<>\"]*?)\"").getMatch(0);
+                if (example_arte_vp_url == null) {
+                    return null;
+                }
+                if (example_arte_vp_url.matches(API_TYPE_GUIDE)) {
+                    /* Same API-urls as for "normal" arte.tv urls. Most likely used for complete movies. */
+                    fid = new Regex(example_arte_vp_url, "/player/[^/]+/([A-Za-z0-9\\-_]+)").getMatch(0);
+                    hybridAPIUrl = "http://org-www.arte.tv/papi/tvguide/videos/stream/player/%s/%s/ALL/ALL.json";
+                } else {
+                    fid = new Regex(example_arte_vp_url, "api\\.arte\\.tv/api/player/v1/config/(?:de|fr)/([A-Za-z0-9\\-]+)").getMatch(0);
+                    final String vector = new Regex(example_arte_vp_url, "vector=([A-Za-z0-9]+)").getMatch(0);
+                    hybridAPIUrl = "https://api.arte.tv/api/player/v1/config/%s/%s?vector=" + vector + "&autostart=1";
+                }
             }
             if (fid == null) {
                 return null;
@@ -438,6 +439,27 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private void scanForExternalUrls() {
+        /* Return external links if existant */
+        final String currentHost = new Regex(this.br.getURL(), "https?://([^/]*?)/.+").getMatch(0);
+        final String[] externURLsRegexes = { "data\\-url=\"(http://creative\\.arte\\.tv/(de|fr)/scald_dmcloud_json/\\d+)", "(youtube\\.com/embed/[^<>\"]*?)\"" };
+        for (final String externURLRegex : externURLsRegexes) {
+            final String[] externURLs = br.getRegex(externURLRegex).getColumn(0);
+            if (externURLs != null && externURLs.length > 0) {
+                for (String externURL : externURLs) {
+                    if (externURL.matches("youtube\\.com/embed/.+")) {
+                        externURL = "https://" + externURL;
+                    } else if (!externURL.startsWith("http")) {
+                        /* TODO: http://cinema.arte.tv/fr/magazine/court-circuit */
+                        externURL = "http://" + currentHost + externURL;
+                    }
+                    final DownloadLink dl = createDownloadlink(externURL);
+                    decryptedLinks.add(dl);
+                }
+            }
+        }
+    }
+
     /* Collection of possible values */
     private final String[] versionCodes             = { "VO", "VO-STA", "VOF-STMF", "VA-STMA", "VOF-STA", "VOA-STMA", "VAAUD", "VE", "VF-STMF", "VE[ANG]" };
     private final String[] versionShortLibelleCodes = { "DE", "VA", "VE", "FR", "VF", "OmU", "VO", "VOF", "VOSTF", "VE[ANG]" };
@@ -541,7 +563,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private String getAPIUrl(final String hybridAPIlink, final String lang, final String id) {
         String apilink;
-        if (parameter.matches(TYPE_GUIDE)) {
+        if (this.example_arte_vp_url.matches(API_TYPE_GUIDE)) {
             final String api_language = this.artetv_api_language(lang);
             final String id_without_lang = id.substring(0, id.length() - 1);
             final String id_with_lang = id_without_lang + api_language;

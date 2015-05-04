@@ -76,6 +76,7 @@ public class VideoMegaTv extends antiDDoSForHost {
             br.setCookie("http://videomega.tv/", "vid_mainpu", "true");
             br.setCookie("http://videomega.tv/", "vid_subpu", "1");
             br.setCookie("http://videomega.tv/", "hashopen", "1");
+            br.setCookie("http://videomega.tv/", "noadvtday", "0");
             // br.getPage("http://videomega.tv/validatehash.php?hashkey=" + fuid);
             br.getPage("http://videomega.tv/iframe.php?ref=" + fuid + "&width=863&height=430");
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -159,20 +160,34 @@ public class VideoMegaTv extends antiDDoSForHost {
             if (dllink == null || id == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final Browser adbr = br.cloneBrowser();
+            adbr.getPage("http://videomega.tv/vjs/plugin/css/videomega.css");
             final String[] adlinks = br.getRegex("\"(/[A-Z0-9]+/ad\\.php[^<>\"]*?)\"").getColumn(0);
             final HashSet<String> dupe = new HashSet<String>();
             if (adlinks != null) {
                 for (final String adlink : adlinks) {
                     if (dupe.add(adlink)) {
-                        br.cloneBrowser().getPage(adlink);
+                        adbr.getPage(adlink);
+                        // final String ad_id = new Regex(adlink, "/([A-Za-z0-9]+)/").getMatch(0);
+                        // final String nextone = adbr.getRegex("([A-Za-z0-9]+)= true;").getMatch(0);
+                        // if (ad_id != null && nextone != null) {
+                        // br.getPage("http://videomega.tv/" + ad_id + "/ad.php?id=" + nextone);
+                        // }
                     }
                 }
             }
-            final Browser ajax = br.cloneBrowser();
-            ajax.getHeaders().put("Accept", "*/*");
-            ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            ajax.postPage("/upd_views.php", "id=" + id + "&referal=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
-            br.getHeaders().put("Accept", "*/*");
+            // adbr.setCookie("http://videomega.tv/", "__gmgvm", "ppm0v0eai4");
+            adbr.getHeaders().put("Accept", "*/*");
+            adbr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            String ref = br.getRegex("referal: \"(http[^<>\"]*?)\"").getMatch(0);
+            if (ref == null) {
+                ref = downloadLink.getDownloadURL();
+            }
+            adbr.postPage("/upd_views.php", "id=" + id + "&referal=" + Encoding.urlEncode(ref));
+
+            // br.getHeaders().put("Accept", "*/*");
+            this.br = new Browser();
+            br.getHeaders().put("Accept", "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5");
             br.getHeaders().put("Accept-Encoding", "identity;q=1, *;q=0");
             // this is needed
             String ran = "";
@@ -181,6 +196,9 @@ public class VideoMegaTv extends antiDDoSForHost {
             }
             ran = ran.substring(1, 11);
             br.setCookie(this.getHost(), "_ga", "GA1.2." + ran + "." + System.currentTimeMillis());
+            // br.setCookie(this.getHost(), "__cfduid", "");
+            this.br.setFollowRedirects(false);
+            this.br.getHeaders().put("Referer", ref);
 
             dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {

@@ -72,8 +72,6 @@ public class Music163Com extends PluginForHost {
         link.setLinkID(linkid);
         prepareAPI(this.br);
         br.getPage("http://music.163.com/api/song/detail/?id=" + linkid + "&ids=%5B" + linkid + "%5D");
-        /* How to get lyrics of a song: */
-        /* http://music.163.com/api/song/lyric?id=<linkid>&lv=-1&tv=-1&csrf_token= */
         /* Example for music videos: */
         // br.getPage("http://music.163.com/api/mv/detail?id=319104&type=mp4");
         if (br.getHttpConnection().getResponseCode() != 200) {
@@ -108,7 +106,21 @@ public class Music163Com extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
+    @SuppressWarnings("unchecked")
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (downloadLink.getComment() == null) {
+            /* Get- and set lyrics if possible */
+            try {
+                br.getPage("http://music.163.com/api/song/lyric?id=" + downloadLink.getLinkID() + "&lv=-1&tv=-1&csrf_token=");
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                entries = (LinkedHashMap<String, Object>) entries.get("lrc");
+                final String lyrics = (String) entries.get("lyric");
+                downloadLink.setComment(lyrics);
+                logger.info("Successfully set lyrics");
+            } catch (final Throwable e) {
+                logger.warning("Failed to get/set lyrics");
+            }
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
