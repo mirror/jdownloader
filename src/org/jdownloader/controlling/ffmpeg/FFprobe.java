@@ -53,6 +53,8 @@ public class FFprobe extends AbstractFFmpegBinary {
     public StreamInfo getStreamInfo(String dllink) {
         ArrayList<String> commandLine = new ArrayList<String>();
         commandLine.add(getFullPath());
+        commandLine.add("-loglevel");
+        commandLine.add("48");
         commandLine.add("-show_format");
         commandLine.add("-show_streams");
         commandLine.add("-probesize");
@@ -61,7 +63,6 @@ public class FFprobe extends AbstractFFmpegBinary {
         commandLine.add("json");
         commandLine.add("-i");
         commandLine.add(dllink);
-
         try {
             String ret = runCommand(null, commandLine);
             StreamInfo data = JSonStorage.restoreFromString(ret, new TypeRef<StreamInfo>() {

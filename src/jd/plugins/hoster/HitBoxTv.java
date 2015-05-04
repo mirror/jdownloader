@@ -52,6 +52,7 @@ public class HitBoxTv extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String vid = new Regex(downloadLink.getDownloadURL(), this.getLazyP().getPattern()).getMatch(0);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 ");
         br.getPage(downloadLink.getDownloadURL());
         ajax = br.cloneBrowser();
         ajax.getHeaders().put("Accept", "application/json, text/plain, */*");
@@ -105,7 +106,7 @@ public class HitBoxTv extends PluginForHost {
         ajax.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
         ajax.getPage("http://www.hitbox.tv/api/player/config/video/" + vid + "?redis=true&embed=false&qos=false&redis=true&showHidden=true");
         url = getJson(ajax, "url");
-        if (url != null && !url.contains(".hls.vods.hitbox.tv/")) {
+        if (url != null && !url.endsWith(".m3u8")) {
             // http dl
             // {"key":"#$54d46eaa112f0508979","play":null,"clip":{"autoPlay":true,"autoBuffering":true,"bufferLength":"2","eventCategory":"QueenBee\/video\/5900","baseUrl":"http:\/\/edge.vie.hitbox.tv\/static\/videos\/recordings","url":"queenbee-1394512729.flv.mp4","stopLiveOnPause":true,"live":false,"smoothing":true,"provider":"pseudo","scaling":"fit","bitrates":[{"url":"queenbee-1394512729.flv.mp4","bitrate":738,"label":"HD
             // 720p","provider":"rtmpHitbox","isDefault":true}],"controls":false,"type":"video","adsPlayed":false},"plugins":{"pseudo":{"queryString":"?start=${start}","url":"flowplayer.pseudostreaming-3.2.12.swf"},"controls":null,"info":{"display":"none","url":"flowplayer.content-3.2.8.swf","html":"<p
@@ -114,7 +115,7 @@ public class HitBoxTv extends PluginForHost {
             // seconds.","LR_LIVESTREAM":1,"LR_LAYOUT_SKIN_ID":2,"LR_LAYOUT_LINEAR_PAUSEONCLICKTHRU":0,"LR_BITRATE":"high","LR_VIDEO_URL":"http:\/\/www.hitbox.tv\/video\/109880","LR_DESCRIPTION":"1d275b55e3d50ee88df280b1c2caa07704717dcb1_531f22770d2bf","LR_IP":"203.161.76.166"}},"canvas":{"backgroundGradient":"none"},"log":{"level":"debug","filter":"org.osmf*"},"showErrors":false,"settings":{"media_id":"-1","max_buffer_count":"3","buffer_length":"2","max_roundtrips":"3","reset_timeout":"60000","play_timeout":"15000","start_timeout":"10000","ad_plugin":"liverail-off","default_br":null,"enabled":"1"},"playlist":[]}
             final String server = getJson(ajax, "baseUrl");
             final String label = getJson(ajax, "label");
-            if (server != null) {
+            if (!"null".equalsIgnoreCase(server) && server != null) {
                 url = server + "/" + url;
             } else {
                 url = "http://edge.vie.hitbox.tv/static/videos/recordings/" + url;
@@ -155,7 +156,7 @@ public class HitBoxTv extends PluginForHost {
             }
 
             br.getHeaders().put("Accept", "*/*");
-            br.getHeaders().put("X-Requested-With", "ShockwaveFlash/16.0.0.257");
+            br.getHeaders().put("X-Requested-With", "ShockwaveFlash/17.0.0.169");
             br.getHeaders().put("Referer", downloadLink.getContentUrl());
             HLSDownloader downloader = new HLSDownloader(downloadLink, br, url);
             StreamInfo streamInfo = downloader.getProbe();
@@ -199,7 +200,7 @@ public class HitBoxTv extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Encrypted HLS is not supported");
             }
             br.getHeaders().put("Accept", "*/*");
-            br.getHeaders().put("X-Requested-With", "ShockwaveFlash/16.0.0.257");
+            br.getHeaders().put("X-Requested-With", "ShockwaveFlash/17.0.0.169");
             br.getHeaders().put("Referer", downloadLink.getContentUrl());
             dl = new HLSDownloader(downloadLink, br, url);
             dl.startDownload();
