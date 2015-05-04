@@ -13,6 +13,7 @@ import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.AbstractResponse;
@@ -54,6 +55,8 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
         super(new CBSolverService(), 1);
         config = JsonConfig.create(CaptchaBrotherHoodSettings.class);
         getService().setSolver(this);
+        // we have "native" cbh support now.
+        Application.getResource("jd/captcha/methods/captchaBrotherhood/jacinfo.xml").renameTo(Application.getResource("jd/captcha/methods/captchaBrotherhood/jacinfo.xml.deprecated"));
     }
 
     @Override
