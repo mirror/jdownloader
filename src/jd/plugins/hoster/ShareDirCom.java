@@ -46,12 +46,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sharedir.com" }, urls = { "http://dl\\.sharedir\\.com/\\d+/" }, flags = { 2 })
 public class ShareDirCom extends PluginForHost {
 
-    // Based on API: http://easyfiles.pl/api_dokumentacja.php?api_en=1
+    private static Object                                  CTRLLOCK                             = new Object();
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                   = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS                             = "NOCHUNKS";
 
     private static final String                            NICE_HOST                            = "sharedir.com";
-    private static final String                            API_HTTP                             = "http://";
     private static final String                            NICE_HOSTproperty                    = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
     /** TODO: Get these 2 constants via API. */
@@ -411,7 +410,9 @@ public class ShareDirCom extends PluginForHost {
             case 668:
                 /* File too big for free accounts -> show errormessage / try without account (or use other available account(s)) */
                 statusMessage = "Error: The current host is only available for premium users";
-                this.currAcc.getAccountInfo().getMultiHostSupport().remove(this.currDownloadLink.getHost());
+                synchronized (CTRLLOCK) {
+                    this.currAcc.getAccountInfo().getMultiHostSupport().remove(this.currDownloadLink.getHost());
+                }
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Host is not supported by multihost");
             default:
                 /* Unknown errorcode -> disable account */

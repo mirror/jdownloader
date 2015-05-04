@@ -48,6 +48,7 @@ public class AllDebridCom extends PluginForHost {
         this.enablePremium("http://www.alldebrid.com/offer/");
     }
 
+    private static Object       CTRLLOCK          = new Object();
     private static final String NICE_HOST         = "alldebrid.com";
     private static final String NICE_HOSTproperty = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
@@ -382,7 +383,10 @@ public class AllDebridCom extends PluginForHost {
                 handleErrorRetries("hoster_unsupported_or_in_maintenance", 20, 5 * 60 * 1000);
             case 101:
                 statusMessage = "Invalid link --> Probably unsupported host";
-                tempUnavailableHoster(4 * 60 * 60 * 1000l);
+                synchronized (CTRLLOCK) {
+                    this.currAcc.getAccountInfo().getMultiHostSupport().remove(this.currDownloadLink.getHost());
+                }
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Host is not supported by multihost");
             case 102:
                 statusMessage = "'Link is dead' --> We don't trust this serverside error --> Retry";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "alldebrid API says 'link is dead''", 60 * 1000l);

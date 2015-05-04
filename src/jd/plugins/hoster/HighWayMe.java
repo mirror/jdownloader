@@ -567,9 +567,12 @@ public class HighWayMe extends PluginForHost {
                 statusMessage = "File not found";
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 10:
-                /* Host offline or invalid url -> Disable for 5 minutes */
+                /* Host offline or invalid url -> Remove host from array of supported hosts */
                 statusMessage = "Unsupported host";
-                tempUnavailableHoster(60 * 60 * 1000l);
+                synchronized (CTRLLOCK) {
+                    this.currAcc.getAccountInfo().getMultiHostSupport().remove(this.currDownloadLink.getHost());
+                }
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Host is not supported by multihost");
             case 11:
                 /* Host itself is currently unavailable (maintenance) -> Disable host */
                 statusMessage = "Host itself is currently unavailable";
