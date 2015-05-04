@@ -68,7 +68,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     final String[]                  formats                    = { http_300, http_800, http_1500, http_2200 };
 
     private static final String     LANG_DE                    = "de";
-    private static final String     LANG_FR                    = "de";
+    private static final String     LANG_FR                    = "fr";
 
     private int                     languageVersion            = 1;
     private String                  parameter;
@@ -563,7 +563,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private String getAPIUrl(final String hybridAPIlink, final String lang, final String id) {
         String apilink;
-        if (this.example_arte_vp_url.matches(API_TYPE_GUIDE)) {
+        if (example_arte_vp_url != null && this.example_arte_vp_url.matches(API_TYPE_GUIDE)) {
             final String api_language = this.artetv_api_language(lang);
             final String id_without_lang = id.substring(0, id.length() - 1);
             final String id_with_lang = id_without_lang + api_language;
