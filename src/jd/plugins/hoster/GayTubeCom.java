@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gaytube.com" }, urls = { "http://(www\\.)?gaytube\\.com/media/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gaytube.com" }, urls = { "http://(www\\.)?gaytube\\.com/media/\\d+(/[a-z0-9\\-]+)?" }, flags = { 0 })
 public class GayTubeCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -72,9 +73,12 @@ public class GayTubeCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)\\- Gaytube\\.com</title>").getMatch(0);
         }
+        if (filename == null) {
+            filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9\\-]+)").getMatch(0);
+        }
         final String[] qualities = { "1080", "720", "480", "360", "240", "180" };
         for (final String quality : qualities) {
-            DLLINK = br.getRegex("flashvars\\.quality_" + quality + "p = \"(http[^<>\"]*?)\"").getMatch(0);
+            DLLINK = br.getRegex("flashvars\\.quality_" + quality + "p[\t\n\r ]*?=[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
             if (DLLINK != null) {
                 break;
             }

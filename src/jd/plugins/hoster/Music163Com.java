@@ -38,7 +38,7 @@ public class Music163Com extends PluginForHost {
 
     public Music163Com(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
+        // setConfigElements();
     }
 
     @Override
