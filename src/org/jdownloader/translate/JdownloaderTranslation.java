@@ -957,4 +957,10 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Updates are ready for Installation. Do you want to run the update now?" })
     String update_dialog_msg_x_updates_available();
 
+    @Default(lngs = { "en" }, values = { "Google 2-Step Verification" })
+    String Google_helper_2factor_sms_dialog_title();
+
+    @Default(lngs = { "en" }, values = { "Google sent a verification code to you mobile phone.\r\nNumber: %s1\r\nPlease enter this code here..." })
+    String Google_helper_2factor_sms_dialog_msg(String number);
+
 }

@@ -9,12 +9,29 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
+import org.appwork.uio.InputDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.swing.dialog.InputDialog;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.translate._JDT;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 public class GoogleHelper {
 
@@ -145,7 +162,7 @@ public class GoogleHelper {
         }
     }
 
-    public boolean login(Account account) throws IOException, InterruptedException {
+    public boolean login(Account account) throws Exception {
 
         try {
             this.br.setDebug(true);
@@ -154,7 +171,7 @@ public class GoogleHelper {
             this.br.clearCookies(null);
 
             br.setCookie("http://google.com", "PREF", "hl=en-GB");
-            if (isCacheEnabled() && account.getProperty(COOKIES2) != null) {
+            if (isCacheEnabled() && account.getProperty(COOKIES2) != null && false) {
                 @SuppressWarnings("unchecked")
                 HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty(COOKIES2);
 
@@ -198,6 +215,11 @@ public class GoogleHelper {
             post.put("rmShown", "1");
 
             postPageFollowRedirects(br, "https://accounts.google.com/ServiceLoginAuth", post);
+            Form form = br.getFormBySubmitvalue("Verify");
+
+            if (form != null && "SecondFactor".equals(form.getAction())) {
+                handle2FactorAuthSms(form);
+            }
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies cYT = this.br.getCookies("google.com");
             for (final Cookie c : cYT.getCookies()) {
@@ -205,12 +227,48 @@ public class GoogleHelper {
             }
             account.setProperty(COOKIES2, cookies);
             return br.containsHTML("accounts/SetSID");
-        } catch (IOException e) {
 
+        } catch (Exception e) {
             account.setProperty(COOKIES2, null);
             throw e;
         }
 
+    }
+
+    private void handle2FactorAuthSms(Form form) throws Exception {
+        // //*[@id="verifyText"]
+        if (br.containsHTML("idv-delivery-error-container")) {
+            // <div class="infobanner">
+            // <p class="error-msg infobanner-content"
+            // id="idv-delivery-error-container">
+            // You seem to be having trouble getting your verification code.
+            // Please try again later.
+            // </p>
+            // </div>
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "You seem to be having trouble getting your sms verification code.  Please try again later.");
+        }
+        String number = br.getRegex("<span\\s+class\\s*=\\s*\"twostepphone\".*?>(.*?)</span>").getMatch(0);
+        InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null);
+        InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
+        handler.throwCloseExceptions();
+        InputField smsUserPin = form.getInputFieldByName("smsUserPin");
+        smsUserPin.setValue(handler.getText());
+        InputField persistentCookie = form.getInputFieldByName("PersistentCookie");
+        persistentCookie.setValue("on");
+        form.remove("smsSend");
+        form.remove("retry");
+        br.submitForm(form);
+        Form[] forms = br.getForms();
+        Form remind = br.getFormBySubmitvalue("Remind me later");
+        if (remind != null && "SmsAuthInterstitial".equals(remind.getAction())) {
+            remind.remove("addBackupPhone");
+            br.submitForm(remind);
+        }
+    }
+
+    private String getText(Document doc, XPath xPath, String string) throws XPathExpressionException {
+        Node n = (Node) xPath.evaluate(string, doc, XPathConstants.NODE);
+        return (n != null ? n.getFirstChild().getTextContent().trim() : null);
     }
 
     private GoogleService service = GoogleService.YOUTUBE;
