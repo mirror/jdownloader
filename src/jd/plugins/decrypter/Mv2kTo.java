@@ -64,8 +64,9 @@ public class Mv2kTo extends PluginForDecrypt {
             if (continuelink != null) {
                 br.getPage("http://www.movie4k.to/" + continuelink);
             }
-            if (br.getURL().endsWith("/error404.php") || br.getURL().equals("http://www.movie4k.to/") || br.containsHTML(">404 Not Found<")) {
+            if (br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().length() < 30) {
                 logger.info("Invalid URL, or the URL doesn't exist any longer: " + parameter);
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             String fpName = br.getRegex("<title>Watch ([^<>\"]*?) online \\- Watch Movies Online, Full Movies, Download</title>").getMatch(0);

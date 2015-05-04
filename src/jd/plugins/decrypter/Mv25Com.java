@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie25.com" }, urls = { "http://(www\\.)?movie25\\.(com|so|tw)/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie25.com" }, urls = { "http://(www\\.)?movie25\\.(com|so|tw|ag)/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class Mv25Com extends PluginForDecrypt {
 
     public Mv25Com(PluginWrapper wrapper) {
@@ -36,11 +36,11 @@ public class Mv25Com extends PluginForDecrypt {
     }
 
     private static final String SINGLELINK = "http://(www\\.)?movie25\\.tw/watch[a-z0-9\\-]+\\.html";
-    private static final String DOMAIN     = "movie25.tw";
+    private static final String DOMAIN     = "movie25.ag";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceAll("movie25\\.(com|so)/", DOMAIN + "/");
+        final String parameter = param.toString().replaceAll("movie25\\.(com|so|tw)/", DOMAIN + "/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         // for some users they present html based redirect!
@@ -62,13 +62,13 @@ public class Mv25Com extends PluginForDecrypt {
             decryptedLinks.add(dl);
         } else {
             final String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            final String[] links = br.getRegex("<li class=\"playing_button\"><span><a href=\"(/watch[a-z0-9\\-]+\\.html)\" target=\"_blank\"").getColumn(0);
+            final String[] links = br.getRegex("<li id=\"playing_button\"><[^<>]+href=\"(watch[a-z0-9\\-]+\\.html)\" target=\"_blank\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             for (String singleLink : links) {
-                singleLink = "http://www." + DOMAIN + singleLink;
+                singleLink = "http://www." + DOMAIN + "/" + singleLink;
                 try {
                     if (this.isAbort()) {
                         logger.info("Decryption aborted for link: " + parameter);

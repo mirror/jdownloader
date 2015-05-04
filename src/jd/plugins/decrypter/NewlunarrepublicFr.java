@@ -21,24 +21,22 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitomi.la" }, urls = { "http://(www\\.)?hitomi\\.la/galleries/\\d+\\.html" }, flags = { 0 })
-public class HitomiLa extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "newlunarrepublic.fr" }, urls = { "http://(www\\.)?newlunarrepublic\\.fr/episodes/.+" }, flags = { 0 })
+public class NewlunarrepublicFr extends PluginForDecrypt {
 
-    public HitomiLa(PluginWrapper wrapper) {
+    public NewlunarrepublicFr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final String gid = new Regex(parameter, "galleries/(\\d+)").getMatch(0);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             try {
@@ -48,15 +46,16 @@ public class HitomiLa extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        String fpName = br.getRegex("<title>([^<>\"]*?) \\| Hitomi\\.la</title>").getMatch(0);
-        final String[] links = br.getRegex("(/" + gid + "/[^<>\"]*?\\.[a-z]+)").getColumn(0);
+        String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        final String[] links = br.getRegex("\"(http[^<>\"]*?\\.(?:webm|mkv))\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         for (final String singleLink : links) {
-            final DownloadLink dl = createDownloadlink("directhttp://http://g.hitomi.la/galleries" + singleLink);
-            dl.setAvailable(true);
+            final DownloadLink dl = createDownloadlink(singleLink);
+            /* IMPORTANT: Their .webm urls won't work without correct Referer */
+            dl.setProperty("refURL", this.br.getURL());
             decryptedLinks.add(dl);
         }
 
