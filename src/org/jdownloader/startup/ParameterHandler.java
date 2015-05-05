@@ -29,6 +29,7 @@ import org.jdownloader.startup.commands.MyJDownloaderCommand;
 import org.jdownloader.startup.commands.ReScanPluginsCommand;
 import org.jdownloader.startup.commands.ReconnectCommand;
 import org.jdownloader.startup.commands.SetConfigCommand;
+import org.jdownloader.startup.commands.ThreadDump;
 import org.jdownloader.updatev2.RestartController;
 
 public class ParameterHandler implements InstanceMessageListener, CommandSwitchListener {
@@ -56,6 +57,7 @@ public class ParameterHandler implements InstanceMessageListener, CommandSwitchL
         addCommand(new MyJDownloaderCommand());
         addCommand(new DisableSysErr());
         addCommand(new SetConfigCommand());
+        addCommand(new ThreadDump());
 
         addCommand(new AbstractStartupCommand("n") {
 

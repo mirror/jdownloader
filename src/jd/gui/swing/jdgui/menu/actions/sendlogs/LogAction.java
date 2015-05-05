@@ -28,6 +28,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.jdserv.JDServUtils;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.startup.commands.ThreadDump;
 
 public class LogAction extends AbstractLogAction {
 
@@ -44,6 +45,7 @@ public class LogAction extends AbstractLogAction {
     @Override
     protected void createPackage(List<LogFolder> selection) throws Exception {
         id = null;
+        new ThreadDump().run(null, new String[0]);
         super.createPackage(selection);
         if (id != null) {
             String name = format(selection.get(0).getCreated()) + "to" + format(selection.get(selection.size() - 1).getLastModified());

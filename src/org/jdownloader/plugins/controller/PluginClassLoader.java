@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -30,7 +31,7 @@ import org.jdownloader.updatev2.ClassLoaderExtension;
 public class PluginClassLoader extends URLClassLoader {
 
     private static final HashMap<String, HashMap<String, Object>> sharedPluginObjectsPool = new HashMap<String, HashMap<String, Object>>();
-    private static final Object                                   LOCK                    = new Object();
+    // http://docs.oracle.com/javase/7/docs/technotes/guides/lang/cl-mt.html
     private static final HashSet<String>                          immutableClasses        = new HashSet<String>() {
         {
             add("java.lang.Boolean");
@@ -46,7 +47,26 @@ public class PluginClassLoader extends URLClassLoader {
         }
     };
 
+    private static class PluginClassLoaderClass {
+        private final Class<?>      clazz;
+        private final AtomicBoolean initialized = new AtomicBoolean(false);
+
+        private PluginClassLoaderClass(Class<?> clazz) {
+            this.clazz = clazz;
+        }
+    }
+
     public static class PluginClassLoaderChild extends URLClassLoader {
+
+        static {
+            if (Application.getJavaVersion() >= Application.JAVA17) {
+                try {
+                    ClassLoader.registerAsParallelCapable();
+                } catch (final Throwable e) {
+                    e.printStackTrace();
+                }
+            }
+        }
 
         private static final byte _0XCA                    = (byte) 0xca;
         private static final byte _0XFE                    = (byte) 0xfe;
@@ -113,7 +133,7 @@ public class PluginClassLoader extends URLClassLoader {
             return false;
         }
 
-        private Class<?> loadAndDefineClass(final URL myUrl, final String name, final PluginClassLoader parent) throws Exception {
+        private Class<?> loadAndDefineClass(final URL myUrl, final String name) throws Exception {
             int tryAgain = 5;
             byte data[] = null;
             while (true) {
@@ -131,11 +151,7 @@ public class PluginClassLoader extends URLClassLoader {
                     if (data == null || data.length == 0) {
                         throw new ClassFormatError("No Class File");
                     }
-                    if (parent != null) {
-                        return parent.defineClass(name, data, 0, data.length);
-                    } else {
-                        return defineClass(name, data, 0, data.length);
-                    }
+                    return defineClass(name, data, 0, data.length);
                 } catch (ClassFormatError e) {
                     LogSource logger = LogController.getRebirthLogger(LogController.GL);
                     if (logger != null) {
@@ -170,80 +186,80 @@ public class PluginClassLoader extends URLClassLoader {
             if (currentClass != null && currentClass.getClassLoader() instanceof PluginClassLoaderChild) {
                 final String currentClassName = currentClass.getName();
                 final HashMap<String, Object> sharedPluginObjects;
-                // synchronized (sharedPluginObjectsPool) {
-                HashMap<String, Object> contains = sharedPluginObjectsPool.get(currentClassName);
-                if (contains == null) {
-                    contains = new HashMap<String, Object>();
-                    sharedPluginObjectsPool.put(currentClassName, contains);
+                synchronized (sharedPluginObjectsPool) {
+                    HashMap<String, Object> contains = sharedPluginObjectsPool.get(currentClassName);
+                    if (contains == null) {
+                        contains = new HashMap<String, Object>();
+                        sharedPluginObjectsPool.put(currentClassName, contains);
+                    }
+                    sharedPluginObjects = contains;
                 }
-                sharedPluginObjects = contains;
-                // }
                 final Field[] fields = currentClass.getDeclaredFields();
                 LogSource logger = null;
                 try {
-                    // synchronized (sharedPluginObjects) {
-                    final HashSet<String> knownFields = new HashSet<String>(sharedPluginObjects.keySet());
-                    for (Field field : fields) {
-                        final String fieldName = field.getName();
-                        if (!field.isSynthetic()) {
-                            final int modifiers = field.getModifiers();
-                            if (Modifier.isStatic(modifiers) && !Modifier.isFinal(modifiers)) {
-                                if (field.getType().isEnum() || field.isEnumConstant()) {
-                                    if (logger == null) {
-                                        logger = LogController.CL(false);
-                                    }
-                                    logger.info("Class " + currentClassName + " has static enum: " + fieldName);
-                                    continue;
-                                }
-                                if (field.getType().isPrimitive()) {
-                                    if (logger == null) {
-                                        logger = LogController.CL(false);
-                                    }
-                                    logger.info("Class " + currentClassName + " has static primitive field: " + fieldName);
-                                    continue;
-                                }
-                                if (immutableClasses.contains(field.getType().getName())) {
-                                    if (logger == null) {
-                                        logger = LogController.CL(false);
-                                    }
-                                    logger.info("Class " + currentClassName + " has static immutable field: " + fieldName);
-                                    continue;
-                                }
-                                /* we only share static objects */
-                                field.setAccessible(true);
-                                if (knownFields.contains(fieldName)) {
-                                    final Object fieldObject = sharedPluginObjects.get(fieldName);
-                                    try {
-                                        field.set(null, fieldObject);
-                                        knownFields.remove(fieldName);
-                                        continue;
-                                    } catch (final Throwable e) {
+                    synchronized (sharedPluginObjects) {
+                        final HashSet<String> knownFields = new HashSet<String>(sharedPluginObjects.keySet());
+                        for (Field field : fields) {
+                            final String fieldName = field.getName();
+                            if (!field.isSynthetic()) {
+                                final int modifiers = field.getModifiers();
+                                if (Modifier.isStatic(modifiers) && !Modifier.isFinal(modifiers)) {
+                                    if (field.getType().isEnum() || field.isEnumConstant()) {
                                         if (logger == null) {
                                             logger = LogController.CL(false);
                                         }
-                                        logger.severe("Cant modify Field " + fieldName + " for " + currentClassName);
+                                        logger.info("Class " + currentClassName + " has static enum: " + fieldName);
+                                        continue;
                                     }
-                                }
-                                final Object fieldObject = field.get(null);
-                                if (fieldObject != null) {
-                                    sharedPluginObjects.put(fieldName, fieldObject);
-                                } else {
-                                    if (logger == null) {
-                                        logger = LogController.CL(false);
+                                    if (field.getType().isPrimitive()) {
+                                        if (logger == null) {
+                                            logger = LogController.CL(false);
+                                        }
+                                        logger.info("Class " + currentClassName + " has static primitive field: " + fieldName);
+                                        continue;
                                     }
-                                    logger.info("Class " + currentClassName + " has static field: " + fieldName + " with null content!");
+                                    if (immutableClasses.contains(field.getType().getName())) {
+                                        if (logger == null) {
+                                            logger = LogController.CL(false);
+                                        }
+                                        logger.info("Class " + currentClassName + " has static immutable field: " + fieldName);
+                                        continue;
+                                    }
+                                    /* we only share static objects */
+                                    field.setAccessible(true);
+                                    if (knownFields.contains(fieldName)) {
+                                        final Object fieldObject = sharedPluginObjects.get(fieldName);
+                                        try {
+                                            field.set(null, fieldObject);
+                                            knownFields.remove(fieldName);
+                                            continue;
+                                        } catch (final Throwable e) {
+                                            if (logger == null) {
+                                                logger = LogController.CL(false);
+                                            }
+                                            logger.severe("Cant modify Field " + fieldName + " for " + currentClassName);
+                                        }
+                                    }
+                                    final Object fieldObject = field.get(null);
+                                    if (fieldObject != null) {
+                                        sharedPluginObjects.put(fieldName, fieldObject);
+                                    } else {
+                                        if (logger == null) {
+                                            logger = LogController.CL(false);
+                                        }
+                                        logger.info("Class " + currentClassName + " has static field: " + fieldName + " with null content!");
+                                    }
                                 }
                             }
                         }
-                    }
-                    for (final String missingField : knownFields) {
-                        if (logger == null) {
-                            logger = LogController.CL(false);
+                        for (final String missingField : knownFields) {
+                            if (logger == null) {
+                                logger = LogController.CL(false);
+                            }
+                            logger.info("Class " + currentClassName + " no longer has static field: " + missingField);
+                            sharedPluginObjects.remove(missingField);
                         }
-                        logger.info("Class " + currentClassName + " no longer has static field: " + missingField);
-                        sharedPluginObjects.remove(missingField);
                     }
-                    // }
                 } catch (final Throwable e) {
                     if (logger == null) {
                         logger = LogController.CL(false);
@@ -258,6 +274,8 @@ public class PluginClassLoader extends URLClassLoader {
             }
             return currentClass;
         }
+
+        private static final HashMap<String, PluginClassLoaderClass> LOADED = new HashMap<String, PluginClassLoaderClass>();
 
         @Override
         public Class<?> loadClass(String name) throws ClassNotFoundException {
@@ -326,22 +344,27 @@ public class PluginClassLoader extends URLClassLoader {
                 if (name.startsWith("jd.plugins.hoster.RTMPDownload")) {
                     return super.loadClass(name);
                 }
-                synchronized (LOCK) {
-                    Class<?> c = null;
-                    /*
-                     * we have to synchronize this because concurrent defineClass for same class throws exception
-                     */
-                    c = findLoadedClass(name);
-                    if (c != null) {
-                        return c;
+                PluginClassLoaderClass c = null;
+                final Class<?> clazz;
+                synchronized (LOADED) {
+                    c = LOADED.get(name);
+                    if (c == null) {
+                        final URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
+                        if (myUrl == null) {
+                            throw new ClassNotFoundException("Class does not exist(anymore): " + name);
+                        }
+                        clazz = loadAndDefineClass(myUrl, name);
+                        c = new PluginClassLoaderClass(clazz);
+                        LOADED.put(name, c);
+                    } else {
+                        clazz = c.clazz;
                     }
-                    final URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
-                    if (myUrl == null) {
-                        throw new ClassNotFoundException("Class does not exist(anymore): " + name);
-                    }
-                    c = mapStaticFields(loadAndDefineClass(myUrl, name, null));
-                    return c;
                 }
+                if (c.initialized.get() == false) {
+                    mapStaticFields(clazz);
+                    c.initialized.set(true);
+                }
+                return clazz;
             } catch (Exception e) {
                 LogSource logger = LogController.getRebirthLogger(LogController.GL);
                 if (logger != null) {
