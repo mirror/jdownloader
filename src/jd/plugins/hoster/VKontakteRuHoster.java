@@ -134,8 +134,19 @@ public class VKontakteRuHoster extends PluginForHost {
                     if (filename == null) {
                         filename = getFileNameFromHeader(con);
                     }
-                    filename = URLDecoder.decode(filename, "cp1251");
-                    link.setFinalFileName(filename);
+                    if (filename != null) {
+                        try {
+                            final String cp1251 = URLDecoder.decode(filename, "cp1251");
+                            final String utf8 = URLDecoder.decode(filename, "UTF-8");
+                            if (cp1251.length() < utf8.length()) {
+                                link.setFinalFileName(cp1251);
+                            } else {
+                                link.setFinalFileName(utf8);
+                            }
+                        } catch (final Throwable e) {
+                            link.setName(filename);
+                        }
+                    }
                     link.setDownloadSize(con.getLongContentLength());
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
