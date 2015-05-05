@@ -459,12 +459,10 @@ public class Uploadedto extends PluginForHost {
         if (account == null) {
             return this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
         } else {
-            final AccountInfo ai = account.getAccountInfo();
-            if (ai == null) {
-                return this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
-            } else {
-                return !StringUtils.equals(account.getPass(), ai.getStringProperty("NOAPI", null)) && this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda);
+            if (this.getPluginConfig().getBooleanProperty(PREFER_PREMIUM_DOWNLOAD_API, default_ppda)) {
+                return !StringUtils.equals(account.getPass(), account.getStringProperty("NOAPI", null));
             }
+            return false;
         }
     }
 
@@ -588,7 +586,7 @@ public class Uploadedto extends PluginForHost {
             }
             account.setProperty("free", true);
             if (preferAPI(account)) {
-                ai.setProperty("NOAPI", account.getPass());
+                account.setProperty("NOAPI", account.getPass());
             }
         } else {
             account.setValid(true);
@@ -610,7 +608,7 @@ public class Uploadedto extends PluginForHost {
             }
             account.setProperty("free", false);
             if (preferAPI(account)) {
-                ai.setProperty("NOAPI", account.getPass());
+                account.setProperty("NOAPI", account.getPass());
             }
         }
         return ai;
@@ -1844,7 +1842,7 @@ public class Uploadedto extends PluginForHost {
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
      * English.
-     * 
+     *
      * @param key
      * @return
      */

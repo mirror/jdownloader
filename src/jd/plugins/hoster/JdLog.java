@@ -73,8 +73,9 @@ public class JdLog extends PluginForHost {
         }
         final String basicauth = basicauthInfo[0];
         br.getHeaders().put("Authorization", basicauth);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getResponseCode() == 401) {
+            dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
         }
         if (isNewLogin) {
@@ -93,21 +94,8 @@ public class JdLog extends PluginForHost {
         return new String[] { logins.toBasicAuth(), logins.getUsername(), logins.getPassword() };
     }
 
-    /* do not add @Override here to keep 0.* compatibility */
-    public boolean hasAutoCaptcha() {
-        return false;
-    }
-
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return false;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-            /* free accounts also have captchas */
-            return false;
-        }
         return false;
     }
 
