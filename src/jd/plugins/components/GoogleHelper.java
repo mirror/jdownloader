@@ -49,33 +49,9 @@ public class GoogleHelper {
 
     }
 
-    public void login() {
-        ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
-        if (accounts != null && accounts.size() != 0) {
-            final Iterator<Account> it = accounts.iterator();
-            while (it.hasNext()) {
-                final Account n = it.next();
-                if (n.isEnabled() && n.isValid()) {
+    public void login(String type) {
 
-                    try {
-
-                        this.login(n);
-                        if (n.isValid()) {
-                            return;
-                        }
-                    } catch (final Exception e) {
-
-                        n.setValid(false);
-                        return;
-                    }
-
-                }
-            }
-        }
-
-        // debug
-
-        accounts = AccountController.getInstance().getAllAccounts("google.com");
+        ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(type);
         if (accounts != null && accounts.size() != 0) {
             final Iterator<Account> it = accounts.iterator();
             while (it.hasNext()) {
@@ -137,7 +113,7 @@ public class GoogleHelper {
             int max = 20;
             int wait = 0;
             while (max-- > 0) {
-                if (url == null || new URL(url).getHost().toLowerCase(Locale.ENGLISH).contains("youtube.com")) {
+                if (url == null || new URL(url).getHost().toLowerCase(Locale.ENGLISH).contains(getService().serviceName)) {
                     break;
                 }
                 if (wait > 0) {
@@ -171,7 +147,8 @@ public class GoogleHelper {
             this.br.clearCookies(null);
 
             br.setCookie("http://google.com", "PREF", "hl=en-GB");
-            if (isCacheEnabled() && account.getProperty(COOKIES2) != null && false) {
+            if (isCacheEnabled() && account.getProperty(COOKIES2) != null) {
+
                 @SuppressWarnings("unchecked")
                 HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty(COOKIES2);
 
@@ -182,9 +159,12 @@ public class GoogleHelper {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie("google.com", key, value);
                         }
-
+                        if (hasBeenValidatedRecently(account)) {
+                            return true;
+                        }
                         getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");
                         if (br.containsHTML("accounts/SetSID")) {
+                            validate(account);
                             return true;
                         }
                     }
@@ -226,13 +206,35 @@ public class GoogleHelper {
                 cookies.put(c.getKey(), c.getValue());
             }
             account.setProperty(COOKIES2, cookies);
-            return br.containsHTML("accounts/SetSID");
+            if (br.containsHTML("accounts/SetSID")) {
+                validate(account);
+                return true;
+            } else {
+                return false;
+            }
 
         } catch (Exception e) {
             account.setProperty(COOKIES2, null);
             throw e;
         }
 
+    }
+
+    protected void validate(Account account) {
+        account.setProperty("LAST_VALIDATE_" + getService().name(), System.currentTimeMillis());
+    }
+
+    protected boolean hasBeenValidatedRecently(Account account) {
+
+        long lastValidated = account.getLongProperty("LAST_VALIDATE_" + getService().name(), -1);
+        if (lastValidated > 0 && System.currentTimeMillis() - lastValidated < getValidatedCacheTimeout()) {
+            return true;
+        }
+        return false;
+    }
+
+    protected long getValidatedCacheTimeout() {
+        return 1 * 60 * 60 * 1000l;
     }
 
     private void handle2FactorAuthSms(Form form) throws Exception {
@@ -257,13 +259,50 @@ public class GoogleHelper {
         persistentCookie.setValue("on");
         form.remove("smsSend");
         form.remove("retry");
-        br.submitForm(form);
-        Form[] forms = br.getForms();
-        Form remind = br.getFormBySubmitvalue("Remind me later");
+        submitForm(br, form);
+
+        handleIntersitial();
+    }
+
+    protected void handleIntersitial() throws Exception {
+        // Form[] forms = br.getForms();
+        Form remind = br.getFormBySubmitvalue("Remind+me+later");
         if (remind != null && "SmsAuthInterstitial".equals(remind.getAction())) {
             remind.remove("addBackupPhone");
-            br.submitForm(remind);
+            submitForm(br, remind);
+
         }
+    }
+
+    private void submitForm(Browser br, Form form) throws Exception {
+        boolean before = br.isFollowingRedirects();
+        br.setFollowRedirects(false);
+        int wait = 0;
+        String url = null;
+        try {
+            br.submitForm(form);
+
+            if (br.getRedirectLocation() != null) {
+                url = br.getRedirectLocation();
+
+            }
+
+            String[] redirect = br.getRegex(META_HTTP_EQUIV_REFRESH_CONTENT_D_S_URL_39_39).getRow(0);
+            if (redirect != null) {
+                url = Encoding.htmlDecode(redirect[1]);
+                wait = Integer.parseInt(redirect[0]) * 1000;
+            }
+        } finally {
+            br.setFollowRedirects(before);
+        }
+        if (url != null) {
+            if (wait > 0) {
+                Thread.sleep(wait);
+            }
+            getPageFollowRedirects(br, url);
+
+        }
+
     }
 
     private String getText(Document doc, XPath xPath, String string) throws XPathExpressionException {
