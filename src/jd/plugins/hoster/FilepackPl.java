@@ -59,7 +59,7 @@ public class FilepackPl extends PluginForHost {
     // For sites which use this script: http://www.yetishare.com/
     // YetiShareBasic Version 0.5.5-psp
     // mods: handleErrors[Added daily limit reached handling]
-    // limit-info: free(unregistered) untested, set standard limits, premium untested, set FREE account limits
+    // limit-info: free(unregistered) untested, set standard limits, premium = 30GB, set FREE account limits
     // captchatype: null, reCaptchaV2, recaptcha
     // other:
 
@@ -126,12 +126,14 @@ public class FilepackPl extends PluginForHost {
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("Filename:[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            filename = br.getRegex("(?:Filename|Nazwa Pliku.):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
             if (filename == null || inValidate(Encoding.htmlDecode(filename).trim()) || Encoding.htmlDecode(filename).trim().equals("  ")) {
                 /* Filename might not be available here either */
                 filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             }
-            filesize = br.getRegex("Filesize:[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+
+            filesize = br.getRegex("(?:Filesize|Wielkość Pliku):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+
         } else {
             br.getPage(link.getDownloadURL());
             if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
@@ -352,6 +354,8 @@ public class FilepackPl extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
         } else if (dl.getConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        } else if (dl.getConnection().getResponseCode() == 504) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 504: Gateway Time-out", 60 * 60 * 1000l);
         }
     }
 
@@ -454,6 +458,8 @@ public class FilepackPl extends PluginForHost {
                     if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">logout \\(")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else if ("pl".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNieprawidłowe hasło lub nazwa użytkownika!\r\nCzy na pewno prawidłowo wprowadziłeś dane logowania? Kilka porad:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń znaki specjalne)!\r\n2. Wprowadź hasło ręcznie, bez używania opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         } else {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
@@ -467,13 +473,15 @@ public class FilepackPl extends PluginForHost {
                     if (!br.containsHTML("\"login_status\":\"success\"")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else if ("pl".equalsIgnoreCase(lang)) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNieprawidłowe hasło lub nazwa użytkownika!\r\nCzy na pewno prawidłowo wprowadziłeś dane logowania? Kilka porad:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń znaki specjalne)!\r\n2. Wprowadź hasło ręcznie, bez używania opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         } else {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
                     }
                 }
                 br.getPage(loginstart + this.getHost() + "/account_home." + type);
-                if (!br.containsHTML("class=\"badge badge\\-success\">PAID USER</span>")) {
+                if (!br.containsHTML("class=\"badge badge\\-success\">PAID USER</span>") && !br.containsHTML("Status Konta:[ \r\n]+Konto Premium<br>")) {
                     account.setProperty("free", true);
                 } else {
                     account.setProperty("free", false);
@@ -498,6 +506,8 @@ public class FilepackPl extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
+
+        String[][] traffics = null;
         /* reset maxPrem workaround on every fetchaccount info */
         MAXPREM.set(1);
         try {
@@ -516,9 +526,11 @@ public class FilepackPl extends PluginForHost {
             MAXPREM.set(account_FREE_MAXDOWNLOADS);
             ai.setStatus("Registered (free) account");
         } else {
+            traffics = br.getRegex("<span class=\"badge badge-success\">(\\d+\\.*?\\d*? [KMGT]+B) / (\\d+\\.*?\\d*? [KMGT]B) </span>").getMatches();
+
             br.getPage("http://" + this.getHost() + "/upgrade." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
-            final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            final String expire = br.getRegex("(?:Reverts To Free Account|Konto Wygasa):[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
                 account.setValid(false);
                 return ai;
@@ -547,8 +559,14 @@ public class FilepackPl extends PluginForHost {
                 ai.setStatus("Premium account");
             }
         }
+        if (traffics.length != 0) {
+            String trafficMax = traffics[0][1];
+            String trafficUsed = traffics[0][0];
+            ai.setTrafficMax(trafficMax);
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficMax) - SizeFormatter.getSize(trafficUsed));
+        }
         account.setValid(true);
-        ai.setUnlimitedTraffic();
+
         return ai;
     }
 
@@ -564,17 +582,26 @@ public class FilepackPl extends PluginForHost {
             doFree(link, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
         } else {
             String dllink = link.getDownloadURL();
+            br.setConnectTimeout(60 * 1000);
+            br.setReadTimeout(60 * 1000);
+
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
             handleServerErrors();
             if (!dl.getConnection().isContentDisposition()) {
                 logger.warning("The final dllink seems not to be a file, checking for errors...");
-                br.followConnection();
-                handleErrors();
-                logger.info("Found no errors, let's see if we can find the dllink now...");
+                if (!br.containsHTML("No htmlCode read")) {
+                    br.followConnection();
+                    handleErrors();
+                    logger.info("Found no errors, let's see if we can find the dllink now...");
+                }
+
                 handlePassword(link);
                 dllink = this.getDllink();
                 if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    dllink = dl.getConnection().getURL().toString();
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
             }
