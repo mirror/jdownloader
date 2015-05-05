@@ -141,9 +141,26 @@ public class PivitLoad extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
-        String user = Encoding.urlEncode(acc.getUser());
-        String pw = Encoding.urlEncode(acc.getPass());
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
+        String user = Encoding.urlEncode(account.getUser());
+        String pw = Encoding.urlEncode(account.getPass());
         String url = Encoding.urlEncode(link.getDownloadURL());
         showMessage(link, "Phase 1/2: Generating link");
 
@@ -152,7 +169,7 @@ public class PivitLoad extends PluginForHost {
         if (genlink.startsWith("<error>") && genlink.endsWith("</error>")) {
             if (genlink.contains("<nr>2</nr>")) { // invalid url
                 // disable hoster for 2min
-                tempUnavailableHoster(acc, link, 2 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 2 * 60 * 1000l);
             } else if (genlink.contains("<nr>1</nr>")) { // invalid login
                 throw new PluginException(PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
@@ -161,11 +178,11 @@ public class PivitLoad extends PluginForHost {
             logger.severe("PivitLoad(Error): " + genlink);
             if (genlink.contains("Hoster unsupported or under maintenance.")) {
                 // disable host for 4h
-                tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 4 * 60 * 60 * 1000l);
             }
             if (genlink.contains("_limit")) {
                 /* limit reached for this host, wait 4h */
-                tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 4 * 60 * 60 * 1000l);
             }
             /*
              * after x retries we disable this host and retry with normal plugin
@@ -174,7 +191,7 @@ public class PivitLoad extends PluginForHost {
                 /* reset retrycounter */
                 link.getLinkStatus().setRetryCount(0);
                 // disable hoster for 30min
-                tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 30 * 60 * 1000l);
 
             }
             String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
@@ -199,7 +216,7 @@ public class PivitLoad extends PluginForHost {
             /* unknown error */
             logger.severe("PivitLoad(Error): " + br.toString());
             // disable hoster for 5min
-            tempUnavailableHoster(acc, link, 5 * 60 * 1000l);
+            tempUnavailableHoster(account, link, 5 * 60 * 1000l);
             // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         }
         /* save generated link */
@@ -278,20 +295,6 @@ public class PivitLoad extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         return true;
     }
 

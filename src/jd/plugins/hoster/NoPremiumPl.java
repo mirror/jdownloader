@@ -118,10 +118,27 @@ public class NoPremiumPl extends PluginForHost {
     }
 
     /* no override to keep plugin compatible to old stable */
-    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
         final String url = Encoding.urlEncode(link.getDownloadURL());
 
-        String postData = "username=" + acc.getUser() + "&password=" + JDHash.getSHA1(JDHash.getMD5(acc.getPass())) + "&info=0&url=" + url + "&site=nopremium";
+        String postData = "username=" + account.getUser() + "&password=" + JDHash.getSHA1(JDHash.getMD5(account.getPass())) + "&info=0&url=" + url + "&site=nopremium";
         String response = br.postPage("http://crypt.nopremium.pl", postData);
         br.setFollowRedirects(true);
 
@@ -146,7 +163,7 @@ public class NoPremiumPl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if (br.containsHTML("15=Hosting nie obslugiwany")) {
                 /* Host not supported */
-                tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
             }
             int timesFailed = link.getIntegerProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", 0);
             link.getLinkStatus().setRetryCount(0);
@@ -157,7 +174,7 @@ public class NoPremiumPl extends PluginForHost {
             } else {
                 link.setProperty(NICE_HOSTproperty + "timesfailed_unknowndlerror", Property.NULL);
                 logger.info(NICE_HOST + ": Unknown error - disabling current host!");
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
         }
         if (dl.getConnection().getResponseCode() == 404) {
@@ -195,20 +212,6 @@ public class NoPremiumPl extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         return true;
     }
 

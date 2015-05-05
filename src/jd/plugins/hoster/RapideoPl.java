@@ -51,8 +51,8 @@ public class RapideoPl extends PluginForHost {
     private static final String                            NICE_HOST          = MAINPAGE.replaceAll("(https://|http://)", "");
     private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
     private static final String[][]                        HOSTS              = { { "vip-file", "vip-file.com" }, { "unibytes", "unibytes.com" }, { "uptobox", "uptobox.com" }, { "fileshark", "fileshark.pl" }, { "megaszafa", "megaszafa.com" }, { "nowvideo", "nowvideo.sx" }, { "divxstage", "divxstage.eu" }, { "played", "played.to" }, { "oboom", "oboom.com" }, { "firedrive", "firedrive.com" }, { "rapidu", "rapidu.net" }, { "ddlstorage", "ddlstorage.com" }, { "uploadable", "uploadable.ch" }, { "secureupload", "secureupload.eu" }, { "uloz", "uloz.to" }, { "cloudstor", "cloudstor.es" }, { "1fichier", "1fichier.com" }, { "datafile", "datafile.com" }, { "terafile", "terafile.co" }, { "hugefiles", "hugefiles.net" }, { "zippyshare", "zippyshare.com" }, { "180upload", "180upload.nl" }, { "kingfiles", "kingfiles.net" }, { "fastshare", "fastshare.cz" }, { "lunaticfiles", "lunaticfiles.com" },
-        { "fileparadox", "fileparadox.in" }, { "filesmonster", "filesmonster.com" }, { "hd3d", "hd3d.cc" }, { "lumfile", "lumfile.com" }, { "catshare", "catshare.org" }, { "ultramegabit", "ultramegabit.com" }, { "luckyshare", "luckyshare.net" }, { "hitfile", "hitfile.net" }, { "shareflare", "shareflare.net" }, { "letitbit", "letitbit.net" }, { "uploaded", "uploaded.to" }, { "bitshare", "bitshare.com" }, { "jumbofiles", "jumbofiles.org" }, { "4shared", "4shared.com" }, { "turbobit", "turbobit.net" }, { "2shared", "2shared.com" }, { "ifilez", "depfile.com" }, { "freakshare", "freakshare.com" }, { "rapidgator", "rapidgator.net" }, { "uploading", "uploading.com" }, { "netload", "netload.in" }, { "ryushare", "ryushare.com" }, { "easyshare", "crocko.com" }, { "mediafire", "mediafire.com" }, { "filefactory", "filefactory.com" }, { "filepost", "filepost.com" }, { "videobb", "videobb.com" },
-            { "megashares", "megashares.com" }, { "filevelocity", "filevelocity.com" }, { "sendspace", "sendspace.com" }, { "cloudnator", "cloudnator.com" }, { "uptobox", "uptobox.com" }, { "filereactor", "filereactor.com" }, { "putlocker", "putlocker.com" }, { "ifile", "filecloud.io" }, { "share-online", "share-online.biz" }, { "glumbouploads", "glumbouploads.com" } };
+            { "fileparadox", "fileparadox.in" }, { "filesmonster", "filesmonster.com" }, { "hd3d", "hd3d.cc" }, { "lumfile", "lumfile.com" }, { "catshare", "catshare.org" }, { "ultramegabit", "ultramegabit.com" }, { "luckyshare", "luckyshare.net" }, { "hitfile", "hitfile.net" }, { "shareflare", "shareflare.net" }, { "letitbit", "letitbit.net" }, { "uploaded", "uploaded.to" }, { "bitshare", "bitshare.com" }, { "jumbofiles", "jumbofiles.org" }, { "4shared", "4shared.com" }, { "turbobit", "turbobit.net" }, { "2shared", "2shared.com" }, { "ifilez", "depfile.com" }, { "freakshare", "freakshare.com" }, { "rapidgator", "rapidgator.net" }, { "uploading", "uploading.com" }, { "netload", "netload.in" }, { "ryushare", "ryushare.com" }, { "easyshare", "crocko.com" }, { "mediafire", "mediafire.com" }, { "filefactory", "filefactory.com" }, { "filepost", "filepost.com" }, { "videobb", "videobb.com" },
+        { "megashares", "megashares.com" }, { "filevelocity", "filevelocity.com" }, { "sendspace", "sendspace.com" }, { "cloudnator", "cloudnator.com" }, { "uptobox", "uptobox.com" }, { "filereactor", "filereactor.com" }, { "putlocker", "putlocker.com" }, { "ifile", "filecloud.io" }, { "share-online", "share-online.biz" }, { "glumbouploads", "glumbouploads.com" } };
 
     public RapideoPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -143,8 +143,25 @@ public class RapideoPl extends PluginForHost {
      * TODO: Improve errorhandling, remove all unneeded requests, maybe add a check if the desired file is already in the account(access
      * downloadprogress=1, see loop below)
      */
-    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
-        login(acc, false);
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
+        login(account, false);
         int maxChunks = 0;
         if (link.getBooleanProperty(RapideoPl.NOCHUNKS, false)) {
             maxChunks = 1;
@@ -173,7 +190,7 @@ public class RapideoPl extends PluginForHost {
             }
             id = br.getRegex("data\\-id=\"([a-z0-9]+)\"").getMatch(0);
             if (id == null) {
-                handleErrors(acc, link, "id_null", 10);
+                handleErrors(account, link, "id_null", 10);
             }
 
             br.postPage("https://www.rapideo.pl/twoje_pliki", "downloadprogress=1");
@@ -210,7 +227,7 @@ public class RapideoPl extends PluginForHost {
                 break;
             }
             if (dllink == null) {
-                handleErrors(acc, link, "dllink_null", 10);
+                handleErrors(account, link, "dllink_null", 10);
             }
             dllink = dllink.replace("\\", "");
         }
@@ -366,20 +383,6 @@ public class RapideoPl extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         return true;
     }
 
