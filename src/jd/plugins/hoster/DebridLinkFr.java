@@ -499,9 +499,26 @@ public class DebridLinkFr extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
-    public void handleMultiHost(final DownloadLink downloadLink, final Account account) throws Exception {
-        showMessage(downloadLink, "Phase 1/2: Generating link");
-        getPage(account, downloadLink, "addLink", true, "link=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
+        showMessage(link, "Phase 1/2: Generating link");
+        getPage(account, link, "addLink", true, "link=" + Encoding.urlEncode(link.getDownloadURL()));
 
         int maxChunks = 0;
         boolean resumes = true;
@@ -520,12 +537,12 @@ public class DebridLinkFr extends PluginForHost {
             logger.warning("Unhandled download error on debrid-link,fr:");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        showMessage(downloadLink, "Phase 2/2: Download begins!");
+        showMessage(link, "Phase 2/2: Download begins!");
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumes, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            errHandling(account, downloadLink, true);
+            errHandling(account, link, true);
             if (br.containsHTML("<img src='http://debrid-link\\.fr/images/logo\\.png")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
             }
@@ -570,21 +587,6 @@ public class DebridLinkFr extends PluginForHost {
                         return false;
                     }
 
-                }
-            }
-        }
-
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(currenthost);
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(currenthost);
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
                 }
             }
         }

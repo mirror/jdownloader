@@ -40,6 +40,7 @@ public class Music163Com extends PluginForDecrypt {
     /** Settings stuff */
     private static final String FAST_LINKCHECK = "FAST_LINKCHECK";
 
+    /* Other possible API calls: http://music.163.com/api/playlist/detail?id=%s http://music.163.com/api/artist/%s */
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         /* Load sister host plugin */
@@ -51,8 +52,8 @@ public class Music163Com extends PluginForDecrypt {
         final boolean fastcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
         jd.plugins.hoster.Music163Com.prepareAPI(this.br);
         br.getPage("http://music.163.com/api/album/" + id_album + "/");
-        br.getPage("http://music.163.com/api/artist/albums/10557?offset=0&");
-        // br.getPage("http://music.163.com/api/artist/albums/" + id_album + "/");
+        // br.getPage("http://music.163.com/api/artist/albums/10557?offset=0&");
+        // br.getPage("http://music.163.com/api/artist/albums/" + id_album + "?offset=0&limit=1000");
         // br.getPage("http://music.163.com/api/artist/<id>/");
         if (br.getHttpConnection().getResponseCode() != 200) {
             decryptedLinks.add(this.createOfflinelink(parameter));
@@ -66,13 +67,24 @@ public class Music163Com extends PluginForDecrypt {
         final String name_album = (String) entries.get("name");
         final String fpName = name_artist + " - " + name_album;
         for (final Object songo : songs) {
+            String ext = null;
+            long filesize = 0;
             final LinkedHashMap<String, Object> song_info = (LinkedHashMap<String, Object>) songo;
+            final Object song_hMusico = song_info.get("hMusic");
             final LinkedHashMap<String, Object> song_bMusic = (LinkedHashMap<String, Object>) song_info.get("bMusic");
             final String songname = (String) song_info.get("name");
-            final String ext = (String) song_bMusic.get("extension");
-            final String filename = name_artist + " - " + name_album + " - " + songname + "." + ext;
             final String fid = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(song_info.get("id"), -1));
-            final long filesize = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(song_bMusic.get("size"), -1);
+            if (song_hMusico != null) {
+                /* HQ (usually 320 KB/s) [officially] only available for registered users */
+                final LinkedHashMap<String, Object> song_hMusic = (LinkedHashMap<String, Object>) song_hMusico;
+                ext = (String) song_hMusic.get("extension");
+                filesize = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(song_hMusic.get("size"), -1);
+            } else {
+                /* LQ */
+                ext = (String) song_bMusic.get("extension");
+                filesize = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(song_bMusic.get("size"), -1);
+            }
+            final String filename = name_artist + " - " + name_album + " - " + songname + "." + ext;
             final DownloadLink dl = createDownloadlink("http://music.163.com/song?id=" + fid);
             dl.setLinkID(fid);
             dl.setFinalFileName(filename);
