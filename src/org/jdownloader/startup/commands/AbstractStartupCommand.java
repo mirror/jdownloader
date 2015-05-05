@@ -12,7 +12,6 @@ public abstract class AbstractStartupCommand implements StartupCommand {
 
     public AbstractStartupCommand(String... commands) {
         this.commands = commands;
-
         logger = LogController.getInstance().getLogger(getClass().getName());
     }
 
@@ -33,7 +32,9 @@ public abstract class AbstractStartupCommand implements StartupCommand {
     public String help() {
         StringBuilder sb = new StringBuilder();
         for (String s : getCommandSwitches()) {
-            if (sb.length() > 0) sb.append("/");
+            if (sb.length() > 0) {
+                sb.append("/");
+            }
             sb.append("-").append(s);
         }
         if (getParameterHelp() != null) {

@@ -12,7 +12,6 @@ public class SetConfigCommand extends AbstractStartupCommand {
 
     public SetConfigCommand() {
         super("set");
-
     }
 
     @Override
