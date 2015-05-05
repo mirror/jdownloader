@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2.solver.myjd;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -152,11 +153,11 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
 
             if (c instanceof RecaptchaV1CaptchaChallenge) {
                 if (!Application.isHeadless()) {
-
+                    FileInputStream is = null;
                     try {
-                        int type = ImageIO.read(((RecaptchaV1CaptchaChallenge) c).getImageFile()).getType();
+                        is = new FileInputStream(((RecaptchaV1CaptchaChallenge) c).getImageFile());
+                        int type = ImageIO.read(is).getType();
                         if (type == 5) {
-
                             // type 5= colored images. the digit captchas. MyJD cannot solve this type
                             return false;
                             // if (BrowserSolverService.getInstance().getConfig().isBrowserLoopEnabled()) {
@@ -177,6 +178,13 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
                         }
                     } catch (IOException e) {
                         return false;
+                    } finally {
+                        if (is != null) {
+                            try {
+                                is.close();
+                            } catch (IOException e) {
+                            }
+                        }
                     }
                 }
 
