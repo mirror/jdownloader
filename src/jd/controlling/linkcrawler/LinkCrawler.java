@@ -1563,8 +1563,6 @@ public class LinkCrawler {
                     } else {
                         fpi.setUniqueId(null);
                     }
-                } else {
-                    fpi.setUniqueId(dp.getUniqueID());
                 }
                 if (dp.hasProperty(PACKAGE_IGNORE_VARIOUS)) {
                     if (Boolean.TRUE.equals(dp.getBooleanProperty(PACKAGE_IGNORE_VARIOUS, false))) {
