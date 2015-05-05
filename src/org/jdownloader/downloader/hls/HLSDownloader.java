@@ -16,6 +16,7 @@ import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -113,10 +114,8 @@ public class HLSDownloader extends DownloadInterface {
         try {
             FFprobe ffmpeg = new FFprobe();
             this.processID = new UniqueAlltimeID().getID();
-            // TODO raztoki: commit JDBrowser Project
-            // return ffmpeg.getStreamInfo("http://127.0.0.1:" + port + "/m3u8?id=" + processID + "&url=" +
-            // Encoding.urlEncode(Request.getLocation(m3uUrl, obr.getRequest())));
-            return ffmpeg.getStreamInfo("http://127.0.0.1:" + port + "/m3u8?id=" + processID + "&url=" + Encoding.urlEncode(m3uUrl));
+
+            return ffmpeg.getStreamInfo("http://127.0.0.1:" + port + "/m3u8?id=" + processID + "&url=" + Encoding.urlEncode(Request.getLocation(m3uUrl, obr.getRequest())));
 
         } finally {
 

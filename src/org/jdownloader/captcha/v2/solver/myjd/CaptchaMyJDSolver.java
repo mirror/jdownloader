@@ -4,7 +4,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.imageio.ImageIO;
+
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.plugins.Account;
 import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
@@ -18,12 +27,12 @@ import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseValidation;
 import org.jdownloader.captcha.v2.SolverStatus;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1CaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
-import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
@@ -78,15 +87,97 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
 
     private final boolean enabled = true;
 
+    private Plugin getPluginFromThread() {
+        final Thread thread = Thread.currentThread();
+        if (thread instanceof AccountCheckerThread) {
+            final AccountCheckJob job = ((AccountCheckerThread) thread).getJob();
+            if (job != null) {
+                final Account account = job.getAccount();
+                return account.getPlugin();
+            }
+        } else if (thread instanceof LinkCheckerThread) {
+            final PluginForHost plg = ((LinkCheckerThread) thread).getPlugin();
+            if (plg != null) {
+                return plg;
+            }
+        } else if (thread instanceof SingleDownloadController) {
+            return ((SingleDownloadController) thread).getDownloadLinkCandidate().getCachedAccount().getPlugin();
+        } else if (thread instanceof LinkCrawlerThread) {
+            final Object owner = ((LinkCrawlerThread) thread).getCurrentOwner();
+            if (owner instanceof Plugin) {
+                return (Plugin) owner;
+            }
+        }
+        return null;
+    }
+
+    public boolean canHandle() {
+        boolean myEn = MyJDownloaderController.getInstance().isRemoteCaptchaServiceEnabled();
+        if (validateLogins() && myEn && isEnabled()) {
+
+            Plugin plg = getPluginFromThread();
+            if (plg != null) {
+                final String id = plg.getHost();
+                int counter = 0;
+                synchronized (lastChallenge) {
+
+                    final ArrayList<Request> remove = new ArrayList<Request>();
+                    for (int i = lastChallenge.size() - 1; i >= 0; i--) {
+                        final Request r = lastChallenge.get(i);
+                        if (System.currentTimeMillis() > r.timestamp + 30 * 60 * 1000l) {
+                            remove.add(r);
+                            continue;
+                        }
+                        if (r.id.equals(id)) {
+                            counter++;
+                        }
+                    }
+                    lastChallenge.removeAll(remove);
+                }
+                // max 2 captchas per plugin and 30 minutes.
+                if (counter >= 10) {
+                    return false;
+                }
+
+            }
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public boolean canHandle(Challenge<?> c) {
         boolean myEn = MyJDownloaderController.getInstance().isRemoteCaptchaServiceEnabled();
         if (validateLogins() && c instanceof BasicCaptchaChallenge && myEn && super.canHandle(c)) {
-            boolean isRecaptchaV1 = "recaptcha".equals(((BasicCaptchaChallenge) c).getTypeID());
-            if (isRecaptchaV1) {
-                if (!Application.isHeadless() && BrowserSolverService.getInstance().getConfig().isBrowserLoopEnabled()) {
-                    // our myjd autosolver currently cannot solve these "easier" types
-                    return false;
+
+            if (c instanceof RecaptchaV1CaptchaChallenge) {
+                if (!Application.isHeadless()) {
+
+                    try {
+                        int type = ImageIO.read(((RecaptchaV1CaptchaChallenge) c).getImageFile()).getType();
+                        if (type == 5) {
+
+                            // type 5= colored images. the digit captchas. MyJD cannot solve this type
+                            return false;
+                            // if (BrowserSolverService.getInstance().getConfig().isBrowserLoopEnabled()) {
+                            // // used browserloop
+                            // // our myjd autosolver currently cannot solve these "easier" types
+                            // logger.info("Do not send Captcha to MyJD CES Solver: BrowserLoop enabled");
+                            // return false;
+                            // }
+                            //
+                            // Browser br = new Browser();
+                            // BrowserSolverService.fillCookies(br);
+                            //
+                            // if (br.getCookie("google.com", "SID") != null && br.getCookie("google.com", "HSID") != null) {
+                            // logger.info("Do not send Captcha to MyJD CES Solver: H?SID Cookies found");
+                            // // used account workaround
+                            // return false;
+                            // }
+                        }
+                    } catch (IOException e) {
+                        return false;
+                    }
                 }
 
             }

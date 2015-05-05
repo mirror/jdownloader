@@ -42,6 +42,7 @@ import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserReference;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
+import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -61,6 +62,10 @@ public abstract class RecaptchaV1Handler {
             return null;
         }
         if (StringUtils.isNotEmpty(rcBr.getCookie("google.com", "SID")) && StringUtils.isNotEmpty(rcBr.getCookie("google.com", "HSID"))) {
+            return null;
+        }
+        if (CaptchaMyJDSolver.getInstance().canHandle()) {
+            // ("Do not try to get easy recaptchas. My.JD is active");
             return null;
         }
         final AtomicReference<String> url = new AtomicReference<String>();

@@ -49,7 +49,7 @@ public class GoogleHelper {
 
     }
 
-    public void login(String type) {
+    public boolean login(String type) {
 
         ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts(type);
         if (accounts != null && accounts.size() != 0) {
@@ -62,18 +62,18 @@ public class GoogleHelper {
 
                         this.login(n);
                         if (n.isValid()) {
-                            return;
+                            return true;
                         }
                     } catch (final Exception e) {
 
                         n.setValid(false);
-                        return;
+                        return false;
                     }
 
                 }
             }
         }
-        return;
+        return false;
     }
 
     private void postPageFollowRedirects(Browser br, String url, LinkedHashMap<String, String> post) throws IOException, InterruptedException {
