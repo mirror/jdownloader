@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2015  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -34,11 +34,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://s\\d+\\.alldebrid\\.com/dl/[a-z0-9]+/.+" }, flags = { 2 })
-public class AllDebridCom extends PluginForHost {
+public class AllDebridCom extends antiDDoSForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
@@ -62,10 +61,9 @@ public class AllDebridCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
-        prepBrowser(br);
         HashMap<String, String> accDetails = new HashMap<String, String>();
         AccountInfo ac = new AccountInfo();
-        br.getPage("https://www.alldebrid.com/api.php?action=info_user&login=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
+        getPage("https://www.alldebrid.com/api.php?action=info_user&login=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
         handleErrors();
 
         /* parse api response in easy2handle hashmap */
@@ -78,7 +76,7 @@ public class AllDebridCom extends PluginForHost {
         String type = accDetails.get("type");
         if ("premium".equals(type)) {
             /* only platinium and premium support */
-            br.getPage("https://www.alldebrid.com/api.php?action=get_host");
+            getPage("https://www.alldebrid.com/api.php?action=get_host");
             String hoster[] = br.toString().split(",\\s*[\r\n]{1,2}\\s*");
             if (hoster != null) {
                 /* workaround for buggy getHost call */
@@ -241,7 +239,6 @@ public class AllDebridCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         setConstants(account, link);
-        prepBrowser(br);
 
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
@@ -263,8 +260,8 @@ public class AllDebridCom extends PluginForHost {
 
         String host_downloadlink = link.getDownloadURL();
         /* here we can get a 503 error page, which causes an exception */
-        final String genlink = this.br.getPage("https://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink) + "&view=1");
-
+        getPage("https://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink) + "&view=1");
+        final String genlink = br.toString();
         if (genlink == null || !genlink.matches("https?://.+")) {
             logger.severe("Error: " + genlink);
             handleErrors();
@@ -273,14 +270,14 @@ public class AllDebridCom extends PluginForHost {
                 tempUnavailableHoster(4 * 60 * 60 * 1000l);
             }
             updatestatuscode();
-            handleAPIErrors(this.br);
+            handleAPIErrors(br);
         }
         handleDL(account, link, genlink);
     }
 
-    private Browser prepBrowser(Browser prepBr) {
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
         // define custom browser headers and language settings.
-        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         prepBr.getHeaders().put("User-Agent", "JDownloader");
         prepBr.setCustomCharset("utf-8");
         prepBr.setFollowRedirects(true);
@@ -291,7 +288,7 @@ public class AllDebridCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink dl) throws PluginException, IOException {
         setConstants(null, dl);
-        prepBrowser(br);
+        prepBrowser(br, dl.getDownloadURL());
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dl.getDownloadURL());
@@ -317,20 +314,6 @@ public class AllDebridCom extends PluginForHost {
         }
     }
 
-    private String getAPISafe(final String accesslink) throws IOException, PluginException {
-        br.getPage(accesslink);
-        updatestatuscode();
-        handleAPIErrors(this.br);
-        return this.br.toString();
-    }
-
-    private String postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
-        br.postPage(accesslink, postdata);
-        updatestatuscode();
-        handleAPIErrors(this.br);
-        return this.br.toString();
-    }
-
     /**
      * 0 = everything ok, 1-99 = "error"-errors, 100-199 = other errors
      */
@@ -345,7 +328,7 @@ public class AllDebridCom extends PluginForHost {
                 statuscode = 666;
             }
         } else {
-            error = this.br.getRegex("<span style=\\'color:#a00;\\'>(.*?)</span>").getMatch(0);
+            error = br.getRegex("<span style='color:#a00;'>(.*?)</span>").getMatch(0);
             if (error == null) {
                 /* No way to tell that something unpredictable happened here --> status should be fine. */
                 statuscode = 0;
@@ -441,26 +424,6 @@ public class AllDebridCom extends PluginForHost {
     private void setConstants(final Account acc, final DownloadLink dl) {
         this.currAcc = acc;
         this.currDownloadLink = dl;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override
