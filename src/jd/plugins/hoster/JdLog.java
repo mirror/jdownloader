@@ -36,8 +36,9 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision: 28806 $", interfaceVersion = 3, names = { "jdlog" }, urls = { "jdlog://(\\d+)" }, flags = { 0 })
 public class JdLog extends PluginForHost {
 
-    private String dllink = null;
-    private String uid    = null;
+    private String  dllink     = null;
+    private String  uid        = null;
+    private boolean isNewLogin = false; ;
 
     @Override
     public String getAGBLink() {
@@ -76,7 +77,9 @@ public class JdLog extends PluginForHost {
         if (dl.getConnection().getResponseCode() == 401) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
         }
-        HTACCESSController.getInstance().addValidatedAuthentication(dllink, basicauthInfo[1], basicauthInfo[2]);
+        if (isNewLogin) {
+            HTACCESSController.getInstance().addValidatedAuthentication(dllink, basicauthInfo[1], basicauthInfo[2]);
+        }
         org.jdownloader.auth.AuthenticationController.getInstance().validate(new org.jdownloader.auth.BasicAuth(basicauthInfo[1], basicauthInfo[2]), downloadLink.getDownloadURL());
         dl.startDownload();
     }
@@ -85,6 +88,7 @@ public class JdLog extends PluginForHost {
         org.jdownloader.auth.Login logins = org.jdownloader.auth.AuthenticationController.getInstance().getBestLogin(dllink);
         if (logins == null) {
             logins = requestLogins(org.jdownloader.translate._JDT._.DirectHTTP_getBasicAuth_message(), link);
+            isNewLogin = true;
         }
         return new String[] { logins.toBasicAuth(), logins.getUsername(), logins.getPassword() };
     }
