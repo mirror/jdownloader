@@ -231,9 +231,10 @@ public class BrowserSolverService extends AbstractSolverService {
             rcBr.setCookie("http://google.com", "SID", getInstance().getConfig().getGoogleComCookieValueSID());
             rcBr.setCookie("http://google.com", "HSID", getInstance().getConfig().getGoogleComCookieValueHSID());
         } else {
+
             GoogleHelper helper = new GoogleHelper(rcBr);
             helper.setCacheEnabled(true);
-            helper.login();
+            helper.login("google.com (Recaptcha)");
         }
 
     }

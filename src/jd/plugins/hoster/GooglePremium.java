@@ -13,7 +13,7 @@ import jd.plugins.components.GoogleHelper;
 
 import org.appwork.exceptions.WTFException;
 
-@HostPlugin(revision = "$Revision: 29935 $", interfaceVersion = 3, names = { "google.com" }, urls = { "google://.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 29935 $", interfaceVersion = 3, names = { "google.com (Recaptcha)" }, urls = { "google://.+" }, flags = { 2 })
 public class GooglePremium extends PluginForHost {
 
     @Override

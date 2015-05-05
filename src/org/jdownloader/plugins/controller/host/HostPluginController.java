@@ -46,7 +46,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
 
     /**
      * get the only existing instance of HostPluginController. This is a singleton
-     *
+     * 
      * @return
      */
     public static HostPluginController getInstance() {
@@ -256,6 +256,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
     private List<LazyHostPlugin> update(LogSource logger, final List<LazyHostPlugin> updateCache, final AtomicLong lastFolderModification) throws Exception {
         final List<LazyHostPlugin> retList = new ArrayList<LazyHostPlugin>();
         for (PluginInfo<PluginForHost> pluginInfo : scan(logger, "jd/plugins/hoster", updateCache, lastFolderModification)) {
+
             if (pluginInfo.getLazyPlugin() != null) {
                 final LazyHostPlugin plugin = (LazyHostPlugin) pluginInfo.getLazyPlugin();
                 retList.add(plugin);

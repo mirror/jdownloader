@@ -73,7 +73,18 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
 
     public static DomainInfo getInstance(String tld) {
         if (tld != null) {
-            final String lcaseTld = tld.toLowerCase(Locale.ENGLISH);
+            String lcaseTld = tld.toLowerCase(Locale.ENGLISH);
+            int index = lcaseTld.indexOf(" ");
+            if (index > 0) {
+                // for examle recaptcha.com (google)
+                lcaseTld = lcaseTld.substring(0, index);
+            }
+
+            index = lcaseTld.indexOf("/");
+            if (index > 0) {
+                // for examle recaptcha.com/bla
+                lcaseTld = lcaseTld.substring(0, index);
+            }
             synchronized (CACHE) {
                 DomainInfo ret = null;
                 WeakReference<DomainInfo> domainInfo = CACHE.get(lcaseTld);
