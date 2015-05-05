@@ -16,17 +16,19 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -36,12 +38,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "music.163.com" }, urls = { "http://(www\\.)?music\\.163\\.com/(#/)?song\\?id=\\d+" }, flags = { 2 })
+import org.appwork.utils.formatter.TimeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "music.163.com" }, urls = { "http://(www\\.)?music\\.163\\.com/(?:#/)?(?:song|mv)\\?id=\\d+|decrypted://music\\.163\\.comcover\\d+" }, flags = { 2 })
 public class Music163Com extends PluginForHost {
 
+    @SuppressWarnings("deprecation")
     public Music163Com(PluginWrapper wrapper) {
         super(wrapper);
-        // setConfigElements();
+        setConfigElements();
     }
 
     @Override
@@ -51,11 +56,17 @@ public class Music163Com extends PluginForHost {
 
     /** Settings stuff */
     private static final String  FAST_LINKCHECK    = "FAST_LINKCHECK";
+    private static final String  GRAB_COVER        = "GRAB_COVER";
+
+    private static final String  TYPE_MUSIC        = "http://(www\\.)?music\\.163\\.com/(?:#/)?song\\?id=\\d+";
+    private static final String  TYPE_VIDEO        = "http://(www\\.)?music\\.163\\.com/(?:#/)?mv\\?id=\\d+";
+    private static final String  TYPE_COVER        = "decrypted://music\\.163\\.comcover\\d+";
 
     private static final String  dlurl_format      = "http://m1.music.126.net/%s/%s.mp3";
 
     /* Qualities from highest to lowest in KB/s: 320, 160, 96 hMusic is officially only available for logged-in users! */
-    public static final String[] qualities         = { "hMusic", "mMusic", "lMusic", "bMusic" };
+    public static final String[] audio_qualities   = { "hMusic", "mMusic", "lMusic", "bMusic" };
+    public static final String[] video_qualities   = { "1080", "720", "360", "240" };
     public static final String   dateformat_en     = "yyyy-MM-dd";
 
     /* Connection stuff */
@@ -77,67 +88,115 @@ public class Music163Com extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         /* Tracknumber can only be given by decrypter */
         final String tracknumber = link.getStringProperty("trachnumber", null);
+        /* Decrypters can also set final filenames */
+        String filename = link.getStringProperty("directfilename", null);
+        /*
+         * First try to get publishedTimestamp from decrypter as an artist can have multiple albums with different timestamps but if the
+         * user added an album we know which timestamp is definitly the correct one!
+         */
         long publishedTimestamp = link.getLongProperty("publishedTimestamp", 0);
         String formattedDate = null;
+        String artist = null;
         long filesize = 0;
         String ext = null;
         DLLINK = null;
         this.setBrowserExclusive();
-        final String linkid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-        link.setLinkID(linkid);
+        LinkedHashMap<String, Object> entries = null;
         prepareAPI(this.br);
-        br.getPage("http://music.163.com/api/song/detail/?id=" + linkid + "&ids=%5B" + linkid + "%5D");
-        /* Example for music videos: */
-        // br.getPage("http://music.163.com/api/mv/detail?id=319104&type=mp4");
-        if (br.getHttpConnection().getResponseCode() != 200) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        final ArrayList<Object> songs = (ArrayList) entries.get("songs");
-        entries = (LinkedHashMap<String, Object>) songs.get(0);
-        final ArrayList<Object> artists = (ArrayList) entries.get("artists");
-        final LinkedHashMap<String, Object> album_info = (LinkedHashMap<String, Object>) entries.get("album");
-        final LinkedHashMap<String, Object> artist_info = (LinkedHashMap<String, Object>) artists.get(0);
-        /* Now find the highest quality available */
-        for (final String quality : qualities) {
-            final Object musicO = entries.get(quality);
-            if (musicO != null) {
-                final LinkedHashMap<String, Object> musicmap = (LinkedHashMap<String, Object>) musicO;
-                ext = (String) musicmap.get("extension");
-                final String dfsid = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(musicmap.get("dfsId"), -1));
-                final String encrypted_dfsid = encrypt_dfsId(dfsid);
-                filesize = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(musicmap.get("size"), -1);
-                /*
-                 * bMusic (and often/alyways) lMusic == mp3Url - in theory we don't have to generate the final downloadlink for these cases
-                 * as it is already given.
-                 */
-                // DLLINK = (String) entries.get("mp3Url");
-                DLLINK = String.format(dlurl_format, encrypted_dfsid, dfsid);
-                break;
+
+        if (link.getDownloadURL().matches(TYPE_COVER)) {
+            DLLINK = link.getStringProperty("directlink", null);
+            filesize = getFilesizeFromHeader(DLLINK);
+        } else if (link.getDownloadURL().matches(TYPE_VIDEO)) {
+            link.setLinkID(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+            br.getPage("http://music.163.com/api/mv/detail?id=" + link.getLinkID() + "&type=mp4");
+            if (br.getHttpConnection().getResponseCode() != 200) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            entries = (LinkedHashMap<String, Object>) entries.get("data");
+            filename = (String) entries.get("artistName");
+
+            final String publishDate = (String) entries.get("publishTime");
+            if (publishDate != null) {
+                publishedTimestamp = TimeFormatter.getMilliSeconds(publishDate, "yyyy-MM-dd", Locale.ENGLISH);
+                if (publishedTimestamp > 0) {
+                    final SimpleDateFormat formatter = new SimpleDateFormat(jd.plugins.hoster.Music163Com.dateformat_en);
+                    formattedDate = formatter.format(publishedTimestamp);
+                }
+            }
+            entries = (LinkedHashMap<String, Object>) entries.get("brs");
+            for (final String quality : video_qualities) {
+                DLLINK = (String) entries.get(quality);
+                if (DLLINK != null) {
+                    break;
+                }
+            }
+            if (filename == null || DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            filesize = getFilesizeFromHeader(DLLINK);
+
+            ext = "mp4";
+            filename += "." + ext;
+            if (tracknumber != null) {
+                filename = tracknumber + "." + filename;
+            }
+        } else {
+            link.setLinkID(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+            br.getPage("http://music.163.com/api/song/detail/?id=" + link.getLinkID() + "&ids=%5B" + link.getLinkID() + "%5D");
+            if (br.getHttpConnection().getResponseCode() != 200) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final ArrayList<Object> songs = (ArrayList) entries.get("songs");
+            entries = (LinkedHashMap<String, Object>) songs.get(0);
+            final ArrayList<Object> artists = (ArrayList) entries.get("artists");
+            final LinkedHashMap<String, Object> album_info = (LinkedHashMap<String, Object>) entries.get("album");
+            final LinkedHashMap<String, Object> artist_info = (LinkedHashMap<String, Object>) artists.get(0);
+            /* Now find the highest quality available */
+            for (final String quality : audio_qualities) {
+                final Object musicO = entries.get(quality);
+                if (musicO != null) {
+                    final LinkedHashMap<String, Object> musicmap = (LinkedHashMap<String, Object>) musicO;
+                    ext = (String) musicmap.get("extension");
+                    final String dfsid = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(musicmap.get("dfsId"), -1));
+                    final String encrypted_dfsid = encrypt_dfsId(dfsid);
+                    filesize = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(musicmap.get("size"), -1);
+                    /*
+                     * bMusic (and often/alyways) lMusic == mp3Url - in theory we don't have to generate the final downloadlink for these
+                     * cases as it is already given.
+                     */
+                    // DLLINK = (String) entries.get("mp3Url");
+                    DLLINK = String.format(dlurl_format, encrypted_dfsid, dfsid);
+                    break;
+                }
+            }
+            if (filename == null) {
+                artist = (String) artist_info.get("name");
+                final String name_album = (String) album_info.get("name");
+                final String songname = (String) entries.get("name");
+                if (publishedTimestamp < 1) {
+                    publishedTimestamp = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(album_info.get("publishTime"), 0);
+                }
+                if (publishedTimestamp > 0) {
+                    final SimpleDateFormat formatter = new SimpleDateFormat(jd.plugins.hoster.Music163Com.dateformat_en);
+                    formattedDate = formatter.format(publishedTimestamp);
+                }
+                if (artist == null || name_album == null || songname == null || ext == null || filesize == -1 || DLLINK == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                filename = artist + " - " + name_album + " - " + songname;
+            }
+            filename += "." + ext;
+            if (tracknumber != null) {
+                filename = tracknumber + "." + filename;
+            }
+            if (formattedDate != null) {
+                filename = formattedDate + "_" + filename;
             }
         }
-
-        final String name_artist = (String) artist_info.get("name");
-        final String name_album = (String) album_info.get("name");
-        final String songname = (String) entries.get("name");
-        if (publishedTimestamp == 0) {
-            publishedTimestamp = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(album_info.get("publishTime"), 0);
-        }
-        if (publishedTimestamp > 0) {
-            final SimpleDateFormat formatter = new SimpleDateFormat(jd.plugins.hoster.Music163Com.dateformat_en);
-            formattedDate = formatter.format(publishedTimestamp);
-        }
-        if (name_artist == null || name_album == null || songname == null || ext == null || filesize == -1 || DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String filename = name_artist + " - " + name_album + " - " + songname + "." + ext;
-        if (tracknumber != null) {
-            filename = tracknumber + "." + filename;
-        }
-        if (formattedDate != null) {
-            filename = formattedDate + "_" + filename;
-        }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        link.setFinalFileName(filename);
         link.setDownloadSize(filesize);
         return AvailableStatus.TRUE;
     }
@@ -148,9 +207,9 @@ public class Music163Com extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "deprecation" })
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (downloadLink.getComment() == null) {
+        if (downloadLink.getComment() == null && downloadLink.getDownloadURL().matches(TYPE_MUSIC)) {
             /* Get- and set lyrics if possible */
             try {
                 br.getPage("http://music.163.com/api/song/lyric?id=" + downloadLink.getLinkID() + "&lv=-1&tv=-1&csrf_token=");
@@ -178,8 +237,27 @@ public class Music163Com extends PluginForHost {
         dl.startDownload();
     }
 
+    private long getFilesizeFromHeader(final String url) throws IOException, PluginException {
+        URLConnectionAdapter con = null;
+        long filesize = 0;
+        try {
+            con = br.openHeadConnection(url);
+            if (!con.getContentType().contains("html")) {
+                filesize = con.getLongContentLength();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        return filesize;
+    }
+
     /*
-     * Thx https://github.com/sk1418/zhuaxia/blob/master/zhuaxia/netease.py and
+     * Thx http://moonlib.com/606.html , https://github.com/sk1418/zhuaxia/blob/master/zhuaxia/netease.py and
      * https://github.com/PeterDing/iScript/blob/master/music.163.com.py Additional thanks to user "cryzed" :)
      */
     private String encrypt_dfsId(final String dfsid) throws NoSuchAlgorithmException {
@@ -216,7 +294,8 @@ public class Music163Com extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.Music163Com.FastLinkcheck", "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.Music163Com.FastLinkcheck", "Enable fast linkcheck for cover-urls?\r\nNOTE: If enabled, before mentioned linktypes will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB_COVER, JDL.L("plugins.hoster.Music163Com.AlbumsGrabCover", "For albums: Grab cover?")).setDefaultValue(false));
     }
 
     @Override
