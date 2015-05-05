@@ -28,6 +28,8 @@ import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -58,15 +60,20 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" }, flags = { 32 })
 public class MediafireCom extends PluginForHost {
 
-    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean           ACCOUNT_PREMIUM_RESUME          = true;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
+
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS       = 10;
+
+    /** Settings stuff */
+    private static final String            FREE_FORCE_RECONNECT_ON_CAPTCHA = "FREE_FORCE_RECONNECT_ON_CAPTCHA";
 
     /** start of random agents **/
     // A alternative solution for providing random user agents.
     // last updated: 4-09-2014
     // raztoki
-    private static final ArrayList<String> stringAgent                  = new ArrayList<String>();
+    private static final ArrayList<String> stringAgent                     = new ArrayList<String>();
 
     /**
      * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
@@ -407,10 +414,11 @@ public class MediafireCom extends PluginForHost {
     public MediafireCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(5000);
-        this.enablePremium("https://www.mediafire.com/register.php");
-
+        this.enablePremium("https://www.mediafire.com/upgrade/");
+        setConfigElements();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
         final String id = new Regex(link.getDownloadURL(), "mediafire\\.com/download/([a-z0-9]+)").getMatch(0);
@@ -420,6 +428,7 @@ public class MediafireCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("http://media", "http://www.media"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         // old setter - remove after next stable update 20130918
@@ -439,8 +448,8 @@ public class MediafireCom extends PluginForHost {
             ai.setStatus("Registered (free) User");
             ai.setUnlimitedTraffic();
             try {
-                maxPrem.set(10);
-                account.setMaxSimultanDownloads(10);
+                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
+                account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
@@ -460,8 +469,8 @@ public class MediafireCom extends PluginForHost {
             }
             ai.setStatus("Premium User");
             try {
-                maxPrem.set(20);
-                account.setMaxSimultanDownloads(20);
+                maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+                account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
@@ -535,6 +544,7 @@ public class MediafireCom extends PluginForHost {
                     final String freeArea = br.getRegex("class=\"nonOwner nonpro_adslayout dl\\-page dlCaptchaActive\"(.*?)class=\"captchaPromo\"").getMatch(0);
                     if (freeArea != null && freeArea.contains("solvemedia.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
+                        handleExtraReconnectSettingOnCaptcha(account);
                         final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                         final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
                         final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
@@ -549,6 +559,7 @@ public class MediafireCom extends PluginForHost {
                         }
                     } else if (freeArea != null && new Regex(freeArea, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                         logger.info("Detected captcha method \"Re Captcha\" for this host");
+                        handleExtraReconnectSettingOnCaptcha(account);
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                         final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
                         String id = new Regex(freeArea, "challenge\\?k=(.+?)\"").getMatch(0);
@@ -590,6 +601,7 @@ public class MediafireCom extends PluginForHost {
                             }
                         }
                     } else if (freeArea != null && freeArea.contains("g-recaptcha-response")) {
+                        handleExtraReconnectSettingOnCaptcha(account);
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                         form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                         br.submitForm(form);
@@ -676,6 +688,18 @@ public class MediafireCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403, ", 30 * 60 * 1000l);
         } else if (dl.getConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404, ", 30 * 60 * 1000l);
+        }
+    }
+
+    private void handleExtraReconnectSettingOnCaptcha(final Account account) throws PluginException {
+        if (this.getPluginConfig().getBooleanProperty(FREE_FORCE_RECONNECT_ON_CAPTCHA, false)) {
+            if (account != null) {
+                logger.info("Captcha reconnect setting active & free account used --> TEMPORARILY_UNAVAILABLE");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Waiting some time to avoid captcha in free account mode", 30 * 60 * 1000l);
+            } else {
+                logger.info("Captcha reconnect setting active & NO account used --> IP_BLOCKED");
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Reconnecting or waiting some time to avoid captcha in free mode", 30 * 60 * 1000l);
+            }
         }
     }
 
@@ -1111,6 +1135,15 @@ public class MediafireCom extends PluginForHost {
 
     private boolean isValidMailAdress(final String value) {
         return value.matches(".+@.+");
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's mediafire.com plugin helps downloading audio files from mediafire.com.";
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FREE_FORCE_RECONNECT_ON_CAPTCHA, JDL.L("plugins.hoster.MediafireCom.FreeForceReconnectOnCaptcha", "Free mode: Reconnect if captcha input needed?\r\n<html><p style=\"color:#F62817\"><b>WARNING: This setting can prevent captchas but it can also lead to an infinite reconnect loop!</b></p></html>")).setDefaultValue(false));
     }
 
     @Override

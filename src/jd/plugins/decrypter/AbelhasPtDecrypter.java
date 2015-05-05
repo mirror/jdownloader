@@ -25,9 +25,11 @@ import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -46,9 +48,11 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
         return ret;
     }
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        String passCode = null;
         try {
             br.getPage(parameter);
         } catch (final BrowserException e) {
@@ -72,6 +76,32 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            br.getPage(parameter);
+        }
+
+        final String chomikid = br.getRegex("type=\"hidden\" name=\"ChomikId\" value=\"(\\d+)\"").getMatch(0);
+        final String folderid = br.getRegex("name=\"FolderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+        final String reqtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (br.containsHTML("class=\"LoginToFolderForm\"")) {
+            final String foldername = br.getRegex("id=\"FolderName\" name=\"FolderName\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+            if (reqtoken == null || chomikid == null || folderid == null || foldername == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            boolean success = false;
+            for (int i = 1; i <= 3; i++) {
+                passCode = Plugin.getUserInput("Password?", param);
+                br.postPageRaw("http://abelhas.pt/action/Files/LoginToFolder", "Remember=true&Remember=false&ChomikId=" + chomikid + "&FolderId=" + folderid + "&FolderName=" + Encoding.urlEncode(foldername) + "&Password=" + Encoding.urlEncode(passCode) + "&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
+                if (br.containsHTML("\"IsSuccess\":false")) {
+                    continue;
+                }
+                success = true;
+                break;
+            }
+            if (!success) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+            /* We don't want to work with the encoded json bla html response */
             br.getPage(parameter);
         }
 
@@ -119,19 +149,6 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
             dl.setProperty("offline", true);
             decryptedLinks.add(dl);
             return decryptedLinks;
-        } else if (br.containsHTML("id=\"ProtectedFolderChomikLogin\"")) {
-            /* Password protected link --> Not yet supported --> Offline */
-            final DownloadLink dl = createDownloadlink("http://abelhasdecrypted.pt/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-            try {
-                dl.setContentUrl(param.getCryptedUrl());
-            } catch (Throwable e1) {
-                // jd09
-            }
-            dl.setFinalFileName(parameter);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
         }
 
         /* Differ between single links and folders */
@@ -155,6 +172,7 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
             dl.setProperty("plain_fid", fid);
             dl.setProperty("mainlink", parameter);
             dl.setProperty("LINKDUPEID", fid + filename);
+            dl.setProperty("pass", passCode);
 
             dl.setName(filename);
             dl.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -245,6 +263,7 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
                     dl.setProperty("plain_fid", fid);
                     dl.setProperty("mainlink", mainlink);
                     dl.setProperty("LINKDUPEID", fid + filename);
+                    dl.setProperty("pass", passCode);
                     try {/* JD2 only */
                         dl.setContentUrl(mainlink);
                     } catch (Throwable e) {/* Stable */

@@ -63,14 +63,12 @@ public class DropmefilesCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("due to ending of the share period|class=\"fileCount\">0</div>") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"type\">[A-Za-z0-9]+</div>[^<>]+</div>([^<>\"]*?)</li>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("").getMatch(0);
-        }
         String filesize = br.getRegex("class=\"fileSize\">([^<>\"]*?)<").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
