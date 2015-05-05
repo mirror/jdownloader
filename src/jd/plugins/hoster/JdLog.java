@@ -80,7 +80,7 @@ public class JdLog extends PluginForHost {
         if (isNewLogin) {
             HTACCESSController.getInstance().addValidatedAuthentication(dllink, basicauthInfo[1], basicauthInfo[2]);
         }
-        org.jdownloader.auth.AuthenticationController.getInstance().validate(new org.jdownloader.auth.BasicAuth(basicauthInfo[1], basicauthInfo[2]), downloadLink.getDownloadURL());
+        org.jdownloader.auth.AuthenticationController.getInstance().validate(new org.jdownloader.auth.BasicAuth(basicauthInfo[1], basicauthInfo[2]), dllink);
         dl.startDownload();
     }
 
