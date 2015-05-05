@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -43,6 +44,7 @@ public class Music163Com extends PluginForDecrypt {
 
     /** Settings stuff */
     private static final String FAST_LINKCHECK    = "FAST_LINKCHECK";
+    private static final String GRAB_COVER        = "GRAB_COVER";
 
     /* Other possible API calls: http://music.163.com/api/playlist/detail?id=%s http://music.163.com/api/artist/%s */
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
@@ -55,7 +57,7 @@ public class Music163Com extends PluginForDecrypt {
         String formattedDate = null;
         final SubConfiguration cfg = SubConfiguration.getConfig("music.163.com");
         final boolean fastcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
-        final String[] qualities = jd.plugins.hoster.Music163Com.qualities;
+        final String[] qualities = jd.plugins.hoster.Music163Com.audio_qualities;
         LinkedHashMap<String, Object> entries = null;
         ArrayList<Object> resourcelist = null;
         jd.plugins.hoster.Music163Com.prepareAPI(this.br);
@@ -81,6 +83,7 @@ public class Music163Com extends PluginForDecrypt {
             }
             entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             entries = (LinkedHashMap<String, Object>) entries.get("album");
+            final String coverurl = (String) entries.get("picUrl");
             final long publishedTimestamp = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("publishTime"), 0);
             LinkedHashMap<String, Object> artistinfo = (LinkedHashMap<String, Object>) entries.get("artist");
             resourcelist = (ArrayList) entries.get("songs");
@@ -120,14 +123,33 @@ public class Music163Com extends PluginForDecrypt {
                 }
                 dl.setLinkID(fid);
                 dl.setFinalFileName(filename);
+                dl.setProperty("directfilename", filename);
                 dl.setProperty("trachnumber", Integer.toString(counter));
-                // if (fastcheck) {
-                // dl.setAvailable(true);
-                // }
                 dl.setAvailable(true);
                 dl.setDownloadSize(filesize);
                 decryptedLinks.add(dl);
                 counter++;
+            }
+            if (cfg.getBooleanProperty(GRAB_COVER, false) && coverurl != null) {
+                final DownloadLink dlcover = createDownloadlink("decrypted://music.163.comcover" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                String filenamecover = fpName;
+                if (formattedDate != null) {
+                    filenamecover = formattedDate + "_" + filenamecover;
+                }
+                String ext = coverurl.substring(coverurl.lastIndexOf("."));
+                if (ext.length() > 5) {
+                    ext = ".jpg";
+                }
+                filenamecover += ext;
+                if (fastcheck) {
+                    dlcover.setAvailable(true);
+                }
+                dlcover.setFinalFileName(filenamecover);
+                dlcover.setContentUrl(parameter);
+                dlcover.setProperty("directfilename", filenamecover);
+                dlcover.setProperty("mainlink", parameter);
+                dlcover.setProperty("directlink", coverurl);
+                decryptedLinks.add(dlcover);
             }
             if (br.getHttpConnection().getResponseCode() == 404) {
                 try {
