@@ -81,15 +81,17 @@ public class MinhatecaComBr extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            boolean success = false;
             for (int i = 1; i <= 3; i++) {
                 passCode = Plugin.getUserInput("Password?", param);
                 br.postPageRaw("http://minhateca.com.br/action/Files/LoginToFolder", "Remember=true&Remember=false&ChomikId=" + chomikid + "&FolderId=" + folderid + "&FolderName=" + Encoding.urlEncode(foldername) + "&Password=" + Encoding.urlEncode(passCode) + "&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
                 if (br.containsHTML("\"IsSuccess\":false")) {
                     continue;
                 }
+                success = true;
                 break;
             }
-            if (br.containsHTML("\"IsSuccess\":false")) {
+            if (!success) {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
             /* We don't want to work with the encoded json bla html response */

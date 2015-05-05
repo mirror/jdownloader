@@ -32,6 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -78,6 +79,7 @@ public class AbelhasPt extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        handlePWProtected(downloadLink);
         /* Free users can only download low quality streams */
         String dllink = br.getRegex("\"(http://(www\\.)?abelhas\\.pt/Video\\.ashx\\?e=[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
@@ -154,6 +156,7 @@ public class AbelhasPt extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -175,6 +178,7 @@ public class AbelhasPt extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getStringProperty("mainlink", null));
+        handlePWProtected(link);
         final String fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
         final String requestvtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (fileid == null || requestvtoken == null) {
@@ -215,6 +219,38 @@ public class AbelhasPt extends PluginForHost {
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
+    }
+
+    private void handlePWProtected(final DownloadLink dl) throws PluginException, IOException {
+        String passCode = dl.getStringProperty("pass", null);
+        if (br.containsHTML("class=\"LoginToFolderForm\"")) {
+            final String reqtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+            final String chomikid = br.getRegex("type=\"hidden\" name=\"ChomikId\" value=\"(\\d+)\"").getMatch(0);
+            final String folderid = br.getRegex("name=\"FolderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+            final String foldername = br.getRegex("id=\"FolderName\" name=\"FolderName\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+            if (reqtoken == null || chomikid == null || folderid == null || foldername == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            boolean success = false;
+            for (int i = 1; i <= 3; i++) {
+                if (passCode == null) {
+                    passCode = Plugin.getUserInput("Password?", dl);
+                }
+                br.postPageRaw("http://" + this.getHost() + "/action/Files/LoginToFolder", "Remember=true&Remember=false&ChomikId=" + chomikid + "&FolderId=" + folderid + "&FolderName=" + Encoding.urlEncode(foldername) + "&Password=" + Encoding.urlEncode(passCode) + "&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
+                if (br.containsHTML("\"IsSuccess\":false")) {
+                    passCode = null;
+                    dl.setProperty("pass", Property.NULL);
+                    continue;
+                }
+                success = true;
+                break;
+            }
+            if (!success) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            }
+            /* We don't want to work with the encoded json bla html response */
+            br.getPage(dl.getStringProperty("mainlink", null));
+        }
     }
 
     private void fixFilename(final DownloadLink downloadLink) {

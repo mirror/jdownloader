@@ -554,7 +554,7 @@ public class HighWayMe extends PluginForHost {
             case 6:
                 /* Invalid link --> Disable host */
                 statusMessage = "Invalid link";
-                tempUnavailableHoster(30 * 60 * 1000l);
+                tempUnavailableHoster(5 * 60 * 1000l);
             case 7:
                 statusMessage = "Undefined errorstate";
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Undefined errorstate");

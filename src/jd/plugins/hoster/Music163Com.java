@@ -171,6 +171,10 @@ public class Music163Com extends PluginForHost {
         }
         final byte[] md5bytes = MessageDigest.getInstance("MD5").digest(byte2);
         final String b64 = new sun.misc.BASE64Encoder().encode(md5bytes);
+        /*
+         * In the above linked pyton examples it seems like they remove the last character of the base64 String but it seems like this is
+         * not necessary.
+         */
         result = b64.replace("/", "_");
         result = result.replace("+", "-");
         return result;

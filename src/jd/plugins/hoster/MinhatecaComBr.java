@@ -113,7 +113,7 @@ public class MinhatecaComBr extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("http://minhateca.com.br/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(req_token));
+            br.postPage("http://" + this.getHost() + "/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(req_token));
             if (dllink == null) {
                 dllink = br.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
             }
@@ -275,19 +275,21 @@ public class MinhatecaComBr extends PluginForHost {
             if (reqtoken == null || chomikid == null || folderid == null || foldername == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            boolean success = false;
             for (int i = 1; i <= 3; i++) {
                 if (passCode == null) {
                     passCode = Plugin.getUserInput("Password?", dl);
                 }
-                br.postPageRaw("http://minhateca.com.br/action/Files/LoginToFolder", "Remember=true&Remember=false&ChomikId=" + chomikid + "&FolderId=" + folderid + "&FolderName=" + Encoding.urlEncode(foldername) + "&Password=" + Encoding.urlEncode(passCode) + "&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
+                br.postPageRaw("http://" + this.getHost() + "/action/Files/LoginToFolder", "Remember=true&Remember=false&ChomikId=" + chomikid + "&FolderId=" + folderid + "&FolderName=" + Encoding.urlEncode(foldername) + "&Password=" + Encoding.urlEncode(passCode) + "&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
                 if (br.containsHTML("\"IsSuccess\":false")) {
                     passCode = null;
                     dl.setProperty("pass", Property.NULL);
                     continue;
                 }
+                success = true;
                 break;
             }
-            if (br.containsHTML("\"IsSuccess\":false")) {
+            if (!success) {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
             /* We don't want to work with the encoded json bla html response */

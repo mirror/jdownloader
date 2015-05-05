@@ -56,18 +56,18 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.im" }, urls = { "https?://(www\\.)?uptobox\\.im/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileriio.com", "uptobox.im" }, urls = { "https?://(www\\.)?(uptobox\\.im|fileriio\\.com)/(embed\\-)?[a-z0-9]{12}", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2, 0 })
 public class UptoboxIm extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://uptobox.im";
+    private static final String            COOKIE_HOST                  = "http://fileriio.com";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(uptobox\\.im)";
+    private static final String            DOMAINS                      = "(uptobox\\.im|fileriio\\.com)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -82,14 +82,14 @@ public class UptoboxIm extends PluginForHost {
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = 0;
-    private static final int               FREE_MAXDOWNLOADS            = 20;
+    private static final int               FREE_MAXCHUNKS               = -2;
+    private static final int               FREE_MAXDOWNLOADS            = 1;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = -2;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
@@ -102,7 +102,7 @@ public class UptoboxIm extends PluginForHost {
     // XfileSharingProBasic Version 2.6.7.1
     // Tags: Script, template
     // mods:
-    // limit-info: no limits
+    // limit-info: free- and premium account untested, set FREE limits
     // protocol: no https
     // captchatype: null
     // other:
@@ -111,13 +111,23 @@ public class UptoboxIm extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/embed-", "/"));
+        link.setUrlDownload(link.getDownloadURL().replace("/embed-", "/").replace("uptobox.im/", "fileriio.com/"));
         /* link cleanup, but respect users protocol choosing or forced protocol */
         if (!SUPPORTSHTTPS) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
         } else if (SUPPORTSHTTPS && SUPPORTSHTTPS_FORCED) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
         }
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("uptobox.im".equals(getHost())) {
+            if (host == null || "uptobox.im".equals(host)) {
+                return "fileriio.com";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
