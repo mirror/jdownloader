@@ -203,7 +203,7 @@ public class FavIcons {
 
                     public void run() {
                         final LazyHostPlugin existingHostPlugin = HostPluginController.getInstance().get(host);
-                        if (existingHostPlugin != null && "jd.plugins.hoster.Offline".equals(existingHostPlugin.getClassName())) {
+                        if (existingHostPlugin != null && ("jd.plugins.hoster.Offline".equals(existingHostPlugin.getClassName()) || "jd.plugins.hoster.JdLog".equals(existingHostPlugin.getClassName()))) {
                             synchronized (LOCK) {
                                 QUEUE.remove(host);
                                 ImageIcon failedIcon = FAILED_ICONS.get(host);
