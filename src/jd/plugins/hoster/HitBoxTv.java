@@ -158,6 +158,9 @@ public class HitBoxTv extends PluginForHost {
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("X-Requested-With", "ShockwaveFlash/17.0.0.169");
             br.getHeaders().put("Referer", downloadLink.getContentUrl());
+            // without this it will fail.
+            br.getPage(url);
+            url = br.getRegex("https?://[^\r\n]+\\.m3u8").getMatch(-1);
             HLSDownloader downloader = new HLSDownloader(downloadLink, br, url);
             StreamInfo streamInfo = downloader.getProbe();
             if (streamInfo == null) {
