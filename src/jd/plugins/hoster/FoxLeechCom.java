@@ -43,7 +43,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "foxleech.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
-public class FoxLeechCom extends PluginForHost {
+public class FoxLeechCom extends antiDDoSForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
@@ -324,6 +324,8 @@ public class FoxLeechCom extends PluginForHost {
             if (error.contains("You have reached the daily limit for")) {
                 /* Daily limit of a single host is reached */
                 tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
+            } else if (error.equals("You don't have enough bandwidth to download this link")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "not enough quota left to download this link", 30 * 60 * 1000l);
             }
             handlePluginBroken(acc, link, "error_unknown", 10);
         }
