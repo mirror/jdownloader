@@ -125,9 +125,26 @@ public class DownMastersCom extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
-        String user = Encoding.urlEncode(acc.getUser());
-        String pw = Encoding.urlEncode(acc.getPass());
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
+        String user = Encoding.urlEncode(account.getUser());
+        String pw = Encoding.urlEncode(account.getPass());
         String url = Encoding.urlEncode(link.getDownloadURL());
         int maxChunks = 0;
         if (link.getBooleanProperty(DownMastersCom.NOCHUNKS, false)) {
@@ -138,7 +155,7 @@ public class DownMastersCom extends PluginForHost {
 
         if (br.containsHTML("No htmlCode read")) {
             logger.info("Received empty page from API, deactivating host for 3 hours");
-            tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
+            tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
         }
 
         final int status = Integer.parseInt(getJson("status"));
@@ -157,10 +174,10 @@ public class DownMastersCom extends PluginForHost {
             }
         case 2:
             logger.info("Bandwidth limit for the host is reached, retrying later...");
-            tempUnavailableHoster(acc, link, 2 * 60 * 60 * 1000l);
+            tempUnavailableHoster(account, link, 2 * 60 * 60 * 1000l);
         case 3:
             logger.info("Host is down, retrying later...");
-            tempUnavailableHoster(acc, link, 10 * 60 * 1000l);
+            tempUnavailableHoster(account, link, 10 * 60 * 1000l);
         case 4:
             logger.info("This is no premium account!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -178,7 +195,7 @@ public class DownMastersCom extends PluginForHost {
             // Actually I don't know what this error means but if it happens, it
             // happens for all links of a host->Disable them!
             logger.info("Dedicated server detected, retrying later...");
-            tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
+            tempUnavailableHoster(account, link, 30 * 60 * 1000l);
         }
 
         if (br.containsHTML("No htmlCode read")) {
@@ -256,20 +273,6 @@ public class DownMastersCom extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         return true;
     }
 

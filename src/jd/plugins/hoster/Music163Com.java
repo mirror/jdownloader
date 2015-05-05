@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -49,6 +51,8 @@ public class Music163Com extends PluginForHost {
     /** Settings stuff */
     private static final String  FAST_LINKCHECK    = "FAST_LINKCHECK";
 
+    private static final String  dlurl_format      = "http://m1.music.126.net/%s/%s.mp3";
+
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
@@ -66,6 +70,8 @@ public class Music163Com extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        long filesize = 0;
+        String ext = null;
         DLLINK = null;
         this.setBrowserExclusive();
         final String linkid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
@@ -80,18 +86,33 @@ public class Music163Com extends PluginForHost {
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         final ArrayList<Object> songs = (ArrayList) entries.get("songs");
         entries = (LinkedHashMap<String, Object>) songs.get(0);
+        final Object hMusico = entries.get("hMusic");
         final ArrayList<Object> artists = (ArrayList) entries.get("artists");
         final LinkedHashMap<String, Object> album_info = (LinkedHashMap<String, Object>) entries.get("album");
         final LinkedHashMap<String, Object> artist_info = (LinkedHashMap<String, Object>) artists.get(0);
-        final LinkedHashMap<String, Object> bMusic = (LinkedHashMap<String, Object>) entries.get("bMusic");
+        if (hMusico != null) {
+            /* HQ (usually 320 KB/s) [officially] only available for registered users */
+            final LinkedHashMap<String, Object> hMusic = (LinkedHashMap<String, Object>) hMusico;
+            ext = (String) hMusic.get("extension") + "_HQ";
+            final String dfsid = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(hMusic.get("dfsId"), -1));
+            final String encrypted_dfsid = encrypt_dfsId(dfsid);
+            filesize = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(hMusic.get("size"), -1);
+            DLLINK = String.format(dlurl_format, encrypted_dfsid, dfsid);
+        } else {
+            /* LQ */
+            final LinkedHashMap<String, Object> bMusic = (LinkedHashMap<String, Object>) entries.get("bMusic");
+            ext = (String) bMusic.get("extension");
+            filesize = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(bMusic.get("size"), -1);
+            /* We can generate LQ downloadlinks the same way as HQ but why should we - the final URL is already in the json source :) */
+            // final String dfsid = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(bMusic.get("dfsId"), -1));
+            // final String encrypted_dfsid = encrypt_dfsId(dfsid);
+            DLLINK = (String) entries.get("mp3Url");
+        }
 
         final String name_artist = (String) artist_info.get("name");
         final String name_album = (String) album_info.get("name");
         final String songname = (String) entries.get("name");
-        final String ext = (String) bMusic.get("extension");
         final String filename = name_artist + " - " + name_album + " - " + songname + "." + ext;
-        final long filesize = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(bMusic.get("size"), -1);
-        DLLINK = (String) entries.get("mp3Url");
         if (name_artist == null || name_album == null || songname == null || ext == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -136,42 +157,31 @@ public class Music163Com extends PluginForHost {
         dl.startDownload();
     }
 
-    // private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-    // String dllink = downloadLink.getStringProperty(property);
-    // if (dllink != null) {
-    // URLConnectionAdapter con = null;
-    // try {
-    // final Browser br2 = br.cloneBrowser();
-    // if (isJDStable()) {
-    // con = br2.openGetConnection(dllink);
-    // } else {
-    // con = br2.openHeadConnection(dllink);
-    // }
-    // if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // }
-    // } catch (final Exception e) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // } finally {
-    // try {
-    // con.disconnect();
-    // } catch (final Throwable e) {
-    // }
-    // }
-    // }
-    // return dllink;
-    // }
-
-    // private boolean isJDStable() {
-    // return System.getProperty("jd.revision.jdownloaderrevision") == null;
-    // }
+    /*
+     * Thx https://github.com/sk1418/zhuaxia/blob/master/zhuaxia/netease.py and
+     * https://github.com/PeterDing/iScript/blob/master/music.163.com.py Additional thanks to user "cryzed" :)
+     */
+    private String encrypt_dfsId(final String dfsid) throws NoSuchAlgorithmException {
+        String result = "";
+        byte[] byte1 = "3go8&$8*3*3h0k(2)2".getBytes();
+        byte[] byte2 = dfsid.getBytes();
+        final int byte1_len = byte1.length;
+        for (int i = 0; i < byte2.length; i++) {
+            byte2[i] = (byte) (byte2[i] ^ byte1[i % byte1_len]);
+        }
+        final byte[] md5bytes = MessageDigest.getInstance("MD5").digest(byte2);
+        final String b64 = new sun.misc.BASE64Encoder().encode(md5bytes);
+        result = b64.replace("/", "_");
+        result = result.replace("+", "-");
+        return result;
+    }
 
     public static void prepareAPI(final Browser br) {
         br.getHeaders().put("Referer", "http://music.163.com/");
-        /* Last updated: 2014-07-13 */
-        br.setCookie("http://music.163.com/", "appver", "1.5.0.75771");
+        /* User-Agent no necessarily needed! */
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.95 Safari/537.36");
+        /* Last updated: 2014-12-08 */
+        br.setCookie("http://music.163.com/", "appver", "1.7.3");
         br.setAllowedResponseCodes(400);
     }
 

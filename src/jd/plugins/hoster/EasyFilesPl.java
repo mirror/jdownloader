@@ -167,7 +167,24 @@ public class EasyFilesPl extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
         this.br = newBrowser();
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "finallink");
         if (dllink == null) {
@@ -175,7 +192,7 @@ public class EasyFilesPl extends PluginForHost {
             if (dlid == null) {
                 final String url = Encoding.urlEncode(link.getDownloadURL());
                 showMessage(link, "Phase 1/3: Starting internal download on " + NICE_HOST);
-                safeAPIRequest(API_HTTP + NICE_HOST + "/api.php?cmd=download_files_direct&links=" + url + "&login=" + Encoding.urlEncode(acc.getUser()) + "&pass=" + Encoding.urlEncode(acc.getPass()), acc, link);
+                safeAPIRequest(API_HTTP + NICE_HOST + "/api.php?cmd=download_files_direct&links=" + url + "&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()), account, link);
                 final String[] data = br.toString().split(":");
                 dlid = data[1];
                 link.setProperty(NICE_HOSTproperty + "dlid", dlid);
@@ -224,7 +241,7 @@ public class EasyFilesPl extends PluginForHost {
             try {
                 link.addPluginProgress(waitProgress);
                 for (int i = 1; i <= 120; i++) {
-                    apiRequest(API_HTTP + NICE_HOST + "/api.php?cmd=get_file_status&id=" + dlid + "&login=" + Encoding.urlEncode(acc.getUser()) + "&pass=" + Encoding.urlEncode(acc.getPass()), acc, link);
+                    apiRequest(API_HTTP + NICE_HOST + "/api.php?cmd=get_file_status&id=" + dlid + "&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()), account, link);
                     String progress = br.toString().trim();
                     if (br.containsHTML("downloaded")) {
                         success = true;
@@ -249,10 +266,10 @@ public class EasyFilesPl extends PluginForHost {
                 link.removePluginProgress(waitProgress);
             }
             if (!success) {
-                handleAPIErrors(this.br, acc, link);
+                handleAPIErrors(this.br, account, link);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             }
-            safeAPIRequest(API_HTTP + NICE_HOST + "/api.php?cmd=get_link&id=" + dlid + "&login=" + Encoding.urlEncode(acc.getUser()) + "&pass=" + Encoding.urlEncode(acc.getPass()), acc, link);
+            safeAPIRequest(API_HTTP + NICE_HOST + "/api.php?cmd=get_link&id=" + dlid + "&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()), account, link);
 
             if (br.toString().trim().equals("error")) {
                 logger.info(NICE_HOST + ": Final link is null_1");
@@ -265,7 +282,7 @@ public class EasyFilesPl extends PluginForHost {
                 } else {
                     link.setProperty(NICE_HOSTproperty + "failedtimes_dllinknull_1", Property.NULL);
                     logger.info(NICE_HOST + ": Final link is null -> Disabling current host");
-                    tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
+                    tempUnavailableHoster(account, link, 1 * 60 * 60 * 1000l);
                 }
             }
             dllink = br.toString();
@@ -536,20 +553,6 @@ public class EasyFilesPl extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         return true;
     }
 
