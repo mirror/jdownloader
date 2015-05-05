@@ -199,12 +199,29 @@ public class Mfhd extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
         prepBrowser(br);
         showMessage(link, "Phase 1/2: Generating link");
 
         // here we can get a 503 error page, which causes an exception
-        String genlink = br.getPage("http://mfhd.de/api.php?username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&action=info&url=" + Encoding.urlEncode(link.getDownloadURL()));
+        String genlink = br.getPage("http://mfhd.de/api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=info&url=" + Encoding.urlEncode(link.getDownloadURL()));
 
         /* Possible html, unhandled: 1,;,https://tusfiles.net/xxxxxxxxxxxx : <span style='color:#a00;'>Invalid link</span>,;,0 */
         if (genlink == null || !genlink.matches("https?://.+")) {
@@ -213,13 +230,13 @@ public class Mfhd extends PluginForHost {
             handleAccountErrors();
             if (genlink.contains("invalid hoster")) {
                 // disable host for 4h
-                tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 4 * 60 * 60 * 1000l);
             } else if (genlink.contains("_limit")) {
                 /* limit reached for this host, wait 4h */
-                tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 4 * 60 * 60 * 1000l);
             } else if (genlink.equals("wrong request")) {
                 /* invalid request, wait 1h */
-                tempUnavailableHoster(acc, link, 1 * 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 1 * 60 * 60 * 1000l);
             }
             /*
              * after x retries we disable this host and retry with normal plugin
@@ -228,14 +245,14 @@ public class Mfhd extends PluginForHost {
                 /* reset retrycounter */
                 link.setProperty("retryCount", Property.NULL);
                 // disable hoster for 30min
-                tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 30 * 60 * 1000l);
 
             }
             String msg = "(" + (retry + 1) + "/" + 3 + ")";
             link.setProperty("retryCount", (retry + 1));
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
         }
-        handleDL(acc, link, genlink);
+        handleDL(account, link, genlink);
     }
 
     private boolean isDirectLink(final DownloadLink downloadLink) {
@@ -300,20 +317,6 @@ public class Mfhd extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         return true;
     }
 

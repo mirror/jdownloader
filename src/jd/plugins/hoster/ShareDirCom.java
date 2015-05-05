@@ -46,7 +46,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sharedir.com" }, urls = { "http://dl\\.sharedir\\.com/\\d+/" }, flags = { 2 })
 public class ShareDirCom extends PluginForHost {
 
-    private static Object                                  CTRLLOCK                             = new Object();
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                   = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS                             = "NOCHUNKS";
 
@@ -403,17 +402,16 @@ public class ShareDirCom extends PluginForHost {
                  */
                 statusMessage = "Error: This file is only downloadable via premium account (filesize > 150 MB)";
                 this.currDownloadLink.setProperty("sharedircom_" + this.currAcc.getUser() + "_downloadallowed", false);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "This file is only downloadable via premium account (filesize > " + default_free_account_filesize_max_mb + " MB)");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "sharedir.com: This file is only downloadable via premium account (filesize > " + default_free_account_filesize_max_mb + " MB)", 1 * 60 * 1000l);
             case 667:
                 /* No traffic available to download current file -> disable current host */
                 tempUnavailableHoster(60 * 60 * 1000l);
             case 668:
-                /* File too big for free accounts -> show errormessage / try without account (or use other available account(s)) */
-                statusMessage = "Error: The current host is only available for premium users";
-                synchronized (CTRLLOCK) {
-                    this.currAcc.getAccountInfo().getMultiHostSupport().remove(this.currDownloadLink.getHost());
-                }
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Host is not supported by multihost");
+                /*
+                 * File is CURRENTLY too big for free accounts -> show errormessage [This is a very rare case]
+                 */
+                statusMessage = "File is currently too big for free accounts --> Unsupported host";
+                tempUnavailableHoster(5 * 60 * 1000l);
             default:
                 /* Unknown errorcode -> disable account */
                 statusMessage = "Unknown errorcode";

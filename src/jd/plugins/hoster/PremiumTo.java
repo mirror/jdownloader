@@ -223,7 +223,24 @@ public class PremiumTo extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
+    public void handleMultiHost(DownloadLink link, Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
         try {
             dl = null;
             String url = link.getDownloadURL().replaceFirst("https?://", "");
@@ -258,7 +275,7 @@ public class PremiumTo extends PluginForHost {
             }
             url = Encoding.urlEncode(url);
             showMessage(link, "Phase 1/3: Login...");
-            login(acc, false);
+            login(account, false);
             showMessage(link, "Phase 2/3: Get link");
 
             int connections = getConnections(link.getHost());
@@ -287,7 +304,7 @@ public class PremiumTo extends PluginForHost {
                     } else {
                         link.setProperty("timesfailedpremiumto_420dlerror", Property.NULL);
                         logger.info("premium.to: 420 download error - disabling current host!");
-                        tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                        tempUnavailableHoster(account, link, 60 * 60 * 1000l);
                     }
                 }
                 br.followConnection();
@@ -299,7 +316,7 @@ public class PremiumTo extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 }
                 if (br.toString().matches("File hosting service not supported")) {
-                    tempUnavailableHoster(acc, link, 60 * 60 * 1000);
+                    tempUnavailableHoster(account, link, 60 * 60 * 1000);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 /*
@@ -307,7 +324,7 @@ public class PremiumTo extends PluginForHost {
                  */
                 if (link.getLinkStatus().getRetryCount() >= 3) {
                     /* disable hoster for 1h */
-                    tempUnavailableHoster(acc, link, 60 * 60 * 1000);
+                    tempUnavailableHoster(account, link, 60 * 60 * 1000);
                     /* reset retry counter */
                     link.getLinkStatus().setRetryCount(0);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -461,20 +478,6 @@ public class PremiumTo extends PluginForHost {
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
 
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         if (downloadLink.getHost().equals("share-online.biz")) {
             if (shareOnlineLocked.get()) {
                 return false;

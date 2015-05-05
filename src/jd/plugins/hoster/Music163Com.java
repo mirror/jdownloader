@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -53,6 +54,10 @@ public class Music163Com extends PluginForHost {
 
     private static final String  dlurl_format      = "http://m1.music.126.net/%s/%s.mp3";
 
+    /* Qualities from highest to lowest in KB/s: 320, 160, 96 hMusic is officially only available for logged-in users! */
+    public static final String[] qualities         = { "hMusic", "mMusic", "lMusic", "bMusic" };
+    public static final String   dateformat_en     = "yyyy-MM-dd";
+
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
@@ -70,6 +75,10 @@ public class Music163Com extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        /* Tracknumber can only be given by decrypter */
+        final String tracknumber = link.getStringProperty("trachnumber", null);
+        long publishedTimestamp = link.getLongProperty("publishedTimestamp", 0);
+        String formattedDate = null;
         long filesize = 0;
         String ext = null;
         DLLINK = null;
@@ -86,37 +95,49 @@ public class Music163Com extends PluginForHost {
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         final ArrayList<Object> songs = (ArrayList) entries.get("songs");
         entries = (LinkedHashMap<String, Object>) songs.get(0);
-        final Object hMusico = entries.get("hMusic");
         final ArrayList<Object> artists = (ArrayList) entries.get("artists");
         final LinkedHashMap<String, Object> album_info = (LinkedHashMap<String, Object>) entries.get("album");
         final LinkedHashMap<String, Object> artist_info = (LinkedHashMap<String, Object>) artists.get(0);
-        if (hMusico != null) {
-            /* HQ (usually 320 KB/s) [officially] only available for registered users */
-            final LinkedHashMap<String, Object> hMusic = (LinkedHashMap<String, Object>) hMusico;
-            ext = (String) hMusic.get("extension") + "_HQ";
-            final String dfsid = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(hMusic.get("dfsId"), -1));
-            final String encrypted_dfsid = encrypt_dfsId(dfsid);
-            filesize = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(hMusic.get("size"), -1);
-            DLLINK = String.format(dlurl_format, encrypted_dfsid, dfsid);
-        } else {
-            /* LQ */
-            final LinkedHashMap<String, Object> bMusic = (LinkedHashMap<String, Object>) entries.get("bMusic");
-            ext = (String) bMusic.get("extension");
-            filesize = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(bMusic.get("size"), -1);
-            /* We can generate LQ downloadlinks the same way as HQ but why should we - the final URL is already in the json source :) */
-            // final String dfsid = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(bMusic.get("dfsId"), -1));
-            // final String encrypted_dfsid = encrypt_dfsId(dfsid);
-            DLLINK = (String) entries.get("mp3Url");
+        /* Now find the highest quality available */
+        for (final String quality : qualities) {
+            final Object musicO = entries.get(quality);
+            if (musicO != null) {
+                final LinkedHashMap<String, Object> musicmap = (LinkedHashMap<String, Object>) musicO;
+                ext = (String) musicmap.get("extension");
+                final String dfsid = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(musicmap.get("dfsId"), -1));
+                final String encrypted_dfsid = encrypt_dfsId(dfsid);
+                filesize = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(musicmap.get("size"), -1);
+                /*
+                 * bMusic (and often/alyways) lMusic == mp3Url - in theory we don't have to generate the final downloadlink for these cases
+                 * as it is already given.
+                 */
+                // DLLINK = (String) entries.get("mp3Url");
+                DLLINK = String.format(dlurl_format, encrypted_dfsid, dfsid);
+                break;
+            }
         }
 
         final String name_artist = (String) artist_info.get("name");
         final String name_album = (String) album_info.get("name");
         final String songname = (String) entries.get("name");
-        final String filename = name_artist + " - " + name_album + " - " + songname + "." + ext;
-        if (name_artist == null || name_album == null || songname == null || ext == null || DLLINK == null) {
+        if (publishedTimestamp == 0) {
+            publishedTimestamp = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(album_info.get("publishTime"), 0);
+        }
+        if (publishedTimestamp > 0) {
+            final SimpleDateFormat formatter = new SimpleDateFormat(jd.plugins.hoster.Music163Com.dateformat_en);
+            formattedDate = formatter.format(publishedTimestamp);
+        }
+        if (name_artist == null || name_album == null || songname == null || ext == null || filesize == -1 || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        String filename = name_artist + " - " + name_album + " - " + songname + "." + ext;
+        if (tracknumber != null) {
+            filename = tracknumber + "." + filename;
+        }
+        if (formattedDate != null) {
+            filename = formattedDate + "_" + filename;
+        }
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(filesize);
         return AvailableStatus.TRUE;
     }

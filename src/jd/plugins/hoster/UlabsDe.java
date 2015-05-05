@@ -143,8 +143,7 @@ public class UlabsDe extends PluginForHost {
                 tempUnavailableHoster(account, link, 2 * 60 * 1000);
             } else if ("7".equals(errorcode)) {
                 logger.info("The host whose downloadlink you tried is not supported by this multihost  --> Temporarily remove current host from hostlist");
-                account.getAccountInfo().getMultiHostSupport().remove(link.getHost());
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Host is not supported by multihost");
+                tempUnavailableHoster(account, link, 10 * 60 * 1000l);
             } else if ("8".equals(errorcode)) {
                 logger.info("There are no available host-accounts at the moment  --> Temporarily remove current host from hostlist");
                 tempUnavailableHoster(account, link, 15 * 60 * 60 * 1000);
