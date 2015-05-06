@@ -111,6 +111,7 @@ GenericVariants_DEMUX_M4A=Izdvajanje M4A zvuka
 GenericVariants_FLV_TO_MP3_=Izdvajanje MP3 zvuka
 GenericVariants_ORIGINAL=Izvorni video
 GenericVariants_TO_OGG=Pretvori u Ogg Vorbis Audio
+Google_helper_2factor_sms_dialog_title=Google provjera u 2 koraka
 ImportAction_tt=Uvoz pravila iz *.jdfilter (*.jdregexfilter) datoteka
 IncludedSelectionSetup_getTranslationForIncludeSelectedLinks=Uključeni odabrani linkovi
 IncludedSelectionSetup_getTranslationForIncludeUnselectedLinks=Uključeni neodabrani linkovi
