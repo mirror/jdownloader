@@ -552,7 +552,7 @@ public class FilepackPl extends antiDDoSForHost {
                 return ai;
             }
             long expire_milliseconds = 0;
-            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss", Locale.ENGLISH);
+            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", Locale.ENGLISH);
             if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
                 account.setProperty("free", true);
                 try {
