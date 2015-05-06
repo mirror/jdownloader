@@ -29,12 +29,13 @@ public enum SkipReason {
     }
 
     public Icon getIcon(Object requestor, int size) {
-        String id;
-        Icon ret = NewTheme.I().getCached(id = "Skipped" + iconKey + "-" + size);
+        final String id = "Skipped" + iconKey + "-" + size;
+        Icon ret = NewTheme.I().getCached(id);
         // if (ret != null) return ret;
-
         if (iconKey == null) {
-            return new AbstractIcon(IconKey.ICON_SKIPPED, size);
+            ret = new AbstractIcon(IconKey.ICON_SKIPPED, size);
+            NewTheme.I().cache(ret, id);
+            return ret;
         }
         int main = (int) (size * 0.75d);
         int badge = (int) (size * 0.75d);
