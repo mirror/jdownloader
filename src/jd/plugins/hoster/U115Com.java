@@ -189,19 +189,25 @@ public class U115Com extends PluginForHost {
                 }
             }
             br.setFollowRedirects(true);
-            br.getPage("http://passport.115.com/?ct=login");
+            br.getPage("http://passport.115.com/?ct=login&ac=ajax&is_ssl=1");
             String key = "abcdef0123456789";
             String vcode = key.toUpperCase();
             String sh1pw = JDHash.getSHA1(account.getPass());
             String sh1user = JDHash.getSHA1(account.getUser());
 
-            String one = JDHash.getSHA1(toHex(sh1pw.getBytes()) + toHex(sh1user.getBytes()));
-            String two = toHex(one.getBytes()) + vcode;
-            String three = JDHash.getSHA1(two);
-            String four = toHex(three.getBytes());
+            // final byte[] md5bytespw = MessageDigest.getInstance("MD5").digest(sh1pw.getBytes());
+            // final byte[] md5bytesuser = MessageDigest.getInstance("MD5").digest(sh1user.getBytes());
+            // final byte[] concatBytes = appendData(md5bytespw, md5bytesuser);
+            //
+            // String one = SHAsum(concatBytes);
+            // String two = new String(MessageDigest.getInstance("MD5").digest(one.getBytes())) + vcode;
+            // String three = JDHash.getSHA1(two);
+            // String four = new String(MessageDigest.getInstance("MD5").digest(three.getBytes()));
 
-            String post_data = "login[ssoent]=B1&login[version]=2.0&login[ssoext]=" + key + "&login[ssoln]=" + account.getUser() + "&login[ssopw]=" + four + "&login[ssovcode]=" + key + "&login[safe]=1&login[time]=1&login[safe_login]=0&login[goto]=http://www.115.com/";
-            br.postPageRaw("http://passport.115.com/?ct=login&ac=ajax&is_ssl=1", post_data);
+            // String post_data = "login[ssoent]=B1&login[version]=2.0&login[ssoext]=" + key + "&login[ssoln]=" + account.getUser() +
+            // "&login[ssopw]=" + four + "&login[ssovcode]=" + key +
+            // "&login[safe]=1&login[time]=1&login[safe_login]=0&login[goto]=http://www.115.com/";
+            // br.postPageRaw("http://passport.115.com/?ct=login&ac=ajax&is_ssl=1", post_data);
 
             // sh1pw = JDHash.getSHA1(Encoding.UTF8Encode(account.getPass()));
             // sh1user = JDHash.getSHA1(Encoding.UTF8Encode(account.getUser()));
@@ -242,17 +248,47 @@ public class U115Com extends PluginForHost {
         }
     }
 
-    public static String toHex(byte[] a) {
-        StringBuilder sb = new StringBuilder(a.length * 2);
-        for (int i = 0; i < a.length; i++) {
-            sb.append(Character.forDigit((a[i] & 0xf0) >> 4, 16));
-            sb.append(Character.forDigit(a[i] & 0x0f, 16));
-        }
-        return sb.toString();
-    }
+    // /* http://stackoverflow.com/questions/5683486/how-to-combine-two-byte-arrays */
+    // protected byte[] appendData(byte[] firstObject, byte[] secondObject) {
+    // ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    // try {
+    // if (firstObject != null && firstObject.length != 0) {
+    // outputStream.write(firstObject);
+    // }
+    // if (secondObject != null && secondObject.length != 0) {
+    // outputStream.write(secondObject);
+    // }
+    // } catch (IOException e) {
+    // e.printStackTrace();
+    // }
+    // return outputStream.toByteArray();
+    // }
+    //
+    // public static String toHex(byte[] a) {
+    // StringBuilder sb = new StringBuilder(a.length * 2);
+    // for (int i = 0; i < a.length; i++) {
+    // sb.append(Character.forDigit((a[i] & 0xf0) >> 4, 16));
+    // sb.append(Character.forDigit(a[i] & 0x0f, 16));
+    // }
+    // return sb.toString();
+    // }
+    //
+    // public static String SHAsum(byte[] convertme) throws NoSuchAlgorithmException {
+    // MessageDigest md = MessageDigest.getInstance("SHA-1");
+    // return byteArray2Hex(md.digest(convertme));
+    // }
+    //
+    // private static String byteArray2Hex(final byte[] hash) {
+    // Formatter formatter = new Formatter();
+    // for (byte b : hash) {
+    // formatter.format("%02x", b);
+    // }
+    // return formatter.toString();
+    // }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
@@ -269,6 +305,7 @@ public class U115Com extends PluginForHost {
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);

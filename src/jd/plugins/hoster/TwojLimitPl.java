@@ -151,11 +151,28 @@ public class TwojLimitPl extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
         showMessage(link, "Phase 1/3: Login");
-        login(acc);
+        login(account);
         if (expired) {
-            acc.setValid(false);
+            account.setValid(false);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         br.setConnectTimeout(90 * 1000);
@@ -163,9 +180,9 @@ public class TwojLimitPl extends PluginForHost {
         br.setDebug(true);
         dl = null;
         /* generate new downloadlink */
-        String username = Encoding.urlEncode(acc.getUser());
+        String username = Encoding.urlEncode(account.getUser());
         String url = Encoding.urlEncode(link.getDownloadURL());
-        String postData = "username=" + username + "&password=" + JDHash.getMD5(acc.getPass()) + "&info=0&url=" + url + "&site=twojlimit";
+        String postData = "username=" + username + "&password=" + JDHash.getMD5(account.getPass()) + "&info=0&url=" + url + "&site=twojlimit";
         showMessage(link, "Phase 2/3: Generating Link");
         String genlink = br.postPage("http://crypt.twojlimit.pl", postData);
 
@@ -178,7 +195,7 @@ public class TwojLimitPl extends PluginForHost {
             if (link.getLinkStatus().getRetryCount() >= 3) {
                 try {
                     // disable hoster for 30min
-                    tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
+                    tempUnavailableHoster(account, link, 30 * 60 * 1000l);
                 } catch (Exception e) {
                 }
                 /* reset retrycounter */
@@ -203,17 +220,17 @@ public class TwojLimitPl extends PluginForHost {
             br.followConnection();
             if (br.getBaseURL().contains("notransfer")) {
                 /* No transfer left */
-                acc.setValid(false);
+                account.setValid(false);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             if (br.getBaseURL().contains("serviceunavailable")) {
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
             if (br.getBaseURL().contains("connecterror")) {
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
             if (br.getBaseURL().contains("invaliduserpass")) {
-                acc.setValid(false);
+                account.setValid(false);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid username or password.");
             }
             if (br.getBaseURL().contains("notfound")) {
@@ -221,14 +238,14 @@ public class TwojLimitPl extends PluginForHost {
             }
             if (br.containsHTML("15=Hosting nie obslugiwany")) {
                 /* Unsupported host */
-                tempUnavailableHoster(acc, link, 3 * 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
             }
         }
 
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline (?) */
             dl.getConnection().disconnect();
-            tempUnavailableHoster(acc, link, 20 * 60 * 1000l);
+            tempUnavailableHoster(account, link, 20 * 60 * 1000l);
         }
         showMessage(link, "Phase 3/3: Begin download");
         dl.startDownload();
@@ -257,20 +274,6 @@ public class TwojLimitPl extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         return true;
     }
 

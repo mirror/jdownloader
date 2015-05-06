@@ -128,13 +128,30 @@ public class RapidsPl extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
         this.br = newBrowser();
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "finallink");
         if (dllink == null) {
-            br.postPage("http://rapids.pl/api/check", "key=" + acc.getStringProperty("apikey", null) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
+            br.postPage("http://rapids.pl/api/check", "key=" + account.getStringProperty("apikey", null) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
             br.getRequest().setHtmlCode(unescape(br.toString()));
-            handleAPIErrors(acc, link);
+            handleAPIErrors(account, link);
             dllink = br.getRegex("\"dlUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
             showMessage(link, "Phase 1/2: Generating final downloadlink");
             if (dllink == null) {
@@ -256,20 +273,6 @@ public class RapidsPl extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         return true;
     }
 

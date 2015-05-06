@@ -46,6 +46,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stahomat.cz" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class StahomatCz extends PluginForHost {
     /* IMPORTANT: superload.cz and stahomat.cz use the same api */
+    /* IMPORTANT2: 30.04.15: They block IPs from the following countries: es, it, jp, fr, cl, br, ar, de, mx, cn, ve */
     private static final String                            mName              = "stahomat.cz/";
     private static final String                            mProt              = "http://";
     private static final String                            mAPI               = "http://api.stahomat.cz/a-p-i";
@@ -163,20 +164,6 @@ public class StahomatCz extends PluginForHost {
             /* without account its not possible to download the link */
             return false;
         }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         return true;
     }
 
@@ -216,23 +203,40 @@ public class StahomatCz extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
-    public void handleMultiHost(final DownloadLink downloadLink, final Account account) throws Exception {
-        setConstants(account, downloadLink);
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+        setConstants(account, link);
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
         prepBrowser();
         br.setFollowRedirects(true);
-        final String pass = downloadLink.getStringProperty("pass", null);
+        final String pass = link.getStringProperty("pass", null);
         this.getToken();
         if (TOKEN == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String dllink = checkDirectLink(downloadLink, "superloadczdirectlink");
+        String dllink = checkDirectLink(link, "superloadczdirectlink");
         if (dllink == null) {
-            showMessage(downloadLink, "Task 1: Generating Link");
+            showMessage(link, "Task 1: Generating Link");
             /* request Download */
             if (pass != null) {
-                postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&password=" + Encoding.urlEncode(pass) + "&token=");
+                postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(link.getDownloadURL()) + "&password=" + Encoding.urlEncode(pass) + "&token=");
             } else {
-                postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&token=");
+                postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(link.getDownloadURL()) + "&token=");
             }
             if (br.containsHTML("\"error\":\"invalidLink\"")) {
                 logger.info("Superload.cz says 'invalid link', disabling real host for 1 hour.");
@@ -241,7 +245,7 @@ public class StahomatCz extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temp. Error. Try again later", 5 * 60 * 1000l);
             } else if (br.containsHTML("\"error\":\"fileNotFound\"")) {
                 logger.info("Detected untrusted fileNotFound --> Retrying until we have to temporarily disable the host");
-                handleErrorRetries(account, downloadLink, "untrusted_file_not_found", 10);
+                handleErrorRetries(account, link, "untrusted_file_not_found", 10);
                 /* Do not trust their file_not_found status --> http://svn.jdownloader.org/issues/56989 */
                 // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("\"error\":\"unsupportedServer\"")) {
@@ -256,10 +260,10 @@ public class StahomatCz extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = dllink.replaceAll("\\\\", "");
-            showMessage(downloadLink, "Task 2: Download begins!");
+            showMessage(link, "Task 2: Download begins!");
         }
         // might need a sleep here hoster seems to have troubles with new links.
-        handleDL(account, downloadLink, dllink);
+        handleDL(account, link, dllink);
     }
 
     /**

@@ -189,7 +189,7 @@ public class MultihostersCom extends PluginForHost {
         /* temp disabled the host */
         if (br.containsHTML("No trafic")) {
             // account has no traffic, disable hoster for 1h
-            tempUnavailableHoster(1 * 60 * 60 * 1000l);
+            tempUnavailableHoster(5 * 60 * 1000l);
         } else if (br.containsHTML(">You have exceeded the maximum amount of fair usage of our service")) {
             /*
              * Free account limits reached and an additional download-try failed or account cookie is invalid -> permanently disable account
@@ -202,9 +202,9 @@ public class MultihostersCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (br.containsHTML("Error")) {
-            handleErrorRetries("stpd_error", 5, 10 * 60 * 1000);
+            handleErrorRetries("stpd_error", 5, 5 * 60 * 1000);
         } else {
-            handleErrorRetries("unknown_error", 5, 10 * 60 * 1000);
+            handleErrorRetries("unknown_error", 5, 2 * 60 * 1000);
         }
 
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

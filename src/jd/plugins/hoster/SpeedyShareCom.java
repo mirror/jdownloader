@@ -449,10 +449,27 @@ public class SpeedyShareCom extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        login(acc, false);
+        login(account, false);
         String dllink = link.getStringProperty("speedysharedirectlink", null);
         if (dllink == null) {
             br.postPage("http://www.speedyshare.com/remote_downloader.php", "urls=" + Encoding.urlEncode(link.getDownloadURL()));
@@ -466,7 +483,7 @@ public class SpeedyShareCom extends PluginForHost {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             if (br.getRedirectLocation() != null && !br.getRedirectLocation().contains("speedyshare.com/")) {
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -495,20 +512,6 @@ public class SpeedyShareCom extends PluginForHost {
         if (account == null) {
             /* without account its not possible to download the link */
             return true;
-        }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
         }
         return true;
     }

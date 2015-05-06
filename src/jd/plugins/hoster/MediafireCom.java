@@ -1139,7 +1139,7 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's mediafire.com plugin helps downloading audio files from mediafire.com.";
+        return "JDownloader's mediafire.com plugin helps downloading files from mediafire.com.";
     }
 
     private void setConfigElements() {
