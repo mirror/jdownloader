@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
@@ -227,23 +228,27 @@ public class RapidrarCom extends PluginForHost {
     private String[] scanInfo(final String[] fileInfo) {
         final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
         final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
+        final String yourequested = fuid + "/(.*?)</span>\\s*\\(([\\d\\.]+ (?:B|KB|MB|GB))\\)</";
 
         /* standard traits from base page */
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
             if (fileInfo[0] == null) {
-                fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                /* traits from download1 page below */
+                fileInfo[0] = new Regex(correctedBR, ">Download File\\s*(.*?)</").getMatch(0);
                 if (fileInfo[0] == null) {
-                    fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                    // next two are details from sharing box
+                    fileInfo[0] = new Regex(correctedBR, yourequested).getMatch(0);
+                    /* traits from download1 page below */
                     if (fileInfo[0] == null) {
-                        fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
+                        fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        // next two are details from sharing box
                         if (fileInfo[0] == null) {
-                            fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
+                            fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
                             if (fileInfo[0] == null) {
-                                /* Link of the box without filesize */
-                                fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
+                                fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
+                                if (fileInfo[0] == null) {
+                                    /* Link of the box without filesize */
+                                    fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
+                                }
                             }
                         }
                     }
@@ -260,7 +265,10 @@ public class RapidrarCom extends PluginForHost {
                     if (fileInfo[1] == null) {
                         fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
                         if (fileInfo[1] == null) {
-                            fileInfo[1] = new Regex(correctedBR, "\\((\\d+(\\.\\d+)? ?(?:B(?:ytes?)?|KB|MB|GB))\\)").getMatch(0);
+                            fileInfo[1] = new Regex(correctedBR, yourequested).getMatch(1);
+                            if (fileInfo[1] == null) {
+                                fileInfo[1] = new Regex(correctedBR, "\\((\\d+(\\.\\d+)? ?(?:B(?:ytes?)?|KB|MB|GB))\\)").getMatch(0);
+                            }
                         }
                     }
                 }
@@ -335,12 +343,13 @@ public class RapidrarCom extends PluginForHost {
         /* Fourth, continue like normal */
         if (dllink == null) {
             checkErrors(downloadLink, false);
-            Form download1 = getFormByKey("op", "download1");
+            Form download1 = getFormDownload1();
             if (download1 == null) {
                 download1 = br.getFormbyKey("usr_login");
             }
             if (download1 != null) {
-                download1.remove("method_premium");
+                // download1.remove("method_premium");
+                download1 = removePremium(download1);
                 /* stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable! */
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
@@ -358,7 +367,7 @@ public class RapidrarCom extends PluginForHost {
             }
         }
         if (dllink == null) {
-            Form dlForm = br.getFormbyProperty("name", "F1");
+            Form dlForm = getFormDownload2();
             if (dlForm == null) {
                 handlePluginBroken(downloadLink, "dlform_f1_null", 3);
             }
@@ -432,7 +441,7 @@ public class RapidrarCom extends PluginForHost {
                     dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     /* wait time is usually skippable for reCaptcha handling */
-                    skipWaittime = true;
+                    skipWaittime = false;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
@@ -480,21 +489,13 @@ public class RapidrarCom extends PluginForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
                 dllink = getDllink();
-                if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
+                dlForm = getFormDownload2();
+                if (dllink == null && (dlForm == null || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
-                    dlForm = br.getFormbyProperty("name", "F1");
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
+                } else if (dllink == null && dlForm != null) {
                     continue;
                 } else {
-                    try {
-                        validateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
                     break;
                 }
             }
@@ -522,6 +523,72 @@ public class RapidrarCom extends PluginForHost {
             /* remove download slot */
             controlFree(-1);
         }
+    }
+
+    private Form removePremium(Form f) {
+        Iterator<InputField> input = f.getInputFields().iterator();
+        int deleteme = -1;
+        while (input.hasNext()) {
+            deleteme++;
+            InputField n = input.next();
+            if (n.getValue() != null && n.getValue().matches("Premium\\+Download")) {
+                f.getInputFields().remove(deleteme);
+            }
+        }
+        return f;
+    }
+
+    private Form getFormDownload1() {
+        Form download1 = getFormByKey("op", "download1");
+        if (download1 == null || download1.hasInputFieldByName("download2")) {
+            download1 = getFormByKey("method_free", "Free+Download");
+            if (download1 == null || download1.hasInputFieldByName("download2")) {
+                download1 = getFormByKey("method_free", "Download");
+                if (download1 == null || download1.hasInputFieldByName("download2")) {
+                    Form[] dlForms = br.getForms();
+                    if (dlForms.length == 1) {
+                        download1 = dlForms[0];
+                    } else {
+                        ArrayList<Form> result = new ArrayList<Form>();
+                        for (Form f : dlForms) {
+                            if (f.hasInputFieldByName("method_free") && !f.hasInputFieldByName("download2")) {
+                                result.add(f);
+                            }
+                            for (final InputField i : f.getInputFields()) {
+                                if (i.getValue() != null && i.getValue().matches("Free\\+Download|Premium\\+Download")) {
+                                    result.add(f);
+                                }
+                            }
+
+                        }
+                        if (!result.isEmpty()) {
+                            download1 = result.get(0);
+                        }
+                    }
+                }
+            }
+        }
+        return download1;
+    }
+
+    private Form getFormDownload2() {
+        Form download2 = getFormByKey("op", "download2");
+        if (download2 == null) {
+            download2 = getFormByKey("method_free", "Free+Download");
+        }
+        if (download2 == null) {
+            Form[] dlForms = br.getForms();
+            ArrayList<Form> result = new ArrayList<Form>();
+            for (Form f : dlForms) {
+                if (f.hasInputFieldByName("method_free")) {
+                    result.add(f);
+                }
+            }
+            if (!result.isEmpty()) {
+                download2 = result.get(0);
+            }
+        }
+        return download2;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
