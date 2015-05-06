@@ -33,19 +33,19 @@ public class PluginClassLoader extends URLClassLoader {
     private static final HashMap<String, HashMap<String, Object>> sharedPluginObjectsPool = new HashMap<String, HashMap<String, Object>>();
     // http://docs.oracle.com/javase/7/docs/technotes/guides/lang/cl-mt.html
     private static final HashSet<String>                          immutableClasses        = new HashSet<String>() {
-        {
-            add("java.lang.Boolean");
-            add("java.lang.Byte");
-            add("java.lang.String");
-            add("java.lang.Double");
-            add("java.lang.Integer");
-            add("java.lang.Long");
-            add("java.lang.Float");
-            add("java.lang.Short");
-            add("java.math.BigInteger");
-            add("java.math.BigDecimal");
-        }
-    };
+                                                                                              {
+                                                                                                  add("java.lang.Boolean");
+                                                                                                  add("java.lang.Byte");
+                                                                                                  add("java.lang.String");
+                                                                                                  add("java.lang.Double");
+                                                                                                  add("java.lang.Integer");
+                                                                                                  add("java.lang.Long");
+                                                                                                  add("java.lang.Float");
+                                                                                                  add("java.lang.Short");
+                                                                                                  add("java.math.BigInteger");
+                                                                                                  add("java.math.BigDecimal");
+                                                                                              }
+                                                                                          };
 
     private static class PluginClassLoaderClass {
         private final Class<?>      clazz;
@@ -275,7 +275,7 @@ public class PluginClassLoader extends URLClassLoader {
             return currentClass;
         }
 
-        private static final HashMap<String, PluginClassLoaderClass> LOADED = new HashMap<String, PluginClassLoaderClass>();
+        private final HashMap<String, PluginClassLoaderClass> LOADEDCLASSES = new HashMap<String, PluginClassLoaderClass>();
 
         @Override
         public Class<?> loadClass(String name) throws ClassNotFoundException {
@@ -323,14 +323,14 @@ public class PluginClassLoader extends URLClassLoader {
                     }
                     if (check) {
                         check = !name.equals("org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream");/*
-                         * available in 09581
-                         * Stable
-                         */
+                                                                                                                       * available in 09581
+                                                                                                                       * Stable
+                                                                                                                       */
                     }
                     if (check) {
                         check = !name.equals("org.appwork.utils.net.throttledconnection.ThrottledConnection");/*
-                         * available in 09581 Stable
-                         */
+                                                                                                               * available in 09581 Stable
+                                                                                                               */
                     }
                     if (check) {
                         if (name.startsWith("org.appwork") || name.startsWith("jd.plugins.hoster") || name.startsWith("jd.plugins.decrypter")) {
@@ -346,8 +346,8 @@ public class PluginClassLoader extends URLClassLoader {
                 }
                 PluginClassLoaderClass c = null;
                 final Class<?> clazz;
-                synchronized (LOADED) {
-                    c = LOADED.get(name);
+                synchronized (LOADEDCLASSES) {
+                    c = LOADEDCLASSES.get(name);
                     if (c == null) {
                         final URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
                         if (myUrl == null) {
@@ -355,7 +355,7 @@ public class PluginClassLoader extends URLClassLoader {
                         }
                         clazz = loadAndDefineClass(myUrl, name);
                         c = new PluginClassLoaderClass(clazz);
-                        LOADED.put(name, c);
+                        LOADEDCLASSES.put(name, c);
                     } else {
                         clazz = c.clazz;
                     }
