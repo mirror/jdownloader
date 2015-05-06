@@ -33,26 +33,30 @@ public class PluginClassLoader extends URLClassLoader {
     private static final HashMap<String, HashMap<String, Object>> sharedPluginObjectsPool = new HashMap<String, HashMap<String, Object>>();
     // http://docs.oracle.com/javase/7/docs/technotes/guides/lang/cl-mt.html
     private static final HashSet<String>                          immutableClasses        = new HashSet<String>() {
-                                                                                              {
-                                                                                                  add("java.lang.Boolean");
-                                                                                                  add("java.lang.Byte");
-                                                                                                  add("java.lang.String");
-                                                                                                  add("java.lang.Double");
-                                                                                                  add("java.lang.Integer");
-                                                                                                  add("java.lang.Long");
-                                                                                                  add("java.lang.Float");
-                                                                                                  add("java.lang.Short");
-                                                                                                  add("java.math.BigInteger");
-                                                                                                  add("java.math.BigDecimal");
-                                                                                              }
-                                                                                          };
+        {
+            add("java.lang.Boolean");
+            add("java.lang.Byte");
+            add("java.lang.String");
+            add("java.lang.Double");
+            add("java.lang.Integer");
+            add("java.lang.Long");
+            add("java.lang.Float");
+            add("java.lang.Short");
+            add("java.math.BigInteger");
+            add("java.math.BigDecimal");
+        }
+    };
 
     private static class PluginClassLoaderClass {
-        private final Class<?>      clazz;
-        private final AtomicBoolean initialized = new AtomicBoolean(false);
+        private final WeakReference<Class<?>> clazz;
+        private final AtomicBoolean           initialized = new AtomicBoolean(false);
 
         private PluginClassLoaderClass(Class<?> clazz) {
-            this.clazz = clazz;
+            this.clazz = new WeakReference<Class<?>>(clazz);
+        }
+
+        private Class<?> getClazz() {
+            return clazz.get();
         }
     }
 
@@ -323,14 +327,14 @@ public class PluginClassLoader extends URLClassLoader {
                     }
                     if (check) {
                         check = !name.equals("org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream");/*
-                                                                                                                       * available in 09581
-                                                                                                                       * Stable
-                                                                                                                       */
+                         * available in 09581
+                         * Stable
+                         */
                     }
                     if (check) {
                         check = !name.equals("org.appwork.utils.net.throttledconnection.ThrottledConnection");/*
-                                                                                                               * available in 09581 Stable
-                                                                                                               */
+                         * available in 09581 Stable
+                         */
                     }
                     if (check) {
                         if (name.startsWith("org.appwork") || name.startsWith("jd.plugins.hoster") || name.startsWith("jd.plugins.decrypter")) {
@@ -357,7 +361,7 @@ public class PluginClassLoader extends URLClassLoader {
                         c = new PluginClassLoaderClass(clazz);
                         LOADEDCLASSES.put(name, c);
                     } else {
-                        clazz = c.clazz;
+                        clazz = c.getClazz();
                     }
                 }
                 if (c.initialized.get() == false) {
