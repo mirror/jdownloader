@@ -182,7 +182,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             }
         }
         if (filesize == null) {
-            filesize = new Regex(correctedBR, "\\(([^<>\"]*?)\\)</div>[\t\n\r ]+<p class=\"tos\"").getMatch(0);
+            filesize = new Regex(correctedBR, "para_title\">.*?\\(([\\d\\.]+ ?(KB|MB|GB))\\)<").getMatch(0);
         }
         if (filesize == null) {
             filesize = new Regex(correctedBR, "\\(([\\d\\.]+ ?(KB|MB|GB))\\)").getMatch(0);
