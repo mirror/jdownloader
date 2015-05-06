@@ -63,8 +63,8 @@ public class DonateAction extends CustomizableAppAction {
                     String json = br.getPage(SERVER + "payment/getDonationScreenDetails?" + TranslationFactory.getDesiredLanguage() + "&button");
                     details = JSonStorage.restoreFromString(json, DonationDetails.TYPEREF);
                 } catch (Throwable e) {
+                    final Throwable oe = e;
                     try {
-
                         //
                         if (e.getCause() != null) {
                             e = e.getCause();
@@ -90,7 +90,7 @@ public class DonateAction extends CustomizableAppAction {
                     } catch (Throwable e2) {
                         StatsManager.I().track("/donation/button/exception/" + URLEncode.encodeRFC2396(e2.getClass() + "/" + e2.getMessage()));
                     }
-                    DonateFeedback.reportFailed(e);
+                    DonateFeedback.reportFailed(oe);
                 } finally {
 
                 }

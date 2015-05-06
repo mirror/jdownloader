@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.Icon;
@@ -17,6 +18,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.DownloadLinkView;
@@ -57,8 +59,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     private volatile java.util.List<DownloadLink> items                    = new ArrayList<DownloadLink>();
 
-    private final AbstractIcon                    falseIcon;
-
     protected static final long                   GUIUPDATETIMEOUT         = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
 
     public boolean isEnabled() {
@@ -72,7 +72,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
      */
     public FilePackageView(FilePackage fp) {
         this.fp = fp;
-        this.falseIcon = new AbstractIcon("false", 16);
+
     }
 
     private DomainInfo[]  infos            = new DomainInfo[0];
@@ -192,38 +192,36 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     public static class PluginState {
 
-        private String description;
-        private Icon   icon;
+        protected String description;
+        protected Icon   stateIcon;
 
         public String getDescription() {
             return description;
         }
 
         public Icon getIcon() {
-            return icon;
+            return stateIcon;
         }
 
-        private PluginState(String message, Icon icon2) {
+        protected PluginState(String message, Icon icon2) {
             this.description = message;
-            this.icon = icon2;
-        }
-
-        public static PluginState create(String message, Icon icon) {
-            if (StringUtils.isEmpty(message) && icon == null) {
-                return null;
-            }
-            return new PluginState(message, icon);
+            this.stateIcon = icon2;
         }
 
     }
 
+    private final static ExtractIconVariant     EXTRACTICONOK        = new ExtractIconVariant("ok", 18, 10);
+    private final static ExtractIconVariant     EXTRACTICONERROR     = new ExtractIconVariant("error", 18, 10);
+    private final static ExtMergedIcon          EXTRACTICONSTART     = new ExtractIconVariant(IconKey.ICON_MEDIA_PLAYBACK_START, 18, 16, 3, 3).crop();
+    private final static AbstractIcon           FALSEICON            = new AbstractIcon("false", 16);
+
     private final static Comparator<DomainInfo> DOMAININFOCOMPARATOR = new Comparator<DomainInfo>() {
 
-                                                                         @Override
-                                                                         public int compare(DomainInfo o1, DomainInfo o2) {
-                                                                             return o1.getTld().compareTo(o2.getTld());
-                                                                         }
-                                                                     };
+        @Override
+        public int compare(DomainInfo o1, DomainInfo o2) {
+            return o1.getTld().compareTo(o2.getTld());
+        }
+    };
 
     @Override
     public void setItems(List<DownloadLink> updatedItems) {
@@ -232,32 +230,32 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         synchronized (this) {
             /* this is called for tablechanged, so update everything for given items */
             final Temp tmp = new Temp();
-            final boolean readL = fp.getModifyLock().readLock();
-            try {
-                tmp.children = fp.getChildren().size();
-                for (final DownloadLink link : fp.getChildren()) {
-                    tmp.newInfos.add(link.getDomainInfo());
-                    addLinkToTemp(tmp, link);
-                }
-            } finally {
-                fp.getModifyLock().readUnlock(readL);
-            }
-            for (final LinkInfo linkInfo : tmp.linkInfos.values()) {
-                if (linkInfo.bytesTotal >= 0) {
-                    tmp.newSize += linkInfo.bytesTotal;
-                } else {
-                    tmp.newUnknownFileSizes++;
-                }
-                if (linkInfo.bytesDone >= 0) {
-                    tmp.newDone += linkInfo.bytesDone;
-                }
-            }
-            writeTempToFields(tmp);
-            items = updatedItems;
-            updatesDone = lupdatesRequired;
-            final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.newInfos);
-            Collections.sort(lst, DOMAININFOCOMPARATOR);
-            infos = lst.toArray(new DomainInfo[tmp.newInfos.size()]);
+                    final boolean readL = fp.getModifyLock().readLock();
+                    try {
+                        tmp.children = fp.getChildren().size();
+                        for (final DownloadLink link : fp.getChildren()) {
+                            tmp.newInfos.add(link.getDomainInfo());
+                            addLinkToTemp(tmp, link);
+                        }
+                    } finally {
+                        fp.getModifyLock().readUnlock(readL);
+                    }
+                    for (final LinkInfo linkInfo : tmp.linkInfos.values()) {
+                        if (linkInfo.bytesTotal >= 0) {
+                            tmp.newSize += linkInfo.bytesTotal;
+                        } else {
+                            tmp.newUnknownFileSizes++;
+                        }
+                        if (linkInfo.bytesDone >= 0) {
+                            tmp.newDone += linkInfo.bytesDone;
+                        }
+                    }
+                    writeTempToFields(tmp);
+                    items = updatedItems;
+                    updatesDone = lupdatesRequired;
+                    final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.newInfos);
+                    Collections.sort(lst, DOMAININFOCOMPARATOR);
+                    infos = lst.toArray(new DomainInfo[tmp.newInfos.size()]);
         }
     }
 
@@ -321,8 +319,11 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         return conditionalSkipReason;
     }
 
-    protected void addLinkToTemp(Temp tmp, DownloadLink link) {
-        String sourceUrl = link.getView().getDisplayUrl();
+    private final static WeakHashMap<DomainInfo, WeakHashMap<Icon, Icon>> ICONCACHE = new WeakHashMap<DomainInfo, WeakHashMap<Icon, Icon>>();
+
+    protected void addLinkToTemp(Temp tmp, final DownloadLink link) {
+        final DownloadLinkView view = link.getView();
+        String sourceUrl = view.getDisplayUrl();
 
         if (sourceUrl != null) {
             tmp.sameSource = StringUtils.getCommonalities(tmp.sameSource, sourceUrl);
@@ -338,42 +339,97 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         String id = null;
         PluginState ps = null;
         //
-        PluginProgress prog = link.getPluginProgress();
+        final DomainInfo domainInfo = link.getDomainInfo();
+        final PluginProgress prog = link.getPluginProgress();
         if (prog != null) {
             if (!(prog instanceof ExtractionProgress)) {
-                id = prog.getClass().getName() + link.getHost();
-                if (prog.getIcon(this) != null) {
+                final Icon icon = prog.getIcon(this);
+                if (icon != null) {
+                    id = prog.getClass().getName().concat(link.getHost());
                     if (!tmp.pluginStates.containsKey(id)) {
-                        ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(prog.getIcon(this), link.getDomainInfo()));
-                        if (ps != null) {
-                            tmp.pluginStates.put(id, ps);
-                        }
+                        ps = new PluginState(null, null) {
+
+                            @Override
+                            public synchronized Icon getIcon() {
+                                if (stateIcon == null) {
+                                    WeakHashMap<Icon, Icon> cache = ICONCACHE.get(domainInfo);
+                                    if (cache == null) {
+                                        cache = new WeakHashMap<Icon, Icon>();
+                                        ICONCACHE.put(domainInfo, cache);
+                                    }
+                                    stateIcon = cache.get(icon);
+                                    if (stateIcon == null) {
+                                        stateIcon = new FavitIcon(icon, domainInfo);
+                                        cache.put(icon, stateIcon);
+                                    }
+                                }
+                                return stateIcon;
+                            }
+
+                            @Override
+                            public String getDescription() {
+                                return prog.getMessage(FilePackageView.this) + " (" + domainInfo.getTld() + ")";
+                            }
+                        };
+                        tmp.pluginStates.put(id, ps);
                     }
                 }
             }
         }
-        ConditionalSkipReason conditionalSkipReason = getConditionalSkipReason(link);
+        final ConditionalSkipReason conditionalSkipReason = getConditionalSkipReason(link);
         if (conditionalSkipReason != null) {
-            id = conditionalSkipReason.getClass().getName() + link.getHost();
-            if (!tmp.pluginStates.containsKey(id)) {
-                ps = PluginState.create(conditionalSkipReason.getMessage(this, link) + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(conditionalSkipReason.getIcon(this, link), link.getDomainInfo()));
-                if (ps != null) {
+            final Icon icon = conditionalSkipReason.getIcon(this, link);
+            if (icon != null) {
+                id = conditionalSkipReason.getClass().getName().concat(link.getHost());
+                if (!tmp.pluginStates.containsKey(id)) {
+                    ps = new PluginState(null, null) {
+
+                        @Override
+                        public synchronized Icon getIcon() {
+                            if (stateIcon == null) {
+                                WeakHashMap<Icon, Icon> cache = ICONCACHE.get(domainInfo);
+                                if (cache == null) {
+                                    cache = new WeakHashMap<Icon, Icon>();
+                                    ICONCACHE.put(domainInfo, cache);
+                                }
+                                stateIcon = cache.get(icon);
+                                if (stateIcon == null) {
+                                    stateIcon = new FavitIcon(icon, domainInfo);
+                                    cache.put(icon, stateIcon);
+                                }
+                            }
+                            return stateIcon;
+                        }
+
+                        @Override
+                        public String getDescription() {
+                            return conditionalSkipReason.getMessage(this, link) + " (" + domainInfo.getTld() + ")";
+                        }
+                    };
                     tmp.pluginStates.put(id, ps);
                 }
             }
         }
-        SkipReason skipReason = link.getSkipReason();
+        final SkipReason skipReason = link.getSkipReason();
         if (skipReason != null) {
             id = skipReason.name();
             if (!tmp.pluginStates.containsKey(id)) {
-                ps = PluginState.create(skipReason.getExplanation(this), skipReason.getIcon(this, 18));
-                if (ps != null) {
-                    tmp.pluginStates.put(id, ps);
-                }
+                ps = new PluginState(null, null) {
+                    public String getDescription() {
+                        return skipReason.getExplanation(this);
+                    };
+
+                    public Icon getIcon() {
+                        if (stateIcon == null) {
+                            stateIcon = skipReason.getIcon(this, 18);
+                        }
+                        return stateIcon;
+                    };
+                };
+                tmp.pluginStates.put(id, ps);
             }
         }
-        FinalLinkState finalLinkState = link.getFinalLinkState();
-
+        final FinalLinkState finalLinkState = link.getFinalLinkState();
         if (finalLinkState != null) {
             // if (FinalLinkState.CheckFailed(finalLinkState)) {
             switch (finalLinkState) {
@@ -385,12 +441,33 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             case FAILED_SHA1:
             case OFFLINE:
             case PLUGIN_DEFECT:
-                id = "error" + link.getHost();
+                id = "error".concat(link.getHost());
                 if (!tmp.pluginStates.containsKey(id)) {
-                    ps = PluginState.create(_GUI._.FilePackageView_addLinkToTemp_downloaderror_() + " (" + link.getDomainInfo().getTld() + ")", new FavitIcon(this.falseIcon, link.getDomainInfo()));
-                    if (ps != null) {
-                        tmp.pluginStates.put(id, ps);
-                    }
+                    ps = new PluginState(null, null) {
+
+                        @Override
+                        public synchronized Icon getIcon() {
+                            if (stateIcon == null) {
+                                WeakHashMap<Icon, Icon> cache = ICONCACHE.get(domainInfo);
+                                if (cache == null) {
+                                    cache = new WeakHashMap<Icon, Icon>();
+                                    ICONCACHE.put(domainInfo, cache);
+                                }
+                                stateIcon = cache.get(FALSEICON);
+                                if (stateIcon == null) {
+                                    stateIcon = new FavitIcon(FALSEICON, domainInfo);
+                                    cache.put(FALSEICON, stateIcon);
+                                }
+                            }
+                            return stateIcon;
+                        }
+
+                        @Override
+                        public String getDescription() {
+                            return _GUI._.FilePackageView_addLinkToTemp_downloaderror_() + " (" + domainInfo.getTld() + ")";
+                        }
+                    };
+                    tmp.pluginStates.put(id, ps);
                 }
                 break;
             case FINISHED:
@@ -401,7 +478,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             }
 
             // }
-            ExtractionStatus extractionStatus = link.getExtractionStatus();
+            final ExtractionStatus extractionStatus = link.getExtractionStatus();
             if (extractionStatus != null) {
                 switch (extractionStatus) {
                 case ERROR:
@@ -415,12 +492,14 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     // extracting the archive name here is probably too slow
                     // ExtractionExtension.getIntance().createArchiveID(new DownloadLinkArchiveFactory(link));
                     if (StringUtils.isNotEmpty(archiveID)) {
-                        id = "extractError:" + archiveID;
+                        id = "extractError:".concat(archiveID);
                         if (!tmp.pluginStates.containsKey(id)) {
-                            ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getName() + ")", new ExtractIconVariant("error", 18, 10));
-                            if (ps != null) {
-                                tmp.pluginStates.put(id, ps);
-                            }
+                            ps = new PluginState(null, EXTRACTICONERROR) {
+                                public String getDescription() {
+                                    return extractionStatus.getExplanation() + " (" + link.getName() + ")";
+                                };
+                            };
+                            tmp.pluginStates.put(id, ps);
                         }
                     }
                     break;
@@ -429,12 +508,14 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     // extracting the archive name here is probably too slow
                     // ExtractionExtension.getIntance().createArchiveID(new DownloadLinkArchiveFactory(link));
                     if (StringUtils.isNotEmpty(archiveID)) {
-                        id = "ExtractSuccess:" + archiveID;
+                        id = "ExtractSuccess:".concat(archiveID);
                         if (!tmp.pluginStates.containsKey(id)) {
-                            ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getName() + ")", new ExtractIconVariant("ok", 18, 10));
-                            if (ps != null) {
-                                tmp.pluginStates.put(id, ps);
-                            }
+                            ps = new PluginState(null, EXTRACTICONOK) {
+                                public String getDescription() {
+                                    return extractionStatus.getExplanation() + " (" + link.getName() + ")";
+                                };
+                            };
+                            tmp.pluginStates.put(id, ps);
                         }
                     }
                     break;
@@ -444,24 +525,28 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     // ExtractionExtension.getIntance().createArchiveID(new DownloadLinkArchiveFactory(link));
 
                     if (StringUtils.isNotEmpty(archiveID)) {
-                        id = "ExtractionRunning" + archiveID;
-                        prog = link.getPluginProgress();
+                        id = "ExtractionRunning".concat(archiveID);
+                        final PluginProgress prog2 = link.getPluginProgress();
                         ps = null;
-                        if (prog != null) {
-                            if (prog instanceof ExtractionProgress) {
+                        if (prog2 != null) {
+                            if (prog2 instanceof ExtractionProgress) {
                                 if (!tmp.pluginStates.containsKey(id)) {
-                                    ps = PluginState.create(prog.getMessage(FilePackageView.this) + " (" + link.getName() + ")", new ExtractIconVariant(IconKey.ICON_MEDIA_PLAYBACK_START, 18, 16, 3, 3).crop());
-                                    if (ps != null) {
-                                        tmp.pluginStates.put(id, ps);
-                                    }
+                                    ps = new PluginState(null, EXTRACTICONSTART) {
+                                        public String getDescription() {
+                                            return prog2.getMessage(FilePackageView.this) + " (" + link.getName() + ")";
+                                        };
+                                    };
+                                    tmp.pluginStates.put(id, ps);
                                 }
                             }
                         }
                         if (ps == null && !tmp.pluginStates.containsKey(id)) {
-                            ps = PluginState.create(extractionStatus.getExplanation() + " (" + link.getName() + ")", new ExtractIconVariant(IconKey.ICON_MEDIA_PLAYBACK_START, 18, 16, 3, 3).crop());
-                            if (ps != null) {
-                                tmp.pluginStates.put(id, ps);
-                            }
+                            ps = new PluginState(null, EXTRACTICONSTART) {
+                                public String getDescription() {
+                                    return extractionStatus.getExplanation() + " (" + link.getName() + ")";
+                                };
+                            };
+                            tmp.pluginStates.put(id, ps);
                         }
 
                     }
@@ -479,7 +564,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
             tmp.newEnabledCount++;
         }
-        final DownloadLinkView view = link.getView();
+
         final String displayName = view.getDisplayName();
         LinkInfo linkInfo = tmp.linkInfos.get(displayName);
         if (linkInfo == null) {
@@ -503,23 +588,23 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         if (link.isEnabled() && link.getFinalLinkState() == null) {
             /* link must be enabled and not finished state */
             boolean linkRunning = link.getDownloadLinkController() != null;
-            if (linkRunning || tmp.eta.contains(link.getView().getDisplayName()) == false) {
+            if (linkRunning || tmp.eta.contains(displayName) == false) {
                 if (linkRunning) {
                     tmp.fpRunning = true;
-                    tmp.eta.add(link.getView().getDisplayName());
+                    tmp.eta.add(displayName);
                 }
 
                 if (link.getView().getBytesTotal() >= 0) {
                     /* we know at least one filesize */
                     tmp.sizeKnown = true;
                 }
-                final long linkTodo = Math.max(-1, link.getView().getBytesTotal() - link.getView().getBytesLoaded());
+                final long linkTodo = Math.max(-1, view.getBytesTotal() - view.getBytesLoaded());
                 SingleDownloadController sdc = link.getDownloadLinkController();
                 DownloadInterface dli = null;
                 if (sdc != null) {
                     dli = sdc.getDownloadInstance();
                 }
-                long linkSpeed = link.getView().getSpeedBps();
+                long linkSpeed = view.getSpeedBps();
                 if (dli == null || (System.currentTimeMillis() - dli.getStartTimeStamp()) < 5000) {
                     /* wait at least 5 secs when download is running, to avoid speed fluctuations in overall ETA */
                     linkSpeed = 0;

@@ -67,46 +67,48 @@ public class SmoozedCom extends PluginForHost {
 
     @Override
     public List<DownloadLink> sortDownloadLinks(Account account, List<DownloadLink> downloadLinks) {
-        synchronized (ACCOUNTINFOS) {
-            final Map<String, Object> map = ACCOUNTINFOS.get(account);
-            if (map != null) {
-                Collections.sort(downloadLinks, new Comparator<DownloadLink>() {
+        if (getPluginConfig().getBooleanProperty(AUTOMIRROR, true) == true) {
+            synchronized (ACCOUNTINFOS) {
+                final Map<String, Object> map = ACCOUNTINFOS.get(account);
+                if (map != null) {
+                    Collections.sort(downloadLinks, new Comparator<DownloadLink>() {
 
-                    public int compare(Number x, Number y) {
-                        if (x != null && y != null) {
-                            return (x.intValue() < y.intValue()) ? 1 : ((x.intValue() == y.intValue()) ? 0 : -1);
-                        } else if (x == null && y == null) {
-                            return 0;
-                        } else if (x != null) {
-                            return -1;
-                        } else {
-                            return 1;
+                        public int compare(Number x, Number y) {
+                            if (x != null && y != null) {
+                                return (x.intValue() < y.intValue()) ? 1 : ((x.intValue() == y.intValue()) ? 0 : -1);
+                            } else if (x == null && y == null) {
+                                return 0;
+                            } else if (x != null) {
+                                return -1;
+                            } else {
+                                return 1;
+                            }
                         }
-                    }
 
-                    @Override
-                    public int compare(DownloadLink o1, DownloadLink o2) {
-                        final Map<String, Object> o1Settings = getHostSettings(map, o1.getHost());
-                        final Map<String, Object> o2Settings = getHostSettings(map, o2.getHost());
-                        final Number o1Priority;
-                        if (o1Settings != null) {
-                            o1Priority = (Number) o1Settings.get("priority");
-                        } else {
-                            o1Priority = null;
+                        @Override
+                        public int compare(DownloadLink o1, DownloadLink o2) {
+                            final Map<String, Object> o1Settings = getHostSettings(map, o1.getHost());
+                            final Map<String, Object> o2Settings = getHostSettings(map, o2.getHost());
+                            final Number o1Priority;
+                            if (o1Settings != null) {
+                                o1Priority = (Number) o1Settings.get("priority");
+                            } else {
+                                o1Priority = null;
+                            }
+                            final Number o2Priority;
+                            if (o2Settings != null) {
+                                o2Priority = (Number) o2Settings.get("priority");
+                            } else {
+                                o2Priority = null;
+                            }
+                            return compare(o1Priority, o2Priority);
                         }
-                        final Number o2Priority;
-                        if (o2Settings != null) {
-                            o2Priority = (Number) o2Settings.get("priority");
-                        } else {
-                            o2Priority = null;
-                        }
-                        return compare(o1Priority, o2Priority);
-                    }
 
-                });
+                    });
+                }
             }
-            return downloadLinks;
         }
+        return downloadLinks;
     }
 
     private void restoreAccountInfos(Account account) {
@@ -284,10 +286,12 @@ public class SmoozedCom extends PluginForHost {
         }
     }
 
-    private final String AUTOLOG = "AUTOLOG";
+    private final String AUTOLOG    = "AUTOLOG";
+    private final String AUTOMIRROR = "AUTOMIRROR";
 
     public void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), AUTOLOG, "Send debug logs to Smoozed.com automatically?").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), AUTOMIRROR, "Enable Smoozed.com mirror selection mode?").setDefaultValue(true));
     }
 
     @Override
