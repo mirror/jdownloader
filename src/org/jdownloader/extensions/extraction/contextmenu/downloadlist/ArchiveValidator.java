@@ -68,6 +68,10 @@ public class ArchiveValidator {
     }
 
     public static List<Archive> getArchivesFromPackageChildren(List<? extends Object> nodes) {
+        return getArchivesFromPackageChildren(nodes, -1);
+    }
+
+    public static List<Archive> getArchivesFromPackageChildren(List<? extends Object> nodes, int maxArchives) {
         final ExtractionExtension extractor = EXTENSION;
         final ArrayList<Archive> archives = new ArrayList<Archive>();
         if (extractor != null) {
@@ -92,6 +96,9 @@ public class ArchiveValidator {
                 final Archive archive = extractor.getArchiveByFactory(af);
                 if (archive != null) {
                     archives.add(archive);
+                    if (maxArchives > 0 && archives.size() >= maxArchives) {
+                        return archives;
+                    }
                 }
             }
         }
