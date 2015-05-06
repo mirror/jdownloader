@@ -66,8 +66,8 @@ public class OshoWorldCom extends PluginForDecrypt {
                 final DownloadLink d = createDownloadlink(parameter.replaceFirst("oshoworld.com/", "oshoworlddecrypted.com/"));
                 d.setName(iFilename);
                 d.setDownloadSize(SizeFormatter.getSize(filesize + " MiB"));
-                if (i.containsKey("checked") && !"checked".equals(i.get("checked"))) {
-                    i.put("checked", "checked");
+                if (i.containsProperty("checked") && !"checked".equals(i.getProperty("checked", null))) {
+                    i.putProperty("checked", "checked");
                 }
                 d.setProperty("iFilename", iFilename);
                 d.setProperty("result", r);
