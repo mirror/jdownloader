@@ -1,12 +1,10 @@
 package org.jdownloader.gui.views.downloads.properties;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JPopupMenu;
 
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -32,8 +30,12 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
 
     @Override
     protected List<Archive> loadArchives() {
-        final ArrayList<DownloadLink> children = DownloadController.getInstance().getChildrenCopy(currentPackage);
-        return ArchiveValidator.getArchivesFromPackageChildren(children);
+        final boolean readL2 = currentPackage.getModifyLock().readLock();
+        try {
+            return ArchiveValidator.getArchivesFromPackageChildren(currentPackage.getChildren(), 2);
+        } finally {
+            currentPackage.getModifyLock().readUnlock(readL2);
+        }
     }
 
     public void fillPopup(JPopupMenu pu) {

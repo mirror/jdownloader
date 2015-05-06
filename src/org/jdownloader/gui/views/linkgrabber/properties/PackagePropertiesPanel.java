@@ -1,12 +1,10 @@
 package org.jdownloader.gui.views.linkgrabber.properties;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JPopupMenu;
 
-import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
@@ -31,8 +29,12 @@ public class PackagePropertiesPanel extends LinkPropertiesPanel {
 
     @Override
     protected List<Archive> loadArchives() {
-        final ArrayList<CrawledLink> children = LinkCollector.getInstance().getChildrenCopy(currentPackage);
-        return ArchiveValidator.getArchivesFromPackageChildren(children);
+        final boolean readL2 = currentPackage.getModifyLock().readLock();
+        try {
+            return ArchiveValidator.getArchivesFromPackageChildren(currentPackage.getChildren(), 2);
+        } finally {
+            currentPackage.getModifyLock().readUnlock(readL2);
+        }
     }
 
     public void fillPopup(JPopupMenu pu) {
