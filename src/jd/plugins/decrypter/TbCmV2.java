@@ -64,7 +64,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?(youtube\\.com|yt\\.not\\.allowed)/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?(\\&variant=[a-z\\_0-9]+)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/)[A-Za-z0-9\\-_]+(\\?variant=[a-z_0.9]+)?" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com", "youtube.com", "youtube.com" }, urls = { "https?://([a-z]+\\.)?yt\\.not\\.allowed/.+", "https?://([a-z]+\\.)?youtube\\.com/(embed/|.*?watch.*?v(%3D|=)|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/|channel/|course\\?list=)[A-Za-z0-9\\-_]+(.*?page=\\d+)?(.*?list=[A-Za-z0-9\\-_]+)?(\\&variant=[a-z\\_0-9]+)?|watch_videos\\?.*?video_ids=.+", "https?://youtube\\.googleapis\\.com/(v/|user/|channel/)[A-Za-z0-9\\-_]+(\\?variant=[a-z_0.9]+)?" }, flags = { 0, 0, 0 })
 public class TbCmV2 extends PluginForDecrypt {
 
     public TbCmV2(PluginWrapper wrapper) {
@@ -173,11 +173,18 @@ public class TbCmV2 extends PluginForDecrypt {
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
         String cryptedLink = param.getCryptedUrl();
         if (StringUtils.containsIgnoreCase(cryptedLink, "yt.not.allowed")) {
+            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             if (cfg.isAndroidSupportEnabled()) {
-                cryptedLink = cryptedLink.replaceFirst("yt\\.not\\.allowed", "youtube.com");
-            } else {
-                return new ArrayList<DownloadLink>();
+                if (cryptedLink.matches("https?://[\\w\\.]*yt\\.not\\.allowed/[a-z_A-Z0-9\\-]+")) {
+                    cryptedLink = cryptedLink.replaceFirst("yt\\.not\\.allowed", "youtu.be");
+                } else {
+                    cryptedLink = cryptedLink.replaceFirst("yt\\.not\\.allowed", "youtube.com");
+                }
+                final DownloadLink link = createDownloadlink(cryptedLink);
+                link.setContainerUrl(cryptedLink);
+                ret.add(link);
             }
+            return ret;
         }
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>() {
             @Override
@@ -685,37 +692,37 @@ public class TbCmV2 extends PluginForDecrypt {
 
                 }
 
-            if (extra != null && extra.length > 0) {
-                main: for (VariantInfo v : allVariants.values()) {
-                    for (String s : extra) {
-                        if (v.variant.getTypeId().equals(s)) {
+                if (extra != null && extra.length > 0) {
+                    main: for (VariantInfo v : allVariants.values()) {
+                        for (String s : extra) {
+                            if (v.variant.getTypeId().equals(s)) {
 
-                            String groupID = getGroupID(v.variant);
+                                String groupID = getGroupID(v.variant);
 
-                            List<VariantInfo> fromGroup = groups.get(groupID);
+                                List<VariantInfo> fromGroup = groups.get(groupID);
 
-                            decryptedLinks.add(createLink(v, fromGroup));
-                            continue main;
+                                decryptedLinks.add(createLink(v, fromGroup));
+                                continue main;
 
-                        }
-                    }
-                }
-
-            }
-
-            ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
-            if (extraSubtitles != null) {
-                for (String v : extraSubtitles) {
-                    if (v != null) {
-                        for (VariantInfo vi : allSubtitles) {
-                            if (vi.getIdentifier().equalsIgnoreCase(v)) {
-                                decryptedLinks.add(createLink(vi, allSubtitles));
                             }
+                        }
+                    }
 
+                }
+
+                ArrayList<String> extraSubtitles = cfg.getExtraSubtitles();
+                if (extraSubtitles != null) {
+                    for (String v : extraSubtitles) {
+                        if (v != null) {
+                            for (VariantInfo vi : allSubtitles) {
+                                if (vi.getIdentifier().equalsIgnoreCase(v)) {
+                                    decryptedLinks.add(createLink(vi, allSubtitles));
+                                }
+
+                            }
                         }
                     }
                 }
-            }
 
             }
         }

@@ -2179,7 +2179,7 @@ public class LinkCrawler {
     public static boolean isTempDecryptedURL(String url) {
         if (url != null) {
             final String host = Browser.getHost(url, true);
-            return StringUtils.containsIgnoreCase(host, "decrypted");
+            return StringUtils.containsIgnoreCase(host, "decrypted") || StringUtils.containsIgnoreCase(host, "yt.not.allowed");
         }
         return false;
     }
@@ -2188,7 +2188,7 @@ public class LinkCrawler {
         final String protocol = HTMLParser.getProtocol(cUrl);
         if (protocol != null) {
             final String host = Browser.getHost(cUrl, true);
-            if (protocol != null && !StringUtils.containsIgnoreCase(host, "decrypted") && !StringUtils.containsIgnoreCase(host, "dummycnl.jdownloader.org")) {
+            if (protocol != null && !StringUtils.containsIgnoreCase(host, "decrypted") && !StringUtils.containsIgnoreCase(host, "dummycnl.jdownloader.org") && !StringUtils.containsIgnoreCase(host, "yt.not.allowed")) {
                 if (cUrl.startsWith("http://") || cUrl.startsWith("https://") || cUrl.startsWith("ftp://")) {
                     return cUrl;
                 } else if (cUrl.startsWith("directhttp://")) {
