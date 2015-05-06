@@ -176,20 +176,6 @@ public class RPNetBiz extends PluginForHost {
             /* without account its not possible to download the link */
             return false;
         }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         return true;
     }
 
@@ -214,7 +200,24 @@ public class RPNetBiz extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
         // Temporary workaround for bitshare. Can be removed when rpnet accepts bitshare shorthand links.
         String downloadURL = null;
         if (link.getDownloadURL().contains("bitshare.com/?f=")) {
@@ -242,7 +245,7 @@ public class RPNetBiz extends PluginForHost {
             // end of workaround
             showMessage(link, "Generating Link");
             /* request Download */
-            String apiDownloadLink = mPremium + "client_api.php?username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&action=generate&links=" + Encoding.urlEncode(downloadURL);
+            String apiDownloadLink = mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=generate&links=" + Encoding.urlEncode(downloadURL);
             br.getPage(apiDownloadLink);
             JSonObject node = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
             JSonArray links = (JSonArray) node.get("links");
@@ -267,7 +270,7 @@ public class RPNetBiz extends PluginForHost {
                     int tryNumber = 0;
 
                     while (tryNumber <= 30) {
-                        br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&action=downloadInformation&id=" + Encoding.urlEncode(id));
+                        br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=downloadInformation&id=" + Encoding.urlEncode(id));
                         JSonObject node2 = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
                         JSonObject downloadNode = (JSonObject) node2.get("download");
                         String tmp = downloadNode.get("status").toString();
@@ -331,7 +334,7 @@ public class RPNetBiz extends PluginForHost {
             } else {
                 link.setProperty("timesfailed" + FAIL_STRING + "_dlfailedunknown", Property.NULL);
                 logger.info(this.getHost() + ": Download failed for unknown reasons -> Disabling current host");
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
         }
     }

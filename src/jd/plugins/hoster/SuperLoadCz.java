@@ -45,6 +45,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superload.cz" }, urls = { "http://\\w+\\.superload\\.eu/download\\.php\\?a=[a-z0-9]+" }, flags = { 2 })
 public class SuperLoadCz extends PluginForHost {
     /* IMPORTANT: superload.cz and stahomat.cz use the same api */
+    /* IMPORTANT2: 30.04.15: They block IPs from the following countries: es, it, jp, fr, cl, br, ar, de, mx, cn, ve */
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
 
@@ -153,20 +154,6 @@ public class SuperLoadCz extends PluginForHost {
             /* without account its not possible to download the link */
             return false;
         }
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         return true;
     }
 
@@ -213,26 +200,43 @@ public class SuperLoadCz extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(final DownloadLink downloadLink, final Account account) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
         prepBrowser(br);
-        final String pass = downloadLink.getStringProperty("pass", null);
-        String dllink = checkDirectLink(downloadLink, "superloadczdirectlink");
+        final String pass = link.getStringProperty("pass", null);
+        String dllink = checkDirectLink(link, "superloadczdirectlink");
         if (dllink == null) {
-            showMessage(downloadLink, "Task 1: Generating Link");
+            showMessage(link, "Task 1: Generating Link");
             /* request Download */
-            postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + (pass != null ? "&password=" + Encoding.urlEncode(pass) : "") + "&token=");
+            postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(link.getDownloadURL()) + (pass != null ? "&password=" + Encoding.urlEncode(pass) : "") + "&token=");
             if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (br.containsHTML("\"error\":\"invalidLink\"")) {
                 logger.info("Superload.cz says 'invalid link', disabling real host for 1 hour.");
-                tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             } else if (br.containsHTML("\"error\":\"temporarilyUnsupportedServer\"")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temp. Error. Try again later", 5 * 60 * 1000l);
             } else if (br.containsHTML("\"error\":\"fileNotFound\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("\"error\":\"unsupportedServer\"")) {
                 logger.info("Superload.cz says 'unsupported server', disabling real host for 1 hour.");
-                tempUnavailableHoster(account, downloadLink, 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             } else if (br.containsHTML("\"error\":\"Lack of credits\"")) {
                 logger.info("Superload.cz says 'Lack of credits', temporarily disabling account.");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -241,10 +245,10 @@ public class SuperLoadCz extends PluginForHost {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            showMessage(downloadLink, "Task 2: Download begins!");
+            showMessage(link, "Task 2: Download begins!");
         }
         // might need a sleep here hoster seems to have troubles with new links.
-        handleDL(account, downloadLink, dllink);
+        handleDL(account, link, dllink);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {

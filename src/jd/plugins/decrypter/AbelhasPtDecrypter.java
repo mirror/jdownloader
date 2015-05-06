@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abelhas.pt" }, urls = { "http://([a-z0-9]+\\.)?abelhas\\.pt/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abelhas.pt" }, urls = { "http://(?!blog)([a-z0-9]+\\.)?abelhas\\.pt/.+" }, flags = { 0 })
 public class AbelhasPtDecrypter extends PluginForDecrypt {
 
     public AbelhasPtDecrypter(PluginWrapper wrapper) {
@@ -44,9 +44,10 @@ public class AbelhasPtDecrypter extends PluginForDecrypt {
     @Override
     protected DownloadLink createDownloadlink(String link) {
         DownloadLink ret = super.createDownloadlink(link);
-
         return ret;
     }
+
+    private static final String TYPE_INVALID = "";
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

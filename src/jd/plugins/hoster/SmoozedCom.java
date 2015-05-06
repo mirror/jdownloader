@@ -431,16 +431,16 @@ public class SmoozedCom extends PluginForHost {
                 if (StringUtils.equalsIgnoreCase(message, "Hoster temporary not available") || StringUtils.equalsIgnoreCase(message, "Internal error")) {
                     // Hoster temporary not available
                     if (seconds != null) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster temporary not available", seconds.intValue() * 1000);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster temporary not availabl via smoozed.come", seconds.intValue() * 1000);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster temporary not available");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster temporary not availablevia smoozed.com");
                     }
                 } else if (StringUtils.equalsIgnoreCase(message, "Temporary not available")) {
                     // File temporary not available
                     if (seconds != null) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporary not available", seconds.intValue() * 1000);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporary not downloadable via smoozed.com", seconds.intValue() * 1000);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporary not available");
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporary not downloadable via smoozed.com");
                     }
                 } else if (StringUtils.equalsIgnoreCase(message, "No traffic available")) {
                     // No traffic available

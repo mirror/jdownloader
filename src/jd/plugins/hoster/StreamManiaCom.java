@@ -131,9 +131,27 @@ public class StreamManiaCom extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
-        String user = Encoding.urlEncode(acc.getUser());
-        String pw = Encoding.urlEncode(acc.getPass());
+    @SuppressWarnings("deprecation")
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
+        String user = Encoding.urlEncode(account.getUser());
+        String pw = Encoding.urlEncode(account.getPass());
         String url = Encoding.urlEncode(link.getDownloadURL());
         br.setFollowRedirects(true);
         br.setConnectTimeout(90 * 1000);
@@ -162,7 +180,7 @@ public class StreamManiaCom extends PluginForHost {
                 /* reset retry counter */
                 link.getLinkStatus().setRetryCount(0);
                 /* disable hoster for one hour */
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000);
             }
             String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
@@ -190,7 +208,7 @@ public class StreamManiaCom extends PluginForHost {
             br.followConnection();
             logger.severe(hostPublicDomain + "(Error): " + br.toString());
             /* disable for 20 min */
-            tempUnavailableHoster(acc, link, 20 * 60 * 1000);
+            tempUnavailableHoster(account, link, 20 * 60 * 1000);
         }
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("final downloadlink leads to html code...");
@@ -205,7 +223,7 @@ public class StreamManiaCom extends PluginForHost {
             } else {
                 link.setProperty("timesfailed" + FAIL_STRING + "_unknowndlerror", Property.NULL);
                 logger.info(this.getHost() + ": unknowndlerror --> Remporarily desabling current host");
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000);
             }
         }
         try {
@@ -256,20 +274,6 @@ public class StreamManiaCom extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         return true;
     }
 

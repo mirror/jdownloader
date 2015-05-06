@@ -127,6 +127,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
                 captchaForm.put("button.x", String.valueOf(p.x));
                 captchaForm.put("button.y", String.valueOf(p.y));
+                captchaForm.remove("button");
                 submitForm(captchaForm);
             } else if (captchaForm != null && captchaForm.containsHTML("=\"g-recaptcha\"")) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();

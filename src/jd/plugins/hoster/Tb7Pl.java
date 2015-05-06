@@ -151,11 +151,28 @@ public class Tb7Pl extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(link.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
+                    }
+                }
+            }
+        }
+
         boolean resume = true;
         showMessage(link, "Phase 1/3: Login");
 
-        login(acc, false);
+        login(account, false);
         br.setConnectTimeout(90 * 1000);
         br.setReadTimeout(90 * 1000);
         dl = null;
@@ -200,7 +217,7 @@ public class Tb7Pl extends PluginForHost {
                 if (link.getLinkStatus().getRetryCount() >= 2) {
                     try {
                         // disable hoster for 30min
-                        tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
+                        tempUnavailableHoster(account, link, 30 * 60 * 1000l);
                     } catch (Exception e) {
                     }
                     /* reset retrycounter */
@@ -241,14 +258,14 @@ public class Tb7Pl extends PluginForHost {
 
             if (br.getBaseURL().contains("notransfer")) {
                 /* No traffic left */
-                acc.getAccountInfo().setTrafficLeft(0);
+                account.getAccountInfo().setTrafficLeft(0);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "No traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             if (br.getBaseURL().contains("serviceunavailable")) {
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
             if (br.getBaseURL().contains("connecterror")) {
-                tempUnavailableHoster(acc, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
             }
             if (br.getBaseURL().contains("invaliduserpass")) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -270,7 +287,7 @@ public class Tb7Pl extends PluginForHost {
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
-            tempUnavailableHoster(acc, link, 20 * 60 * 1000l);
+            tempUnavailableHoster(account, link, 20 * 60 * 1000l);
         }
         showMessage(link, "Phase 3/3: Begin download");
         dl.startDownload();
@@ -342,20 +359,6 @@ public class Tb7Pl extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    return false;
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(downloadLink.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
         return true;
     }
 
