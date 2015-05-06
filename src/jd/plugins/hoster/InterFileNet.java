@@ -407,7 +407,7 @@ public class InterFileNet extends PluginForHost {
                 InputField f = download1.getInputFieldByName("method_sms");
                 if (f != null) {
                     download1.addInputField(new InputField("method_free", f.getValue()));
-                    download1.remove(f);
+                    download1.removeInputField(f);
                 }
                 sendForm(download1);
                 if (cbr.containsHTML("This file is available for Premium Users only.")) {
