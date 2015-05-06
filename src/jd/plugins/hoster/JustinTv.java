@@ -249,12 +249,17 @@ public class JustinTv extends PluginForHost {
             formattedDate = formatter.format(theDate);
         }
         // parse for user characters outside of wild card, only used as separators.
-        String p = new Regex(formattedFilename, "\\*?([^\\*]*)?\\*partnumber\\*([^\\*]*)?").getMatch(-1);
+        final String p = new Regex(formattedFilename, "\\*?(([^\\*]*)?\\*partnumber\\*([^\\*]*)?)").getMatch(0);
         if (partNumber == -1) {
-            formattedFilename = formattedFilename.replace(p, "");
+            if (p != null) {
+                formattedFilename = formattedFilename.replace(p, "");
+            } else {
+                formattedFilename = formattedFilename.replace("*partnumber*", "");
+            }
         } else {
             formattedFilename = formattedFilename.replace("*partnumber*", df.format(partNumber));
         }
+
         formattedFilename = formattedFilename.replace("*quality*", quality);
         formattedFilename = formattedFilename.replace("*channelname*", channelName);
         formattedFilename = formattedFilename.replace("*videoQuality*", videoQuality == -1 ? "" : videoQuality + "p");
