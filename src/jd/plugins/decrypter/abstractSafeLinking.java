@@ -307,6 +307,8 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
                     rc.load();
                     File cfRe = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String code = getCaptchaCode(cfRe, param);
+                    /* Sometimes that field already exists containing the value "manuel_challenge" */
+                    protectedForm.remove("recaptcha_response_field");
                     protectedForm.put("recaptcha_challenge_field", rc.getChallenge());
                     protectedForm.put("recaptcha_response_field", Encoding.urlEncode(code));
                     break;

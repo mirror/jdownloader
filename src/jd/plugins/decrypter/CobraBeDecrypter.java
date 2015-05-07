@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cobra.be" }, urls = { "http://(www\\.)?cobra\\.be/(permalink/\\d\\.\\d+|cm/(vrtnieuws|cobra)([^/]+)?/(mediatheek|videozone).+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cobra.be" }, urls = { "http://(www\\.)?cobra\\.be/(permalink/\\d\\.\\d+|cm/(vrtnieuws|cobra)([^/]+)?/(mediatheek|videozone).+)" }, flags = { 0 })
 public class CobraBeDecrypter extends PluginForDecrypt {
 
     public CobraBeDecrypter(PluginWrapper wrapper) {
@@ -60,6 +60,7 @@ public class CobraBeDecrypter extends PluginForDecrypt {
         }
         final String filename = br.getRegex("data\\-video\\-title=\"([^<>\"]*?)\"").getMatch(0);
         if (filename != null) {
+            mainlink.setLinkID(filename);
             mainlink.setName(Encoding.htmlDecode(filename.trim()));
         }
         decryptedLinks.add(mainlink);

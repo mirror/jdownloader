@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -29,11 +27,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 /*
  * vrt.be network
  * old content handling --> var vars12345 = Array();
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cobra.be" }, urls = { "http://cobradecrypted\\.be/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cobra.be" }, urls = { "http://cobradecrypted\\.be/\\d+" }, flags = { 0 })
 public class CobraBe extends PluginForHost {
 
     public CobraBe(PluginWrapper wrapper) {
@@ -54,43 +54,36 @@ public class CobraBe extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getStringProperty("mainlink", null));
         // Link offline
-        if (br.containsHTML(">Pagina \\- niet gevonden<|>De pagina die u zoekt kan niet gevonden worden") || !br.containsHTML("class=\"media flashPlayer bigMediaItem\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        DLLINK = br.getRegex("data\\-video\\-src=\"(http://[^<>\"]*?)\"").getMatch(0);
-        final String filename = br.getRegex("data\\-video\\-title=\"([^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()).replaceAll("\"", "") + ext);
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
+        if (br.containsHTML(">Pagina \\- niet gevonden<|>De pagina die u zoekt kan niet gevonden worden") || !br.containsHTML("class=\"media flashPlayer bigMediaItem\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String filename = br.getRegex("data\\-video\\-title=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
+        final String ext = ".mp4";
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()).replaceAll("\"", "") + ext);
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        final String hlsserver = br.getRegex("data-video-iphone-server=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        final String hlsfile = br.getRegex("data-video-iphone-path=\"(mp4:[^<>\"]*?\\.m3u8)\"").getMatch(0);
+        if (hlsserver == null || hlsfile == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String hlsmanifest = hlsserver + "/" + hlsfile;
+        br.getPage(hlsmanifest);
+        DLLINK = br.getRegex("(chunklist\\.m3u8.*?)\n").getMatch(0);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        DLLINK = hlsmanifest.replace("/playlist.m3u8", "") + "/" + DLLINK;
+        checkFFmpeg(downloadLink, "Download a HLS Stream");
+        dl = new HLSDownloader(downloadLink, br, DLLINK);
         dl.startDownload();
     }
 
