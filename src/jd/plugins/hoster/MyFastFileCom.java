@@ -234,6 +234,7 @@ public class MyFastFileCom extends antiDDoSForHost {
         dl.startDownload();
     }
 
+    @Override
     protected void getPage(final String page) throws Exception {
         super.getPage(page);
         updatestatuscode();
