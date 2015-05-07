@@ -140,7 +140,7 @@ public class IfolderRu extends PluginForHost {
                 watchAd = br.getRegex("\"f_top\" src=\"(.*?)\"").getMatch(0);
                 // If they take the waittime out this part is optional
                 if (watchAd != null) {
-                    logger.info("Waittime active");
+                    logger.info("Third watchad available --> Waittime active");
                     br.getPage(watchAd);
                     /* Tickettime */
                     String ticketTimeS = br.getRegex("delay = (\\d+)").getMatch(0);
