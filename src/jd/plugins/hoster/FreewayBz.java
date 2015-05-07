@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.awt.Color;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -39,7 +38,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
@@ -49,7 +47,7 @@ import org.jdownloader.plugins.accounts.EditAccountPanel;
 import org.jdownloader.plugins.accounts.Notifier;
 
 @HostPlugin(revision = "$Revision: 26092 $", interfaceVersion = 3, names = { "freeway.bz" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 2 })
-public class FreewayBz extends PluginForHost {
+public class FreewayBz extends antiDDoSForHost {
 
     // DEV NOTES
     // password is APIKey from users profile.
@@ -105,10 +103,9 @@ public class FreewayBz extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
-        prepBR();
         final AccountInfo ac = new AccountInfo();
         br.setFollowRedirects(true);
-        getAPISafe(mProt + mName + "/filehostapi?action=accountstatus&user_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()));
+        getPage(mProt + mName + "/filehostapi?action=accountstatus&user_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()));
         if ("error".equals(this.getJson("status"))) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -141,7 +138,7 @@ public class FreewayBz extends PluginForHost {
         }
 
         // now it's time to get all supported hosts
-        getAPISafe("/filehostapi?action=hosts&user_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()));
+        getPage("/filehostapi?action=hosts&user_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()));
         if (inValidStatus()) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCan not parse supported hosts!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
@@ -158,7 +155,6 @@ public class FreewayBz extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         setConstants(account, link);
-        prepBR();
 
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
@@ -187,7 +183,7 @@ public class FreewayBz extends PluginForHost {
 
         /* generate downloadlink */
         br.setFollowRedirects(true);
-        getAPISafe(mProt + mName + "/filehostapi?action=download&user_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
+        getPage(mProt + mName + "/filehostapi?action=download&user_id=" + Encoding.urlEncode(account.getUser()) + "&pin=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDownloadURL()));
 
         // parse json
         if (br.containsHTML("Max atteint\\s*!")) {
@@ -236,11 +232,10 @@ public class FreewayBz extends PluginForHost {
         dl.startDownload();
     }
 
-    @SuppressWarnings("unused")
-    private void getAPISafe(final String accesslink) throws IOException, PluginException {
-        br.getPage(accesslink);
+    protected void getPage(final String page) throws Exception {
+        super.getPage(page);
         updatestatuscode();
-        handleAPIErrors(this.br);
+        handleAPIErrors(br);
     }
 
     /** 0 = everything ok, 1-99 = possible errors */
@@ -355,42 +350,6 @@ public class FreewayBz extends PluginForHost {
         return !"ok".equalsIgnoreCase(getJson("status"));
     }
 
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    protected boolean inValidate(final String s) {
-        if (s == null || s.matches("[\r\n\t ]+") || s.equals("")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
         if (downloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
@@ -418,11 +377,6 @@ public class FreewayBz extends PluginForHost {
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         return true;
-    }
-
-    private void prepBR() {
-        br.setConnectTimeout(3 * 60 * 1000);
-        br.setReadTimeout(3 * 60 * 1000);
     }
 
     @Override
