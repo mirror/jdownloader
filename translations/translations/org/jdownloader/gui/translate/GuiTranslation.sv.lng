@@ -1017,6 +1017,7 @@ RangeValidator_toString_object_=Tillåtet intervall: %s1 - %s2
 RecaptchaV1Handler_disable=Avaktivera webbläsarloop
 RecaptchaV1Handler_load_help_=Mer information...
 RecaptchaV1Handler_load_help__title=Ny funktion: Webbläsarloop
+RecaptchaV1Handler_load_help_msg=JDownloader öppnade nyss din webbläsare, gjorde lite Captcha magi och stängde det några sekunder senare. Tack vare denna 'Webbläsarloop' kan JD visa Captchas som är mycket enklare att läsa och lösa. Om du inte vill använda denna nya funktion, klicka på [Disable Browser Loop]. Du kan aktivera eller avaktivera denna funktion under Avancderade inställningar.
 RecaptchaV1Handler_ok=Behåll Webbläsarlopp aktiverad
 Recaptcha_cookie_help_msg=Var god jämför captchas till vänster. Den enkla Captchan bör vara enklare att läsa och lösa. Im inte, så använde du inte en validerad Goggle Session, eller den angivna cookien är ogiltig..
 Recaptcha_cookie_help_msg_both_cookies=För denna option krävs 2 avancerade val:\nBrowserCaptchaSolver: Google Com Cookie Value HSID\n*BrowserCaptchaSolver: Google Com Cookie Value SID
