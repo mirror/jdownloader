@@ -142,6 +142,9 @@ public class Music163Com extends PluginForHost {
             if (tracknumber != null) {
                 filename = tracknumber + "." + filename;
             }
+            if (formattedDate != null) {
+                filename = formattedDate + "_" + filename;
+            }
         } else {
             link.setLinkID(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
             br.getPage("http://music.163.com/api/song/detail/?id=" + link.getLinkID() + "&ids=%5B" + link.getLinkID() + "%5D");
