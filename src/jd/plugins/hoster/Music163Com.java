@@ -139,11 +139,11 @@ public class Music163Com extends PluginForHost {
 
             ext = "mp4";
             filename += "." + ext;
-            if (tracknumber != null) {
-                filename = tracknumber + "." + filename;
-            }
             if (formattedDate != null) {
                 filename = formattedDate + "_" + filename;
+            }
+            if (tracknumber != null) {
+                filename = tracknumber + "." + filename;
             }
         } else {
             link.setLinkID(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
@@ -175,6 +175,7 @@ public class Music163Com extends PluginForHost {
                     break;
                 }
             }
+            /* Only set filename if user added links without decrypter. */
             if (filename == null) {
                 artist = (String) artist_info.get("name");
                 final String name_album = (String) album_info.get("name");
@@ -190,13 +191,13 @@ public class Music163Com extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 filename = artist + " - " + name_album + " - " + songname;
-            }
-            filename += "." + ext;
-            if (tracknumber != null) {
-                filename = tracknumber + "." + filename;
-            }
-            if (formattedDate != null) {
-                filename = formattedDate + "_" + filename;
+                filename += "." + ext;
+                if (formattedDate != null) {
+                    filename = formattedDate + "_" + filename;
+                }
+                if (tracknumber != null) {
+                    filename = tracknumber + "." + filename;
+                }
             }
         }
         link.setFinalFileName(filename);
