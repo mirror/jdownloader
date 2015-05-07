@@ -48,13 +48,13 @@ public class AdfLy extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String adfPre       = "https?://(www\\.)?";
+    private static final String adfPre       = "https?://(?:www\\.)?";
     // belongs to adfly group
     private static final String adfDomains   = "adf\\.ly|j\\.gs|q\\.gs|adclicks\\.pw|ay\\.gy";
     // belongs to other people who use subdomains and use adf.ly service
-    private static final String subDomains   = "(dl|david|down)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|proxy\\.doujin\\.us|free\\.singlem4a\\.com|adf\\.acb\\.im|ddl\\.tiramisubs\\.tk|packs\\.redmusic\\.pl|dl\\.android-zone\\.org|sostieni\\.ilwebmaster21\\.com";
+    private static final String subDomains   = "(?:dl|david|down)\\.nhachot\\.info|chathu\\.apkmania\\.co|alien\\.apkmania\\.co|n\\.shareme\\.in|proxy\\.doujin\\.us|free\\.singlem4a\\.com|adf\\.acb\\.im|ddl\\.tiramisubs\\.tk|packs\\.redmusic\\.pl|dl\\.android-zone\\.org|sostieni\\.ilwebmaster21\\.com";
     // builds final String for method calling (no need to edit).
-    private static final String HOSTS        = adfPre + "(" + adfDomains + "|" + subDomains + ")";
+    private static final String HOSTS        = adfPre + "(?:" + adfDomains + "|" + subDomains + ")";
     private static final String INVALIDLINKS = "/(link-deleted\\.php|index|login|static).+";
     private static Object       LOCK         = new Object();
 
@@ -97,7 +97,7 @@ public class AdfLy extends PluginForDecrypt {
             br.setReadTimeout(3 * 60 * 1000);
 
             if (parameter.matches(hosts + "/\\d+/(http|ftp).+")) {
-                String linkInsideLink = new Regex(parameter, hosts + "/\\d+/(.+)").getMatch(2);
+                String linkInsideLink = new Regex(parameter, hosts + "/\\d+/(.+)").getMatch(0);
                 if (!linkInsideLink.matches(hosts + "/.+")) {
                     decryptedLinks.add(linkInsideLink);
                     return decryptedLinks;
@@ -178,10 +178,10 @@ public class AdfLy extends PluginForDecrypt {
                 }
                 /* old stuff still exists! tested and working as of 20130328 */
                 if (finallink != null && (!finallink.startsWith("/") && finallink.matches(hosts + ".+"))) {
-                    String extendedProtectionPage = br.getRegex("(" + hosts + ")?(/go(/|\\.php\\?)[^<>\"']+)").getMatch(3);
+                    String extendedProtectionPage = br.getRegex("(?:" + hosts + ")?(/go(/|\\.php\\?)[^<>\"']+)").getMatch(0);
                     if (extendedProtectionPage == null) {
                         // 201307xx
-                        extendedProtectionPage = new Regex(finallink, "(" + hosts + ")?(/go(/|\\.php\\?)[^<>\"']+)").getMatch(3);
+                        extendedProtectionPage = new Regex(finallink, "(?:" + hosts + ")?(/go(/|\\.php\\?)[^<>\"']+)").getMatch(0);
                         if (extendedProtectionPage != null) {
                             extendedProtectionPage = protocol + "adf.ly" + extendedProtectionPage;
                         } else {
