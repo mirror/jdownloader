@@ -16,6 +16,14 @@
 
 package jd.plugins.hoster;
 
+import java.io.ByteArrayInputStream;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -29,8 +37,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wat.tv" }, urls = { "http://(www\\.)?wat\\.tv/video/.*?\\.html" }, flags = { 0 })
 public class WatTv extends PluginForHost {
@@ -44,7 +56,7 @@ public class WatTv extends PluginForHost {
     // return Integer.toString(t, 36);
     // }
 
-    private static final boolean enable_hds_workaround = true;
+    private final boolean enable_hds_workaround = true;
 
     private String computeToken(String quality, final String videoID) {
         quality += videoID;
@@ -156,7 +168,7 @@ public class WatTv extends PluginForHost {
         String finallink = getFinalLink();
         if (finallink.startsWith("rtmp")) {
             /* Old */
-            if (isStableEnviroment()) {
+            if (System.getProperty("jd.revision.jdownloaderrevision") == null) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!");
             }
             /**
@@ -180,6 +192,26 @@ public class WatTv extends PluginForHost {
             rtmp.setResume(true);
 
             ((RTMPDownload) dl).startDownload();
+        } else if (finallink.contains(".f4m?")) {
+            // HDS
+            br.getPage(finallink);
+            final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            final XPath xPath = XPathFactory.newInstance().newXPath();
+            Document d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));
+            NodeList mediaUrls = (NodeList) xPath.evaluate("/manifest/media", d, XPathConstants.NODESET);
+            Node media;
+            for (int j = 0; j < mediaUrls.getLength(); j++) {
+                media = mediaUrls.item(j);
+
+                String temp = getAttByNamedItem(media, "url");
+                if (temp != null) {
+                    // finallink = Request.getLocation(temp, br.getRequest());
+                    finallink = temp;
+                    break;
+                }
+            }
+            dl = new HDSDownloader(downloadLink, br, finallink);
+            dl.startDownload();
         } else {
             // dl = new HDSDownloader(downloadLink, br, finallink);
             // dl.startDownload();
@@ -191,18 +223,17 @@ public class WatTv extends PluginForHost {
         }
     }
 
-    private boolean isStableEnviroment() {
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        final int rev = Integer.parseInt(prev);
-        if (rev < 10000) {
-            return true;
-        }
-        return false;
+    /**
+     * lets try and prevent possible NPE from killing the progress.
+     *
+     * @author raztoki
+     * @param n
+     * @param item
+     * @return
+     */
+    private String getAttByNamedItem(final Node n, final String item) {
+        final String t = n.getAttributes().getNamedItem(item).getTextContent();
+        return (t != null ? t.trim() : null);
     }
 
     @Override
