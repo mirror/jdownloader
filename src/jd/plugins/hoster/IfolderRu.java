@@ -113,34 +113,34 @@ public class IfolderRu extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Password required to download this file");
                 }
             }
-            String domain = br.getRegex("(https?://ints\\..*?\\.[a-z]{2,3})/ints/").getMatch(0);
-            String watchAd = br.getRegex("http://ints\\..*?\\.[a-z]{2,3}/ints/\\?([^<>\"\\']+)(\"|\\')").getMatch(0);
-            if (watchAd != null) {
-                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifolderru.errors.ticketwait", "Waiting for ticket"));
-                watchAd = domain + "/ints/?".concat(watchAd).replace("';", "");
-                br.getPage(watchAd);
+            String domain = null;
+            String watchAd = null;
+            domain = br.getRegex("(https?://ints\\..*?\\.[a-z]{2,3})/ints/").getMatch(0);
+            watchAd = br.getRegex("http://ints\\..*?\\.[a-z]{2,3}/ints/\\?([^<>\"\\']+)(\"|\\')").getMatch(0);
+            if (domain == null || watchAd == null) {
+                /* TODO: Check if this step is really always needed! */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            watchAd = domain + "/ints/?".concat(watchAd).replace("';", "");
+            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifolderru.errors.ticketwait", "Waiting for ticket"));
+            br.getPage(watchAd);
+            final String watchAdComplete = br.getRegex("location\\.href = \\'(http[^<>\"]*?)\\';").getMatch(0);
+            if (watchAdComplete != null) {
+                final String adfly = new Regex(watchAdComplete, "(http://adf\\.ly/\\d+/?)").getMatch(0);
+                watchAd = new Regex(watchAdComplete, "(http://ints\\.rusfolder\\.com/.+)").getMatch(0);
+                if (adfly == null || watchAd == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getHeaders().put("Referer", watchAdComplete);
+            } else {
                 watchAd = br.getRegex("href=(http://ints\\.rusfolder.[a-z0-9]+/ints/[^<>\"]*?)>").getMatch(0);
+            }
+            if (watchAd != null) {
+                br.getPage(watchAd);
+                watchAd = br.getRegex("\"f_top\" src=\"(.*?)\"").getMatch(0);
                 // If they take the waittime out this part is optional
                 if (watchAd != null) {
-                    br.getPage(watchAd);
-                    watchAd = br.getRegex("\"f_top\" src=\"(.*?)\"").getMatch(0);
-                    if (watchAd == null) {
-                        logger.info("third watchad equals null, trying to get sessioncode");
-                        String sessioncode = br.getRegex("session=([a-z0-9]+)\"").getMatch(0);
-                        if (sessioncode == null) {
-                            sessioncode = br.getRegex("type=hidden name=\"session\" value=([a-z0-9]+)>").getMatch(0);
-                        }
-                        if (sessioncode != null) {
-                            watchAd = "http://ints.rusfolder.ru/?session=" + sessioncode;
-                        }
-                    }
-                    if (watchAd == null) {
-                        logger.warning("third watchad equals null");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    if (!watchAd.startsWith("http") || !watchAd.contains(domain)) {
-                        watchAd = domain + watchAd;
-                    }
+                    logger.info("Waittime active");
                     br.getPage(watchAd);
                     /* Tickettime */
                     String ticketTimeS = br.getRegex("delay = (\\d+)").getMatch(0);
@@ -152,11 +152,9 @@ public class IfolderRu extends PluginForHost {
                     this.sleep(ticketTime + 1, downloadLink);
                     /* this response comes without valid http header */
                     br.getPage(watchAd);
-                } else {
-                    logger.warning("second watchad equals null");
                 }
             } else {
-                logger.warning("String watchad equals null");
+                logger.warning("second watchad equals null");
             }
             if (!br.containsHTML(CAPTEXT)) {
                 logger.warning("Browser doesn't contain the captcha-text");
@@ -164,18 +162,16 @@ public class IfolderRu extends PluginForHost {
             }
             for (int retry = 1; retry <= 5; retry++) {
                 Form captchaForm = br.getFormbyProperty("name", "form1");
-                String captchaurl = br.getRegex("(/random/images/.*?)\"").getMatch(0);
+                String captchaurl = "/random/images/?session=";
                 String ints_session = br.getRegex("tag\\.value = \"(.*?)\"").getMatch(0);
                 if (captchaForm == null || captchaurl == null) {
                     logger.warning("captchaForm or captchaurl or ints_session equals null, stopping...");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                captchaurl += captchaForm.getInputField("session").getValue();
                 captchaForm.put("ints_session", ints_session);
-                captchaForm.setAction(br.getURL());
-                if (!captchaurl.startsWith("http://")) {
-                    String host = new Regex(br.getURL(), "(https?://.*?)/").getMatch(0);
-                    captchaurl = host + captchaurl;
-                }
+                captchaForm.remove("adverigo_captcha");
+                captchaForm.setAction(this.br.getURL());
                 /* Captcha */
                 // try {
                 // // jd2
@@ -187,7 +183,11 @@ public class IfolderRu extends PluginForHost {
                 captchaForm.put("confirmed_number", captchaCode);
                 /* this hoster checks content encoding */
                 captchaForm.setEncoding("application/x-www-form-urlencoded");
-                final String specialParam = br.getRegex("var s=[\t\n\r ]*?\\'([^<>\"]*?)\\';").getMatch(0);
+                String specialParam = br.getRegex("var s=[\t\n\r ]*?\\'([^<>\"]*?)\\';").getMatch(0);
+                final String paramsubstring = br.getRegex("s\\.substring\\((\\d+)\\)").getMatch(0);
+                if (paramsubstring != null) {
+                    specialParam = specialParam.substring(Integer.parseInt(paramsubstring));
+                }
                 String specialValue = br.getRegex("s\\.substring\\(\\d+\\)\\+\"\\' value=\\'([a-z0-9]+)\\\'>").getMatch(0);
                 if (specialValue == null) {
                     specialValue = "1";
@@ -197,6 +197,7 @@ public class IfolderRu extends PluginForHost {
                 } else {
                     logger.info("Specialstuff is null, this could cause trouble...");
                 }
+                captchaForm.put("adverigo-input", "");
                 try {
                     br.submitForm(captchaForm);
                 } catch (Exception e) {
