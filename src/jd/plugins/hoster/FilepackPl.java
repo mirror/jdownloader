@@ -143,6 +143,13 @@ public class FilepackPl extends antiDDoSForHost {
                 /* Filename might not be available here either */
                 filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             }
+            if (filename != null && filename.endsWith(".. &nbsp;&nbsp;")) {
+
+                String betterFilename = br.getRegex("<meta name=\"description\" content=\"Information about([^<>\"]*?)\"/>").getMatch(0);
+                if (betterFilename != null) {
+                    filename = betterFilename;
+                }
+            }
 
             filesize = br.getRegex("(?:Filesize|Wielkość Pliku):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
 
