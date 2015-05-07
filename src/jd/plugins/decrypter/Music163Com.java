@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -90,6 +91,12 @@ public class Music163Com extends PluginForDecrypt {
             final String name_artist = (String) artistinfo.get("name");
             final String name_album = (String) entries.get("name");
             String fpName = name_artist + " - " + name_album;
+            final DecimalFormat df;
+            if (resourcelist.size() < 100) {
+                df = new DecimalFormat("00");
+            } else {
+                df = new DecimalFormat("000");
+            }
             int counter = 1;
             if (publishedTimestamp > 0) {
                 final SimpleDateFormat formatter = new SimpleDateFormat(jd.plugins.hoster.Music163Com.dateformat_en);
@@ -101,6 +108,7 @@ public class Music163Com extends PluginForDecrypt {
                 final LinkedHashMap<String, Object> song_info = (LinkedHashMap<String, Object>) songo;
                 final String songname = (String) song_info.get("name");
                 final String fid = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(song_info.get("id"), -1));
+                final String tracknumber = df.format(counter);
                 /* Now find the highest quality available */
                 for (final String quality : qualities) {
                     final Object musicO = song_info.get(quality);
@@ -116,7 +124,7 @@ public class Music163Com extends PluginForDecrypt {
                     return null;
                 }
                 final DownloadLink dl = createDownloadlink("http://music.163.com/song?id=" + fid);
-                String filename = counter + "." + name_artist + " - " + name_album + " - " + songname + "." + ext;
+                String filename = tracknumber + "." + name_artist + " - " + name_album + " - " + songname + "." + ext;
                 if (formattedDate != null) {
                     dl.setProperty("publishedTimestamp", publishedTimestamp);
                     filename = formattedDate + "_" + filename;
@@ -124,7 +132,7 @@ public class Music163Com extends PluginForDecrypt {
                 dl.setLinkID(fid);
                 dl.setFinalFileName(filename);
                 dl.setProperty("directfilename", filename);
-                dl.setProperty("trachnumber", Integer.toString(counter));
+                dl.setProperty("trachnumber", tracknumber);
                 dl.setAvailable(true);
                 dl.setDownloadSize(filesize);
                 decryptedLinks.add(dl);

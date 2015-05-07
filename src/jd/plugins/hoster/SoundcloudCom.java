@@ -316,7 +316,12 @@ public class SoundcloudCom extends PluginForHost {
                 finallink = toString(json.get("download_url"));
                 if (finallink != null) {
                     /* We have it? Let's make it valid! */
-                    finallink += "?client_id=" + SoundcloudCom.CLIENTID + "&app_version=" + SoundcloudCom.APP_VERSION;
+                    if (!finallink.contains("?")) {
+                        finallink += "?";
+                    } else {
+                        finallink += "&";
+                    }
+                    finallink += "client_id=" + SoundcloudCom.CLIENTID + "&app_version=" + SoundcloudCom.APP_VERSION;
                 }
             } else {
                 /* Normal- or hls stream */
