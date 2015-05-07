@@ -105,7 +105,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String                         fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.7.3
+    // XfileSharingProBasic Version 2.6.7.4
     // Tags: Script, template
     // mods:
     // limit-info:
@@ -349,7 +349,7 @@ public class XFileSharingProBasic extends PluginForHost {
                     }
                 }
                 /* end of backward compatibility */
-                sendForm(download1);
+                submitForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();
             }
@@ -473,7 +473,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 if (!skipWaittime) {
                     waitTime(timeBefore, downloadLink);
                 }
-                sendForm(dlForm);
+                submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
                 dllink = getDllink();
@@ -687,7 +687,7 @@ public class XFileSharingProBasic extends PluginForHost {
         correctBR();
     }
 
-    private void sendForm(final Form form) throws Exception {
+    private void submitForm(final Form form) throws Exception {
         br.submitForm(form);
         correctBR();
     }
@@ -1091,7 +1091,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                sendForm(loginform);
+                submitForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -1149,7 +1149,7 @@ public class XFileSharingProBasic extends PluginForHost {
                     if (dlform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    sendForm(dlform);
+                    submitForm(dlform);
                     checkErrors(downloadLink, true);
                     dllink = getDllink();
                 }
