@@ -47,12 +47,17 @@ public class NewlunarrepublicFr extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        final String[] links = br.getRegex("\"(http[^<>\"]*?\\.(?:webm|mkv))\"").getColumn(0);
+        final String[] links = br.getRegex("\"([^<>\"]*?\\.(?:webm|mkv|srt))\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (final String singleLink : links) {
+        for (String singleLink : links) {
+            /* For subtitles */
+            if (!singleLink.startsWith("http")) {
+                singleLink = "http://www.newlunarrepublic.fr" + singleLink;
+            }
+            singleLink = "directhttp://" + singleLink;
             final DownloadLink dl = createDownloadlink(singleLink);
             /* IMPORTANT: Their .webm urls won't work without correct Referer */
             dl.setProperty("refURL", this.br.getURL());

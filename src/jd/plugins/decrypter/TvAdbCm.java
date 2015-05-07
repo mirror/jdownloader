@@ -51,7 +51,7 @@ public class TvAdbCm extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("/player/player\\.swf")) {
             // No need to randomise URL when exporting offline links!
             // Please always use directhttp && property OFFLINE from decrypters! Using 'OFFLINE' property, ensures when the user checks
             // online status again it will _always_ return offline status.
