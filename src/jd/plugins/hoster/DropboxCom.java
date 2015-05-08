@@ -177,6 +177,7 @@ public class DropboxCom extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         String dlURL = downloadLink.getDownloadURL();
@@ -266,7 +267,7 @@ public class DropboxCom extends PluginForHost {
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.postPage("/sso_state", "is_xhr=true&t=" + t + "&email=" + Encoding.urlEncode(account.getUser()));
                 br.postPage("/ajax_login", "recaptcha_response_field=&recaptcha_public_key=6LeAbPQSAAAAAB_-BzhpAZbgz51jHD2pGIKsM6L0&remember_me=True&is_xhr=true&t=" + t + "&cont=%2F&require_role=&signup_data=&signup_tag=&login_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie("https://www.dropbox.com", "forumlid") == null) {
+                if (br.getCookie("https://www.dropbox.com", "jar") == null || !"OK".equals(getJson("status"))) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -283,6 +284,16 @@ public class DropboxCom extends PluginForHost {
             }
         }
 
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override

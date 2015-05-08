@@ -90,12 +90,12 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     VKAUDIOS_USEIDASPACKAGENAME             = "VKAUDIOS_USEIDASPACKAGENAME";
 
     /* Settings 'in action' */
-    private boolean                 wall_grabalbums;
-    private boolean                 wall_grabphotos;
-    private boolean                 wall_grabaudio;
-    private boolean                 wall_grabvideo;
-    private boolean                 wall_grablink;
-    private boolean                 wall_grabdocs;
+    private boolean                 vkwall_grabalbums;
+    private boolean                 vkwall_grabphotos;
+    private boolean                 vkwall_grabaudio;
+    private boolean                 vkwall_grabvideo;
+    private boolean                 vkwall_grablink;
+    private boolean                 vkwall_grabdocs;
 
     /* Some supported url patterns */
     private static final String     PATTERN_SHORT                           = "https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+";
@@ -150,6 +150,8 @@ public class VKontakteRu extends PluginForDecrypt {
     private boolean                 fastcheck_photo                         = false;
     private boolean                 fastcheck_audio                         = false;
 
+    private final boolean           docs_add_unique_id                      = true;
+
     private ArrayList<DownloadLink> decryptedLinks                          = null;
     private boolean                 https                                   = false;
 
@@ -194,19 +196,19 @@ public class VKontakteRu extends PluginForDecrypt {
         cfg = SubConfiguration.getConfig("vkontakte.ru");
         fastcheck_photo = cfg.getBooleanProperty(FASTLINKCHECK_PICTURES, false);
         fastcheck_audio = cfg.getBooleanProperty(FASTLINKCHECK_AUDIO, false);
-        wall_grabalbums = cfg.getBooleanProperty(VKWALL_GRAB_ALBUMS, false);
-        wall_grabphotos = cfg.getBooleanProperty(VKWALL_GRAB_PHOTOS, false);
-        wall_grabaudio = cfg.getBooleanProperty(VKWALL_GRAB_AUDIO, false);
-        wall_grabvideo = cfg.getBooleanProperty(VKWALL_GRAB_VIDEO, false);
-        wall_grablink = cfg.getBooleanProperty(VKWALL_GRAB_LINK, false);
-        wall_grabdocs = cfg.getBooleanProperty(VKWALL_GRAB_DOCS, false);
-        if (wall_grabalbums == false && wall_grabphotos == false && wall_grabaudio == false && wall_grabvideo == false && wall_grablink == false) {
-            wall_grabalbums = true;
-            wall_grabphotos = true;
-            wall_grabaudio = true;
-            wall_grabvideo = true;
-            wall_grablink = true;
-            wall_grabdocs = true;
+        vkwall_grabalbums = cfg.getBooleanProperty(VKWALL_GRAB_ALBUMS, false);
+        vkwall_grabphotos = cfg.getBooleanProperty(VKWALL_GRAB_PHOTOS, false);
+        vkwall_grabaudio = cfg.getBooleanProperty(VKWALL_GRAB_AUDIO, false);
+        vkwall_grabvideo = cfg.getBooleanProperty(VKWALL_GRAB_VIDEO, false);
+        vkwall_grablink = cfg.getBooleanProperty(VKWALL_GRAB_LINK, false);
+        vkwall_grabdocs = cfg.getBooleanProperty(VKWALL_GRAB_DOCS, false);
+        if (vkwall_grabalbums == false && vkwall_grabphotos == false && vkwall_grabaudio == false && vkwall_grabvideo == false && vkwall_grablink == false && vkwall_grabdocs == false) {
+            vkwall_grabalbums = true;
+            vkwall_grabphotos = true;
+            vkwall_grabaudio = true;
+            vkwall_grabvideo = true;
+            vkwall_grablink = true;
+            vkwall_grabdocs = true;
         }
 
         prepBrowser(br);
@@ -454,7 +456,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 decryptedLinks = null;
                 return;
             }
-            final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + owner_id.replace("-", "") + "_" + content_id);
+            final String linkid = owner_id + "_" + content_id;
+            final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + linkid);
             try {
                 dl.setContentUrl(this.CRYPTEDLINK_FUNCTIONAL);
             } catch (final Throwable e) {
@@ -469,6 +472,7 @@ public class VKontakteRu extends PluginForDecrypt {
             if (fastcheck_audio) {
                 dl.setAvailable(true);
             }
+            dl.setLinkID(linkid);
             fp.add(dl);
             decryptedLinks.add(dl);
         }
@@ -506,7 +510,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 decryptedLinks = null;
                 return;
             }
-            final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + owner_id + "_" + content_id);
+            final String linkid = owner_id + "_" + content_id;
+            final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + linkid);
             dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
             // Set filename so we have nice filenames here ;)
             dl.setFinalFileName(Encoding.htmlDecode(artist) + " - " + Encoding.htmlDecode(title) + ".mp3");
@@ -637,7 +642,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String oid = ids[0];
         final String id = ids[1];
         apiGetPageSafe(getProtocoll() + "vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
-        if (br.containsHTML("NO_ACCESS") || br.containsHTML("No htmlCode read")) {
+        if (br.containsHTML(jd.plugins.hoster.VKontakteRuHoster.HTML_VIDEO_NO_ACCESS) || br.containsHTML(jd.plugins.hoster.VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS)) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         try {
@@ -719,14 +724,15 @@ public class VKontakteRu extends PluginForDecrypt {
                 final String finallink = foundQualities.get(selectedQualityValue);
                 if (finallink != null) {
                     final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/videolink/" + System.currentTimeMillis() + new Random().nextInt(1000000));
+                    final String linkid = oid + "_" + id;
                     dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
 
                     try {
                         /* JD2 only */
-                        dl.setContentUrl(getProtocoll() + "vk.com/video" + oid + "_" + id);
+                        dl.setContentUrl(getProtocoll() + "vk.com/video" + linkid);
                     } catch (Throwable e) {
                         /* Stable */
-                        dl.setBrowserUrl(getProtocoll() + "vk.com/video" + oid + "_" + id);
+                        dl.setBrowserUrl(getProtocoll() + "vk.com/video" + linkid);
                     }
 
                     String ext = finallink.substring(finallink.lastIndexOf("."));
@@ -749,6 +755,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     if (fastLinkcheck) {
                         dl.setAvailable(true);
                     }
+                    dl.setLinkID(linkid + "_" + selectedQualityValue);
                     fp.add(dl);
                     decryptedLinks.add(dl);
                 }
@@ -764,15 +771,15 @@ public class VKontakteRu extends PluginForDecrypt {
         String oid = null;
         String id = null;
         if (parameter.matches(PATTERN_VIDEO_SINGLE_EMBED) || parameter.matches(PATTERN_VIDEO_SINGLE_EMBED_HASH)) {
-            final Regex idsRegex = new Regex(parameter, "vk\\.com/video_ext\\.php\\?oid=((\\-)?\\d+)\\&id=(\\d+)");
+            final Regex idsRegex = new Regex(parameter, "vk\\.com/video_ext\\.php\\?oid=((?:\\-)?\\d+)\\&id=(\\d+)");
             oid = idsRegex.getMatch(0);
             id = idsRegex.getMatch(2);
         } else if (parameter.matches(PATTERN_VIDEO_SINGLE_ORIGINAL)) {
-            final Regex idsRegex = new Regex(parameter, "((\\-)?\\d+)_(\\d+)$");
+            final Regex idsRegex = new Regex(parameter, "((?:\\-)?\\d+)_(\\d+)$");
             oid = idsRegex.getMatch(0);
             id = idsRegex.getMatch(2);
         } else if (parameter.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST)) {
-            final Regex idsRegex = new Regex(parameter, "((\\-)?\\d+)_(\\d+)\\?");
+            final Regex idsRegex = new Regex(parameter, "((?:\\-)?\\d+)_(\\d+)\\?");
             oid = idsRegex.getMatch(0);
             id = idsRegex.getMatch(2);
         }
@@ -821,13 +828,15 @@ public class VKontakteRu extends PluginForDecrypt {
         final String[][] regexesAllOthers = { { "><a href=\"/photo((\\-)?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
         final ArrayList<String> decryptedData = decryptMultiplePages(type, numberOfEntrys, regexesPage1, regexesAllOthers, 80, 40, 80, this.CRYPTEDLINK_FUNCTIONAL, "al=1&part=1&offset=");
         String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/(album.+)").getMatch(0);
-        for (final String element : decryptedData) {
+        for (final String content_id : decryptedData) {
             if (albumID == null) {
-                albumID = "tag" + new Regex(element, "\\?tag=(\\d+)").getMatch(0);
+                albumID = "tag" + new Regex(content_id, "\\?tag=(\\d+)").getMatch(0);
             }
-            /** Pass those goodies over to the hosterplugin */
-            final DownloadLink dl = getSinglePhotoDownloadLink(element);
+            /* Pass those goodies over to the hosterplugin */
+            final DownloadLink dl = getSinglePhotoDownloadLink(content_id);
+            final String linkid = albumID + "_" + content_id;
             dl.setProperty("albumid", albumID);
+            dl.setLinkID(linkid);
             fp.add(dl);
             decryptedLinks.add(dl);
         }
@@ -1271,14 +1280,17 @@ public class VKontakteRu extends PluginForDecrypt {
                 if (typeObject == null) {
                     System.out.println("No Attachment for type " + type + " in " + attachment);
                 }
-                if (type.equals("photo") && wall_grabphotos) {
-
+                DownloadLink dl = null;
+                final String owner_id = typeObject.get("owner_id").toString();
+                String content_id = null;
+                String title = null;
+                String filename = null;
+                if (type.equals("photo") && vkwall_grabphotos) {
+                    content_id = typeObject.get("pid").toString();
                     final String album_id = typeObject.get("aid").toString();
-                    final String owner_id = typeObject.get("owner_id").toString();
-                    final String content_id = typeObject.get("pid").toString();
                     final String wall_single_photo_content_url = getProtocoll() + "vk.com/" + wall_ID + "?own=1&z=photo" + owner_id + "_" + content_id + "/" + wall_list_id;
 
-                    final DownloadLink dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
+                    dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
                     /* Ovverride previously set content URL as this really is the direct link to the picture which works fine via browser. */
                     try {
                         dl.setContentUrl(wall_single_photo_content_url);
@@ -1286,37 +1298,36 @@ public class VKontakteRu extends PluginForDecrypt {
                         /* Not available in old 0.9.581 Stable */
                     }
                     dl.setBrowserUrl(wall_single_photo_content_url);
-
                     dl.setProperty("postID", id);
                     dl.setProperty("albumid", album_id);
                     dl.setProperty("owner_id", owner_id);
-                    dl.setProperty("content_id", content_id);
                     dl.setProperty("directlinks", typeObject);
                     dl.setProperty("photo_list_id", wall_list_id);
                     dl.setProperty("photo_module", "wall");
-                    fp.add(dl);
-                    decryptedLinks.add(dl);
-                } else if (type.equals("doc") && wall_grabdocs) {
-                    final String title = Encoding.htmlDecode((String) typeObject.get("title"));
+                } else if (type.equals("doc") && vkwall_grabdocs) {
+                    content_id = typeObject.get("did").toString();
+                    title = Encoding.htmlDecode((String) typeObject.get("title"));
                     final String url = (String) typeObject.get("url");
                     if (title == null || url == null) {
                         continue;
                     }
-                    final DownloadLink dl = createDownloadlink(url);
+                    filename = title;
+                    if (docs_add_unique_id) {
+                        filename = owner_id + "_" + content_id + filename;
+                    }
+                    dl = createDownloadlink(url);
                     dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
                     dl.setDownloadSize(((Number) typeObject.get("size")).longValue());
-                    dl.setName(title);
+                    dl.setName(filename);
                     dl.setAvailable(true);
-                    fp.add(dl);
-                    decryptedLinks.add(dl);
-                } else if (type.equals("audio") && wall_grabaudio) {
+                } else if (type.equals("audio") && vkwall_grabaudio) {
+                    content_id = typeObject.get("aid").toString();
                     final String artist = Encoding.htmlDecode(typeObject.get("artist").toString());
-                    final String owner_id = typeObject.get("owner_id").toString();
-                    final String title = Encoding.htmlDecode((String) typeObject.get("title"));
+                    title = Encoding.htmlDecode((String) typeObject.get("title"));
+                    filename = artist + " - " + title + ".mp3";
                     final String url = (String) typeObject.get("url");
-                    final long content_id = ((Number) typeObject.get("aid")).longValue();
 
-                    final DownloadLink dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + owner_id + "_" + content_id);
+                    dl = createDownloadlink("http://vkontaktedecrypted.ru/audiolink/" + owner_id + "_" + content_id);
                     dl.setProperty("mainlink", this.CRYPTEDLINK_FUNCTIONAL);
                     /*
                      * Audiolinks have their directlinks and IDs but no "nice" links so let's simply use the link to the source wall post
@@ -1332,41 +1343,43 @@ public class VKontakteRu extends PluginForDecrypt {
                     dl.setProperty("fromId", fromId);
                     dl.setProperty("toId", toId);
                     dl.setProperty("directlink", url);
-                    dl.setProperty("content_id", content_id);
                     dl.setProperty("owner_id", owner_id);
                     if (fastcheck_audio) {
                         dl.setAvailable(url != null && url.length() > 0);
                     }
-                    dl.setFinalFileName(artist + " - " + title + ".mp3");
-                    fp.add(dl);
-                    decryptedLinks.add(dl);
-                } else if (type.equals("link") && wall_grablink) {
+                    dl.setFinalFileName(filename);
+                } else if (type.equals("link") && vkwall_grablink) {
                     final String url = (String) typeObject.get("url");
                     if (url == null) {
                         continue;
                     }
-                    final DownloadLink dl = createDownloadlink(url);
-                    fp.add(dl);
-                    decryptedLinks.add(dl);
-                } else if (type.equals("video") && wall_grabvideo) {
-                    final String owner_id = typeObject.get("owner_id").toString();
-                    final String content_id = typeObject.get("vid").toString();
-
-                    final DownloadLink dl = createDownloadlink(getProtocoll() + "vk.com/video" + owner_id + "_" + content_id);
-                    fp.add(dl);
-                    decryptedLinks.add(dl);
-                } else if (type.equals("album") && wall_grabalbums) {
+                    dl = createDownloadlink(url);
+                } else if (type.equals("video") && vkwall_grabvideo) {
+                    content_id = typeObject.get("vid").toString();
+                    dl = createDownloadlink(getProtocoll() + "vk.com/video" + owner_id + "_" + content_id);
+                } else if (type.equals("album") && vkwall_grabalbums) {
                     // it's string here. no idea why
                     final String album_id = typeObject.get("aid").toString();
-                    final String owner_id = typeObject.get("owner_id").toString();
-
-                    final DownloadLink dl = createDownloadlink(getProtocoll() + "vk.com/album" + owner_id + "_" + album_id);
-                    fp.add(dl);
-                    decryptedLinks.add(dl);
+                    dl = createDownloadlink(getProtocoll() + "vk.com/album" + owner_id + "_" + album_id);
                 } else if (type.equals("poll")) {
                     logger.info("Current post only contains a poll --> Skipping it");
                 } else {
                     logger.warning("Either the type of the current post is unsupported or not selected by the user: " + type);
+                }
+                if (dl != null) {
+                    if (owner_id != null && content_id != null) {
+                        /*
+                         * linkID is only needed for links which go into our host plugin. owner_id and content_id should always be available
+                         * for that content.
+                         */
+                        if (filename != null) {
+                            dl.setName(filename);
+                        }
+                        dl.setProperty("content_id", content_id);
+                        dl.setLinkID(owner_id + "_" + content_id);
+                    }
+                    fp.add(dl);
+                    decryptedLinks.add(dl);
                 }
             } catch (Throwable ee) {
                 // catches casting errors etc.
@@ -1415,6 +1428,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String owner_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "photo((?:\\-)?\\d+)_\\d+").getMatch(0);
         final String content_id = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "photo(?:\\-)?\\d+_(\\d+)").getMatch(0);
         final DownloadLink dl = getSinglePhotoDownloadLink(owner_id + "_" + content_id);
+        final String linkid = owner_id + "_" + content_id;
         try {
             dl.setContentUrl(CRYPTEDLINK_FUNCTIONAL);
         } catch (final Throwable e) {
@@ -1426,6 +1440,7 @@ public class VKontakteRu extends PluginForDecrypt {
         dl.setProperty("content_id", content_id);
         dl.setProperty("photo_module", module);
         dl.setProperty("photo_list_id", list_id);
+        dl.setLinkID(linkid);
         decryptedLinks.add(dl);
         return;
     }
@@ -1456,6 +1471,7 @@ public class VKontakteRu extends PluginForDecrypt {
             final String filename = stringdata[1];
             final String content_ID = new Regex(docinfo, "^(?:\\[)?(\\d+)").getMatch(0);
             final DownloadLink dl = getSinglePhotoDownloadLink("https://vk.com/doc" + owner_ID + "_" + content_ID);
+            final String linkid = owner_ID + "_" + content_ID;
             try {
                 dl.setContentUrl(CRYPTEDLINK_FUNCTIONAL);
             } catch (final Throwable e) {
@@ -1468,6 +1484,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
             dl.setProperty("owner_id", owner_ID);
             dl.setProperty("content_id", content_ID);
+            dl.setLinkID(linkid);
             fp.add(dl);
             decryptedLinks.add(dl);
         }

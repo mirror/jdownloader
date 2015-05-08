@@ -659,16 +659,17 @@ public class UpToBoxCom extends antiDDoSForHost {
         return dllink;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
             login(account, true);
-        } catch (PluginException e) {
+        } catch (final PluginException e) {
             account.setValid(false);
-            return ai;
+            throw e;
         }
         String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
         if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) {
@@ -745,18 +746,41 @@ public class UpToBoxCom extends antiDDoSForHost {
                     }
                 }
                 br.setFollowRedirects(true);
+                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:37.0) Gecko/20100101 Firefox/37.0");
                 getPage("https://login.uptobox.com/");
                 ipBlock();
                 // Form loginform = br.getForm(0);
-                Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                submitForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // Form loginform = br.getFormbyProperty("name", "FL");
+                // if (loginform == null) {
+                // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!",
+                // PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!",
+                // PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // } else {
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!",
+                // PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // }
+                // }
+                // loginform.put("login", Encoding.urlEncode(account.getUser()));
+                // loginform.put("password", Encoding.urlEncode(account.getPass()));
+                // loginform.setAction("http://login.uptobox.com/");
+                br.setCookie("login.uptobox.com", "lang", "english");
+                br.setCookie("login.uptobox.com", "_pk_ses.6.e106", "*");
+                br.setCookie("login.uptobox.com", "bm_last_load_status", "BLOCKING");
+                br.setCookie("login.uptobox.com", "bm_monthly_unique", "true");
+                br.setCookie("login.uptobox.com", "bm_daily_unique", "true");
+                br.postPage("https://login.uptobox.com/", "op=login&redirect=https%3A%2F%2Flogin.uptobox.com%2F&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                getPage("http://uptobox.com/");
+                if (!br.containsHTML("logout\">Logout</a>")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
                 getPage(COOKIE_HOST + "/?op=my_account");
                 if (!new Regex(correctedBR, "class=\"premium_time\"").matches()) {

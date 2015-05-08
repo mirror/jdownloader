@@ -51,44 +51,50 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_[\\d\\-]+|videolink/[\\d\\-]+)|https?://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp3" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_\\d+|videolink/[\\d\\-]+)|https?://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp3" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
-    private static final String DOMAIN                      = "http://vk.com";
-    private static final String TYPE_AUDIOLINK              = "http://vkontaktedecrypted\\.ru/audiolink/[\\d\\-]+_[\\d\\-]+";
-    private static final String TYPE_VIDEOLINK              = "http://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
-    private static final String TYPE_AUDIO_DIRECT           = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp3";
-    private static final String TYPE_PICTURELINK            = "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?";
-    private static final String TYPE_DOCLINK                = "https?://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?";
-    private int                 MAXCHUNKS                   = 1;
-    private static final String TEMPORARILYBLOCKED          = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
+    private static final String DOMAIN                                = "http://vk.com";
+    private static final String TYPE_AUDIOLINK                        = "http://vkontaktedecrypted\\.ru/audiolink/(?:\\-)?\\d+_\\d+";
+    private static final String TYPE_VIDEOLINK                        = "http://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
+    private static final String TYPE_AUDIO_DIRECT                     = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp3";
+    private static final String TYPE_PICTURELINK                      = "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?";
+    private static final String TYPE_DOCLINK                          = "https?://vk\\.com/doc[\\d\\-]+_\\d+(\\?hash=[a-z0-9]+)?";
+    private int                 MAXCHUNKS                             = 1;
+    private static final String TEMPORARILYBLOCKED                    = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
     /* Settings stuff */
-    private static final String USECOOKIELOGIN              = "USECOOKIELOGIN";
-    private static final String FASTLINKCHECK_VIDEO         = "FASTLINKCHECK_VIDEO";
-    private static final String FASTLINKCHECK_PICTURES      = "FASTLINKCHECK_PICTURES";
-    private static final String FASTLINKCHECK_AUDIO         = "FASTLINKCHECK_AUDIO";
-    private static final String ALLOW_BEST                  = "ALLOW_BEST";
-    private static final String ALLOW_240P                  = "ALLOW_240P";
-    private static final String ALLOW_360P                  = "ALLOW_360P";
-    private static final String ALLOW_480P                  = "ALLOW_480P";
-    private static final String ALLOW_720P                  = "ALLOW_720P";
-    private static final String VKWALL_GRAB_ALBUMS          = "VKWALL_GRAB_ALBUMS";
-    private static final String VKWALL_GRAB_PHOTOS          = "VKWALL_GRAB_PHOTOS";
-    private static final String VKWALL_GRAB_AUDIO           = "VKWALL_GRAB_AUDIO";
-    private static final String VKWALL_GRAB_VIDEO           = "VKWALL_GRAB_VIDEO";
-    private static final String VKWALL_GRAB_LINK            = "VKWALL_GRAB_LINK";
-    public static final String  VKWALL_GRAB_DOCS            = "VKWALL_GRAB_DOCS";
-    private static final String VKVIDEO_USEIDASPACKAGENAME  = "VKVIDEO_USEIDASPACKAGENAME";
-    private static final String VKAUDIOS_USEIDASPACKAGENAME = "VKAUDIOS_USEIDASPACKAGENAME";
-    private static final String VKPHOTO_CORRECT_FINAL_LINKS = "VKPHOTO_CORRECT_FINAL_LINKS";
-    public static final String  VKADVANCED_USER_AGENT       = "VKADVANCED_USER_AGENT";
+    private static final String USECOOKIELOGIN                        = "USECOOKIELOGIN";
+    private static final String FASTLINKCHECK_VIDEO                   = "FASTLINKCHECK_VIDEO";
+    private static final String FASTLINKCHECK_PICTURES                = "FASTLINKCHECK_PICTURES";
+    private static final String FASTLINKCHECK_AUDIO                   = "FASTLINKCHECK_AUDIO";
+    private static final String ALLOW_BEST                            = "ALLOW_BEST";
+    private static final String ALLOW_240P                            = "ALLOW_240P";
+    private static final String ALLOW_360P                            = "ALLOW_360P";
+    private static final String ALLOW_480P                            = "ALLOW_480P";
+    private static final String ALLOW_720P                            = "ALLOW_720P";
+    private static final String VKWALL_GRAB_ALBUMS                    = "VKWALL_GRAB_ALBUMS";
+    private static final String VKWALL_GRAB_PHOTOS                    = "VKWALL_GRAB_PHOTOS";
+    private static final String VKWALL_GRAB_AUDIO                     = "VKWALL_GRAB_AUDIO";
+    private static final String VKWALL_GRAB_VIDEO                     = "VKWALL_GRAB_VIDEO";
+    private static final String VKWALL_GRAB_LINK                      = "VKWALL_GRAB_LINK";
+    public static final String  VKWALL_GRAB_DOCS                      = "VKWALL_GRAB_DOCS";
+    private static final String VKVIDEO_USEIDASPACKAGENAME            = "VKVIDEO_USEIDASPACKAGENAME";
+    private static final String VKAUDIOS_USEIDASPACKAGENAME           = "VKAUDIOS_USEIDASPACKAGENAME";
+    private static final String VKPHOTO_CORRECT_FINAL_LINKS           = "VKPHOTO_CORRECT_FINAL_LINKS";
+    public static final String  VKADVANCED_USER_AGENT                 = "VKADVANCED_USER_AGENT";
 
-    private static Object       LOCK                        = new Object();
-    private String              finalUrl                    = null;
+    /* html patterns */
+    public static final String  HTML_VIDEO_NO_ACCESS                  = "NO_ACCESS";
+    public static final String  HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS = "This video has been removed from public access";
 
-    private String              ownerID                     = null;
-    private String              contentID                   = null;
-    private String              mainlink                    = null;
+    private final boolean       docs_add_unique_id                    = true;
+
+    private static Object       LOCK                                  = new Object();
+    private String              finalUrl                              = null;
+
+    private String              ownerID                               = null;
+    private String              contentID                             = null;
+    private String              mainlink                              = null;
 
     public VKontakteRuHoster(final PluginWrapper wrapper) {
         super(wrapper);
@@ -158,6 +164,9 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
             }
         } else if (link.getDownloadURL().matches(VKontakteRuHoster.TYPE_DOCLINK)) {
+            if (link.getLinkID() == null || !link.getLinkID().matches("")) {
+                link.setLinkID(new Regex(link.getDownloadURL(), "/doc((?:\\-)?\\d+_\\d+)").getMatch(0));
+            }
             this.MAXCHUNKS = 0;
             this.br.getPage(link.getDownloadURL());
             if (this.br.containsHTML("File deleted")) {
@@ -179,6 +188,9 @@ public class VKontakteRuHoster extends PluginForHost {
                 filename = Encoding.htmlDecode(betterFilename).trim();
             } else {
                 filename = Encoding.htmlDecode(filename.trim());
+            }
+            if (docs_add_unique_id) {
+                filename = link.getLinkID() + filename;
             }
             checkstatus = this.linkOk(link, filename);
             if (checkstatus != 1) {
@@ -223,7 +235,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         *
+                         * 
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         this.postPageSafe(aa, link, "https://vk.com/audio", getAudioAlbumPostString(this.mainlink, this.ownerID));
@@ -264,7 +276,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     final String oid = link.getStringProperty("userid", null);
                     final String id = link.getStringProperty("videoid", null);
                     this.br.getPage("http://vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
-                    if (br.containsHTML("This video has been removed from public access")) {
+                    if (br.containsHTML(VKontakteRuHoster.HTML_VIDEO_NO_ACCESS) || br.containsHTML(VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     final LinkedHashMap<String, String> availableQualities = this.findAvailableVideoQualities();

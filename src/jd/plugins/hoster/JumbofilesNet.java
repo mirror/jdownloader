@@ -49,20 +49,20 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rabidfiles.com" }, urls = { "https?://(www\\.)?rabidfiles\\.com/[A-Za-z0-9]+" }, flags = { 2 })
-public class RabitFilesCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jumbofiles.net" }, urls = { "https?://(www\\.)?jumbofiles\\.net/[A-Za-z0-9]+" }, flags = { 2 })
+public class JumbofilesNet extends PluginForHost {
 
-    public RabitFilesCom(PluginWrapper wrapper) {
+    public JumbofilesNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
     }
 
     // For sites which use this script: http://www.yetishare.com/
     // YetiShareBasic Version 0.5.8-psp
-    // mods:
-    // limit-info: account untested, set FREE limits
+    // mods: requestFileInformation[One extra filename RegEx to avoid crippled filenames]
+    // limit-info:
     // protocol: no https
-    // captchatype: solvemedia
+    // captchatype: reCaptchaV1
     // other:
 
     @Override
@@ -71,8 +71,8 @@ public class RabitFilesCom extends PluginForHost {
     }
 
     /* Basic constants */
-    private final String         mainpage                                     = "http://rabidfiles.com";
-    private final String         domains                                      = "(rabidfiles\\.com)";
+    private final String         mainpage                                     = "http://jumbofiles.net";
+    private final String         domains                                      = "(jumbofiles\\.net)";
     private final String         type                                         = "html";
     private static final int     wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int     additional_WAIT_SECONDS                      = 3;
@@ -95,8 +95,8 @@ public class RabitFilesCom extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean free_RESUME                                  = true;
-    private static final int     free_MAXCHUNKS                               = 0;
-    private static final int     free_MAXDOWNLOADS                            = 20;
+    private static final int     free_MAXCHUNKS                               = 1;
+    private static final int     free_MAXDOWNLOADS                            = 1;
     private static final boolean account_FREE_RESUME                          = true;
     private static final int     account_FREE_MAXCHUNKS                       = 0;
     private static final int     account_FREE_MAXDOWNLOADS                    = 20;
@@ -128,7 +128,10 @@ public class RabitFilesCom extends PluginForHost {
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("Filename:[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            filename = br.getRegex(">Information about ([^<>\"]*?)</div>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("Filename:[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            }
             if (filename == null || inValidate(Encoding.htmlDecode(filename).trim()) || Encoding.htmlDecode(filename).trim().equals("  ")) {
                 /* Filename might not be available here either */
                 filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
@@ -461,7 +464,7 @@ public class RabitFilesCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage(this.getProtocol() + "www." + this.getHost() + "/");
+                br.getPage(this.getProtocol() + this.getHost() + "/");
                 final String lang = System.getProperty("user.language");
                 final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                 if (useOldLoginMethod) {

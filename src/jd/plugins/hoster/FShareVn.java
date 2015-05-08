@@ -18,14 +18,10 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -49,9 +45,8 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fshare.vn", "mega.1280.com" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)", "dgjediz65854twsdfbtzoi6UNUSED_REGEX" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn", "mega.1280.com" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)", "dgjediz65854twsdfbtzoi6UNUSED_REGEX" }, flags = { 2, 0 })
 public class FShareVn extends PluginForHost {
 
     private final String         SERVERERROR = "Tài nguyên bạn yêu cầu không tìm thấy";
@@ -417,11 +412,6 @@ public class FShareVn extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null) {
-            premiumWarning();
-            account.setValid(false);
-            return ai;
-        }
         login(account, true);
         if (!br.getURL().endsWith("/home")) {
             br.getPage("/home");
@@ -489,34 +479,6 @@ public class FShareVn extends PluginForHost {
             return true;
         }
         return false;
-    }
-
-    private static void premiumWarning() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        title = "fshare.vn Premium Issues";
-                        message = "Hi, This version of JDownloader can not be used to login into fshare.vn, you will need to to install JDownloader 2.\r\n";
-                        message += "More information can be found on our fourm, when selecting OK you will proceed to our forum in your default web browser.\r\n";
-                        message += "http://board.jdownloader.org/showthread.php?t=37365\r\n";
-                        if (CrossSystem.isOpenBrowserSupported()) {
-                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                            if (JOptionPane.OK_OPTION == result) {
-                                CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
-                            }
-                        }
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
     }
 
     /**

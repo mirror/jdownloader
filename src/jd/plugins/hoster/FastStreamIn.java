@@ -103,6 +103,7 @@ public class FastStreamIn extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
@@ -110,6 +111,9 @@ public class FastStreamIn extends PluginForHost {
         getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getURL().contains("faststream.in/")) {
+            logger.info("File offline as old domain redirects to new one without old content");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (correctedBR.contains(MAINTENANCE)) {
