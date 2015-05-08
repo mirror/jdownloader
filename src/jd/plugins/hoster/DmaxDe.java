@@ -17,26 +17,30 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dmax.de", "tlc.de", "discovery.de", "animalplanet.de" }, urls = { "http://(www\\.)?dmax\\.de/(programme/[a-z0-9\\-]+/videos/[a-z0-9\\-]+/|videos/#\\d+)", "http://(www\\.)?tlc\\.de/[^<>\"]*?videos/#\\d+", "http://(www\\.)?discovery\\.de/[^<>\"]*?(video|highlights)/#\\d+", "http://(www\\.)?animalplanet\\.de/[^<>\"]*?video/#\\d+" }, flags = { 0, 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dmax.de", "tlc.de", "discovery.de", "animalplanet.de" }, urls = { "http://dmax\\.dedecrypted\\d+", "http://tlc\\.dedecrypted\\d+", "http://discovery\\.dedecrypted\\d+", "http://animalplanet\\.dedecrypted\\d+" }, flags = { 0, 0, 0, 0 })
 public class DmaxDe extends PluginForHost {
 
     public DmaxDe(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     @Override
@@ -45,12 +49,11 @@ public class DmaxDe extends PluginForHost {
     }
 
     /* Tags: Discovery Communications Inc */
-    private static final String  type_videoid           = "https?://.+/videos?/#\\d+$";
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME            = true;
-    private static final int     FREE_MAXCHUNKS         = 0;
-    private static final int     FREE_MAXDOWNLOADS      = 20;
+    private static final boolean                  FREE_RESUME            = true;
+    private static final int                      FREE_MAXCHUNKS         = 0;
+    private static final int                      FREE_MAXDOWNLOADS      = 20;
 
     /* Last updated: 01.11.13 */
     // private static final String playerKey = "AAAAAGLvCOI~,a0C3h1Jh3aQKs2UcRZrrxyrjE0VH93xl";
@@ -58,48 +61,53 @@ public class DmaxDe extends PluginForHost {
     // private static final String publisherID = "1659832546";
 
     /* Last updated: 06.07.14 */
-    private static final String  apiTokenDmax           = "XoVA15ecuocTY5wBbxNImXVFbQd72epyxxVcH3ZVmOA.";
-    private static final String  apiTokenTlc            = "XoVA15ecuocTY5wBbxNImXVFbQd72epyxxVcH3ZVmOA.";
-    private static final String  apiTokenDiscoveryDe    = "XoVA15ecuocTY5wBbxNImXVFbQd72epyxxVcH3ZVmOA.";
-    private static final String  apiTokenAnimalplanetDe = "XoVA15ecuocTY5wBbxNImXVFbQd72epyxxVcH3ZVmOA.";
+    public static final String                    apiTokenDmax           = "XoVA15ecuocTY5wBbxNImXVFbQd72epyxxVcH3ZVmOA.";
+    public static final String                    apiTokenTlc            = "XoVA15ecuocTY5wBbxNImXVFbQd72epyxxVcH3ZVmOA.";
+    public static final String                    apiTokenDiscoveryDe    = "XoVA15ecuocTY5wBbxNImXVFbQd72epyxxVcH3ZVmOA.";
+    public static final String                    apiTokenAnimalplanetDe = "XoVA15ecuocTY5wBbxNImXVFbQd72epyxxVcH3ZVmOA.";
 
-    private String               apiTokenCurrent        = null;
-    private String               DLLINK                 = null;
-    private boolean              downloadMode           = false;
+    private String                                apiTokenCurrent        = null;
+    private String                                DLLINK                 = null;
+    private boolean                               downloadMode           = false;
+
+    public static LinkedHashMap<String, String[]> formats                = new LinkedHashMap<String, String[]>() {
+                                                                             {
+                                                                                 /*
+                                                                                  * Format-name:videoCodec, videoBitrate, videoResolution,
+                                                                                  * audioCodec, audioBitrate
+                                                                                  */
+                                                                                 put("240", new String[] { "AVC", "440", "240x140", "AAC LC", "128" });
+                                                                                 put("480", new String[] { "AVC", "440", "480x268", "AAC LC", "128" });
+                                                                                 put("640", new String[] { "AVC", "700", "640x360", "AAC LC", "128" });
+                                                                                 put("720", new String[] { "AVC", "950", "720x204", "AAC LC", "128" });
+                                                                                 put("1024", new String[] { "AVC", "950", "1024x576", "AAC LC", "128" });
+                                                                                 put("1280", new String[] { "AVC", "1600", "1280x720", "AAC LC", "128" });
+
+                                                                             }
+                                                                         };
 
     /*
      * Thanks goes to: https://github.com/bromix/plugin.video.bromix.dmax_de/blob/master/discoverychannel/fusion.py AND
      * https://github.com/dethfeet/plugin.video.dmax/blob/master/default.py
      */
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        String vpath = null;
-        String videoID;
+        DLLINK = link.getStringProperty("directlink", null);
+        final String videoID = link.getStringProperty("videoid", null);
+        long foundFilesize = link.getLongProperty("directsize", -1);
         this.setBrowserExclusive();
         initAPI(link);
-        if (link.getDownloadURL().matches(type_videoid)) {
-            videoID = link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("#") + 1);
-        } else {
-            br.getPage(link.getDownloadURL());
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            videoID = br.getRegex("\"@videoPlayer\".value=\"([^\"]+)\"").getMatch(0);
-            /* Get rid of cookies/Headers before we do the API request! */
-            this.br = new Browser();
-        }
-        if (videoID == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         try {
             link.setLinkID(videoID);
         } catch (final Throwable e) {
             /* Not available in old 0.9.581 Stable */
         }
-        /* Offline links should also have nice filenames */
-        link.setName(videoID + ".mp4");
-        this.br.getHeaders().put("User-Agent", "stagefright/1.2 (Linux;Android 4.4.2)");
+        if (DLLINK == null) {
+            /* User has old links in downloadlist --> Rare case */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        link.setFinalFileName(link.getStringProperty("directfilename", null));
         accessAPI("find_video_by_id", "video_id=" + videoID + "&video_fields=name,renditions");
         if (br.getHttpConnection().getResponseCode() == 404 || br.toString().equals("null")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -109,55 +117,7 @@ public class DmaxDe extends PluginForHost {
         if (entries.get("error") != null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = (String) entries.get("name");
-        final ArrayList<Object> ressourcelist = (ArrayList) entries.get("renditions");
-        long foundFilesize = -1;
-        long width = -1;
-        long height = -1;
-        for (final Object o : ressourcelist) {
-            final LinkedHashMap<String, Object> vdata = (LinkedHashMap<String, Object>) o;
-            DLLINK = (String) vdata.get("url");
-            final Object size = vdata.get("size");
-            final Object owidth = vdata.get("frameWidth");
-            final Object oheigth = vdata.get("frameHeight");
-            long fsize = -1;
-            if (owidth != null && oheigth != null) {
-                width = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(owidth, -1);
-                height = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(oheigth, -1);
-            }
-            if (size != null) {
-                fsize = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(size, -1);
-            }
-            if (fsize > foundFilesize) {
-                foundFilesize = fsize;
-            }
-
-        }
-        if (title == null || DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* Okay now let's convert the standard Akamai HD URLs to standard HTTP URLs. */
-        /*
-         * Akamai URL:
-         * http://discintlhdflash-f.akamaihd.net/byocdn/media/1659832546/201503/3129/1234567890_4133464537001_mp4-DCB366660004000-204.mp4
-         */
-        /*
-         * HTTP URL: http://discoveryint1.edgeboss.net/download/discoveryint1/byocdn/media/1659832546/201503/3129/
-         * 1234567890_4133464537001_mp4-DCB366660004000-204.mp4
-         */
-        /* "byocdn/media/.+" == similarity */
-        /* Akamai is not always used so 'vpath' can also be null in some rare cases as we already have a normal http url. */
-        vpath = new Regex(DLLINK, "(/byocdn/media/.+)").getMatch(0);
-        if (vpath != null) {
-            DLLINK = "http://discoveryint1.edgeboss.net/download/discoveryint1/" + vpath;
-        }
-        title = encodeUnicode(title);
-        if (width > -1 && height > -1) {
-            title = title + "_" + width + "x" + height;
-        }
-        title += ".mp4";
-        link.setFinalFileName(title);
-        /*-1 = defaultvalue, 0 =  no Akamai url --> Filesize not given in API json --> We have to find it via the headers.*/
+        /*-1 = defaultvalue, 0 =  no Akamai url --> Filesize not given in API json (or by decrypter) --> We have to find it via the headers.*/
         if (foundFilesize < 1) {
             URLConnectionAdapter con = null;
             try {
@@ -257,6 +217,7 @@ public class DmaxDe extends PluginForHost {
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        this.br.getHeaders().put("User-Agent", "stagefright/1.2 (Linux;Android 4.4.2)");
     }
 
     private void accessAPI(final String command, final String params) throws IOException {
@@ -266,88 +227,56 @@ public class DmaxDe extends PluginForHost {
         this.br.getPage(url);
     }
 
-    /** Avoid chars which are not allowed in filenames under certain OS' */
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
+    @Override
+    public String getDescription() {
+        return "JDownloader's DMAX plugin helps downloading videoclips from dmax.de.";
     }
 
-    // private void getAMFRequest(final Browser amf, final byte[] b, String s) throws IOException {
-    // amf.getHeaders().put("Content-Type", "application/x-amf");
-    // amf.setKeepResponseContentBytes(true);
-    // PostRequest request = (PostRequest) amf.createPostRequest("http://c.brightcove.com/services/messagebroker/amf?playerKey=" + s,
-    // (String) null);
-    // request.setPostBytes(b);
-    // amf.openRequestConnection(request);
-    // amf.loadConnection(null);
-    // }
-    //
-    // private String build_amf_request(final String cnst, final String playerID, final String videoPlayer, final String publisherID) throws
-    // IOException {
-    // br.postPage("http://c.brightcove.com/services/messagebroker/amf?playerKey=" + playerID, "");
-    // return null;
-    // }
-    //
-    // private byte[] createAMFMessage(String... s) {
-    // /* TODO Update this to work with dmax! */
-    // String data =
-    // "0A0000000202002838363436653830346539333531633838633464643962306630383166316236643062373464363039110A6363636F6D2E627269676874636F76652E657870657269656E63652E566965776572457870657269656E63655265717565737419657870657269656E636549641964656C6976657279547970650755524C13706C617965724B657921636F6E74656E744F76657272696465731154544C546F6B656E054281B0158F580800057FFFFFFFE0000000";
-    // data += "06" + getHexLength(s[0], true) + JDHexUtils.getHexString(s[0]); // 0x06(String marker) + length + String b
-    // data += "06" + getHexLength(s[1], true) + JDHexUtils.getHexString(s[1]);
-    // data +=
-    // "0903010A810353636F6D2E627269676874636F76652E657870657269656E63652E436F6E74656E744F7665727269646515666561747572656449641B6665617475726564526566496417636F6E74656E745479706513636F6E74656E7449640D74617267657415636F6E74656E744964731B636F6E74656E7452656649647319636F6E74656E745265664964057FFFFFFFE0000000010400057FFFFFFFE00000000617766964656F506C617965720101";
-    // data += "06" + getHexLength(s[2], true) + JDHexUtils.getHexString(s[2]);
-    // data += "0601";
-    // return
-    // JDHexUtils.getByteArray("0003000000010046636F6D2E627269676874636F76652E657870657269656E63652E457870657269656E636552756E74696D654661636164652E67657444617461466F72457870657269656E636500022F310000"
-    // + getHexLength(JDHexUtils.toString(data), false) + data);
-    // }
-    //
-    // private String getHexLength(final String s, boolean amf3) {
-    // String result = Integer.toHexString(s.length() | 1);
-    // if (amf3) {
-    // result = "";
-    // for (int i : getUInt29(s.length() << 1 | 1)) {
-    // if (i == 0) {
-    // break;
-    // }
-    // result += Integer.toHexString(i);
-    // }
-    // }
-    // return result.length() % 2 > 0 ? "0" + result : result;
-    // }
-    //
-    // private int[] getUInt29(int ref) {
-    // int[] buf = new int[4];
-    // if (ref < 0x80) {
-    // buf[0] = ref;
-    // } else if (ref < 0x4000) {
-    // buf[0] = (((ref >> 7) & 0x7F) | 0x80);
-    // buf[1] = ref & 0x7F;
-    // } else if (ref < 0x200000) {
-    // buf[0] = (((ref >> 14) & 0x7F) | 0x80);
-    // buf[1] = (((ref >> 7) & 0x7F) | 0x80);
-    // buf[2] = ref & 0x7F;
-    // } else if (ref < 0x40000000) {
-    // buf[0] = (((ref >> 22) & 0x7F) | 0x80);
-    // buf[1] = (((ref >> 15) & 0x7F) | 0x80);
-    // buf[2] = (((ref >> 8) & 0x7F) | 0x80);
-    // buf[3] = ref & 0xFF;
-    // } else {
-    // logger.warning("about.com(amf3): Integer out of range: " + ref);
-    // }
-    // return buf;
-    // }
+    private void setConfigElements() {
+        /* Currently not needed as we get the filesize from the XML */
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK,
+        // JDL.L("plugins.hoster.DmaxDe.FastLinkcheck",
+        // "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video Formatseinstellungen:\r\n<html><b>Wichtig: In manchen Fällen ist nur eine (undefinierte) Qualitätsstufe da.\r\nIn solchen Fällen wird diese, unabhängig von diesen Einstellungen hinzugefügt!</b></p></html>"));
+        final Iterator<Entry<String, String[]>> it = formats.entrySet().iterator();
+        while (it.hasNext()) {
+            /*
+             * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate
+             */
+            String usertext = "Load ";
+            final Entry<String, String[]> videntry = it.next();
+            final String internalname = videntry.getKey();
+            final String[] vidinfo = videntry.getValue();
+            final String videoCodec = vidinfo[0];
+            final String videoBitrate = vidinfo[1];
+            final String videoResolution = vidinfo[2];
+            final String audioCodec = vidinfo[3];
+            final String audioBitrate = vidinfo[4];
+            if (videoCodec != null) {
+                usertext += videoCodec + " ";
+            }
+            if (videoBitrate != null) {
+                usertext += videoBitrate + " ";
+            }
+            if (videoResolution != null) {
+                usertext += videoResolution + " ";
+            }
+            if (audioCodec != null || audioBitrate != null) {
+                usertext += "with audio ";
+                if (audioCodec != null) {
+                    usertext += audioCodec + " ";
+                }
+                if (audioBitrate != null) {
+                    usertext += audioBitrate;
+                }
+            }
+            if (usertext.endsWith(" ")) {
+                usertext = usertext.substring(0, usertext.lastIndexOf(" "));
+            }
+            final ConfigEntry vidcfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), internalname, JDL.L("plugins.hoster.DmaxDe.ALLOW_" + internalname, usertext)).setDefaultValue(true);
+            getConfig().addEntry(vidcfg);
+        }
+    }
 
     private boolean isJDStable() {
         return System.getProperty("jd.revision.jdownloaderrevision") == null;
