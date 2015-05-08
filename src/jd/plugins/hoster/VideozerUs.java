@@ -491,6 +491,13 @@ public class VideozerUs extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 br.getPage(this.getProtocol() + this.getHost() + "/files/login." + type);
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nServerfehler 404 beim Loginversucht für den FILE-host: https://videozer.us/files/login.html", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nServer error 404 on login attempt for the FILE-host: http://videozer.us/files/login.html", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
                 final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                 final String loginpostpage = loginstart + this.getHost() + "/files//ajax/_account_login.ajax.php";
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");

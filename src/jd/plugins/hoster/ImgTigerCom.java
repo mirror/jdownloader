@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgtiger.com" }, urls = { "http://(www\\.)?imgtiger\\.com/viewer\\.php\\?file=\\d+\\.(jpg|png)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgtiger.com" }, urls = { "http://(www\\.)?imgtiger\\.com/viewer\\.php\\?file=\\d+\\.(?:jpe?g|png|gif)" }, flags = { 0 })
 public class ImgTigerCom extends PluginForHost {
 
     public ImgTigerCom(PluginWrapper wrapper) {
@@ -42,6 +42,7 @@ public class ImgTigerCom extends PluginForHost {
         return "http://imgtiger.com/terms";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -51,15 +52,23 @@ public class ImgTigerCom extends PluginForHost {
         br.setConnectTimeout(3 * 60 * 1000);
         br.setReadTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("does not exist or has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = new Regex(downloadLink.getDownloadURL(), "file=(\\d+\\.(jpg|png))").getMatch(0);
-        DLLINK = br.getRegex("\"(http://img\\d+\\.imgtiger\\.com/images/\\d+\\.(jpg|png))\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("does not exist or has been deleted")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = new Regex(downloadLink.getDownloadURL(), "file=(\\d+.+)").getMatch(0);
+        DLLINK = br.getRegex("\"(http://img\\d+\\.imgtiger\\.com/images/\\d+\\.[a-z]+)\"").getMatch(0);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".jpg";
-        if (!filename.endsWith(ext)) filename = Encoding.htmlDecode(filename) + ext;
+        if (ext == null || ext.length() > 5) {
+            ext = ".jpg";
+        }
+        if (!filename.endsWith(ext)) {
+            filename = Encoding.htmlDecode(filename) + ext;
+        }
         downloadLink.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
