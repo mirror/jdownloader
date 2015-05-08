@@ -793,22 +793,28 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         }
 
         if (vid.date <= 0) {
+
+            // dd MMM yyyy - old
             final Locale locale = Locale.ENGLISH;
             SimpleDateFormat formatter = new SimpleDateFormat("dd MMM yyyy", locale);
             formatter.setTimeZone(TimeZone.getDefault());
             String date = this.br.getRegex("class=\"watch-video-date\" >([ ]+)?(\\d{1,2} [A-Za-z]{3} \\d{4})</span>").getMatch(1);
-
             if (date == null) {
-                formatter = new SimpleDateFormat("dd MMM yyyy", locale);
-                formatter.setTimeZone(TimeZone.getDefault());
                 date = this.br.getRegex("<strong[^>]*>Published on (\\d{1,2} [A-Za-z]{3} \\d{4})</strong>").getMatch(0);
             }
+
+            // MMM dd, yyyy (20150508)
             if (date == null) {
-                formatter = new SimpleDateFormat("yyyy-dd-MM", locale);
+                formatter = new SimpleDateFormat("MMM dd, yyyy", locale);
+                formatter.setTimeZone(TimeZone.getDefault());
+                date = this.br.getRegex("<strong[^>]*>Published on ([A-Za-z]{3} \\d{1,2}, \\d{4})</strong>").getMatch(0);
+            }
+            // yyyy-mm-dd (20150508)
+            if (date == null) {
+                formatter = new SimpleDateFormat("yyyy-mm-dd", locale);
                 formatter.setTimeZone(TimeZone.getDefault());
                 date = this.br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d{4}-\\d{2}-\\d{2})\">").getMatch(0);
             }
-
             if (date != null) {
                 try {
                     vid.date = formatter.parse(date).getTime();
@@ -1057,6 +1063,13 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 logger.warning(unavailableReason);
                 vid.error = unavailableReason;
                 return null;
+            } else if ("This live event has ended.".equalsIgnoreCase(unavailableReason)) {
+                // currently covering
+                // This live event has ended.
+                // id=qEJwOuvDf7I, date=20150412, author=raztoki
+                logger.warning(unavailableReason);
+                vid.error = unavailableReason;
+                return null;
             } else if (unavailableReason.contains(copyrightClaim)) {
                 // currently covering
                 // "One Monkey saves another Mo..."
@@ -1289,7 +1302,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 DatatypeFactory f = DatatypeFactory.newInstance();
                 XMLGregorianCalendar xgc = f.newXMLGregorianCalendar(date);
 
-                vid.date = xgc.toGregorianCalendar().getTime().getTime();
+                // vid.date = xgc.toGregorianCalendar().getTime().getTime();
 
             }
 
@@ -1324,7 +1337,6 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             vid.duration = Integer.parseInt(duration);
 
         }
-        // System.out.println(1);
 
     }
 
