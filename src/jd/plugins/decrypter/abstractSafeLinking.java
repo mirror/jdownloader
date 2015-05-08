@@ -158,7 +158,7 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
      * @return
      */
     protected String regexLinkShort() {
-        return "https?://[^/]+" + getShortHost() + "/[a-zA-Z0-9]+";
+        return "https?://[^/]*" + getShortHost() + "/[a-zA-Z0-9]+";
     }
 
     protected String getShortHost() {
@@ -218,11 +218,11 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
     }
 
     protected String regexCaptchaBasic() {
-        return "(https?://[^/]+" + regexSupportedDomains() + "/includes/captcha_factory/securimage/securimage_(show\\.php\\?hash=[a-z0-9]+|register\\.php\\?hash=[^\"]+sid=[a-z0-9]{32}))";
+        return "(https?://[^/]*" + regexSupportedDomains() + "/includes/captcha_factory/securimage/securimage_(show\\.php\\?hash=[a-z0-9]+|register\\.php\\?hash=[^\"]+sid=[a-z0-9]{32}))";
     }
 
     protected String regexCaptchaThreeD() {
-        return "\"(https?://[^/]+" + regexSupportedDomains() + "/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"";
+        return "\"(https?://[^/]*" + regexSupportedDomains() + "/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"";
     }
 
     protected String regexCaptchaFancy() {
@@ -234,11 +234,11 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
     }
 
     protected String regexCaptchaSimplecaptcha() {
-        return "\"https?://[^/]+" + regexSupportedDomains() + "/simplecaptcha/captcha\\.php\"";
+        return "\"https?://[^/]*" + regexSupportedDomains() + "/simplecaptcha/captcha\\.php\"";
     }
 
     protected String regexCaptchaCatAndDog() {
-        return "\"https?://[^/]+" + regexSupportedDomains() + "/includes/captcha_factory/catsdogs/catdogcaptcha\\.php\\?";
+        return "\"https?://[^/]*" + regexSupportedDomains() + "/includes/captcha_factory/catsdogs/catdogcaptcha\\.php\\?";
     }
 
     protected void handleCaptcha(final CryptedLink param) throws Exception {
@@ -342,6 +342,7 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
                     protectedForm.put("iQapTcha", "");
                     break;
                 }
+                case 0:
                 case 7:
                 case 8:
                 case 9:
@@ -350,6 +351,7 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
                     // unsupported types
                     // short wait to prevent hammering
                     Thread.sleep(2500);
+                    // maybe also good to clear cookies?
                     br.getPage(br.getURL());
                     protectedForm = formProtected();
                     prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
@@ -442,7 +444,7 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
         br.getRequest().setHtmlCode(captcha);
 
         // nullify cType, this is so feedback is correct on retries etc.
-        cType = null;
+        cType = "notDetected";
 
         for (Entry<String, String> next : captchaRegex.entrySet()) {
             if (br.containsHTML(next.getValue())) {
@@ -485,7 +487,7 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> loadcontainer(String format, CryptedLink param) throws IOException, PluginException {
         ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-        String containerLink = br.getRegex("\"(https?://[^/]+" + regexSupportedDomains() + "/c/[a-z0-9]+" + format + ")").getMatch(0);
+        String containerLink = br.getRegex("\"(https?://[^/]*" + regexSupportedDomains() + "/c/[a-z0-9]+" + format + ")").getMatch(0);
         if (containerLink == null) {
             logger.warning("Contailerlink for link " + param.toString() + " for format " + format + " could not be found.");
             return links;
