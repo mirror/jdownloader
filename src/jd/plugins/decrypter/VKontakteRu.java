@@ -773,15 +773,15 @@ public class VKontakteRu extends PluginForDecrypt {
         if (parameter.matches(PATTERN_VIDEO_SINGLE_EMBED) || parameter.matches(PATTERN_VIDEO_SINGLE_EMBED_HASH)) {
             final Regex idsRegex = new Regex(parameter, "vk\\.com/video_ext\\.php\\?oid=((?:\\-)?\\d+)\\&id=(\\d+)");
             oid = idsRegex.getMatch(0);
-            id = idsRegex.getMatch(2);
+            id = idsRegex.getMatch(1);
         } else if (parameter.matches(PATTERN_VIDEO_SINGLE_ORIGINAL)) {
             final Regex idsRegex = new Regex(parameter, "((?:\\-)?\\d+)_(\\d+)$");
             oid = idsRegex.getMatch(0);
-            id = idsRegex.getMatch(2);
+            id = idsRegex.getMatch(1);
         } else if (parameter.matches(PATTERN_VIDEO_SINGLE_ORIGINAL_LIST)) {
             final Regex idsRegex = new Regex(parameter, "((?:\\-)?\\d+)_(\\d+)\\?");
             oid = idsRegex.getMatch(0);
-            id = idsRegex.getMatch(2);
+            id = idsRegex.getMatch(1);
         }
         ids[0] = oid;
         ids[1] = id;

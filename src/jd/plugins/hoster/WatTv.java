@@ -78,7 +78,7 @@ public class WatTv extends PluginForHost {
         if (enable_oauth_api) {
             /* thx to: https://github.com/olamedia/medialink/blob/master/mediaDrivers/watTvMediaLinkDriver.php */
             /* xml also possible */
-            br.getPage("http://www.wat.tv/interface/oembed/json?url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&oembedtype=wattv");
+            br.getPage("http://www.wat.tv/interface/oembed/json?url=http%3A%2F%2Fwww.wat.tv%2Fvideo%2F" + downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/")) + "&oembedtype=wattv");
             final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             filename = (String) entries.get("title");
             final String html = (String) entries.get("html");
@@ -92,13 +92,16 @@ public class WatTv extends PluginForHost {
             if (br.getURL().equals("http://www.wat.tv/") || br.containsHTML("<title> WAT TV, vidéos replay musique et films, votre média vidéo \\– Wat\\.tv </title>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);
+            filename = br.getRegex("<meta name=\"name\" content=\"(.*?)\"").getMatch(0);
             if (filename == null || filename.equals("")) {
-                filename = br.getRegex("<meta name=\"name\" content=\"(.*?)\"").getMatch(0);
+                filename = br.getRegex("\\'premium:([^<>\"\\']*?)\\'").getMatch(0);
             }
-            video_id = br.getRegex("<meta property=\"og:video(:secure_url)?\" content=\"[^\"]+(\\d{8})\">").getMatch(1);
+            if (filename == null || filename.equals("")) {
+                filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"").getMatch(0);
+            }
+            video_id = br.getRegex("<meta property=\"og:video(:secure_url)?\" content=\"[^\"]+(\\d{6,8})\">").getMatch(1);
             if (video_id == null) {
-                video_id = br.getRegex("xtpage = \"[^;]+video\\-(\\d{8})\";").getMatch(0);
+                video_id = br.getRegex("xtpage = \"[^;]+video\\-(\\d{6,8})\";").getMatch(0);
             }
             if (video_id == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
