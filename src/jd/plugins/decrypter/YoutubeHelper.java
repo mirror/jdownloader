@@ -662,12 +662,12 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     /**
      * *
-     * 
+     *
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     * 
+     *
      * @return
      * @throws IOException
      * @throws PluginException
@@ -802,6 +802,11 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 formatter = new SimpleDateFormat("dd MMM yyyy", locale);
                 formatter.setTimeZone(TimeZone.getDefault());
                 date = this.br.getRegex("<strong[^>]*>Published on (\\d{1,2} [A-Za-z]{3} \\d{4})</strong>").getMatch(0);
+            }
+            if (date == null) {
+                formatter = new SimpleDateFormat("yyyy-dd-MM", locale);
+                formatter.setTimeZone(TimeZone.getDefault());
+                date = this.br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d{4}-\\d{2}-\\d{2})\">").getMatch(0);
             }
 
             if (date != null) {
