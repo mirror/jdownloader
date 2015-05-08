@@ -160,8 +160,8 @@ public class RapidGatorNet extends PluginForHost {
         prepBr.getHeaders().put("Pragma", null);
         prepBr.setCookie("http://rapidgator.net/", "lang", "en");
         prepBr.setCustomCharset("UTF-8");
-        prepBr.setReadTimeout(3 * 60 * 1000);
-        prepBr.setConnectTimeout(3 * 60 * 1000);
+        prepBr.setReadTimeout(1 * 60 * 1000);
+        prepBr.setConnectTimeout(1 * 60 * 1000);
         return prepBr;
     }
 
@@ -596,6 +596,7 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Property.NULL);
         final AccountInfo ai = new AccountInfo();
         synchronized (RapidGatorNet.LOCK) {
             if (this.getPluginConfig().getBooleanProperty(this.DISABLE_API_PREMIUM, false)) {
@@ -629,10 +630,16 @@ public class RapidGatorNet extends PluginForHost {
                             account.setProperty("free", false);
                             /* account still valid */
                             if (reset_in != null) {
-                                ai.setStatus("Traffic exceeded " + reset_in);
-                                account.setTempDisabled(true);
+                                // this is pointless, when traffic == 0 == core automatically sets ai.settraffic("No Traffic Left")
+                                // ai.setStatus("Traffic exceeded " + reset_in);
+                                // account.setAccountInfo(ai);
+
+                                // is reset_in == seconds, * 1000 back into ms.
+                                Long l = Long.parseLong(reset_in) * 1000;
+                                account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", l);
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                             } else {
-                                ai.setStatus("Premium account");
+                                ai.setStatus("Premium Account");
                             }
                             try {
                                 RapidGatorNet.maxPrem.set(-1);
@@ -644,7 +651,7 @@ public class RapidGatorNet extends PluginForHost {
                             return ai;
                         }
                     }
-                    ai.setStatus("Free account");
+                    ai.setStatus("Free Account");
                     account.setProperty("session_type", "free");
                     account.setProperty("free", true);
                     try {
@@ -662,10 +669,12 @@ public class RapidGatorNet extends PluginForHost {
                 account.setValid(false);
                 return ai;
             } catch (final PluginException e) {
-                account.setProperty("free", Property.NULL);
-                account.setProperty("session_type", Property.NULL);
-                account.setProperty("session_id", Property.NULL);
-                account.setValid(false);
+                if (e.getLinkStatus() != 256) {
+                    account.setProperty("free", Property.NULL);
+                    account.setProperty("session_type", Property.NULL);
+                    account.setProperty("session_id", Property.NULL);
+                    account.setValid(false);
+                }
                 throw e;
             }
         }
@@ -1135,9 +1144,9 @@ public class RapidGatorNet extends PluginForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             * 
+             *
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             * 
+             *
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
@@ -1149,6 +1158,8 @@ public class RapidGatorNet extends PluginForHost {
         if (this.dl.getConnection().getContentType().contains("html")) {
             this.logger.warning("The final dllink seems not to be a file!");
             this.handleErrors_api(session_id, link, account, this.dl.getConnection());
+            // so we can see errors maybe proxy errors etc.
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();
@@ -1220,6 +1231,8 @@ public class RapidGatorNet extends PluginForHost {
             if (this.dl.getConnection().getContentType().contains("html")) {
                 this.logger.warning("The final dllink seems not to be a file!");
                 this.handleErrors_api(null, link, account, this.dl.getConnection());
+                // so we can see errors maybe proxy errors etc.
+                br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.dl.startDownload();
