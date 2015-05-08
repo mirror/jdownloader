@@ -67,14 +67,14 @@ class SplitUtil {
         if (priority == null || CPUPriority.HIGH.equals(priority)) {
             priority = null;
         }
-        final Archive archive = controller.getArchiv();
+        final Archive archive = controller.getArchive();
         long size = -skipBytesFirstPart;
         for (ArchiveFile l : archive.getArchiveFiles()) {
             size += l.getFileSize();
         }
         final String mergeTo = controller.getExtractToFolder().getAbsoluteFile() + File.separator + fileName;
         File destination = new File(mergeTo);
-        controller.getArchiv().getContentView().add(new PackedFile(false, archive.getName(), size));
+        controller.getArchive().getContentView().add(new PackedFile(false, archive.getName(), size));
         controller.setCompleteBytes(size);
         controller.setProcessedBytes(0);
         final FileBytesCache cache = controller.getFileBytesCache();

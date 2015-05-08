@@ -58,7 +58,7 @@ public class HJSplit extends IExtraction {
 
     @Override
     public void extract(ExtractionController ctrl) {
-        final Archive archive = getArchive();
+        final Archive archive = getExtractionController().getArchive();
         final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
         final String matches[] = splitType.getMatches(firstArchiveFile.getName());
         if (matches != null) {
@@ -74,7 +74,7 @@ public class HJSplit extends IExtraction {
                     skipBytes = 0;
                     fileName = matches[0];
                 }
-                if (SplitUtil.merge(controller, fileName, skipBytes, getConfig())) {
+                if (SplitUtil.merge(getExtractionController(), fileName, skipBytes, getConfig())) {
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
                 } else {
                     if (archive.getExitCode() == -1) {

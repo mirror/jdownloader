@@ -172,22 +172,20 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     public synchronized ExtractionController addToQueue(final Archive archive, boolean forceAskForUnknownPassword) {
         // check if we have this archive already in queue.
         for (ExtractionController ec : extractionQueue.getJobs()) {
-            if (ec.getArchiv() == archive || StringUtils.equals(ec.getArchiv().getArchiveID(), archive.getArchiveID())) {
+            final Archive eca = ec.getArchive();
+            if (eca == archive || StringUtils.equals(eca.getArchiveID(), archive.getArchiveID())) {
                 return ec;
             }
         }
         final ExtractionController currentController = extractionQueue.getCurrentQueueEntry();
         if (currentController != null) {
-            if (currentController.getArchiv() == archive || StringUtils.equals(currentController.getArchiv().getArchiveID(), archive.getArchiveID())) {
+            final Archive ca = currentController.getArchive();
+            if (ca == archive || StringUtils.equals(ca.getArchiveID(), archive.getArchiveID())) {
                 return currentController;
             }
         }
-        if (archive.getArchiveFiles().size() < 1) {
+        if (archive.getArchiveFiles().size() == 0) {
             logger.info("Archive:" + archive.getName() + "|Empty");
-            return null;
-        }
-        if (archive.isActive()) {
-            logger.info("Archive:" + archive.getName() + "|Active");
             return null;
         }
         if (isComplete(archive) == false) {
@@ -196,13 +194,13 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         }
         final IExtraction extractor = getExtractorInstanceByFactory(archive.getFactory());
         if (extractor == null) {
+            logger.info("Archive:" + archive.getName() + "|Unsupported");
             return null;
         }
         archive.getFactory().fireArchiveAddedToQueue(archive);
         final ExtractionController controller = new ExtractionController(this, archive, extractor);
         controller.setAskForUnknownPassword(forceAskForUnknownPassword);
         controller.setIfFileExistsAction(getIfFileExistsAction(archive));
-        archive.setActive(true);
         extractor.setConfig(getSettings());
         extractionQueue.addAsynch(controller);
         fireEvent(new ExtractionEvent(controller, ExtractionEvent.Type.QUEUED));
@@ -250,39 +248,45 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      * @throws ArchiveException
      */
     public Archive buildArchive(final ArchiveFactory factory) throws ArchiveException {
-        final Archive existing = getExistingArchive(factory);
-        if (existing == null) {
+        if (!Boolean.FALSE.equals(factory.isPartOfAnArchive())) {
+            final Archive existing = getExistingArchive(factory);
+            if (existing == null) {
+                final boolean deepInspection = !(factory instanceof CrawledLinkFactory);
+                for (IExtraction extractor : extractors) {
+                    try {
+                        if (!Boolean.FALSE.equals(extractor.isSupported(factory, deepInspection))) {
+                            final Archive archive = extractor.buildArchive(factory, deepInspection);
+                            if (archive != null) {
+                                factory.onArchiveFinished(archive);
+                                return archive;
+                            }
+                        }
+                    } catch (final Throwable e) {
+                        logger.log(e);
+                    }
+                }
+                factory.setPartOfAnArchive(false);
+            }
+            return existing;
+        }
+        return null;
+    }
+
+    public DummyArchive createDummyArchive(final Archive archive) throws CheckException {
+        final ArchiveFactory factory = archive.getFactory();
+        if (!Boolean.FALSE.equals(factory.isPartOfAnArchive())) {
             final boolean deepInspection = !(factory instanceof CrawledLinkFactory);
             for (IExtraction extractor : extractors) {
                 try {
                     if (!Boolean.FALSE.equals(extractor.isSupported(factory, deepInspection))) {
-                        final Archive archive = extractor.buildArchive(factory, deepInspection);
-                        if (archive != null) {
-                            factory.onArchiveFinished(archive);
-                            return archive;
+                        final DummyArchive dummyArchive = extractor.checkComplete(archive);
+                        if (dummyArchive != null) {
+                            return dummyArchive;
                         }
                     }
                 } catch (final Throwable e) {
                     logger.log(e);
                 }
-            }
-        }
-        return existing;
-    }
-
-    public DummyArchive createDummyArchive(final Archive archive) throws CheckException {
-        final ArchiveFactory factory = archive.getFactory();
-        final boolean deepInspection = !(factory instanceof CrawledLinkFactory);
-        for (IExtraction extractor : extractors) {
-            try {
-                if (!Boolean.FALSE.equals(extractor.isSupported(factory, deepInspection))) {
-                    final DummyArchive dummyArchive = extractor.checkComplete(archive);
-                    if (dummyArchive != null) {
-                        return dummyArchive;
-                    }
-                }
-            } catch (final Throwable e) {
-                logger.log(e);
             }
         }
         return null;
@@ -305,26 +309,20 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      * @return
      */
     private IExtraction getExtractorInstanceByFactory(final ArchiveFactory factory) {
-        for (IExtraction extractor : extractors) {
-            try {
-                if (Boolean.TRUE.equals(extractor.isSupported(factory, true))) {
-                    final IExtraction ret = extractor.getClass().newInstance();
-                    ret.setLogger(extractor.logger);
-                    return ret;
+        if (!Boolean.FALSE.equals(factory.isPartOfAnArchive())) {
+            for (IExtraction extractor : extractors) {
+                try {
+                    if (Boolean.TRUE.equals(extractor.isSupported(factory, true))) {
+                        final IExtraction ret = extractor.getClass().newInstance();
+                        ret.setLogger(extractor.logger);
+                        return ret;
+                    }
+                } catch (Throwable e) {
+                    getLogger().log(e);
                 }
-            } catch (Throwable e) {
-                getLogger().log(e);
             }
         }
         return null;
-    }
-
-    /**
-     * Finishes the extraction process.
-     *
-     * @param controller
-     */
-    void onFinished(ExtractionController controller) {
     }
 
     @Override
@@ -637,12 +635,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         if (archive == null) {
             return false;
         }
-        if (archive.getArchiveFiles().size() < 1) {
+        if (archive.getArchiveFiles().size() == 0) {
             logger.info("Archive:" + archive.getName() + "|Empty");
-            return false;
-        }
-        if (archive.isActive()) {
-            logger.info("Archive:" + archive.getName() + "|Active");
             return false;
         }
         if (!isAutoExtractEnabled(archive)) {
@@ -661,14 +655,14 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     private synchronized Archive getExistingArchive(final Object archiveFactory) {
         for (ExtractionController ec : extractionQueue.getJobs()) {
-            final Archive archive = ec.getArchiv();
+            final Archive archive = ec.getArchive();
             if (archive.contains(archiveFactory)) {
                 return archive;
             }
         }
         final ExtractionController currentController = extractionQueue.getCurrentQueueEntry();
         if (currentController != null) {
-            final Archive archive = currentController.getArchiv();
+            final Archive archive = currentController.getArchive();
             if (archive.contains(archiveFactory)) {
                 return archive;
             }
@@ -726,17 +720,17 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                         if (files.size() > 0) {
                             final ExtractionController con = (ExtractionController) caller;
                             final ArrayList<String> knownPasswords = new ArrayList<String>();
-                            final String usedPassword = con.getArchiv().getFinalPassword();
+                            final String usedPassword = con.getArchive().getFinalPassword();
                             if (StringUtils.isNotEmpty(usedPassword)) {
                                 knownPasswords.add(usedPassword);
                             }
-                            final List<String> archiveSettingsPasswords = con.getArchiv().getSettings().getPasswords();
+                            final List<String> archiveSettingsPasswords = con.getArchive().getSettings().getPasswords();
                             if (archiveSettingsPasswords != null) {
                                 knownPasswords.addAll(archiveSettingsPasswords);
                             }
                             final List<ArchiveFactory> archiveFactories = new ArrayList<ArchiveFactory>(files.size());
                             for (File archiveStartFile : files) {
-                                archiveFactories.add(new FileArchiveFactory(archiveStartFile, con.getArchiv()));
+                                archiveFactories.add(new FileArchiveFactory(archiveStartFile, con.getArchive()));
                             }
                             final List<Archive> newArchives = ArchiveValidator.getArchivesFromPackageChildren(archiveFactories);
                             for (Archive newArchive : newArchives) {
@@ -836,7 +830,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         path = archive.getFactory().createExtractSubPath(path, archive);
         File ret = new File(path);
         ret = appendSubFolder(archive, ret);
-
         return ret;
     }
 
@@ -962,7 +955,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             if (archive != null) {
                 if (asker instanceof ExtractionController) {
                     ExtractionController ec = (ExtractionController) asker;
-                    if (ec.getArchiv() == archive || StringUtils.equals(ec.getArchiv().getArchiveID(), archive.getArchiveID())) {
+                    if (ec.getArchive() == archive || StringUtils.equals(ec.getArchive().getArchiveID(), archive.getArchiveID())) {
                         ret.add(dlink);
                         continue;
                     }

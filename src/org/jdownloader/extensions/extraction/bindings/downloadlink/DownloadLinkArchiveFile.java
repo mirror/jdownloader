@@ -36,7 +36,21 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     private final String                   filePath;
     private volatile long                  size;
     private final int                      hashCode;
-    private final AtomicReference<Boolean> exists = new AtomicReference<Boolean>(null);
+    private final AtomicReference<Boolean> exists                = new AtomicReference<Boolean>(null);
+    private boolean                        fileArchiveFileExists = false;
+
+    public boolean isFileArchiveFileExists() {
+        return fileArchiveFileExists;
+    }
+
+    public void setFileArchiveFileExists(boolean fileArchiveFileExists) {
+        if (fileArchiveFileExists) {
+            setExists(true);
+        } else {
+            invalidateExists();
+        }
+        this.fileArchiveFileExists = fileArchiveFileExists;
+    }
 
     public DownloadLinkArchiveFile(DownloadLink link) {
         downloadLinks = new CopyOnWriteArrayList<DownloadLink>();
@@ -79,6 +93,9 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public boolean isComplete() {
+        if (isFileArchiveFileExists() && exists()) {
+            return true;
+        }
         for (DownloadLink downloadLink : getDownloadLinks()) {
             if ((SkipReason.FILE_EXISTS.equals(downloadLink.getSkipReason()) || FinalLinkState.FAILED_EXISTS.equals(downloadLink.getFinalLinkState()) || FinalLinkState.CheckFinished(downloadLink.getFinalLinkState()))) {
                 return true;
@@ -93,6 +110,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     public void deleteFile(DeleteOption option) {
         DownloadWatchDog.getInstance().delete(new ArrayList<DownloadLink>(getDownloadLinks()), option);
+        setFileArchiveFileExists(false);
     }
 
     public List<DownloadLink> getDownloadLinks() {
@@ -105,20 +123,26 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     }
 
     public void setStatus(ExtractionController controller, ExtractionStatus status) {
-        for (DownloadLink downloadLink : getDownloadLinks()) {
-            downloadLink.setExtractionStatus(status);
-            final PluginProgress progress = downloadLink.getPluginProgress();
-            if (progress != null && progress instanceof ExtractionProgress) {
-                ((ExtractionProgress) progress).setMessage(status.getExplanation());
+        for (final DownloadLink downloadLink : getDownloadLinks()) {
+            if (!FilePackage.isDefaultFilePackage(downloadLink.getFilePackage())) {
+                downloadLink.setExtractionStatus(status);
+                if (status != null) {
+                    final PluginProgress progress = downloadLink.getPluginProgress();
+                    if (progress != null && progress instanceof ExtractionProgress) {
+                        ((ExtractionProgress) progress).setMessage(status.getExplanation());
+                    }
+                }
             }
         }
     }
 
     public void setMessage(ExtractionController controller, String text) {
-        for (DownloadLink downloadLink : getDownloadLinks()) {
-            final PluginProgress progress = downloadLink.getPluginProgress();
-            if (progress != null && progress instanceof ExtractionProgress) {
-                ((ExtractionProgress) progress).setMessage(text);
+        for (final DownloadLink downloadLink : getDownloadLinks()) {
+            if (!FilePackage.isDefaultFilePackage(downloadLink.getFilePackage())) {
+                final PluginProgress progress = downloadLink.getPluginProgress();
+                if (progress != null && progress instanceof ExtractionProgress) {
+                    ((ExtractionProgress) progress).setMessage(text);
+                }
             }
         }
     }
@@ -127,17 +151,20 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         final PluginProgress progress = controller.getExtractionProgress();
         progress.updateValues(value, max);
         progress.setColor(color);
-        for (DownloadLink downloadLink : getDownloadLinks()) {
-            if (value <= 0 && max <= 0) {
-                downloadLink.addPluginProgress(progress);
-            } else {
-                if (!downloadLink.hasPluginProgress(progress)) {
+        for (final DownloadLink downloadLink : getDownloadLinks()) {
+            if (!FilePackage.isDefaultFilePackage(downloadLink.getFilePackage())) {
+                if (value <= 0 && max <= 0) {
+                    /* moves to top */
                     downloadLink.addPluginProgress(progress);
-                }
-                if (downloadLink.getPluginProgress() == progress) {
-                    final FilePackageView view = downloadLink.getParentNode().getView();
-                    if (view != null) {
-                        view.requestUpdate();
+                } else {
+                    if (!downloadLink.hasPluginProgress(progress)) {
+                        downloadLink.addPluginProgress(progress);
+                    }
+                    if (downloadLink.getPluginProgress() == progress) {
+                        final FilePackageView view = downloadLink.getParentNode().getView();
+                        if (view != null) {
+                            view.requestUpdate();
+                        }
                     }
                 }
             }
@@ -157,24 +184,9 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         size = Math.max(link.getView().getBytesTotal(), size);
     }
 
-    public void setProperty(String key, Object value) {
-        for (DownloadLink downloadLink : getDownloadLinks()) {
-            downloadLink.setProperty(key, value);
-        }
-    }
-
-    public Object getProperty(String key) {
-        for (DownloadLink downloadLink : getDownloadLinks()) {
-            if (downloadLink.hasProperty(key)) {
-                return downloadLink.getProperty(key);
-            }
-        }
-        return null;
-    }
-
     public AvailableStatus getAvailableStatus() {
         AvailableStatus ret = null;
-        for (DownloadLink downloadLink : getDownloadLinks()) {
+        for (final DownloadLink downloadLink : getDownloadLinks()) {
             switch (downloadLink.getAvailableStatus()) {
             case TRUE:
                 return downloadLink.getAvailableStatus();
@@ -200,7 +212,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     public void onCleanedUp(final ExtractionController controller) {
         if (controller.isSuccessful()) {
             final CleanAfterDownloadAction cleanup;
-            if (controller.getExtension().isRemoveDownloadLinksAfterExtractEnabled(controller.getArchiv())) {
+            if (controller.getExtension().isRemoveDownloadLinksAfterExtractEnabled(controller.getArchive())) {
                 cleanup = CleanAfterDownloadAction.CLEANUP_IMMEDIATELY;
             } else {
                 cleanup = CFG_GENERAL.CFG.getCleanupAfterDownloadAction();
@@ -265,8 +277,9 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     @Override
     public void setArchive(Archive archive) {
         if (archive != null && archive.getFactory() != null) {
-            for (DownloadLink downloadLink : getDownloadLinks()) {
+            for (final DownloadLink downloadLink : getDownloadLinks()) {
                 downloadLink.setArchiveID(archive.getFactory().getID());
+                downloadLink.setPartOfAnArchive(Boolean.TRUE);
             }
         }
     }
@@ -302,6 +315,30 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     @Override
     public void invalidateExists() {
         exists.set(null);
+    }
+
+    @Override
+    public void setPartOfAnArchive(Boolean b) {
+        for (DownloadLink link : getDownloadLinks()) {
+            link.setPartOfAnArchive(b);
+        }
+    }
+
+    @Override
+    public Boolean isPartOfAnArchive() {
+        Boolean ret = null;
+        for (DownloadLink link : getDownloadLinks()) {
+            final Boolean newRet = link.isPartOfAnArchive();
+            if (newRet != null) {
+                if (Boolean.TRUE.equals(newRet)) {
+                    return newRet;
+                }
+                if (ret == null) {
+                    ret = newRet;
+                }
+            }
+        }
+        return ret;
     }
 
 }

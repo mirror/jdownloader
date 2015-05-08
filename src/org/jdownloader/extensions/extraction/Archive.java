@@ -68,11 +68,6 @@ public class Archive {
     private int               exitCode    = -1;
 
     /**
-     * Is extraction process active.
-     */
-    private boolean           active      = false;
-
-    /**
      * Type of the archive.
      */
     private ArchiveType       archiveType = null;
@@ -129,6 +124,17 @@ public class Archive {
         contents = new ContentView();
     }
 
+    public Archive getParentArchive() {
+        return null;
+    }
+
+    public Archive getRootArchive() {
+        if (getParentArchive() != null) {
+            return getParentArchive().getRootArchive();
+        }
+        return this;
+    }
+
     public boolean isProtected() {
         return protect;
     }
@@ -146,10 +152,11 @@ public class Archive {
     }
 
     public String toString() {
-        if (getFirstArchiveFile() == null) {
-            return "Incomplete Archive";
+        try {
+            return "Archive:" + getName();
+        } catch (final Throwable e) {
+            return e.getMessage();
         }
-        return "Archive " + getFirstArchiveFile().getFilePath();
     }
 
     public int getExitCode() {
@@ -165,27 +172,11 @@ public class Archive {
     }
 
     public void setArchiveFiles(java.util.List<ArchiveFile> collection) {
-        this.archives = new CopyOnWriteArrayList<ArchiveFile>(collection);
+        final List<ArchiveFile> archives = new CopyOnWriteArrayList<ArchiveFile>(collection);
         for (ArchiveFile af : archives) {
             af.setArchive(this);
         }
-    }
-
-    public ArchiveFile getFirstArchiveFile() {
-        for (ArchiveFile file : getArchiveFiles()) {
-            if (!(file instanceof MissingArchiveFile)) {
-                return file;
-            }
-        }
-        return null;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    public boolean isActive() {
-        return active;
+        this.archives = archives;
     }
 
     public void setArchiveType(ArchiveType singleFile) {
@@ -200,7 +191,7 @@ public class Archive {
         this.crcError.add(crc);
     }
 
-    public java.util.List<ArchiveFile> getCrcError() {
+    public List<ArchiveFile> getCrcError() {
         return crcError;
     }
 
@@ -220,10 +211,10 @@ public class Archive {
         this.skippedFiles.add(file);
     }
 
-    public boolean contains(Object link) {
-        if (link != null) {
+    public boolean contains(Object contains) {
+        if (contains != null) {
             for (ArchiveFile file : getArchiveFiles()) {
-                if (file.equals(link)) {
+                if (file.equals(contains)) {
                     return true;
                 }
             }
@@ -257,7 +248,7 @@ public class Archive {
 
     public ArchiveFile getArchiveFileByPath(String filename) {
         if (filename != null) {
-            for (ArchiveFile af : archives) {
+            for (ArchiveFile af : getArchiveFiles()) {
                 if (filename.equals(af.getFilePath())) {
                     return af;
                 }
@@ -280,12 +271,6 @@ public class Archive {
     protected void onCleanUp() {
     }
 
-    public void setStatus(ExtractionController controller, ExtractionStatus status) {
-        for (ArchiveFile link : getArchiveFiles()) {
-            link.setStatus(controller, status);
-        }
-    }
-
     public File getExtractLogFile() {
         return getArchiveLogFileById(getFactory().getID());
     }
@@ -306,17 +291,10 @@ public class Archive {
     }
 
     public void setAutoExtract(BooleanStatus booleanStatus) {
-        if (booleanStatus == null) {
-            booleanStatus = BooleanStatus.UNSET;
-        }
         if (getSettings().getAutoExtract() != booleanStatus) {
             getSettings().setAutoExtract(booleanStatus);
             notifyChanges(ArchiveSettings.AUTO_EXTRACT);
         }
-    }
-
-    public Archive getPreviousArchive() {
-        return null;
     }
 
 }

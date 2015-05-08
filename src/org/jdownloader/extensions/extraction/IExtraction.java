@@ -31,13 +31,12 @@ import org.jdownloader.extensions.extraction.multi.CheckException;
  */
 public abstract class IExtraction {
 
-    private Archive                archive;
-    protected ExtractionController controller;
-    protected LogSource            logger;
-    protected ExtractionConfig     config;
-    private Exception              exception;
-    private ArchiveFile            lastAccessedArchiveFile;
-    private ExtractLogFileWriter   crashLog;
+    private ExtractionController controller;
+    protected LogSource          logger;
+    private ExtractionConfig     config;
+    private Exception            exception;
+    private ArchiveFile          lastAccessedArchiveFile;
+    private ExtractLogFileWriter crashLog;
 
     public void setLastAccessedArchiveFile(ArchiveFile lastAccessedArchiveFile) {
 
@@ -55,27 +54,17 @@ public abstract class IExtraction {
     }
 
     /**
-     * Sets the {@link Archive} which should be extracted.
-     *
-     * @param archive
-     *            The {@link Archive}.
-     */
-    public final void setArchiv(Archive archive) {
-        this.archive = archive;
-    }
-
-    public final Archive getArchive() {
-        return archive;
-    }
-
-    /**
      * Sets the {@link ExtractionController} which controlls the extraction.
      *
      * @param controller
      *            The {@link ExtractionController}.
      */
-    public final void setExtractionController(ExtractionController controller) {
+    protected final void setExtractionController(ExtractionController controller) {
         this.controller = controller;
+    }
+
+    protected final ExtractionController getExtractionController() {
+        return this.controller;
     }
 
     /**

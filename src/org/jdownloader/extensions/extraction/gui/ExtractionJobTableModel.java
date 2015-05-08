@@ -7,7 +7,6 @@ import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
-import java.io.IOException;
 import java.text.DecimalFormat;
 
 import javax.swing.BorderFactory;
@@ -20,7 +19,6 @@ import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCircleProgressColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.ColorUtils;
-import org.appwork.utils.Files;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
@@ -32,8 +30,8 @@ import org.jdownloader.gui.translate._GUI;
 public class ExtractionJobTableModel extends ExtTableModel<ExtractionController> {
 
     /**
-	 * 
-	 */
+     *
+     */
     private static final long serialVersionUID = 7585295834599426087L;
     private Color             textColor;
     private Color             back;
@@ -53,8 +51,8 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
         addColumn(new ExtTextColumn<ExtractionController>(T._.tooltip_NameColumn()) {
             /**
-			 * 
-			 */
+             *
+             */
             private static final long serialVersionUID = -7294960809807602558L;
 
             @Override
@@ -69,7 +67,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
             @Override
             protected String getTooltipText(ExtractionController value) {
-                return value.getArchiv().getName();
+                return value.getArchive().getName();
             }
 
             @Override
@@ -80,8 +78,8 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             @Override
             protected Icon getIcon(ExtractionController value) {
                 try {
-                    return (CrossSystem.getMime().getFileIcon(Files.getExtension(value.getArchiv().getFirstArchiveFile().getFilePath()), 16, 16));
-                } catch (IOException e) {
+                    return (CrossSystem.getMime().getFileIcon(value.getArchive().getName(), 16, 16));
+                } catch (Throwable e) {
                     e.printStackTrace();
                 }
                 return null;
@@ -89,15 +87,14 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
             @Override
             public String getStringValue(ExtractionController value) {
-
-                return value.getArchiv().getName();
+                return value.getArchive().getName();
             }
         });
 
         addColumn(new ExtTextColumn<ExtractionController>(_GUI._.lit_status()) {
             /**
-			 * 
-			 */
+             *
+             */
             private static final long serialVersionUID = -5325290576078384961L;
 
             {
@@ -132,52 +129,45 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
 
             @Override
             public String getStringValue(ExtractionController value) {
-                Type event = value.getLatestEvent();
-                if (event == null) {
-                    return "";
-                }
-                switch (event) {
-                case START:
-                    return T._.plugins_optional_extraction_status_openingarchive2();
-
-                case START_CRACK_PASSWORD:
-                    return "Start password finding";
-
-                case PASSWORT_CRACKING:
-                    try {
-                        return T._.plugins_optional_extraction_status_crackingpass_progress(((10000 * value.getCrackProgress()) / value.getPasswordListSize()) / 100.00);
-                    } catch (Throwable e) {
-                        return T._.plugins_optional_extraction_status_crackingpass_progress(0.00d);
-
+                final Type event = value.getLatestEvent();
+                if (event != null) {
+                    switch (event) {
+                    case START:
+                        return T._.plugins_optional_extraction_status_openingarchive2();
+                    case START_CRACK_PASSWORD:
+                        return "Start password finding";
+                    case PASSWORT_CRACKING:
+                        try {
+                            return T._.plugins_optional_extraction_status_crackingpass_progress(((10000 * value.getCrackProgress()) / value.getPasswordListSize()) / 100.00);
+                        } catch (Throwable e) {
+                            return T._.plugins_optional_extraction_status_crackingpass_progress(0.00d);
+                        }
+                    case PASSWORD_FOUND:
+                        return T._.plugins_optional_extraction_status_passfound();
+                    case EXTRACTING:
+                        final int size = value.getArchive().getExtractedFiles().size();
+                        if (size > 0) {
+                            return T._.plugins_optional_extraction_status_extracting_filename(value.getArchive().getExtractedFiles().get(size - 1).getName());
+                        } else {
+                            return T._.plugins_optional_extraction_status_extracting2();
+                        }
+                    case FINISHED:
+                        return T._.plugins_optional_extraction_status_extractok();
+                    case NOT_ENOUGH_SPACE:
+                        return T._.plugins_optional_extraction_status_notenoughspace();
+                    case FILE_NOT_FOUND:
+                        return T._.plugins_optional_extraction_filenotfound();
                     }
-                case PASSWORD_FOUND:
-                    return T._.plugins_optional_extraction_status_passfound();
-                case EXTRACTING:
-                    final int size = value.getArchiv().getExtractedFiles().size();
-                    if (size > 0) {
-                        return T._.plugins_optional_extraction_status_extracting_filename(value.getArchiv().getExtractedFiles().get(size - 1).getName());
-                    } else {
-                        return T._.plugins_optional_extraction_status_extracting2();
-                    }
-                case FINISHED:
-                    return T._.plugins_optional_extraction_status_extractok();
-
-                case NOT_ENOUGH_SPACE:
-                    return T._.plugins_optional_extraction_status_notenoughspace();
-
-                case FILE_NOT_FOUND:
-                    return T._.plugins_optional_extraction_filenotfound();
-
                 }
-                return null;
+                return "";
 
             }
         });
         ExtCircleProgressColumn<ExtractionController> sorter;
         addColumn(sorter = new ExtCircleProgressColumn<ExtractionController>(_GUI._.lit_progress()) {
             /**
-			 * 
-			 */
+             *
+             */
             private static final long serialVersionUID = -7238552518783596726L;
             private RendererMigPanel  panel;
             private RenderLabel       label;

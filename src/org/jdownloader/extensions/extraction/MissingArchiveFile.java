@@ -75,4 +75,13 @@ public class MissingArchiveFile implements ArchiveFile {
     public void invalidateExists() {
     }
 
+    @Override
+    public void setPartOfAnArchive(Boolean b) {
+    }
+
+    @Override
+    public Boolean isPartOfAnArchive() {
+        return null;
+    }
+
 }

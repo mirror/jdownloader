@@ -69,7 +69,7 @@ public class ExtractorToolTip extends PanelToolTip {
             int width = 0;
             FontMetrics fm = getFontMetrics(new Font("Arial", Font.PLAIN, 12));
             for (ExtractionController ec : list) {
-                String n = ec.getArchiv().getName();
+                String n = ec.getArchive().getName();
                 width = Math.max(width, fm.stringWidth(n));
             }
 

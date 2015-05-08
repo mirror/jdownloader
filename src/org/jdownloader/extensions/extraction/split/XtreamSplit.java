@@ -77,8 +77,8 @@ public class XtreamSplit extends IExtraction {
 
     @Override
     public void extract(ExtractionController ctrl) {
-        final Archive archive = controller.getArchiv();
-        final FileBytesCache cache = controller.getFileBytesCache();
+        final Archive archive = getExtractionController().getArchive();
+        final FileBytesCache cache = getExtractionController().getFileBytesCache();
         RandomAccessFile fos = null;
         FileBytesCacheFlusher flusher = null;
         final AtomicBoolean fileOpen = new AtomicBoolean(false);
@@ -89,9 +89,9 @@ public class XtreamSplit extends IExtraction {
             }
             /* file already exists */
             if (outputFile.exists()) {
-                IfFileExistsAction action = controller.getIfFileExistsAction();
+                IfFileExistsAction action = getExtractionController().getIfFileExistsAction();
                 while (action == null || action == IfFileExistsAction.ASK_FOR_EACH_FILE) {
-                    final IfFileExistsDialog d = new IfFileExistsDialog(outputFile, controller.getCurrentActiveItem(), archive);
+                    final IfFileExistsDialog d = new IfFileExistsDialog(outputFile, getExtractionController().getCurrentActiveItem(), archive);
                     d.show();
                     if (d.getCloseReason() != CloseReason.OK) {
                         throw new ExtractionControllerException(ExtractionControllerConstants.EXIT_CODE_USER_BREAK);
@@ -138,9 +138,9 @@ public class XtreamSplit extends IExtraction {
                 archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
                 return;
             }
-            controller.getArchiv().getContentView().add(new PackedFile(false, archive.getName(), size));
-            controller.setCompleteBytes(size);
-            controller.setProcessedBytes(0);
+            getExtractionController().getArchive().getContentView().add(new PackedFile(false, archive.getName(), size));
+            getExtractionController().setCompleteBytes(size);
+            getExtractionController().setProcessedBytes(0);
             fos = new RandomAccessFile(outputFile, "rw");
             archive.addExtractedFiles(outputFile);
             long fileWritePosition = 0;
@@ -166,7 +166,7 @@ public class XtreamSplit extends IExtraction {
                     }
                 }
             };
-            controller.setCurrentActiveItem(new Item(outputFile.getName(), size, outputFile));
+            getExtractionController().setCurrentActiveItem(new Item(outputFile.getName(), size, outputFile));
             final byte[] buffer = new byte[32767];
             for (int partIndex = 0; partIndex < archive.getArchiveFiles().size(); partIndex++) {
                 final File part = new File(archive.getArchiveFiles().get(partIndex).getFilePath());
@@ -210,14 +210,14 @@ public class XtreamSplit extends IExtraction {
                         if (dataRead > 0) {
                             cache.write(flusher, fileWritePosition, buffer, dataRead);
                             fileWritePosition += dataRead;
-                            if (controller.gotKilled()) {
+                            if (getExtractionController().gotKilled()) {
                                 throw new ExtractionControllerException(ExtractionControllerConstants.EXIT_CODE_USER_BREAK, "Extraction has been aborted!");
                             }
                             if (ioException.get() != null) {
                                 throw ioException.get();
                             }
                             // Sum up bytes for control
-                            controller.addAndGetProcessedBytes(dataRead);
+                            getExtractionController().addAndGetProcessedBytes(dataRead);
                             partRead += dataRead;
                             if (md5) {
                                 // Update MD5
@@ -300,7 +300,7 @@ public class XtreamSplit extends IExtraction {
 
     @Override
     public boolean prepare() {
-        final Archive archive = getArchive();
+        final Archive archive = getExtractionController().getArchive();
         final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
         outputFile = new File(firstArchiveFile.getFilePath().replaceFirst("\\.[\\d]+\\.xtm$", ""));
         FileInputStream in = null;
