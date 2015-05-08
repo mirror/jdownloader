@@ -156,6 +156,9 @@ public class UploadableCh extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
         br.setFollowRedirects(false);
         String dllink = checkDirectLink(downloadLink, "uploadabledirectlink");
         if (dllink == null) {

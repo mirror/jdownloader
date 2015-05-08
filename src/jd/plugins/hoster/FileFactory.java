@@ -487,6 +487,9 @@ public class FileFactory extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         // reset setter
         downloadLink.setProperty(dlRedirects, Property.NULL);
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
         if (useAPI.get()) {
             handleDownload_API(downloadLink, null);
         } else {
@@ -628,6 +631,9 @@ public class FileFactory extends PluginForHost {
                 if (account.getBooleanProperty("free")) {
                     br.setFollowRedirects(true);
                     br.getPage(downloadLink.getDownloadURL());
+                    if (checkShowFreeDialog(getHost())) {
+                        showFreeDialog(getHost());
+                    }
                     doFree(downloadLink, account);
                 } else {
                     // NOTE: no premium, pre download password handling yet...

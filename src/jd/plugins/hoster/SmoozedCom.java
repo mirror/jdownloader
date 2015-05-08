@@ -1,7 +1,6 @@
 package jd.plugins.hoster;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,7 +44,6 @@ import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64OutputStream;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
 import org.jdownloader.gui.dialog.AskToUsePremiumDialogInterface;
 import org.jdownloader.plugins.controller.host.PluginFinder;
@@ -235,13 +233,11 @@ public class SmoozedCom extends PluginForHost {
                 return "adsPremium_" + domain;
             }
         };
-        d.setMessage(TranslationFactory.create(SmoozedTranslation.class).free_trial_end());
         try {
+            d.setMessage(TranslationFactory.create(SmoozedTranslation.class).free_trial_end());
             UIOManager.I().show(AskToUsePremiumDialogInterface.class, d).throwCloseExceptions();
             CrossSystem.openURL(new URL(d.getPremiumUrl()));
-        } catch (DialogNoAnswerException e) {
-            LogSource.exception(logger, e);
-        } catch (IOException e) {
+        } catch (Throwable e) {
             LogSource.exception(logger, e);
         }
     }
@@ -437,7 +433,8 @@ public class SmoozedCom extends PluginForHost {
                     if (map != null) {
                         synchronized (map) {
                             if (isPremium(map) == true) {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No traffic available", 5 * 60 * 1000l);
                             }
                         }
                     }

@@ -215,7 +215,9 @@ public class Keep2ShareCc extends K2SApi {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         setConstants(null);
-        checkShowFreeDialog(Browser.getHost(MAINPAGE));
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
         if (useAPI()) {
             super.handleDownload(downloadLink, null);
         } else {
@@ -558,7 +560,9 @@ public class Keep2ShareCc extends K2SApi {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         setConstants(account);
         if (account.getBooleanProperty("free", false)) {
-            checkShowFreeDialog(Browser.getHost(MAINPAGE));
+            if (checkShowFreeDialog(getHost())) {
+                showFreeDialog(getHost());
+            }
         }
         if (useAPI()) {
             super.handleDownload(link, account);

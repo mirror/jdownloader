@@ -153,7 +153,9 @@ public class FileBoomMe extends K2SApi {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         setConstants(null);
-        checkShowFreeDialog(Browser.getHost(MAINPAGE));
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
         if (useAPI()) {
             super.handleDownload(downloadLink, null);
         } else {
@@ -394,6 +396,11 @@ public class FileBoomMe extends K2SApi {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         setConstants(account);
+        if (account.getBooleanProperty("free", false)) {
+            if (checkShowFreeDialog(getHost())) {
+                showFreeDialog(getHost());
+            }
+        }
         if (useAPI()) {
             super.handleDownload(link, account);
         } else {
@@ -402,7 +409,6 @@ public class FileBoomMe extends K2SApi {
             br.setFollowRedirects(false);
             getPage(link.getDownloadURL());
             if (account.getBooleanProperty("free", false)) {
-                checkShowFreeDialog(Browser.getHost(MAINPAGE));
                 doFree(link, account);
             } else {
                 String dllink = br.getRedirectLocation();

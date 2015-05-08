@@ -270,6 +270,9 @@ public class DataFileCom extends PluginForHost {
 
     @SuppressWarnings({ "deprecation", "unchecked" })
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
         currentIP.set(this.getIP());
         synchronized (CTRLLOCK) {
             /* Load list of saved IPs + timestamp of last download */
