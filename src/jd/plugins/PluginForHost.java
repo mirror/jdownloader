@@ -62,6 +62,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
 import jd.nutils.Formatter;
+import jd.nutils.JDHash;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterfaceFactory;
@@ -90,7 +91,6 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.DomainInfo;
@@ -148,14 +148,14 @@ public abstract class PluginForHost extends Plugin {
 
     private static final Pattern[]   PATTERNS       = new Pattern[] {
 
-        /**
-         * these patterns should split filename and fileextension (extension must include the
-         * point)
-         */
-        // multipart rar archives
-        Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
-        // normal files with extension
-        Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
+                                                    /**
+                                                     * these patterns should split filename and fileextension (extension must include the
+                                                     * point)
+                                                     */
+                                                    // multipart rar archives
+            Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
+            // normal files with extension
+            Pattern.compile("(.*)(\\..*?$)", Pattern.CASE_INSENSITIVE) };
 
     private LazyHostPlugin           lazyP          = null;
     /**
@@ -910,16 +910,16 @@ public abstract class PluginForHost extends Plugin {
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
          * fetchAccountInfo must fill ai.setMultiHostSupport to signal all supported multiHosts
-         *
+         * 
          * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
-         *
+         * 
          * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
-         *
+         * 
          * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host
          * does not equal link host!
-         *
-         *
-         *
+         * 
+         * 
+         * 
          * will update this doc about error handling
          */
         logger.severe("invalid call to handleMultiHost: " + downloadLink.getName() + ":" + downloadLink.getHost() + " to " + getHost() + ":" + this.getVersion() + " with " + account);
@@ -1885,7 +1885,7 @@ public abstract class PluginForHost extends Plugin {
      * @throws DialogClosedException
      */
     protected void showFreeDialog(final String domain) {
-        AskToUsePremiumDialog d = new AskToUsePremiumDialog(domain, this) {
+        final AskToUsePremiumDialog d = new AskToUsePremiumDialog(domain, this) {
             @Override
             public String getDontShowAgainKey() {
                 return "adsPremium_" + domain;
@@ -1894,11 +1894,49 @@ public abstract class PluginForHost extends Plugin {
         try {
             UIOManager.I().show(AskToUsePremiumDialogInterface.class, d).throwCloseExceptions();
             CrossSystem.openURL(new URL(d.getPremiumUrl()));
-        } catch (DialogNoAnswerException e) {
-            LogSource.exception(logger, e);
-        } catch (IOException e) {
+        } catch (Throwable e) {
             LogSource.exception(logger, e);
         }
+    }
+
+    private static Object CHECKSHOWFREEDIALOGLOCK = new Object();
+
+    protected boolean checkShowFreeDialog(final String domain) {
+        try {
+            if (domain != null) {
+                synchronized (CHECKSHOWFREEDIALOGLOCK) {
+                    final String key = JDHash.getMD5(domain) + "_08052015";
+                    final long TIMEOUT = 1000l * 60 * 60 * 24 * 31 * 3;
+                    long lastTimestamp = -1;
+                    SubConfiguration config = null;
+                    try {
+                        config = getPluginConfig();
+                        final Object value = config.getProperty(key, null);
+                        if (value != null) {
+                            try {
+                                lastTimestamp = Long.parseLong(value.toString());
+                            } catch (final Throwable e) {
+                            }
+                        }
+                        if (lastTimestamp < 0 || System.currentTimeMillis() - lastTimestamp > TIMEOUT) {
+                            lastTimestamp = System.currentTimeMillis();
+                            return true;
+                        } else {
+                            config = null;
+                            lastTimestamp = -1;
+                        }
+                    } finally {
+                        if (config != null && lastTimestamp > 0) {
+                            config.setProperty(key, Long.toString(lastTimestamp));
+                            config.save();
+                        }
+                    }
+                }
+            }
+        } catch (final Throwable e) {
+            LogSource.exception(logger, e);
+        }
+        return false;
     }
 
     public static class FilePair {

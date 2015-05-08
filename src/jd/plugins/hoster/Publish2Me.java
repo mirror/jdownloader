@@ -149,7 +149,6 @@ public class Publish2Me extends K2SApi {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         setConstants(null);
-        checkShowFreeDialog(Browser.getHost(MAINPAGE));
         if (useAPI()) {
             super.handleDownload(downloadLink, null);
         } else {
@@ -398,7 +397,6 @@ public class Publish2Me extends K2SApi {
             br.setFollowRedirects(false);
             getPage(link.getDownloadURL());
             if (account.getBooleanProperty("free", false)) {
-                checkShowFreeDialog(Browser.getHost(MAINPAGE));
                 doFree(link, account);
             } else {
                 String dllink = br.getRedirectLocation();

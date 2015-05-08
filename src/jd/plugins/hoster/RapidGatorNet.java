@@ -44,7 +44,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
-import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -90,7 +89,7 @@ public class RapidGatorNet extends PluginForHost {
     private final String                   apiURL                          = "https://rapidgator.net/api/";
 
     private final String[]                 IPCHECK                         = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private static AtomicBoolean           hasAttemptedDownloadstart                         = new AtomicBoolean(false);
+    private static AtomicBoolean           hasAttemptedDownloadstart       = new AtomicBoolean(false);
     private static AtomicLong              timeBefore                      = new AtomicLong(0);
     private static final String            PROPERTY_LASTDOWNLOAD_TIMESTAMP = "rapidgatornet_lastdownload_timestamp";
     private final String                   LASTIP                          = "LASTIP";
@@ -269,66 +268,39 @@ public class RapidGatorNet extends PluginForHost {
     protected void showFreeDialog(final String domain) {
         if (System.getProperty("org.jdownloader.revision") != null) { /* JD2 ONLY! */
             super.showFreeDialog(domain);
-            return;
-        }
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
+        } else {
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
 
-                @Override
-                public void run() {
-                    try {
-                        final String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        final String tab = "                        ";
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = domain + " Free Download";
-                            message = "Du lädst im kostenlosen Modus von " + domain + ".\r\n";
-                            message += "Wie bei allen anderen Hostern holt JDownloader auch hier das Beste für dich heraus!\r\n\r\n";
-                            message += tab + "  Falls du allerdings mehrere Dateien\r\n" + "          - und das möglichst mit Fullspeed und ohne Unterbrechungen - \r\n" + "             laden willst, solltest du dir den Premium Modus anschauen.\r\n\r\nUnserer Erfahrung nach lohnt sich das - Aber entscheide am besten selbst. Jetzt ausprobieren?  ";
-                        } else {
-                            title = domain + " Free Download";
-                            message = "You are using the " + domain + " Free Mode.\r\n";
-                            message += "JDownloader always tries to get the best out of each hoster's free mode!\r\n\r\n";
-                            message += tab + "   However, if you want to download multiple files\r\n" + tab + "- possibly at fullspeed and without any wait times - \r\n" + tab + "you really should have a look at the Premium Mode.\r\n\r\nIn our experience, Premium is well worth the money. Decide for yourself, though. Let's give it a try?   ";
-                        }
-                        if (CrossSystem.isOpenBrowserSupported()) {
-                            final int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result) {
-                                CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                    @Override
+                    public void run() {
+                        try {
+                            final String lng = System.getProperty("user.language");
+                            String message = null;
+                            String title = null;
+                            final String tab = "                        ";
+                            if ("de".equalsIgnoreCase(lng)) {
+                                title = domain + " Free Download";
+                                message = "Du lädst im kostenlosen Modus von " + domain + ".\r\n";
+                                message += "Wie bei allen anderen Hostern holt JDownloader auch hier das Beste für dich heraus!\r\n\r\n";
+                                message += tab + "  Falls du allerdings mehrere Dateien\r\n" + "          - und das möglichst mit Fullspeed und ohne Unterbrechungen - \r\n" + "             laden willst, solltest du dir den Premium Modus anschauen.\r\n\r\nUnserer Erfahrung nach lohnt sich das - Aber entscheide am besten selbst. Jetzt ausprobieren?  ";
+                            } else {
+                                title = domain + " Free Download";
+                                message = "You are using the " + domain + " Free Mode.\r\n";
+                                message += "JDownloader always tries to get the best out of each hoster's free mode!\r\n\r\n";
+                                message += tab + "   However, if you want to download multiple files\r\n" + tab + "- possibly at fullspeed and without any wait times - \r\n" + tab + "you really should have a look at the Premium Mode.\r\n\r\nIn our experience, Premium is well worth the money. Decide for yourself, though. Let's give it a try?   ";
                             }
+                            if (CrossSystem.isOpenBrowserSupported()) {
+                                final int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
+                                if (JOptionPane.OK_OPTION == result) {
+                                    CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                                }
+                            }
+                        } catch (final Throwable e) {
                         }
-                    } catch (final Throwable e) {
                     }
-                }
-            });
-        } catch (final Throwable e) {
-        }
-    }
-
-    private void checkShowFreeDialog() {
-        SubConfiguration config = null;
-        try {
-            config = this.getPluginConfig();
-            if (config.getBooleanProperty("premAdShown", Boolean.FALSE) == false) {
-                if (config.getProperty("premAdShown2") == null) {
-                    final File checkFile = JDUtilities.getResourceFile("tmp/rgtmp");
-                    if (!checkFile.exists()) {
-                        checkFile.mkdirs();
-                        this.showFreeDialog("rapidgator.net");
-                    }
-                } else {
-                    config = null;
-                }
-            } else {
-                config = null;
-            }
-        } catch (final Throwable e) {
-        } finally {
-            if (config != null) {
-                config.setProperty("premAdShown", Boolean.TRUE);
-                config.setProperty("premAdShown2", "shown");
-                config.save();
+                });
+            } catch (final Throwable e) {
             }
         }
     }
@@ -344,7 +316,9 @@ public class RapidGatorNet extends PluginForHost {
         // experimental code - raz
         // so called 15mins between your last download, ends up with your IP blocked for the day..
         // Trail and error until we find the sweet spot.
-        this.checkShowFreeDialog();
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
         final boolean useExperimentalHandling = this.getPluginConfig().getBooleanProperty(this.EXPERIMENTALHANDLING, false);
         final String currentIP = this.getIP();
         if (useExperimentalHandling) {
