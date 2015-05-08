@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -39,7 +38,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.com", "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.\\-]*?\\.)?((daoifolder|yapapka|rusfolder|ifolder)\\.(net|ru|com)|files\\.metalarea\\.org)/(files/)?\\d+", "IFOLDERISNOWRUSFOLDER", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0, 0 })
 public class IfolderRu extends PluginForHost {
 
-    private String       ua          = RandomUserAgent.generate();
+    private String       ua          = null;
 
     private final String passWarning = ">Владелец файла установил пароль для скачивания\\.<";
     private final String PWTEXT      = "Введите пароль:<br";
@@ -187,6 +186,9 @@ public class IfolderRu extends PluginForHost {
                 final String paramsubstring = br.getRegex("s\\.substring\\((\\d+)\\)").getMatch(0);
                 if (paramsubstring != null) {
                     specialParam = specialParam.substring(Integer.parseInt(paramsubstring));
+                    if (!specialParam.matches("[a-f0-9]{32}")) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster error");
+                    }
                 }
                 String specialValue = br.getRegex("s\\.substring\\(\\d+\\)\\+\"\\' value=\\'([a-z0-9]+)\\\'>").getMatch(0);
                 if (specialValue == null) {
@@ -292,6 +294,9 @@ public class IfolderRu extends PluginForHost {
     private void prepareBrowser(Browser br) {
         if (br == null) {
             return;
+        }
+        while (ua == null || ua.contains("Windows")) {
+            ua = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
         br.getHeaders().put("User-Agent", ua);
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
