@@ -1,6 +1,8 @@
 package jd.plugins.hoster;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,6 +13,7 @@ import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
@@ -30,14 +33,21 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SmoozedTranslation;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.txtresource.TranslationFactory;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64OutputStream;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.gui.dialog.AskToUsePremiumDialog;
+import org.jdownloader.gui.dialog.AskToUsePremiumDialogInterface;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @HostPlugin(revision = "$Revision: 27915 $", interfaceVersion = 3, names = { "smoozed.com" }, urls = { "" }, flags = { 2 })
@@ -217,6 +227,25 @@ public class SmoozedCom extends PluginForHost {
         }
     }
 
+    @Override
+    protected void showFreeDialog(final String domain) {
+        final AskToUsePremiumDialog d = new AskToUsePremiumDialog(domain, this) {
+            @Override
+            public String getDontShowAgainKey() {
+                return "adsPremium_" + domain;
+            }
+        };
+        d.setMessage(TranslationFactory.create(SmoozedTranslation.class).free_trial_end());
+        try {
+            UIOManager.I().show(AskToUsePremiumDialogInterface.class, d).throwCloseExceptions();
+            CrossSystem.openURL(new URL(d.getPremiumUrl()));
+        } catch (DialogNoAnswerException e) {
+            LogSource.exception(logger, e);
+        } catch (IOException e) {
+            LogSource.exception(logger, e);
+        }
+    }
+
     private void apiCheck(final Account account, final String session_Key, final DownloadLink link, int round) throws Exception {
         final Request request = api(account, session_Key, "/api/check", "url=" + Encoding.urlEncode(link.getDownloadURL()));
         final String responseString = request.getHtmlCode();
@@ -321,7 +350,7 @@ public class SmoozedCom extends PluginForHost {
         Request request;
         if (StringUtils.contains(con.getHeaderField("Content-Type"), "application/json") || con.getRequest().getLocation() == null) {
             br.followConnection();
-            errorHandling(br.getRequest(), account, session_Key, "/api/download");
+            errorHandling(br.getRequest(), account, session_Key, "/api/download", link);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             br.followConnection();
@@ -337,14 +366,14 @@ public class SmoozedCom extends PluginForHost {
                     dl = jd.plugins.BrowserAdapter.openDownload(br, link, con.getRequest().getUrl(), maxChunks > 0, maxChunks >= 1 ? -maxChunks : 1);
                     if (!dl.getConnection().isContentDisposition()) {
                         br.followConnection();
-                        errorHandling(br.getRequest(), account, session_Key, "/api/download");
+                        errorHandling(br.getRequest(), account, session_Key, "/api/download", link);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     dl.startDownload();
                     return;
                 } else {
                     br.followConnection();
-                    errorHandling(br.getRequest(), account, session_Key, "/api/download");
+                    errorHandling(br.getRequest(), account, session_Key, "/api/download", link);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
@@ -369,7 +398,7 @@ public class SmoozedCom extends PluginForHost {
     private Request apiConfigJS(final Account account, final String session_Key) throws Exception {
         br.getPage(API + "/config.js?session_key=" + Encoding.urlEncode(session_Key));
         final Request request = br.getRequest();
-        errorHandling(request, account, session_Key, "/config.js");
+        errorHandling(request, account, session_Key, "/config.js", null);
         final String responseString = request.getHtmlCode();
         final HashMap<String, Object> responseMap = JSonStorage.restoreFromString(responseString, new TypeRef<HashMap<String, Object>>() {
         }, null);
@@ -380,7 +409,9 @@ public class SmoozedCom extends PluginForHost {
         return request;
     }
 
-    private void errorHandling(Request request, final Account account, final String session_Key, final String method) throws Exception {
+    private final static AtomicBoolean TRIALDIALOG = new AtomicBoolean(false);
+
+    private void errorHandling(Request request, final Account account, final String session_Key, final String method, DownloadLink link) throws Exception {
         if (StringUtils.containsIgnoreCase(request.getResponseHeader("Content-Type"), "application/json")) {
             final HashMap<String, Object> responseMap = JSonStorage.restoreFromString(request.getHtmlCode(), new TypeRef<HashMap<String, Object>>() {
             }, null);
@@ -388,7 +419,30 @@ public class SmoozedCom extends PluginForHost {
             final String message = (String) responseMap.get("message");
             final Number seconds = get(responseMap, Number.class, "seconds");
             if ("error".equals(state)) {
-                if (StringUtils.equalsIgnoreCase(message, "Invalid Login Credentials")) {
+                if (StringUtils.equalsIgnoreCase(message, "Premium needed") && link != null && account != null) {
+                    // Premium account needed
+                    link.setProperty(premiumRequiredProperty, "P");
+                    if (TRIALDIALOG.compareAndSet(false, true)) {
+                        final String freeTrialDialog = "freeTrialDialog";
+                        if (Boolean.FALSE.equals(this.getPluginConfig().getBooleanProperty(freeTrialDialog, Boolean.FALSE))) {
+                            this.getPluginConfig().setProperty(freeTrialDialog, Boolean.TRUE);
+                            showFreeDialog(getHost());
+                        }
+                    }
+                    final Map<String, Object> map;
+                    synchronized (ACCOUNTINFOS) {
+                        restoreAccountInfos(account);
+                        map = ACCOUNTINFOS.get(account);
+                    }
+                    if (map != null) {
+                        synchronized (map) {
+                            if (isPremium(map) == true) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        }
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } else if (StringUtils.equalsIgnoreCase(message, "Invalid Login Credentials")) {
                     // Invalid Login Credentials
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid Login Credentials", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else if (StringUtils.equalsIgnoreCase(message, "Login Failed")) {
@@ -467,7 +521,7 @@ public class SmoozedCom extends PluginForHost {
         }
         br.postPage(API + method, postParam);
         final Request request = br.getRequest();
-        errorHandling(request, account, session_Key, method);
+        errorHandling(request, account, session_Key, method, null);
         return request;
     }
 
@@ -574,6 +628,8 @@ public class SmoozedCom extends PluginForHost {
         return user_Premium != null && (user_Premium.longValue() * 1000l >= System.currentTimeMillis());
     }
 
+    private final String premiumRequiredProperty = "sRAT"; // smoozedRequiredAccountType
+
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (account != null) {
@@ -584,12 +640,16 @@ public class SmoozedCom extends PluginForHost {
             }
             if (map != null) {
                 synchronized (map) {
+                    final boolean isPremium = isPremium(map);
+                    if ("P".equals(downloadLink.getProperty(premiumRequiredProperty)) && isPremium == false) {
+                        return false;
+                    }
                     final Map limits = get(map, Map.class, "data", "hoster_limits");
                     if (limits != null) {
                         final Map<String, Object> hostLimitsMap = limits;
                         final Object hostLimits = hostLimitsMap.get(downloadLink.getHost());
                         if (hostLimits != null) {
-                            final Number limit = get((Map<String, Object>) hostLimits, Number.class, isPremium(map) ? "premium" : "free");
+                            final Number limit = get((Map<String, Object>) hostLimits, Number.class, isPremium ? "premium" : "free");
                             return limit != null && limit.longValue() >= 0;
                         }
                     }

@@ -26,7 +26,7 @@ public enum CPUPriority implements LabelInterface {
         }
     };
 
-    private int time = 0;
+    private final int time;
 
     private CPUPriority(int time) {
         this.time = Math.max(time, 0);
