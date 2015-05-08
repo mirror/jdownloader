@@ -15,17 +15,8 @@ public class FileArchiveFile implements ArchiveFile {
     private final File                     file;
     private final String                   name;
     private final String                   filePath;
-    private boolean                        isFirstArchiveFile = false;
     private final int                      hashCode;
-    private final AtomicReference<Boolean> exists             = new AtomicReference<Boolean>(null);
-
-    public boolean isFirstArchiveFile() {
-        return isFirstArchiveFile;
-    }
-
-    public void setFirstArchiveFile(boolean isFirstArchiveFile) {
-        this.isFirstArchiveFile = isFirstArchiveFile;
-    }
+    private final AtomicReference<Boolean> exists = new AtomicReference<Boolean>(null);
 
     protected FileArchiveFile(File f) {
         this.file = f;
@@ -124,5 +115,13 @@ public class FileArchiveFile implements ArchiveFile {
     public void invalidateExists() {
         exists.set(null);
     }
+
+    @Override
+    public void setPartOfAnArchive(Boolean b) {
+    }
+
+    public Boolean isPartOfAnArchive() {
+        return null;
+    };
 
 }

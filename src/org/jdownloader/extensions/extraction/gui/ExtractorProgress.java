@@ -4,6 +4,7 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
+import java.util.List;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -26,8 +27,8 @@ import org.jdownloader.images.NewTheme;
 
 public class ExtractorProgress extends IconedProcessIndicator {
     /**
-	 * 
-	 */
+     *
+     */
     private static final long       serialVersionUID = -7582954114939419184L;
     private ExtractorToolTip        tooltip;
     private ExtractionExtension     extension;
@@ -54,8 +55,8 @@ public class ExtractorProgress extends IconedProcessIndicator {
         pu = new JPopupMenu();
         tModel = new ExtractionJobTableModel(new JLabel().getForeground()) {
             /**
-			 * 
-			 */
+             *
+             */
             private static final long serialVersionUID = 7254604415572431495L;
 
             protected void initColumns() {
@@ -63,8 +64,8 @@ public class ExtractorProgress extends IconedProcessIndicator {
 
                 addColumn(new ExtComponentColumn<ExtractionController>("Cancel") {
                     /**
-					 * 
-					 */
+                     *
+                     */
                     private static final long    serialVersionUID = 261994408344732524L;
                     private ExtButton            renderer;
                     private ExtButton            editor;
@@ -73,7 +74,6 @@ public class ExtractorProgress extends IconedProcessIndicator {
                     {
                         renderer = getButton();
                         editor = getButton();
-
                     }
 
                     @Override
@@ -84,8 +84,8 @@ public class ExtractorProgress extends IconedProcessIndicator {
                     private ExtButton getButton() {
                         ExtButton ret = new ExtButton(new AppAction() {
                             /**
-							 * 
-							 */
+                             *
+                             */
                             private static final long serialVersionUID = -2183896670625238331L;
                             {
                                 setSmallIcon(NewTheme.I().getIcon("cancel", 16));
@@ -180,7 +180,6 @@ public class ExtractorProgress extends IconedProcessIndicator {
             java.util.List<ExtractionController> jpobs = extension.getJobQueue().getJobs();
             if (jpobs.size() > 0) {
                 tModel._fireTableStructureChanged(jpobs, true);
-                ;
                 ToolTipController.getInstance().unregister(this);
                 Dimension psize = pu.getPreferredSize();
                 pu.show(this, -psize.width + getWidth(), -psize.height);
@@ -198,8 +197,6 @@ public class ExtractorProgress extends IconedProcessIndicator {
             // is visible
             tooltip.update();
         }
-
-        java.util.List<ExtractionController> entries;
         switch (type) {
         case EXTRACTING:
             setIndeterminate(false);
@@ -207,11 +204,9 @@ public class ExtractorProgress extends IconedProcessIndicator {
         case START:
             setIndeterminate(true);
             setValue(10);
-
         case QUEUED:
             if (con.getExtractionQueue().size() > 0) {
                 if (!isEnabled()) {
-
                     setEnabled(true);
                 }
             }
@@ -219,10 +214,7 @@ public class ExtractorProgress extends IconedProcessIndicator {
                 if (table.isEditing()) {
                     table.getCellEditor().stopCellEditing();
                 }
-
-                tModel.getTableData().clear();
-                tModel.addAllElements(extension.getJobQueue().getJobs());
-
+                tModel._fireTableStructureChanged(extension.getJobQueue().getJobs(), true);
             }
             return;
         case CLEANUP:
@@ -231,28 +223,23 @@ public class ExtractorProgress extends IconedProcessIndicator {
                 if (table.isEditing()) {
                     table.getCellEditor().stopCellEditing();
                 }
-
-                tModel.getTableData().clear();
-                tModel.addAllElements(extension.getJobQueue().getJobs());
-
+                tModel._fireTableStructureChanged(extension.getJobQueue().getJobs(), true);
             }
-
             setValue(0);
             if (con.getExtractionQueue().size() <= 1) {
                 /*
                  * <=1 because current element is still running at this point
                  */
                 if (isEnabled()) {
-
                     setEnabled(false);
                 }
             }
             return;
         }
-        entries = extension.getJobQueue().getJobs();
+        final List<ExtractionController> entries = extension.getJobQueue().getJobs();
         double progress = 0d;
         for (ExtractionController ec : entries) {
-            if (ec.getArchiv().getContentView().getTotalSize() > 0) {
+            if (ec.getArchive().getContentView().getTotalSize() > 0) {
                 progress += ec.getProgress();
             }
         }
@@ -263,12 +250,8 @@ public class ExtractorProgress extends IconedProcessIndicator {
         if (!isIndeterminate() && progress <= 0) {
             setIndeterminate(true);
         }
-
         if (pu.isVisible()) {
-
             tModel.refreshSort();
-
         }
-
     }
 }

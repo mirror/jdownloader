@@ -126,7 +126,7 @@ public class Multi extends IExtraction {
 
     public void setPermissions(ISimpleInArchiveItem item, File extractTo) {
         if ((CrossSystem.isLinux() || CrossSystem.isMac())) {
-            if (config.isRestoreFilePermissions() && item != null && extractTo != null && extractTo.exists()) {
+            if (getConfig().isRestoreFilePermissions() && item != null && extractTo != null && extractTo.exists()) {
                 try {
                     FilePermissionSet filePermissionSet = null;
                     final Integer attributesInteger = item.getAttributes();
@@ -168,7 +168,7 @@ public class Multi extends IExtraction {
     public void setLastModifiedDate(ISimpleInArchiveItem item, File extractTo) {
         // Set last write time
         try {
-            if (config.isUseOriginalFileDate()) {
+            if (getConfig().isUseOriginalFileDate()) {
                 final Date date = item.getLastWriteTime();
                 if (date != null && date.getTime() >= 0) {
                     if (!extractTo.setLastModified(date.getTime())) {
@@ -349,7 +349,7 @@ public class Multi extends IExtraction {
 
     @Override
     public void close() {
-        final Archive archive = getArchive();
+        final Archive archive = getExtractionController().getArchive();
         try {
             if (archive.getExitCode() == ExtractionControllerConstants.EXIT_CODE_SUCCESS && ArchiveType.RAR_MULTI.equals(archive.getArchiveType())) {
                 // Deleteing rar recovery volumes
@@ -382,7 +382,7 @@ public class Multi extends IExtraction {
 
     @Override
     public void extract(final ExtractionController ctrl) {
-        final Archive archive = getArchive();
+        final Archive archive = getExtractionController().getArchive();
         final ArchiveFormat format = archive.getArchiveType().getArchiveFormat();
         try {
             ctrl.setCompleteBytes(archive.getContentView().getTotalSize());
@@ -411,7 +411,7 @@ public class Multi extends IExtraction {
                         round.clear();
                         Seven7ExtractCallback callback = null;
                         try {
-                            inArchive.extract(items, false, callback = new Seven7ExtractCallback(this, inArchive, ctrl, archive, config));
+                            inArchive.extract(items, false, callback = new Seven7ExtractCallback(this, inArchive, ctrl, archive, getConfig()));
                         } catch (SevenZipException e) {
                             logger.log(e);
                             throw e;
@@ -453,7 +453,7 @@ public class Multi extends IExtraction {
                     final Long size = item.getSize();
                     ctrl.setCurrentActiveItem(new Item(item.getPath(), size, extractTo));
                     try {
-                        MultiCallback call = new MultiCallback(extractTo, controller, config, false) {
+                        MultiCallback call = new MultiCallback(extractTo, getExtractionController(), getConfig(), false) {
 
                             @Override
                             public int write(byte[] data) throws SevenZipException {
@@ -559,7 +559,7 @@ public class Multi extends IExtraction {
     }
 
     public File getExtractFilePath(ISimpleInArchiveItem item, ExtractionController ctrl, AtomicBoolean skipped) throws SevenZipException {
-        final Archive archive = getArchive();
+        final Archive archive = getExtractionController().getArchive();
         String path = item.getPath();
         final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
         if (StringUtils.isEmpty(path)) {
@@ -572,7 +572,7 @@ public class Multi extends IExtraction {
             } else {
                 path = "UnknownExtractionFilename";
             }
-            if (ArchiveType.TGZ_SINGLE.equals(ctrl.getArchiv().getArchiveType()) && !StringUtils.endsWithCaseInsensitive(path, ".tar")) {
+            if (ArchiveType.TGZ_SINGLE.equals(ctrl.getArchive().getArchiveType()) && !StringUtils.endsWithCaseInsensitive(path, ".tar")) {
                 path = path + ".tar";
             }
         }
@@ -600,14 +600,14 @@ public class Multi extends IExtraction {
             }
             path = sb.toString();
         }
-        String filename = controller.getExtractToFolder().getAbsoluteFile() + File.separator + path;
+        String filename = getExtractionController().getExtractToFolder().getAbsoluteFile() + File.separator + path;
 
         File extractTo = new File(filename);
         logger.info("Extract " + filename);
         if (extractTo.exists()) {
             /* file already exists */
 
-            IfFileExistsAction action = controller.getIfFileExistsAction();
+            IfFileExistsAction action = getExtractionController().getIfFileExistsAction();
             while (action == null || action == IfFileExistsAction.ASK_FOR_EACH_FILE) {
                 IfFileExistsDialog d = new IfFileExistsDialog(extractTo, new Item(path, size, extractTo), archive);
                 d.show();
@@ -710,7 +710,7 @@ public class Multi extends IExtraction {
 
     @Override
     public boolean findPassword(final ExtractionController ctl, String password, boolean optimized) throws ExtractionException {
-        final Archive archive = getArchive();
+        final Archive archive = getExtractionController().getArchive();
         final ArchiveFormat format = archive.getArchiveType().getArchiveFormat();
         final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
         crack++;
@@ -786,7 +786,7 @@ public class Multi extends IExtraction {
                     items[index++] = item;
                 }
                 try {
-                    inArchive.extract(items, false, new Seven7PWCallback(inArchive, passwordfound, password, buffer, config.getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(), ctl.getFileSignatures(), optimized));
+                    inArchive.extract(items, false, new Seven7PWCallback(inArchive, passwordfound, password, buffer, getConfig().getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(), ctl.getFileSignatures(), optimized));
                 } catch (SevenZipException e) {
                     e.printStackTrace();
                     // An error will be thrown if the write method
@@ -794,7 +794,7 @@ public class Multi extends IExtraction {
                     // 0.
                 }
             } else {
-                SignatureCheckingOutStream signatureOutStream = new SignatureCheckingOutStream(passwordfound, ctl.getFileSignatures(), buffer, config.getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(), optimized);
+                SignatureCheckingOutStream signatureOutStream = new SignatureCheckingOutStream(passwordfound, ctl.getFileSignatures(), buffer, getConfig().getMaxCheckedFileSizeDuringOptimizedPasswordFindingInBytes(), optimized);
                 ISimpleInArchiveItem[] items = inArchive.getSimpleInterface().getArchiveItems();
                 // we found some rar archives, that throw an exception when we try to open it with no or an invalid password, but do not
                 // throw any exceptions if we use - for example - their archive name as password.
@@ -882,7 +882,7 @@ public class Multi extends IExtraction {
 
     @Override
     public boolean prepare() throws ExtractionException {
-        final Archive archive = getArchive();
+        final Archive archive = getExtractionController().getArchive();
         final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
         try {
             if (ArchiveFormat.RAR == archive.getArchiveType().getArchiveFormat()) {
@@ -897,7 +897,7 @@ public class Multi extends IExtraction {
                     logger.log(e);
                 }
             }
-            final String[] patternStrings = config.getBlacklistPatterns();
+            final String[] patternStrings = getConfig().getBlacklistPatterns();
             filter.clear();
             if (patternStrings != null && patternStrings.length > 0) {
                 for (final String patternString : patternStrings) {
@@ -995,7 +995,7 @@ public class Multi extends IExtraction {
     }
 
     private void updateContentView(ISimpleInArchive simpleInterface) {
-        final Archive archive = getArchive();
+        final Archive archive = getExtractionController().getArchive();
         try {
             if (archive != null) {
                 final ContentView newView = new ContentView();

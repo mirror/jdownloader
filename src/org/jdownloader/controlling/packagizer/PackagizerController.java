@@ -791,8 +791,8 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             return;
         }
         if (caller instanceof ExtractionController && caller != this) {
-            if (((ExtractionController) caller).getArchiv() instanceof DownloadLinkArchive) {
-                for (ArchiveFile af : ((ExtractionController) caller).getArchiv().getArchiveFiles()) {
+            if (((ExtractionController) caller).getArchive() instanceof DownloadLinkArchive) {
+                for (ArchiveFile af : ((ExtractionController) caller).getArchive().getArchiveFiles()) {
                     if (af instanceof DownloadLinkArchiveFile) {
                         for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
                             for (File f : fileList) {

@@ -93,17 +93,17 @@ public class ExtractionAPIImpl implements ExtractionAPI {
     @Override
     public Boolean cancelExtraction(long archiveId) {
         final ExtractionExtension extension = ArchiveValidator.EXTENSION;
-        boolean ret = false;
         if (extension != null) {
-            List<ExtractionController> jobs = extension.getJobQueue().getJobs();
+            final List<ExtractionController> jobs = extension.getJobQueue().getJobs();
             if (jobs != null && !jobs.isEmpty()) {
-                for (ExtractionController controller : jobs) {
-                    if (("" + archiveId).equals(controller.getArchiv().getFactory().getID())) {
+                final String archiveID = Long.toString(archiveId);
+                for (final ExtractionController controller : jobs) {
+                    if (archiveID.equals(controller.getArchive().getFactory().getID())) {
                         return extension.cancel(controller);
                     }
                 }
             }
         }
-        return ret;
+        return false;
     }
 }

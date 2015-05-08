@@ -35,15 +35,12 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         super(l);
     }
 
-    private CrawledLink getFirstLink() {
+    private CrawledLink getFirstPart() {
         return getLinks().get(0);
     }
 
-    private CrawledLink getFirstLink(Archive archive) {
-        if (archive.getFirstArchiveFile() instanceof CrawledLinkArchiveFile) {
-            return ((CrawledLinkArchiveFile) archive.getFirstArchiveFile()).getLinks().get(0);
-        }
-        for (ArchiveFile af : archive.getArchiveFiles()) {
+    private static CrawledLink getFirstCrawledLink(Archive archive) {
+        for (final ArchiveFile af : archive.getArchiveFiles()) {
             if (af instanceof CrawledLinkArchiveFile) {
                 return ((CrawledLinkArchiveFile) af).getLinks().get(0);
             }
@@ -53,7 +50,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
 
     public List<ArchiveFile> createPartFileList(String file, String pattern) {
         final Pattern pat = Pattern.compile(pattern, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
-        final CrawledPackage parentNode = getFirstLink().getParentNode();
+        final CrawledPackage parentNode = getFirstPart().getParentNode();
         if (parentNode == null) {
             final List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
             // not yet packagized
@@ -91,7 +88,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
                         map.put(localFile.getName(), localFile);
                     } else if (archiveFile instanceof CrawledLinkArchiveFile) {
                         final CrawledLinkArchiveFile af = (CrawledLinkArchiveFile) archiveFile;
-                        af.setExists(true);
+                        af.setFileArchiveFileExists(true);
                     }
                 }
             }
@@ -108,7 +105,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
 
     public String createDefaultExtractToPath(Archive archive) {
         try {
-            CrawledLink firstLink = getFirstLink(archive);
+            final CrawledLink firstLink = getFirstCrawledLink(archive);
             return LinkTreeUtils.getDownloadDirectory(firstLink).getAbsolutePath();
         } catch (final Throwable e) {
         }
@@ -116,11 +113,14 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
     }
 
     public String createExtractSubPath(String path, Archive archive) {
-        CrawledLink link = getFirstLink(archive);
+        final CrawledLink link = getFirstCrawledLink(archive);
         try {
             if (path.contains(PACKAGENAME)) {
                 CrawledPackage fp = link.getParentNode();
-                String packageName = CrossSystem.alleviatePathParts(fp.getName());
+                String packageName = null;
+                if (fp != null) {
+                    packageName = CrossSystem.alleviatePathParts(fp.getName());
+                }
                 if (!StringUtils.isEmpty(packageName)) {
                     path = path.replace(PACKAGENAME, packageName);
                 } else {
@@ -187,7 +187,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
     @Override
     public File getFolder() {
         try {
-            return LinkTreeUtils.getDownloadDirectory(getFirstLink());
+            return LinkTreeUtils.getDownloadDirectory(getFirstPart());
         } catch (Throwable e) {
             return new File(JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
         }
@@ -211,7 +211,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
 
     private String getIDFromFile(CrawledLinkArchiveFile file) {
         for (CrawledLink link : file.getLinks()) {
-            String id = link.getDownloadLink().getArchiveID();
+            final String id = link.getDownloadLink().getArchiveID();
             if (id != null) {
                 return id;
             }
@@ -266,7 +266,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
 
     @Override
     public BooleanStatus getDefaultAutoExtract() {
-        CrawledLink first = getLinks().get(0);
+        final CrawledLink first = getLinks().get(0);
         if (first.hasArchiveInfo()) {
             return first.getArchiveInfo().getAutoExtract();
         }

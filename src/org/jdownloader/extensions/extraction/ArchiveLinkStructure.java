@@ -4,7 +4,6 @@ import org.appwork.storage.Storable;
 
 public class ArchiveLinkStructure implements Storable {
     public ArchiveLinkStructure(/* storable */) {
-
     }
 
     private long[]   firstFile;

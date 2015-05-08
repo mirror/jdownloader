@@ -67,13 +67,13 @@ public class HachaSplit extends IExtraction {
 
     @Override
     public void extract(ExtractionController ctrl) {
-        final Archive archive = getArchive();
+        final Archive archive = getExtractionController().getArchive();
         final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
         final String matches[] = splitType.getMatches(firstArchiveFile.getFilePath());
         if (matches != null) {
             try {
                 final HachaHeader hachaHeader = parseHachaHeader(firstArchiveFile);
-                if (SplitUtil.merge(controller, hachaHeader.getFileName(), hachaHeader.getHeaderSize(), getConfig())) {
+                if (SplitUtil.merge(getExtractionController(), hachaHeader.getFileName(), hachaHeader.getHeaderSize(), getConfig())) {
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
                 } else {
                     if (archive.getExitCode() == -1) {

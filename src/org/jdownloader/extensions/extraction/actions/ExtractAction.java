@@ -223,7 +223,7 @@ public class ExtractAction extends AbstractExtractionContextAction {
                                 public String getString() {
                                     final ExtractionController lController = controller;
                                     if (lController != null) {
-                                        return T._.extractprogress_label(format.format(lController.getProgress()) + " %", lController.getArchiv().getExtractedFiles().size() + "");
+                                        return T._.extractprogress_label(format.format(lController.getProgress()) + " %", lController.getArchive().getExtractedFiles().size() + "");
                                     } else {
                                         return format.format(0d) + " %";
                                     }

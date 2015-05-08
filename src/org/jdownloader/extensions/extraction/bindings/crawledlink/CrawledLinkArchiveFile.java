@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkProperty;
+import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
@@ -23,8 +24,23 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
 
     private final String                   name;
     private volatile long                  size;
-    private final AtomicReference<Boolean> exists = new AtomicReference<Boolean>(null);
+    private final AtomicReference<Boolean> exists                = new AtomicReference<Boolean>(null);
     private final int                      hashCode;
+
+    private boolean                        fileArchiveFileExists = false;
+
+    public boolean isFileArchiveFileExists() {
+        return fileArchiveFileExists;
+    }
+
+    public void setFileArchiveFileExists(boolean fileArchiveFileExists) {
+        if (fileArchiveFileExists) {
+            setExists(true);
+        } else {
+            invalidateExists();
+        }
+        this.fileArchiveFileExists = fileArchiveFileExists;
+    }
 
     public CrawledLinkArchiveFile(CrawledLink l) {
         links = new CopyOnWriteArrayList<CrawledLink>();
@@ -65,10 +81,15 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     }
 
     public boolean isComplete() {
+        if (isFileArchiveFileExists() && exists()) {
+            return true;
+        }
         for (CrawledLink downloadLink : getLinks()) {
             switch (downloadLink.getLinkState()) {
             case ONLINE:
                 return true;
+            default:
+                break;
             }
         }
         return false;
@@ -83,7 +104,7 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     }
 
     public void deleteFile(DeleteOption option) {
-        invalidateExists();
+        setFileArchiveFileExists(false);
     }
 
     public String getName() {
@@ -144,9 +165,43 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     public void setArchive(Archive archive) {
         if (archive != null && archive.getFactory() != null) {
             for (CrawledLink link : getLinks()) {
-                link.setArchiveID(archive.getFactory().getID());
+                final DownloadLink dlLink = link.getDownloadLink();
+                if (dlLink != null) {
+                    dlLink.setArchiveID(archive.getFactory().getID());
+                    dlLink.setPartOfAnArchive(Boolean.TRUE);
+                }
             }
         }
+    }
+
+    @Override
+    public void setPartOfAnArchive(Boolean b) {
+        for (CrawledLink link : getLinks()) {
+            final DownloadLink dlLink = link.getDownloadLink();
+            if (dlLink != null) {
+                dlLink.setPartOfAnArchive(b);
+            }
+        }
+    }
+
+    @Override
+    public Boolean isPartOfAnArchive() {
+        Boolean ret = null;
+        for (CrawledLink link : getLinks()) {
+            final DownloadLink dlLink = link.getDownloadLink();
+            if (dlLink != null) {
+                final Boolean newRet = dlLink.isPartOfAnArchive();
+                if (newRet != null) {
+                    if (Boolean.TRUE.equals(newRet)) {
+                        return newRet;
+                    }
+                    if (ret == null) {
+                        ret = newRet;
+                    }
+                }
+            }
+        }
+        return ret;
     }
 
     @Override

@@ -518,7 +518,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_GENERIC_EXTRACTION == script.getEventTrigger()) {
                 try {
                     HashMap<String, Object> props = new HashMap<String, Object>();
-                    props.put("archive", new ArchiveSandbox(event.getCaller().getArchiv()));
+                    props.put("archive", new ArchiveSandbox(event.getCaller().getArchive()));
                     props.put("event", event.getType().name());
                     runScript(script, props);
                 } catch (Throwable e) {
@@ -532,7 +532,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                 if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.ON_ARCHIVE_EXTRACTED == script.getEventTrigger()) {
                     try {
                         HashMap<String, Object> props = new HashMap<String, Object>();
-                        props.put("archive", new ArchiveSandbox(event.getCaller().getArchiv()));
+                        props.put("archive", new ArchiveSandbox(event.getCaller().getArchive()));
                         props.put("event", event.getType().name());
                         runScript(script, props);
                     } catch (Throwable e) {

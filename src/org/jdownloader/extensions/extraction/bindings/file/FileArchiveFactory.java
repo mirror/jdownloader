@@ -1,6 +1,5 @@
 package org.jdownloader.extensions.extraction.bindings.file;
 
-import java.awt.Color;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,9 +20,7 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.BooleanStatus;
-import org.jdownloader.extensions.extraction.ExtractionController;
-import org.jdownloader.extensions.extraction.ExtractionStatus;
-import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.settings.GeneralSettings;
 
 public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactory {
@@ -65,57 +62,7 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
         final Pattern pattern = Pattern.compile(patternString, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
         final List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
         for (final File foundFile : findFiles(pattern, getFile().getParentFile())) {
-            if (origin == null) {
-                ret.add(new FileArchiveFile(foundFile));
-            } else {
-                ret.add(new FileArchiveFile(foundFile) {
-
-                    @Override
-                    public void setStatus(ExtractionController controller, ExtractionStatus error) {
-                        if (isFirstArchiveFile()) {
-                            origin.getFirstArchiveFile().setStatus(controller, error);
-                        } else {
-                            for (ArchiveFile archiveFile : origin.getArchiveFiles()) {
-                                archiveFile.setStatus(controller, error);
-                            }
-                        }
-                        super.setStatus(controller, error);
-                    }
-
-                    @Override
-                    public void setMessage(ExtractionController controller, String plugins_optional_extraction_status_notenoughspace) {
-                        if (isFirstArchiveFile()) {
-                            origin.getFirstArchiveFile().setMessage(controller, plugins_optional_extraction_status_notenoughspace);
-                        } else {
-                            for (ArchiveFile archiveFile : origin.getArchiveFiles()) {
-                                archiveFile.setMessage(controller, plugins_optional_extraction_status_notenoughspace);
-                            }
-                        }
-                        super.setMessage(controller, plugins_optional_extraction_status_notenoughspace);
-                    }
-
-                    @Override
-                    public void setProgress(ExtractionController controller, long value, long max, Color color) {
-                        if (isFirstArchiveFile()) {
-                            origin.getFirstArchiveFile().setProgress(controller, value, max, color);
-                        }
-                        super.setProgress(controller, value, max, color);
-                    }
-
-                    @Override
-                    public void removePluginProgress(ExtractionController controller) {
-                        if (isFirstArchiveFile()) {
-                            origin.getFirstArchiveFile().removePluginProgress(controller);
-                        } else {
-                            for (ArchiveFile archiveFile : origin.getArchiveFiles()) {
-                                archiveFile.removePluginProgress(controller);
-                            }
-                        }
-                        super.removePluginProgress(controller);
-                    }
-
-                });
-            }
+            ret.add(new FileArchiveFile(foundFile));
         }
         return ret;
     }
@@ -127,16 +74,15 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
         return new Archive(this) {
 
             @Override
-            public Archive getPreviousArchive() {
+            public Archive getParentArchive() {
                 return origin;
             }
-
         };
     }
 
     public Collection<? extends String> getGuessedPasswordList(Archive archive) {
-        HashSet<String> ret = new HashSet<String>();
-        ret.add(new File(archive.getFirstArchiveFile().getFilePath()).getName());
+        final HashSet<String> ret = new HashSet<String>();
+        ret.add(new File(archive.getArchiveFiles().get(0).getFilePath()).getName());
         return ret;
     }
 
@@ -149,40 +95,32 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
 
     public String createExtractSubPath(String path, Archive archiv) {
         try {
+            final DownloadLink downloadLink = DownloadLinkArchiveFactory.getFirstDownloadLinkPart(archiv);
+            if (downloadLink != null) {
+                final String ret = new DownloadLinkArchiveFactory(downloadLink).createExtractSubPath(path, archiv);
+                if (ret != null) {
+                    return ret;
+                }
+            }
+        } catch (final Throwable e) {
+        }
+        final ArchiveFile firstArchiveFile = archiv.getArchiveFiles().get(0);
+        try {
             if (path.contains(PACKAGENAME)) {
-                String packageName = null;
-                for (ArchiveFile file : archiv.getArchiveFiles()) {
-                    if (packageName != null) {
-                        break;
-                    }
-                    if (file instanceof DownloadLinkArchiveFile) {
-                        final DownloadLinkArchiveFile daf = (DownloadLinkArchiveFile) file;
-                        if (daf.getDownloadLinks() != null) {
-                            for (DownloadLink link : daf.getDownloadLinks()) {
-                                packageName = CrossSystem.alleviatePathParts(link.getLastValidFilePackage().getName());
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (!StringUtils.isEmpty(packageName)) {
-                    path = path.replace(PACKAGENAME, packageName);
-                } else {
-                    path = path.replace(PACKAGENAME, "");
-                    Log.L.severe("Could not set packagename for " + archiv.getFirstArchiveFile().getFilePath());
-                }
+                path = path.replace(PACKAGENAME, "");
+                Log.L.severe("Could not set packagename for " + firstArchiveFile.getFilePath());
             }
             if (path.contains(ARCHIVENAME)) {
                 if (!StringUtils.isEmpty(archiv.getName())) {
                     path = path.replace(ARCHIVENAME, archiv.getName());
                 } else {
                     path = path.replace(ARCHIVENAME, "");
-                    Log.L.severe("Could not set archivename for " + archiv.getFirstArchiveFile().getFilePath());
+                    Log.L.severe("Could not set archivename for " + firstArchiveFile.getFilePath());
                 }
             }
             if (path.contains(HOSTER)) {
                 path = path.replace(HOSTER, "");
-                Log.L.severe("Could not set hoster for " + archiv.getFirstArchiveFile().getFilePath());
+                Log.L.severe("Could not set hoster for " + firstArchiveFile.getFilePath());
             }
             if (path.contains("$DATE:")) {
                 int start = path.indexOf("$DATE:");
@@ -197,7 +135,7 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
                     path = path.replace(path.substring(start, end + 1), format.format(new Date()));
                 } catch (Exception e) {
                     path = path.replace(path.substring(start, end + 1), "");
-                    Log.L.severe("Could not set extraction date. Maybe pattern is wrong. For " + archiv.getFirstArchiveFile().getFilePath());
+                    Log.L.severe("Could not set extraction date. Maybe pattern is wrong. For " + firstArchiveFile.getFilePath());
                 }
             }
             String dif = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).getAbsolutePath().replace(getFile().getParent(), "");

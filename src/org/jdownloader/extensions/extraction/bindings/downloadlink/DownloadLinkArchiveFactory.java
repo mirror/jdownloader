@@ -38,7 +38,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     }
 
     public String createExtractSubPath(String path, Archive archive) {
-        final DownloadLink link = getFirstLink(archive);
+        final DownloadLink link = getFirstDownloadLinkPart(archive);
         try {
             if (path.contains(PACKAGENAME)) {
                 final String packageName = CrossSystem.alleviatePathParts(link.getLastValidFilePackage().getName());
@@ -138,7 +138,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 map.put(localFile.getName(), localFile);
             } else if (archiveFile instanceof DownloadLinkArchiveFile) {
                 final DownloadLinkArchiveFile af = (DownloadLinkArchiveFile) archiveFile;
-                af.setExists(true);
+                af.setFileArchiveFileExists(true);
             }
         }
         return new ArrayList<ArchiveFile>(map.values());
@@ -173,10 +173,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         }
     }
 
-    private DownloadLink getFirstLink(Archive archive) {
-        if (archive.getFirstArchiveFile() instanceof DownloadLinkArchiveFile) {
-            return ((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getDownloadLinks().get(0);
-        }
+    public static DownloadLink getFirstDownloadLinkPart(Archive archive) {
         for (ArchiveFile af : archive.getArchiveFiles()) {
             if (af instanceof DownloadLinkArchiveFile) {
                 return ((DownloadLinkArchiveFile) af).getDownloadLinks().get(0);
@@ -187,7 +184,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
 
     public String createDefaultExtractToPath(Archive archive) {
         try {
-            return new File(archive.getFirstArchiveFile().getFilePath()).getParent();
+            return new File(archive.getArchiveFiles().get(0).getFilePath()).getParent();
         } catch (final Throwable e) {
         }
         return new File(getFilePath()).getParent();

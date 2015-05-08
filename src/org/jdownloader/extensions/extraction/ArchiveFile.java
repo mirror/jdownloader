@@ -32,6 +32,10 @@ public interface ArchiveFile {
 
     public void setArchive(Archive archive);
 
+    public void setPartOfAnArchive(Boolean b);
+
+    public Boolean isPartOfAnArchive();
+
     public void notifyChanges(Object type);
 
 }

@@ -62,7 +62,7 @@ public class ExtractionBubbleContent extends AbstractBubbleContentPanel {
         }
         if (event != null) {
             if (archive != null) {
-                final ArchiveFile firstArchiveFile = caller.getArchiv().getArchiveFiles().get(0);
+                final ArchiveFile firstArchiveFile = caller.getArchive().getArchiveFiles().get(0);
                 archive.setText(firstArchiveFile.getName());
                 archive.setTooltip(firstArchiveFile.getFilePath());
             }

@@ -44,12 +44,12 @@ public class UnixSplit extends IExtraction {
 
     @Override
     public void extract(ExtractionController ctrl) {
-        final Archive archive = getArchive();
+        final Archive archive = getExtractionController().getArchive();
         final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
         final String matches[] = splitType.getMatches(firstArchiveFile.getName());
         if (matches != null) {
             try {
-                if (SplitUtil.merge(controller, matches[0], 0, getConfig())) {
+                if (SplitUtil.merge(getExtractionController(), matches[0], 0, getConfig())) {
                     archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_SUCCESS);
                 } else {
                     if (archive.getExitCode() == -1) {

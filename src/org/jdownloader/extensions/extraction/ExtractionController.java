@@ -120,7 +120,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         synchronized (extension) {
             final List<ExtractionController> removeList = new ArrayList<ExtractionController>();
             for (ExtractionController ec : getExtractionQueue().getJobs()) {
-                if (ec.getArchiv() == archive || StringUtils.equals(ec.getArchiv().getArchiveID(), archive.getArchiveID())) {
+                if (ec.getArchive() == archive || StringUtils.equals(ec.getArchive().getArchiveID(), archive.getArchiveID())) {
                     removeList.add(ec);
                 }
             }
@@ -139,7 +139,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         logger.info("Extraction of" + archive);
         this.extractor = extractor;
         extractionProgress = new ExtractionProgress(this, 0, 0, null);
-        extractor.setArchiv(archiv);
         extractor.setExtractionController(this);
         extension = extractionExtension;
         extractor.setLogger(logger);
@@ -250,7 +249,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         }
                         passwordList.addAll(archive.getFactory().getGuessedPasswordList(archive));
                         passwordList.add(archive.getName());
-                        java.util.List<String> pwList = extractor.config.getPasswordList();
+                        java.util.List<String> pwList = extractor.getConfig().getPasswordList();
                         if (pwList == null) {
                             pwList = new ArrayList<String>();
                         }
@@ -487,7 +486,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      * Deletes the archive files.
      */
     void removeArchiveFiles() {
-        final DeleteOption remove = getExtension().getRemoveFilesAfterExtractAction(getArchiv());
+        final DeleteOption remove = getExtension().getRemoveFilesAfterExtractAction(getArchive());
         if (remove != null && !DeleteOption.NO_DELETE.equals(remove)) {
             for (ArchiveFile link : archive.getArchiveFiles()) {
                 link.deleteFile(remove);
@@ -539,7 +538,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      *
      * @return
      */
-    public Archive getArchiv() {
+    public Archive getArchive() {
         return archive;
     }
 

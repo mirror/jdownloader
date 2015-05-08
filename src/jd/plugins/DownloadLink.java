@@ -194,6 +194,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private transient UrlProtection                     urlProtection                       = UrlProtection.UNSET;
     private transient List<HistoryEntry>                history                             = null;
 
+    private transient Boolean                           partOfAnArchive                     = null;
+
+    public Boolean isPartOfAnArchive() {
+        return partOfAnArchive;
+    }
+
+    public void setPartOfAnArchive(Boolean notAnArchive) {
+        this.partOfAnArchive = notAnArchive;
+    }
+
     public FilePackage getLastValidFilePackage() {
         final FilePackage lFilePackage = lastValidFilePackage;
         if (lFilePackage != null) {
@@ -480,7 +490,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * @deprecated Use #getPluginUrl() instead
+     * @deprecated Use #getPluginPatternMatcher() instead
      * @return
      */
     @Deprecated
@@ -1832,8 +1842,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (!StringUtils.equals(id, getArchiveID())) {
             if (!StringUtils.isEmpty(id)) {
                 setProperty(DownloadLink.PROPERTY_ARCHIVE_ID, id);
+                setPartOfAnArchive(Boolean.TRUE);
             } else {
                 setProperty(DownloadLink.PROPERTY_ARCHIVE_ID, Property.NULL);
+                setPartOfAnArchive(null);
             }
             if (hasNotificationListener()) {
                 notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.ARCHIVE_ID, id));
