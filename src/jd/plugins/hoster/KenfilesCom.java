@@ -432,7 +432,14 @@ public class KenfilesCom extends PluginForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
                 dllink = getDllink();
-                if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
+                logger.info("DLLink gotten: " + dllink);
+                /*
+                 * String[][] m = new Regex(correctedBR,
+                 * "<a href\\= ?\"(https?://\\w+\\.kenfiles.com(\\:\\d+)?/free/\\w+/\\w+\\.\\w+)\">").getMatches(); logger.info("Matches: "
+                 * + m.length); for (int x = 0; x < m.length; x++) { for (int y = 0; y < m[x].length; y++) { logger.info("MATCHES: " + x +
+                 * " " + y + " " + m[x][y]); } }
+                 */
+                if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
@@ -592,6 +599,10 @@ public class KenfilesCom extends PluginForHost {
                         }
                     }
                 }
+            }
+            if (dllink == null) {
+                // Try to get the download link from the page, as chances are we're currently on the final page
+                dllink = new Regex(correctedBR, "<a href\\= ?\"(https?://\\w+\\.\\w+.com(\\:\\d+)?/free/\\w+/[A-Za-z0-9\\_\\-\\.]+\\.\\w+)\">").getMatch(0);
             }
         }
         return dllink;
