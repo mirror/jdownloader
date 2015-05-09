@@ -45,18 +45,28 @@ public class AnimeUltimeNet extends PluginForHost {
         return "http://www.anime-ultime.net/index-0-1#principal";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("> 0 vostfr streaming<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("> 0 vostfr streaming<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("<h1>([^<>\"]*?)vostfr streaming</h1>").getMatch(0);
         String filesize = br.getRegex("Taille : ([^<>\"]*?)<br />").getMatch(0);
-        final String ext = br.getRegex("Conteneur : ([^<>\"]*?)<br />").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String ext = br.getRegex("Conteneur : ([^<>\"]*?)<br />").getMatch(0);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (ext != null) {
+            ext = "." + ext.trim();
+        } else {
+            ext = "";
+        }
         filesize = filesize.replace("mo", "mb");
-        link.setName(Encoding.htmlDecode(filename.trim()) + "." + ext.trim());
+        link.setName(Encoding.htmlDecode(filename.trim()) + ext);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -70,12 +80,16 @@ public class AnimeUltimeNet extends PluginForHost {
             br.postPage("http://www.anime-ultime.net/ddl/authorized_download.php", "idfile=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + "&type=orig");
             final String wait = getJson("wait");
             int waittime = 45;
-            if (wait != null) waittime = Integer.parseInt(wait);
+            if (wait != null) {
+                waittime = Integer.parseInt(wait);
+            }
             waittime += 2;
             this.sleep(waittime * 1000l, downloadLink);
             br.postPage("http://www.anime-ultime.net/ddl/authorized_download.php", "idfile=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + "&type=orig");
             dllink = getJson("link");
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dllink = dllink.replace("\\", "");
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -108,7 +122,9 @@ public class AnimeUltimeNet extends PluginForHost {
 
     private String getJson(final String parameter) {
         String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) {
+            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
         return result;
     }
 
