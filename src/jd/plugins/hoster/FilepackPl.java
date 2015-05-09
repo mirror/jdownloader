@@ -417,7 +417,7 @@ public class FilepackPl extends antiDDoSForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -580,13 +580,13 @@ public class FilepackPl extends antiDDoSForHost {
                 }
                 MAXPREM.set(account_PREMIUM_MAXDOWNLOADS);
                 ai.setStatus("Premium account");
+                if (traffics.length != 0) {
+                    String trafficMax = traffics[0][1];
+                    String trafficUsed = traffics[0][0];
+                    ai.setTrafficMax(Long.valueOf(trafficMax));
+                    ai.setTrafficLeft(SizeFormatter.getSize(trafficMax) - SizeFormatter.getSize(trafficUsed));
+                }
             }
-        }
-        if (traffics.length != 0) {
-            String trafficMax = traffics[0][1];
-            String trafficUsed = traffics[0][0];
-            ai.setTrafficMax(trafficMax);
-            ai.setTrafficLeft(SizeFormatter.getSize(trafficMax) - SizeFormatter.getSize(trafficUsed));
         }
         account.setValid(true);
 
