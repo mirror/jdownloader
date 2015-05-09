@@ -196,6 +196,13 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         getPurchaseURL(entry);
                         get500Thumbnail(dl, entry);
                         getOriginalThumbnail(dl, entry);
+                        /*
+                         * This is the handling for single links but because users can also add the thumbnails it definitly makes sense to
+                         * set a packagename as we got multiple DownloadLinks then.
+                         */
+                        final FilePackage fp = FilePackage.getInstance();
+                        fp.setName(dl.getStringProperty("plainfilename", null));
+                        fp.addLinks(decryptedLinks);
                     } catch (final Exception e) {
                         if (br.containsHTML("\"404 - Not Found\"")) {
                             return decryptedLinks;
@@ -204,7 +211,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         decryptedLinks.add(createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted")));
                     }
                 } else {
-                    DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
+                    final DownloadLink dl = createDownloadlink(parameter.replace("soundcloud", "soundclouddecrypted"));
                     dl.setProperty("plain_url_username", url_username);
                     decryptedLinks.add(dl);
                 }

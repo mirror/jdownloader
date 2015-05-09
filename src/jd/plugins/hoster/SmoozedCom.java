@@ -297,6 +297,13 @@ public class SmoozedCom extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, message);
                     }
+                } else if (StringUtils.equalsIgnoreCase(message, "Temporary not available")) {
+                    // File temporary not available
+                    if (seconds != null) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporary not downloadable via smoozed.com", seconds.intValue() * 1000);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporary not downloadable via smoozed.com");
+                    }
                 } else if (StringUtils.equalsIgnoreCase(message, "Check timed out")) {
                     // Check timed out
                     logger.info("Check timed out, trying to download without one!");

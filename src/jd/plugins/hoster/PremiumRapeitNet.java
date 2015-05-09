@@ -187,6 +187,7 @@ public class PremiumRapeitNet extends PluginForHost {
 
     private static Object LOCK = new Object();
 
+    /* They only have accounts with traffic, no free/premium difference (other than no traffic) */
     private AccountInfo site_fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
         if (!site_login(account, true)) {
@@ -215,17 +216,27 @@ public class PremiumRapeitNet extends PluginForHost {
         if (traffic_left != null && traffic_downloaded != null) {
             traffic_left = traffic_left.replace(",", ".");
             traffic_downloaded = traffic_downloaded.replace(",", ".");
+            final long trafficleft = SizeFormatter.getSize(traffic_left);
+            final long trafficmax = trafficleft + SizeFormatter.getSize(traffic_downloaded);
+            if (trafficleft == 0 && trafficmax == 0) {
+                account.setType(AccountType.FREE);
+            } else {
+                account.setType(AccountType.PREMIUM);
+            }
             ac.setTrafficLeft(SizeFormatter.getSize(traffic_left));
             ac.setTrafficMax(ac.getTrafficLeft() + SizeFormatter.getSize(traffic_downloaded));
         } else {
             /* Don't fail here just because the values are null. */
             ac.setUnlimitedTraffic();
+            account.setType(AccountType.PREMIUM);
         }
-        /* They only have accounts with traffic, no free/premium difference (other than no traffic) */
-        account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(true);
-        ac.setStatus("Premium account");
+        if (account.getType() == AccountType.PREMIUM) {
+            ac.setStatus("Premium account");
+        } else {
+            ac.setStatus("Registered (free) account");
+        }
         return ac;
     }
 
@@ -271,7 +282,7 @@ public class PremiumRapeitNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("http://premium.rapeit.net/?login");
+                br.getPage("https://premium.rapeit.net/?login");
                 String postData = "emailaddress=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
                 final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, MAINPAGE, true);
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
@@ -286,7 +297,7 @@ public class PremiumRapeitNet extends PluginForHost {
                     final String code = getCaptchaCode("/random_image.php", dummyLink);
                     postData += "&txtCaptcha=" + Encoding.urlEncode(code);
                 }
-                br.postPage("http://premium.rapeit.net/?login", postData);
+                br.postPage("/?login", postData);
                 if (br.getCookie(MAINPAGE, "session") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder Login-Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort (und Captcha) stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -311,6 +322,7 @@ public class PremiumRapeitNet extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private String site_get_dllink(final DownloadLink link, final Account acc) throws Exception {
         String dllink;
         final String url = Encoding.urlEncode(link.getDownloadURL());
