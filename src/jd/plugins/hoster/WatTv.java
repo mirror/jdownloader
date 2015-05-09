@@ -89,7 +89,7 @@ public class WatTv extends PluginForHost {
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (br.getURL().equals("http://www.wat.tv/") || br.containsHTML("<title> WAT TV, vidéos replay musique et films, votre média vidéo \\– Wat\\.tv </title>")) {
+            if (br.getURL().equals("http://www.wat.tv/") || br.containsHTML("<title> WAT TV, vidéos replay musique et films, votre média vidéo \\– Wat\\.tv </title>") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("<meta name=\"name\" content=\"(.*?)\"").getMatch(0);
