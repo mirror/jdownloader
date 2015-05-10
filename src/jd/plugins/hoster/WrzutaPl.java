@@ -57,31 +57,46 @@ public class WrzutaPl extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         boolean addext = true;
-        String fileid = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/" + filetype + "/([^/]*)").getMatch(0);
+        String fileId = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/" + filetype + "/([^/]*)").getMatch(0);
         String host = new Regex(downloadLink.getDownloadURL(), "https?://(.*?)/").getMatch(0);
-        if (fileid == null || filetype == null) {
+        if (fileId == null || filetype == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String linkurl = null;
+        String linkUrl = null;
         br.setFollowRedirects(true);
         if (filetype.equalsIgnoreCase("audio")) {
 
             String wrzutaPlayerSource = br.getRegex("window\\['__wrzuta_player_src'\\] = (.*) \\+ '\\?autoplay=true';").getMatch(0);
 
-            String xmlAudioPage = "http://" + host + "/xml/kontent/" + fileid + "/wrzuta.pl/sa/" + new Random().nextInt(100000);
+            String xmlAudioPage = "http://" + host + "/xml/kontent/" + fileId + "/wrzuta.pl/sa/" + new Random().nextInt(100000);
             br.getPage(xmlAudioPage);
-            linkurl = br.getRegex("<fileId><\\!\\[CDATA\\[(http://.*?)\\]\\]></fileId>").getMatch(0);
+            linkUrl = br.getRegex("<fileId><\\!\\[CDATA\\[(http://.*?)\\]\\]></fileId>").getMatch(0);
             addext = false;
-            if (linkurl == null) {
+            if (linkUrl == null) {
                 if (wrzutaPlayerSource == null) {
                     // try with simple player
-                    br.getPage("http://" + host + "/u/" + fileid);
+                    br.getPage("http://" + host + "/u/" + fileId);
                     String getVar = br.getRegex("context\\.setOption\\(options, 'flashSrc', encodeURIComponent\\((.*)\\)\\);").getMatch(0);
-                    // probably better Regex is needed, less greedy
-                    String match = br.getRegex("(var " + getVar + ".*;)").getMatch(0);
-                    match = match.substring(0, match.indexOf(";"));
-                    linkurl = getURLFromVar(match);
-                    logger.info(linkurl);
+                    if (getVar != null) {
+                        // probably better Regex is needed, less greedy
+                        String match = br.getRegex("(var " + getVar + ".*;)").getMatch(0);
+                        match = match.substring(0, match.indexOf(";"));
+                        linkUrl = getURLFromVar(match);
+
+                    } else {
+                        // new method - get linkurl directly from embeded url based on username and fileid
+                        // http://vengodelmar007.wrzuta.pl/audio/0psjP9Mz9Vz/ricchi_e_poveri_-_voulez_vous_dancer
+                        // Json description is at:
+                        // http://www.wrzuta.pl/npp/embed/vengodelmar007/0psjP9Mz9Vz?login=vengodelmar007&key=0psjP9Mz9Vz
+                        final String userName = new Regex(downloadLink.getDownloadURL(), "https?://([^<>\"]+)\\.wrzuta\\.pl").getMatch(0);
+                        final String embedURL = "http://www.wrzuta.pl/npp/embed/" + userName + "/" + fileId + "?login=" + userName + "&key=" + fileId;
+                        final String jsonReponse = br.getPage(embedURL);
+                        if (jsonReponse != null) {
+                            linkUrl = getJson(jsonReponse, "url");
+                        }
+                    }
+
+                    logger.info(linkUrl);
                 } else {
                     // try to get final link via wrzuta player
                     String[][] matches = new Regex(wrzutaPlayerSource, "\"[a-zA-Z:/\\.0-9]*\"").getMatches();
@@ -96,28 +111,28 @@ public class WrzutaPl extends PluginForHost {
                     }
                     matches = new Regex(flashSrcUrl, "\"[a-zA-z\\d:/\\.\\?=%&]*\"").getMatches();
 
-                    linkurl = concatenate(matches);
+                    linkUrl = concatenate(matches);
                 }
             }
         } else if (filetype.equalsIgnoreCase("film")) {
-            String xmlFilmPage = "http://" + host + "/xml/kontent/" + fileid + "/wrztua.pl/sa/" + new Random().nextInt(100000);
+            String xmlFilmPage = "http://" + host + "/xml/kontent/" + fileId + "/wrztua.pl/sa/" + new Random().nextInt(100000);
             br.getPage(xmlFilmPage);
-            linkurl = br.getRegex("<fileId><\\!\\[CDATA\\[(http://.*?)\\]\\]></fileId>").getMatch(0);
+            linkUrl = br.getRegex("<fileId><\\!\\[CDATA\\[(http://.*?)\\]\\]></fileId>").getMatch(0);
             addext = false;
         } else if (filetype.equalsIgnoreCase("obraz")) {
-            linkurl = br.getRegex("<img id=\"image\" src=\"(.*?)\"").getMatch(0);
-            if (linkurl == null) {
-                linkurl = downloadLink.getDownloadURL().replaceFirst("obraz", "sr/f");
+            linkUrl = br.getRegex("<img id=\"image\" src=\"(.*?)\"").getMatch(0);
+            if (linkUrl == null) {
+                linkUrl = downloadLink.getDownloadURL().replaceFirst("obraz", "sr/f");
             }
         }
-        if (linkurl == null) {
+        if (linkUrl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setDebug(true);
         br.setFollowRedirects(true);
         // set one chunk as film and audio based links will reset soon as second
         // chunk is connected.
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkUrl, true, 1);
 
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType().contains("html")) {
@@ -233,5 +248,9 @@ public class WrzutaPl extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
 }
