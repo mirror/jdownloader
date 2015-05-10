@@ -93,4 +93,14 @@ public class KeepLinksMe extends abstractSafeLinking {
         return "<lable[^>]+class=\"num(?:live|direct) nodisplay\"[^>]*>(.*?)</a>(?:<br\\s*/>|</label>)";
     }
 
+    @Override
+    protected String formPasswordInputKeyName() {
+        return "password";
+    }
+
+    @Override
+    protected boolean isCaptchaSkipable() {
+        return true;
+    }
+
 }

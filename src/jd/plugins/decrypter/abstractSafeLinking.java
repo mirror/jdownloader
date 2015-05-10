@@ -256,16 +256,27 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
         /* search for protected form */
         Form protectedForm = formProtected();
         if (protectedForm != null) {
-            boolean password = formInputFieldsContainsProperties(protectedForm, formPasswordInputProperties()); // password?
+            String psw = null;
+            boolean password = formInputFieldContainsProperties(protectedForm, formPasswordInputProperties());
             prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
 
-            for (int i = 0; i <= 5; i++) {
+            final int repeat = 5;
+            for (int i = 0; i < repeat; i++) {
+                while (protectedForm.hasInputFieldByName("%5C")) {
+                    protectedForm.remove("%5C");
+                }
                 if (password) {
-                    final String psw = getUserInput(parameter, param);
-                    if ("".equals(psw)) {
-                        throw new DecrypterException(DecrypterException.PASSWORD);
+                    if ((i <= 2 && isCaptchaSkipable()) || (i <= 1 && !isCaptchaSkipable())) {
+                        // only use this twice, once for auto solvemedia, and second time with manual captcha!
+                        psw = param.getDecrypterPassword();
                     }
-                    protectedForm.put("link-password", psw);
+                    if (psw == null || "".equals(psw)) {
+                        psw = getUserInput(parameter, param);
+                        if (psw == null || "".equals(psw)) {
+                            throw new DecrypterException(DecrypterException.PASSWORD);
+                        }
+                    }
+                    protectedForm.put(formPasswordInputKeyName(), Encoding.urlEncode(psw));
                 }
 
                 Browser captchaBr = null;
@@ -275,15 +286,12 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
 
                 switch (getCaptchaTypeNumber()) {
                 case 1:
-                    if (i == 0) {
+                    if (i == 0 && isCaptchaSkipable()) {
                         long wait = 0;
                         while (wait < 3000) {
                             wait = 1272 * new Random().nextInt(6);
                         }
                         Thread.sleep(wait);
-                        while (protectedForm.hasInputFieldByName("%5C")) {
-                            protectedForm.remove("%5C");
-                        }
                         protectedForm.put("captchatype", "Simple");
                         protectedForm.put("used_captcha", "SolveMedia");
                         protectedForm.put("adcopy_challenge", "null");
@@ -295,9 +303,9 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
                         File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                         String code = getCaptchaCode(cf, param);
                         String chid = sm.getChallenge(code);
-                        protectedForm.put("solvemedia_response=", code.replace(" ", "+"));
-                        protectedForm.put("adcopy_challenge", chid);
-                        protectedForm.put("adcopy_response", code.replace(" ", "+"));
+                        protectedForm.put("solvemedia_response=", Encoding.urlEncode(code));
+                        protectedForm.put("adcopy_challenge", Encoding.urlEncode(chid));
+                        protectedForm.put("adcopy_response", Encoding.urlEncode(code));
                         break;
                     }
                 case 2: {
@@ -370,35 +378,51 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
                         logger.warning("500 Internal Server Error. Link: " + parameter);
                         continue;
                     }
-                    password = br.getRegex("type=\"password\" name=\"link-password\"").matches(); // password correct?
-                }
-
-                if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || password || br.containsHTML("<strong>Prove you are human</strong>") || confirmationCheck()) {
+                    if (password) {
+                        protectedForm = formProtected();
+                        password = formInputFieldContainsProperties(protectedForm, formPasswordInputProperties());
+                        if (password) {
+                            if (i + 1 > repeat) {
+                                throw new DecrypterException(DecrypterException.PASSWORD);
+                            }
+                            prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
+                            continue;
+                        }
+                        break;
+                    }
                     protectedForm = formProtected();
-                    prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
-                    continue;
+                    /*
+                     * I doubt that the following is required, (confirmationCheck() ||
+                     * br.containsHTML("<strong>Prove you are human</strong>")). it shouldn't be, but if the form is present even after
+                     * successful captcha&|password step, we will need to reinstate. -raz 20150510
+                     */
+                    if (protectedForm != null) {
+                        if (i + 1 > repeat) {
+                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                        }
+                        prepareCaptchaAdress(protectedForm.getHtmlCode(), captchaRegex);
+                        continue;
+                    }
                 }
                 break;
             }
-            if (!"notDetected".equals(cType) && (br.containsHTML(captchaRegex.get(cType)) || br.containsHTML("<strong>Prove you are human</strong>") || confirmationCheck())) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
-            }
-            if (password) {
-                throw new DecrypterException(DecrypterException.PASSWORD);
-            }
         }
+    }
+
+    protected boolean isCaptchaSkipable() {
+        return false;
     }
 
     protected boolean confirmationCheck() {
         return false;
     }
 
-    protected String getBaseData() {
-        return "post-protect=1";
+    protected String[][] formPasswordInputProperties() {
+        return new String[][] { { "type", "password" }, { "name", formPasswordInputKeyName() } };
     }
 
-    protected String[][] formPasswordInputProperties() {
-        return new String[][] { { "type", "password" }, { "name", "link-password" } };
+    protected String formPasswordInputKeyName() {
+        return "link-password";
     }
 
     /**
@@ -409,30 +433,44 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
      * @param inputProperties
      * @return
      */
-    protected final boolean formInputFieldsContainsProperties(final Form form, final String[][] inputProperties) {
+    protected final boolean formInputFieldContainsProperties(final Form form, final String[][] inputProperties) {
+        if (form == null || inputProperties == null) {
+            return false;
+        }
         for (final InputField i : form.getInputFields()) {
-            // dynamic type
-            boolean d = false;
+            ArrayList<Boolean> v = new ArrayList<Boolean>(inputProperties.length);
+            int d = -1;
             for (final String[] fpip : inputProperties) {
-                final String value = i.getProperty(fpip[0], null);
-                if (fpip[1].equalsIgnoreCase(value)) {
-                    d = true;
+                d++;
+                v.add(d, null);
+                if ("type".equalsIgnoreCase(fpip[0]) && fpip[1].equalsIgnoreCase(i.getType())) {
+                    v.add(d, Boolean.TRUE);
+                } else if ("name".equalsIgnoreCase(fpip[0]) && fpip[1].equalsIgnoreCase(i.getKey())) {
+                    v.add(d, Boolean.TRUE);
+                } else if ("value".equalsIgnoreCase(fpip[0]) && fpip[1].equalsIgnoreCase(i.getValue())) {
+                    v.add(d, Boolean.TRUE);
+                } else {
+                    final String property = i.getProperty(fpip[0], null);
+                    if (fpip[1].equalsIgnoreCase(property)) {
+                        v.add(d, Boolean.TRUE);
+                    }
                 }
             }
-            if (d) {
-                return true;
+            Boolean isMapAllTrue = null;
+            for (int x = 0; x != inputProperties.length; x++) {
+                final Boolean b = v.get(x);
+                if (Boolean.FALSE.equals(b) || b == null) {
+                    isMapAllTrue = Boolean.FALSE;
+                    break;
+                } else if (Boolean.TRUE.equals(b)) {
+                    isMapAllTrue = Boolean.TRUE;
+                }
+            }
+            if (Boolean.TRUE.equals(isMapAllTrue)) {
+                return isMapAllTrue;
             }
         }
         return false;
-
-        // if (key != null && key.equals(field.getKey())) {
-        // if (value == null && field.getValue() == null) {
-        // return f;
-        // }
-        // if (value != null && value.equals(field.getValue())) {
-        // return f;
-        // }
-        // }
     }
 
     protected Form formProtected() {
