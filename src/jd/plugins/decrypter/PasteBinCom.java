@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://(www\\.)?pastebin\\.com/(raw.*?=)?[0-9A-Za-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://(www\\.)?pastebin\\.com/(?:download\\.php\\?i=|raw.*?=)?[0-9A-Za-z]+" }, flags = { 0 })
 public class PasteBinCom extends PluginForDecrypt {
 
     public PasteBinCom(PluginWrapper wrapper) {
@@ -44,6 +44,9 @@ public class PasteBinCom extends PluginForDecrypt {
             offline.setAvailable(false);
             offline.setProperty("offline", true);
             decryptedLinks.add(offline);
+            return decryptedLinks;
+        } else if (parameter.contains("/download.php?i=")) {
+            decryptedLinks.add(createDownloadlink("directhttp://" + parameter));
             return decryptedLinks;
         }
         br.setFollowRedirects(true);
