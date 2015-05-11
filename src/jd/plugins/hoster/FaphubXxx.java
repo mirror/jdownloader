@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "faphub.xxx" }, urls = { "http://(www\\.)?faphub\\.xxx/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "faphub.xxx" }, urls = { "http://(www\\.)?faphubdecrypted\\.xxx/video/\\d+" }, flags = { 0 })
 public class FaphubXxx extends PluginForHost {
 
     public FaphubXxx(PluginWrapper wrapper) {
@@ -58,6 +58,11 @@ public class FaphubXxx extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.faphub.xxx/tos";
+    }
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("faphubdecrypted.xxx/", "faphub.xxx/"));
     }
 
     @SuppressWarnings("deprecation")

@@ -131,6 +131,15 @@ public class VKontakteRu extends PluginForDecrypt {
     public static final String      TEMPORARILYBLOCKED                      = "You tried to load the same page more than once in one second|Вы попытались загрузить более одной однотипной страницы в секунду|Pr\\&#243;bujesz za\\&#322;adowa\\&#263; wi\\&#281;cej ni\\&#380; jedn\\&#261; stron\\&#281; w ci\\&#261;gu sekundy|Sie haben versucht die Seite mehrfach innerhalb einer Sekunde zu laden";
     private static final String     FILEOFFLINE                             = "(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)";
 
+    /* Possible/Known types of single vk-wall-posts */
+    private static final String     wallpost_type_photo                     = "photo";
+    private static final String     wallpost_type_doc                       = "doc";
+    private static final String     wallpost_type_audio                     = "audio";
+    private static final String     wallpost_type_link                      = "link";
+    private static final String     wallpost_type_video                     = "video";
+    private static final String     wallpost_type_album                     = "album";
+    private static final String     wallpost_type_poll                      = "poll";
+
     /* Internal settings / constants */
     /*
      * Whenever we found this number of links or more, quit the decrypter and add a [b]LOOPBACK_LINK[/b] to continue later in order to avoid
@@ -1272,20 +1281,29 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         for (Map<String, Object> attachment : attachments) {
             try {
+                String owner_id = null;
                 final String type = (String) attachment.get("type");
                 if (type == null) {
                     return;
                 }
                 Map<String, Object> typeObject = (Map<String, Object>) attachment.get(type);
                 if (typeObject == null) {
-                    System.out.println("No Attachment for type " + type + " in " + attachment);
+                    logger.warning("No Attachment for type " + type + " in " + attachment);
+                    return;
+                }
+                /* links don't necessarily have an owner and we don't need it for them either. */
+                try {
+                    if (type.equals(wallpost_type_photo) || type.equals(wallpost_type_doc) || type.equals(wallpost_type_audio) || type.equals(wallpost_type_video) || type.equals(wallpost_type_album)) {
+                        owner_id = typeObject.get("owner_id").toString();
+                    }
+                } catch (final Throwable e) {
+                    logger.warning("WTF");
                 }
                 DownloadLink dl = null;
-                final String owner_id = typeObject.get("owner_id").toString();
                 String content_id = null;
                 String title = null;
                 String filename = null;
-                if (type.equals("photo") && vkwall_grabphotos) {
+                if (type.equals(wallpost_type_photo) && vkwall_grabphotos) {
                     content_id = typeObject.get("pid").toString();
                     final String album_id = typeObject.get("aid").toString();
                     final String wall_single_photo_content_url = getProtocoll() + "vk.com/" + wall_ID + "?own=1&z=photo" + owner_id + "_" + content_id + "/" + wall_list_id;
@@ -1304,7 +1322,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     dl.setProperty("directlinks", typeObject);
                     dl.setProperty("photo_list_id", wall_list_id);
                     dl.setProperty("photo_module", "wall");
-                } else if (type.equals("doc") && vkwall_grabdocs) {
+                } else if (type.equals(wallpost_type_doc) && vkwall_grabdocs) {
                     content_id = typeObject.get("did").toString();
                     title = Encoding.htmlDecode((String) typeObject.get("title"));
                     final String url = (String) typeObject.get("url");
@@ -1320,7 +1338,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     dl.setDownloadSize(((Number) typeObject.get("size")).longValue());
                     dl.setName(filename);
                     dl.setAvailable(true);
-                } else if (type.equals("audio") && vkwall_grabaudio) {
+                } else if (type.equals(wallpost_type_audio) && vkwall_grabaudio) {
                     content_id = typeObject.get("aid").toString();
                     final String artist = Encoding.htmlDecode(typeObject.get("artist").toString());
                     title = Encoding.htmlDecode((String) typeObject.get("title"));
@@ -1348,20 +1366,20 @@ public class VKontakteRu extends PluginForDecrypt {
                         dl.setAvailable(url != null && url.length() > 0);
                     }
                     dl.setFinalFileName(filename);
-                } else if (type.equals("link") && vkwall_grablink) {
+                } else if (type.equals(wallpost_type_link) && vkwall_grablink) {
                     final String url = (String) typeObject.get("url");
                     if (url == null) {
                         continue;
                     }
                     dl = createDownloadlink(url);
-                } else if (type.equals("video") && vkwall_grabvideo) {
+                } else if (type.equals(wallpost_type_video) && vkwall_grabvideo) {
                     content_id = typeObject.get("vid").toString();
                     dl = createDownloadlink(getProtocoll() + "vk.com/video" + owner_id + "_" + content_id);
-                } else if (type.equals("album") && vkwall_grabalbums) {
+                } else if (type.equals(wallpost_type_album) && vkwall_grabalbums) {
                     // it's string here. no idea why
                     final String album_id = typeObject.get("aid").toString();
                     dl = createDownloadlink(getProtocoll() + "vk.com/album" + owner_id + "_" + album_id);
-                } else if (type.equals("poll")) {
+                } else if (type.equals(wallpost_type_poll)) {
                     logger.info("Current post only contains a poll --> Skipping it");
                 } else {
                     logger.warning("Either the type of the current post is unsupported or not selected by the user: " + type);

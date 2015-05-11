@@ -125,6 +125,7 @@ public class UploadingCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public boolean checkLinks(DownloadLink[] urls) {
         if (urls == null || urls.length == 0) {
             return false;
@@ -169,6 +170,10 @@ public class UploadingCom extends PluginForHost {
                     if (fileid == null) {
                         logger.warning("Uploading.com availablecheck is broken!");
                         return false;
+                    }
+                    if (br.containsHTML("are no such files on Uploadi")) {
+                        dl.setAvailable(false);
+                        continue;
                     }
                     final Regex allMatches = new Regex(correctedHTML, "<div class=\"result clearfix (failed|ok)\">.+http://uploading\\.com/(files/)?(get/)?" + fileid + "/([^/\"]+).*?</a><span class=\"size\">([\\d\\.]+ (B(ytes)|KB|MB|GB))</span></div></div>");
                     final String status = allMatches.getMatch(0);
