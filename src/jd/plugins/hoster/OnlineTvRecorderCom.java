@@ -93,10 +93,14 @@ public class OnlineTvRecorderCom extends PluginForHost {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                     DLLINK = downloadLink.getDownloadURL();
                 } else {
-                    if (con.getResponseCode() == 400) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    if (con.getResponseCode() == 400) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                     // Stable workaround
                     get(downloadLink.getDownloadURL());
-                    if (br.containsHTML(">Aufnahme nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    if (br.containsHTML(">Aufnahme nicht gefunden")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                 }
                 DOWNLOADNOW = true;
                 return AvailableStatus.TRUE;
@@ -114,27 +118,38 @@ public class OnlineTvRecorderCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (DOWNLOADNOW) {
             if (DLLINK == null) {
                 final String apilink = br.getRegex("var apilink = \"(http://[^<>\"]*?)\"").getMatch(0);
-                if (apilink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (apilink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 // 2 hours waiting = maximum
                 for (int i = 1; i <= 240; i++) {
                     br.getPage(apilink);
                     DLLINK = getData("filedownloadlink");
-                    if (DLLINK != null) break;
+                    if (DLLINK != null) {
+                        break;
+                    }
                     final String currentPosition = getData("queueposition");
-                    if (currentPosition != null) downloadLink.getLinkStatus().setStatusText("In queue, current position is: " + currentPosition);
+                    if (currentPosition != null) {
+                        downloadLink.getLinkStatus().setStatusText("In queue, current position is: " + currentPosition);
+                    }
                     logger.info("In queue, current position is: " + currentPosition);
                     int wait = 30;
                     final String waittime = getData("refreshTime");
-                    if (waittime != null) wait = Integer.parseInt(waittime);
+                    if (waittime != null) {
+                        wait = Integer.parseInt(waittime);
+                    }
                     sleep(wait * 1000l, downloadLink);
                 }
-                if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (DLLINK == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 DLLINK = DLLINK.replace("\\", "");
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, -2);
@@ -165,7 +180,9 @@ public class OnlineTvRecorderCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -216,15 +233,17 @@ public class OnlineTvRecorderCom extends PluginForHost {
         }
         br.getPage(MAINPAGE);
         final String points = br.getRegex("<td align=\"right\"><a href=\"\\?aktion=gwp\">(\\d+(\\.\\d+)?)</a>").getMatch(0);
-        if (points != null)
+        if (points != null) {
             ai.setStatus("Registered User - " + points + " points left");
-        else
+        } else {
             ai.setStatus("Registered User");
+        }
         ai.setUnlimitedTraffic();
         account.setValid(true);
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         // requestFileInformation(link);
@@ -233,7 +252,18 @@ public class OnlineTvRecorderCom extends PluginForHost {
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: reduce connections to this host to continue downloading", 5 * 60 * 1000l);
+            if (dl.getConnection().getResponseCode() == 503) {
+                long wait = 30 * 60 * 1001l;
+                String wait_string = null;
+                final String header_errmsg = br.getHeaders().get("X-OTR-Error-Message");
+                if (header_errmsg != null) {
+                    wait_string = new Regex(wait_string, "(\\d+) Sekunden").getMatch(0);
+                }
+                if (wait_string != null) {
+                    wait = Long.parseLong(wait_string) * 1001l;
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: reduce connections to this host to continue downloading", wait);
+            }
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

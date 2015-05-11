@@ -50,17 +50,15 @@ public class ChoMikujPl extends PluginForDecrypt {
 
     /* ChomikujPlScript */
 
-    private final String         PASSWORDTEXT             = "Ten folder jest (<b>)?zabezpieczony oddzielnym hasłem";
-    private String               FOLDERPASSWORD           = null;
-    private ArrayList<Integer>   REGEXSORT                = new ArrayList<Integer>();
-    private String               ERROR                    = "Decrypter broken for link: ";
-    private String               REQUESTVERIFICATIONTOKEN = null;
-    private final String         PAGEDECRYPTLINK          = "https?://chomikujpagedecrypt\\.pl/.+";
-    private final String         ENDINGS                  = "\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|url|viv|vivo|vob|webm|wav|wmv|wma|wpl|xla|xls|xpi|zeno|zip)";
-    private final String         UNSUPPORTED              = "http://(www\\.)?chomikuj\\.pl//?(action/[^<>\"]+|(Media|Kontakt|PolitykaPrywatnosci|Empty|Abuse|Sugestia|LostPassword|Zmiany|Regulamin|Platforma)\\.aspx|favicon\\.ico|konkurs_literacki/info)";
-    private static Object        LOCK                     = new Object();
-
-    private static final boolean FORCEV2                  = false;
+    private final String       PASSWORDTEXT             = "Ten folder jest (<b>)?zabezpieczony oddzielnym hasłem";
+    private String             FOLDERPASSWORD           = null;
+    private ArrayList<Integer> REGEXSORT                = new ArrayList<Integer>();
+    private String             ERROR                    = "Decrypter broken for link: ";
+    private String             REQUESTVERIFICATIONTOKEN = null;
+    private final String       PAGEDECRYPTLINK          = "https?://chomikujpagedecrypt\\.pl/.+";
+    private final String       ENDINGS                  = "\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|url|viv|vivo|vob|webm|wav|wmv|wma|wpl|xla|xls|xpi|zeno|zip)";
+    private final String       UNSUPPORTED              = "http://(www\\.)?chomikuj\\.pl//?(action/[^<>\"]+|(Media|Kontakt|PolitykaPrywatnosci|Empty|Abuse|Sugestia|LostPassword|Zmiany|Regulamin|Platforma)\\.aspx|favicon\\.ico|konkurs_literacki/info)";
+    private static Object      LOCK                     = new Object();
 
     public int getMaxConcurrentProcessingInstances() {
         return 4;
@@ -194,7 +192,9 @@ public class ChoMikujPl extends PluginForDecrypt {
             br.getPage(parameter);
         }
 
-        if (br.containsHTML("Nie znaleziono \\- błąd 404")) {
+        final String numberof_files = br.getRegex("class=\"bold\">(\\d+)</span> plik\\&#243;w<br />").getMatch(0);
+
+        if (br.containsHTML("Nie znaleziono \\- błąd 404") || br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("class=\"greenActionButton\"|name=\"FolderId\"") || "0".equals(numberof_files)) {
             // Offline
             final DownloadLink dloffline = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
             dloffline.setAvailable(false);
@@ -602,15 +602,6 @@ public class ChoMikujPl extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
-    }
-
-    private void addRegexInt(int filename, int filenameExt, int filesize, int fileid, int fullfilename) {
-        REGEXSORT.clear();
-        REGEXSORT.add(filename);
-        REGEXSORT.add(filenameExt);
-        REGEXSORT.add(filesize);
-        REGEXSORT.add(fileid);
-        REGEXSORT.add(fullfilename);
     }
 
     public int getPageCount(final String theParameter) throws NumberFormatException, DecrypterException, IOException {

@@ -78,7 +78,7 @@ public class TwitterCom extends PluginForDecrypt {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(user);
             int reloadNumber = 1;
-            String maxid = br.getRegex("data\\-max\\-id=\"(\\d+)\"").getMatch(0);
+            String maxid = br.getRegex("data-min-position=\"(\\d+)\"").getMatch(0);
             do {
                 try {
                     if (this.isAbort()) {
@@ -90,7 +90,7 @@ public class TwitterCom extends PluginForDecrypt {
                 }
                 logger.info("Decrypting reloadnumber " + reloadNumber + ", found " + decryptedLinks.size() + " links till now");
                 if (reloadNumber > 1) {
-                    maxid = br.getRegex("\"max_id\":\"(\\d+)").getMatch(0);
+                    maxid = br.getRegex("\"min_position\":\"(\\d+)").getMatch(0);
                 }
                 if (maxid == null) {
                     logger.info("Either there is nothing to decrypt or the decrypter is broken: " + parameter);
@@ -140,7 +140,7 @@ public class TwitterCom extends PluginForDecrypt {
                 if (addedlinks_all == 0) {
                     break;
                 }
-                br.getPage("https://twitter.com/i/profiles/show/" + user + "/media_timeline?include_available_features=1&include_entities=1&max_id=" + maxid);
+                br.getPage("https://twitter.com/i/profiles/show/" + user + "/media_timeline?include_available_features=1&include_entities=1&max_position=" + maxid);
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 reloadNumber++;
             } while (br.containsHTML("\"has_more_items\":true"));

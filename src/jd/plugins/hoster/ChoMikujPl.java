@@ -87,6 +87,7 @@ public class ChoMikujPl extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        prepBR(this.br);
         // Offline from decrypter
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -536,6 +537,7 @@ public class ChoMikujPl extends PluginForHost {
                 br.setCookie(MAINPAGE, "cookiesAccepted", "1");
                 br.setCookie(MAINPAGE, "spt", "0");
                 br.setCookie(MAINPAGE, "rcid", "1");
+                prepBR(this.br);
 
                 postPageRaw(this.br, "http://chomikuj.pl/" + Encoding.urlEncode(account.getUser()), "ReturnUrl=%2F" + Encoding.urlEncode(account.getUser()) + "&Login=" + Encoding.urlEncode(account.getUser()) + "&Password=" + Encoding.urlEncode(account.getPass()) + "&rememberLogin=true&rememberLogin=false&topBar_LoginBtn=Zaloguj");
                 getPage(this.br, "http://chomikuj.pl/" + Encoding.urlEncode(account.getUser()));
@@ -576,6 +578,10 @@ public class ChoMikujPl extends PluginForHost {
 
     private String correctBR(final String input) {
         return input.replace("\\", "");
+    }
+
+    private void prepBR(final Browser br) {
+        br.setAllowedResponseCodes(500);
     }
 
     /**

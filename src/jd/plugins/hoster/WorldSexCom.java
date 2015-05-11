@@ -64,7 +64,10 @@ public class WorldSexCom extends PluginForHost {
             if (filename == null) {
                 filename = br.getRegex("<title>([^<>\"]*?)at Worldsex Movies</title>").getMatch(0);
             }
-            DLLINK = br.getRegex("url: (?:\\'|\")(http://[^<>\"]*?)(?:\\'|\")").getMatch(0);
+            if (filename == null) {
+                filename = new Regex(downloadLink.getDownloadURL(), "worldsex\\.com/videos/([a-z0-9\\-]+)\\d+\\.html$").getMatch(0);
+            }
+            DLLINK = br.getRegex("(?:url|file): (?:\\'|\")(http://[^<>\"]*?)(?:\\'|\")").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

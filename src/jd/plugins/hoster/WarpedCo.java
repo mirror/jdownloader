@@ -49,10 +49,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rabidfiles.com" }, urls = { "https?://(www\\.)?rabidfiles\\.com/[A-Za-z0-9]+" }, flags = { 2 })
-public class RabitFilesCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "warped.co" }, urls = { "https?://(www\\.)?warped\\.co/[A-Za-z0-9]+" }, flags = { 2 })
+public class WarpedCo extends PluginForHost {
 
-    public RabitFilesCom(PluginWrapper wrapper) {
+    public WarpedCo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
     }
@@ -60,9 +60,9 @@ public class RabitFilesCom extends PluginForHost {
     // For sites which use this script: http://www.yetishare.com/
     // YetiShareBasic Version 0.5.8-psp
     // mods:
-    // limit-info: account untested, set FREE limits
+    // limit-info: no limits
     // protocol: no https
-    // captchatype: solvemedia
+    // captchatype: null, solvemedia, reCaptchaV1, reCaptchaV2
     // other:
 
     @Override
@@ -71,8 +71,8 @@ public class RabitFilesCom extends PluginForHost {
     }
 
     /* Basic constants */
-    private final String         mainpage                                     = "http://rabidfiles.com";
-    private final String         domains                                      = "(rabidfiles\\.com)";
+    private final String         mainpage                                     = "http://warped.co";
+    private final String         domains                                      = "(warped\\.co)";
     private final String         type                                         = "html";
     private static final int     wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
     private static final int     additional_WAIT_SECONDS                      = 3;
@@ -256,7 +256,7 @@ public class RabitFilesCom extends PluginForHost {
                         success = true;
                         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
                     }
-                    if (!dl.getConnection().isContentDisposition() && !dl.getConnection().getContentType().contains("html")) {
+                    if (dl.getConnection().isContentDisposition()) {
                         success = true;
                         break;
                     }
@@ -268,7 +268,7 @@ public class RabitFilesCom extends PluginForHost {
                     }
                 }
             }
-            if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
+            if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
                 if (captcha && !success) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -461,7 +461,7 @@ public class RabitFilesCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage(this.getProtocol() + "www." + this.getHost() + "/");
+                br.getPage(this.getProtocol() + this.getHost() + "/");
                 final String lang = System.getProperty("user.language");
                 final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                 if (useOldLoginMethod) {
@@ -585,7 +585,7 @@ public class RabitFilesCom extends PluginForHost {
             String dllink = link.getDownloadURL();
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
             handleServerErrors();
-            if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
+            if (!dl.getConnection().isContentDisposition()) {
                 logger.warning("The final dllink seems not to be a file, checking for errors...");
                 br.followConnection();
                 handleErrors();
@@ -598,7 +598,7 @@ public class RabitFilesCom extends PluginForHost {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, account_PREMIUM_RESUME, account_PREMIUM_MAXCHUNKS);
             }
             handleServerErrors();
-            if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
+            if (!dl.getConnection().isContentDisposition()) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 handleErrors();
