@@ -16,20 +16,16 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
-import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videowood.tv" }, urls = { "http://(www\\.)?videowood\\.tv/(embed|video)/[A-Za-z0-9]+" }, flags = { 0 })
-public class VideoWoodTv extends PluginForHost {
+public class VideoWoodTv extends antiDDoSForHost {
 
     public VideoWoodTv(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,29 +41,18 @@ public class VideoWoodTv extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("/video/", "/embed/"));
     }
 
-    private boolean cloudflare = false;
-
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        try {
-            br.getPage(link.getDownloadURL());
-        } catch (final BrowserException e) {
-            if (br.getHttpConnection().getResponseCode() == 503) {
-                link.getLinkStatus().setStatusText("Cannot break through cloudflare DDoS protection!");
-                cloudflare = true;
-                return AvailableStatus.UNCHECKABLE;
-            }
-            throw e;
-        }
-        if (br.containsHTML(">This video doesn\\'t exist|>Was deleted by user")) {
+        getPage(link.getDownloadURL());
+        if (br.containsHTML(">This video doesn't exist|>Was deleted by user")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("This video is not ready yet")) {
             link.getLinkStatus().setStatusText("Host says 'This video is not ready yet'");
             return AvailableStatus.TRUE;
         }
-        final String filename = br.getRegex("title: \"([^<>\"]*?)\"").getMatch(0);
+        final String filename = br.getRegex("title:\\s*(\"|')(.*?)\\1").getMatch(1);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -78,12 +63,10 @@ public class VideoWoodTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (cloudflare) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot break through cloudflare DDoS protection!", 3 * 60 * 60 * 1000l);
-        } else if (br.containsHTML("This video is not ready yet")) {
+        if (br.containsHTML("This video is not ready yet")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host says 'This video is not ready yet'", 30 * 60 * 1000l);
         }
-        final String dllink = br.getRegex("file: \"(http[^<>\"]*?)\"").getMatch(0);
+        final String dllink = br.getRegex("file:\\s*(\"|')(http.*?)\\1").getMatch(1);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
