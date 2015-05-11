@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "faststream.in" }, urls = { "https?://(www\\.)?faststream\\.in/[a-z0-9]{12}" }, flags = { 0 })
-public class FastStreamIn extends PluginForHost {
+public class FastStreamIn extends antiDDoSForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -97,17 +97,18 @@ public class FastStreamIn extends PluginForHost {
         return true;
     }
 
-    public void prepBrowser(final Browser br) {
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
         // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
-        br.setCookie(COOKIE_HOST, "lang", "english");
+        prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        return prepBr;
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
-        prepBrowser(br);
         getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
@@ -133,7 +134,7 @@ public class FastStreamIn extends PluginForHost {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                sendForm(download1);
+                submitForm(download1);
                 scanInfo(fileInfo);
             }
         }
@@ -231,7 +232,7 @@ public class FastStreamIn extends PluginForHost {
             if (download1 != null) {
                 waitTime(System.currentTimeMillis(), downloadLink);
                 download1.remove("method_premium");
-                sendForm(download1);
+                submitForm(download1);
                 checkErrors(downloadLink, false, passCode);
             }
             dllink = getDllink();
@@ -324,7 +325,7 @@ public class FastStreamIn extends PluginForHost {
                 if (!skipWaittime) {
                     waitTime(timeBefore, downloadLink);
                 }
-                sendForm(dlForm);
+                submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true, passCode);
                 dllink = getDllink();
@@ -420,13 +421,15 @@ public class FastStreamIn extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(final String page) throws Exception {
-        br.getPage(page);
+    @Override
+    protected void getPage(final String page) throws Exception {
+        super.getPage(page);
         correctBR();
     }
 
-    private void sendForm(final Form form) throws Exception {
-        br.submitForm(form);
+    @Override
+    protected void submitForm(final Form form) throws Exception {
+        super.submitForm(form);
         correctBR();
     }
 
