@@ -51,17 +51,29 @@ public class HundredTwentySexDiskCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.126disk.com/error.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.126disk.com/error.php") || br.getHttpConnection().getResponseCode() == 403 || br.containsHTML(">你访问的文件不存在。现在将转入首页！")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h1><img src=\\'[^<>\"]*?\\'>([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("class=\"nowrap file\\-name( [a-z0-9\\-]+)?\">([^<>\"]*?)</h1>").getMatch(1);
+        if (filename == null) {
+            filename = br.getRegex("class=\"nowrap file\\-name( [a-z0-9\\-]+)?\">([^<>\"]*?)</h1>").getMatch(1);
+        }
         String filesize = br.getRegex("<b>文件大小 ：</b>([^<>\"]*?)</li>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<table id=\"info_table\">[\t\n\r ]+<tr>[\t\n\r ]+<td width=\"160px;\">文件大小：([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filesize == null) {
+            filesize = br.getRegex("<table id=\"info_table\">[\t\n\r ]+<tr>[\t\n\r ]+<td width=\"160px;\">文件大小：([^<>\"]*?)</td>").getMatch(0);
+        }
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
         String md5 = br.getRegex(">M D 5值 ：</b>([a-z0-9]{32})</li>").getMatch(0);
-        if (md5 == null) md5 = br.getRegex("<td>文件MD5：([a-f0-9]{32})</td>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
+        if (md5 == null) {
+            md5 = br.getRegex("<td>文件MD5：([a-f0-9]{32})</td>").getMatch(0);
+        }
+        if (md5 != null) {
+            link.setMD5Hash(md5);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -70,11 +82,15 @@ public class HundredTwentySexDiskCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.getPage("http://www.126disk.com/download.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)\\.html$").getMatch(0) + "&share=0&type=wt&t=" + System.currentTimeMillis());
         final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.126disk\\.com/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(dllink), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("<title>Error</title>|<TITLE>无法找到该页</TITLE>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (br.containsHTML("<title>Error</title>|<TITLE>无法找到该页</TITLE>")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
