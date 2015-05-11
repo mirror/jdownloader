@@ -474,34 +474,24 @@ public class NitroFlareCom extends antiDDoSForHost {
                     final Browser captcha = br.cloneBrowser();
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                     final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(captcha);
-                    int repeat = 5;
-                    for (int i = 1; i != repeat; i++) {
-                        rc.setId(recap);
-                        rc.load();
-                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                        if (!inValidate(delay)) {
-                            sleep((Long.parseLong(delay) * 1000) - (System.currentTimeMillis() - startTime), downloadLink);
-                        }
-                        getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                        final String wrongCaptcha = getJson("accessLink");
-                        if ((!inValidate(wrongCaptcha) || "error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code"))) && i + 1 != repeat) {
-                            startTime = System.currentTimeMillis();
-                            continue;
-                        } else if ((!inValidate(wrongCaptcha) || "error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code"))) && i + 1 == repeat) {
-                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                        } else {
-                            break;
-                        }
+                    rc.setId(recap);
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                    if (!inValidate(delay)) {
+                        sleep((Long.parseLong(delay) * 1000) - (System.currentTimeMillis() - startTime), downloadLink);
+                    }
+                    getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                    if ("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code"))) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                 }
-
-            }
-            // some times error 4 is found here
-            handleApiErrors(account, downloadLink);
-            dllink = getJson("url");
-            if (inValidate(dllink)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // some times error 4 is found here
+                handleApiErrors(account, downloadLink);
+                dllink = getJson("url");
+                if (inValidate(dllink)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
