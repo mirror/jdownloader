@@ -637,6 +637,10 @@ public class DirectHTTP extends PluginForHost {
                 if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) == false) {
                     downloadLink.setProperty(DirectHTTP.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
+                    downloadLink.setChunksProgress(null);
+                    downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
             throw e;
