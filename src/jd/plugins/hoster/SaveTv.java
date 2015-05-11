@@ -25,8 +25,10 @@ import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
@@ -69,7 +71,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/archive/VideoArchiveDetails\\.cfm\\?TelecastID=\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/archive/VideoArchiveDetails\\.cfm\\?TelecastID=\\d+" }, flags = { 2 })
 public class SaveTv extends PluginForHost {
 
     /* Static information */
@@ -93,6 +95,7 @@ public class SaveTv extends PluginForHost {
     public static final String   PROPERTY_ACCOUNT_API_SESSIONID            = "sessionid";
     private static final String  PROPERTY_DOWNLOADLINK_NORESUME            = "NORESUME";
     private static final String  PROPERTY_DOWNLOADLINK_NOCHUNKS            = "NOCHUNKS";
+    private static final String  PROPERTY_DOWNLOADLINK_ADSFREEFAILED_COUNT = "current_no_ads_free_available_retries";
 
     /* Host plugin settings stuff */
     private static final String  USEORIGINALFILENAME                       = "USEORIGINALFILENAME";
@@ -106,7 +109,7 @@ public class SaveTv extends PluginForHost {
     /* Text strings displayed to the user in various cases */
     private final String         USERTEXT_ADSFREEAVAILABLE                 = "Video ist werbefrei verfügbar";
     private final String         USERTEXT_ADSFREEANOTVAILABLE              = "Video ist nicht werbefrei verfügbar";
-    private final String         USERTEXT_NOCUTAVAILABLE                   = "Für diese Sendung steht (noch) keine Schnittliste zur Verfügung";
+    private final static String  USERTEXT_NOCUTAVAILABLE                   = "Für diese Sendung steht (noch) keine Schnittliste zur Verfügung";
     /* The list of server values displayed to the user */
     private final String[]       formats                                   = new String[] { "HD", "H.264 HQ", "H.264 MOBILE" };
 
@@ -144,8 +147,9 @@ public class SaveTv extends PluginForHost {
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS              = -1;
 
     /* Other API/site errorhandling constants */
-    private static final String  SITE_DL_IMPOSSIBLE                        = ">Diese Sendung kann leider nicht heruntergeladen werden, da die Aufnahme fehlerhaft ist";
-    private static final String  API_DL_IMPOSSIBLE                         = ">1418</ErrorCodeID>";
+    private static final String  HTML_SITE_DL_IMPOSSIBLE                   = ">Diese Sendung kann leider nicht heruntergeladen werden, da die Aufnahme fehlerhaft ist";
+    private static final String  HTML_API_DL_IMPOSSIBLE                    = ">1418</ErrorCodeID>";
+    public static final String   URL_LOGGED_OUT                            = "Token=MSG_LOGOUT_B";
     private static final String  DL_IMPOSSIBLE_USER_TEXT                   = JDL.L("plugins.hoster.SaveTv.dlImpossible", "Aufnahme fehlerhaft - Download momentan nicht möglich");
 
     /* Property / Filename constants */
@@ -169,17 +173,15 @@ public class SaveTv extends PluginForHost {
     private static final int     MAX_RETRIES_LOGIN                         = 10;
     private static final int     MAX_RETRIES_SAFE_REQUEST                  = 3;
 
+    private Account              currAcc                                   = null;
+    private DownloadLink         currDownloadLink                          = null;
+    private SubConfiguration     cfg                                       = null;
+
     @SuppressWarnings("deprecation")
     public SaveTv(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.save.tv/stv/s/obj/registration/RegPage1.cfm");
-        if (!isJDStable()) {
-            setConfigElements();
-        }
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
+        setConfigElements();
     }
 
     @Override
@@ -211,6 +213,12 @@ public class SaveTv extends PluginForHost {
         return false;
     }
 
+    private void setConstants(final Account acc, final DownloadLink dl) {
+        this.currAcc = acc;
+        this.currDownloadLink = dl;
+        cfg = this.getPluginConfig();
+    }
+
     /**
      * TODO: Known Bugs in API mode: API cannot differ between different video formats -> Cannot show any error in case user choice is not
      * available. --> NO FATAL bugs ---> Plugin will work fine with them!
@@ -223,14 +231,9 @@ public class SaveTv extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         link.setProperty("type", EXTENSION);
-        try {
-            /* Set linkID for correct dupe-check */
-            if (link.getLinkID() == null || !link.getLinkID().matches("\\d+")) {
-                link.setLinkID(getTelecastId(link));
-            }
-        } catch (final Throwable e) {
-            /* Not available in old 0.9.581 Stable */
-            /* TODO: Use getLinkID() instead of getTelecastId(DownloadLink) once JD1 is dead */
+        /* Set linkID for correct dupe-check */
+        if (link.getLinkID() == null || !link.getLinkID().matches("\\d+")) {
+            link.setLinkID(getTelecastId(link));
         }
         /* Show telecast-ID + extension as dummy name for all error cases */
         if (link.getName() != null && (link.getName().contains(getTelecastId(link)) && !link.getName().endsWith(EXTENSION) || link.getName().contains("VideoArchiveDetails.cfm"))) {
@@ -244,6 +247,7 @@ public class SaveTv extends PluginForHost {
             }
             return AvailableStatus.UNCHECKABLE;
         }
+        setConstants(aa, link);
         if (this.getPluginConfig().getBooleanProperty(DISABLE_LINKCHECK, false) && !FORCE_LINKCHECK) {
             link.getLinkStatus().setStatusText("Linkcheck deaktiviert - korrekter Dateiname erscheint erst beim Downloadstart");
             return AvailableStatus.TRUE;
@@ -252,7 +256,7 @@ public class SaveTv extends PluginForHost {
         String filesize = null;
 
         if (is_API_enabled()) {
-            API_SESSIONID = api_login(this.br, aa, false);
+            API_SESSIONID = login_api(this.br, aa, false);
             /* Last revision with old filename-convert handling: 26988 */
             api_doSoapRequestSafe(this.br, aa, "http://tempuri.org/ITelecast/GetTelecastDetail", "<telecastIds xmlns:a=\"http://schemas.microsoft.com/2003/10/Serialization/Arrays\" xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\"><a:int>" + getTelecastId(link) + "</a:int></telecastIds><detailLevel>2</detailLevel>");
             if (!br.containsHTML("<a:TelecastDetail>")) {
@@ -262,7 +266,7 @@ public class SaveTv extends PluginForHost {
             parseFilenameInformation_api(link, br.toString());
             parseQualityTag(link, null);
         } else {
-            site_login(this.br, aa, false);
+            login_site(this.br, aa, false);
             final String telecast_ID = getTelecastId(link);
             getPageSafe("https://www.save.tv/STV/M/obj/archive/JSON/VideoArchiveDetailsApi.cfm?TelecastID=" + telecast_ID, aa);
             if (!br.getURL().contains("/JSON/")) {
@@ -291,8 +295,8 @@ public class SaveTv extends PluginForHost {
             link.setDownloadSize(calculateFilesize(getLongProperty(link, "site_runtime_minutes", 0)));
         }
         /* TODO: Check if this errormessage still exists */
-        if (br.containsHTML(SITE_DL_IMPOSSIBLE)) {
-            if (br.containsHTML(SITE_DL_IMPOSSIBLE)) {
+        if (br.containsHTML(HTML_SITE_DL_IMPOSSIBLE)) {
+            if (br.containsHTML(HTML_SITE_DL_IMPOSSIBLE)) {
                 link.getLinkStatus().setStatusText(DL_IMPOSSIBLE_USER_TEXT);
             }
         }
@@ -567,7 +571,7 @@ public class SaveTv extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked", "unused", "rawtypes" })
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         synchronized (LOCK) {
@@ -581,6 +585,7 @@ public class SaveTv extends PluginForHost {
         String downloadWithoutAds_request_value = Boolean.toString(preferAdsFree);
         FORCE_LINKCHECK = true;
         requestFileInformation(downloadLink);
+        setConstants(account, downloadLink);
 
         /* Check if the content has been recorded already! */
         final long runtime_end = getLongProperty(downloadLink, "originaldate_end", System.currentTimeMillis() + 1);
@@ -605,7 +610,7 @@ public class SaveTv extends PluginForHost {
             }
         } else {
             /* TODO: Check if this errormessage still exists */
-            if (br.containsHTML(SITE_DL_IMPOSSIBLE)) {
+            if (br.containsHTML(HTML_SITE_DL_IMPOSSIBLE)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, DL_IMPOSSIBLE_USER_TEXT, 30 * 60 * 1000l);
             }
             /* Check if ads-free version is available */
@@ -632,19 +637,21 @@ public class SaveTv extends PluginForHost {
         if (preferAdsFree && !this.ISADSFREEAVAILABLE) {
             logger.info("Ad-free version is unavailable");
             final long maxRetries = getLongProperty(cfg, ADS_FREE_UNAVAILABLE_MAXRETRIES, defaultADS_FREE_UNAVAILABLE_MAXRETRIES);
-            long currentTryCount = getLongProperty(downloadLink, "curren_no_ads_free_available_retries", 0);
+            long currentTryCount = getLongProperty(downloadLink, PROPERTY_DOWNLOADLINK_ADSFREEFAILED_COUNT, 0);
             final boolean load_with_ads = (maxRetries != 0 && currentTryCount >= maxRetries);
 
-            if (!load_with_ads) {
+            /* Always increase error counter, even if the user downloads the version with ads. */
+            currentTryCount++;
+            downloadLink.setProperty(PROPERTY_DOWNLOADLINK_ADSFREEFAILED_COUNT, currentTryCount);
+
+            if (load_with_ads) {
+                logger.info("Ad-free version is unavailable --> Downloading version with ads");
+                downloadWithoutAds_request_value = "false";
+            } else {
                 logger.info("Ad-free version is unavailable --> Waiting");
-                currentTryCount++;
-                downloadLink.setProperty("curren_no_ads_free_available_retries", currentTryCount);
                 logger.info("--> Throw Exception_no_ads_free_1 | Try " + currentTryCount + "/" + maxRetries);
                 final long userDefinedWaitHours = getLongProperty(cfg, ADS_FREE_UNAVAILABLE_HOURS, SaveTv.defaultADS_FREE_UNAVAILABLE_HOURS);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_NOCUTAVAILABLE, userDefinedWaitHours * 60 * 60 * 1000l);
-            } else {
-                logger.info("Ad-free version is unavailable --> Downloading version with ads");
-                downloadWithoutAds_request_value = "false";
             }
         }
 
@@ -657,19 +664,19 @@ public class SaveTv extends PluginForHost {
             for (final String format : formats) {
                 api_postDownloadPage(downloadLink, format, downloadWithoutAds_request_value);
                 /* TODO: Decide whether we want to throw an error here or try until we find an existing format. */
-                if (br.containsHTML(API_DL_IMPOSSIBLE) && stv_request_selected_format_value == API_FORMAT_HD) {
+                if (br.containsHTML(HTML_API_DL_IMPOSSIBLE) && stv_request_selected_format_value == API_FORMAT_HD) {
                     // continue;
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_PREFERREDFORMATNOTAVAILABLE, 4 * 60 * 60 * 1000l);
                 }
                 break;
             }
-            if (br.containsHTML(API_DL_IMPOSSIBLE)) {
+            if (br.containsHTML(HTML_API_DL_IMPOSSIBLE)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, DL_IMPOSSIBLE_USER_TEXT, 30 * 60 * 1000l);
             }
             dllink = br.getRegex("<a:DownloadUrl>(http://[^<>\"]*?)</a").getMatch(0);
         } else {
             stv_request_selected_format_value = site_get_format_request_value();
-            site_GetDownloadPage(downloadLink, stv_request_selected_format_value, downloadWithoutAds_request_value);
+            site_AccessDownloadPage(downloadLink, stv_request_selected_format_value, downloadWithoutAds_request_value);
             /* TODO: Check if their new system still has this particular errormessage */
             if (br.containsHTML("Die Aufnahme liegt nicht im gewünschten Format vor")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_PREFERREDFORMATNOTAVAILABLE, 4 * 60 * 60 * 1000l);
@@ -688,16 +695,18 @@ public class SaveTv extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Versuch " + currentTryCount + "/" + maxRetries + "Serverfehler: 'Leider enthält Ihre Aufnahme nur Werbung' (HD Format gewählt aber nicht verfügbar)", waitHours * 60 * 60 * 1000l);
                 } else {
                     logger.info("--> Max retries reached: " + maxRetries + " --> Trying to download adsfree version");
-                    site_GetDownloadPage(downloadLink, stv_request_selected_format_value, "false");
+                    site_AccessDownloadPage(downloadLink, stv_request_selected_format_value, "false");
                     if (br.containsHTML("\"Leider enthält Ihre Aufnahme nur Werbung")) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: 'Leider enthält Ihre Aufnahme nur Werbung' (Ausweichen auf HQ Format hat nichts gebracht)", 12 * 60 * 60 * 1000l);
                     }
                 }
-                if (br.containsHTML("\"NOK\",\"unknown error\"")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler - finaler Downloadlink wurde nicht zurückgegeben: '\"NOK\",\"unknown error\"'", 15 * 60 * 1000l);
-                }
             }
-            dllink = br.getRegex("(\\'|\")(http://[^<>\"\\']+/\\?m=dl)(\\'|\")").getMatch(1);
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final ArrayList<Object> ressourcelist = (ArrayList) entries.get("ARRVIDEOURL");
+            final Object dllink_object = ressourcelist.get(2);
+            if (dllink_object instanceof String) {
+                dllink = (String) dllink_object;
+            }
         }
         if (dllink == null) {
             logger.warning("Final downloadlink (dllink) is null");
@@ -747,14 +756,10 @@ public class SaveTv extends PluginForHost {
         server_filename = fixCharIssues(server_filename);
         server_filename = server_filename.substring(0, server_filename.lastIndexOf("."));
         downloadLink.setProperty("server_filename", server_filename);
-        try {
-            /* This is for checking server speed. */
-            final String previouscomment = downloadLink.getComment();
-            if (previouscomment == null || previouscomment.contains("Aktuell/Zuletzt verwendeter direkter Downloadlink:")) {
-                downloadLink.setComment("Aktuell/Zuletzt verwendeter direkter Downloadlink: " + dllink);
-            }
-        } catch (final Throwable e) {
-            /* Not available in old 0.9.581 Stable */
+        /* This is for checking server speed. */
+        final String previouscomment = downloadLink.getComment();
+        if (previouscomment == null || previouscomment.contains("Aktuell/Zuletzt verwendeter direkter Downloadlink:")) {
+            downloadLink.setComment("Aktuell/Zuletzt verwendeter direkter Downloadlink: " + dllink);
         }
 
         final String final_filename = getFilename(downloadLink);
@@ -819,6 +824,7 @@ public class SaveTv extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
+        setConstants(account, null);
         loginSafe(this.br, account, true);
         /* We're logged in - don't fail here! */
         String acctype = null;
@@ -904,14 +910,14 @@ public class SaveTv extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (is_API_enabled()) {
-            API_SESSIONID = api_login(br, account, force);
+            API_SESSIONID = login_api(br, account, force);
         } else {
-            site_login(br, account, force);
+            login_site(br, account, force);
         }
     }
 
     @SuppressWarnings("unchecked")
-    public static void site_login(final Browser br, final Account account, final boolean force) throws IOException, PluginException {
+    public static void login_site(final Browser br, final Account account, final boolean force) throws IOException, PluginException {
         final String lang = System.getProperty("user.language");
         site_prepBrowser(br);
         synchronized (LOCK) {
@@ -961,7 +967,7 @@ public class SaveTv extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public static String api_login(final Browser br, final Account account, final boolean force) throws IOException, PluginException {
+    public static String login_api(final Browser br, final Account account, final boolean force) throws IOException, PluginException {
         final String lang = System.getProperty("user.language");
         String api_sessionid = account.getStringProperty(PROPERTY_ACCOUNT_API_SESSIONID, null);
         final long lastUse = getLongProperty(account, "lastuse", -1l);
@@ -1053,8 +1059,8 @@ public class SaveTv extends PluginForHost {
          * Max 30 logins possible Max 3 accesses of the link possible -> Max 33 total requests
          */
         for (int i = 1; i <= MAX_RETRIES_SAFE_REQUEST; i++) {
-            getPageCorrectBr(this.br, url);
-            if (br.getURL().contains("Token=MSG_LOGOUT_B")) {
+            this.br.getPage(url);
+            if (br.getURL().contains(URL_LOGGED_OUT)) {
                 logger.info("Refreshing cookies to continue downloading " + i + " of " + MAX_RETRIES_SAFE_REQUEST);
                 br.clearCookies(COOKIE_HOST);
                 loginSafe(br, acc, true);
@@ -1063,55 +1069,66 @@ public class SaveTv extends PluginForHost {
             if (i > 1) {
                 logger.info("Successfully refreshed cookies to access url: " + url);
             }
+            handleErrorsSiteJson(br);
             break;
         }
     }
 
-    /* Avoid 503 server errors */
-    @SuppressWarnings("unused")
-    private void postPageSafe(final Browser br, final String url, final String postData) throws IOException, PluginException, InterruptedException {
-        for (int i = 1; i <= 3; i++) {
-            try {
-                br.postPage(url, postData);
-            } catch (final BrowserException e) {
-                if (br.getRequest().getHttpConnection().getResponseCode() == 503) {
-                    logger.info("503 BrowserException occured, retry " + i + " of 3");
-                    Thread.sleep(3000);
-                    continue;
-                }
-                logger.info("Unhandled BrowserException occured...");
-                throw e;
+    /* Handles website requests + errorhandling. */
+    private void postPageSafe(final Browser br, final String url, final String postData) throws Exception {
+        br.postPage(url, postData);
+        handleErrorsSiteJson(br);
+    }
+
+    /*
+     * Handles website json errors.
+     */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private void handleErrorsSiteJson(final Browser br) throws Exception {
+        /*
+         * NOT use the json parser für the first check as especially when used via decrypter, the amount of data can be huge which can lead
+         * to parser memory problems/crashes.
+         */
+        final boolean isInErrorState = br.containsHTML("\\d+\\.\\d+E\\d+,\"NOK\",\"");
+        if (isInErrorState) {
+            final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final ArrayList<Object> errorlist = (ArrayList) entries.get("ARRVIDEOURL");
+            final String errormessage = (String) errorlist.get(2);
+            if (errormessage.contains("Aufnahme zu betrachten, laden Sie bitte die ungeschnittene Version")) {
+                final long userDefinedWaitHours = getLongProperty(cfg, ADS_FREE_UNAVAILABLE_HOURS, SaveTv.defaultADS_FREE_UNAVAILABLE_HOURS);
+                long currentTryCount = getLongProperty(this.currDownloadLink, PROPERTY_DOWNLOADLINK_ADSFREEFAILED_COUNT, 0);
+                /* Always increase error counter, even if the user downloads the version with ads. */
+                currentTryCount++;
+                this.currDownloadLink.setProperty(PROPERTY_DOWNLOADLINK_ADSFREEFAILED_COUNT, currentTryCount);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_NOCUTAVAILABLE, userDefinedWaitHours * 60 * 60 * 1000l);
+            } else if (errormessage.equals("unknown error")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: 'unknown error'", 15 * 60 * 1000l);
+            } else {
+                /* We can retry on unknown errorstates here as we know that Stv will usually fix them soon. */
+                logger.warning("Unhandled / Unknown error happened");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Undehandelter Fehler: " + errormessage, 30 * 60 * 1000l);
             }
-            break;
         }
-    }
-
-    public static void getPageCorrectBr(final Browser br, final String url) throws IOException {
-        br.getPage(url);
-        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
      *
      * @author raztoki
      * */
-    private static String getJson(final String source, final String key) {
-        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
-        if (resultIsEmpty(source, key)) {
-            return null;
-        }
-        if (result == null) {
-            result = new Regex(source, "\"" + key + "\":\"([^\"]*?)\"").getMatch(0);
-        }
-        if (result == null || result.equals("")) {
-            /* Workaround - sometimes they use " plain in json even though usually this has to be encoded! */
-            result = new Regex(source, "\"" + key + "\":\"([^<>]*?)\",\"").getMatch(0);
-        }
-        if (result != null) {
-            result = result.replaceAll("\\\\/", "/");
-        }
-        return result;
+    public static String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     private static boolean resultIsEmpty(final String source, final String key) {
@@ -1138,9 +1155,11 @@ public class SaveTv extends PluginForHost {
      *            : Vom Benutzer bevorzugte Qualitätsstufe
      * @param downloadWithoutAds
      *            : Videos mit angewandter Schnittliste bevorzugen oder nicht
+     * @throws Exception
      */
-    private void site_GetDownloadPage(final DownloadLink dl, final String user_selected_video_quality, final String downloadWithoutAds) throws IOException {
-        getPageCorrectBr(this.br, "https://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?TelecastId=" + getTelecastId(dl) + "&iFormat=" + user_selected_video_quality + "&bAdFree=" + downloadWithoutAds);
+    private void site_AccessDownloadPage(final DownloadLink dl, final String user_selected_video_quality, final String downloadWithoutAds) throws Exception {
+        final String downloadoverview_url = "https://www.save.tv/STV/M/obj/cRecordOrder/croGetDownloadUrl.cfm?TelecastId=" + getTelecastId(dl) + "&iFormat=" + user_selected_video_quality + "&bAdFree=" + downloadWithoutAds;
+        this.getPageSafe(downloadoverview_url, this.currAcc);
     }
 
     /**
@@ -1167,9 +1186,10 @@ public class SaveTv extends PluginForHost {
         try {
             /* If the API is used, we need to log in via site here to be able to delete the telecastID */
             if (apiActive()) {
-                site_login(this.br, acc, false);
+                login_site(this.br, acc, false);
             }
-            br.getPage("https://www.save.tv/STV/M/obj/cRecordOrder/croDelete.cfm?TelecastID=" + getTelecastId(dl));
+            final String deleteurl = "https://www.save.tv/STV/M/obj/cRecordOrder/croDelete.cfm?TelecastID=" + getTelecastId(dl);
+            this.br.getPage(deleteurl);
             if (br.containsHTML("\"ok\"")) {
                 logger.info("Successfully deleted telecastID: " + getTelecastId(dl));
             } else {
@@ -1337,7 +1357,7 @@ public class SaveTv extends PluginForHost {
         br.postPageRaw(APIPAGE, postdata);
         /* Check for invalid sessionid --> Refresh if needed & perform request again */
         if (br.containsHTML(">invalid session id</ErrorMessage>")) {
-            api_login(br, acc, true);
+            login_api(br, acc, true);
             postdata = "<?xml version=\"1.0\" encoding=\"utf-8\"?><v:Envelope xmlns:i=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:d=\"http://www.w3.org/2001/XMLSchema\" xmlns:c=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:v=\"http://schemas.xmlsoap.org/soap/envelope/\"><v:Header /><v:Body><" + method + " xmlns=\"http://tempuri.org/\" id=\"o0\" c:root=\"1\">" + "<sessionId i:type=\"d:string\">" + acc.getStringProperty(PROPERTY_ACCOUNT_API_SESSIONID, null) + "</sessionId>" + soapPost + "</" + method + "></v:Body></v:Envelope>";
             br.getHeaders().put("SOAPAction", soapAction);
             br.getHeaders().put("Content-Type", "text/xml");

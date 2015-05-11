@@ -47,7 +47,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/archive/VideoArchive\\.cfm" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/archive/VideoArchive\\.cfm" }, flags = { 0 })
 public class SaveTvDecrypter extends PluginForDecrypt {
 
     public SaveTvDecrypter(PluginWrapper wrapper) {
@@ -257,16 +257,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final ArrayList<String> temp_telecastIDs = new ArrayList<String>();
         int offset = 0;
         while (true) {
-            try {
-                if (this.isAbort()) {
-                    decryptAborted = true;
-                    throw new DecrypterException("Decrypt aborted!");
-                }
-            } catch (final DecrypterException e) {
-                // Not available in old 0.9.581 Stable
-                if (decryptAborted) {
-                    throw e;
-                }
+            if (this.isAbort()) {
+                decryptAborted = true;
+                throw new DecrypterException("Decrypt aborted!");
             }
             jd.plugins.hoster.SaveTv.api_doSoapRequestSafe(this.br, acc, "http://tempuri.org/IVideoArchive/SimpleParamsGetVideoArchiveList", "<channelId>0</channelId><filterType>0</filterType><recordingState>0</recordingState><tvCategoryId>0</tvCategoryId><tvSubCategoryId>0</tvSubCategoryId><textSearchType>0</textSearchType><from>" + offset + "</from><count>" + (offset + ENTRIES_PER_REQUEST) + "</count>");
             final String[] telecastIDs = br.getRegex("Stv\\.Api\\.Contract\\.Telecast\">(\\d+)</Id>").getColumn(0);
@@ -290,16 +283,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         offset = 0;
         int request_num = 1;
         while (true) {
-            try {
-                if (this.isAbort()) {
-                    decryptAborted = true;
-                    throw new DecrypterException("Decrypt aborted!");
-                }
-            } catch (final DecrypterException e) {
-                // Not available in old 0.9.581 Stable
-                if (decryptAborted) {
-                    throw e;
-                }
+            if (this.isAbort()) {
+                decryptAborted = true;
+                throw new DecrypterException("Decrypt aborted!");
             }
             String telecastid_post_data = "";
             for (int i = 0; i <= ENTRIES_PER_REQUEST - 1; i++) {
@@ -349,16 +335,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
         try {
             for (int i = 1; i <= requestCount; i++) {
-                try {
-                    if (this.isAbort()) {
-                        decryptAborted = true;
-                        throw new DecrypterException("Decrypt aborted!");
-                    }
-                } catch (final DecrypterException e) {
-                    // Not available in old 0.9.581 Stable
-                    if (decryptAborted) {
-                        throw e;
-                    }
+                if (this.isAbort()) {
+                    decryptAborted = true;
+                    throw new DecrypterException("Decrypt aborted!");
                 }
 
                 logger.info("save.tv: Decrypting request " + i + " of " + requestCount);
@@ -410,11 +389,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         if (id_IS_Allowed(dl)) {
             dl.setDownloadSize(calculated_filesize);
             dl.setName(jd.plugins.hoster.SaveTv.getFilename(dl));
-            try {
-                distribute(dl);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            distribute(dl);
             decryptedLinks.add(dl);
         }
     }
@@ -429,11 +404,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             dl.setDownloadSize(calculated_filesize);
             dl.setName(jd.plugins.hoster.SaveTv.getFilename(dl));
 
-            try {
-                distribute(dl);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            distribute(dl);
             decryptedLinks.add(dl);
         }
     }
@@ -445,14 +416,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         if (fast_linkcheck) {
             dl.setAvailable(true);
         }
-        try {
-            /* JD2 only */
-            dl.setContentUrl(telecast_url);
-            dl.setLinkID(telecastID);
-        } catch (Throwable e) {
-            /* Not available in old 0.9.581 Stable */
-            dl.setProperty("LINKDUPEID", telecastID);
-        }
+        dl.setContentUrl(telecast_url);
+        dl.setLinkID(telecastID);
         return dl;
     }
 
@@ -484,9 +449,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         }
         try {
             if (api_enabled) {
-                jd.plugins.hoster.SaveTv.api_login(this.br, acc, force);
+                jd.plugins.hoster.SaveTv.login_api(this.br, acc, force);
             } else {
-                jd.plugins.hoster.SaveTv.site_login(this.br, acc, force);
+                jd.plugins.hoster.SaveTv.login_site(this.br, acc, force);
             }
         } catch (final PluginException e) {
             acc.setValid(false);
@@ -502,8 +467,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         // Max 3 accesses of the link possible
         // -> Max 9 total requests
         for (int i = 0; i <= 2; i++) {
-            jd.plugins.hoster.SaveTv.getPageCorrectBr(this.br, url);
-            if (br.getURL().contains("Token=MSG_LOGOUT_B")) {
+            this.br.getPage(url);
+            if (br.getURL().contains(jd.plugins.hoster.SaveTv.URL_LOGGED_OUT)) {
                 for (int i2 = 0; i2 <= 1; i2++) {
                     logger.info("Link redirected to login page, logging in again to retry this: " + url);
                     logger.info("Try " + i2 + " of 1");
@@ -543,23 +508,23 @@ public class SaveTvDecrypter extends PluginForDecrypt {
     }
 
     /**
+     * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
      *
      * @author raztoki
      * */
-    private static String getJson(final String source, final String key) {
-        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
-        if (result == null) {
-            result = new Regex(source, "\"" + key + "\":\"([^\"]*?)\"").getMatch(0);
-        }
-        if (result == null || result.equals("")) {
-            /* Workaround - sometimes they use " plain in json even though usually this has to be encoded! */
-            result = new Regex(source, "\"" + key + "\":\"([^<>]*?)\",\"").getMatch(0);
-        }
-        if (result != null) {
-            result = result.replaceAll("\\\\/", "/");
-        }
-        return result;
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     // /**
