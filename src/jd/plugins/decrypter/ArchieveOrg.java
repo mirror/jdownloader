@@ -28,7 +28,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "https?://(www\\.)?archive\\.org/(?:details|download)/(?!copyrightrecords)[A-Za-z0-9_\\-\\.]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "https?://(www\\.)?archive\\.org/(?:details|download)/(?!copyrightrecords)[A-Za-z0-9_\\-\\.]+$" }, flags = { 0 })
 public class ArchieveOrg extends PluginForDecrypt {
 
     public ArchieveOrg(PluginWrapper wrapper) {
@@ -50,7 +50,7 @@ public class ArchieveOrg extends PluginForDecrypt {
         final String fpName = br.getRegex("<h1>Index of [^<>\"]+/([^<>\"/]+)/?</h1>").getMatch(0);
         br.setFollowRedirects(true);
         // New way
-        final String[][] finfo = br.getRegex("<a href=\"([^<>\"]*?)\">[^<>\"]*?</a>[^<>\"]*?(\\d+\\.\\d+(?:K|M))").getMatches();
+        final String[][] finfo = br.getRegex("<a href=\"([^<>\"]*?)\">[^<>\"]*?</a>[^<>\"]*?(\\d+\\.\\d+(?:K|M|G|B))").getMatches();
         for (final String[] finfosingle : finfo) {
             final String filename = finfosingle[0];
             String fsize = finfosingle[1];

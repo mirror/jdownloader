@@ -483,6 +483,13 @@ public class OldRAFDownload extends DownloadInterface {
                 setResume(false);
                 setChunkNum(1);
             }
+            if (connection != null && connection.getHeaderField("Transfer-Encoding") != null && connection.getHeaderField("Transfer-Encoding").equalsIgnoreCase("chunked")) {
+                /* hier dann auch den final filesize check prüfen */
+                downloadable.setVerifiedFileSize(-1);
+                setResume(false);
+                setChunkNum(1);
+            }
+
             // Erst hier Dateinamen holen, somit umgeht man das Problem das bei
             // mehrfachAufruf von connect entstehen kann
             if (this.downloadable.getFinalFileName() == null && ((connection != null && connection.isContentDisposition()) || this.allowFilenameFromURL)) {
