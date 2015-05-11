@@ -825,6 +825,12 @@ public class DirectHTTP extends PluginForHost {
                     return this.requestFileInformation(downloadLink);
                 }
             }
+            final long length = urlConnection.getLongContentLength();
+            if (length == 0 && urlConnection.getRequest() instanceof HeadRequest) {
+                preferHeadRequest = false;
+                br.followConnection();
+                return this.requestFileInformation(downloadLink);
+            }
             final String streamMod = urlConnection.getHeaderField("X-Mod-H264-Streaming");
             if (streamMod != null && downloadLink.getProperty("streamMod") == null) {
                 downloadLink.setProperty("streamMod", streamMod);
@@ -898,7 +904,6 @@ public class DirectHTTP extends PluginForHost {
                     downloadLink.setProperty("fixName", fileName);
                 }
             }
-            final long length = urlConnection.getLongContentLength();
             if (length >= 0) {
                 downloadLink.setDownloadSize(length);
                 final String contentEncoding = urlConnection.getHeaderField("Content-Encoding");
@@ -991,7 +996,7 @@ public class DirectHTTP extends PluginForHost {
 
     /**
      * update this map to your needs
-     * 
+     *
      * @param mimeType
      * @return
      */
