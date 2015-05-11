@@ -807,14 +807,14 @@ public class DirectHTTP extends PluginForHost {
                 validateLogins(downloadLink, basicauthInfo[1], basicauthInfo[2]);
 
             }
+            if (urlConnection.getResponseCode() == 503) {
+                return AvailableStatus.UNCHECKABLE;
+            }
             if (urlConnection.getResponseCode() == 404 || urlConnection.getResponseCode() == 410 || !urlConnection.isOK()) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             downloadLink.setProperty("auth", basicauth);
 
-            if (urlConnection.getResponseCode() == 503) {
-                return AvailableStatus.UNCHECKABLE;
-            }
             this.contentType = urlConnection.getContentType();
             if (this.contentType != null && this.contentType.startsWith("application/pls") && downloadLink.getName().endsWith("mp3")) {
                 this.br.followConnection();
