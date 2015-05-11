@@ -979,9 +979,6 @@ public class VKontakteRu extends PluginForDecrypt {
                     singleVideo = singleVideo.replace(",", "_");
                     singleVideo = singleVideo.replace(" ", "");
                     singleVideo = singleVideo.replace("\"", "");
-                    if (totalCounter == 28) {
-                        logger.info("Wtf");
-                    }
                     logger.info("Decrypting video " + totalCounter + " / " + numberOfEntrys);
                     final String completeVideolink = getProtocoll() + "vk.com/video" + singleVideo;
                     try {
@@ -1292,12 +1289,8 @@ public class VKontakteRu extends PluginForDecrypt {
                     return;
                 }
                 /* links don't necessarily have an owner and we don't need it for them either. */
-                try {
-                    if (type.equals(wallpost_type_photo) || type.equals(wallpost_type_doc) || type.equals(wallpost_type_audio) || type.equals(wallpost_type_video) || type.equals(wallpost_type_album)) {
-                        owner_id = typeObject.get("owner_id").toString();
-                    }
-                } catch (final Throwable e) {
-                    logger.warning("WTF");
+                if (type.equals(wallpost_type_photo) || type.equals(wallpost_type_doc) || type.equals(wallpost_type_audio) || type.equals(wallpost_type_video) || type.equals(wallpost_type_album)) {
+                    owner_id = typeObject.get("owner_id").toString();
                 }
                 DownloadLink dl = null;
                 String content_id = null;
