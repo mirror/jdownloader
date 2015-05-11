@@ -99,7 +99,7 @@ public class ImdbCom extends PluginForDecrypt {
                     final DownloadLink dl = createDownloadlink(link);
                     final String id = new Regex(link, "rm(\\d+)").getMatch(0);
                     fp.add(dl);
-                    final String subtitle = Encoding.htmlDecode(linkinfo[4]);
+                    final String subtitle = linkinfo[3];
                     if (subtitle != null) {
                         dl.setName(fpName + "_" + id + "_" + Encoding.htmlDecode(subtitle.trim()) + ".jpg");
                     } else {

@@ -1107,8 +1107,6 @@ public class DirectHTTP extends PluginForHost {
                  * it seems google checks referer and ip must have called the page lately
                  */
                 br.getHeaders().put("Referer", "https://sites.google.com");
-            } else if (link.contains("fastpic.ru")) {
-                br.getHeaders().put("Referer", "https://fastpic.ru");
             } else if (link.contains("tinypic.com/")) {
                 // they seem to block direct link access
                 br.getHeaders().put("Referer", link);

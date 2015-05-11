@@ -54,6 +54,7 @@ public class MyzukaRu extends PluginForHost {
         link.setUrlDownload("https://myzuka.org/Song/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -75,14 +76,17 @@ public class MyzukaRu extends PluginForHost {
         }
         String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         final String filesize = br.getRegex("(\\d{1,2},\\d{1,2}) Мб").getMatch(0);
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(encodeUnicode(Encoding.htmlDecode(filename.trim())) + ".mp3");
-        link.setDownloadSize(SizeFormatter.getSize(filesize + "MB"));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize + "MB"));
+        }
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -93,6 +97,9 @@ public class MyzukaRu extends PluginForHost {
                 logger.info("Could not find downloadurl, trying to get streamurl");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getPage("http://myzuka.org/Song/GetPlayFileUrl/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+                if (br.getHttpConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 - file not downloadable?", 3 * 60 * 60 * 1000l);
+                }
                 dllink = br.getRegex("\"(http://[^<>\"]*?)\"").getMatch(0);
                 if (dllink != null) {
                     logger.info("Found streamurl");
