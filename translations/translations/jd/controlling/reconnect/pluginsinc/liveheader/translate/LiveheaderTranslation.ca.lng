@@ -31,7 +31,6 @@ LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm=Aquest servei no està d
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Servei no disponible
 LiveHeaderDetectionWizard_runOnlineScan_warning_badhost=La IP '%s1' del router és invàlida!
 LiveHeaderDetectionWizard_runOnlineScan_warning_badip=Sembla que no hi ha cap Interfície web a http://%s1.\nLa IP del router podria ser invàlida.\n\nVoleu continuar de totes maneres?
-LiveHeaderDetectionWizard_sendRouter_reconnectFailed=Reconnexió fallada. Només podeu compartir scripts de reconnexió funcionals.
 LiveHeaderDetectionWizard_uploadData_sent_failed=El vostre script ja existeix a la nostra base de dades. Gràcies de totes maneres
 LiveHeaderDetectionWizard_uploadData_sent_ok=Gràcies! Hem afegit el vostre script de reconnexió a la nostra base de dades.
 LiveHeaderDetectionWizard_userConfirm_loginstext=Els inicis de sessió NO es carregaran. Si us plau, introdueix-los igualment. Es necessiten per eliminar qualsevol tipus d'informació referent a ells despres de pujar l'script. Si no els coneixes: pots deixar-los en blanc o preguntar-los a l'administrador de la xarxa.
