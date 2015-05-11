@@ -60,6 +60,7 @@ public class FileSharkPl extends PluginForHost {
         return "http://www.fileshark.pl/strona/regulamin";
     }
 
+    private static final String DAILY_LIMIT = "30 GB";
     private static final String POLAND_ONLY = ">Strona jest dostępna wyłącznie dla użytkowników znajdujących się na terenie Polski<";
 
     private long checkForErrors() throws PluginException {
@@ -251,10 +252,10 @@ public class FileSharkPl extends PluginForHost {
             return ai;
         }
 
-        final String dailyLimitLeftUsed = br.getRegex("<p>Pobrano dzisiaj</p>[\r\t\n ]+<p><strong>(.*)</strong> z 20 GB</p>").getMatch(0);
+        final String dailyLimitLeftUsed = br.getRegex("<p>Pobrano dzisiaj</p>[\r\t\n ]+<p><strong>(.*)</strong> z " + DAILY_LIMIT + "</p>").getMatch(0);
         if (dailyLimitLeftUsed != null) {
-            long trafficLeft = SizeFormatter.getSize("20 GB") - SizeFormatter.getSize(dailyLimitLeftUsed);
-            ai.setTrafficMax(SizeFormatter.getSize("20 GB"));
+            long trafficLeft = SizeFormatter.getSize(DAILY_LIMIT) - SizeFormatter.getSize(dailyLimitLeftUsed);
+            ai.setTrafficMax(SizeFormatter.getSize(DAILY_LIMIT));
             ai.setTrafficLeft(trafficLeft);
         } else {
             ai.setUnlimitedTraffic();
