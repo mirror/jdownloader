@@ -164,7 +164,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
 
     public static class UlBannerData implements Storable {
         public static final TypeRef<UlBannerData> TYPREF = new TypeRef<UlBannerData>() {
-        };
+                                                         };
 
         public UlBannerData(/* Storable */) {
         }
@@ -288,7 +288,6 @@ public class UploadedController implements AccountControllerListener, Sponsor {
         EXCLUDES.add("babes.com");
         EXCLUDES.add("youtube.com");
         EXCLUDES.add("dropbox.com");
-        EXCLUDES.add("uploadhero.co");
         EXCLUDES.add("otr.datenkeller.at");
         EXCLUDES.add("flickr.com");
         EXCLUDES.add("trilulilu.ro");
