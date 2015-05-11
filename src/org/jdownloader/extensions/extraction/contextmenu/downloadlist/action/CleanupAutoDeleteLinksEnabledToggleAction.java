@@ -17,30 +17,30 @@ public class CleanupAutoDeleteLinksEnabledToggleAction extends AbstractExtractio
     public CleanupAutoDeleteLinksEnabledToggleAction() {
         super();
         setName(org.jdownloader.extensions.extraction.translate.T._.contextmenu_autodeletelinks());
-
         setSmallIcon(new ExtractIconVariant(IconKey.ICON_LINK, 18, 14, 0, 0).crop());
         setSelected(false);
-
     }
 
     @Override
     protected void onAsyncInitDone() {
         super.onAsyncInitDone();
-        final List<Archive> lArchives = archives;
+        final List<Archive> lArchives = getArchives();
         if (lArchives != null && lArchives.size() > 0) {
             setSelected(_getExtension().isRemoveDownloadLinksAfterExtractEnabled(lArchives.get(0)));
         }
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) {
+        final List<Archive> lArchives = getArchives();
+        if (!isEnabled() || lArchives == null) {
             return;
-        }
-        for (Archive archive : archives) {
-            archive.getSettings().setRemoveDownloadLinksAfterExtraction(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
-        }
-        if (JDGui.bugme(WarnLevel.NORMAL)) {
-            Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? org.jdownloader.extensions.extraction.translate.T._.set_autoremovelinks_true() : org.jdownloader.extensions.extraction.translate.T._.set_autoremovelinks_false());
+        } else {
+            for (Archive archive : lArchives) {
+                archive.getSettings().setRemoveDownloadLinksAfterExtraction(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
+            }
+            if (JDGui.bugme(WarnLevel.NORMAL)) {
+                Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? org.jdownloader.extensions.extraction.translate.T._.set_autoremovelinks_true() : org.jdownloader.extensions.extraction.translate.T._.set_autoremovelinks_false());
+            }
         }
     }
 }

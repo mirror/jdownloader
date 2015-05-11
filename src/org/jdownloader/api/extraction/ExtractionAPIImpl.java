@@ -34,24 +34,26 @@ public class ExtractionAPIImpl implements ExtractionAPI {
 
     @Override
     public HashMap<String, Boolean> startExtractionNow(final long[] linkIds, final long[] packageIds) {
-        SelectionInfo<FilePackage, DownloadLink> selection = DownloadsAPIV2Impl.getSelectionInfo(linkIds, packageIds);
         final HashMap<String, Boolean> ret = new HashMap<String, Boolean>();
-        if (selection != null && !selection.isEmpty()) {
-            final ExtractionExtension extension = ExtractionExtension.getInstance();
-            List<Archive> archives = ArchiveValidator.validate(selection);
-            if (archives != null && !archives.isEmpty() && extension != null) {
-                for (Archive archive : archives) {
-                    final String archiveId = archive.getFactory().getID();
-                    try {
-                        final DummyArchive da = extension.createDummyArchive(archive);
-                        if (da.isComplete()) {
-                            extension.addToQueue(archive, true);
-                            ret.put(archiveId, true);
-                        } else {
+        final ExtractionExtension extension = ExtractionExtension.getInstance();
+        if (extension != null) {
+            final SelectionInfo<FilePackage, DownloadLink> selection = DownloadsAPIV2Impl.getSelectionInfo(linkIds, packageIds);
+            if (selection != null && !selection.isEmpty()) {
+                final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(selection.getChildren());
+                if (archives != null && !archives.isEmpty()) {
+                    for (Archive archive : archives) {
+                        final String archiveId = archive.getFactory().getID();
+                        try {
+                            final DummyArchive da = extension.createDummyArchive(archive);
+                            if (da.isComplete()) {
+                                extension.addToQueue(archive, true);
+                                ret.put(archiveId, true);
+                            } else {
+                                ret.put(archiveId, false);
+                            }
+                        } catch (CheckException e) {
                             ret.put(archiveId, false);
                         }
-                    } catch (CheckException e) {
-                        ret.put(archiveId, false);
                     }
                 }
             }
@@ -60,30 +62,32 @@ public class ExtractionAPIImpl implements ExtractionAPI {
     }
 
     public List<ArchiveStatusStorable> getArchiveInfo(final long[] linkIds, final long[] packageIds) {
-        SelectionInfo<FilePackage, DownloadLink> selection = DownloadsAPIV2Impl.getSelectionInfo(linkIds, packageIds);
         final List<ArchiveStatusStorable> ret = new ArrayList<ArchiveStatusStorable>();
         final ExtractionExtension extension = ArchiveValidator.EXTENSION;
-        if (extension != null && selection != null && !selection.isEmpty()) {
-            List<Archive> archives = ArchiveValidator.validate(selection);
-            if (archives != null && !archives.isEmpty() && extension != null) {
-                for (Archive archive : archives) {
-                    final String archiveId = archive.getFactory().getID();
-                    final String archiveName = archive.getName();
-                    final HashMap<String, ArchiveFileStatus> extractionStates = new HashMap<String, ArchiveFileStatus>();
-                    for (ArchiveFile file : archive.getArchiveFiles()) {
-                        DummyArchiveFile da = new DummyArchiveFile(file);
-                        if (da.isIncomplete()) {
-                            if (da.isMissing()) {
-                                extractionStates.put(file.getName(), ArchiveFileStatus.MISSING);
+        if (extension != null) {
+            final SelectionInfo<FilePackage, DownloadLink> selection = DownloadsAPIV2Impl.getSelectionInfo(linkIds, packageIds);
+            if (selection != null && !selection.isEmpty()) {
+                final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(selection.getChildren());
+                if (archives != null && !archives.isEmpty()) {
+                    for (Archive archive : archives) {
+                        final String archiveId = archive.getFactory().getID();
+                        final String archiveName = archive.getName();
+                        final HashMap<String, ArchiveFileStatus> extractionStates = new HashMap<String, ArchiveFileStatus>();
+                        for (ArchiveFile file : archive.getArchiveFiles()) {
+                            DummyArchiveFile da = new DummyArchiveFile(file);
+                            if (da.isIncomplete()) {
+                                if (da.isMissing()) {
+                                    extractionStates.put(file.getName(), ArchiveFileStatus.MISSING);
+                                } else {
+                                    extractionStates.put(file.getName(), ArchiveFileStatus.INCOMPLETE);
+                                }
                             } else {
-                                extractionStates.put(file.getName(), ArchiveFileStatus.INCOMPLETE);
+                                extractionStates.put(file.getName(), ArchiveFileStatus.COMPLETE);
                             }
-                        } else {
-                            extractionStates.put(file.getName(), ArchiveFileStatus.COMPLETE);
                         }
+                        ArchiveStatusStorable archiveStatus = new ArchiveStatusStorable(archiveId, archiveName, extractionStates);
+                        ret.add(archiveStatus);
                     }
-                    ArchiveStatusStorable archiveStatus = new ArchiveStatusStorable(archiveId, archiveName, extractionStates);
-                    ret.add(archiveStatus);
                 }
             }
         }

@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -49,7 +49,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 }
             }
             if (path.contains(ARCHIVENAME)) {
-                String archiveName = CrossSystem.alleviatePathParts(archive.getName());
+                final String archiveName = CrossSystem.alleviatePathParts(archive.getName());
                 if (!StringUtils.isEmpty(archiveName)) {
                     path = path.replace(ARCHIVENAME, archiveName);
                 } else {
@@ -57,7 +57,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 }
             }
             if (path.contains(HOSTER)) {
-                String hostName = CrossSystem.alleviatePathParts(link.getHost());
+                final String hostName = CrossSystem.alleviatePathParts(link.getHost());
                 if (!StringUtils.isEmpty(hostName)) {
                     path = path.replace(HOSTER, hostName);
                 } else {
@@ -78,7 +78,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 }
             }
             if (path.contains(SUBFOLDER)) {
-                String dif = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).getAbsolutePath().replace(new File(link.getFileOutput(false, true)).getParent(), "");
+                final String dif = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).getAbsolutePath().replace(new File(link.getFileOutput(false, true)).getParent(), "");
                 if (StringUtils.isEmpty(dif) || new File(dif).isAbsolute()) {
                     path = path.replace(SUBFOLDER, "");
                 } else {
@@ -149,11 +149,11 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     }
 
     public Collection<? extends String> getGuessedPasswordList(Archive archive) {
-        HashSet<String> ret = new HashSet<String>();
-        for (ArchiveFile af : archive.getArchiveFiles()) {
-            if (af instanceof DownloadLinkArchiveFile) {
-                for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
-                    String pw = link.getDownloadPassword();
+        final LinkedHashSet<String> ret = new LinkedHashSet<String>();
+        for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+            if (archiveFile instanceof DownloadLinkArchiveFile) {
+                for (final DownloadLink downloadLink : ((DownloadLinkArchiveFile) archiveFile).getDownloadLinks()) {
+                    final String pw = downloadLink.getDownloadPassword();
                     if (StringUtils.isEmpty(pw) == false) {
                         ret.add(pw);
                     }
@@ -164,19 +164,19 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     }
 
     public void fireArchiveAddedToQueue(Archive archive) {
-        for (ArchiveFile af : archive.getArchiveFiles()) {
-            if (af instanceof DownloadLinkArchiveFile) {
-                for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
-                    link.setExtractionStatus(null);
+        for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+            if (archiveFile instanceof DownloadLinkArchiveFile) {
+                for (final DownloadLink downloadLink : ((DownloadLinkArchiveFile) archiveFile).getDownloadLinks()) {
+                    downloadLink.setExtractionStatus(null);
                 }
             }
         }
     }
 
     public static DownloadLink getFirstDownloadLinkPart(Archive archive) {
-        for (ArchiveFile af : archive.getArchiveFiles()) {
-            if (af instanceof DownloadLinkArchiveFile) {
-                return ((DownloadLinkArchiveFile) af).getDownloadLinks().get(0);
+        for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+            if (archiveFile instanceof DownloadLinkArchiveFile) {
+                return ((DownloadLinkArchiveFile) archiveFile).getDownloadLinks().get(0);
             }
         }
         throw new WTFException("Archive should always have at least one link");
@@ -214,10 +214,12 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     }
 
     private String getIDFromFile(DownloadLinkArchiveFile file) {
-        for (DownloadLink link : file.getDownloadLinks()) {
-            String id = link.getArchiveID();
-            if (id != null) {
-                return id;
+        if (file != null) {
+            for (final DownloadLink downloadLink : file.getDownloadLinks()) {
+                final String id = downloadLink.getArchiveID();
+                if (id != null) {
+                    return id;
+                }
             }
         }
         return null;
@@ -227,9 +229,9 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     public void onArchiveFinished(Archive archive) {
         String id = getID();
         if (id == null) {
-            for (ArchiveFile af : archive.getArchiveFiles()) {
-                if (af instanceof DownloadLinkArchiveFactory) {
-                    id = getIDFromFile((DownloadLinkArchiveFactory) af);
+            for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                if (archiveFile instanceof DownloadLinkArchiveFactory) {
+                    id = getIDFromFile((DownloadLinkArchiveFactory) archiveFile);
                 }
                 if (id != null) {
                     break;
@@ -239,10 +241,10 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         if (id == null) {
             id = createUniqueAlltimeID();
         }
-        for (ArchiveFile af : archive.getArchiveFiles()) {
-            if (af instanceof DownloadLinkArchiveFile) {
-                for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
-                    link.setArchiveID(id);
+        for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+            if (archiveFile instanceof DownloadLinkArchiveFile) {
+                for (final DownloadLink downloadLink : ((DownloadLinkArchiveFile) archiveFile).getDownloadLinks()) {
+                    downloadLink.setArchiveID(id);
                 }
             }
         }

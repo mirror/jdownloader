@@ -42,7 +42,7 @@ import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 public class RemoveIncompleteArchives extends CustomizableAppAction implements ExtTableListener, ActionContext, ExtTableModelListener {
 
     /**
-     * 
+     *
      */
     private static final long      serialVersionUID = 2816227528827363428L;
     private ByPassDialogSetup      byPassDialog;
@@ -94,7 +94,9 @@ public class RemoveIncompleteArchives extends CustomizableAppAction implements E
 
                         if (true) {
                             for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> filter : filters) {
-                                if (filter.isFiltered(node)) { return false; }
+                                if (filter.isFiltered(node)) {
+                                    return false;
+                                }
                             }
                         }
                         if (node.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
@@ -111,14 +113,15 @@ public class RemoveIncompleteArchives extends CustomizableAppAction implements E
             nodesToDelete.addAll(LinkGrabberTable.getInstance().getSelectionInfo(false, true).getChildren());
         }
 
-        if (!isEnabled()) return;
+        if (!isEnabled()) {
+            return;
+        }
         Thread thread = new Thread() {
             @Override
             public void run() {
                 try {
                     List<CrawledLink> l = new ArrayList<CrawledLink>();
-
-                    for (Archive a : ArchiveValidator.validate(new SelectionInfo<CrawledPackage, CrawledLink>(null, nodesToDelete, true))) {
+                    for (Archive a : ArchiveValidator.getArchivesFromPackageChildren(new SelectionInfo<CrawledPackage, CrawledLink>(null, nodesToDelete, true).getChildren())) {
                         final DummyArchive da = ExtractionExtension.getInstance().createDummyArchive(a);
                         if (!da.isComplete()) {
                             try {

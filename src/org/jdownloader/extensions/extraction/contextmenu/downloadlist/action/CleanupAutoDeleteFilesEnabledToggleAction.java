@@ -27,21 +27,23 @@ public class CleanupAutoDeleteFilesEnabledToggleAction extends AbstractExtractio
     @Override
     protected void onAsyncInitDone() {
         super.onAsyncInitDone();
-        final List<Archive> lArchives = archives;
+        final List<Archive> lArchives = getArchives();
         if (lArchives != null && lArchives.size() > 0) {
             setSelected(_getExtension().getRemoveFilesAfterExtractAction(lArchives.get(0)) != FileCreationManager.DeleteOption.NO_DELETE);
         }
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) {
+        final List<Archive> lArchives = getArchives();
+        if (!isEnabled() || lArchives == null) {
             return;
-        }
-        for (Archive archive : archives) {
-            archive.getSettings().setRemoveFilesAfterExtraction(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
-        }
-        if (JDGui.bugme(WarnLevel.NORMAL)) {
-            Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? org.jdownloader.extensions.extraction.translate.T._.set_autoremovefiles_true() : org.jdownloader.extensions.extraction.translate.T._.set_autoremovefiles_false());
+        } else {
+            for (Archive archive : lArchives) {
+                archive.getSettings().setRemoveFilesAfterExtraction(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
+            }
+            if (JDGui.bugme(WarnLevel.NORMAL)) {
+                Dialog.getInstance().showMessageDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, isSelected() ? org.jdownloader.extensions.extraction.translate.T._.set_autoremovefiles_true() : org.jdownloader.extensions.extraction.translate.T._.set_autoremovefiles_false());
+            }
         }
     }
 }

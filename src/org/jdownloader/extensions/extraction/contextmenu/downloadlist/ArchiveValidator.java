@@ -9,6 +9,7 @@ import java.util.WeakHashMap;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.plugins.DownloadLink;
 
+import org.appwork.controlling.SingleReachableState;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
@@ -19,53 +20,86 @@ import org.jdownloader.gui.views.SelectionInfo;
 
 public class ArchiveValidator {
 
-    public static ExtractionExtension                        EXTENSION;
+    public static class ArchiveValidation {
+        protected final SingleReachableState state    = new SingleReachableState("ArchiveValidation");
+        protected volatile List<Archive>     archives = null;
 
-    private static WeakHashMap<SelectionInfo, List<Archive>> VALIDATIONCACHE = new WeakHashMap<SelectionInfo, List<Archive>>();
-    private static WeakHashMap<SelectionInfo, Object>        VALIDATIONLOCKS = new WeakHashMap<SelectionInfo, Object>();
+        public void executeWhenReached(final Runnable run) {
+            state.executeWhenReached(run);
+        }
 
-    public static List<Archive> validate(SelectionInfo<?, ?> selection) {
-        if (EXTENSION == null) {
-            return null;
+        public List<Archive> getArchives() {
+            return archives;
         }
-        Object lock = null;
-        List<Archive> validation = null;
-        synchronized (VALIDATIONCACHE) {
-            validation = VALIDATIONCACHE.get(selection);
-            if (validation != null) {
-                return validation;
-            }
-            synchronized (VALIDATIONLOCKS) {
-                lock = VALIDATIONLOCKS.get(selection);
-                if (lock == null) {
-                    lock = new Object();
-                    VALIDATIONLOCKS.put(selection, lock);
-                }
-            }
+
+        public boolean isFinished() {
+            return state.isReached();
         }
-        synchronized (lock) {
-            try {
-                synchronized (VALIDATIONCACHE) {
-                    validation = VALIDATIONCACHE.get(selection);
-                    if (validation != null) {
-                        return validation;
-                    }
-                }
-                validation = getArchives(selection);
-                synchronized (VALIDATIONCACHE) {
-                    VALIDATIONCACHE.put(selection, validation);
-                }
-                return validation;
-            } finally {
-                synchronized (VALIDATIONLOCKS) {
-                    VALIDATIONLOCKS.remove(selection);
-                }
-            }
+
+        public void waitForReached() throws InterruptedException {
+            state.waitForReached();
         }
     }
 
-    public static List<Archive> getArchives(SelectionInfo<?, ?> si) {
-        return getArchivesFromPackageChildren(si.getChildren());
+    public static volatile ExtractionExtension                         EXTENSION;
+
+    private static final WeakHashMap<SelectionInfo, ArchiveValidation> RESULTS = new WeakHashMap<SelectionInfo, ArchiveValidation>();
+
+    public static ArchiveValidation validate(final SelectionInfo<?, ?> selection, final boolean async) {
+        if (EXTENSION != null) {
+            final ArchiveValidation result;
+            final boolean newResult;
+            synchronized (RESULTS) {
+                final ArchiveValidation existingResult = RESULTS.get(selection);
+                if (existingResult != null) {
+                    newResult = false;
+                    result = existingResult;
+                } else {
+                    newResult = true;
+                    result = new ArchiveValidation();
+                    RESULTS.put(selection, result);
+                }
+            }
+            if (newResult) {
+                if (async && selection.getChildren().size() > 0) {
+                    final Thread thread = new Thread() {
+                        public void run() {
+                            try {
+                                result.archives = getArchivesFromPackageChildren(selection.getChildren());
+                            } finally {
+                                result.state.setReached();
+                            }
+                        };
+                    };
+                    thread.setDaemon(true);
+                    thread.setName("ArchiveValidation");
+                    thread.start();
+                } else {
+                    try {
+                        if (selection.getChildren().size() > 0) {
+                            result.archives = getArchivesFromPackageChildren(selection.getChildren());
+                        } else {
+                            result.archives = new ArrayList<Archive>(0);
+                        }
+                    } finally {
+                        result.state.setReached();
+                    }
+                }
+                return result;
+            } else {
+                if (!async) {
+                    try {
+                        result.waitForReached();
+                    } catch (final InterruptedException ignore) {
+                    }
+                }
+                return result;
+            }
+        }
+        final ArchiveValidation ret = new ArchiveValidation();
+        ret.state.setReached();
+        ret.archives = new ArrayList<Archive>(0);
+        return ret;
     }
 
     public static List<Archive> getArchivesFromPackageChildren(List<? extends Object> nodes) {
