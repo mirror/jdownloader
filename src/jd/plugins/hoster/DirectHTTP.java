@@ -919,8 +919,11 @@ public class DirectHTTP extends PluginForHost {
                             downloadLink.setMD5Hash(contentMD5);
                         }
                     }
-                    downloadLink.setProperty("VERIFIEDFILESIZE", length);
+                    downloadLink.setVerifiedFileSize(length);
                 }
+            } else {
+                downloadLink.setDownloadSize(-1);
+                downloadLink.setVerifiedFileSize(-1);
             }
             final String referer = urlConnection.getRequestProperty(HTTPConstants.HEADER_REQUEST_REFERER);
             downloadLink.setProperty("lastRefURL", referer);
