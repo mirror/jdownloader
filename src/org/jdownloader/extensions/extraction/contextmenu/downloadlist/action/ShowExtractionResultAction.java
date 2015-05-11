@@ -2,6 +2,7 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 
 import java.awt.event.ActionEvent;
 import java.io.IOException;
+import java.util.List;
 
 import jd.gui.swing.jdgui.JDGui;
 
@@ -24,8 +25,8 @@ import org.jdownloader.gui.translate._GUI;
 public class ShowExtractionResultAction extends AbstractExtractionContextAction implements GenericConfigEventListener<Boolean> {
 
     /**
- * 
- */
+     *
+     */
 
     public ShowExtractionResultAction() {
         super();
@@ -40,14 +41,14 @@ public class ShowExtractionResultAction extends AbstractExtractionContextAction 
     @Override
     protected void onAsyncInitDone() {
         super.onAsyncInitDone();
-        if (archives != null && archives.size() > 0) {
-            for (Archive a : archives) {
+        final List<Archive> lArchives = getArchives();
+        if (lArchives != null && lArchives.size() > 0) {
+            for (Archive a : lArchives) {
                 if (a.getExtractLogFile().exists()) {
                     setVisible(true);
                     return;
                 }
             }
-
         }
         setVisible(false);
     }
@@ -57,35 +58,35 @@ public class ShowExtractionResultAction extends AbstractExtractionContextAction 
     }
 
     public void actionPerformed(ActionEvent e) {
-        for (Archive archive : archives) {
-
-            if (archive.getExtractLogFile().exists()) {
-                try {
-                    ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_OK, T._.showextractlog(archive.getName()), IO.readFileToString(archive.getExtractLogFile()), null, null, _GUI._.lit_close()) {
-
-                        @Override
-                        protected int getPreferredHeight() {
-                            return (int) (JDGui.getInstance().getMainFrame().getHeight() * 0.8);
-                        }
-
-                        @Override
-                        protected int getPreferredWidth() {
-                            return (int) (JDGui.getInstance().getMainFrame().getWidth() * 0.8);
-                        }
-
-                    };
+        final List<Archive> lArchives = getArchives();
+        if (lArchives != null) {
+            for (Archive archive : lArchives) {
+                if (archive.getExtractLogFile().exists()) {
                     try {
-                        Dialog.getInstance().showDialog(d);
-                    } catch (DialogClosedException e1) {
-                        e1.printStackTrace();
-                    } catch (DialogCanceledException e1) {
-                        e1.printStackTrace();
+                        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_LARGE | Dialog.STYLE_HIDE_ICON | UIOManager.BUTTONS_HIDE_OK, T._.showextractlog(archive.getName()), IO.readFileToString(archive.getExtractLogFile()), null, null, _GUI._.lit_close()) {
+
+                            @Override
+                            protected int getPreferredHeight() {
+                                return (int) (JDGui.getInstance().getMainFrame().getHeight() * 0.8);
+                            }
+
+                            @Override
+                            protected int getPreferredWidth() {
+                                return (int) (JDGui.getInstance().getMainFrame().getWidth() * 0.8);
+                            }
+                        };
+                        try {
+                            Dialog.getInstance().showDialog(d);
+                        } catch (DialogClosedException e1) {
+                            e1.printStackTrace();
+                        } catch (DialogCanceledException e1) {
+                            e1.printStackTrace();
+                        }
+                    } catch (IOException e1) {
+                        Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
                     }
-                } catch (IOException e1) {
-                    Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e1.getMessage(), e1);
                 }
             }
-
         }
     }
 

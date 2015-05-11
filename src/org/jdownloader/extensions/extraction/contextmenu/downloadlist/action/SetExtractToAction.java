@@ -2,6 +2,7 @@ package org.jdownloader.extensions.extraction.contextmenu.downloadlist.action;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.util.List;
 
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -27,26 +28,27 @@ public class SetExtractToAction extends AbstractExtractionContextAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) {
+        final List<Archive> lArchives = getArchives();
+        if (!isEnabled() || lArchives == null) {
             return;
-        }
-        File extractto = _getExtension().getFinalExtractToFolder(archives.get(0), true);
-
-        while (extractto != null && !extractto.isDirectory() && !isTag(extractto.getName())) {
-            extractto = extractto.getParentFile();
-        }
-        try {
-            File path = DownloadFolderChooserDialog.open(extractto, true, org.jdownloader.extensions.extraction.translate.T._.extract_to2());
-            if (path == null) {
-                return;
+        } else {
+            File extractto = _getExtension().getFinalExtractToFolder(lArchives.get(0), true);
+            while (extractto != null && !extractto.isDirectory() && !isTag(extractto.getName())) {
+                extractto = extractto.getParentFile();
             }
-            for (Archive archive : archives) {
-                archive.getSettings().setExtractPath(path.getAbsolutePath());
+            try {
+                File path = DownloadFolderChooserDialog.open(extractto, true, org.jdownloader.extensions.extraction.translate.T._.extract_to2());
+                if (path == null) {
+                    return;
+                }
+                for (Archive archive : lArchives) {
+                    archive.getSettings().setExtractPath(path.getAbsolutePath());
+                }
+            } catch (DialogClosedException e1) {
+                e1.printStackTrace();
+            } catch (DialogCanceledException e1) {
+                e1.printStackTrace();
             }
-        } catch (DialogClosedException e1) {
-            e1.printStackTrace();
-        } catch (DialogCanceledException e1) {
-            e1.printStackTrace();
         }
     }
 

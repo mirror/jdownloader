@@ -47,6 +47,7 @@ import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkArchiveFile;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator.ArchiveValidation;
 import org.jdownloader.extensions.extraction.gui.DummyArchiveDialog;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.KeyObserver;
@@ -242,7 +243,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     public static final String AUTO_START       = "autoStart";
 
     /**
-     * 
+     *
      */
     private static final long  serialVersionUID = -3937346180905569896L;
 
@@ -267,8 +268,8 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                     final ExtractionExtension extension = ExtractionExtension.getInstance();
                     if (extension != null) {
                         ConfirmIncompleteArchiveAction doAction = CFG_GUI.CFG.getConfirmIncompleteArchiveAction();
-
-                        loop: for (Archive a : ArchiveValidator.validate(selection)) {
+                        final ArchiveValidation result = ArchiveValidator.validate(selection, false);
+                        loop: for (Archive a : result.getArchives()) {
                             ConfirmIncompleteArchiveAction doActionForTheCurrentArchive = doAction;
                             final DummyArchive da = extension.createDummyArchive(a);
                             if (da.isComplete()) {

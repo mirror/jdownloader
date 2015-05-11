@@ -72,6 +72,11 @@ public class D extends PluginsC {
 
     }
 
+    public static String filterString(final String str) {
+        final String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnmöäü;:,._-&$%(){}#~+ 1234567890<>='\"/";
+        return Encoding.filterString(str, allowed);
+    }
+
     // //@Override
     public ContainerStatus callDecryption(File d) {
         ContainerStatus cs = new ContainerStatus(d);
@@ -142,7 +147,7 @@ public class D extends PluginsC {
                         p = dsk(x);
 
                         // String test = dsk("8dEAMOh4EcaP8QgExlHZRNeCYL9EzB3cGJIdDG2prCE=");
-                        p = Encoding.filterString(p);
+                        p = filterString(p);
                         if (p.length() != 16) {
                             logger.severe("DLC Error2(key): " + s2);
                             ee += s2 + "" + JDL.L("sys.warning.dlcerror_version", "DLC Fehler(1) ") + " ";
@@ -162,7 +167,7 @@ public class D extends PluginsC {
 
                         continue;
                     }
-                    dds1 = Encoding.filterString(dds1);
+                    dds1 = filterString(dds1);
                     // Log.L.info("Decr " + decryptedDlcString);
                     pxs(dds1, d);
                     /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */

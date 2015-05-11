@@ -13,17 +13,15 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.extensions.extraction.gui.DummyArchiveDialog;
 import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.extensions.extraction.translate.T;
-import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
 public class ValidateArchiveAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
 
-    private ExtractionExtension     extractor;
-    private java.util.List<Archive> archives;
+    private final ExtractionExtension     extractor;
+    private final java.util.List<Archive> archives;
 
     public ValidateArchiveAction(ExtractionExtension extractionExtension, Archive... as) {
         if (as.length > 1) {
@@ -44,28 +42,26 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
         return extractor;
     }
 
-    public ValidateArchiveAction(ExtractionExtension extractionExtension, SelectionInfo<PackageType, ChildrenType> si) {
-        setName(T._.ValidateArchiveAction_ValidateArchiveAction_object_());
-        setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage(org.jdownloader.gui.IconKey.ICON_COMPRESS, 18), NewTheme.I().getImage("ok", 11), -1, 0, 6, 8)));
-        //
-        archives = ArchiveValidator.validate(si);
-        setEnabled(archives.size() > 0);
-    }
-
     public DummyArchive createDummyArchive(Archive a) throws CheckException {
-        return extractor.createDummyArchive(a);
+        if (extractor != null) {
+            return extractor.createDummyArchive(a);
+        } else {
+            return null;
+        }
     }
 
     public void actionPerformed(ActionEvent e) {
         try {
             for (Archive archive : archives) {
                 try {
-                    DummyArchive da = createDummyArchive(archive);
-                    DummyArchiveDialog d = new DummyArchiveDialog(da);
-                    try {
-                        Dialog.getInstance().showDialog(d);
-                    } catch (DialogCanceledException e1) {
-                        e1.printStackTrace();
+                    final DummyArchive da = createDummyArchive(archive);
+                    if (da != null) {
+                        final DummyArchiveDialog d = new DummyArchiveDialog(da);
+                        try {
+                            Dialog.getInstance().showDialog(d);
+                        } catch (DialogCanceledException e1) {
+                            e1.printStackTrace();
+                        }
                     }
                 } catch (CheckException e1) {
                     Dialog.getInstance().showExceptionDialog("Error", "Cannot Check Archive", e1);

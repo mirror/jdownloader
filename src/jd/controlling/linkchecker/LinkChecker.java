@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -32,7 +33,7 @@ public class LinkChecker<E extends CheckableLink> {
 
     protected static class InternCheckableLink {
         protected final CheckableLink                        link;
-        protected final int                                  linkCheckerGeneration;
+        protected final long                                 linkCheckerGeneration;
         protected final LinkChecker<? extends CheckableLink> checker;
 
         public InternCheckableLink(CheckableLink link, LinkChecker<? extends CheckableLink> checker) {
@@ -56,22 +57,22 @@ public class LinkChecker<E extends CheckableLink> {
     }
 
     /* static variables */
-    private static AtomicInteger                              CHECKER                = new AtomicInteger(0);
-    private static AtomicInteger                              LINKCHECKER_THREAD_NUM = new AtomicInteger(0);
-    private final static int                                  MAX_THREADS;
-    private final static int                                  KEEP_ALIVE;
-    private static HashMap<String, Thread>                    CHECK_THREADS          = new HashMap<String, Thread>();
-    private static HashMap<String, List<InternCheckableLink>> LINKCHECKER            = new HashMap<String, List<InternCheckableLink>>();
-    private static final Object                               LOCK                   = new Object();
+    private final static AtomicInteger                              CHECKER                = new AtomicInteger(0);
+    private final static AtomicLong                                 LINKCHECKER_THREAD_NUM = new AtomicLong(0);
+    private final static int                                        MAX_THREADS;
+    private final static int                                        KEEP_ALIVE;
+    private final static HashMap<String, Thread>                    CHECK_THREADS          = new HashMap<String, Thread>();
+    private final static HashMap<String, List<InternCheckableLink>> LINKCHECKER            = new HashMap<String, List<InternCheckableLink>>();
+    private final static Object                                     LOCK                   = new Object();
 
     /* local variables for this LinkChecker */
-    private AtomicLong                                        linksRequested         = new AtomicLong(0);
-    private AtomicLong                                        linksDone              = new AtomicLong(0);
-    private final boolean                                     forceRecheck;
-    private LinkCheckerHandler<E>                             handler                = null;
-    private static int                                        SPLITSIZE              = 80;
-    private static LinkCheckerEventSender                     EVENTSENDER            = new LinkCheckerEventSender();
-    protected AtomicInteger                                   checkerGeneration      = new AtomicInteger(0);
+    private final AtomicLong                                        linksRequested         = new AtomicLong(0);
+    private final boolean                                           forceRecheck;
+    private LinkCheckerHandler<E>                                   handler                = null;
+    private final static int                                        SPLITSIZE              = 80;
+    private final static LinkCheckerEventSender                     EVENTSENDER            = new LinkCheckerEventSender();
+    protected final AtomicLong                                      checkerGeneration      = new AtomicLong(0);
+    protected final AtomicBoolean                                   runningState           = new AtomicBoolean(false);
 
     public static LinkCheckerEventSender getEventSender() {
         return EVENTSENDER;
@@ -104,25 +105,42 @@ public class LinkChecker<E extends CheckableLink> {
 
     public void stopChecking() {
         checkerGeneration.incrementAndGet();
-        if (linksDone.get() == linksRequested.get()) {
-            CHECKER.decrementAndGet();
-            EVENTSENDER.fireEvent(new LinkCheckerEvent(this, LinkCheckerEvent.Type.STOPPED));
+        if (linksRequested.get() == 0) {
+            final boolean event;
+            synchronized (CHECKER) {
+                if (linksRequested.get() == 0 && runningState.compareAndSet(true, false)) {
+                    event = CHECKER.decrementAndGet() == 0;
+                } else {
+                    event = false;
+                }
+            }
+            if (event) {
+                EVENTSENDER.fireEvent(new LinkCheckerEvent(this, LinkCheckerEvent.Type.STOPPED));
+            }
         }
     }
 
     @SuppressWarnings("unchecked")
     protected void linkChecked(InternCheckableLink link) {
-        if (link == null) {
-            return;
-        }
-        boolean stopped = linksDone.incrementAndGet() == linksRequested.get();
-        if (stopped) {
-            CHECKER.decrementAndGet();
-            EVENTSENDER.fireEvent(new LinkCheckerEvent(this, LinkCheckerEvent.Type.STOPPED));
-        }
-        LinkCheckerHandler<E> h = handler;
-        if (h != null && link.linkCheckAllowed()) {
-            h.linkCheckDone((E) link.getCheckableLink());
+        if (link != null) {
+            final boolean event;
+            if (linksRequested.decrementAndGet() == 0) {
+                synchronized (CHECKER) {
+                    if (linksRequested.get() == 0 && runningState.compareAndSet(true, false)) {
+                        event = CHECKER.decrementAndGet() == 0;
+                    } else {
+                        event = false;
+                    }
+                }
+                if (event) {
+                    CHECKER.decrementAndGet();
+                    EVENTSENDER.fireEvent(new LinkCheckerEvent(this, LinkCheckerEvent.Type.STOPPED));
+                }
+            }
+            final LinkCheckerHandler<E> h = handler;
+            if (h != null && link.linkCheckAllowed()) {
+                h.linkCheckDone((E) link.getCheckableLink());
+            }
         }
     }
 
@@ -150,9 +168,17 @@ public class LinkChecker<E extends CheckableLink> {
             }
         }
         InternCheckableLink checkableLink = new InternCheckableLink(link, this);
-        if (linksRequested.getAndIncrement() == linksDone.get()) {
-            CHECKER.incrementAndGet();
-            EVENTSENDER.fireEvent(new LinkCheckerEvent(this, LinkCheckerEvent.Type.STARTED));
+        if (linksRequested.getAndIncrement() == 0) {
+            final boolean event;
+            synchronized (CHECKER) {
+                event = runningState.compareAndSet(false, true);
+                if (event) {
+                    CHECKER.incrementAndGet();
+                }
+            }
+            if (event) {
+                EVENTSENDER.fireEvent(new LinkCheckerEvent(this, LinkCheckerEvent.Type.STARTED));
+            }
         }
         synchronized (LOCK) {
             List<InternCheckableLink> hosterTodos = LINKCHECKER.get(host);
@@ -178,15 +204,11 @@ public class LinkChecker<E extends CheckableLink> {
      * @return
      */
     public boolean isRunning() {
-        return linksRequested.get() != linksDone.get();
+        return runningState.get();
     }
 
     public long checksRequested() {
         return linksRequested.get();
-    }
-
-    public long checksDone() {
-        return linksDone.get();
     }
 
     public static boolean isChecking() {

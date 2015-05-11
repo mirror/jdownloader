@@ -9,6 +9,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtensionAction;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator.ArchiveValidation;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
@@ -17,11 +18,14 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
 public abstract class AbstractExtractionContextAction extends AbstractExtensionAction<ExtractionExtension> {
 
-    protected List<Archive> archives;
+    private volatile List<Archive> archives = null;
+
+    public List<Archive> getArchives() {
+        return archives;
+    }
 
     public AbstractExtractionContextAction() {
         super();
-
     }
 
     @Override
@@ -32,24 +36,23 @@ public abstract class AbstractExtractionContextAction extends AbstractExtensionA
 
     protected void requestUpdateSelection() {
         setEnabled(false);
-
-        if (getSelection() != null && !getSelection().isEmpty()) {
+        final SelectionInfo<?, ?> selection = getSelection();
+        if (selection != null && !selection.isEmpty()) {
             setVisible(true);
-            Thread thread = new Thread() {
+            final ArchiveValidation result = ArchiveValidator.validate(selection, true);
+            result.executeWhenReached(new Runnable() {
+
+                @Override
                 public void run() {
-                    asynchInit();
+                    archives = result.getArchives();
                     new EDTRunner() {
                         @Override
                         protected void runInEDT() {
-
                             onAsyncInitDone();
                         }
                     };
-                };
-            };
-            thread.setDaemon(true);
-            thread.setName("SetEnabled: " + getClass().getName());
-            thread.start();
+                }
+            });
         } else {
             setVisible(false);
             setEnabled(false);
@@ -57,7 +60,8 @@ public abstract class AbstractExtractionContextAction extends AbstractExtensionA
     }
 
     protected void onAsyncInitDone() {
-        if (archives != null && archives.size() > 0) {
+        final List<Archive> lArchives = getArchives();
+        if (lArchives != null && lArchives.size() > 0) {
             super.setEnabled(true);
         } else {
             super.setEnabled(false);
@@ -66,23 +70,17 @@ public abstract class AbstractExtractionContextAction extends AbstractExtensionA
     }
 
     public void setEnabled(boolean newValue) {
-
         super.setEnabled(newValue);
     }
 
     private SelectionInfo<?, ?> getSelection() {
-        View view = MainTabbedPane.getInstance().getSelectedView();
-
+        final View view = MainTabbedPane.getInstance().getSelectedView();
         if (view instanceof DownloadsView) {
-            return DownloadsTable.getInstance().getSelectionInfo(true, true);
-
-        } else if (view instanceof LinkGrabberView) { return LinkGrabberTable.getInstance().getSelectionInfo(); }
+            return DownloadsTable.getInstance().getSelectionInfo();
+        } else if (view instanceof LinkGrabberView) {
+            return LinkGrabberTable.getInstance().getSelectionInfo();
+        }
         return null;
-
-    }
-
-    protected void asynchInit() {
-        archives = ArchiveValidator.validate(getSelection());
     }
 
 }
