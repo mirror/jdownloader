@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2015  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -42,34 +42,28 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rapeit.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
-public class PremiumRapeitNet extends PluginForHost {
+public class PremiumRapeitNet extends antiDDoSForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
-    private static final String                            MAINPAGE           = "http://premium.rapeit.net";
+    private static final String                            MAINPAGE           = "https://premium.rapeit.net";
     private static final String                            NICE_HOST          = MAINPAGE.replaceAll("(https://|http://)", "");
     private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
-    private static final String                            USE_API            = "USE_API";
 
     public PremiumRapeitNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://premium.rapeit.net/");
-        this.setConfigElements();
+        this.enablePremium(MAINPAGE);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://premium.rapeit.net/#tou";
+        return MAINPAGE + "/#tou";
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ac = new AccountInfo();
-        if (this.useAPI()) {
-            ac = api_fetchAccountInfo(account);
-        } else {
-            ac = site_fetchAccountInfo(account);
-        }
+        ac = site_fetchAccountInfo(account);
         return ac;
     }
 
@@ -103,14 +97,10 @@ public class PremiumRapeitNet extends PluginForHost {
         }
 
         String dllink;
-        if (this.useAPI()) {
-            dllink = api_get_dllink(link, account);
-        } else {
-            site_login(account, false);
-            dllink = checkDirectLink(link, NICE_HOST + "directlink");
-            if (dllink == null) {
-                dllink = site_get_dllink(link, account);
-            }
+        site_login(account, false);
+        dllink = checkDirectLink(link, NICE_HOST + "directlink");
+        if (dllink == null) {
+            dllink = site_get_dllink(link, account);
         }
         int maxChunks = 1;
         if (link.getBooleanProperty(PremiumRapeitNet.NOCHUNKS, false)) {
@@ -197,8 +187,8 @@ public class PremiumRapeitNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password (and captcha) you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        if (!br.getURL().equals("http://premium.rapeit.net/")) {
-            br.getPage("http://premium.rapeit.net/");
+        if (!br.getURL().matches("https?://premium.rapeit.net/")) {
+            getPage(MAINPAGE);
         }
         final String[] hosts = br.getRegex("ON / Domain: ([^<>\"]*?)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>();
@@ -211,8 +201,8 @@ public class PremiumRapeitNet extends PluginForHost {
             }
             ac.setMultiHostSupport(this, supportedHosts);
         }
-        String traffic_left = br.getRegex("Available premium bandwidth: <strong>([^<>\"]*?)</strong>").getMatch(0);
-        String traffic_downloaded = br.getRegex("Total used premium bandwidth: <strong>([^<>\"]*?)</strong>").getMatch(0);
+        String traffic_left = br.getRegex("Available premium bandwidth: <strong>([^<>\"]+)</strong>").getMatch(0);
+        String traffic_downloaded = br.getRegex("Total used premium bandwidth: <strong>([^<>\"]+)</strong>").getMatch(0);
         if (traffic_left != null && traffic_downloaded != null) {
             traffic_left = traffic_left.replace(",", ".");
             traffic_downloaded = traffic_downloaded.replace(",", ".");
@@ -223,8 +213,8 @@ public class PremiumRapeitNet extends PluginForHost {
             } else {
                 account.setType(AccountType.PREMIUM);
             }
-            ac.setTrafficLeft(SizeFormatter.getSize(traffic_left));
-            ac.setTrafficMax(ac.getTrafficLeft() + SizeFormatter.getSize(traffic_downloaded));
+            ac.setTrafficLeft(trafficleft);
+            ac.setTrafficMax(trafficmax);
         } else {
             /* Don't fail here just because the values are null. */
             ac.setUnlimitedTraffic();
@@ -233,9 +223,9 @@ public class PremiumRapeitNet extends PluginForHost {
         account.setMaxSimultanDownloads(-1);
         account.setConcurrentUsePossible(true);
         if (account.getType() == AccountType.PREMIUM) {
-            ac.setStatus("Premium account");
+            ac.setStatus("Premium Account");
         } else {
-            ac.setStatus("Registered (free) account");
+            ac.setStatus("Free Account");
         }
         return ac;
     }
@@ -268,7 +258,7 @@ public class PremiumRapeitNet extends PluginForHost {
                         }
                         /* Avoid login captcha on forced login */
                         if (force) {
-                            br.getPage(MAINPAGE);
+                            getPage(MAINPAGE);
                             if (br.containsHTML(">Logged in as <strong>")) {
                                 return true;
                             } else {
@@ -282,7 +272,7 @@ public class PremiumRapeitNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("https://premium.rapeit.net/?login");
+                getPage(MAINPAGE + "/?login");
                 String postData = "emailaddress=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
                 final DownloadLink dummyLink = new DownloadLink(this, "Account", NICE_HOST, MAINPAGE, true);
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
@@ -297,7 +287,7 @@ public class PremiumRapeitNet extends PluginForHost {
                     final String code = getCaptchaCode("/random_image.php", dummyLink);
                     postData += "&txtCaptcha=" + Encoding.urlEncode(code);
                 }
-                br.postPage("/?login", postData);
+                postPage("/?login", postData);
                 if (br.getCookie(MAINPAGE, "session") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder Login-Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort (und Captcha) stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -322,36 +312,21 @@ public class PremiumRapeitNet extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private String site_get_dllink(final DownloadLink link, final Account acc) throws Exception {
         String dllink;
         final String url = Encoding.urlEncode(link.getDownloadURL());
-        br.postPage("http://premium.rapeit.net/", "inputlink=" + url);
-        dllink = br.getRegex("href=\"(https?://[a-z0-9]+\\.rapeit\\.net(:\\d+)?/dl/[^<>\"]*?)\" target=\"_blank\"").getMatch(0);
+        postPage(MAINPAGE, "inputlink=" + url);
+        dllink = br.getRegex("href=\"(https?://[a-z0-9]+\\.rapeit\\.net(:\\d+)?/dl/[^<>\"]+)\" target=\"_blank\"").getMatch(0);
         if (dllink == null) {
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().matches("https?://premium\\.rapeit\\.net/?")) {
+                // they probably switched/enforce from http to https or https to http
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+            }
             handleErrorRetriesn(acc, link, "dllink_null", 10);
         }
         dllink = dllink.replace("\\", "");
         return dllink;
-    }
-
-    private AccountInfo api_fetchAccountInfo(final Account account) throws Exception {
-        if (!api_login(account, true)) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder Login-Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort (und Captcha) stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password (and captcha) you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
-        return null;
-    }
-
-    private boolean api_login(final Account account, final boolean force) throws Exception {
-        return false;
-    }
-
-    private String api_get_dllink(final DownloadLink link, final Account acc) throws Exception {
-        return null;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -393,18 +368,6 @@ public class PremiumRapeitNet extends PluginForHost {
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         return true;
-    }
-
-    private static final boolean default_USE_API = false;
-
-    protected boolean useAPI() {
-        return getPluginConfig().getBooleanProperty(USE_API, default_USE_API);
-    }
-
-    private void setConfigElements() {
-        /* No API available yet: http://svn.jdownloader.org/issues/46706 */
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API,
-        // JDL.L("plugins.hoster.PremiumRapeitNet.useAPI", "Use API (recommended!)")).setDefaultValue(default_USE_API));
     }
 
     @Override
