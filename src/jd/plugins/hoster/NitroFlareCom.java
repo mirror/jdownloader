@@ -309,7 +309,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     /**
      * Validates account and returns correct account info, when user has provided incorrect user pass fields to JD client. Or Throws
      * exception indicating users mistake, when it's a irreversible mistake.
-     *
+     * 
      * @param account
      * @return
      * @throws PluginException
@@ -488,10 +488,10 @@ public class NitroFlareCom extends antiDDoSForHost {
                 }
                 // some times error 4 is found here
                 handleApiErrors(account, downloadLink);
-                dllink = getJson("url");
-                if (inValidate(dllink)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+            }
+            dllink = getJson("url");
+            if (inValidate(dllink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumes, chunks);
