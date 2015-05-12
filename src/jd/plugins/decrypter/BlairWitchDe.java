@@ -54,11 +54,13 @@ public class BlairWitchDe extends PluginForDecrypt {
 
         // images
         final String[][] images = br.getRegex("(http://(?:www\\.)?blairwitch\\.de/wp-content/(?:uploads/\\d+/\\d+/|bwdatabase/gallery/full/\\d+.*?)(\\.(?:je?pg|png|gif)))").getMatches();
-        for (final String[] finallink : images) {
-            if (finallink != null && dupe.add(finallink[0])) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + finallink[0]);
-                dl.setFinalFileName(filename + finallink[1]);
-                decryptedLinks.add(dl);
+        if (images != null) {
+            for (final String[] finallink : images) {
+                if (dupe.add(finallink[0])) {
+                    final DownloadLink dl = createDownloadlink("directhttp://" + finallink[0]);
+                    dl.setFinalFileName(filename + finallink[1]);
+                    decryptedLinks.add(dl);
+                }
             }
         }
 
@@ -66,19 +68,23 @@ public class BlairWitchDe extends PluginForDecrypt {
         // some are youtube
         // some are at brightcove and these are rtmp
         String[] finallinks = br.getRegex("https?://(?:www\\.)?blairwitch\\.de/wp-content/bwdatabase/trailer/\\d+\\.mp4").getColumn(-1);
-        for (final String finallink : finallinks) {
-            if (finallink != null && dupe.add(finallink)) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-                dl.setFinalFileName(filename + ".mp4");
-                decryptedLinks.add(dl);
+        if (finallinks != null) {
+            for (final String finallink : finallinks) {
+                if (dupe.add(finallink)) {
+                    final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+                    dl.setFinalFileName(filename + ".mp4");
+                    decryptedLinks.add(dl);
+                }
             }
         }
         // youtube
         finallinks = br.getRegex("<iframe[^>]*src=('|\")(.*?youtube.com/.*?)\\1").getColumn(1);
-        for (final String finallink : finallinks) {
-            if (finallink != null && dupe.add(finallink)) {
-                final DownloadLink dl = createDownloadlink(finallink);
-                decryptedLinks.add(dl);
+        if (finallinks != null) {
+            for (final String finallink : finallinks) {
+                if (finallink != null && dupe.add(finallink)) {
+                    final DownloadLink dl = createDownloadlink(finallink);
+                    decryptedLinks.add(dl);
+                }
             }
         }
         // brightcove (not supported at this time)
