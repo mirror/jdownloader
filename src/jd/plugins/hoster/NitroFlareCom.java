@@ -309,7 +309,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     /**
      * Validates account and returns correct account info, when user has provided incorrect user pass fields to JD client. Or Throws
      * exception indicating users mistake, when it's a irreversible mistake.
-     * 
+     *
      * @param account
      * @return
      * @throws PluginException
@@ -471,9 +471,8 @@ public class NitroFlareCom extends antiDDoSForHost {
                 String recap = getJson("recaptchaPublic");
                 if (!inValidate(recap)) {
                     logger.info("Detected captcha method \"Re Captcha\"");
-                    final Browser captcha = br.cloneBrowser();
                     final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(captcha);
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                     rc.setId(recap);
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
@@ -482,13 +481,13 @@ public class NitroFlareCom extends antiDDoSForHost {
                         sleep((Long.parseLong(delay) * 1000) - (System.currentTimeMillis() - startTime), downloadLink);
                     }
                     getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                    if ("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code"))) {
+                    if (("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code"))) || (!inValidate(getJson("accessLink")) && !inValidate(getJson("recaptchaPublic")))) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                 }
-                // some times error 4 is found here
-                handleApiErrors(account, downloadLink);
             }
+            // some times error 4 is found here
+            handleApiErrors(account, downloadLink);
             dllink = getJson("url");
             if (inValidate(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
