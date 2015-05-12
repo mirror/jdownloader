@@ -62,7 +62,7 @@ import org.jdownloader.translate._JDT;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
- * 
+ *
  * Alle Plugins verfügen über einen Event Mechanismus
  */
 public abstract class Plugin implements ActionListener {
@@ -160,7 +160,7 @@ public abstract class Plugin implements ActionListener {
     /**
      * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer
      * DownloadLink.getName() verwendet werden
-     * 
+     *
      * @return Datename des Downloads.
      */
     public static String extractFileNameFromURL(final String iFilename) {
@@ -194,13 +194,13 @@ public abstract class Plugin implements ActionListener {
 
     /**
      * Holt den Dateinamen aus einem Content-Disposition header. wird dieser nicht gefunden, wird der dateiname aus der url ermittelt
-     * 
+     *
      * @param urlConnection
      * @return Filename aus dem header (content disposition) extrahiert
      */
     public static String getFileNameFromHeader(final URLConnectionAdapter urlConnection) {
         String contentDisposition = urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION);
-        if (contentDisposition == null || contentDisposition.indexOf("filename") < 0) {
+        if (contentDisposition == null || contentDisposition.indexOf("filename") < 0 && contentDisposition.indexOf("file_name") < 0) {
             return Plugin.getFileNameFromURL(urlConnection.getURL());
         } else {
             return Plugin.getFileNameFromDispositionHeader(contentDisposition);
@@ -212,7 +212,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * 
+     *
      * @param message
      *            The message to be displayed or <code>null</code> to display a Password prompt
      * @param link
@@ -273,7 +273,7 @@ public abstract class Plugin implements ActionListener {
 
     /**
      * Show a USername + password dialog
-     * 
+     *
      * @param link
      * @return
      * @throws PluginException
@@ -310,7 +310,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * 
+     *
      * @param message
      *            The message to be displayed or <code>null</code> to display a Password prompt
      * @param link
@@ -363,7 +363,7 @@ public abstract class Plugin implements ActionListener {
     /**
      * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des
      * Patterns vorhanden ist.
-     * 
+     *
      * @param data
      *            der zu prüfende Text
      * @return wahr, falls ein Treffer gefunden wurde.
@@ -388,7 +388,7 @@ public abstract class Plugin implements ActionListener {
 
     /**
      * Gibt das Konfigurationsobjekt der Instanz zurück. Die Gui kann daraus Dialogelement zaubern
-     * 
+     *
      * @return gibt die aktuelle Configuration Instanz zurück
      */
     public ConfigContainer getConfig() {
@@ -428,7 +428,7 @@ public abstract class Plugin implements ActionListener {
 
     /**
      * Liefert den Anbieter zurück, für den dieses Plugin geschrieben wurde
-     * 
+     *
      * @return Der unterstützte Anbieter
      */
     public abstract String getHost();
@@ -439,7 +439,7 @@ public abstract class Plugin implements ActionListener {
 
     /**
      * Returns the time in ms until a captcha request times out. this can be different for every plugin.
-     * 
+     *
      * @PluginDevelopers: Please do not use the @Override Annotation when overriding this method. At least not until 2.0 stable release
      * @return
      */
@@ -449,7 +449,7 @@ public abstract class Plugin implements ActionListener {
 
     /**
      * Gibt die Datei zurück in die der aktuelle captcha geladen werden soll.
-     * 
+     *
      * @param plugin
      * @return Gibt einen Pfad zurück der für die nächste Captchadatei reserviert ist
      */
@@ -466,14 +466,14 @@ public abstract class Plugin implements ActionListener {
 
     /**
      * p gibt das interne properties objekt zurück indem die Plugineinstellungen gespeichert werden
-     * 
+     *
      * @return internes property objekt
      */
     public abstract SubConfiguration getPluginConfig();
 
     /**
      * Ein regulärer Ausdruck, der anzeigt, welche Links von diesem Plugin unterstützt werden
-     * 
+     *
      * @return Ein regulärer Ausdruck
      * @see Pattern
      */
@@ -481,7 +481,7 @@ public abstract class Plugin implements ActionListener {
 
     /**
      * Liefert die Versionsbezeichnung dieses Plugins zurück
-     * 
+     *
      * @return Versionsbezeichnung
      */
     public abstract long getVersion();
@@ -494,7 +494,7 @@ public abstract class Plugin implements ActionListener {
 
     /**
      * Can be overridden, to return a descriptio of the hoster, or a short help forit's settings
-     * 
+     *
      * @return
      */
     public String getDescription() {
