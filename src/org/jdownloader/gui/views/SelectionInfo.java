@@ -212,7 +212,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         if (lastPackageView != null) {
             final PackageType lastPackage = lastPackageView.getPackage();
             PluginView<ChildrenType> lastPluginView = null;
-            if (lastPackageView.isPackageSelected() && (lastPackageView.isExpanded == false || lastPackageChildren.size() == 0)) {
+            if (lastPackageView.isPackageSelected() && (lastPackageView.isExpanded() == false || lastPackageChildren.size() == 0)) {
                 final boolean readL = lastPackage.getModifyLock().readLock();
                 try {
                     final List<ChildrenType> packageChildren = lastPackage.getChildren();
