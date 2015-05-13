@@ -259,7 +259,7 @@ public class FapduCom extends PluginForDecrypt {
             }
         }
         // fapdu.com direct links handling
-        externID = br.getRegex("\\'file\\' : \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        externID = br.getRegex("\"file\"[\t\n\r ]*?:[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("directhttp://" + Encoding.htmlDecode(externID)));
             return decryptedLinks;

@@ -61,6 +61,7 @@ public class SlideShareNet extends PluginForHost {
     private static final String NOTDOWNLOADABLE = "class=\"sprite iconNoDownload j\\-tooltip\"";
 
     // TODO: Implement API: http://www.slideshare.net/developers/documentation
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -203,6 +204,7 @@ public class SlideShareNet extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -218,6 +220,7 @@ public class SlideShareNet extends PluginForHost {
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -250,7 +253,10 @@ public class SlideShareNet extends PluginForHost {
                 if (br.containsHTML(FILENOTFOUND)) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "This document is not downloadable!");
                 }
-                dllink = br.getRegex("class=\"altDownload\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("class=\"altDownload\">[\t\n\r ]+<a class=\"btn\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\"(http://[a-z0-9]+\\.amazonaws\\.com/[^<>\"]*?)\"").getMatch(0);
+                }
             }
         }
         if (dllink == null) {

@@ -71,6 +71,7 @@ public class Tube8Com extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        dllink = null;
         if (setEx) {
             this.setBrowserExclusive();
         }
@@ -112,7 +113,7 @@ public class Tube8Com extends PluginForHost {
         }
         /* normal link */
         if (failed) {
-            findNormalLink(videoDownloadUrls);
+            findNormalLink(this.br.toString());
         }
         if (failed && dllink != null && requestVideo(downloadLink)) {
             failed = false;
@@ -165,7 +166,8 @@ public class Tube8Com extends PluginForHost {
         }
     }
 
-    private String standardAndMobile(DownloadLink downloadLink) throws Exception {
+    @SuppressWarnings("deprecation")
+    private String standardAndMobile(final DownloadLink downloadLink) throws Exception {
         final String hash = br.getRegex("videoHash[\t\n\r ]+=[\t\n\r ]\"([a-z0-9]+)\"").getMatch(0);
         if (hash == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -188,6 +190,9 @@ public class Tube8Com extends PluginForHost {
         dllink = new Regex(correctedBR, "\"standard_url\":\"(http.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = new Regex(correctedBR, "\"(http://cdn\\d+\\.public\\.tube8\\.com/.*?)\"").getMatch(0);
+        }
+        if (dllink == null) {
+            dllink = new Regex(correctedBR, "page_params\\.videoUrlJS = \"(http[^<>\"]*?)\";").getMatch(0);
         }
     }
 
@@ -272,6 +277,7 @@ public class Tube8Com extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();

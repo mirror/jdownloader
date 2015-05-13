@@ -833,7 +833,11 @@ public class SaveTv extends PluginForHost {
                 // doSoapRequest("http://tempuri.org/IUser/GetUserStatus", "<sessionId i:type=\"d:string\">" + SESSIONID + "</sessionId>");
                 acctype = "XL Account";
             } else {
-                /* Get long lasting login cookie */
+                /*
+                 * Get long lasting login cookie. Keep in mind that such a cookie can only exist once for every account so in case a user
+                 * uses multiple JDs it might happen that they "steal" themselves this cookie but it should still work fine for up to 3
+                 * JDownloader instances.
+                 */
                 String long_cookie = br.getCookie("http://save.tv/", "SLOCO");
                 if (long_cookie == null || long_cookie.trim().equals("bAutoLoginActive=1")) {
                     logger.info("Long session cookie does not exist yet/anymore - enabling it");
@@ -862,9 +866,20 @@ public class SaveTv extends PluginForHost {
                     }
                 }
 
-                final String expireDate = getJson(br.toString(), "DCURRENTARTICLEENDDATE");
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd hh:mm:ss", Locale.GERMAN));
-                account.setProperty("acc_expire", expireDate);
+                final String expireDate_str = getJson(br.toString(), "DCURRENTARTICLEENDDATE");
+                final long expireDate_real = TimeFormatter.getMilliSeconds(expireDate_str, "yyyy-MM-dd hh:mm:ss", Locale.GERMAN);
+                long expireDate_user_display = expireDate_real;
+                final long timeleft = System.currentTimeMillis() - expireDate_real;
+                if (timeleft > 0 && timeleft < 24 * 60 * 60 * 1000l) {
+                    /*
+                     * Account expired less then 24 hours ago --> Add 24 hours to it so in case the user has a subscription JD does not
+                     * deactivate the account because save.tv needs some time to show the new expire date.
+                     */
+                    expireDate_user_display += 24 * 60 * 60 * 1000;
+                }
+                ai.setValidUntil(expireDate_user_display);
+                account.setProperty("acc_expire", expireDate_real);
+
                 final String package_name = getJson(br.toString(), "SCURRENTARTICLENAME");
                 if (package_name.contains("Basis")) {
                     acctype = "Basis Account";
