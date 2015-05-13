@@ -62,6 +62,11 @@ public class ImgurCom extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         PARAMETER = param.toString().replace("https://", "http://").replaceFirst("/all$", "");
+        LID = new Regex(PARAMETER, "([A-Za-z0-9]+)$").getMatch(0);
+        /* Gallery == single image */
+        if (PARAMETER.matches(TYPE_GALLERY)) {
+            PARAMETER = "http://imgur.com/" + LID;
+        }
         synchronized (ctrlLock) {
             if (!pluginLoaded.get()) {
                 // load plugin!
@@ -70,8 +75,7 @@ public class ImgurCom extends PluginForDecrypt {
             }
             view_filesizelimit = jd.plugins.hoster.ImgUrCom.view_filesizelimit;
             String fpName = null;
-            LID = new Regex(PARAMETER, "([A-Za-z0-9]+)$").getMatch(0);
-            if (PARAMETER.matches(TYPE_ALBUM) || PARAMETER.matches(TYPE_GALLERY)) {
+            if (PARAMETER.matches(TYPE_ALBUM)) {
                 try {
                     if (!SubConfiguration.getConfig("imgur.com").getBooleanProperty(SETTING_USE_API, false)) {
                         logger.info("User prefers not to use the API");
@@ -79,6 +83,8 @@ public class ImgurCom extends PluginForDecrypt {
                     }
                     br.getHeaders().put("Authorization", jd.plugins.hoster.ImgUrCom.getAuthorization());
                     try {
+                        /* Gallery (single image) */
+                        // br.getPage("https://api.imgur.com/3/gallery/image/" + LID);
                         br.getPage("https://api.imgur.com/3/album/" + LID);
                     } catch (final BrowserException e) {
                         if (br.getHttpConnection().getResponseCode() == 429) {
@@ -149,7 +155,6 @@ public class ImgurCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @SuppressWarnings("deprecation")
     private void api_decrypt() throws DecrypterException {
         if (br.containsHTML("\"status\":404")) {
             /* Well in case it's a gallery link it might be a single picture */

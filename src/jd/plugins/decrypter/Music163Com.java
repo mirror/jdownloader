@@ -33,7 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "music.163.com" }, urls = { "http://(www\\.)?music\\.163\\.com/(?:#/)?(?:album\\?id=\\d+|artist/album\\?id=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "music.163.com" }, urls = { "http://(www\\.)?music\\.163\\.com/(?:#/)?(?:album\\?id=|artist/album\\?id=|playlist\\?id=)\\d+" }, flags = { 0 })
 public class Music163Com extends PluginForDecrypt {
 
     public Music163Com(PluginWrapper wrapper) {
@@ -42,6 +42,7 @@ public class Music163Com extends PluginForDecrypt {
 
     private static final String TYPE_SINGLE_ALBUM = "http://(www\\.)?music\\.163\\.com/(?:#/)?album\\?id=\\d+";
     private static final String TYPE_ARTIST       = "http://(www\\.)?music\\.163\\.com/(?:#/)?artist/album\\?id=\\d+";
+    private static final String TYPE_PLAYLIST     = "http://(www\\.)?music\\.163\\.com/(?:#/)?playlist\\?id=\\d+";
 
     /** Settings stuff */
     private static final String FAST_LINKCHECK    = "FAST_LINKCHECK";
@@ -77,20 +78,43 @@ public class Music163Com extends PluginForDecrypt {
                 decryptedLinks.add(dl);
             }
         } else {
-            br.getPage("http://music.163.com/api/album/" + lid + "/");
-            if (br.getHttpConnection().getResponseCode() != 200) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+            long publishedTimestamp = 0;
+            LinkedHashMap<String, Object> artistinfo = null;
+            String name_artist = null;
+            String name_album = null;
+            String fpName = null;
+            if (parameter.matches(TYPE_PLAYLIST)) {
+                /* Playlist */
+                br.getPage("http://music.163.com/api/playlist/detail?id=" + lid);
+                if (br.getHttpConnection().getResponseCode() != 200) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
+                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                entries = (LinkedHashMap<String, Object>) entries.get("result");
+                artistinfo = (LinkedHashMap<String, Object>) entries.get("creator");
+                resourcelist = (ArrayList) entries.get("tracks");
+
+                final String name_playlist = (String) entries.get("name");
+                final String name_creator = (String) artistinfo.get("signature");
+                fpName = name_creator + " - " + name_playlist;
+            } else {
+                /* Album */
+                br.getPage("http://music.163.com/api/album/" + lid + "/");
+                if (br.getHttpConnection().getResponseCode() != 200) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
+                entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                entries = (LinkedHashMap<String, Object>) entries.get("album");
+                artistinfo = (LinkedHashMap<String, Object>) entries.get("artist");
+                publishedTimestamp = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("publishTime"), 0);
+                resourcelist = (ArrayList) entries.get("songs");
+                name_album = (String) entries.get("name");
+                name_artist = (String) artistinfo.get("name");
+                fpName = name_artist + " - " + name_album;
             }
-            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            entries = (LinkedHashMap<String, Object>) entries.get("album");
             final String coverurl = (String) entries.get("picUrl");
-            final long publishedTimestamp = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("publishTime"), 0);
-            LinkedHashMap<String, Object> artistinfo = (LinkedHashMap<String, Object>) entries.get("artist");
-            resourcelist = (ArrayList) entries.get("songs");
-            final String name_artist = (String) artistinfo.get("name");
-            final String name_album = (String) entries.get("name");
-            String fpName = name_artist + " - " + name_album;
             final DecimalFormat df;
             if (resourcelist.size() < 100) {
                 df = new DecimalFormat("00");
@@ -106,9 +130,12 @@ public class Music163Com extends PluginForDecrypt {
                 String ext = null;
                 long filesize = 0;
                 final LinkedHashMap<String, Object> song_info = (LinkedHashMap<String, Object>) songo;
+                final ArrayList<Object> artists = (ArrayList) song_info.get("artists");
+                final LinkedHashMap<String, Object> artist_info = (LinkedHashMap<String, Object>) artists.get(0);
                 final String songname = (String) song_info.get("name");
                 final String fid = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(song_info.get("id"), -1));
                 final String tracknumber = df.format(counter);
+                final String artist = (String) artist_info.get("name");
                 /* Now find the highest quality available */
                 for (final String quality : qualities) {
                     final Object musicO = song_info.get(quality);
@@ -124,7 +151,12 @@ public class Music163Com extends PluginForDecrypt {
                     return null;
                 }
                 final DownloadLink dl = createDownloadlink("http://music.163.com/song?id=" + fid);
-                String filename = tracknumber + "." + name_artist + " - " + name_album + " - " + songname + "." + ext;
+                String filename;
+                if (name_album != null) {
+                    filename = tracknumber + "." + artist + " - " + name_album + " - " + songname + "." + ext;
+                } else {
+                    filename = tracknumber + "." + artist + " - " + songname + "." + ext;
+                }
                 if (formattedDate != null) {
                     dl.setProperty("publishedTimestamp", publishedTimestamp);
                     filename = formattedDate + "_" + filename;
