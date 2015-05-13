@@ -46,9 +46,14 @@ public class BlairWitchDe extends PluginForDecrypt {
 
         String param = parameter.toString();
         br.getPage(param);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(createOfflinelink(param));
+            return decryptedLinks;
+        }
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
-            return null;
+            // this may or may not be an error. to prevent frivolous guarado tickets
+            return decryptedLinks;
         }
         filename = Encoding.htmlDecode(filename);
 
