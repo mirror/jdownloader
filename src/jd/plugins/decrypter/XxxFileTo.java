@@ -28,7 +28,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 24808 $", interfaceVersion = 2, names = { "xxxfile.to" }, urls = { "http://(?:www\\.)?(?:xxxfile|x3)\\.to/download/clips/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 24808 $", interfaceVersion = 2, names = { "xfull.net" }, urls = { "http://(?:www\\.)?(?:xfull\\.net|xxxfile\\.to|x3\\.to)/download/clips(?:_[sh]d)?/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class XxxFileTo extends PluginForDecrypt {
 
     /**
@@ -41,8 +41,8 @@ public class XxxFileTo extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("xxxfile.to", "x3.to");
-        br.setCookie("x3.to", "hasVisitedSite", "Yes");
+        final String parameter = param.toString().replaceFirst("xxxfile\\.to|x3.to", getHost());
+        br.setCookie(getHost(), "hasVisitedSite", "Yes");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         correctBR();
@@ -64,15 +64,17 @@ public class XxxFileTo extends PluginForDecrypt {
         }
 
         for (final String link : links) {
-            if (!link.matches("https?://(?:www\\.)?(?:xxxfile|x3)\\.to/.+")) {
+            if (!link.matches("https?://(?:www\\.)?(?:xxxfile\\.to|x3\\.to|xfull\\.net)/.+")) {
                 decryptedLinks.add(createDownloadlink(link));
             }
         }
 
-        final String[] imgs = new Regex(content, "(https?://([\\w\\.]+)?(?:pixhost\\.org/show/|picsee\\.net/)[^\"]+)").getColumn(0);
+        final String[] imgs = new Regex(content, "https?://([\\w\\.]+)?(?:pixhost\\.org/show/|picsee\\.net/)[^\"]+").getColumn(-1);
         if (links != null && links.length != 0) {
             for (final String img : imgs) {
-                decryptedLinks.add(createDownloadlink(img));
+                if (!img.matches("(?i-).+thumbnails?.+")) {
+                    decryptedLinks.add(createDownloadlink(img));
+                }
             }
         }
 
