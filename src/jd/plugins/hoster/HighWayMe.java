@@ -285,7 +285,8 @@ public class HighWayMe extends PluginForHost {
         final LinkedHashMap<String, Object> info_account = (LinkedHashMap<String, Object>) entries.get("user");
         final ArrayList<Object> array_hoster = (ArrayList) entries.get("hoster");
         final int account_maxchunks = ((Number) info_account.get("max_chunks")).intValue();
-        final int account_maxdls = ((Number) info_account.get("max_connection")).intValue();
+        int account_maxdls = ((Number) info_account.get("max_connection")).intValue();
+        account_maxdls = this.correctMaxdls(account_maxdls);
         final int account_resume = ((Number) info_account.get("resume")).intValue();
         final long free_traffic = ((Number) info_account.get("free_traffic")).longValue();
         final long premium_bis = ((Number) info_account.get("premium_bis")).longValue();
@@ -307,7 +308,7 @@ public class HighWayMe extends PluginForHost {
         account.setConcurrentUsePossible(true);
         /* Set supported hosts, limits and account limits */
         account.setProperty("account_maxchunks", this.correctChunks(account_maxchunks));
-        account.setProperty("account_maxdls", this.correctMaxdls(account_maxdls));
+        account.setProperty("account_maxdls", account_maxdls);
         if (account_resume == 1) {
             account.setProperty("resume", true);
         } else {
@@ -317,7 +318,7 @@ public class HighWayMe extends PluginForHost {
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         hostMaxchunksMap.clear();
         hostMaxdlsMap.clear();
-        account.setMaxSimultanDownloads(20);
+        account.setMaxSimultanDownloads(account_maxdls);
         for (final Object hoster : array_hoster) {
             final LinkedHashMap<String, Object> hoster_map = (LinkedHashMap<String, Object>) hoster;
             final String domain = correctHost((String) hoster_map.get("name"));

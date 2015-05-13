@@ -870,10 +870,11 @@ public class SaveTv extends PluginForHost {
                 final long expireDate_real = TimeFormatter.getMilliSeconds(expireDate_str, "yyyy-MM-dd hh:mm:ss", Locale.GERMAN);
                 long expireDate_user_display = expireDate_real;
                 final long timeleft = System.currentTimeMillis() - expireDate_real;
-                if (timeleft > 0 && timeleft < 24 * 60 * 60 * 1000l) {
+                if ((timeleft > 0 && timeleft < 24 * 60 * 60 * 1000l) || (expireDate_user_display < 0 && expireDate_user_display > 2 * 60 * 60 * 1000l)) {
                     /*
-                     * Account expired less then 24 hours ago --> Add 24 hours to it so in case the user has a subscription JD does not
-                     * deactivate the account because save.tv needs some time to show the new expire date.
+                     * Account expired less then 24 hours ago or is only valid for 2 hours or less --> Add 24 hours to it so in case the
+                     * user has a subscription JD does not deactivate the account because save.tv needs some time to show the new expire
+                     * date.
                      */
                     expireDate_user_display += 24 * 60 * 60 * 1000;
                 }
