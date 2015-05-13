@@ -490,23 +490,36 @@ public class SmoozedCom extends PluginForHost {
                     }
                 }
             } else if ("retry".equals(state)) {
-                if (StringUtils.equalsIgnoreCase(message, "Hoster temporary not available") || StringUtils.equalsIgnoreCase(message, "Internal error")) {
+                if (StringUtils.equalsIgnoreCase(message, "Premium needed") && link != null && account != null) {
+                    if (seconds != null) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Traffic limit for this hoster via smoozed.com reached", Math.max(900, seconds.intValue()) * 1000);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Traffic limit for this hoster via smoozed.com reached");
+                    }
+                } else if (StringUtils.equalsIgnoreCase(message, "Hoster temporary not available") || StringUtils.equalsIgnoreCase(message, "Internal error")) {
                     // Hoster temporary not available
                     if (seconds != null) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster temporary not availabl via smoozed.come", seconds.intValue() * 1000);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster temporary not availabl via smoozed.com", Math.max(900, seconds.intValue()) * 1000);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster temporary not availablevia smoozed.com");
                     }
                 } else if (StringUtils.equalsIgnoreCase(message, "Temporary not available")) {
                     // File temporary not available
                     if (seconds != null) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporary not downloadable via smoozed.com", seconds.intValue() * 1000);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporary not downloadable via smoozed.com", Math.max(300, seconds.intValue()) * 1000);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File temporary not downloadable via smoozed.com");
                     }
                 } else if (StringUtils.equalsIgnoreCase(message, "No traffic available")) {
                     // No traffic available
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No traffic available");
+                } else if (StringUtils.equalsIgnoreCase(message, "Check timed out")) {
+                    // Check timed out
+                    if (seconds != null) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Check timed out at smoozed.com", Math.max(60, seconds.intValue()) * 1000);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Check timed out at smoozed.com");
+                    }
                 }
             }
         }
