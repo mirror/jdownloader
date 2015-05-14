@@ -48,6 +48,9 @@ public class UlabsDe extends PluginForHost {
     private static final String                            NICE_HOST          = MAINPAGE.replaceAll("(https://|http://)", "");
     private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
 
+    /* Contains <host><aavailable_traffic> */
+    private static HashMap<String, Long>                   hostTrafficleftMap = new HashMap<String, Long>();
+
     public UlabsDe(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://u-labs.de/register.php");
@@ -232,18 +235,22 @@ public class UlabsDe extends PluginForHost {
         }
         final String[] hosts = br.getRegex("\"name\":[\t\n\r ]+\"([^<>\"]*?)\"").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        for (final String host : hosts) {
-            supportedHosts.add(host.toLowerCase());
-        }
         long trafficavailable = 0;
         long trafficmax = 0;
         final String[] traffics = br.getRegex("\"freeTraffic\":[\t\n\r ]+(\\d+)").getColumn(0);
         final String[] traffics_max = br.getRegex("\"totalTraffic\":[\t\n\r ]+(\\d+)").getColumn(0);
-        for (final String traffic : traffics) {
-            trafficavailable += Long.parseLong(traffic) * 1024 * 1024;
-        }
-        for (final String trafficmx : traffics_max) {
-            trafficmax += Long.parseLong(trafficmx) * 1024 * 1024;
+        for (int i = 0; i < traffics.length; i++) {
+            final String trafficstr = traffics[i];
+            final String host_traffic_maxstr = traffics_max[i];
+            final long trafficlong = Long.parseLong(trafficstr) * 1024 * 1024;
+            final long host_traffic_max = Long.parseLong(host_traffic_maxstr) * 1024 * 1024;
+            trafficavailable += trafficlong;
+            trafficmax += host_traffic_max;
+            final String host = hosts[i].toLowerCase();
+            synchronized (hostTrafficleftMap) {
+                hostTrafficleftMap.put(host, trafficlong);
+            }
+            supportedHosts.add(host);
         }
         ac.setTrafficLeft(trafficavailable);
         ac.setTrafficMax(trafficmax);
@@ -382,8 +389,18 @@ public class UlabsDe extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public boolean canHandle(DownloadLink downloadLink, Account account) {
+    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+        synchronized (hostTrafficleftMap) {
+            final String host = downloadLink.getHost();
+            if (hostTrafficleftMap.containsKey(host)) {
+                final long traffic_left = hostTrafficleftMap.get(host);
+                if (downloadLink.getDownloadSize() > traffic_left) {
+                    return false;
+                }
+            }
+        }
         return true;
     }
 
