@@ -273,7 +273,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 final int id = Integer.parseInt(modifiers);
 
                 String output = input;
-                // the i counter allows us to write regular expressions that adress a certain line only.
+                // the i counter allows us to write regular expressions that address a certain line only.
                 final String pattern = lgr.getSourceRule().getPattern().pattern();
                 final boolean indexed = pattern.matches("^\\-?\\d+\\\\\\. .+");
                 final boolean inverted = pattern.startsWith("-");
@@ -308,7 +308,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                         }
                     }
                     if (values != null && values.length > (id - 1)) {
-                        output = Pattern.compile("<jd:source:" + id + "/?>").matcher(output).replaceAll(Matcher.quoteReplacement(Encoding.urlDecode(values[id - 1], false)));
+                        output = Pattern.compile("<jd:source:" + id + "\\s*/?\\s*>").matcher(output).replaceAll(Matcher.quoteReplacement(Encoding.urlDecode(values[id - 1], false)));
                     }
                 }
                 return output;
@@ -317,12 +317,12 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
         addReplacer(new PackagizerReplacer() {
 
-            private Pattern pat = Pattern.compile("<jd:orgfilename/?>");
+            private Pattern pat = Pattern.compile("<jd:" + ORGFILENAME + "\\s*/?\\s*>");
 
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 if (modifiers != null) {
-                    String rep = new Regex(link.getName(), lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(modifiers) - 1];
-                    return Pattern.compile("<jd:orgfilename:" + modifiers + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(rep));
+                    final String rep = new Regex(link.getName(), lgr.getFileNameRule().getPattern()).getMatch(Integer.parseInt(modifiers) - 1);
+                    return Pattern.compile("<jd:" + ORGFILENAME + ":" + modifiers + "\\s*/?\\s*>").matcher(input).replaceAll(Matcher.quoteReplacement(rep));
                 }
                 return pat.matcher(input).replaceAll(Matcher.quoteReplacement(link.getName()));
             }
@@ -334,7 +334,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         });
         addReplacer(new PackagizerReplacer() {
 
-            private Pattern pat = Pattern.compile("<jd:" + ORGPACKAGENAME + "/?>");
+            private Pattern pat = Pattern.compile("<jd:" + ORGPACKAGENAME + "\\s*/?\\s*>");
 
             public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
                 String packagename = null;
@@ -350,7 +350,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 if (modifiers != null) {
                     Pattern patt = lgr.getPackageNameRule().getPattern();
                     String[] matches = new Regex(packagename, patt).getRow(0);
-                    return Pattern.compile("<jd:" + ORGPACKAGENAME + ":" + modifiers + "/?>").matcher(input).replaceAll(Matcher.quoteReplacement(matches[Integer.parseInt(modifiers) - 1]));
+                    return Pattern.compile("<jd:" + ORGPACKAGENAME + ":" + modifiers + "\\s*/?\\s*>").matcher(input).replaceAll(Matcher.quoteReplacement(matches[Integer.parseInt(modifiers) - 1]));
                     //
                 }
                 return pat.matcher(input).replaceAll(Matcher.quoteReplacement(packagename));
@@ -770,13 +770,13 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     public String replaceVariables(String txt, CrawledLink link, PackagizerRuleWrapper lgr) {
-        String[][] matches = new Regex(txt, "<jd:(.*?)(:(.+?))?>").getMatches();
+        String[][] matches = new Regex(txt, "<jd:([^>]+)(?::(.*?))\\s*/?\\s*>").getMatches();
         if (matches != null) {
             try {
                 for (String m[] : matches) {
                     PackagizerReplacer replacer = replacers.get(m[0].toLowerCase(Locale.ENGLISH));
                     if (replacer != null) {
-                        txt = replacer.replace(m[2], link, txt, lgr);
+                        txt = replacer.replace(m[1], link, txt, lgr);
                     }
                 }
             } catch (final Throwable e) {
