@@ -1642,7 +1642,7 @@ public class SaveTv extends PluginForHost {
         final String episodename = dl.getStringProperty("episodename", customStringForEmptyTags);
         final String episodenumber = getEpisodeNumber(dl);
         /* If we have an episodename and/or episodenumber, we have a series, category does not matter then */
-        final boolean forceSeries = (!episodename.equals(customStringForEmptyTags) || episodenumber.matches("\\d+"));
+        final boolean forceSeries = (!inValidate(episodename) && !episodename.equals(customStringForEmptyTags) || episodenumber.matches("\\d+"));
 
         /* Check if we have a series or movie category */
         long cat = getLongProperty(dl, "category", 0l);
@@ -1774,6 +1774,22 @@ public class SaveTv extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     * */
+    private static boolean inValidate(final String s) {
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
