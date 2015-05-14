@@ -25,9 +25,15 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://(www\\.)?zippyshare\\.com/[a-z0-9\\-_%]+/[a-z0-9\\-_%]+/dir\\.html" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zippyshare.com" }, urls = { "http://(?:www\\.)?zippyshare\\.com/([a-z0-9\\-_%]+/[a-z0-9\\-_%]+/dir\\.html|[a-z0-9A-Z_-]+)" }, flags = { 0 })
 public class ZippyShareComFolder extends PluginForDecrypt {
 
     public ZippyShareComFolder(PluginWrapper wrapper) {
@@ -40,33 +46,55 @@ public class ZippyShareComFolder extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter);
         if (!br.containsHTML("class=\"filerow even\">")) {
-            logger.info("Link offline: " + parameter);
+            // this isn't the case.. it can be a user site link since now we listen to /[a-z0-9A-Z_-]+ we don't know until we try!
+            // logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        String[] links = br.getRegex("\"(http://www\\d+\\.zippyshare\\.com/v/\\d+/file\\.html)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (String singleLink : links)
-            decryptedLinks.add(createDownloadlink(singleLink));
-
         // Over 50 links? Maybe there is more...
-        int count = 1;
-        final String user = new Regex(parameter, "zippyshare\\.com/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/").getMatch(0);
-        final String dir = new Regex(parameter, "zippyshare\\.com/[a-z0-9\\-_]+/([a-z0-9\\-_]+)/").getMatch(0);
-        while (links != null && links.length == 50) {
-            if (count == 1) br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("http://www.zippyshare.com/fragments/publicDir/filetable.jsp", "page=" + count + "&user=" + user + "&dir=" + dir + "&sort=nameasc&pageSize=50&search=&viewType=default");
-            links = br.getRegex("\"(http://www\\d+\\.zippyshare\\.com/v/\\d+/file\\.html)\"").getColumn(0);
-            if (links != null) {
-                for (String singleLink : links)
-                    decryptedLinks.add(createDownloadlink(singleLink));
+        final String[] userDir = new Regex(parameter, "zippyshare\\.com/([a-z0-9\\-_]+)(?:/([a-z0-9\\-_]+)/)?").getRow(0);
+        final int r = 250;
+        while (true) {
+            final int dsize = decryptedLinks.size();
+            if (dsize == 0) {
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             }
-            count++;
+            br.postPage("http://www.zippyshare.com/fragments/publicDir/filetable.jsp", "page=" + (dsize / r) + "&user=" + userDir[0] + "&dir=" + (userDir[1] != null ? userDir[1] : "0") + "&sort=nameasc&pageSize=" + r + "&search=&viewType=default");
+            parseLinks(decryptedLinks);
+            if (decryptedLinks.size() != dsize + r) {
+                break;
+            }
         }
-
+        if (userDir[1] == null) {
+            // user directory
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName("User Directory - " + userDir[0]);
+            fp.addLinks(decryptedLinks);
+        }
         return decryptedLinks;
+    }
+
+    private void parseLinks(final ArrayList<DownloadLink> decryptedLinks) throws PluginException {
+        // lets parse each of the results and keep them trusted as online... this will reduce server loads
+        final String[] results = br.getRegex("<tr[^>]+class=(\"|')filerow even\\1.*?</tr>").getColumn(-1);
+        if (results != null) {
+            for (final String result : results) {
+                final String link = new Regex(result, "\"(http://www\\d+\\.zippyshare\\.com/v/[a-zA-Z0-9]+/file\\.html)\"").getMatch(0);
+                final String name = new Regex(result, ">([^\r\n]+)</a>").getMatch(0);
+                final String size = new Regex(result, ">\\s*(\\d+(?:[\\.,]\\d+)?\\s*(?:B(?:yte)?|KB|MB|GB))\\s*").getMatch(0);
+                if (link == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final DownloadLink dl = createDownloadlink(link);
+                if (name != null) {
+                    dl.setName(name);
+                    dl.setAvailableStatus(AvailableStatus.TRUE);
+                }
+                if (size != null) {
+                    dl.setDownloadSize(SizeFormatter.getSize(size.replace(",", ".")));
+                }
+                decryptedLinks.add(dl);
+            }
+        }
     }
 
     /* NO OVERRIDE!! */
