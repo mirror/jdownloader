@@ -76,7 +76,7 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
         parameter = correctLink(param.toString());
         prepBrowser(br);
         // setuid
-        uid = new Regex(parameter, "/(?:p|d)/([a-z0-9]+)$").getMatch(0);
+        uid = getUID(parameter);
         br.getPage(parameter);
         if (isOffline()) {
             decryptedLinks.add(createOfflinelink(parameter));
@@ -117,6 +117,10 @@ public abstract class abstractSafeLinking extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
+    }
+
+    protected String getUID(final String parameter) {
+        return new Regex(parameter, "/(?:p|d)/([a-z0-9]+)$").getMatch(0);
     }
 
     protected boolean isOffline() {
