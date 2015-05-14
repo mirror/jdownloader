@@ -61,6 +61,7 @@ public class ImgUrCom extends PluginForHost {
     }
 
     /* User settings */
+    private static final String SETTING_WEBM                   = "SETTING_WEBM";
     private static final String SETTING_CLIENTID               = "SETTING_CLIENTID";
     private static final String SETTING_USE_API                = "SETTING_USE_API";
 
@@ -222,6 +223,7 @@ public class ImgUrCom extends PluginForHost {
         if (filetype == null) {
             filetype = "jpeg";
         }
+        filetype = correctFiletypeUser(filetype);
         String finalfilename;
         if (title == null || title.equals("")) {
             finalfilename = imgUID + "." + filetype;
@@ -245,7 +247,7 @@ public class ImgUrCom extends PluginForHost {
         final String imgUID = getImgUID(dl);
         final String filetype = getFiletype(dl);
         String downloadlink;
-        if (filetype.equals("gif")) {
+        if (filetype.equals("gif") || filetype.equals("webm")) {
             /* Small workaround for gif files. */
             downloadlink = getURLView(dl);
         } else {
@@ -273,7 +275,7 @@ public class ImgUrCom extends PluginForHost {
     /** Returns viewable/downloadable imgur link. */
     public static final String getURLView(final DownloadLink dl) {
         final String imgUID = getImgUID(dl);
-        final String filetype = getFiletype(dl);
+        final String filetype = getFiletypeForUrl(dl);
         final String link_view = "http://i.imgur.com/" + imgUID + "." + filetype;
         return link_view;
     }
@@ -284,6 +286,37 @@ public class ImgUrCom extends PluginForHost {
 
     public static String getFiletype(final DownloadLink dl) {
         return dl.getStringProperty("filetype", null);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static String getFiletypeForUrl(final DownloadLink dl) {
+        final boolean preferWEBM = SubConfiguration.getConfig("imgur.com").getBooleanProperty(SETTING_WEBM, defaultWEBM);
+        String filetype_url;
+        final String real_filetype = getFiletype(dl);
+        if ((real_filetype.equals("gif") && preferWEBM) || real_filetype.equals("webm")) {
+            filetype_url = "webm";
+        } else {
+            filetype_url = real_filetype;
+        }
+        return filetype_url;
+    }
+
+    public static String getFiletypeForUser(final DownloadLink dl) {
+        final String real_filetype = getFiletype(dl);
+        final String corrected_filetype = correctFiletypeUser(real_filetype);
+        return corrected_filetype;
+    }
+
+    @SuppressWarnings("deprecation")
+    public static String correctFiletypeUser(final String input) {
+        final boolean preferWEBM = SubConfiguration.getConfig("imgur.com").getBooleanProperty(SETTING_WEBM, defaultWEBM);
+        String correctedfiletype_user;
+        if (input.equals("gif") && preferWEBM) {
+            correctedfiletype_user = "webm";
+        } else {
+            correctedfiletype_user = input;
+        }
+        return correctedfiletype_user;
     }
 
     private String getJson(final String source, final String parameter) {
@@ -348,9 +381,12 @@ public class ImgUrCom extends PluginForHost {
         return "This Plugin can download galleries/albums/images from imgur.com.";
     }
 
-    private final static String defaultClientID = "JDDEFAULT";
+    private static final String defaultClientID = "JDDEFAULT";
+    public static final boolean defaultWEBM     = false;
 
     private void setConfigElements() {
+        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_WEBM,
+        // JDL.L("plugins.hoster.ImgUrCom.downloadWEBM", "Download .webm files instead of .gif?")).setDefaultValue(defaultWEBM));
         final ConfigEntry cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API, JDL.L("plugins.hoster.ImgUrCom.useAPI", "Use API (recommended!)")).setDefaultValue(true);
         getConfig().addEntry(cfg);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENTID, JDL.L("plugins.hoster.ImgUrCom.oauthClientID", "Enter your own imgur Oauth Client-ID:")).setDefaultValue(defaultClientID).setEnabledCondidtion(cfg, true));

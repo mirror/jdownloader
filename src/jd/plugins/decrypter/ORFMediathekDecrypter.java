@@ -125,10 +125,12 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     private ArrayList<DownloadLink> getDownloadLinks(final String data, final SubConfiguration cfg) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
 
         try {
+            final String video_id = new Regex(data, "(\\d+)$").getMatch(0);
             String xmlData = br.getRegex("ORF\\.flashXML\\s*=\\s*\'([^\']+)\';").getMatch(0);
             String jsonData = br.getRegex("\"segments\":\\[(\\{.*?\\})\\],\"is_forward_container\"").getMatch(0);
 
@@ -238,6 +240,9 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     }
                 }
                 String fpName = getTitle(br);
+                if (video_id != null) {
+                    fpName += "_" + video_id;
+                }
                 String extension = ".mp4";
                 if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
                     extension = ".mp3";
@@ -315,7 +320,11 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         if (ext.length() == 4) {
                             extension = ext;
                         }
-                        final String name = fileName + "@" + fmt + (protocol != null ? "_" + protocol : "") + extension;
+                        String name = fileName + "@" + fmt + (protocol != null ? "_" + protocol : "");
+                        if (video_id != null) {
+                            name += "_" + video_id;
+                        }
+                        name += extension;
                         final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=" + fmt + "&hash=" + JDHash.getMD5(name));
 
                         link.setFinalFileName(name);

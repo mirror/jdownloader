@@ -188,6 +188,9 @@ public class PornHubCom extends PluginForHost {
     private void getVideoLink(String dllink) throws Exception {
         String flashVars = br.getRegex("\\'flashvars\\' :[\t\n\r ]+\\{([^\\}]+)").getMatch(0);
         if (flashVars == null) {
+            flashVars = br.getRegex("var flashvars_\\d+ = (\\{.*?);\n").getMatch(0);
+        }
+        if (flashVars == null) {
             return;
         }
         flashVars = flashVars.replaceAll("\"", "");
