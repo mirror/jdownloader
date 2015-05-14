@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -28,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "http://(www\\.)?manga(park|tank|window)\\.com/manga/[\\w\\-\\.\\%]+/(v\\d+/?)?(c(ex(tra)?[^/]+|[\\d\\.]+(v\\d|[^/]+)?)?|extra(\\+\\d+)?|\\+\\(Oneshot\\))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "http://(?:www\\.)?manga(?:park|tank|window)\\.(?:com|me)/manga/[\\w\\-\\.\\%]+/(?:s\\d/)?(?:v\\d+/?)?(?:c(?:ex(?:tra)?[^/]+|[\\d\\.]+(?:v\\d|[^/]+)?)?|extra(?:\\+\\d+)?|\\+\\(?:Oneshot\\))" }, flags = { 0 })
 public class MngPrkCm extends PluginForDecrypt {
     /**
      * @author raztoki
@@ -54,7 +55,7 @@ public class MngPrkCm extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("://manga", "://www.manga");
+        String parameter = param.toString().replace("://(?:www\\.)manga\\.(?:com|me)", "://mangamark.me");
         HOST = new Regex(parameter, "(https?://[^/]+)").getMatch(0);
         prepBrowser();
         br.setFollowRedirects(true);
@@ -63,11 +64,11 @@ public class MngPrkCm extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final Regex srv_info = br.getRegex("target=\"_blank\" href=\"(http://[a-z0-9]+\\.mpcdn\\.net/[^<>\"]*?)(\\d+)(\\.(jpg|png))\"");
+        final Regex srv_info = br.getRegex("target=\"_blank\" href=\"(https?://(?:[a-z0-9]+\\.){1,}mpcdn\\.net/[^<>\"]*?)(\\d+)(\\.(?:jpg|png))(?:\\?\\d+)?\"");
         final String srv_link = srv_info.getMatch(0);
         final String extension = srv_info.getMatch(2);
-        String fpName = br.getRegex("</a> / ([^<>\"]*?)<em class=\"refresh\"").getMatch(0);
-        if (srv_link == null || fpName == null || extension == null) {
+        String[] fpname = br.getRegex(">([^<>\"]+)\\s*</a>\\s*/\\s*([^<>]+)<em class=\"refresh\"").getRow(0);
+        if (srv_link == null || fpname == null || extension == null) {
             if (br.containsHTML("class=\"manga\"")) {
                 logger.info("Link offline (unsupported link): " + parameter);
                 return decryptedLinks;
@@ -75,52 +76,41 @@ public class MngPrkCm extends PluginForDecrypt {
             logger.warning("Issue with getThis! : " + parameter);
             return null;
         }
+        String fpName = (fpname[0] != null ? fpname[0] : "") + (fpname[1] != null ? " - " + fpname[1] : "");
         fpName = Encoding.htmlDecode(fpName).trim();
-        fpName = encodeUnicode(fpName);
         // grab the total pages within viewer
         String totalPages = br.getRegex(">\\d+ of (\\d+)</a></em>").getMatch(0);
         if (totalPages == null) {
             totalPages = br.getRegex("selected>\\d+ / (\\d+)</option>").getMatch(0);
             if (totalPages == null) {
-                logger.warning("'TotalPages' not found! : " + parameter);
-                return null;
+                // cound be on a chapter page //return null;
+                String[] pages = srv_info.getColumn(-1);
+                if (pages != null) {
+                    totalPages = String.valueOf(pages.length);
+                } else {
+                    logger.warning("'TotalPages' not found! : " + parameter);
+                    return null;
+                }
             }
         }
         int numberOfPages = Integer.parseInt(totalPages);
         FilePackage fp = FilePackage.getInstance();
+        fp.setProperty("CLEANUP_NAME", false);
         fp.setName(fpName);
+
+        final DecimalFormat df = new DecimalFormat("00");
 
         for (int i = 1; i <= numberOfPages; i++) {
             final String img = srv_link + i + extension;
             final DownloadLink link = createDownloadlink("directhttp://" + img);
-            link.setFinalFileName((fpName + " – page " + i + extension).replace(" ", "_"));
+            link.setFinalFileName((fpName + " – page " + df.format(i) + extension).replace(" ", "_"));
             link.setAvailable(true);
             fp.add(link);
-            // try {
-            // distribute(link);
-            // } catch (final Throwable e) {
-            // /* does not exist in 09581 */
-            // }
             decryptedLinks.add(link);
         }
         logger.warning("Task Complete! : " + parameter);
         HOST = "";
         return decryptedLinks;
-    }
-
-    private static String encodeUnicode(final String input) {
-        String output = input;
-        output = output.replace(":", ";");
-        output = output.replace("|", "¦");
-        output = output.replace("<", "[");
-        output = output.replace(">", "]");
-        output = output.replace("/", "⁄");
-        output = output.replace("\\", "∖");
-        output = output.replace("*", "#");
-        output = output.replace("?", "¿");
-        output = output.replace("!", "¡");
-        output = output.replace("\"", "'");
-        return output;
     }
 
     /* NO OVERRIDE!! */

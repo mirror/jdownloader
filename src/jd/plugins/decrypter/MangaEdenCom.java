@@ -27,10 +27,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangaeden.com" }, urls = { "http://(www\\.)?mangaeden\\.com/[a-z0-9\\-]+/[a-z0-9\\-]+/\\d+/1/" }, flags = { 0 })
-public class MangaEdenCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangaeden.com" }, urls = { "http://(www\\.)?mangaeden\\.com/[a-z0-9\\-]+/[a-z0-9\\-]+/\\d+(?:\\.\\d+)?/1/" }, flags = { 0 })
+public class MangaEdenCom extends antiDDoSForDecrypt {
 
     public MangaEdenCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,25 +39,24 @@ public class MangaEdenCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> cryptedLinks = new ArrayList<String>();
         final String parameter = param.toString();
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.containsHTML("404 NOT FOUND")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (br.containsHTML("Isn\\'t Out\\!<")) {
+        if (br.containsHTML("Isn't Out!<")) {
             logger.info("Link offline (next chapter isn't out yet): " + parameter);
             return decryptedLinks;
         }
         final String thisLinkpart = new Regex(parameter, "mangaeden\\.com(/.*?)1/$").getMatch(0);
-        String fpName = br.getRegex("<title>([^<>\"]*?)\\- Read Manga Online Free").getMatch(0);
-        final String[] pages = br.getRegex("class=\"ui\\-state\\-default\" href=\"(" + thisLinkpart + "\\d+/)\"").getColumn(0);
+        String fpName = br.getRegex("<title>\\s*([^<>\"]*?)\\s*-\\s*(?:Read Manga Online Free|Manga Eden)").getMatch(0);
+        final String[] pages = br.getRegex("<option[^>]+value=\"(" + thisLinkpart + "\\d+/)\"").getColumn(0);
         if (pages == null || pages.length == 0 || fpName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         fpName = Encoding.htmlDecode(fpName.trim()).replace("\n", "");
 
-        cryptedLinks.add(parameter);
         for (final String currentPage : pages) {
             if (!cryptedLinks.contains(currentPage)) {
                 cryptedLinks.add(currentPage);
@@ -66,11 +64,11 @@ public class MangaEdenCom extends PluginForDecrypt {
         }
 
         // decrypt all pages
-        final DecimalFormat df = new DecimalFormat("0000");
+        final DecimalFormat df = new DecimalFormat(cryptedLinks.size() < 100 ? "00" : "000");
         int counter = 1;
         for (final String currentPage : cryptedLinks) {
-            if (!currentPage.equals(parameter)) {
-                br.getPage("http://www.mangaeden.com/" + currentPage);
+            if (!br.getURL().endsWith(currentPage)) {
+                getPage(currentPage);
             }
             final String decryptedlink = getSingleLink();
             final DownloadLink dd = createDownloadlink("directhttp://" + decryptedlink);
@@ -86,15 +84,15 @@ public class MangaEdenCom extends PluginForDecrypt {
     }
 
     private String getSingleLink() {
-        String finallink = br.getRegex("id=\"mainImg\" src=\"((http)?://[^<>\"]*?)\"").getMatch(0);
+        String finallink = br.getRegex("<img[^>]+id=\"mainImg\"[^>]+src=\"((?:https?:)?//[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
-            finallink = br.getRegex("\"((http)?//(www\\.)?cdn\\.mangaeden\\.com/mangasimg/[^<>\"]*?)\"").getMatch(0);
+            finallink = br.getRegex("\"((?:https?:)?//(?:www\\.)?cdn\\.mangaeden\\.com/mangasimg/[^<>\"]*?)\"").getMatch(0);
         }
         if (finallink == null) {
             return null;
         }
         if (finallink.startsWith("//")) {
-            finallink = "http:" + finallink;
+            finallink = new Regex(br.getURL(), "https?:").getMatch(-1) + finallink;
         }
         return finallink;
     }
