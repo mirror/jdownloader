@@ -54,7 +54,7 @@ public class BinBoxIo extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("https://", "http://");
         br.getPage(parameter);
-        if (br.containsHTML(">Page Not Found<")) {
+        if (br.containsHTML(">Page Not Found<|<h2 id=('|\"|)title\\1>Access Denied</h2>")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -97,11 +97,15 @@ public class BinBoxIo extends PluginForDecrypt {
                 getPaste();
             } else {
                 // unsupported captcha type, or broken
-                logger.warning("Unsupported captcha type or broken decrypter, please confirm in browser.");
-                return null;
+                // logger.warning("Possible unsupported captcha type or broken decrypter, please confirm in browser.");
+                // return null;
             }
         }
         doThis();
+        if (br.containsHTML("<h1 id=('|\"|)paste-title\\1 class=('|\"|)float left\\2>\\[REMOVED\\]</h1>")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (salt != null && paste != null) {
             paste = paste.replace("&quot;", "\"");
             paste = Encoding.Base64Decode(paste);
@@ -132,8 +136,8 @@ public class BinBoxIo extends PluginForDecrypt {
                     logger.info("Link offline: " + parameter);
                 }
             } else if (br.containsHTML(/* DCMA */"<div id=\"paste-deleted\"" +
-            /* suspended or deactivated account */"|This link is unavailable because |" +
-            /* content deleted */"The content you have requested has been deleted\\.")) {
+                    /* suspended or deactivated account */"|This link is unavailable because |" +
+                    /* content deleted */"The content you have requested has been deleted\\.")) {
                 try {
                     decryptedLinks.add(createOfflinelink(parameter, fpName != null ? Encoding.htmlDecode(fpName.trim()) : null, null));
                 } catch (final Throwable t) {
