@@ -5392,7 +5392,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Dialog (Window) in JDownloader" })
     String DialogBasicCaptchaSolver_gettypeName();
 
-    @Default(lngs = { "en" }, values = { "Dialog (Window) in the Browser(Chrome, Firefox, Internet Explorer,..." })
+    @Default(lngs = { "en" }, values = { "Dialog (Window) in Browser(Chrome, Firefox, Internet Explorer,..." })
     String BrowserSolverService_gettypeName();
 
     @Default(lngs = { "en" }, values = { "Manual remote Captcha Solving" })
