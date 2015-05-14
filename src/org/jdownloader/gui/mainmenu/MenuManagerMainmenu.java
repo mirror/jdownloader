@@ -33,6 +33,7 @@ import org.jdownloader.gui.mainmenu.container.OptionalContainer;
 import org.jdownloader.gui.mainmenu.container.SettingsMenuContainer;
 import org.jdownloader.gui.toolbar.action.CaptchaModeChangeAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogle9KWAction;
+import org.jdownloader.gui.toolbar.action.CaptchaToogleBrowserSolverAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleCBAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleDBCAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleDialogAction;
@@ -52,7 +53,7 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static MenuManagerMainmenu getInstance() {
@@ -108,6 +109,7 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
         ocr.add(CaptchaToogleDBCAction.class);
         ocr.add(CaptchaToogleImageTyperzAction.class);
         ocr.add(CaptchaToogleDialogAction.class);
+        ocr.add(CaptchaToogleBrowserSolverAction.class);
         ocr.add(CaptchaToogleJACAction.class);
         ocr.add(CaptchaToogleMyJDAutoAction.class);
         ocr.add(CaptchaToogleMyJDRemoteAction.class);
