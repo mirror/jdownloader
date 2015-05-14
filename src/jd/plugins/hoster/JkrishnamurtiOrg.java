@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -25,6 +24,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,74 +32,62 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fotki.yandex.ru" }, urls = { "https?://fotki\\.yandex\\.ru/next/users/[A-Za-z0-9\\-_]+/album/\\d+/view/\\d+" }, flags = { 0 })
-public class FotkiYandexRu extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jkrishnamurti.org" }, urls = { "http://(www\\.)?jkrishnamurti\\.org/[a-z0-9\\-]+/view\\-video/.+" }, flags = { 0 })
+public class JkrishnamurtiOrg extends PluginForHost {
 
-    public FotkiYandexRu(PluginWrapper wrapper) {
+    public JkrishnamurtiOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
+    // Porn_get_file_/videos/_basic Version 0.3
     // Tags:
-    // protocol: https forced
+    // protocol: no https
     // other:
 
+    /* Extension which will be used if no correct extension is found */
+    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
-    private static final boolean  free_resume         = true;
-    private static final int      free_maxchunks      = 0;
-    private static final int      free_maxdownloads   = -1;
+    private static final boolean free_resume       = true;
+    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxdownloads = -1;
 
-    private static final String[] allowed_sizes       = { "orig", "x5l", "x4l", "xxxl", "xxl", "xl", "l", "m", "sq200", "s", "xs", "xxs", "xxxs" };
-
-    private static final String   HTML_PRIVATECONTENT = ">У вас нет прав на просмотр этой фотографии";
-
-    private String                DLLINK              = null;
+    private String               DLLINK            = null;
 
     @Override
     public String getAGBLink() {
-        return "https://fotki.yandex.ru/";
+        return "http://www.jkrishnamurti.org/contact/index.php";
     }
 
     @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
-    }
-
-    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/view/")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(HTML_PRIVATECONTENT)) {
-            downloadLink.getLinkStatus().setStatusText("This picture is private - only the owner can view it");
-            return AvailableStatus.TRUE;
         }
-        final String json = br.getRegex("\\.restoreModel\\((\\{\"author\".*?)\\);\n").getMatch(0);
-        if (json == null) {
+        final Regex dlurlinfo = br.getRegex("'video_player','([^<>\"']*?)' \\+ '/' \\+ '([^<>\"']*?)'");
+        final String dl1 = dlurlinfo.getMatch(0);
+        final String dl2 = dlurlinfo.getMatch(1);
+        String filename = br.getRegex(">Video</a> \\&raquo; ([^<>\"]*?)</div>").getMatch(0);
+        if (dl1 == null || dl2 == null || filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-        final LinkedHashMap<String, Object> sizes = (LinkedHashMap<String, Object>) entries.get("sizes");
-        for (final String size : allowed_sizes) {
-            final Object sizeo = sizes.get(size);
-            if (sizeo != null) {
-                final LinkedHashMap<String, Object> sizemap = (LinkedHashMap<String, Object>) sizeo;
-                DLLINK = (String) sizemap.get("url");
-                break;
-            }
-        }
-        String filename = (String) entries.get("fileName");
-        if (filename == null || DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        DLLINK = "http://www.jkrishnamurti.org/videos/" + dl1 + "/" + dl2;
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
+        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        /* Make sure that we get a correct extension */
+        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
+            ext = default_Extension;
+        }
+        if (!filename.endsWith(ext)) {
+            filename += ext;
+        }
         downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -129,16 +117,6 @@ public class FotkiYandexRu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(HTML_PRIVATECONTENT)) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This picture is private - only the owner can view it");
-        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {

@@ -71,9 +71,13 @@ public class FileUploadDotnet extends PluginForHost {
                     // Get complete name
                     String filename = br.getRegex("<title>File\\-Upload\\.net \\- ([^<>\"]*?)</title>").getMatch(0);
                     // This name might be cut
-                    if (filename == null) filename = br.getRegex("<h1 class=\\'dateiname\\'>([^<>\"]*?)</h1>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("<h1 class=\\'dateiname\\'>([^<>\"]*?)</h1>").getMatch(0);
+                    }
                     String filesize = br.getRegex("label>Dateigröße:</label><span>([^<>\"]+)").getMatch(0);
-                    if (filesize == null) filesize = br.getRegex("(\\d+(\\.\\d+)? ?(B(ytes)?|KB|MB|GB))").getMatch(0);
+                    if (filesize == null) {
+                        filesize = br.getRegex("(\\d+(\\.\\d+)? ?(B(ytes)?|KB|MB|GB))").getMatch(0);
+                    }
                     if (filesize != null) {
                         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
                     }
@@ -100,12 +104,15 @@ public class FileUploadDotnet extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
+    @SuppressWarnings("deprecation")
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.getHeaders().put("User-Agent", UA);
         if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
-            String dllink = br.getRegex("(http://(www\\.)file\\-upload\\.net/download\\.php\\?valid=[\\d\\.]+&id=\\d+&name=[^\"\\']+)").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String dllink = br.getRegex("(http://(www\\.)file\\-upload\\.net/download(?:\\d+)?\\.php\\?valid=[\\d\\.]+&id=\\d+&name=[^\"\\']+)").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             dllink = Encoding.htmlDecode(dllink);
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink);

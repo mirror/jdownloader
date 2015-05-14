@@ -49,6 +49,8 @@ public class EsouboryCz extends PluginForHost {
         this.enablePremium("http://www.esoubory.cz/credits/buy/");
     }
 
+    /* Using similar API (and same owner): esoubory.cz, filesloop.com */
+
     @Override
     public String getAGBLink() {
         return "http://www.esoubory.cz/";

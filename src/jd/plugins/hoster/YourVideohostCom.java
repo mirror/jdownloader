@@ -528,6 +528,10 @@ public class YourVideohostCom extends PluginForHost {
                 }
             }
         }
+        if (dllink == null) {
+            /* Sometimes used for streaming */
+            dllink = new Regex(correctedBR, "file:[\t\n\r ]*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
+        }
         return dllink;
     }
 

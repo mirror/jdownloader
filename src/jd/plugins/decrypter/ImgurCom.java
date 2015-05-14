@@ -63,10 +63,6 @@ public class ImgurCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         PARAMETER = param.toString().replace("https://", "http://").replaceFirst("/all$", "");
         LID = new Regex(PARAMETER, "([A-Za-z0-9]+)$").getMatch(0);
-        /* Gallery == single image */
-        if (PARAMETER.matches(TYPE_GALLERY)) {
-            PARAMETER = "http://imgur.com/" + LID;
-        }
         synchronized (ctrlLock) {
             if (!pluginLoaded.get()) {
                 // load plugin!
@@ -75,7 +71,7 @@ public class ImgurCom extends PluginForDecrypt {
             }
             view_filesizelimit = jd.plugins.hoster.ImgUrCom.view_filesizelimit;
             String fpName = null;
-            if (PARAMETER.matches(TYPE_ALBUM)) {
+            if (PARAMETER.matches(TYPE_ALBUM) || PARAMETER.matches(TYPE_GALLERY)) {
                 try {
                     if (!SubConfiguration.getConfig("imgur.com").getBooleanProperty(SETTING_USE_API, false)) {
                         logger.info("User prefers not to use the API");
@@ -86,6 +82,13 @@ public class ImgurCom extends PluginForDecrypt {
                         /* Gallery (single image) */
                         // br.getPage("https://api.imgur.com/3/gallery/image/" + LID);
                         br.getPage("https://api.imgur.com/3/album/" + LID);
+                        if (PARAMETER.matches(TYPE_GALLERY) && br.getHttpConnection().getResponseCode() == 404) {
+                            /* Either it is a gallery with a single photo or it is offline. Seems like there is no way to know this before! */
+                            final DownloadLink dl = createDownloadlink(getHostpluginurl(LID));
+                            dl.setProperty("imgUID", LID);
+                            decryptedLinks.add(dl);
+                            return decryptedLinks;
+                        }
                     } catch (final BrowserException e) {
                         if (br.getHttpConnection().getResponseCode() == 429) {
                             logger.info("API limit reached, using site");
@@ -147,7 +150,7 @@ public class ImgurCom extends PluginForDecrypt {
                 fp.setName(fpName.trim());
                 fp.addLinks(decryptedLinks);
             } else {
-                final DownloadLink dl = createDownloadlink("http://imgurdecrypted.com/download/" + LID);
+                final DownloadLink dl = createDownloadlink(getHostpluginurl(LID));
                 dl.setProperty("imgUID", LID);
                 decryptedLinks.add(dl);
             }
@@ -155,11 +158,15 @@ public class ImgurCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private String getHostpluginurl(final String lid) {
+        return "http://imgurdecrypted.com/download/" + lid;
+    }
+
     private void api_decrypt() throws DecrypterException {
         if (br.containsHTML("\"status\":404")) {
             /* Well in case it's a gallery link it might be a single picture */
             if (PARAMETER.matches(TYPE_GALLERY)) {
-                final DownloadLink dl = createDownloadlink("http://imgurdecrypted.com/download/" + LID);
+                final DownloadLink dl = createDownloadlink(getHostpluginurl(LID));
                 dl.setProperty("imgUID", LID);
                 decryptedLinks.add(dl);
                 return;
