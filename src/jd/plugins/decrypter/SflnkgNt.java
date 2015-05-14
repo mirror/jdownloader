@@ -20,12 +20,13 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
 //Similar to SafeUrlMe (safeurl.me)
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safelinking.net" }, urls = { "https?://(?:www\\.)?(safelinking\\.net/(?:p|d)/[a-z0-9]+|sflk\\.in/[A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safelinking.net" }, urls = { "https?://(?:www\\.)?(safelinking\\.net/(?:p|d(?:/com)?)/[a-z0-9]+|sflk\\.in/[A-Za-z0-9]+)" }, flags = { 0 })
 public class SflnkgNt extends abstractSafeLinking {
 
     public SflnkgNt(PluginWrapper wrapper) {
@@ -56,6 +57,16 @@ public class SflnkgNt extends abstractSafeLinking {
     @Override
     protected boolean useRUA() {
         return true;
+    }
+
+    @Override
+    protected String regexLinkD() {
+        return "https?://[^/]*" + regexSupportedDomains() + "/d(?:/com)?/[a-z0-9]+";
+    }
+
+    @Override
+    protected String getUID(String parameter) {
+        return new Regex(parameter, "/(?:p|d(?:/com)?)/([a-z0-9]+)$").getMatch(0);
     }
 
 }
