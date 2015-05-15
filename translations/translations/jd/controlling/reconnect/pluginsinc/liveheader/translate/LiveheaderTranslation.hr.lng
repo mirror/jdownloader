@@ -1,4 +1,5 @@
 AutoDetectAction_run_failed=JDownloader ne može pronaći LiveHeader skriptu za rekonekciju koja radi.\r\n Molimo provjerite jeste li unijeli točne podatke, i imate li dinamičku IP vezu.
+BadQueryException=Kriva pretraga.\r\nUvjerite se da uzorak za pretraživanje nije dugačak 1 ili 2 znaka.
 DataCompareDialog_DataCompareDialog_=Usporedi informacije rutera
 DataCompareDialog_layoutDialogContent__desc=Molimo provjerite sljedeće podatke, i pokušajte ispuniti prazna polja što točnije.
 DataCompareDialog_layoutDialogContent_firmware=Firmware/Verzija
