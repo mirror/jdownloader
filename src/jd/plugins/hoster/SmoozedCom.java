@@ -277,6 +277,13 @@ public class SmoozedCom extends PluginForHost {
                 if (StringUtils.equalsIgnoreCase(message, "Offline")) {
                     // Offline
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (StringUtils.equalsIgnoreCase(message, "Premium needed")) {
+                    /*
+                     * TODO: Not sure if this error affects the whole account or if it only means that the users' account type is not
+                     * allowed to download from currently used host.
+                     */
+                    account.getAccountInfo().setExpired(true);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPremium needed to continue downloading!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, message);
             } else if ("retry".equals(state)) {
