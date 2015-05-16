@@ -33,7 +33,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -49,7 +48,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 // http://tvthek,orf.at/live/... --> HDS
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orfmediathek.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/(programs?|topic)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orfmediathek.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/(programs?|topic)/.+" }, flags = { 0 })
 public class ORFMediathekDecrypter extends PluginForDecrypt {
 
     private static final String Q_SUBTITLES   = "Q_SUBTITLES";
@@ -143,6 +142,8 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
     @SuppressWarnings({ "deprecation", "unchecked", "unused", "rawtypes" })
     private ArrayList<DownloadLink> getDownloadLinks(final String data, final SubConfiguration cfg) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String nicehost = new Regex(data, "http://(?:www\\.)?([^/]+)").getMatch(0);
+        final String decryptedhost = "http://" + nicehost + "decrypted";
 
         try {
             final String json = br.getRegex("initializeAdworx\\((.*?)\\);\n").getMatch(0);
@@ -150,11 +151,12 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
             String xmlData = br.getRegex("ORF\\.flashXML\\s*=\\s*\'([^\']+)\';").getMatch(0);
 
             if (xmlData != null || json != null) {
-                Map<String, HashMap<String, String>> MediaEntrys = new TreeMap<String, HashMap<String, String>>();
-                HashMap<String, String> MediaEntry = null;
+                Map<String, HashMap<String, String>> mediaEntries = new TreeMap<String, HashMap<String, String>>();
+                HashMap<String, String> mediaEntry = null;
                 String quality = null, key = null, title = null;
 
                 if (xmlData != null) {
+                    /* TODO: Check if this is still needed and fix- or remove it */
                     Document doc = JDUtilities.parseXmlString(Encoding.htmlDecode(xmlData), false);
 
                     /* xmlData --> HashMap */
@@ -164,7 +166,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     for (int i = 0; i < nl.getLength(); i++) {
                         Node childNode = nl.item(i);
                         NodeList t = childNode.getChildNodes();
-                        MediaEntry = new HashMap<String, String>();
+                        mediaEntry = new HashMap<String, String>();
                         for (int j = 0; j < t.getLength(); j++) {
                             Node g = t.item(j);
                             if ("#text".equals(g.getNodeName())) {
@@ -178,20 +180,20 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             if ("VideoUrl".equalsIgnoreCase(key)) {
                                 key = quality;
                             }
-                            MediaEntry.put(key, g.getTextContent());
+                            mediaEntry.put(key, g.getTextContent());
                         }
-                        title = MediaEntry.get("Title");
+                        title = mediaEntry.get("Title");
                         if (isEmpty(title)) {
                             continue;
                         }
-                        MediaEntrys.put(title, MediaEntry);
+                        mediaEntries.put(title, mediaEntry);
                     }
                 } else {
                     /* jsonData --> HashMap */
-                    MediaEntry = new HashMap<String, String>();
+                    mediaEntry = new HashMap<String, String>();
                     HashMap<String, String> tmpMediaEntry = new HashMap<String, String>();
                     ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
-                    LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
+                    LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) ressourcelist.get(ressourcelist.size() - 1);
                     entries = (LinkedHashMap<String, Object>) entries.get("values");
                     ressourcelist = (ArrayList) entries.get("segments");
 
@@ -212,7 +214,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         }
 
                         for (final Object sourceo : sources) {
-                            MediaEntry = new HashMap<String, String>();
+                            mediaEntry = new HashMap<String, String>();
                             final LinkedHashMap<String, Object> entry_source = (LinkedHashMap<String, Object>) sourceo;
                             final Iterator<Entry<String, Object>> it = entry_source.entrySet().iterator();
                             while (it.hasNext()) {
@@ -221,7 +223,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                                 if (entry_entry.getValue() instanceof String) {
                                     try {
                                         final String value = (String) entry_entry.getValue();
-                                        MediaEntry.put(ky, value);
+                                        mediaEntry.put(ky, value);
                                     } catch (final Throwable e) {
                                     }
                                 }
@@ -237,22 +239,21 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             }
                             String subtitle = new Regex("still_broken", "\"subtitles\":\\[\\{\"src\":\"(http[^\"]+)\"").getMatch(0);
                             if (subtitle != null) {
-                                MediaEntry.put("SubTitleUrl", subtitle.replace("\\", ""));
+                                mediaEntry.put("SubTitleUrl", subtitle.replace("\\", ""));
                             }
-                            MediaEntry.put("decrypted_id", decrypted_id);
+                            mediaEntry.put("decrypted_id", decrypted_id);
                             String selector = p + d;
-                            MediaEntry.put(q, url);
-                            // MediaEntry.put("protocol", p);
-                            // MediaEntry.put("delivery", d);
-                            if (!(p + d).equals(selector)) {
-                                MediaEntrys.put(titlethis + "@" + selector, tmpMediaEntry);
-                                selector = p + d;
-                                tmpMediaEntry = new HashMap<String, String>();
-                                tmpMediaEntry.putAll(MediaEntry);
-                            } else {
-                                tmpMediaEntry.putAll(MediaEntry);
+                            mediaEntry.put(q, url);
+                            mediaEntry.put("selector", selector);
+
+                            String entryKey = titlethis + "@" + selector;
+                            if (video_id != null) {
+                                entryKey += "_" + video_id;
                             }
-                            MediaEntrys.put(titlethis + "@" + selector, tmpMediaEntry);
+                            if (decrypted_id != null) {
+                                entryKey += "_" + decrypted_id;
+                            }
+                            mediaEntries.put(entryKey, mediaEntry);
                         }
                     }
                 }
@@ -270,29 +271,30 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
                 String vIdTemp = "";
 
-                for (Entry<String, HashMap<String, String>> next : MediaEntrys.entrySet()) {
-                    MediaEntry = new HashMap<String, String>(next.getValue());
+                for (Entry<String, HashMap<String, String>> next : mediaEntries.entrySet()) {
+                    mediaEntry = new HashMap<String, String>(next.getValue());
                     String fileName = next.getKey();
                     fileName = fileName.replaceAll("\"", "");
                     fileName = fileName.replaceAll(":\\s|\\s\\|\\s", " - ").trim();
-                    final String video_id_detailed = MediaEntry.get("decrypted_id");
-                    String protocol = MediaEntry.get("protocol");
-                    String delivery = MediaEntry.get("delivery");
-                    if (protocol != null && delivery != null) {
-                        if (fileName.contains(protocol) && fileName.contains(delivery)) {
-                            fileName = MediaEntry.get("title");
-                        }
+                    final String video_id_detailed = mediaEntry.get("decrypted_id");
+                    final String protocol = mediaEntry.get("protocol");
+                    final String delivery = mediaEntry.get("delivery");
+                    final String selector = mediaEntry.get("selector");
+                    final String url = mediaEntry.get("src");
+                    String fmt = mediaEntry.get("quality");
+
+                    if (fileName.contains("nalyse")) {
+                        logger.warning("WTF");
                     }
 
                     // available protocols: http, rtmp, rtsp, hds, hls
-                    if (!("http".equals(protocol) && "progressive".equals(delivery))) {
-                        if (!("rtmp".equals(protocol) && "streaming".equals(delivery))) {
-                            continue;
-                        }
-                    }
-                    if (cfg.getBooleanProperty(HTTP_STREAM, false) && "rtmp".equals(protocol)) {
+                    if (!"http".equals(protocol) || !"progressive".equals(delivery)) {
                         continue;
                     }
+                    /* Leave this in in case we want to support rtmp versions again in the future. */
+                    // if (cfg.getBooleanProperty(HTTP_STREAM, false) && "rtmp".equals(protocol)) {
+                    // continue;
+                    // }
 
                     if (fileName == null) {
                         continue;
@@ -302,110 +304,80 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     if (fileName.equals(vIdTemp)) {
                         sub = false;
                     }
-
-                    for (Entry<String, String> stream : MediaEntry.entrySet()) {
-                        String url = stream.getValue();
-                        String fmt = stream.getKey();
-                        if (!isEmpty(fmt)) {
-                            fmt = humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
-                            /* best selection is done at the end */
-                            if ("LOW".equals(fmt)) {
-                                if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
-                                    continue;
-                                } else {
-                                    if ("http".equals(protocol)) {
-                                        continue; // 404
-                                    }
-                                    fmt = "LOW";
-                                }
-                            } else if ("MEDIUM".equals(fmt)) {
-                                if ((cfg.getBooleanProperty(Q_MEDIUM, true) || BEST) == false) {
-                                    continue;
-                                } else {
-                                    fmt = "MEDIUM";
-                                }
-                            } else if ("HIGH".equals(fmt)) {
-                                if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
-                                    continue;
-                                } else {
-                                    fmt = "HIGH";
-                                }
-                            } else {
-                                if (unknownQualityIdentifier(fmt)) {
-                                    logger.info("ORFMediathek Decrypter: unknown quality identifier --> " + fmt);
-                                    logger.info("Link: " + data);
-                                }
+                    if (!isEmpty(fmt)) {
+                        fmt = humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
+                        /* best selection is done at the end */
+                        if ("LOW".equals(fmt)) {
+                            if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
                                 continue;
+                            } else {
+                                fmt = "LOW";
                             }
-                        }
-                        String ext = url.substring(url.lastIndexOf("."));
-                        if (ext.length() == 4) {
-                            extension = ext;
-                        }
-                        String name = fileName + "@" + fmt + (protocol != null ? "_" + protocol : "");
-                        if (video_id != null) {
-                            name += "_" + video_id;
-                        }
-                        if (video_id_detailed != null) {
-                            name += "_" + video_id_detailed;
-                        }
-                        name += extension;
-                        final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=" + fmt + "&hash=" + JDHash.getMD5(name));
-
-                        link.setFinalFileName(name);
-                        try {/* JD2 only */
-                            link.setContentUrl(data);
-                        } catch (Throwable e) {/* Stable */
-                            link.setBrowserUrl(data);
-                        }
-                        link.setProperty("directURL", url);
-                        link.setProperty("directName", name);
-                        link.setProperty("directQuality", fmt);
-                        if (protocol == null && delivery == null) {
-                            link.setAvailable(true);
-                            link.setProperty("streamingType", "rtmp");
+                        } else if ("MEDIUM".equals(fmt)) {
+                            if ((cfg.getBooleanProperty(Q_MEDIUM, true) || BEST) == false) {
+                                continue;
+                            } else {
+                                fmt = "MEDIUM";
+                            }
+                        } else if ("HIGH".equals(fmt)) {
+                            if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
+                                continue;
+                            } else {
+                                fmt = "HIGH";
+                            }
                         } else {
-                            link.setProperty("streamingType", protocol);
-                            link.setProperty("delivery", delivery);
-                            if (!"http".equals(protocol)) {
-                                link.setAvailable(true);
+                            if (unknownQualityIdentifier(fmt)) {
+                                logger.info("ORFMediathek Decrypter: unknown quality identifier --> " + fmt);
+                                logger.info("Link: " + data);
                             }
+                            continue;
                         }
+                    }
+                    String ext = url.substring(url.lastIndexOf("."));
+                    if (ext.length() == 4) {
+                        extension = ext;
+                    }
+                    String name = fileName + "@" + fmt + (protocol != null ? "_" + protocol : "");
+                    name += extension;
+                    final DownloadLink link = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
 
-                        DownloadLink best = bestMap.get(fmt);
-                        if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
-                            bestMap.put(fmt, link);
-                        }
-                        part.add(link);
-                    }
-                    if (part.size() > 0) {
-                        if (BEST) {
-                            /* only keep best quality */
-                            DownloadLink keep = bestMap.get("HIGH");
-                            if (keep == null) {
-                                keep = bestMap.get("MEDIUM");
-                            }
-                            if (keep == null) {
-                                keep = bestMap.get("LOW");
-                            }
-                            if (keep != null) {
-                                part.clear();
-                                part.add(keep);
-                            }
+                    link.setFinalFileName(name);
+                    link.setContentUrl(data);
+                    link.setProperty("directURL", url);
+                    link.setProperty("directName", name);
+                    link.setProperty("directQuality", fmt);
+                    link.setProperty("mainlink", data);
+                    if (protocol == null && delivery == null) {
+                        link.setAvailable(true);
+                        link.setProperty("streamingType", "rtmp");
+                    } else {
+                        link.setProperty("streamingType", protocol);
+                        link.setProperty("delivery", delivery);
+                        if (!"http".equals(protocol)) {
+                            link.setAvailable(true);
                         }
                     }
+                    link.setLinkID(video_id_detailed + "_" + fmt);
+
+                    DownloadLink best = bestMap.get(fmt);
+                    if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
+                        bestMap.put(fmt, link);
+                    }
+                    part.add(link);
                     if (sub) {
                         if (cfg.getBooleanProperty(Q_SUBTITLES, false)) {
-                            String subtitleUrl = MediaEntry.get("SubTitleUrl");
+                            String subtitleUrl = mediaEntry.get("SubTitleUrl");
                             if (!isEmpty(subtitleUrl)) {
-                                final String name = fileName + ".srt";
-                                final DownloadLink link = createDownloadlink("decrypted://tvthek.orf.at/subtitles/" + System.currentTimeMillis() + new Random().nextInt(1000000));
-                                link.setAvailable(true);
-                                link.setFinalFileName(name);
-                                link.setProperty("directURL", subtitleUrl);
-                                link.setProperty("directName", name);
-                                link.setProperty("streamingType", "subtitle");
-                                part.add(link);
+                                final String name_subtitle = fileName + ".srt";
+                                final DownloadLink subtitle = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                                subtitle.setAvailable(true);
+                                subtitle.setFinalFileName(name_subtitle);
+                                subtitle.setContentUrl(data);
+                                subtitle.setProperty("directURL", subtitleUrl);
+                                subtitle.setProperty("directName", name_subtitle);
+                                subtitle.setProperty("streamingType", "subtitle");
+                                subtitle.setProperty("mainlink", data);
+                                part.add(subtitle);
                                 vIdTemp = fileName;
                             }
                         }

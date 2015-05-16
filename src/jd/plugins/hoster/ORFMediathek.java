@@ -33,17 +33,18 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "orf.at" }, urls = { "decrypted://(www\\.)?tvthek\\.orf\\.at/((programs?|topic)/.+\\&quality=\\w+\\&hash=\\w+|subtitles/\\d+)|http://ooe\\.orf\\.at/radio/stories/\\d+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "http://tvthek\\.orf\\.atdecrypted\\d+" }, flags = { 0 })
 public class ORFMediathek extends PluginForHost {
 
-    private static final String TYPE_AUDIO  = "http://ooe\\.orf\\.at/radio/stories/\\d+/";
+    private static final String NEW_URLFORMAT = "http://tvthek\\.orf\\.atdecrypted\\d+";
+    private static final String TYPE_AUDIO    = "http://ooe\\.orf\\.at/radio/stories/\\d+/";
 
-    private static final String Q_SUBTITLES = "Q_SUBTITLES";
-    private static final String Q_BEST      = "Q_BEST";
-    private static final String Q_LOW       = "Q_LOW";
-    private static final String Q_MEDIUM    = "Q_MEDIUM";
-    private static final String Q_HIGH      = "Q_HIGH";
-    private static final String HTTP_STREAM = "HTTP_STREAM";
+    private static final String Q_SUBTITLES   = "Q_SUBTITLES";
+    private static final String Q_BEST        = "Q_BEST";
+    private static final String Q_LOW         = "Q_LOW";
+    private static final String Q_MEDIUM      = "Q_MEDIUM";
+    private static final String Q_HIGH        = "Q_HIGH";
+    private static final String HTTP_STREAM   = "HTTP_STREAM";
 
     public ORFMediathek(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,17 +52,16 @@ public class ORFMediathek extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("decrypted://", "http://"));
-    }
-
-    @Override
     public String getAGBLink() {
         return "http://orf.at";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.getDownloadURL().matches(NEW_URLFORMAT)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         URLConnectionAdapter con = null;
         String dllink = null;
         if (link.getDownloadURL().matches(TYPE_AUDIO)) {
@@ -157,6 +157,7 @@ public class ORFMediathek extends PluginForHost {
         rtmp.setRealTime();
     }
 
+    @SuppressWarnings("deprecation")
     private void download(final DownloadLink downloadLink) throws Exception {
         final String dllink = downloadLink.getStringProperty("directURL", null);
         if (dllink == null) {
@@ -224,14 +225,14 @@ public class ORFMediathek extends PluginForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, JDL.L("plugins.hoster.orf.subtitles", "Download subtitle whenever possible")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.orf.best", "Load Best Version ONLY")).setDefaultValue(false);
+        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.orf.best", "Load Best Version ONLY")).setDefaultValue(false).setEnabled(false);
         getConfig().addEntry(bestonly);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.orf.loadlow", "Load low version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, JDL.L("plugins.hoster.orf.loadmedium", "Load medium version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.orf.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HTTP_STREAM, JDL.L("plugins.hoster.orf.loadhttp", "Load http streams ONLY")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HTTP_STREAM, JDL.L("plugins.hoster.orf.loadhttp", "Load http streams ONLY")).setDefaultValue(true).setEnabled(false));
     }
 
 }
