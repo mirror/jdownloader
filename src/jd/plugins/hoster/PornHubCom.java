@@ -4,8 +4,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
 import javax.crypto.Cipher;
@@ -18,7 +17,6 @@ import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Base64;
-import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -185,6 +183,7 @@ public class PornHubCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("unchecked")
     private void getVideoLink(String dllink) throws Exception {
         String flashVars = br.getRegex("\\'flashvars\\' :[\t\n\r ]+\\{([^\\}]+)").getMatch(0);
         if (flashVars == null) {
@@ -193,28 +192,15 @@ public class PornHubCom extends PluginForHost {
         if (flashVars == null) {
             return;
         }
-        flashVars = flashVars.replaceAll("\"", "");
-        Map<String, String> values = new HashMap<String, String>();
-
-        for (String s : flashVars.split(",")) {
-            if (!s.matches(".+:.+")) {
-                continue;
-            }
-            String key = s.split(":")[0];
-            if (!key.equalsIgnoreCase("video_title")) {
-                values.put(key, Encoding.htmlDecode(s.split(":", 2)[1]));
-            } else {
-                values.put(key, Encoding.urlDecode(s.split(":", 2)[1], false));
-            }
-        }
+        final LinkedHashMap<String, Object> values = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(flashVars);
 
         if (values == null || values.size() < 1) {
             return;
         }
-        dlUrl = values.get("video_url");
+        dlUrl = (String) values.get("video_url");
         if (dlUrl == null) {
             int q = 0;
-            for (Entry<String, String> next : values.entrySet()) {
+            for (Entry<String, Object> next : values.entrySet()) {
                 String key = next.getKey();
                 if (!(key.startsWith("quality_"))) {
                     continue;
@@ -225,14 +211,14 @@ public class PornHubCom extends PluginForHost {
                 }
                 if (Integer.parseInt(quality) > q) {
                     q = Integer.parseInt(quality);
-                    dlUrl = values.get("quality_" + q + "p");
+                    dlUrl = (String) values.get("quality_" + q + "p");
                 }
             }
         }
 
-        String isEncrypted = values.get("encrypted");
-        if ("1".equals(isEncrypted) || Boolean.parseBoolean(isEncrypted)) {
-            String key = values.get("video_title");
+        final boolean encrypted = ((Boolean) values.get("encrypted")).booleanValue();
+        if (encrypted) {
+            String key = (String) values.get("video_title");
             try {
                 dlUrl = new BouncyCastleAESCounterModeDecrypt().decrypt(dlUrl, key, 256);
             } catch (Throwable e) {

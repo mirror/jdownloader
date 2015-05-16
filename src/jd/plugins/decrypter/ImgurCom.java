@@ -80,9 +80,34 @@ public class ImgurCom extends PluginForDecrypt {
                     br.getHeaders().put("Authorization", jd.plugins.hoster.ImgUrCom.getAuthorization());
                     try {
                         /* Gallery (single image) */
-                        // br.getPage("https://api.imgur.com/3/gallery/image/" + LID);
+                        if (PARAMETER.matches(TYPE_GALLERY)) {
+                            br.getPage("https://api.imgur.com/3/gallery/:" + LID);
+                            if (br.getHttpConnection().getResponseCode() == 404) {
+                                /*
+                                 * Either it is a gallery with a single photo or it is offline. Seems like there is no way to know this
+                                 * before!
+                                 */
+                                final DownloadLink dl = createDownloadlink(getHostpluginurl(LID));
+                                dl.setProperty("imgUID", LID);
+                                decryptedLinks.add(dl);
+                                return decryptedLinks;
+                            }
+                            boolean is_album = false;
+                            final String is_albumo = getJson(this.br.toString(), "is_album");
+                            if (is_albumo != null) {
+                                is_album = Boolean.parseBoolean(is_albumo);
+                            }
+                            if (PARAMETER.matches(TYPE_GALLERY) && is_album) {
+                                /* We have a single picture and not an album. */
+                                final DownloadLink dl = createDownloadlink(getHostpluginurl(LID));
+                                dl.setProperty("imgUID", LID);
+                                decryptedLinks.add(dl);
+                                return decryptedLinks;
+                            }
+                        }
+                        /* We knopw that we definitly have an album --> Crawl it */
                         br.getPage("https://api.imgur.com/3/album/" + LID);
-                        if (PARAMETER.matches(TYPE_GALLERY) && br.getHttpConnection().getResponseCode() == 404) {
+                        if (br.getHttpConnection().getResponseCode() == 404) {
                             /* Either it is a gallery with a single photo or it is offline. Seems like there is no way to know this before! */
                             final DownloadLink dl = createDownloadlink(getHostpluginurl(LID));
                             dl.setProperty("imgUID", LID);

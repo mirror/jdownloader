@@ -30,10 +30,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vid.gg" }, urls = { "http://(www\\.)?vid\\.gg/(video/|embed\\?id=)[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidgg.to", "vid.gg" }, urls = { "http://(www\\.)?vid\\.gg/(video/|embed\\?id=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0, 0 })
 public class VidGg extends PluginForHost {
 
-    private static final String DOMAIN = "vid.gg";
+    private static final String DOMAIN = "vidgg.to";
 
     public VidGg(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,8 +49,19 @@ public class VidGg extends PluginForHost {
         return -1;
     }
 
+    @Override
+    public String rewriteHost(String host) {
+        if ("vid.gg".equals(getHost())) {
+            if (host == null || "vid.gg".equals(host)) {
+                return "vidgg.to";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload("http://www.vid.gg/video/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        link.setUrlDownload("http://www.vidgg.to/video/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet, VidGg */
@@ -58,9 +69,11 @@ public class VidGg extends PluginForHost {
     // This plugin is 99,99% copy the same as the DivxStageNet plugin, if this
     // gets broken please also check the other one!
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         setBrowserExclusive();
+        /* Make sure to fix old urls too! */
+        correctDownloadLink(downloadLink);
         br.getHeaders().put("Accept-Encoding", "identity");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(The file is beeing transfered to our other servers|This file no longer exists on our servers)")) {
@@ -68,7 +81,7 @@ public class VidGg extends PluginForHost {
         }
         String filename = br.getRegex("Title: </strong>(.*?)</td>( <td>)?").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>Watch ([^<>\"]*?) online \\| VID\\.GG</title>").getMatch(0);
+            filename = br.getRegex("<title>Watch ([^<>\"]*?) online \\| vidgg\\.to</title>").getMatch(0);
         }
         if (br.containsHTML("<strong>Title:</strong> Untitled</p>") && filename == null) {
             filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
