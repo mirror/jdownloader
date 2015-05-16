@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -275,7 +276,7 @@ public class FilesloopCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings({ "deprecation" })
+    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         this.setConstants(account, null);
@@ -322,13 +323,18 @@ public class FilesloopCom extends PluginForHost {
 
         this.getAPISafe(DOMAIN + "list");
         final String[] supportedhosts = br.getRegex("\"[^\"]+/(?:www\\.)?([^\"/]+\\.[^\"/]+)\"").getColumn(0);
+        ArrayList<String> supportedhostslist = new ArrayList(Arrays.asList(supportedhosts));
+        /* Small workaround for serverside wrong input */
+        if (supportedhostslist.contains("turbobit.biz")) {
+            supportedhostslist.add("turbobit.net");
+        }
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         ai.setUnlimitedTraffic();
 
         hostMaxchunksMap.clear();
         hostMaxdlsMap.clear();
-        ai.setMultiHostSupport(this, Arrays.asList(supportedhosts));
+        ai.setMultiHostSupport(this, supportedhostslist);
         return ai;
     }
 

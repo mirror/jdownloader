@@ -17,11 +17,13 @@
 package jd.plugins.decrypter;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -158,258 +160,278 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
 
+        String fpName = br.getRegex("class=\"grid_10\"><h1>([^<>\"]*?)</h1>").getMatch(0);
+        if (fpName == null) {
+            fpName = new Regex(parameter, "tele5\\.de/([\\w/\\-]+)\\.html").getMatch(0);
+        }
+
         if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("kaltura_player_")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
 
-        final String[] videosinfo = br.getRegex("kWidget\\.thumbEmbed\\(\\{(.*?)</script>").getColumn(0);
+        final String[] videosinfo = br.getRegex("kWidget\\.(?:thumb)?Embed\\(\\{(.*?)</script>").getColumn(0);
+        if (videosinfo == null || videosinfo.length == 0) {
+            return null;
+        }
+        HashMap<String, DownloadLink> foundLinks_all = new HashMap<String, DownloadLink>();
 
         /* parse flash url */
-        for (final String vidinfo : videosinfo) {
-            final String entry_id = getJson(vidinfo, "entry_id");
-            final String wid = getJson(vidinfo, "wid");
-            final String uiconf_id = getJson(vidinfo, "uiconf_id");
-            final String cache_st = getJson(vidinfo, "cache_st");
-            String streamerType = getJson(vidinfo, "streamerType");
-            if (streamerType == null) {
-                streamerType = "http";
-            }
-            if (entry_id == null || wid == null || uiconf_id == null || cache_st == null) {
-                logger.warning("tele5 Decrypter broken!");
-                return null;
-            }
-            final String flashUrl = "http://api.medianac.com/index.php/kwidget/wid/" + wid + "/uiconf_id/" + uiconf_id + "/entry_id/" + entry_id + "/cache_st/" + cache_st;
-
-            /* decompress flash */
-            String result = getUrlValues(flashUrl);
-            if (result == null) {
-                return null;
-            }
-            String kdpUrl = new Regex(result, "kdpUrl=([^#]+)#").getMatch(0);
-            if (kdpUrl == null) {
-                return null;
-            }
-            kdpUrl = Encoding.htmlDecode(kdpUrl);
-
-            /* put url vars into map */
-            Map<String, String> v = new HashMap<String, String>();
-            for (String s : kdpUrl.split("&")) {
-                if (!s.contains("=")) {
-                    s += "=placeholder";
-                }
-                if ("referer=".equals(s)) {
-                    s += br.getURL();
-                }
-                v.put(s.split("=")[0], s.split("=")[1]);
-            }
-            v.put("streamerType", streamerType);
-            boolean isRtmp = "rtmp".equals(streamerType);
-            Browser br2 = br.cloneBrowser();
-            /* create final request */
-            String getData = "?service=multirequest&action=null&";
-            getData += "2:entryId=" + v.get("entryId");
-            getData += "&2:service=flavorasset";
-            getData += "&clientTag=kdp:3.4.10.3," + v.get("clientTag");
-            getData += "&2:action=getWebPlayableByEntryId";
-            getData += "&3:entryId=" + v.get("entryId");
-            getData += "&1:version=-1";
-            getData += "&3:service=baseentry";
-            getData += "&ks=" + v.get("ks");
-            getData += "&1:service=baseentry";
-            getData += "&3:action=getContextData";
-            getData += "&3:contextDataParams:objectType=KalturaEntryContextDataParams";
-            getData += "&1:entryId=" + v.get("entryId");
-            getData += "&3:contextDataParams:referrer=" + v.get("referer");
-            getData += "&1:action=get";
-            getData += "&ignoreNull=1";
-            final String getpage = "http://api.medianac.com//api_v3/index.php" + getData;
-            br2.getPage(getpage);
-            Document doc = JDUtilities.parseXmlString(br2.toString(), false);
-
-            /* xml data --> HashMap */
-            // /xml/result/item --> name, ext etc.
-            // /xml/result/item/item --> streaminfo entryId bitraten auflösung usw.
-            final Node root = doc.getChildNodes().item(0);
-            NodeList nl = root.getFirstChild().getChildNodes();
-
-            HashMap<String, HashMap<String, String>> KalturaMediaEntry = new HashMap<String, HashMap<String, String>>();
-            HashMap<String, String> KalturaFlavorAsset = null;
-            HashMap<String, String> fileInfo = new HashMap<String, String>();
-
-            for (int i = 0; i < nl.getLength(); i++) {
-                Node childNode = nl.item(i);
-                NodeList t = childNode.getChildNodes();
-
-                for (int j = 0; j < t.getLength(); j++) {
-                    Node g = t.item(j);
-                    if ("item".equals(g.getNodeName())) {
-                        KalturaFlavorAsset = new HashMap<String, String>();
-                        NodeList item = g.getChildNodes();
-
-                        for (int k = 0; k < item.getLength(); k++) {
-                            Node kk = item.item(k);
-                            KalturaFlavorAsset.put(kk.getNodeName(), kk.getTextContent());
-                        }
-                        KalturaMediaEntry.put(String.valueOf(j), KalturaFlavorAsset);
-                        // if (isRtmp) break;
-                        continue;
-                    }
-                    fileInfo.put(g.getNodeName(), g.getTextContent());
-                }
-            }
-            if (fileInfo.size() == 0) {
-                return null;
-            }
-
-            if (!isEmpty(fileInfo.get("categories"))) {
-                fileInfo.put("categories", new String(fileInfo.get("categories").getBytes("ISO-8859-1"), "UTF-8"));
-            }
-            if (!isEmpty(fileInfo.get("name"))) {
-                fileInfo.put("name", new String(fileInfo.get("name").getBytes("ISO-8859-1"), "UTF-8"));
-            }
-
-            ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
-            boolean r = true;
-            boolean gotPage = false;
-
-            /* creating downloadLinks */
-            for (Entry<String, HashMap<String, String>> next : KalturaMediaEntry.entrySet()) {
-                KalturaFlavorAsset = new HashMap<String, String>(next.getValue());
-                final String bitrate = KalturaFlavorAsset.get("bitrate");
-                String fName = fileInfo.get("categories");
-                if (isEmpty(fName)) {
-                    fName = br.getRegex("<div id=\"headline\" class=\"grid_\\d+\"><h1>(.*?)</h1><").getMatch(0);
-                    fileInfo.put("categories", fName);
-                }
-                String formatString = "";
-                final String videoBitrate = KalturaFlavorAsset.get("bitrate");
-                final String videoResolution = KalturaFlavorAsset.get("width") + "x" + KalturaFlavorAsset.get("height");
-                final String qualityInfo = videoResolution.substring(0, 1) + "_" + videoBitrate.substring(0, 1);
-                final String[] formatinfo = formats.get(qualityInfo);
-                final String audioCodec = formatinfo[3];
-                final String audioBitrate = formatinfo[4];
-                final String videoCodec = formatinfo[0];
-                if (videoCodec != null) {
-                    formatString += videoCodec + "_";
-                }
-                if (videoResolution != null) {
-                    formatString += videoResolution + "_";
-                }
-                if (videoBitrate != null) {
-                    formatString += videoBitrate + "_";
-                }
-                if (audioCodec != null) {
-                    formatString += audioCodec + "_";
-                }
-                if (audioBitrate != null) {
-                    formatString += audioBitrate;
-                }
-                if (formatString.endsWith("_")) {
-                    formatString = formatString.substring(0, formatString.lastIndexOf("_"));
-                }
-                final String filename = fileInfo.get("categories") + "_" + fileInfo.get("name").replaceAll("\\|", "-") + "_" + formatString + "." + KalturaFlavorAsset.get("fileExt");
-
-                /* Always access rtmp urls as this way we get all qualities/formats --> Then build http urls out of them --> :) */
-                String vidlink = "http://api.medianac.com/p/" + v.get("partnerId") + "/sp/" + v.get("subpId") + "/playManifest/entryId/" + v.get("entryId") + "/format/rtmp/protocol/rtmp/cdnHost/api.medianac.com";
-                vidlink += (v.containsKey("storageId") ? "/storageId/" + v.get("storageId") : "");
-                vidlink += (v.containsKey("ks") ? "/ks/" + v.get("ks") : "") + "/referrer/" + Encoding.Base64Encode(parameter) + (v.containsKey("token") ? "/token/" + v.get("token") : "") + "/a/a.f4m";
-                vidlink += "?referrer=" + Encoding.Base64Encode(parameter);
-                if (vidlink.contains("null")) {
-                    logger.warning("tele5 Decrypter: null in API Antwort entdeckt!");
-                    logger.warning("tele5 Decrypter: " + vidlink);
-                }
-                if (r && !gotPage) {
-                    /* We only need to access this page once, at least if we use rtmp as streaming protocol. */
-                    gotPage = true;
-                    br2.getPage(vidlink);
-                }
-                final String rtmp_base_server = br2.getRegex("<baseURL>rtmp://rtmp.(mnac\\-p\\-\\d+).c.nmdn.net/mnac-p-000000102</baseURL>").getMatch(0);
-                /* make dllink */
-                vidlink = br2.getRegex("<media url=\"mp4:([^<>\"]*?)\" bitrate=\"" + bitrate + "\"").getMatch(0);
-                if (vidlink != null) {
-                    /* rtmp --> http */
-                    if (rtmp_base_server == null) {
-                        return null;
-                    }
-                    vidlink = "http://dl." + rtmp_base_server + ".c.nmdn.net/" + rtmp_base_server + "/" + vidlink + ".mp4";
-                } else {
-                    logger.warning("Undefined case, assigned quality might be wrong!");
-                    vidlink = br2.getRegex("<media url=\"(http[^\"]+" + KalturaFlavorAsset.get("id") + ".*?)\"").getMatch(0);
-                }
-                if (vidlink == null) {
-                    return null;
-                }
-                final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                dl.setAvailable(true);
-                dl.setFinalFileName(filename);
-                try {
-                    /* JD2 only */
-                    dl.setLinkID(filename);
-                    dl.setContentUrl(parameter);
-                } catch (Throwable e) {
-                    /* Stable */
-                    dl.setBrowserUrl(parameter);
-                }
-                dl.setDownloadSize(SizeFormatter.getSize(KalturaFlavorAsset.get("size") + "kb"));
-                dl.setProperty("streamerType", v.get("streamerType"));
-                dl.setProperty("directURL", vidlink);
-                if (isRtmp) {
-                    r = false;
-                    String baseUrl = br2.getRegex("<baseURL>(rtmp.*?)</baseURL").getMatch(0);
-                    if (baseUrl == null) {
-                        logger.warning("tele5 Decrypter: baseUrl regex broken!");
-                        continue;
-                    }
-                    dl.setProperty("directRTMPURL", baseUrl + "@" + vidlink);
-                }
-                if (cfg.getBooleanProperty(qualityInfo, false)) {
-                    newRet.add(dl);
-                }
-            }
-
-            if (newRet.size() > 1) {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(fileInfo.get("categories"));
-                fp.addLinks(newRet);
-            }
-            decryptedLinks.addAll(newRet);
-
-            /* Above RegEx is greedy - we simply stop after the first entry as this is all we want! */
-            break;
+        ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
+        for (final String videosource : videosinfo) {
+            HashMap<String, DownloadLink> foundLinks = getURLsFromMedianac(br, decryptedhost, videosource, formats);
+            foundLinks_all.putAll(foundLinks);
         }
+
+        final Iterator<Entry<String, DownloadLink>> it = foundLinks_all.entrySet().iterator();
+        while (it.hasNext()) {
+            final Entry<String, DownloadLink> next = it.next();
+            final String qualityInfo = next.getKey();
+            final DownloadLink dl = next.getValue();
+            if (cfg.getBooleanProperty(qualityInfo, false)) {
+                newRet.add(dl);
+            }
+        }
+
+        if (newRet.size() > 1) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName);
+            fp.addLinks(newRet);
+        }
+        decryptedLinks.addAll(newRet);
+
         return decryptedLinks;
     }
 
-    private String getFormatString(final String[] formatinfo) {
-        String formatString = "";
-        final String videoCodec = formatinfo[0];
-        final String videoBitrate = formatinfo[1];
-        final String videoResolution = formatinfo[2];
-        final String audioCodec = formatinfo[3];
-        final String audioBitrate = formatinfo[4];
-        if (videoCodec != null) {
-            formatString += videoCodec + "_";
+    /**
+     * Can extract directurls from api.medianac.com.
+     *
+     * @param br
+     *            Browser to use
+     * @param decryptedhost
+     *            (String) Name of the host to use in created DownloadLink's
+     * @param video_source
+     *            (String)html/json source that contains medianac.com API parameters
+     * @param formats
+     *            (Stringarray) containing information about the supported videoformats
+     *
+     * @throws IOException
+     */
+    public HashMap<String, DownloadLink> getURLsFromMedianac(final Browser br, final String decryptedhost, final String video_source, final HashMap<String, String[]> formats) throws IOException {
+        /* parse flash url */
+        HashMap<String, DownloadLink> foundLinks = new HashMap<String, DownloadLink>();
+
+        String entry_id = getJson(video_source, "entry_id");
+        String wid = getJson(video_source, "wid");
+        String uiconf_id = getJson(video_source, "uiconf_id");
+        String cache_st = getJson(video_source, "cache_st");
+        String streamerType = getJson(video_source, "streamerType");
+        /* Check if values are missing. Most likely this is needed to support embedded medianac videos. */
+        if (wid == null) {
+            wid = new Regex(video_source, "api\\.medianac\\.com/p/(\\d+)/").getMatch(0);
+            if (wid != null) {
+                wid = "_" + wid;
+            }
         }
-        if (videoResolution != null) {
-            formatString += videoResolution + "_";
+        if (uiconf_id == null) {
+            uiconf_id = new Regex(video_source, "/uiconf_id/(\\d+)/").getMatch(0);
         }
-        if (videoBitrate != null) {
-            formatString += videoBitrate + "_";
+        if (entry_id == null) {
+            entry_id = new Regex(video_source, "(?:entry_id/|\\&entry_id=)([^/\\&]+)").getMatch(0);
         }
-        if (audioCodec != null) {
-            formatString += audioCodec + "_";
+        /* Force http */
+        if (streamerType == null || true) {
+            streamerType = "http";
         }
-        if (audioBitrate != null) {
-            formatString += audioBitrate;
+        if (entry_id == null || wid == null || uiconf_id == null) {
+            return null;
         }
-        if (formatString.endsWith("_")) {
-            formatString = formatString.substring(0, formatString.lastIndexOf("_"));
+        String flashUrl = "http://api.medianac.com/index.php/kwidget/wid/" + wid + "/uiconf_id/" + uiconf_id + "/entry_id/" + entry_id;
+        if (cache_st != null) {
+            flashUrl += "/cache_st/" + cache_st;
         }
-        return formatString;
+        /* decompress flash */
+        String result = getUrlValues(flashUrl);
+        if (result == null) {
+            return null;
+        }
+        String kdpUrl = new Regex(result, "kdpUrl=([^#]+)#").getMatch(0);
+        if (kdpUrl == null) {
+            return null;
+        }
+        kdpUrl = Encoding.htmlDecode(kdpUrl);
+
+        /* put url vars into map */
+        Map<String, String> v = new HashMap<String, String>();
+        for (String s : kdpUrl.split("&")) {
+            if (!s.contains("=")) {
+                s += "=placeholder";
+            }
+            if ("referer=".equals(s)) {
+                s += br.getURL();
+            }
+            v.put(s.split("=")[0], s.split("=")[1]);
+        }
+        v.put("streamerType", streamerType);
+        boolean isRtmp = "rtmp".equals(streamerType);
+        Browser br2 = br.cloneBrowser();
+        /* create final request */
+        String getData = "?service=multirequest&action=null&";
+        getData += "2:entryId=" + v.get("entryId");
+        getData += "&2:service=flavorasset";
+        getData += "&clientTag=kdp:3.4.10.3," + v.get("clientTag");
+        getData += "&2:action=getWebPlayableByEntryId";
+        getData += "&3:entryId=" + v.get("entryId");
+        getData += "&1:version=-1";
+        getData += "&3:service=baseentry";
+        getData += "&ks=" + v.get("ks");
+        getData += "&1:service=baseentry";
+        getData += "&3:action=getContextData";
+        getData += "&3:contextDataParams:objectType=KalturaEntryContextDataParams";
+        getData += "&1:entryId=" + v.get("entryId");
+        getData += "&3:contextDataParams:referrer=" + v.get("referer");
+        getData += "&1:action=get";
+        getData += "&ignoreNull=1";
+        final String getpage = "http://api.medianac.com//api_v3/index.php" + getData;
+        br2.getPage(getpage);
+        Document doc = JDUtilities.parseXmlString(br2.toString(), false);
+
+        /* xml data --> HashMap */
+        // /xml/result/item --> name, ext etc.
+        // /xml/result/item/item --> streaminfo entryId bitraten auflösung usw.
+        final Node root = doc.getChildNodes().item(0);
+        NodeList nl = root.getFirstChild().getChildNodes();
+
+        HashMap<String, HashMap<String, String>> KalturaMediaEntry = new HashMap<String, HashMap<String, String>>();
+        HashMap<String, String> KalturaFlavorAsset = null;
+        HashMap<String, String> fileInfo = new HashMap<String, String>();
+
+        for (int i = 0; i < nl.getLength(); i++) {
+            Node childNode = nl.item(i);
+            NodeList t = childNode.getChildNodes();
+
+            for (int j = 0; j < t.getLength(); j++) {
+                Node g = t.item(j);
+                if ("item".equals(g.getNodeName())) {
+                    KalturaFlavorAsset = new HashMap<String, String>();
+                    NodeList item = g.getChildNodes();
+
+                    for (int k = 0; k < item.getLength(); k++) {
+                        Node kk = item.item(k);
+                        KalturaFlavorAsset.put(kk.getNodeName(), kk.getTextContent());
+                    }
+                    KalturaMediaEntry.put(String.valueOf(j), KalturaFlavorAsset);
+                    // if (isRtmp) break;
+                    continue;
+                }
+                fileInfo.put(g.getNodeName(), g.getTextContent());
+            }
+        }
+        if (fileInfo.size() == 0) {
+            return null;
+        }
+
+        if (!isEmpty(fileInfo.get("categories"))) {
+            fileInfo.put("categories", new String(fileInfo.get("categories").getBytes("ISO-8859-1"), "UTF-8"));
+        }
+        if (!isEmpty(fileInfo.get("name"))) {
+            fileInfo.put("name", new String(fileInfo.get("name").getBytes("ISO-8859-1"), "UTF-8"));
+        }
+
+        boolean r = true;
+        boolean gotPage = false;
+
+        /* creating downloadLinks */
+        for (Entry<String, HashMap<String, String>> next : KalturaMediaEntry.entrySet()) {
+            KalturaFlavorAsset = new HashMap<String, String>(next.getValue());
+            final String bitrate = KalturaFlavorAsset.get("bitrate");
+            String fName = fileInfo.get("categories");
+            if (isEmpty(fName)) {
+                fName = br.getRegex("<div id=\"headline\" class=\"grid_\\d+\"><h1>(.*?)</h1><").getMatch(0);
+                fileInfo.put("categories", fName);
+            }
+            String formatString = "";
+            final String videoBitrate = KalturaFlavorAsset.get("bitrate");
+            final String videoWidth = KalturaFlavorAsset.get("width");
+            final String videoHeight = KalturaFlavorAsset.get("height");
+            final String videoResolution = videoWidth + "x" + videoHeight;
+            final String qualityInfo = videoBitrate.substring(0, 1) + "_" + videoWidth.substring(0, 1) + "_" + videoHeight.substring(0, 1);
+            final String[] formatinfo = formats.get(qualityInfo);
+            final String audioCodec = formatinfo[3];
+            final String audioBitrate = formatinfo[4];
+            final String videoCodec = formatinfo[0];
+            if (videoCodec != null) {
+                formatString += videoCodec + "_";
+            }
+            if (videoResolution != null) {
+                formatString += videoResolution + "_";
+            }
+            if (videoBitrate != null) {
+                formatString += videoBitrate + "_";
+            }
+            if (audioCodec != null) {
+                formatString += audioCodec + "_";
+            }
+            if (audioBitrate != null) {
+                formatString += audioBitrate;
+            }
+            if (formatString.endsWith("_")) {
+                formatString = formatString.substring(0, formatString.lastIndexOf("_"));
+            }
+            final String filename = fileInfo.get("categories") + "_" + fileInfo.get("name").replaceAll("\\|", "-") + "_" + formatString + "." + KalturaFlavorAsset.get("fileExt");
+
+            /* Always access rtmp urls as this way we get all qualities/formats --> Then build http urls out of them --> :) */
+            String vidlink = "http://api.medianac.com/p/" + v.get("partnerId") + "/sp/" + v.get("subpId") + "/playManifest/entryId/" + v.get("entryId") + "/format/rtmp/protocol/rtmp/cdnHost/api.medianac.com";
+            vidlink += (v.containsKey("storageId") ? "/storageId/" + v.get("storageId") : "");
+            vidlink += (v.containsKey("ks") ? "/ks/" + v.get("ks") : "") + "/referrer/" + Encoding.Base64Encode(br.getURL()) + (v.containsKey("token") ? "/token/" + v.get("token") : "") + "/a/a.f4m";
+            vidlink += "?referrer=" + Encoding.Base64Encode(br.getURL());
+            if (vidlink.contains("null")) {
+                /* WTF */
+                return null;
+            }
+            if (r && !gotPage) {
+                /* We only need to access this page once, at least if we use rtmp as streaming protocol. */
+                gotPage = true;
+                br2.getPage(vidlink);
+            }
+            final String rtmp_base_server = br2.getRegex("<baseURL>rtmp://rtmp\\.(mnac\\-p\\-\\d+)\\.c\\.nmdn\\.net/.+</baseURL>").getMatch(0);
+            /* make dllink */
+            vidlink = br2.getRegex("<media url=\"mp4:([^<>\"]*?)\" bitrate=\"" + bitrate + "\"").getMatch(0);
+            if (vidlink != null) {
+                /* rtmp --> http */
+                if (rtmp_base_server == null) {
+                    return null;
+                }
+                vidlink = "http://dl." + rtmp_base_server + ".c.nmdn.net/" + rtmp_base_server + "/" + vidlink + ".mp4";
+            } else {
+                vidlink = br2.getRegex("<media url=\"(http[^\"]+" + KalturaFlavorAsset.get("id") + ".*?)\"").getMatch(0);
+            }
+            if (vidlink == null) {
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
+            dl.setAvailable(true);
+            dl.setFinalFileName(filename);
+            dl.setLinkID(filename);
+            dl.setContentUrl(br.getURL());
+            dl.setDownloadSize(SizeFormatter.getSize(KalturaFlavorAsset.get("size") + "kb"));
+            dl.setProperty("streamerType", v.get("streamerType"));
+            dl.setProperty("directURL", vidlink);
+            if (isRtmp) {
+                r = false;
+                String baseUrl = br2.getRegex("<baseURL>(rtmp.*?)</baseURL").getMatch(0);
+                if (baseUrl == null) {
+                    /* Ignore rtmp */
+                    continue;
+                }
+                dl.setProperty("directRTMPURL", baseUrl + "@" + vidlink);
+            }
+            foundLinks.put(qualityInfo, dl);
+        }
+        return foundLinks;
     }
 
-    private String getUrlValues(String s) throws UnsupportedEncodingException {
+    public String getUrlValues(String s) throws UnsupportedEncodingException {
         SWFDecompressor swfd = new SWFDecompressor();
         byte[] swfdec = swfd.decompress(s);
         if (swfdec == null || swfdec.length == 0) {
@@ -430,7 +452,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
      *
      * @author raztoki
      * */
-    private String getJson(final String source, final String key) {
+    private static String getJson(final String source, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
 
@@ -486,7 +508,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
-    private boolean isEmpty(String ip) {
+    private static boolean isEmpty(String ip) {
         return ip == null || ip.trim().length() == 0;
     }
 

@@ -395,6 +395,10 @@ public class FileBitPl extends PluginForHost {
                 /* Host offline -> Disable for 5 minutes */
                 statusMessage = "Host offline";
                 tempUnavailableHoster(account, downloadLink, 5 * 60 * 1000l);
+            case 101:
+                /* MOCH server maintenance -> Disable for 5 minutes */
+                statusMessage = "MOCH server maintenance";
+                tempUnavailableHoster(account, downloadLink, 5 * 60 * 1000l);
             default:
                 /* unknown error, do not try again with this multihoster */
                 statusMessage = "Unknown API error code, please inform JDownloader Development Team";

@@ -40,7 +40,7 @@ public class ORFMediathek extends PluginForHost {
     private static final String TYPE_AUDIO    = "http://ooe\\.orf\\.at/radio/stories/\\d+/";
 
     private static final String Q_SUBTITLES   = "Q_SUBTITLES";
-    private static final String Q_BEST        = "Q_BEST";
+    private static final String Q_BEST        = "Q_BEST_2";
     private static final String Q_LOW         = "Q_LOW";
     private static final String Q_MEDIUM      = "Q_MEDIUM";
     private static final String Q_HIGH        = "Q_HIGH";
