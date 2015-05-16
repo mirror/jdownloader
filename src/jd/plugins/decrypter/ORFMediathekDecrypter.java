@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,6 +32,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -64,6 +67,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -72,7 +76,18 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         }
         String parameter = param.toString();
 
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
+                final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=default&hash=default");
+                link.setAvailable(false);
+                link.setProperty("offline", true);
+                decryptedLinks.add(link);
+                return decryptedLinks;
+            }
+            throw e;
+        }
         int status = br.getHttpConnection().getResponseCode();
         if (status == 301 || status == 302) {
             br.setFollowRedirects(true);
@@ -125,16 +140,16 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         return false;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked", "unused", "rawtypes" })
     private ArrayList<DownloadLink> getDownloadLinks(final String data, final SubConfiguration cfg) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
 
         try {
+            final String json = br.getRegex("initializeAdworx\\((.*?)\\);\n").getMatch(0);
             final String video_id = new Regex(data, "(\\d+)$").getMatch(0);
             String xmlData = br.getRegex("ORF\\.flashXML\\s*=\\s*\'([^\']+)\';").getMatch(0);
-            String jsonData = br.getRegex("\"segments\":\\[(\\{.*?\\})\\],\"is_forward_container\"").getMatch(0);
 
-            if (xmlData != null || jsonData != null) {
+            if (xmlData != null || json != null) {
                 Map<String, HashMap<String, String>> MediaEntrys = new TreeMap<String, HashMap<String, String>>();
                 HashMap<String, String> MediaEntry = null;
                 String quality = null, key = null, title = null;
@@ -173,70 +188,72 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     }
                 } else {
                     /* jsonData --> HashMap */
+                    MediaEntry = new HashMap<String, String>();
                     HashMap<String, String> tmpMediaEntry = new HashMap<String, String>();
-                    // if (!jsonData.endsWith("}]")) jsonData += "}]";
-                    jsonData = decodeUnicode(jsonData);
+                    ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+                    LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) ressourcelist.get(0);
+                    entries = (LinkedHashMap<String, Object>) entries.get("values");
+                    ressourcelist = (ArrayList) entries.get("segments");
 
-                    String selector = "";
-                    for (String segment : new Regex(jsonData, "\\{\"clickcounter_corrected\"(.*?)\"is_episode_one_segment_episode\":").getColumn(0)) {
-                        segment = segment.replace("\\", "");
-                        title = new Regex(segment, "\"title\":\"(.*?)\",").getMatch(0);
-                        if (title == null) {
-                            if (title == null) {
-                                title = new Regex(segment, "\"title\":\"([^\"]+)\"").getMatch(0);
-                            }
-                            if (title == null) {
-                                title = new Regex(segment, "\"description\":\"\\\\\"([^\\\\\"]+)\\\\\"").getMatch(0);
-                            }
-                            if (title == null) {
-                                title = new Regex(segment, "\"description\":\"([^\"]+)\"").getMatch(0);
-                            }
-                            if (title != null && title.length() > 80) {
-                                title = title.substring(0, 80);
-                            }
+                    for (final Object segmento : ressourcelist) {
+                        final LinkedHashMap<String, Object> entry = (LinkedHashMap<String, Object>) segmento;
+                        final LinkedHashMap<String, Object> playlist_data = (LinkedHashMap<String, Object>) entry.get("playlist_data");
+                        final ArrayList<Object> sources = (ArrayList) playlist_data.get("sources");
+
+                        final String encrypted_id = (String) entry.get("encrypted_id");
+                        final String decrypted_id = Encoding.Base64Decode(encrypted_id);
+                        final String description = (String) entry.get("description");
+                        String titlethis = (String) entry.get("title");
+                        if (titlethis == null) {
+                            titlethis = description;
+                        }
+                        if (titlethis != null && titlethis.length() > 80) {
+                            titlethis = titlethis.substring(0, 80);
                         }
 
-                        String streams = new Regex(segment, "\"sources\":\\[(.*?)\\]").getMatch(0);
-                        if (isEmpty(streams)) {
-                            continue;
-                        }
-                        for (String stream : new Regex(streams, "\\{(.*?)\\}").getColumn(0)) {
+                        for (final Object sourceo : sources) {
                             MediaEntry = new HashMap<String, String>();
-                            for (String[] sss : new Regex(stream, "\"([^\"]+)\":\"([^\"]+)\"").getMatches()) {
-                                MediaEntry.put(sss[0], sss[1]);
+                            final LinkedHashMap<String, Object> entry_source = (LinkedHashMap<String, Object>) sourceo;
+                            final Iterator<Entry<String, Object>> it = entry_source.entrySet().iterator();
+                            while (it.hasNext()) {
+                                final Entry<String, Object> entry_entry = it.next();
+                                final String ky = entry_entry.getKey();
+                                if (entry_entry.getValue() instanceof String) {
+                                    try {
+                                        final String value = (String) entry_entry.getValue();
+                                        MediaEntry.put(ky, value);
+                                    } catch (final Throwable e) {
+                                    }
+                                }
                             }
-                            if (isEmpty(title)) {
-                                continue;
-                            }
-                            title = title.trim();
-                            MediaEntry.put("title", title);
+
                             /* Backward compatibility with xml method */
-                            String url = MediaEntry.get("src");
-                            String q = MediaEntry.get("quality");
-                            String p = MediaEntry.get("protocol");
-                            String d = MediaEntry.get("delivery");
+                            String url = (String) entry_source.get("src");
+                            String q = (String) entry_source.get("quality");
+                            String p = (String) entry_source.get("protocol");
+                            String d = (String) entry_source.get("delivery");
                             if (isEmpty(url) && isEmpty(q) && isEmpty(p) && isEmpty(d)) {
                                 continue;
                             }
-                            String subtitle = new Regex(segment, "\"subtitles\":\\[\\{\"src\":\"(http[^\"]+)\"").getMatch(0);
+                            String subtitle = new Regex("still_broken", "\"subtitles\":\\[\\{\"src\":\"(http[^\"]+)\"").getMatch(0);
                             if (subtitle != null) {
                                 MediaEntry.put("SubTitleUrl", subtitle.replace("\\", ""));
                             }
-                            MediaEntry.remove("src");
+                            MediaEntry.put("decrypted_id", decrypted_id);
+                            String selector = p + d;
                             MediaEntry.put(q, url);
-                            if (isEmpty(selector)) {
-                                selector = p + d;
-                            }
+                            // MediaEntry.put("protocol", p);
+                            // MediaEntry.put("delivery", d);
                             if (!(p + d).equals(selector)) {
-                                MediaEntrys.put(title + "@" + selector, tmpMediaEntry);
+                                MediaEntrys.put(titlethis + "@" + selector, tmpMediaEntry);
                                 selector = p + d;
                                 tmpMediaEntry = new HashMap<String, String>();
                                 tmpMediaEntry.putAll(MediaEntry);
                             } else {
                                 tmpMediaEntry.putAll(MediaEntry);
                             }
+                            MediaEntrys.put(titlethis + "@" + selector, tmpMediaEntry);
                         }
-                        MediaEntrys.put(title + "@" + selector, tmpMediaEntry);
                     }
                 }
                 String fpName = getTitle(br);
@@ -258,6 +275,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     String fileName = next.getKey();
                     fileName = fileName.replaceAll("\"", "");
                     fileName = fileName.replaceAll(":\\s|\\s\\|\\s", " - ").trim();
+                    final String video_id_detailed = MediaEntry.get("decrypted_id");
                     String protocol = MediaEntry.get("protocol");
                     String delivery = MediaEntry.get("delivery");
                     if (protocol != null && delivery != null) {
@@ -273,6 +291,10 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         }
                     }
                     if (cfg.getBooleanProperty(HTTP_STREAM, false) && "rtmp".equals(protocol)) {
+                        continue;
+                    }
+
+                    if (fileName == null) {
                         continue;
                     }
 
@@ -323,6 +345,9 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                         String name = fileName + "@" + fmt + (protocol != null ? "_" + protocol : "");
                         if (video_id != null) {
                             name += "_" + video_id;
+                        }
+                        if (video_id_detailed != null) {
+                            name += "_" + video_id_detailed;
                         }
                         name += extension;
                         final DownloadLink link = createDownloadlink(data.replace("http://", "decrypted://") + "&quality=" + fmt + "&hash=" + JDHash.getMD5(name));
@@ -397,6 +422,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 ret = newRet;
             }
         } catch (final Throwable e) {
+            e.printStackTrace();
             logger.severe(e.getMessage());
         }
         for (DownloadLink dl : ret) {

@@ -83,6 +83,7 @@ public class Music163Com extends PluginForDecrypt {
             String name_artist = null;
             String name_album = null;
             String fpName = null;
+            String coverurl = null;
             if (parameter.matches(TYPE_PLAYLIST)) {
                 /* Playlist */
                 br.getPage("http://music.163.com/api/playlist/detail?id=" + lid);
@@ -95,6 +96,7 @@ public class Music163Com extends PluginForDecrypt {
                 artistinfo = (LinkedHashMap<String, Object>) entries.get("creator");
                 resourcelist = (ArrayList) entries.get("tracks");
 
+                coverurl = (String) entries.get("coverImgUrl");
                 final String name_playlist = (String) entries.get("name");
                 final String name_creator = (String) artistinfo.get("signature");
                 fpName = name_creator + " - " + name_playlist;
@@ -108,13 +110,13 @@ public class Music163Com extends PluginForDecrypt {
                 entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 entries = (LinkedHashMap<String, Object>) entries.get("album");
                 artistinfo = (LinkedHashMap<String, Object>) entries.get("artist");
+                coverurl = (String) entries.get("picUrl");
                 publishedTimestamp = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("publishTime"), 0);
                 resourcelist = (ArrayList) entries.get("songs");
                 name_album = (String) entries.get("name");
                 name_artist = (String) artistinfo.get("name");
                 fpName = name_artist + " - " + name_album;
             }
-            final String coverurl = (String) entries.get("picUrl");
             final DecimalFormat df;
             if (resourcelist.size() < 100) {
                 df = new DecimalFormat("00");

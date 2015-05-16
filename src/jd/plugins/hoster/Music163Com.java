@@ -299,7 +299,7 @@ public class Music163Com extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.Music163Com.FastLinkcheck", "Enable fast linkcheck for cover-urls?\r\nNOTE: If enabled, before mentioned linktypes will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB_COVER, JDL.L("plugins.hoster.Music163Com.AlbumsGrabCover", "For albums: Grab cover?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB_COVER, JDL.L("plugins.hoster.Music163Com.AlbumsGrabCover", "For albums & playlists: Grab cover?")).setDefaultValue(false));
     }
 
     @Override

@@ -81,7 +81,7 @@ public class File4SafeCom extends PluginForHost {
     // XfileSharingProBasic Version 2.6.2.5
     // mods:
     // non account: 1 * 1
-    // free account: 1 * 1
+    // free account: 1 * 1, simultan downloads via multiple free accounts possible, waittimes are saved on accounts and NOT IP!
     // premium account: 1 * 4
     // protocol: no https
     // captchatype: recaptcha
@@ -785,7 +785,8 @@ public class File4SafeCom extends PluginForHost {
                 // free accounts can still have captcha.
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
+                /* Special case for XFS sites: multiple free accounts can be used at the same time */
+                account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
                 // not available in old Stable 0.9.581
             }

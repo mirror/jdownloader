@@ -88,6 +88,9 @@ public class FileUploadDotnet extends PluginForHost {
                 /* LinkCheck für DownloadFiles */
                 String downloadurl = downloadLink.getDownloadURL();
                 br.getPage(downloadurl);
+                if (!br.getURL().contains("view")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 if (!br.containsHTML("Datei existiert nicht auf unserem Server")) {
                     String filename = br.getRegex("<h1>Bildeigenschaften von \"(.*?)\"</h1>").getMatch(0);
                     String filesize;

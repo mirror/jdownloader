@@ -63,6 +63,7 @@ public class AudioinboxCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        this.br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (!br.getURL().contains("/s/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

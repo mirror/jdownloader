@@ -45,15 +45,16 @@ public class FotkiYandexRu extends PluginForHost {
     // other:
 
     /* Connection stuff */
-    private static final boolean  free_resume         = true;
-    private static final int      free_maxchunks      = 0;
-    private static final int      free_maxdownloads   = -1;
+    private static final boolean  free_resume            = true;
+    private static final int      free_maxchunks         = 0;
+    private static final int      free_maxdownloads      = -1;
 
-    private static final String[] allowed_sizes       = { "orig", "x5l", "x4l", "xxxl", "xxl", "xl", "l", "m", "sq200", "s", "xs", "xxs", "xxxs" };
+    private static final String[] allowed_sizes          = { "orig", "x5l", "x4l", "xxxl", "xxl", "xl", "l", "m", "sq200", "s", "xs", "xxs", "xxxs" };
 
-    private static final String   HTML_PRIVATECONTENT = ">У вас нет прав на просмотр этой фотографии";
+    private static final String   HTML_PRIVATECONTENT    = ">У вас нет прав на просмотр этой фотографии";
+    private static final String   HTML_PASSWORDPROTECTED = ">Альбом защищён паролем<";
 
-    private String                DLLINK              = null;
+    private String                DLLINK                 = null;
 
     @Override
     public String getAGBLink() {
@@ -76,6 +77,9 @@ public class FotkiYandexRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(HTML_PRIVATECONTENT)) {
             downloadLink.getLinkStatus().setStatusText("This picture is private - only the owner can view it");
+            return AvailableStatus.TRUE;
+        } else if (br.containsHTML(HTML_PASSWORDPROTECTED)) {
+            downloadLink.getLinkStatus().setStatusText("This picture is password protected");
             return AvailableStatus.TRUE;
         }
         final String json = br.getRegex("\\.restoreModel\\((\\{\"author\".*?)\\);\n").getMatch(0);
@@ -138,6 +142,8 @@ public class FotkiYandexRu extends PluginForHost {
                 }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This picture is private - only the owner can view it");
+        } else if (br.containsHTML(HTML_PASSWORDPROTECTED)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected images are not yet supported. Please contact our support!");
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
