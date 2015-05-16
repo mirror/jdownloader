@@ -162,6 +162,7 @@ public class MultiVipNet extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
 
@@ -191,13 +192,13 @@ public class MultiVipNet extends PluginForHost {
                 br.getPage("http://multivip.net/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=addlink&vipkey=" + Encoding.urlEncode(account.getPass()) + "&ip=&link=" + Encoding.urlEncode(link.getDownloadURL()));
                 /* Should never happen because size limit is set in fetchAccountInfo and handled via canHandle */
                 if ("204".equals(getJson(br.toString(), "error"))) {
+                    /*
+                     * Should never happen because size limit is set in fetchAccountInfo and handled via canHandle. Update 16.05.2015: This
+                     * can indeed happen for links with unknown filesize!
+                     */
                     account.setType(AccountType.FREE);
-                    account.getAccountInfo().setStatus("Free Account");
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nKostenloser Key - dieser funktioniert nur zum Download kleiner Dateien!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree key - it is limited to download small files!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    account.getAccountInfo().setStatus("Free account");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This link too big to download via " + this.getHost());
                 }
                 dllink = getJson(br.toString(), "directlink");
             } else {
@@ -210,14 +211,13 @@ public class MultiVipNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid Vip key!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 } else if (br.containsHTML("This is a FREE key and File size in")) {
-                    /* Should never happen because size limit is set in fetchAccountInfo and handled via canHandle */
+                    /*
+                     * Should never happen because size limit is set in fetchAccountInfo and handled via canHandle. Update 16.05.2015: This
+                     * can indeed happen for links with unknown filesize!
+                     */
                     account.setType(AccountType.FREE);
-                    account.getAccountInfo().setStatus("Free Account");
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nKostenloser Key - dieser funktioniert nur zum Download kleiner Dateien!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree key - it is limited to download small files!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    account.getAccountInfo().setStatus("Free account");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This link too big to download via " + this.getHost());
                 } else if (br.containsHTML("Unfortunately this key was expired")) {
                     /* Our account has expired */
                     final String expire_date = br.getRegex("Unfortunately this key was expired <strong>([^<>\"]*?)</strong>").getMatch(0);
@@ -300,7 +300,7 @@ public class MultiVipNet extends PluginForHost {
         ai.setValidUntil(Long.parseLong(expire) * 1000);
         ai.setTrafficLeft(Long.parseLong(traffic_left_kb) * 1024);
         account.setProperty("max_downloadable_filesize", Long.parseLong(max_downloadable_filesize) * 1024);
-        br.getPage("http://multivip.net/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=getlist");
+        br.getPage("/api.php?apipass=" + Encoding.Base64Decode(APIKEY) + "&do=getlist");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] hostDomains = br.getRegex("\"allow\":\\[(.*?)\\]").getColumn(0);
         for (final String domains : hostDomains) {

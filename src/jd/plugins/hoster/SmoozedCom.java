@@ -242,6 +242,7 @@ public class SmoozedCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void apiCheck(final Account account, final String session_Key, final DownloadLink link, int round) throws Exception {
         final Request request = api(account, session_Key, "/api/check", "url=" + Encoding.urlEncode(link.getDownloadURL()));
         final String responseString = request.getHtmlCode();
@@ -271,22 +272,7 @@ public class SmoozedCom extends PluginForHost {
                     }
                 }
             }
-            state = (String) responseMap.get("state");
-            if ("error".equals(state)) {
-                final String message = (String) responseMap.get("message");
-                if (StringUtils.equalsIgnoreCase(message, "Offline")) {
-                    // Offline
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (StringUtils.equalsIgnoreCase(message, "Premium needed")) {
-                    /*
-                     * TODO: Not sure if this error affects the whole account or if it only means that the users' account type is not
-                     * allowed to download from currently used host.
-                     */
-                    account.getAccountInfo().setExpired(true);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPremium needed to continue downloading!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, message);
-            } else if ("retry".equals(state)) {
+            if ("retry".equals(state)) {
                 final String message = (String) responseMap.get("message");
                 if (StringUtils.equalsIgnoreCase(message, "Hoster temporary not available")) {
                     // Hoster temporary not available
@@ -321,7 +307,19 @@ public class SmoozedCom extends PluginForHost {
                 return;
             }
         } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String message = (String) responseMap.get("message");
+            if (StringUtils.equalsIgnoreCase(message, "Offline")) {
+                // Offline
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (StringUtils.equalsIgnoreCase(message, "Premium needed")) {
+                /*
+                 * TODO: Not sure if this error affects the whole account or if it only means that the users' account type is not allowed to
+                 * download from currently used host.
+                 */
+                account.getAccountInfo().setExpired(true);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPremium expired. Premium needed to continue downloading!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, message);
         }
     }
 
