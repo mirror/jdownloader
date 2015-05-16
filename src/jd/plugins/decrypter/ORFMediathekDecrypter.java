@@ -52,7 +52,7 @@ import org.w3c.dom.NodeList;
 public class ORFMediathekDecrypter extends PluginForDecrypt {
 
     private static final String Q_SUBTITLES   = "Q_SUBTITLES";
-    private static final String Q_BEST        = "Q_BEST";
+    private static final String Q_BEST        = "Q_BEST_2";
     private static final String Q_LOW         = "Q_LOW";
     private static final String Q_MEDIUM      = "Q_MEDIUM";
     private static final String Q_HIGH        = "Q_HIGH";
@@ -231,10 +231,10 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
 
                             /* Backward compatibility with xml method */
                             String url = (String) entry_source.get("src");
-                            String q = (String) entry_source.get("quality");
+                            String fmt = (String) entry_source.get("quality");
                             String p = (String) entry_source.get("protocol");
                             String d = (String) entry_source.get("delivery");
-                            if (isEmpty(url) && isEmpty(q) && isEmpty(p) && isEmpty(d)) {
+                            if (isEmpty(url) && isEmpty(fmt) && isEmpty(p) && isEmpty(d)) {
                                 continue;
                             }
                             String subtitle = new Regex("still_broken", "\"subtitles\":\\[\\{\"src\":\"(http[^\"]+)\"").getMatch(0);
@@ -243,7 +243,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             }
                             mediaEntry.put("decrypted_id", decrypted_id);
                             String selector = p + d;
-                            mediaEntry.put(q, url);
+                            mediaEntry.put(fmt, url);
                             mediaEntry.put("selector", selector);
 
                             String entryKey = titlethis + "@" + selector;
@@ -253,6 +253,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             if (decrypted_id != null) {
                                 entryKey += "_" + decrypted_id;
                             }
+                            entryKey += "@" + humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
                             mediaEntries.put(entryKey, mediaEntry);
                         }
                     }
@@ -282,10 +283,6 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     final String selector = mediaEntry.get("selector");
                     final String url = mediaEntry.get("src");
                     String fmt = mediaEntry.get("quality");
-
-                    if (fileName.contains("nalyse")) {
-                        logger.warning("WTF");
-                    }
 
                     // available protocols: http, rtmp, rtsp, hds, hls
                     if (!"http".equals(protocol) || !"progressive".equals(delivery)) {
@@ -337,7 +334,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     if (ext.length() == 4) {
                         extension = ext;
                     }
-                    String name = fileName + "@" + fmt + (protocol != null ? "_" + protocol : "");
+                    String name = fileName + (protocol != null ? "_" + protocol : "");
                     name += extension;
                     final DownloadLink link = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
 

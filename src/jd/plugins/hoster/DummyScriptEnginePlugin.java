@@ -11,6 +11,7 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +29,7 @@ import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -1218,6 +1220,51 @@ public class DummyScriptEnginePlugin extends PluginForHost {
         } catch (final Throwable e) {
         }
         return lo;
+    }
+
+    /**
+     * @param json
+     *            Object that was previously parsed via any jsonToJavaObject function.
+     *
+     @param crawlstring
+     *            String that contains info on what to get in this format: /String/String/{<Integer (if you want to pick an entry out of an
+     *            array)>}/String
+     */
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public static Object walkJson(final Object json, final String crawlstring) {
+        if (crawlstring == null) {
+            return null;
+        }
+
+        final String[] crawlparts = crawlstring.split("/");
+        Object currentObject = json;
+
+        LinkedHashMap<String, Object> tmp_linkedmap = null;
+        ArrayList<Object> tmp_list = null;
+
+        try {
+            for (final String crawlpart : crawlparts) {
+                if (currentObject instanceof LinkedHashMap) {
+                    tmp_linkedmap = (LinkedHashMap<String, Object>) currentObject;
+                    currentObject = tmp_linkedmap.get(crawlpart);
+                } else if (currentObject instanceof ArrayList) {
+                    int crawlentry_number = 0;
+                    tmp_list = (ArrayList) currentObject;
+                    final String crawlpart_crawlnumber = new Regex(crawlpart, "\\{(\\d+)\\}").getMatch(0);
+                    if (crawlpart_crawlnumber != null) {
+                        crawlentry_number = Integer.parseInt(crawlpart_crawlnumber);
+                    }
+                    currentObject = tmp_list.get(crawlentry_number);
+                } else {
+                    break;
+                }
+            }
+
+        } catch (final Throwable e) {
+            return null;
+        }
+
+        return currentObject;
     }
 
     public static Object toMap(Object obj) {

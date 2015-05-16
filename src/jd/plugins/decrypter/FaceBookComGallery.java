@@ -62,10 +62,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String   TYPE_SET_LINK_PHOTO             = "http(s)?://(www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)o?a[0-9\\.]+(\\&type=\\d+)?";
     private static final String   TYPE_SET_LINK_VIDEO             = "https?://(www\\.)?facebook\\.com/media/set/\\?set=vb\\.\\d+.*?";
     private static final String   TYPE_ALBUMS_LINK                = "https?://(www\\.)?facebook\\.com/.+photos_albums";
-    private static final String   TYPE_PHOTOS_OF_LINK             = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of";
-    private static final String   TYPE_PHOTOS_ALL_LINK            = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all";
-    private static final String   TYPE_PHOTOS_STREAM_LINK         = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_stream";
-    private static final String   TYPE_PHOTOS_LINK                = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos";
+    private static final String   TYPE_PHOTOS_OF_LINK             = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of.*";
+    private static final String   TYPE_PHOTOS_ALL_LINK            = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all.*";
+    private static final String   TYPE_PHOTOS_STREAM_LINK         = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_stream.*";
+    private static final String   TYPE_PHOTOS_LINK                = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos.*";
     private static final String   TYPE_GROUPS_PHOTOS              = "https?://(www\\.)?facebook\\.com/groups/\\d+/photos/";
     private static final String   TYPE_GROUPS_FILES               = "https?://(www\\.)?facebook\\.com/groups/\\d+/files/";
     private static final String   TYPE_PROFILE_PHOTOS             = "https?://(www\\.)?facebook\\.com/profile\\.php\\?id=\\d+\\&sk=photos\\&collection_token=[A-Z0-9%]+";
@@ -594,6 +594,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         String fpName = getPageTitle();
+        final String url_username = new Regex(PARAMETER, "facebook\\.com/([^<>\"\\?/]+)").getMatch(0);
         final String rev = getRev();
         final String user = getUser();
         final String dyn = getDyn();
@@ -650,7 +651,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     logger.info("Returning already decrypted links anyways...");
                     break;
                 }
-                final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/TimelinePhotosStreamPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + currentLastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22tab_key%22%3A%22photos_stream%22%2C%22ajaxpipe%22%3A%221%22%2C%22ajaxpipe_token%22%3A%22" + ajaxpipe_token + "%22%2C%22quickling%22%3A%7B%22version%22%3A%221162685%3B0%3B1%3B0%3B%22%7D%2C%22__user%22%3A%22" + user + "%22%2C%22__a%22%3A%221%22%2C%22__dyn%22%3A%22" + dyn + "%22%2C%22__req%22%3A%22jsonp_2%22%2C%22__rev%22%3A%22" + rev + "%22%2C%22__adt%22%3A%222%22%2C%22sk%22%3A%22photos_stream%22%2C%22pager_fired_on_init%22%3Atrue%7D&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=jsonp_" + i + "&__rev=" + rev + "&__adt=4";
+                final String data = "{\"scroll_load\":true,\"last_fbid\":" + currentLastFbid + ",\"fetch_size\":32,\"profile_id\":" + profileID + ",\"tab\":\"photos_stream\",\"ajaxpipe\":\"1\",\"ajaxpipe_token\":\"" + ajaxpipe_token + "\",\"quickling\":{\"version\":\"1739814;0;\"},\"__user\":\"" + user + "\",\"__a\":\"1\",\"__dyn\":\"7nmajEyl35xKt2u6aEyx90BGUsx6bF3ozzkC-K26m6oKew\",\"__req\":\"jsonp_7\",\"__rev\":\"" + rev + "\",\"__adt\":\"7\",\"vanity\":\"" + url_username + "\",\"sk\":\"photos_stream\",\"tab_key\":\"photos_stream\",\"page\":" + profileID + ",\"is_medley_view\":true,\"pager_fired_on_init\":true}";
+                final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/TimelinePhotosStreamPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=" + dyn + "&__req=jsonp_" + i + "&__rev=" + rev + "&__adt=4";
                 br.getPage(loadLink);
                 links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
                 currentMaxPicCount = 40;

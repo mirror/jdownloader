@@ -38,28 +38,26 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tele5.de" }, urls = { "http://tele5\\.dedecrypted\\d+" }, flags = { 2 })
 public class TeleFiveDe extends PluginForHost {
 
-    /** Settings stuff */
-    private static final String                   FAST_LINKCHECK = "FAST_LINKCHECK";
+    public static LinkedHashMap<String, String[]> formats = new LinkedHashMap<String, String[]>() {
+                                                              {
+                                                                  /*
+                                                                   * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec,
+                                                                   * audioBitrate
+                                                                   */
+                                                                  /*
+                                                                   * Video-bitrates and resultions here are not exact as they vary. Correct
+                                                                   * values will be in the filenames!
+                                                                   */
+                                                                  put("4_4_2", new String[] { "AVC", "400", "480x250", "AAC LC", "64" });
+                                                                  put("6_6_3", new String[] { "AVC", "600", "640x350", "AAC LC", "64" });
+                                                                  put("9_6_3", new String[] { "AVC", "900", "640x350", "AAC LC", "64" });
 
-    public static LinkedHashMap<String, String[]> formats        = new LinkedHashMap<String, String[]>() {
-        {
-            /*
-             * Format-name:videoCodec, videoBitrate, videoResolution,
-             * audioCodec, audioBitrate
-             */
-            /*
-             * Video-bitrates and resultions here are not exact as they vary.
-             * Correct values will be in the filenames!
-             */
-            put("4_4", new String[] { "AVC", "400", "480x250", "AAC LC", "64" });
-            put("6_6", new String[] { "AVC", "600", "640x350", "AAC LC", "64" });
-            put("6_9", new String[] { "AVC", "900", "640x350", "AAC LC", "64" });
+                                                              }
+                                                          };
 
-        }
-    };
+    private String                                DLLINK  = null;
 
-    private String                                DLLINK         = null;
-
+    @SuppressWarnings("deprecation")
     public TeleFiveDe(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();

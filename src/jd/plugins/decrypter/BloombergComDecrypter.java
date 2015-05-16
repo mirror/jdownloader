@@ -63,7 +63,7 @@ public class BloombergComDecrypter extends PluginForDecrypt {
     @SuppressWarnings({ "deprecation", "unchecked" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         /* Load sister-host plugin */
-        JDUtilities.getPluginForHost("bloomberg.com");
+        JDUtilities.getPluginForHost(DOMAIN);
         final String parameter = param.toString();
         String vid = null;
         String title = null;
