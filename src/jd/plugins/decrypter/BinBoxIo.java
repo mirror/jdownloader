@@ -41,7 +41,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "binbox.io" }, urls = { "https?://(www\\.)?binbox\\.io/\\w+#\\w+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "binbox.io" }, urls = { "https?://(www\\.)?binbox\\.io/\\w+#\\w+" }, flags = { 0 })
 public class BinBoxIo extends PluginForDecrypt {
 
     private String sjcl, uid, salt, token, paste;
@@ -55,7 +55,7 @@ public class BinBoxIo extends PluginForDecrypt {
         final String parameter = param.toString().replace("https://", "http://");
         br.getPage(parameter);
         if (br.containsHTML(">Page Not Found<|<h2 id=('|\"|)title\\1>Access Denied</h2>")) {
-            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String fpName = br.getRegex("<title>([^<>\"]*?)- Binbox</title>").getMatch(0);
@@ -103,7 +103,7 @@ public class BinBoxIo extends PluginForDecrypt {
         }
         doThis();
         if (br.containsHTML("<h1 id=('|\"|)paste-title\\1 class=('|\"|)float left\\2>\\[REMOVED\\]</h1>")) {
-            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (salt != null && paste != null) {
@@ -136,8 +136,8 @@ public class BinBoxIo extends PluginForDecrypt {
                     logger.info("Link offline: " + parameter);
                 }
             } else if (br.containsHTML(/* DCMA */"<div id=\"paste-deleted\"" +
-                    /* suspended or deactivated account */"|This link is unavailable because |" +
-                    /* content deleted */"The content you have requested has been deleted\\.")) {
+            /* suspended or deactivated account */"|This link is unavailable because |" +
+            /* content deleted */"The content you have requested has been deleted\\.")) {
                 try {
                     decryptedLinks.add(createOfflinelink(parameter, fpName != null ? Encoding.htmlDecode(fpName.trim()) : null, null));
                 } catch (final Throwable t) {
