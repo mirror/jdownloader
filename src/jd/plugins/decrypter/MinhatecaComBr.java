@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
@@ -82,13 +83,20 @@ public class MinhatecaComBr extends PluginForDecrypt {
                 return null;
             }
             boolean success = false;
-            for (int i = 1; i <= 3; i++) {
-                passCode = Plugin.getUserInput("Password?", param);
+            for (int i = 0; i <= 2; i++) {
+                if (i == 0) {
+                    passCode = this.getPluginConfig().getStringProperty("last_used_password", null);
+                }
+                if (passCode == null) {
+                    passCode = Plugin.getUserInput("Password?", param);
+                }
                 br.postPageRaw("http://minhateca.com.br/action/Files/LoginToFolder", "Remember=true&Remember=false&ChomikId=" + chomikid + "&FolderId=" + folderid + "&FolderName=" + Encoding.urlEncode(foldername) + "&Password=" + Encoding.urlEncode(passCode) + "&__RequestVerificationToken=" + Encoding.urlEncode(reqtoken));
                 if (br.containsHTML("\"IsSuccess\":false")) {
+                    this.getPluginConfig().setProperty("last_used_password", Property.NULL);
                     continue;
                 }
                 success = true;
+                this.getPluginConfig().setProperty("last_used_password", passCode);
                 break;
             }
             if (!success) {
