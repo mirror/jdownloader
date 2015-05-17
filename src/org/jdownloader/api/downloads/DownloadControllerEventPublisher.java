@@ -369,6 +369,8 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                 break;
             case SHA1:
                 break;
+            case SHA256:
+                break;
             case SKIPPED:
                 // SkipReason skipReason = dl.getSkipReason();
 

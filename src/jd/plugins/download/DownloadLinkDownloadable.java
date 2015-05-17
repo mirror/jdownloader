@@ -78,6 +78,11 @@ public class DownloadLinkDownloadable implements Downloadable {
     }
 
     @Override
+    public String getSha256Hash() {
+        return downloadLink.getSha256Hash();
+    }
+
+    @Override
     public long[] getChunksProgress() {
         return downloadLink.getView().getChunksProgress();
     }
@@ -255,9 +260,10 @@ public class DownloadLinkDownloadable implements Downloadable {
             switch (type) {
             case MD5:
             case SHA1:
+            case SHA256:
                 DigestInputStream is = null;
                 try {
-                    is = new DigestInputStream(fis = new FileInputStream(outputPartFile), MessageDigest.getInstance(type.name()));
+                    is = new DigestInputStream(fis = new FileInputStream(outputPartFile), MessageDigest.getInstance("SHA256".equals(type.name()) ? "SHA-256" : type.name()));
                     while ((n = is.read(b)) >= 0) {
                         cur += n;
                         hashProgress.setCurrent(cur);
@@ -319,6 +325,9 @@ public class DownloadLinkDownloadable implements Downloadable {
         } else if (!StringUtils.isEmpty(hash = downloadLink.getSha1Hash()) && hash.matches("^[a-fA-F0-9]{40}$")) {
             /* SHA1 Check */
             return new HashInfo(hash, HashInfo.TYPE.SHA1);
+        } else if (!StringUtils.isEmpty(hash = downloadLink.getSha256Hash()) && hash.matches("^[a-fA-F0-9]{64}$")) {
+            /* SHA256 Check */
+            return new HashInfo(hash, HashInfo.TYPE.SHA256);
         } else if ((hash = new Regex(name, ".*?\\[([A-Fa-f0-9]{8})\\]").getMatch(0)) != null) {
             return new HashInfo(hash, HashInfo.TYPE.CRC32, false);
         } else {
@@ -560,6 +569,9 @@ public class DownloadLinkDownloadable implements Downloadable {
                 break;
             case SHA1:
                 downloadLink.setSha1Hash(hashInfo.getHash());
+                break;
+            case SHA256:
+                downloadLink.setSha256Hash(hashInfo.getHash());
                 break;
             }
         }

@@ -22,6 +22,7 @@ public class DownloadLinkProperty {
         MD5,
         RESUMABLE,
         SHA1,
+        SHA256,
         URL_CONTENT,
         URL_PROTECTION,
         VARIANT,

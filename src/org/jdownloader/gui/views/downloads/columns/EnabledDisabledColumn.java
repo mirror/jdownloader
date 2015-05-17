@@ -29,6 +29,9 @@ import org.jdownloader.images.NewTheme;
  */
 public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
 
+    /**
+     *
+     */
     private Icon iconNo;
     private Icon iconYes;
 

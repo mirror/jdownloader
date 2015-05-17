@@ -16,7 +16,7 @@ import org.jdownloader.gui.views.downloads.columns.FileColumn;
 public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
@@ -55,8 +55,15 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
             dl = ((DownloadLink) value);
         }
         if (dl != null) {
-            if (!StringUtils.isEmpty(dl.getSha1Hash())) { return dl.getSha1Hash(); }
-            if (dl.getMD5Hash() != null) return dl.getMD5Hash();
+            if (!StringUtils.isEmpty(dl.getSha256Hash())) {
+                return dl.getSha256Hash();
+            }
+            if (!StringUtils.isEmpty(dl.getSha1Hash())) {
+                return dl.getSha1Hash();
+            }
+            if (!StringUtils.isEmpty(dl.getMD5Hash())) {
+                return dl.getMD5Hash();
+            }
         }
         return null;
     }
@@ -77,15 +84,23 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public boolean isEditable(AbstractNode obj) {
-        if (obj instanceof CrawledLink) return true;
-        if (obj instanceof DownloadLink) return true;
+        if (obj instanceof CrawledLink) {
+            return true;
+        }
+        if (obj instanceof DownloadLink) {
+            return true;
+        }
         return false;
     }
 
     @Override
     public boolean isEnabled(final AbstractNode obj) {
-        if (obj instanceof CrawledPackage) { return ((CrawledPackage) obj).getView().isEnabled(); }
-        if (obj instanceof FilePackage) { return ((FilePackage) obj).getView().isEnabled(); }
+        if (obj instanceof CrawledPackage) {
+            return ((CrawledPackage) obj).getView().isEnabled();
+        }
+        if (obj instanceof FilePackage) {
+            return ((FilePackage) obj).getView().isEnabled();
+        }
         return obj.isEnabled();
     }
 
@@ -98,13 +113,16 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
             dl = ((DownloadLink) object);
         }
         if (dl != null) {
-            value = value.replaceAll("[^0-9a-fA-f]", "");
+            value = value.trim();
             if (value != null && value.length() == 32) {
                 dl.setMD5Hash(value);
             } else if (value != null && value.length() == 40) {
                 dl.setSha1Hash(value);
+            } else if (value != null && value.length() == 64) {
+                dl.setSha256Hash(value);
             } else if (value == null || value.length() == 0) {
                 dl.setSha1Hash(null);
+                dl.setSha256Hash(null);
                 dl.setMD5Hash(null);
             }
         }
@@ -119,8 +137,15 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
             dl = ((DownloadLink) value);
         }
         if (dl != null) {
-            if (!StringUtils.isEmpty(dl.getSha1Hash())) { return "[SHA1] " + dl.getSha1Hash(); }
-            if (dl.getMD5Hash() != null) return "[MD5] " + dl.getMD5Hash();
+            if (!StringUtils.isEmpty(dl.getSha1Hash())) {
+                return "[SHA1] " + dl.getSha1Hash();
+            }
+            if (!StringUtils.isEmpty(dl.getSha256Hash())) {
+                return "[SHA256] " + dl.getSha256Hash();
+            }
+            if (!StringUtils.isEmpty(dl.getMD5Hash())) {
+                return "[MD5] " + dl.getMD5Hash();
+            }
         }
         return null;
 

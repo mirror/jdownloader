@@ -32,6 +32,7 @@ public class MirrorPackage {
     private boolean            enabled     = false;
     private String             md5         = null;
     private String             sha1        = null;
+    private String             sha256      = null;
     private long               speed;
     private MirrorPackageSetup setup;
 
@@ -62,11 +63,15 @@ public class MirrorPackage {
             // hash mismatch
             return id + "/" + link.getMD5Hash().toLowerCase(Locale.ENGLISH);
         }
-
         if (StringUtils.isNotEmpty(sha1) && StringUtils.isNotEmpty(link.getSha1Hash()) && !link.getSha1Hash().toLowerCase(Locale.ENGLISH).equals(sha1)) {
             // hash mismatch
             return id + "/" + link.getSha1Hash().toLowerCase(Locale.ENGLISH);
         }
+        if (StringUtils.isNotEmpty(sha256) && StringUtils.isNotEmpty(link.getSha256Hash()) && !link.getSha256Hash().toLowerCase(Locale.ENGLISH).equals(sha256)) {
+            // hash mismatch
+            return id + "/" + link.getSha256Hash().toLowerCase(Locale.ENGLISH);
+        }
+
         finished |= FinalLinkState.CheckFinished(link.getFinalLinkState()) && (link.getExtractionStatus() == ExtractionStatus.SUCCESSFUL || new File(getFileOutput(link)).exists());
 
         if (setup.isLocalFileUsageEnabled()) {
@@ -88,10 +93,13 @@ public class MirrorPackage {
         if (StringUtils.isEmpty(md5) && StringUtils.isNotEmpty(link.getMD5Hash())) {
             md5 = link.getMD5Hash().toLowerCase(Locale.ENGLISH);
         }
-
         if (StringUtils.isEmpty(sha1) && StringUtils.isNotEmpty(link.getSha1Hash())) {
             sha1 = link.getSha1Hash().toLowerCase(Locale.ENGLISH);
         }
+        if (StringUtils.isEmpty(sha256) && StringUtils.isNotEmpty(link.getSha256Hash())) {
+            sha256 = link.getSha256Hash().toLowerCase(Locale.ENGLISH);
+        }
+
         if (bytesTotal < 0) {
             bytesTotal = link.getView().getBytesTotal();
         }

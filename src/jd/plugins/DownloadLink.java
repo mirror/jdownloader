@@ -93,6 +93,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private static final String                         PROPERTY_MD5                        = "MD5";
     private static final String                         PROPERTY_MIRRORID                   = "MID";
     private static final String                         PROPERTY_SHA1                       = "SHA1";
+    private static final String                         PROPERTY_SHA256                     = "SHA256";
     private static final String                         PROPERTY_PASS                       = "pass";
     private static final String                         PROPERTY_FINALFILENAME              = "FINAL_FILENAME";
     private static final String                         PROPERTY_FORCEDFILENAME             = "FORCED_FILENAME";
@@ -508,6 +509,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return getStringProperty(URL_CONTENT);
     }
 
+    /**
+     * Browser URL / URL to hoster link. replaces set/get UrlDownload()
+     *
+     * @since JD2
+     */
     public void setContentUrl(final String url) {
         if (!StringUtils.equals(url, getContentUrl())) {
             if (StringUtils.isEmpty(url)) {
@@ -561,6 +567,12 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return getStringProperty(URL_CONTAINER);
     }
 
+    /**
+     * "nearest crawler url..."
+     *
+     * @since JD2
+     * @param url
+     */
     public void setContainerUrl(final String url) {
         if (!StringUtils.equals(url, getContainerUrl())) {
             if (StringUtils.isEmpty(url)) {
@@ -731,6 +743,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             setProperty(PROPERTY_CUSTOM_LOCALFILENAME, Property.NULL);
         } else {
             fileName = CrossSystem.alleviatePathParts(fileName);
+            // if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.FILENAME_TO_LOWER_CASE.isEnabled()) {
+            // fileName = fileName.toLowerCase(Locale.ENGLISH);
+            // }
             this.setProperty(PROPERTY_CUSTOM_LOCALFILENAME, fileName);
         }
         cachedName = null;
@@ -746,6 +761,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             setProperty(PROPERTY_CUSTOM_LOCALFILENAMEAPPEND, Property.NULL);
         } else {
             fileName = CrossSystem.alleviatePathParts(fileName);
+            // if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.FILENAME_TO_LOWER_CASE.isEnabled()) {
+            // fileName = fileName.toLowerCase(Locale.ENGLISH);
+            // }
             this.setProperty(PROPERTY_CUSTOM_LOCALFILENAMEAPPEND, fileName);
         }
         cachedName = null;
@@ -1014,7 +1032,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     *
+     * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -1378,6 +1396,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
         if (!StringUtils.isEmpty(name)) {
             name = CrossSystem.alleviatePathParts(name);
+            // if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.FILENAME_TO_LOWER_CASE.isEnabled()) {
+            // name = name.toLowerCase(Locale.ENGLISH);
+            // }
         }
         if (StringUtils.isEmpty(name)) {
             name = UNKNOWN_FILE_NAME;
@@ -1415,6 +1436,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 }
             } else {
                 name = CrossSystem.alleviatePathParts(name);
+                // if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.FILENAME_TO_LOWER_CASE.isEnabled()) {
+                // name = name.toLowerCase(Locale.ENGLISH);
+                // }
                 this.setProperty(PROPERTY_FORCEDFILENAME, name);
             }
         }
@@ -1471,6 +1495,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - new Regex(newfinalFileName, Pattern.compile("r..(\\.htm.?)$", Pattern.CASE_INSENSITIVE)).getMatch(0).length());
             }
             newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName);
+            // if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.FILENAME_TO_LOWER_CASE.isEnabled()) {
+            // newfinalFileName = newfinalFileName.toLowerCase(Locale.ENGLISH);
+            // }
             this.setProperty(PROPERTY_FINALFILENAME, newfinalFileName);
             setName(newfinalFileName);
         } else {
@@ -1491,7 +1518,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     @Deprecated
     public void setUrlDownload(String urlDownload) {
         setPluginPatternMatcher(urlDownload);
-
     }
 
     public void setPluginPatternMatcher(final String pluginPattern) {
@@ -1575,7 +1601,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
-    public void setMD5Hash(String md5) {
+    public void setMD5Hash(final String md5) {
         if (StringUtils.equals(md5, getMD5Hash())) {
             return;
         }
@@ -1585,7 +1611,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else {
             this.setProperty(PROPERTY_MD5, md5.trim());
             setSha1Hash(null);
-
+            setSha256Hash(null);
         }
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.MD5, md5));
@@ -1670,7 +1696,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return lPluginProgress != null && lPluginProgress.contains(contains);
     }
 
-    public void setSha1Hash(String sha1) {
+    public void setSha1Hash(final String sha1) {
         if (StringUtils.equals(sha1, getSha1Hash())) {
             return;
         }
@@ -1680,10 +1706,32 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else {
             this.setProperty(PROPERTY_SHA1, sha1.trim());
             setMD5Hash(null);
-
+            setSha256Hash(null);
         }
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SHA1, sha1));
+        }
+    }
+
+    /**
+     * @author raztoki
+     * @param sha256
+     * @since JD2
+     */
+    public void setSha256Hash(final String sha256) {
+        if (StringUtils.equals(sha256, getSha1Hash())) {
+            return;
+        }
+        // validate sha1 String is a SHA1 hash!
+        if (StringUtils.isEmpty(sha256) || !sha256.trim().matches("[a-fA-F0-9]{64}")) {
+            this.setProperty(PROPERTY_SHA256, Property.NULL);
+        } else {
+            this.setProperty(PROPERTY_SHA256, sha256.trim());
+            setMD5Hash(null);
+            setSha1Hash(null);
+        }
+        if (hasNotificationListener()) {
+            notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.SHA256, sha256));
         }
     }
 
@@ -1701,6 +1749,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public String getSha1Hash() {
         return getStringProperty(PROPERTY_SHA1, (String) null);
+    }
+
+    /**
+     * @author raztoki
+     * @return
+     * @since JD2
+     *
+     */
+    public String getSha256Hash() {
+        return getStringProperty(PROPERTY_SHA256, (String) null);
     }
 
     /**
