@@ -193,22 +193,25 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
                 if (dl != null) {
                     if (grabsubtitles && SUBTITLE_URL != null) {
                         final DownloadLink subtitlelink = getSubtitleDownloadlink(dl);
-                        if (description != null) {
-                            try {
-                                subtitlelink.setComment(description);
-                            } catch (final Throwable e) {
-                                /* Not available in 0.9.581 Stable */
-                            }
-                        }
-                        fp.add(subtitlelink);
-                        decryptedLinks.add(subtitlelink);
-                    }
-                    if (description != null) {
                         try {
-                            dl.setComment(description);
+                            subtitlelink.setContentUrl(PARAMETER);
+                            if (description != null) {
+                                subtitlelink.setComment(description);
+                            }
                         } catch (final Throwable e) {
                             /* Not available in 0.9.581 Stable */
                         }
+
+                        fp.add(subtitlelink);
+                        decryptedLinks.add(subtitlelink);
+                    }
+                    try {
+                        dl.setContentUrl(PARAMETER);
+                        if (description != null) {
+                            dl.setComment(description);
+                        }
+                    } catch (final Throwable e) {
+                        /* Not available in 0.9.581 Stable */
                     }
                     fp.add(dl);
                     decryptedLinks.add(dl);

@@ -53,11 +53,14 @@ public class EmuParadiseMe extends PluginForHost {
         return "http://www.emuparadise.me/contact.php";
     }
 
-    private static Object        LOCK        = new Object();
-    private static final String  COOKIE_HOST = "http://emuparadise.me/";
-    private static AtomicInteger maxFree     = new AtomicInteger(1);
+    private static Object        LOCK             = new Object();
+    private static final String  COOKIE_HOST      = "http://emuparadise.me/";
+    private static AtomicInteger maxFree          = new AtomicInteger(1);
 
-    @SuppressWarnings("unchecked")
+    /* Books, movies and specials are "directlinks" (no captcha/waittime) */
+    private static final String  HTML_TYPE_DIRECT = "Direct Download:</h2>";
+
+    @SuppressWarnings({ "unchecked", "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         link.setName(Encoding.htmlDecode(new Regex(link.getDownloadURL(), "emuparadise\\.me/[^<>/]+/([^<>/]+)/").getMatch(0)) + ".zip");
@@ -79,11 +82,24 @@ public class EmuParadiseMe extends PluginForHost {
             }
         }
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=\"Download\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<br>").getMatch(0);
-        final String filesize = br.getRegex("\\((\\d+(\\.\\d+)?(K|M|G))\\)").getMatch(0);
+        String filename = null;
+        String filesize = null;
+        if (br.containsHTML(HTML_TYPE_DIRECT)) {
+            filename = br.getRegex("\"http://[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+[^<>\"]*?/([^<>\"/]*?)\"").getMatch(0);
+            filesize = br.getRegex("Size: (\\d+(?:\\.\\d+)?(?:K|M|G))<br>").getMatch(0);
+            if (filesize != null) {
+                filesize += "b";
+            }
+        } else {
+            if (!br.containsHTML("id=\"Download\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<br>").getMatch(0);
+            filesize = br.getRegex("\\((\\d+(?:\\.\\d+)?(?:K|M|G))\\)").getMatch(0);
+        }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -92,52 +108,57 @@ public class EmuParadiseMe extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         String dllink = null;
         requestFileInformation(downloadLink);
-        synchronized (LOCK) {
-            br.getPage(br.getURL() + "-download");
-            if (br.containsHTML("id=\"happy\\-hour\"") && !br.containsHTML("class=\"help tip\" style=\"display:none;\" id=\"happy\\-hour\">")) {
-                maxFree.set(2);
-            } else {
-                maxFree.set(1);
-            }
-            dllink = checkDirectLink(downloadLink, "directlink");
-            if (dllink == null) {
-                /* As long as the static cookie set captcha workaround works fine, */
-                if (br.containsHTML("solvemedia\\.com/papi/")) {
-                    logger.info("Detected captcha method \"solvemedia\" for this host");
-                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
-                    File cf = null;
-                    try {
-                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    } catch (final Exception e) {
-                        if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
-                        }
-                        throw e;
-                    }
-                    final String code = getCaptchaCode(cf, downloadLink);
-                    final String chid = sm.getChallenge(code);
-                    br.postPage(br.getURL(), "submit=+Verify+%26+Download&adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + chid);
-                    if (br.containsHTML("solvemedia\\.com/papi/")) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    /* Save cookies to avoid captchas in the future */
-                    final HashMap<String, String> cookies = new HashMap<String, String>();
-                    final Cookies add = this.br.getCookies(COOKIE_HOST);
-                    for (final Cookie c : add.getCookies()) {
-                        cookies.put(c.getKey(), c.getValue());
-                    }
-                    this.getPluginConfig().setProperty("cookies", cookies);
+        if (br.containsHTML(HTML_TYPE_DIRECT)) {
+            dllink = br.getRegex("\"(http://[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+[^<>\"]*?/[^<>\"/]*?)\"").getMatch(0);
+        } else {
+            synchronized (LOCK) {
+                br.getPage(br.getURL() + "-download");
+                if (br.containsHTML("id=\"happy\\-hour\"") && !br.containsHTML("class=\"help tip\" style=\"display:none;\" id=\"happy\\-hour\">")) {
+                    maxFree.set(2);
+                } else {
+                    maxFree.set(1);
                 }
-                dllink = br.getRegex("\"[^<>\"]*?(/roms/get\\-download\\.php[^<>\"]*?)\"").getMatch(0);
+                dllink = checkDirectLink(downloadLink, "directlink");
                 if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    /* As long as the static cookie set captcha workaround works fine, */
+                    if (br.containsHTML("solvemedia\\.com/papi/")) {
+                        logger.info("Detected captcha method \"solvemedia\" for this host");
+                        final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                        final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                        File cf = null;
+                        try {
+                            cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                        } catch (final Exception e) {
+                            if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                                throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                            }
+                            throw e;
+                        }
+                        final String code = getCaptchaCode(cf, downloadLink);
+                        final String chid = sm.getChallenge(code);
+                        br.postPage(br.getURL(), "submit=+Verify+%26+Download&adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + chid);
+                        if (br.containsHTML("solvemedia\\.com/papi/")) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        /* Save cookies to avoid captchas in the future */
+                        final HashMap<String, String> cookies = new HashMap<String, String>();
+                        final Cookies add = this.br.getCookies(COOKIE_HOST);
+                        for (final Cookie c : add.getCookies()) {
+                            cookies.put(c.getKey(), c.getValue());
+                        }
+                        this.getPluginConfig().setProperty("cookies", cookies);
+                    }
+                    dllink = br.getRegex("\"[^<>\"]*?(/roms/get\\-download\\.php[^<>\"]*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    dllink = "http://www.emuparadise.me" + Encoding.htmlDecode(dllink);
                 }
-                dllink = "http://www.emuparadise.me" + Encoding.htmlDecode(dllink);
             }
         }
         /* Without this the directlink won't be accepted! */
