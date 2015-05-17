@@ -23,6 +23,7 @@ addScheduleEntryDialog_no_parameter_caption=Parameter
 addScheduleEntryDialog_repeat=Opakovať
 addScheduleEntryDialog_speed=Rýchlosť
 addScheduleEntryDialog_time=Čas
+addScheduleEntryDialog_title=Vytvoriť nový plán
 addScheduleEntryDialog_title_edit=Upraviť plán
 entry_remove_action_msg=Naozaj odstrániť %s1
 lit_copy=Kopírovať

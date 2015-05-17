@@ -18,6 +18,7 @@ DataCompareDialog_layoutDialogContent_webinterface=Webové rozhranie routera
 DataCompareDialog_layoutDialogContent_webinterface_desc=Pre vykonanie znovu-pripojenia, je potrebné zadať prihlasovacie údaje do webového rozhrania Vášho routera.\nVeľmi často ich môžete nájsť na spodnej strane routera.\nAk ich neviete, opýtajte sa svojho správcu siete
 DataCompareDialog_open_webinterface=Otvoriť webové rozhranie
 EditScriptAction_EditScriptAction_=Upraviť skript
+EditScriptAction_EditScriptAction_add=Nový skript
 GetIPAction_GetIPAction_=Získať IP routera
 GetIPAction_GetIPAction_tt=Skontroluje vašu sieť a snaží sa nájsť IP adresu vášho routera
 GetIPAction_actionPerformed_d_msg=Vyhľadávanie IP routera
