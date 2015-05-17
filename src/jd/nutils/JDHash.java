@@ -21,29 +21,47 @@ import java.io.File;
 import org.appwork.utils.Hash;
 
 /**
- * TODO: Remove with next major update and change to
- * {@link org.appwork.utils.Hash}
+ * TODO: Remove with next major update and change to {@link org.appwork.utils.Hash}
  */
 public class JDHash {
 
-    public static String HASH_TYPE_MD5  = Hash.HASH_TYPE_MD5;
+    public static String HASH_TYPE_MD5    = Hash.HASH_TYPE_MD5;
+    public static String HASH_TYPE_SHA1   = Hash.HASH_TYPE_SHA1;
+    public static String HASH_TYPE_SHA256 = Hash.HASH_TYPE_SHA256;
 
-    public static String HASH_TYPE_SHA1 = Hash.HASH_TYPE_SHA1;
-
-    public static String getMD5(String arg) {
+    public static String getMD5(final String arg) {
         return Hash.getStringHash(arg, HASH_TYPE_MD5);
     }
 
-    public static String getMD5(File arg) {
+    public static String getMD5(final File arg) {
         return Hash.getFileHash(arg, HASH_TYPE_MD5);
     }
 
-    public static String getSHA1(String arg) {
+    public static String getSHA1(final String arg) {
         return Hash.getStringHash(arg, HASH_TYPE_SHA1);
     }
 
-    public static String getSHA1(File arg) {
+    public static String getSHA1(final File arg) {
         return Hash.getFileHash(arg, HASH_TYPE_SHA1);
     }
 
+    /**
+     * @author raztoki
+     * @since JD2
+     * @param arg
+     * @return
+     */
+    public static String getSHA256(final String arg) {
+        return Hash.getStringHash(arg, HASH_TYPE_SHA256);
+    }
+
+    /**
+     * @author raztoki
+     * @since JD2
+     * @param arg
+     * @return
+     */
+    public static String getSHA256(final File arg) {
+        return Hash.getFileHash(arg, HASH_TYPE_SHA256);
+    }
 }

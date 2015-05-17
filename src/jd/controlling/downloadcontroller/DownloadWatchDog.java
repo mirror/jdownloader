@@ -1040,7 +1040,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         }
     }
 
-    private Boolean hasSameHash(DownloadLink linkCandidate, DownloadLink mirrorCandidate) {
+    private Boolean hasSameHash(final DownloadLink linkCandidate, final DownloadLink mirrorCandidate) {
         final String md5A = linkCandidate.getMD5Hash();
         final String md5B = mirrorCandidate.getMD5Hash();
         if (md5A != null && md5B != null) {
@@ -1050,6 +1050,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         final String sha1B = mirrorCandidate.getSha1Hash();
         if (sha1A != null && sha1B != null) {
             return sha1A.equalsIgnoreCase(sha1B);
+        }
+        final String sha256A = linkCandidate.getSha256Hash();
+        final String sha256B = mirrorCandidate.getSha256Hash();
+        if (sha256A != null && sha256B != null) {
+            return sha256A.equalsIgnoreCase(sha256B);
         }
         return null;
     }
@@ -1216,6 +1221,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     case SHA1:
                         candidate.getLink().setFinalLinkState(FinalLinkState.FINISHED_SHA1);
                         break;
+                    case SHA256:
+                        candidate.getLink().setFinalLinkState(FinalLinkState.FINISHED_SHA256);
+                        break;
                     default:
                         candidate.getLink().setFinalLinkState(FinalLinkState.FINISHED);
                         break;
@@ -1246,6 +1254,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         break;
                     case SHA1:
                         candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_SHA1);
+                        break;
+                    case SHA256:
+                        candidate.getLink().setFinalLinkState(FinalLinkState.FAILED_SHA256);
                         break;
                     default:
                         candidate.getLink().setFinalLinkState(FinalLinkState.FAILED);

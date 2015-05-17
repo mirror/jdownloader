@@ -3518,10 +3518,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter the password required to download the file..." })
     String AddLinksDialog_layoutDialogContent_password_tt();
 
-    @Default(lngs = { "en" }, values = { "MD5/SHA1:" })
+    @Default(lngs = { "en" }, values = { "MD5/SHA1/SHA256:" })
     String propertiespanel_checksum();
 
-    @Default(lngs = { "en" }, values = { "Enter the MD5 or SHA1 Checksum..." })
+    @Default(lngs = { "en" }, values = { "Enter the MD5 or SHA1 or SHA256 Checksum..." })
     String AddLinksDialog_layoutDialogContent_checksum_tt();
 
     @Default(lngs = { "en" }, values = { "Link origin" })
@@ -3644,7 +3644,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Show Download Password" })
     String LinkgrabberPropertiesHeader_downloadpassword();
 
-    @Default(lngs = { "en" }, values = { "Show Checksum (MD5/SHA1)" })
+    @Default(lngs = { "en" }, values = { "Show Checksum (MD5/SHA1/SHA256)" })
     String LinkgrabberPropertiesHeader_checksum();
 
     @Default(lngs = { "en" }, values = { "Show Comment & Priority" })
@@ -5931,4 +5931,8 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "For this feature, 2 advanced options are required:\r\nBrowserCaptchaSolver: Google Com Cookie Value HSID\r\n*BrowserCaptchaSolver: Google Com Cookie Value SID\r\n\r\nPlease enter both." })
     String Recaptcha_cookie_help_msg_both_cookies();
+
+    @Default(lngs = { "en" }, values = { "Start CRC task! This will validate data on storage device against input inside Checksum column" })
+    String gui_table_contextmenu_runchecksum();
+
 }

@@ -26,7 +26,7 @@ public interface Downloadable {
 
     /**
      * return the verified(100%) size of final download
-     * 
+     *
      * @param bytes
      */
     long getVerifiedFileSize();
@@ -35,7 +35,7 @@ public interface Downloadable {
 
     /**
      * Return the pluginhost. this can be the requested domain, but it may be a different domain as well
-     * 
+     *
      * @return
      */
     String getHost();
@@ -52,7 +52,7 @@ public interface Downloadable {
 
     /**
      * returns the approximate(live) amount of downloaded bytes
-     * 
+     *
      * @return
      */
     public long getDownloadBytesLoaded();
@@ -61,7 +61,7 @@ public interface Downloadable {
 
     /**
      * set the verified(100%) size of final download
-     * 
+     *
      * @param length
      */
     void setVerifiedFileSize(long length);
@@ -92,7 +92,7 @@ public interface Downloadable {
 
     /**
      * set the exact amount of bytes loaded
-     * 
+     *
      * @param bytes
      */
     void setDownloadBytesLoaded(long bytes);
@@ -107,11 +107,13 @@ public interface Downloadable {
 
     String getSha1Hash();
 
+    String getSha256Hash();
+
     String getName();
 
     /**
      * returns the best known filesize (does not have to match the final downloadsize)
-     * 
+     *
      * @return
      */
     long getKnownDownloadSize();

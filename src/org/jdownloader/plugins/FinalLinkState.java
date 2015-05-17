@@ -14,11 +14,13 @@ public enum FinalLinkState {
     FINISHED_MIRROR(_GUI._.TaskColumn_getStringValue_finished_mirror(), IconKey.ICON_TRUE_ORANGE),
     FINISHED_MD5(_JDT._.system_download_doCRC2_success("MD5"), IconKey.ICON_OK),
     FINISHED_SHA1(_JDT._.system_download_doCRC2_success("SHA1"), IconKey.ICON_OK),
+    FINISHED_SHA256(_JDT._.system_download_doCRC2_success("SHA256"), IconKey.ICON_OK),
     FINISHED_CRC32(_JDT._.system_download_doCRC2_success("CRC32"), IconKey.ICON_OK),
 
     FAILED(_JDT._.downloadlink_status_error_downloadfailed(), IconKey.ICON_FALSE),
     FAILED_MD5(_JDT._.system_download_doCRC2_failed("MD5"), IconKey.ICON_FALSE),
     FAILED_SHA1(_JDT._.system_download_doCRC2_failed("SHA1"), IconKey.ICON_FALSE),
+    FAILED_SHA256(_JDT._.system_download_doCRC2_failed("SHA256"), IconKey.ICON_FALSE),
     FAILED_CRC32(_JDT._.system_download_doCRC2_failed("CRC32"), IconKey.ICON_FALSE),
     FAILED_EXISTS(_JDT._.downloadlink_status_error_file_exists(), IconKey.ICON_FALSE),
 
@@ -67,6 +69,7 @@ public enum FinalLinkState {
         case FINISHED_CRC32:
         case FINISHED_MD5:
         case FINISHED_SHA1:
+        case FINISHED_SHA256:
             return true;
         default:
             return false;

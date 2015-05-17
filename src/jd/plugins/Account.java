@@ -91,7 +91,7 @@ public class Account extends Property {
     }
 
     /**
-     * 
+     *
      * @param string
      * @return
      */
@@ -108,7 +108,7 @@ public class Account extends Property {
     }
 
     /**
-     * 
+     *
      * @param user
      * @param pass
      */
@@ -123,7 +123,7 @@ public class Account extends Property {
 
     /**
      * -1 = unlimited, 0 = use deprecated getMaxSimultanPremiumDownloadNum/getMaxSimultanFreeDownloadNum,>1 = use this
-     * 
+     *
      * @since JD2
      * */
     public void setMaxSimultanDownloads(int max) {
@@ -209,7 +209,7 @@ public class Account extends Property {
 
     /**
      * this method returns for how long this account will be (or has been) a premium account
-     * 
+     *
      * @return
      */
     public long getValidPremiumUntil() {
@@ -454,7 +454,7 @@ public class Account extends Property {
 
     /**
      * JD2 Code!
-     * 
+     *
      * @since JD2
      */
     public void setType(AccountType type) {
@@ -508,7 +508,6 @@ public class Account extends Property {
                 e.printStackTrace();
             }
         }
-        // nopremium z.b. 4shared.com
         if (getBooleanProperty("nopremium", false)) {
             // nopremium z.b. 4shared.com
             return AccountType.FREE;
