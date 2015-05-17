@@ -176,17 +176,20 @@ public class AbelhasPt extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(link.getStringProperty("mainlink", null));
         handlePWProtected(link);
         final String fileid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
-        final String requestvtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (fileid == null || requestvtoken == null) {
+        final String requesttoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (fileid == null || requesttoken == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://abelhas.pt/action/License/Download", "fileId=" + fileid + "&__RequestVerificationToken=" + Encoding.urlEncode(requestvtoken));
+        br.postPage("http://abelhas.pt/action/License/Download", "fileId=" + fileid + "&__RequestVerificationToken=" + Encoding.urlEncode(requesttoken));
         String dllink = br.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://s\\d+\\.abelhas\\.pt/File\\.aspx[^\\\\\"]+)").getMatch(0);
+        }
         if (dllink == null) {
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
             final String orgfile = br.getRegex("name=\"orgFile\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -194,7 +197,7 @@ public class AbelhasPt extends PluginForHost {
             if (orgfile == null || userSelection == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.postPage("http://abelhas.pt/action/License/acceptLargeTransfer", "fileId=" + fileid + "&orgFile=" + Encoding.urlEncode(orgfile) + "&userSelection=" + Encoding.urlEncode(userSelection) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestvtoken));
+            br.postPage("http://abelhas.pt/action/License/acceptLargeTransfer", "fileId=" + fileid + "&orgFile=" + Encoding.urlEncode(orgfile) + "&userSelection=" + Encoding.urlEncode(userSelection) + "&__RequestVerificationToken=" + Encoding.urlEncode(requesttoken));
             dllink = br.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
