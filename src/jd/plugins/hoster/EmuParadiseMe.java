@@ -133,7 +133,7 @@ public class EmuParadiseMe extends PluginForHost {
                     }
                     this.getPluginConfig().setProperty("cookies", cookies);
                 }
-                dllink = br.getRegex("\"(/roms/get\\-download\\.php[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("\"[^<>\"]*?(/roms/get\\-download\\.php[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
