@@ -45,6 +45,11 @@ public class MySpassDe extends PluginForHost {
         return "http://www.myspass.de/myspass/kontakt/";
     }
 
+    /*
+     * Example final url (18.05.2015):
+     * http://x3583brainc11021.s.o.l.lb.core-cdn.net/secdl/78de6150fffffffffff1f136aff77d61/55593149/11021brainpool/ondemand
+     * /3583brainpool/163840/myspass2009/14/660/10680/18471/18471_61.mp4
+     */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
