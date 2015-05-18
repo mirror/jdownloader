@@ -2,7 +2,7 @@ package org.jdownloader.gui.views.components.packagetable;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -14,16 +14,85 @@ import org.jdownloader.gui.views.linkgrabber.quickfilter.FilterTable;
 
 public class PackageControllerTableModelData<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends ArrayList<AbstractNode> {
 
+    public static interface PackageControllerTableModelDataPackage {
+
+        public AbstractPackageNode getPackage();
+
+        public boolean isExpanded();
+
+        public List<? extends AbstractNode> getVisibleChildren();
+
+        public List<? extends AbstractNode> getInvisibleChildren();
+    }
+
     private final static AtomicLong                                            VERSION              = new AtomicLong(0);
     private List<PackageControllerTableModelFilter<PackageType, ChildrenType>> packageFilters       = null;
     private List<PackageControllerTableModelFilter<PackageType, ChildrenType>> childrenFilters      = null;
-    private List<ChildrenType>                                                 allChildren          = new ArrayList<ChildrenType>();
     private List<PackageControllerTableModelCustomizer>                        tableModelCustomizer = null;
     private final long                                                         version              = VERSION.incrementAndGet();
     private boolean                                                            filtered             = false;
+    private final List<PackageControllerTableModelDataPackage>                 modelDataPackages    = new ArrayList<PackageControllerTableModelDataPackage>();
+    private final List<AbstractNode>                                           filteredChildren     = new ArrayList<AbstractNode>();
+    private final List<AbstractNode>                                           hiddenChildren       = new ArrayList<AbstractNode>();
+
+    protected List<AbstractNode> getHiddenChildren() {
+        return hiddenChildren;
+    }
+
+    protected List<AbstractNode> getFilteredChildren() {
+        return filteredChildren;
+    }
+
+    public List<PackageControllerTableModelDataPackage> getModelDataPackages() {
+        return modelDataPackages;
+    }
 
     public long getVersion() {
         return version;
+    }
+
+    public Iterator<ChildrenType> getVisibleChildrenIterator() {
+        final Iterator<PackageControllerTableModelDataPackage> it = getModelDataPackages().iterator();
+        return new Iterator<ChildrenType>() {
+
+            ChildrenType                     ret = null;
+            Iterator<? extends AbstractNode> it2 = null;
+
+            @Override
+            public boolean hasNext() {
+                if (ret != null) {
+                    return true;
+                } else {
+                    if (it2 != null) {
+                        while (it2.hasNext()) {
+                            ret = (ChildrenType) it2.next();
+                            return true;
+                        }
+                        it2 = null;
+                    }
+                    while (it.hasNext()) {
+                        final PackageControllerTableModelDataPackage next = it.next();
+                        if (next.getVisibleChildren() != null && next.getVisibleChildren().size() > 0) {
+                            it2 = next.getVisibleChildren().iterator();
+                            ret = (ChildrenType) it2.next();
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            }
+
+            @Override
+            public ChildrenType next() {
+                if (hasNext()) {
+                    final ChildrenType ret = this.ret;
+                    this.ret = null;
+                    return ret;
+                } else {
+                    return null;
+                }
+            }
+        };
     }
 
     public List<PackageControllerTableModelCustomizer> getTableModelCustomizer() {
@@ -35,14 +104,6 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
             tableModelCustomizer = null;
         }
         this.tableModelCustomizer = tableModelCustomizer;
-    }
-
-    public List<ChildrenType> getAllChildrenNodes() {
-        return allChildren;
-    }
-
-    protected void setAllChildrenNodes(List<ChildrenType> allChildren) {
-        this.allChildren = Collections.unmodifiableList(allChildren);
     }
 
     public List<PackageControllerTableModelFilter<PackageType, ChildrenType>> getPackageFilters() {

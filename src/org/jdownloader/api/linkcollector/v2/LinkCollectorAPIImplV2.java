@@ -462,45 +462,33 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
      * @throws BadParameterException
      */
     public static SelectionInfo<CrawledPackage, CrawledLink> getSelectionInfo(long[] linkIds, long[] packageIds) throws BadParameterException {
-        ArrayList<AbstractNode> list = new ArrayList<AbstractNode>();
+        final ArrayList<AbstractNode> list = new ArrayList<AbstractNode>();
         if (packageIds != null) {
-            List<CrawledPackage> packages = getPackagesByID(packageIds);
-
+            final List<CrawledPackage> packages = getPackagesByID(packageIds);
             list.addAll(packages);
         }
         if (linkIds != null) {
-            List<CrawledLink> links = getLinksById(linkIds);
-
+            final List<CrawledLink> links = getLinksById(linkIds);
             list.addAll(links);
         }
-
-        return new SelectionInfo<CrawledPackage, CrawledLink>(null, list, false);
+        return new SelectionInfo<CrawledPackage, CrawledLink>(null, list);
 
     }
 
     @Override
     public void moveToDownloadlist(final long[] linkIds, final long[] packageIds) throws BadParameterException {
-
         LinkCollector.getInstance().moveLinksToDownloadList(getSelectionInfo(linkIds, packageIds));
-
     }
 
     @Override
     public void removeLinks(final long[] linkIds, final long[] packageIds) throws BadParameterException {
         LinkCollector lc = LinkCollector.getInstance();
-        lc.writeLock();
-        try {
-            lc.removeChildren(getSelectionInfo(linkIds, packageIds).getChildren());
-        } finally {
-            lc.writeUnlock();
-        }
-
+        lc.removeChildren(getSelectionInfo(linkIds, packageIds).getChildren());
     }
 
     @Override
     public void renameLink(long linkId, String newName) throws BadParameterException {
         CrawledLink lc = getLinkById(linkId);
-
         lc.setName(newName);
 
     }
@@ -508,32 +496,24 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     @Override
     public void renamePackage(long packageId, String newName) throws BadParameterException {
         CrawledPackage lc = getPackageByID(packageId);
-
         lc.setName(newName);
 
     }
 
     @Override
     public void setEnabled(boolean enabled, final long[] linkIds, final long[] packageIds) throws BadParameterException {
-        try {
-            LinkCollector.getInstance().writeLock();
-            List<CrawledLink> sdl = getSelectionInfo(linkIds, packageIds).getChildren();
-            for (CrawledLink dl : sdl) {
-                dl.setEnabled(enabled);
-            }
-        } finally {
-            LinkCollector.getInstance().writeUnlock();
+        List<CrawledLink> sdl = getSelectionInfo(linkIds, packageIds).getChildren();
+        for (CrawledLink dl : sdl) {
+            dl.setEnabled(enabled);
         }
 
     }
 
     @Override
     public void movePackages(long[] packageIds, long afterDestPackageId) throws BadParameterException {
-
         List<CrawledPackage> selectedPackages = getPackagesByID(packageIds);
         CrawledPackage afterDestPackage = afterDestPackageId <= 0 ? null : getPackageByID(afterDestPackageId);
         LinkCollector.getInstance().move(selectedPackages, afterDestPackage);
-
     }
 
     private static CrawledPackage getPackageByID(long afterDestPackageId) throws BadParameterException {

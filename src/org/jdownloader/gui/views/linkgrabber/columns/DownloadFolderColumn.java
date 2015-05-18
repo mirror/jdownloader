@@ -32,7 +32,7 @@ import org.jdownloader.translate._JDT;
 
 public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
     private AbstractNode      editing;
@@ -57,7 +57,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public boolean onRenameClick(MouseEvent e, AbstractNode obj) {
-        SetDownloadFolderInLinkgrabberAction r = new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj, null, false));
+        SetDownloadFolderInLinkgrabberAction r = new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(obj));
         r.requestUpdate(this);
         r.actionPerformed(null);
         return true;

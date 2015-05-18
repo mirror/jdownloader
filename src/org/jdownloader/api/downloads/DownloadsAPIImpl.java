@@ -294,17 +294,14 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
     @Override
     public boolean removeLinks(final List<Long> linkIds, final List<Long> packageIds) {
-        if (linkIds == null) {
-            return true;
+        if (linkIds != null) {
+            final List<DownloadLink> links = getAllTheLinks(linkIds, packageIds);
+            if (links != null && links.size() > 0) {
+                DownloadController.getInstance().removeChildren(links);
+                return true;
+            }
         }
-
-        DownloadController dlc = DownloadController.getInstance();
-
-        dlc.writeLock();
-        dlc.removeChildren(getAllTheLinks(linkIds, packageIds));
-        dlc.writeUnlock();
-
-        return true;
+        return false;
     }
 
     @Override
@@ -314,26 +311,34 @@ public class DownloadsAPIImpl implements DownloadsAPI {
 
     @Override
     public boolean forceDownload(final List<Long> linkIds, final List<Long> packageIds) {
-
         DownloadController dlc = DownloadController.getInstance();
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();
         dwd.forceDownload(getAllTheLinks(linkIds, packageIds));
-
         return true;
     }
 
     @Override
     public boolean renamePackage(Long packageId, String newName) {
-        DownloadController dlc = DownloadController.getInstance();
-        dlc.writeLock();
-        for (FilePackage fp : dlc.getPackages()) {
-            if (packageId.equals(fp.getUniqueID().getID())) {
+        if (packageId != null && newName != null) {
+            DownloadController dlc = DownloadController.getInstance();
+            final boolean readL = dlc.readLock();
+            FilePackage fp = null;
+            try {
+                for (FilePackage pkg : dlc.getPackages()) {
+                    if (packageId.longValue() == pkg.getUniqueID().getID()) {
+                        fp = pkg;
+                        break;
+                    }
+                }
+            } finally {
+                dlc.readUnlock(readL);
+            }
+            if (fp != null) {
                 fp.setName(newName);
-                break;
+                return true;
             }
         }
-        dlc.writeUnlock();
-        return true;
+        return false;
     }
 
     @Override

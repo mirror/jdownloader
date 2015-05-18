@@ -24,7 +24,6 @@ import javax.swing.JFrame;
 
 import jd.SecondLevelLaunch;
 import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadLinkCandidateResult;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -38,8 +37,6 @@ import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.gui.swing.dialog.AboutDialog;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -56,7 +53,7 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.controlling.AggregatedNumbers;
-import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.icon.IconBadgePainter;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -214,7 +211,8 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                                 } catch (InterruptedException e) {
                                     break;
                                 }
-                                final AggregatedNumbers aggn = new AggregatedNumbers(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllChildren(), false));
+
+                                final AggregatedNumbers aggn = new AggregatedNumbers(DownloadsTable.getInstance().getSelectionInfo(false, false));
                                 int percent = 0;
                                 if (aggn.getTotalBytes() > 0) {
                                     percent = (int) ((aggn.getLoadedBytes() * 100) / aggn.getTotalBytes());

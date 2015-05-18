@@ -170,7 +170,7 @@ public class LinkTreeUtils {
         }
 
         String rawURL = null;
-        List<?> actualChildren = new SelectionInfo(null, links, true).getChildren();
+        List<?> actualChildren = new SelectionInfo(null, links).getChildren();
         for (Object node : actualChildren) {
             DownloadLink link = null;
             if (node instanceof DownloadLink) {

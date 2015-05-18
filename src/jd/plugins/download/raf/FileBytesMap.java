@@ -33,7 +33,7 @@ public class FileBytesMap {
 
         /**
          * return the begin of the first byte(inclusive)
-         * 
+         *
          * @return
          */
         private final long getBegin() {
@@ -42,7 +42,7 @@ public class FileBytesMap {
 
         /**
          * return the end of the last byte(inclusive)
-         * 
+         *
          * @return
          */
         private final long getEnd() {
@@ -51,7 +51,7 @@ public class FileBytesMap {
 
         /**
          * return the length of this entry
-         * 
+         *
          * @return
          */
         private final long getLength() {
@@ -106,7 +106,7 @@ public class FileBytesMap {
 
         /**
          * return a list of begin/length entries of the map
-         * 
+         *
          * @return
          */
         public List<Long[]> getMarkedAreas() {
@@ -151,7 +151,7 @@ public class FileBytesMap {
 
         /**
          * return a list of begin/length entries of the map
-         * 
+         *
          * @return
          */
         @Override
@@ -262,9 +262,9 @@ public class FileBytesMap {
 
     /**
      * return how much area got marked
-     * 
+     *
      * if return value != markedAreaLength ->overlapping mark
-     * 
+     *
      * @param markedAreaBegin
      * @param markedAreaLength
      * @return
@@ -382,7 +382,7 @@ public class FileBytesMap {
 
     /**
      * return known size of this map
-     * 
+     *
      * @return
      */
     public synchronized long getSize() {
@@ -401,7 +401,7 @@ public class FileBytesMap {
 
     /**
      * return size of unmarked area
-     * 
+     *
      * @return
      */
     public synchronized long getUnMarkedBytes() {
@@ -410,7 +410,7 @@ public class FileBytesMap {
 
     /**
      * return a "live" size marked area
-     * 
+     *
      * @return
      */
     public long getMarkedBytesLive() {
@@ -442,7 +442,7 @@ public class FileBytesMap {
 
     /**
      * return size of marked area
-     * 
+     *
      * @return
      */
     public synchronized long getMarkedBytes() {

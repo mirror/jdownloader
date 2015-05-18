@@ -53,8 +53,19 @@ public class MegaConz extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         parameter.setCryptedUrl(parameter.toString().replaceAll("%21", "!"));
+
         String folderID = getFolderID(parameter);
         String masterKey = getMasterKey(parameter);
+        final String containerURL;
+        if (parameter.getCryptedUrl().startsWith("chrome://")) {
+            if (folderID != null && masterKey != null) {
+                containerURL = "https://mega.co.nz/#F!" + folderID + "!" + masterKey;
+            } else {
+                containerURL = parameter.getCryptedUrl();
+            }
+        } else {
+            containerURL = parameter.getCryptedUrl();
+        }
         try {
             br.setLoadLimit(16 * 1024 * 1024);
         } catch (final Throwable e) {
@@ -64,19 +75,19 @@ public class MegaConz extends PluginForDecrypt {
         String nodes[] = br.getRegex("\\{\\s*?(\"h\".*?)\\}").getColumn(0);
         /*
          * p = parent node (ID)
-         * 
+         *
          * s = size
-         * 
+         *
          * t = type (0=file, 1=folder, 2=root, 3=inbox, 4=trash
-         * 
+         *
          * ts = timestamp
-         * 
+         *
          * h = node (ID)
-         * 
+         *
          * u = owner
-         * 
+         *
          * a = attribute (contains name)
-         * 
+         *
          * k = node key
          */
         HashMap<String, MegaFolder> folders = new HashMap<String, MegaFolder>();
@@ -119,6 +130,7 @@ public class MegaConz extends PluginForDecrypt {
                 }
                 String safeNodeKey = nodeKey.replace("+", "-").replace("/", "_");
                 DownloadLink link = createDownloadlink("http://mega.co.nz/#N!" + nodeID + "!" + safeNodeKey);
+                link.setContainerUrl(containerURL);
                 link.setFinalFileName(nodeName);
                 link.setProperty("REL_PATH", path);
                 link.setAvailable(true);

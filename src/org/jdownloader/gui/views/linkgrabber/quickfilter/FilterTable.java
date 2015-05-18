@@ -69,7 +69,7 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     }
 
     /**
-     * 
+     *
      */
     private static final long                              serialVersionUID       = -5917220196056769905L;
     private HeaderInterface                                header;
@@ -93,7 +93,7 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                                                                                                   }
 
                                                                                                   @Override
-                                                                                                  protected List<CrawledLink> modifyPackageData(CrawledPackage pkg, List<CrawledLink> unfilteredChildren) {
+                                                                                                  protected void modifyPackageData(CrawledPackage pkg, List<CrawledLink> unfilteredChildren) {
                                                                                                       boolean expand = false;
                                                                                                       for (CrawledLink link : unfilteredChildren) {
                                                                                                           for (Filter filter : selectedFilters) {
@@ -107,7 +107,6 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                                                                                                       if (expand) {
                                                                                                           pkg.setExpanded(true);
                                                                                                       }
-                                                                                                      return unfilteredChildren;
                                                                                                   }
 
                                                                                                   @Override
@@ -184,7 +183,9 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
         List<CrawledLink> filteredLinks = new ArrayList<CrawledLink>();
         List<CrawledLink> allCollectorChildren = LinkCollector.getInstance().getAllChildren();
         PackageControllerTableModelData<CrawledPackage, CrawledLink> tableData = LinkGrabberTableModel.getInstance().getTableData();
-        for (CrawledLink link : tableData.getAllChildrenNodes()) {
+        final Iterator<CrawledLink> it = tableData.getVisibleChildrenIterator();
+        while (it.hasNext()) {
+            final CrawledLink link = it.next();
             processedLinks.add(link);
             for (FilterTableDataUpdater update : updater) {
                 update.updateVisible(link);
@@ -244,9 +245,9 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
             updateTableData.put(filterTable, filters);
         }
 
-        Iterator<Entry<FilterTable, List<Filter>>> it = updateTableData.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<FilterTable, List<Filter>> next = it.next();
+        final Iterator<Entry<FilterTable, List<Filter>>> it2 = updateTableData.entrySet().iterator();
+        while (it2.hasNext()) {
+            Entry<FilterTable, List<Filter>> next = it2.next();
             next.getKey().updateTableData(next.getValue());
         }
         if (newDisabledFilters) {

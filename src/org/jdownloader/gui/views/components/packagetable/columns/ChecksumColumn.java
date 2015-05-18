@@ -48,21 +48,26 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
     }
 
     private String getEditorStringValue(AbstractNode value) {
-        DownloadLink dl = null;
+        final DownloadLink dl;
         if (value instanceof CrawledLink) {
             dl = ((CrawledLink) value).getDownloadLink();
         } else if (value instanceof DownloadLink) {
             dl = ((DownloadLink) value);
+        } else {
+            return null;
         }
         if (dl != null) {
-            if (!StringUtils.isEmpty(dl.getSha256Hash())) {
-                return dl.getSha256Hash();
+            String hash = dl.getSha256Hash();
+            if (!StringUtils.isEmpty(hash)) {
+                return hash;
             }
-            if (!StringUtils.isEmpty(dl.getSha1Hash())) {
-                return dl.getSha1Hash();
+            hash = dl.getSha1Hash();
+            if (!StringUtils.isEmpty(hash)) {
+                return hash;
             }
-            if (!StringUtils.isEmpty(dl.getMD5Hash())) {
-                return dl.getMD5Hash();
+            hash = dl.getMD5Hash();
+            if (!StringUtils.isEmpty(hash)) {
+                return hash;
             }
         }
         return null;
@@ -130,25 +135,29 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public String getStringValue(AbstractNode value) {
-        DownloadLink dl = null;
+        final DownloadLink dl;
         if (value instanceof CrawledLink) {
             dl = ((CrawledLink) value).getDownloadLink();
         } else if (value instanceof DownloadLink) {
             dl = ((DownloadLink) value);
+        } else {
+            return null;
         }
         if (dl != null) {
-            if (!StringUtils.isEmpty(dl.getSha1Hash())) {
-                return "[SHA1] " + dl.getSha1Hash();
+            String hash = dl.getSha256Hash();
+            if (!StringUtils.isEmpty(hash)) {
+                return "[SHA1] ".concat(hash);
             }
-            if (!StringUtils.isEmpty(dl.getSha256Hash())) {
-                return "[SHA256] " + dl.getSha256Hash();
+            hash = dl.getSha1Hash();
+            if (!StringUtils.isEmpty(hash)) {
+                return "[SHA256] ".concat(hash);
             }
-            if (!StringUtils.isEmpty(dl.getMD5Hash())) {
-                return "[MD5] " + dl.getMD5Hash();
+            hash = dl.getMD5Hash();
+            if (!StringUtils.isEmpty(hash)) {
+                return "[MD5] ".concat(hash);
             }
         }
         return null;
-
     }
 
 }

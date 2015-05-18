@@ -563,11 +563,14 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
                 }
                 ArrayList<CrawledLink> toMove = new ArrayList<CrawledLink>();
+                boolean createNewSelectionInfo = false;
                 for (CrawledLink cl : selection.getChildren()) {
                     if (toDelete.contains(cl)) {
+                        createNewSelectionInfo = true;
                         continue;
                     }
                     if (toKeepInLinkgrabber.contains(cl)) {
+                        createNewSelectionInfo = true;
                         continue;
                     }
                     if (forcedStart != null) {
@@ -588,14 +591,17 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                 }
                 if (toDelete.size() > 0) {
                     java.awt.Toolkit.getDefaultToolkit().beep();
-                    java.awt.Toolkit.getDefaultToolkit().beep();
                     LinkCollector.getInstance().removeChildren(new ArrayList<CrawledLink>(toDelete));
                 }
                 if (toMove.size() == 0) {
                     java.awt.Toolkit.getDefaultToolkit().beep();
                     return;
                 }
-                LinkCollector.getInstance().moveLinksToDownloadList(new SelectionInfo<CrawledPackage, CrawledLink>(null, toMove, false));
+                if (createNewSelectionInfo) {
+                    LinkCollector.getInstance().moveLinksToDownloadList(new SelectionInfo<CrawledPackage, CrawledLink>(null, toMove));
+                } else {
+                    LinkCollector.getInstance().moveLinksToDownloadList(selection);
+                }
 
                 if (doTabSwitch) {
                     switchToDownloadTab();

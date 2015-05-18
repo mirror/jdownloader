@@ -22,7 +22,7 @@ import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTab
 
 public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
@@ -57,7 +57,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     public boolean onRenameClick(MouseEvent e, AbstractNode clicked) {
         // JDGui.help(_GUI._.literall_usage_tipp(), _GUI._.DownloadFolderColumn_onSingleClick_object_(), NewTheme.I().getIcon("smart", 48));
 
-        new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(clicked, null, false)).actionPerformed(null);
+        new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(clicked)).actionPerformed(null);
         return true;
     }
 

@@ -6,10 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 
 import org.appwork.swing.exttable.ExtTableEvent;
 import org.appwork.swing.exttable.ExtTableListener;
@@ -21,10 +19,7 @@ import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
-import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 
 public class ConfirmHashValuesAction extends CustomizableTableContextAppAction implements ActionContext, ExtTableListener, ExtTableModelListener {
@@ -58,70 +53,38 @@ public class ConfirmHashValuesAction extends CustomizableTableContextAppAction i
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
-        PackageControllerTable<?, ?> table = LinkGrabberTable.getInstance();
         final List<CrawledLink> links = new ArrayList<CrawledLink>();
-
         final SelectionInfo<CrawledPackage, CrawledLink> selection = LinkGrabberTable.getInstance().getSelectionInfo();
         switch (includedSelection.getSelectionType()) {
         case NONE:
             return;
-
         case SELECTED:
             links.addAll(selection.getChildren());
-
             break;
         case UNSELECTED:
-            final List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> filters = LinkGrabberTableModel.getInstance().getTableFilters();
-            LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
-
-                @Override
-                public int returnMaxResults() {
-                    return 0;
-                }
-
-                @Override
-                public boolean acceptNode(CrawledLink node) {
-                    if (!selection.contains(node)) {
-
-                        if (true) {
-                            for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> filter : filters) {
-                                if (filter.isFiltered(node)) { return false; }
-                            }
-                        }
-
-                        links.add(node);
-                    }
-                    return false;
-                }
-            });
+            if (selection.getUnselectedChildren() != null) {
+                links.addAll(selection.getUnselectedChildren());
+            }
             break;
         case ALL:
-
             links.addAll(LinkGrabberTable.getInstance().getSelectionInfo(false, true).getChildren());
         }
-
-        if (links.size() == 0) return;
-
+        if (links.size() == 0) {
+            return;
+        }
         HashMap<String, List<CrawledLink>> map = new HashMap<String, List<CrawledLink>>();
-
         for (CrawledLink cl : links) {
             List<CrawledLink> list = map.get(cl.getName());
             if (list == null) {
                 list = new ArrayList<CrawledLink>();
                 map.put(cl.getName(), list);
             }
-
             list.add(cl);
         }
-
         main: for (Entry<String, List<CrawledLink>> se : map.entrySet()) {
-
             List<CrawledLink> list = se.getValue();
-
             String md5 = null;
             String sha = null;
-
             for (CrawledLink cl : list) {
                 if (cl.getDownloadLink().getMD5Hash() != null) {
                     if (md5 != null && !StringUtils.equalsIgnoreCase(md5, cl.getDownloadLink().getMD5Hash())) {
@@ -141,13 +104,15 @@ public class ConfirmHashValuesAction extends CustomizableTableContextAppAction i
                     }
                 }
             }
-
             for (CrawledLink cl : list) {
-                if (md5 != null) cl.getDownloadLink().setMD5Hash(md5);
-                if (sha != null) cl.getDownloadLink().setSha1Hash(sha);
+                if (md5 != null) {
+                    cl.getDownloadLink().setMD5Hash(md5);
+                }
+                if (sha != null) {
+                    cl.getDownloadLink().setSha1Hash(sha);
+                }
             }
         }
-
     }
 
     @Override

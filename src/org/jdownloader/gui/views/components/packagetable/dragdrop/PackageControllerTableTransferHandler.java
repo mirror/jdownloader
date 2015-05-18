@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.components.packagetable.dragdrop;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.InputEvent;
+import java.util.ArrayList;
 
 import javax.swing.JComponent;
 import javax.swing.JTable;
@@ -16,12 +17,14 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 
 public abstract class PackageControllerTableTransferHandler<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends TransferHandler {
 
     /**
-     * 
+     *
      */
     private static final long                                         serialVersionUID = 4546100125368290556L;
     final protected PackageControllerTable<PackageType, ChildrenType> table;
@@ -41,11 +44,16 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
         /*
          * get all selected packages and children and create a transferable if possible
          */
-        java.util.List<PackageType> packages = table.getSelectedPackages();
-        java.util.List<ChildrenType> links = table.getSelectedChildren();
+        final SelectionInfo<PackageType, ChildrenType> selectionInfo = table.getSelectionInfo(true, true);
         Transferable ret = null;
-        if ((links != null && links.size() > 0) || (packages != null && packages.size() > 0)) {
-            PackageControllerTableTransferable<PackageType, ChildrenType> ret2 = new PackageControllerTableTransferable<PackageType, ChildrenType>(packages, links, table);
+        if (selectionInfo.getChildren().size() > 0 || selectionInfo.getPackageViews().size() > 0) {
+            final ArrayList<PackageType> packages = new ArrayList<PackageType>(selectionInfo.getPackageViews().size());
+            for (PackageView<PackageType, ChildrenType> packageView : selectionInfo.getPackageViews()) {
+                if (packageView.isPackageSelected()) {
+                    packages.add(packageView.getPackage());
+                }
+            }
+            PackageControllerTableTransferable<PackageType, ChildrenType> ret2 = new PackageControllerTableTransferable<PackageType, ChildrenType>(packages, selectionInfo.getChildren(), table);
             ret = customizeTransferable(ret2);
         }
         return ret;
@@ -74,10 +82,14 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
 
     @SuppressWarnings("unchecked")
     protected PackageControllerTableTransferableContent<PackageType, ChildrenType> getContent(TransferSupport support) {
-        if (!support.isDataFlavorSupported(PackageControllerTableTransferable.FLAVOR)) return null;
+        if (!support.isDataFlavorSupported(PackageControllerTableTransferable.FLAVOR)) {
+            return null;
+        }
         try {
             PackageControllerTableTransferableContent<?, ?> content = (PackageControllerTableTransferableContent<?, ?>) support.getTransferable().getTransferData(PackageControllerTableTransferable.FLAVOR);
-            if (content.table != table) return null;
+            if (content.table != table) {
+                return null;
+            }
             return (PackageControllerTableTransferableContent<PackageType, ChildrenType>) content;
         } catch (final Throwable e) {
             Log.exception(e);
@@ -86,10 +98,16 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
     }
 
     protected boolean canImportPackageControllerTransferable(TransferSupport support) {
-        if (!table.isOriginalOrder() || table.getModel().isFilteredView()) { return false; }
+        if (!table.isOriginalOrder() || table.getModel().isFilteredView()) {
+            return false;
+        }
         PackageControllerTableTransferableContent<PackageType, ChildrenType> content = getContent(support);
-        if (content == null) return false;
-        if (!allowImport(content.packages, content.links)) return false;
+        if (content == null) {
+            return false;
+        }
+        if (!allowImport(content.packages, content.links)) {
+            return false;
+        }
         Object onElement = null;
         boolean linksAvailable = content.links != null && content.links.size() > 0;
         boolean packagesAvailable = content.packages != null && content.packages.size() > 0;
@@ -127,7 +145,9 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                             }
                         }
                     }
-                    if (fp == null && packagesAvailable == false) { return false; }
+                    if (fp == null && packagesAvailable == false) {
+                        return false;
+                    }
                     if (packagesAvailable) {
                         if (afterElement != null && !(afterElement instanceof AbstractPackageNode)) {
                             /*
@@ -143,7 +163,9 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                          * we do not allow drop on items that are part of our transferable
                          */
                         for (PackageType p : packages) {
-                            if (p == fp) { return false; }
+                            if (p == fp) {
+                                return false;
+                            }
                         }
                     }
                 }
@@ -168,7 +190,9 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                      * we do not allow drop on items that are part of our transferable
                      */
                     for (PackageType p : packages) {
-                        if (p == onElement) return false;
+                        if (p == onElement) {
+                            return false;
+                        }
                     }
                 } else {
                     /*
@@ -189,7 +213,9 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                      * children are not allowed to drop on their own packages
                      */
                     for (ChildrenType link : links) {
-                        if (link.getParentNode() == onElement) return false;
+                        if (link.getParentNode() == onElement) {
+                            return false;
+                        }
                     }
                 }
             }
@@ -211,7 +237,9 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
     }
 
     protected boolean importPackageControllerTransferable(TransferSupport support) {
-        if (canImportPackageControllerTransferable(support) == false) return false;
+        if (canImportPackageControllerTransferable(support) == false) {
+            return false;
+        }
         QueuePriority prio = org.appwork.utils.event.queue.Queue.QueuePriority.HIGH;
         PackageControllerTableTransferableContent<PackageType, ChildrenType> content = getContent(support);
         java.util.List<ChildrenType> tmpLinks = null;
@@ -219,10 +247,16 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
         if (content != null) {
             tmpLinks = content.links;
             tmpPackages = content.packages;
-            if (tmpLinks != null && tmpLinks.size() == 0) tmpLinks = null;
-            if (tmpPackages != null && tmpPackages.size() == 0) tmpPackages = null;
+            if (tmpLinks != null && tmpLinks.size() == 0) {
+                tmpLinks = null;
+            }
+            if (tmpPackages != null && tmpPackages.size() == 0) {
+                tmpPackages = null;
+            }
         }
-        if (tmpLinks == null && tmpPackages == null) { return false; }
+        if (tmpLinks == null && tmpPackages == null) {
+            return false;
+        }
         final java.util.List<ChildrenType> links = tmpLinks;
         final java.util.List<PackageType> packages = tmpPackages;
         boolean isInsert = false;
@@ -278,7 +312,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                 } else if (beforeElement instanceof AbstractPackageNode) {
                     dest = (PackageType) beforeElement;
                 } else if (beforeElement instanceof AbstractPackageChildrenNode) {
-                    dest = (PackageType) ((ChildrenType) beforeElement).getParentNode();
+                    dest = ((ChildrenType) beforeElement).getParentNode();
                 } else {
                     dest = null;
                 }

@@ -415,10 +415,12 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             id = skipReason.name();
             if (!tmp.pluginStates.containsKey(id)) {
                 ps = new PluginState(null, null) {
+                    @Override
                     public String getDescription() {
                         return skipReason.getExplanation(this);
                     };
 
+                    @Override
                     public Icon getIcon() {
                         if (stateIcon == null) {
                             stateIcon = skipReason.getIcon(this, 18);
@@ -497,6 +499,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                         id = "extractError:".concat(archiveID);
                         if (!tmp.pluginStates.containsKey(id)) {
                             ps = new PluginState(null, EXTRACTICONERROR) {
+                                @Override
                                 public String getDescription() {
                                     return extractionStatus.getExplanation() + " (" + link.getName() + ")";
                                 };
@@ -513,6 +516,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                         id = "ExtractSuccess:".concat(archiveID);
                         if (!tmp.pluginStates.containsKey(id)) {
                             ps = new PluginState(null, EXTRACTICONOK) {
+                                @Override
                                 public String getDescription() {
                                     return extractionStatus.getExplanation() + " (" + link.getName() + ")";
                                 };
@@ -534,6 +538,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                             if (prog2 instanceof ExtractionProgress) {
                                 if (!tmp.pluginStates.containsKey(id)) {
                                     ps = new PluginState(null, EXTRACTICONSTART) {
+                                        @Override
                                         public String getDescription() {
                                             return prog2.getMessage(FilePackageView.this) + " (" + link.getName() + ")";
                                         };
@@ -544,6 +549,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                         }
                         if (ps == null && !tmp.pluginStates.containsKey(id)) {
                             ps = new PluginState(null, EXTRACTICONSTART) {
+                                @Override
                                 public String getDescription() {
                                     return extractionStatus.getExplanation() + " (" + link.getName() + ")";
                                 };

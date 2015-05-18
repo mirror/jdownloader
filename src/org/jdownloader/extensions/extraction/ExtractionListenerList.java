@@ -54,8 +54,6 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.images.NewTheme;
 
@@ -153,19 +151,11 @@ public class ExtractionListenerList implements ExtractionListener {
 
                         @Override
                         protected Void run() throws RuntimeException {
-                            final ArrayList<AbstractNode> links = new ArrayList<AbstractNode>();
+                            final ArrayList<AbstractNode> selection = new ArrayList<AbstractNode>();
                             for (final ArchiveFile faf : controller.getArchive().getRootArchive().getArchiveFiles()) {
                                 if (faf instanceof DownloadLinkArchiveFile) {
-                                    links.addAll(((DownloadLinkArchiveFile) faf).getDownloadLinks());
+                                    selection.addAll(((DownloadLinkArchiveFile) faf).getDownloadLinks());
                                 }
-                            }
-                            final SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, links, true);
-                            final ArrayList<AbstractNode> selection = new ArrayList<AbstractNode>();
-                            for (PackageView<FilePackage, DownloadLink> pv : si.getPackageViews()) {
-                                if (pv.isFull()) {
-                                    selection.add(pv.getPackage());
-                                }
-                                selection.addAll(pv.getChildren());
                             }
                             DownloadsTableModel.getInstance().setSelectedObjects(selection);
                             return null;

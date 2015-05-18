@@ -3,15 +3,12 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.swing.exttable.ExtTableEvent;
 import org.appwork.swing.exttable.ExtTableListener;
@@ -33,10 +30,8 @@ import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveVal
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.action.ExtractIconVariant;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.downloads.action.ByPassDialogSetup;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
-import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 
 public class RemoveIncompleteArchives extends CustomizableAppAction implements ExtTableListener, ActionContext, ExtTableModelListener {
@@ -49,7 +44,6 @@ public class RemoveIncompleteArchives extends CustomizableAppAction implements E
     private IncludedSelectionSetup includedSelection;
 
     public RemoveIncompleteArchives() {
-
         setName(_GUI._.RemoveIncompleteArchives_RemoveIncompleteArchives_object_());
         setSmallIcon(new ExtractIconVariant("error", 18));
         addContextSetup(byPassDialog = new ByPassDialogSetup());
@@ -66,94 +60,88 @@ public class RemoveIncompleteArchives extends CustomizableAppAction implements E
     }
 
     public void actionPerformed(ActionEvent e) {
-
-        final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
-        final AtomicBoolean containsOnline = new AtomicBoolean(false);
-
-        final SelectionInfo<CrawledPackage, CrawledLink> selection = LinkGrabberTable.getInstance().getSelectionInfo();
-        switch (includedSelection.getSelectionType()) {
-        case NONE:
-            return;
-
-        case SELECTED:
-            nodesToDelete.addAll(selection.getChildren());
-
-            break;
-        case UNSELECTED:
-            final List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> filters = LinkGrabberTableModel.getInstance().getTableFilters();
-            LinkCollector.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<CrawledLink>() {
-
-                @Override
-                public int returnMaxResults() {
-                    return 0;
-                }
-
-                @Override
-                public boolean acceptNode(CrawledLink node) {
-                    if (!selection.contains(node)) {
-
-                        if (true) {
-                            for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> filter : filters) {
-                                if (filter.isFiltered(node)) {
-                                    return false;
-                                }
-                            }
-                        }
-                        if (node.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
-                            containsOnline.set(true);
-                        }
-                        nodesToDelete.add(node);
-                    }
-                    return false;
-                }
-            });
-            break;
-        case ALL:
-
-            nodesToDelete.addAll(LinkGrabberTable.getInstance().getSelectionInfo(false, true).getChildren());
-        }
-
-        if (!isEnabled()) {
-            return;
-        }
-        Thread thread = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    List<CrawledLink> l = new ArrayList<CrawledLink>();
-                    for (Archive a : ArchiveValidator.getArchivesFromPackageChildren(new SelectionInfo<CrawledPackage, CrawledLink>(null, nodesToDelete, true).getChildren())) {
-                        final DummyArchive da = ExtractionExtension.getInstance().createDummyArchive(a);
-                        if (!da.isComplete()) {
-                            try {
-                                if (JDGui.bugme(WarnLevel.LOW) && !byPassDialog.isBypassDialog()) {
-                                    Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), _GUI._.RemoveIncompleteArchives_run_(da.getName()), null, _GUI._.literally_yes(), _GUI._.literall_no());
-                                }
-
-                                for (ArchiveFile af : a.getArchiveFiles()) {
-                                    if (af instanceof CrawledLinkArchiveFile) {
-                                        l.addAll(((CrawledLinkArchiveFile) af).getLinks());
-                                    }
-                                }
-                                LinkCollector.getInstance().removeChildren(l);
-                            } catch (DialogCanceledException e) {
-                                // next archive
-                            }
-                        }
-
-                    }
-
-                } catch (DialogNoAnswerException e) {
+        if (isEnabled()) {
+            final SelectionInfo<CrawledPackage, CrawledLink> selectionInfo;
+            switch (includedSelection.getSelectionType()) {
+            case NONE:
+                selectionInfo = null;
+                return;
+            case SELECTED:
+                selectionInfo = LinkGrabberTable.getInstance().getSelectionInfo();
+                break;
+            case UNSELECTED:
+                selectionInfo = LinkGrabberTable.getInstance().getSelectionInfo();
+                if (selectionInfo.getUnselectedChildren() == null) {
                     return;
-                } catch (Throwable e) {
-                    Log.exception(e);
                 }
-
+                break;
+            case ALL:
+                selectionInfo = LinkGrabberTable.getInstance().getSelectionInfo(false, true);
+                break;
+            default:
+                selectionInfo = null;
+                return;
             }
-        };
-        thread.setDaemon(true);
-        thread.setPriority(Thread.MIN_PRIORITY);
-        thread.setName(getClass().getName());
-        thread.start();
+            Thread thread = new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        final List<Archive> archives;
+                        switch (includedSelection.getSelectionType()) {
+                        case NONE:
+                            archives = new ArrayList<Archive>();
+                            return;
+                        case SELECTED:
+                            archives = ArchiveValidator.getArchivesFromPackageChildren(selectionInfo.getChildren());
+                            break;
+                        case UNSELECTED:
+                            if (selectionInfo.getUnselectedChildren() == null) {
+                                return;
+                            }
+                            archives = ArchiveValidator.getArchivesFromPackageChildren(selectionInfo.getUnselectedChildren());
+                            break;
+                        case ALL:
+                            archives = ArchiveValidator.getArchivesFromPackageChildren(selectionInfo.getChildren());
+                            break;
+                        default:
+                            archives = new ArrayList<Archive>();
+                            return;
+                        }
+
+                        for (final Archive archive : archives) {
+                            final DummyArchive da = ExtractionExtension.getInstance().createDummyArchive(archive);
+                            if (!da.isComplete()) {
+                                try {
+                                    if (JDGui.bugme(WarnLevel.LOW) && !byPassDialog.isBypassDialog()) {
+                                        Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.literally_are_you_sure(), _GUI._.RemoveIncompleteArchives_run_(da.getName()), null, _GUI._.literally_yes(), _GUI._.literall_no());
+                                    }
+                                    final List<CrawledLink> links = new ArrayList<CrawledLink>();
+                                    for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                                        if (archiveFile instanceof CrawledLinkArchiveFile) {
+                                            links.addAll(((CrawledLinkArchiveFile) archiveFile).getLinks());
+                                        }
+                                    }
+                                    LinkCollector.getInstance().removeChildren(links);
+                                } catch (DialogCanceledException e) {
+                                    // next archive
+                                }
+                            }
+
+                        }
+
+                    } catch (DialogNoAnswerException e) {
+                        return;
+                    } catch (Throwable e) {
+                        Log.exception(e);
+                    }
+
+                }
+            };
+            thread.setDaemon(true);
+            thread.setPriority(Thread.MIN_PRIORITY);
+            thread.setName(getClass().getName());
+            thread.start();
+        }
     }
 
     @Override
