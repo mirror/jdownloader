@@ -90,15 +90,15 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
     protected final Queue QUEUE = new Queue(getClass().getName()) {
 
-                                    @Override
-                                    public void killQueue() {
-                                        Log.exception(new Throwable("YOU CANNOT KILL ME!"));
-                                        /*
-                                         * this queue can't be killed
-                                         */
-                                    }
+        @Override
+        public void killQueue() {
+            Log.exception(new Throwable("YOU CANNOT KILL ME!"));
+            /*
+             * this queue can't be killed
+             */
+        }
 
-                                };
+    };
 
     /**
      * add a Package at given position position in this PackageController. in case the Package is already controlled by this
@@ -915,6 +915,15 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         boolean readL = readLock();
         try {
             return getPackages().indexOf(pkg);
+        } finally {
+            readUnlock(readL);
+        }
+    }
+
+    public int lastIndexOf(PackageType pkg) {
+        boolean readL = readLock();
+        try {
+            return getPackages().lastIndexOf(pkg);
         } finally {
             readUnlock(readL);
         }
