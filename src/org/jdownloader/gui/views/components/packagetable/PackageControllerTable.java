@@ -14,20 +14,14 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import javax.swing.table.TableModel;
 
 import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractNodeVisitor;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
@@ -37,10 +31,8 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
-import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -58,20 +50,27 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 public abstract class PackageControllerTable<ParentType extends AbstractPackageNode<ChildrenType, ParentType>, ChildrenType extends AbstractPackageChildrenNode<ParentType>> extends BasicJDTable<AbstractNode> {
 
     protected class SelectionInfoCache {
-        private final long tableDataVersion;
 
-        public long getTableDataVersion() {
-            return tableDataVersion;
+        private final SelectionInfo<ParentType, ChildrenType> selectionInfo;
+        private final long                                    selectionVersion;
+        private final long                                    dataVersion;
+
+        public final long getSelectionVersion() {
+            return selectionVersion;
         }
 
-        protected volatile SelectionInfo<ParentType, ChildrenType> unfilteredList;
-        protected volatile SelectionInfo<ParentType, ChildrenType> filteredList;
-        protected volatile SelectionInfo<ParentType, ChildrenType> unfilteredSelection;
-        protected volatile SelectionInfo<ParentType, ChildrenType> filteredSelection;
-        protected final AtomicLong                                 selectionVersion = new AtomicLong(-1);
+        public final long getDataVersion() {
+            return dataVersion;
+        }
 
-        protected SelectionInfoCache(long tableDataVersion) {
-            this.tableDataVersion = tableDataVersion;
+        public final SelectionInfo<ParentType, ChildrenType> getSelectionInfo() {
+            return selectionInfo;
+        }
+
+        protected SelectionInfoCache(long selectionVersion, long dataVersion, SelectionInfo<ParentType, ChildrenType> selectionInfo) {
+            this.selectionVersion = selectionVersion;
+            this.dataVersion = dataVersion;
+            this.selectionInfo = selectionInfo;
         }
 
     }
@@ -95,8 +94,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     private AppAction                                             moveUpAction        = null;
     private AppAction                                             moveDownAction      = null;
     private AppAction                                             moveBottomAction    = null;
-    private NullsafeAtomicReference<SelectionInfoCache>           selectionInfoCache  = new NullsafeAtomicReference<SelectionInfoCache>(null);
-    private AtomicLong                                            selectionVersion    = new AtomicLong(0);
+    private final AtomicLong                                      selectionVersion    = new AtomicLong(0);
     private final DelayedRunnable                                 selectionDelayedUpdate;
     private final boolean                                         wrapAroundEnabled;
 
@@ -152,20 +150,13 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 updateMoveActions();
             }
         };
-        tableModel.addTableModelListener(new TableModelListener() {
-
-            @Override
-            public void tableChanged(TableModelEvent e) {
-                getSelectionInfo(false, false);
-            }
-        });
     }
 
     public SelectionInfo<ParentType, ChildrenType> getSelectionInfo() {
         return getSelectionInfo(true, true);
     }
 
-    protected WeakReference<AbstractNode> contextMenuTrigger = null;
+    protected WeakReference<AbstractNode> contextMenuTrigger = new WeakReference<AbstractNode>(null);
 
     protected void processMouseEvent(final MouseEvent e) {
         if (e.getID() == MouseEvent.MOUSE_PRESSED) {
@@ -185,111 +176,94 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         return null;
     }
 
-    public SelectionInfo<ParentType, ChildrenType> getSelectionInfo(final boolean selectionOnly, final boolean excludeFilteredLinks) {
-        return new EDTHelper<SelectionInfo<ParentType, ChildrenType>>() {
+    /** access within EDT only **/
+    protected SelectionInfoCache          selectionOnly_TableData      = null;
+    /** access within EDT only **/
+    protected SelectionInfoCache          selectionOnly_ControllerData = null;
+    /** access within EDT only **/
+    protected SelectionInfoCache          all_TableData                = null;
 
-            @Override
-            public SelectionInfo<ParentType, ChildrenType> edtRun() {
-                SelectionInfoCache cachedSelectionInfo = selectionInfoCache.get();
-                final long tableVersion = tableModel.getTableDataVersion();
-                if (cachedSelectionInfo == null || cachedSelectionInfo.getTableDataVersion() != tableVersion) {
-                    cachedSelectionInfo = new SelectionInfoCache(tableVersion);
-                    selectionInfoCache.set(cachedSelectionInfo);
-                }
-                if (selectionOnly) {
-                    long selection = selectionVersion.get();
-                    if (cachedSelectionInfo.selectionVersion.getAndSet(selection) != selection) {
-                        cachedSelectionInfo.unfilteredSelection = null;
-                        cachedSelectionInfo.filteredSelection = null;
-                    }
-                    final ListSelectionModel sm = getSelectionModel();
-                    if (excludeFilteredLinks) {
-                        final AbstractNode contextMenuTrigger = getContextMenuTrigger();
-                        if (cachedSelectionInfo.filteredSelection != null) {
-                            if (contextMenuTrigger != cachedSelectionInfo.filteredSelection.getRawContext()) {
-                                cachedSelectionInfo.filteredSelection = null;
-                            }
+    protected volatile SelectionInfoCache all_ControllerData           = null;
+
+    public SelectionInfo<ParentType, ChildrenType> getSelectionInfo(final boolean selectionOnly, final boolean useTableModelData) {
+        if (selectionOnly) {
+            return new EDTHelper<SelectionInfo<ParentType, ChildrenType>>() {
+
+                @Override
+                public SelectionInfo<ParentType, ChildrenType> edtRun() {
+                    final long currentSelectionVersion = selectionVersion.get();
+                    if (useTableModelData) {
+                        SelectionInfoCache lselectionOnly_TableData = selectionOnly_TableData;
+                        final long dataVersion = tableModel.getTableDataVersion();
+                        if (lselectionOnly_TableData != null && lselectionOnly_TableData.getSelectionVersion() == currentSelectionVersion && lselectionOnly_TableData.getDataVersion() == dataVersion) {
+                            return lselectionOnly_TableData.getSelectionInfo();
                         }
-                        if (cachedSelectionInfo.filteredSelection == null) {
-                            if (sm.isSelectionEmpty()) {
-                                cachedSelectionInfo.filteredSelection = new SelectionInfo<ParentType, ChildrenType>(null, null, true);
-                            } else {
-                                cachedSelectionInfo.filteredSelection = new SelectionInfo<ParentType, ChildrenType>(contextMenuTrigger, getModel().getSelectedObjects(), true);
-                            }
+                        final SelectionInfo<ParentType, ChildrenType> selectionInfo;
+                        if (getSelectionModel().isSelectionEmpty()) {
+                            selectionInfo = new EmptySelectionInfo<ParentType, ChildrenType>();
+                        } else {
+                            selectionInfo = new PackageControllerTableModelSelectionOnlySelectionInfo<ParentType, ChildrenType>(getContextMenuTrigger(), getModel());
                         }
-                        return cachedSelectionInfo.filteredSelection;
+                        lselectionOnly_TableData = new SelectionInfoCache(currentSelectionVersion, dataVersion, selectionInfo);
+                        selectionOnly_TableData = lselectionOnly_TableData;
+                        return selectionInfo;
                     } else {
-                        if (cachedSelectionInfo.unfilteredSelection == null) {
-                            if (sm.isSelectionEmpty()) {
-                                cachedSelectionInfo.unfilteredSelection = new SelectionInfo<ParentType, ChildrenType>(null, null, false);
-                            } else {
-                                throw new WTFException("You really want an unfiltered filtered view?!");
-                            }
+                        SelectionInfoCache lselectionOnly_ControllerData = selectionOnly_ControllerData;
+                        if (lselectionOnly_ControllerData != null && lselectionOnly_ControllerData.getSelectionVersion() == currentSelectionVersion) {
+                            return lselectionOnly_ControllerData.getSelectionInfo();
                         }
-                        return cachedSelectionInfo.unfilteredSelection;
-                    }
-
-                } else {
-                    if (excludeFilteredLinks) {
-                        if (cachedSelectionInfo.filteredList == null) {
-                            final PackageControllerTableModelData<ParentType, ChildrenType> tableData = getModel().getTableData();
-                            cachedSelectionInfo.filteredList = new SelectionInfo<ParentType, ChildrenType>(null, null, false) {
-
-                                @Override
-                                public List<? extends AbstractNode> getRawSelection() {
-                                    return tableData;
-                                }
-
-                                @Override
-                                protected void aggregate(Queue queue) {
-                                    super.aggregate(getModel().getController().getQueue());
-                                }
-
-                                @Override
-                                protected void aggregate() {
-                                    childrenFilters = tableData.getChildrenFilters();
-                                    super.aggregate();
-                                }
-                            };
+                        if (getSelectionModel().isSelectionEmpty()) {
+                            final SelectionInfo<ParentType, ChildrenType> selectionInfo = new EmptySelectionInfo<ParentType, ChildrenType>();
+                            lselectionOnly_ControllerData = new SelectionInfoCache(currentSelectionVersion, -1, selectionInfo);
+                            selectionOnly_ControllerData = lselectionOnly_ControllerData;
+                            return selectionInfo;
+                        } else {
+                            throw new WTFException("You really want an unfiltered filtered view?!");
                         }
-                        return cachedSelectionInfo.filteredList;
-                    } else {
-                        if (cachedSelectionInfo.unfilteredList == null) {
-                            cachedSelectionInfo.unfilteredList = new SelectionInfo<ParentType, ChildrenType>(null, null, false) {
-
-                                @Override
-                                public List<? extends AbstractNode> getRawSelection() {
-                                    return children;
-                                }
-
-                                @Override
-                                protected void aggregate() {
-                                    getModel().getController().visitNodes(new AbstractNodeVisitor<ChildrenType, ParentType>() {
-                                        PackageView<ParentType, ChildrenType> lastPackageView = null;
-                                        PluginView<ChildrenType>              lastPluginView  = null;
-
-                                        @Override
-                                        public Boolean visitPackageNode(ParentType currentPackage) {
-                                            lastPackageView = internalPackageView(currentPackage, true);
-                                            return Boolean.TRUE;
-                                        }
-
-                                        @Override
-                                        public Boolean visitChildrenNode(ChildrenType node) {
-                                            children.add(node);
-                                            lastPackageView.add(node);
-                                            (lastPluginView = internalPluginView(node, lastPluginView)).add(node);
-                                            return Boolean.TRUE;
-                                        }
-                                    }, true);
-                                }
-                            };
-                        }
-                        return cachedSelectionInfo.unfilteredList;
                     }
                 }
+            }.getReturnValue();
+        } else {
+            if (useTableModelData) {
+                return new EDTHelper<SelectionInfo<ParentType, ChildrenType>>() {
+
+                    @Override
+                    public SelectionInfo<ParentType, ChildrenType> edtRun() {
+                        final long dataVersion = tableModel.getTableDataVersion();
+                        SelectionInfoCache lall_TableData = all_TableData;
+                        if (lall_TableData != null && lall_TableData.getDataVersion() == dataVersion) {
+                            return lall_TableData.getSelectionInfo();
+                        }
+                        final SelectionInfo<ParentType, ChildrenType> selectionInfo = new PackageControllerTableModelSelectionInfo<ParentType, ChildrenType>(null, getModel());
+                        lall_TableData = new SelectionInfoCache(-1, dataVersion, selectionInfo);
+                        all_TableData = lall_TableData;
+                        return selectionInfo;
+                    }
+
+                }.getReturnValue();
+            } else {
+                final long dataVersion = getModel().getController().getChildrenChanges();
+                SelectionInfoCache lall_ControllerData = all_ControllerData;
+                if (lall_ControllerData != null && lall_ControllerData.getDataVersion() == dataVersion) {
+                    return lall_ControllerData.selectionInfo;
+                }
+                return getModel().getController().getQueue().addWait(new QueueAction<SelectionInfo<ParentType, ChildrenType>, RuntimeException>(Queue.QueuePriority.HIGH) {
+
+                    @Override
+                    protected SelectionInfo<ParentType, ChildrenType> run() throws RuntimeException {
+                        final long dataVersion = getModel().getController().getChildrenChanges();
+                        SelectionInfoCache lall_ControllerData = all_ControllerData;
+                        if (lall_ControllerData != null && lall_ControllerData.getDataVersion() == dataVersion) {
+                            return lall_ControllerData.selectionInfo;
+                        }
+                        final SelectionInfo<ParentType, ChildrenType> selectionInfo = new PackageControllerSelectionInfo<ParentType, ChildrenType>(getModel().getController());
+                        lall_ControllerData = new SelectionInfoCache(-1, dataVersion, selectionInfo);
+                        all_ControllerData = lall_ControllerData;
+                        return selectionInfo;
+                    }
+                });
             }
-        }.getReturnValue();
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -300,7 +274,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     protected void doSortOnColumn(ExtColumn<AbstractNode> column, MouseEvent e) {
         if (CrossSystem.isMac()) {
             if (e.isMetaDown()) {
-
                 new SortPackagesDownloadOrdnerOnColumn(column).actionPerformed(new ActionEvent(e.getSource(), e.getID(), "sort", System.currentTimeMillis(), e.getModifiers()));
                 return;
             }
@@ -341,141 +314,19 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     protected void updateMoveActions() {
-        final java.util.List<ParentType> selectedPkgs = new ArrayList<ParentType>();
-        final java.util.List<ChildrenType> selectedChld = new ArrayList<ChildrenType>();
+        final SelectionInfo<ParentType, ChildrenType> selectionInfo = getSelectionInfo(true, true);
+        final boolean moveUpPossible = moveUpPossible(selectionInfo);
+        final boolean moveDownPossible = moveDownPossible(selectionInfo);
         new EDTRunner() {
 
             @Override
             protected void runInEDT() {
-                getSelected(selectedPkgs, selectedChld);
-            }
-        }.waitForEDT();
-        final boolean[] movePossible = movePossible(selectedPkgs, selectedChld);
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                moveTopAction.setEnabled(movePossible[0]);
-                moveUpAction.setEnabled(movePossible[0]);
-                moveDownAction.setEnabled(movePossible[1]);
-                moveBottomAction.setEnabled(movePossible[1]);
+                moveTopAction.setEnabled(moveUpPossible);
+                moveUpAction.setEnabled(moveUpPossible);
+                moveDownAction.setEnabled(moveDownPossible);
+                moveBottomAction.setEnabled(moveDownPossible);
             }
         };
-    }
-
-    public void getSelected(List<ParentType> selectedPkgs, List<ChildrenType> selectedChld) {
-        int iMin = selectionModel.getMinSelectionIndex();
-        int iMax = selectionModel.getMaxSelectionIndex();
-        if ((iMin == -1) || (iMax == -1)) {
-            return;
-        }
-        List<AbstractNode> tableData = getModel().getTableData();
-        for (int i = iMin; i <= iMax; i++) {
-            if (selectionModel.isSelectedIndex(i)) {
-                final AbstractNode node = tableData.get(i);
-                if (node != null) {
-                    if (node instanceof AbstractPackageNode<?, ?> && selectedPkgs != null) {
-                        selectedPkgs.add((ParentType) node);
-                    } else if (node instanceof AbstractPackageChildrenNode<?> && selectedChld != null) {
-
-                        if (tableModel.isHideSinglePackage()) {
-                            Object pNode = ((AbstractPackageChildrenNode) node).getParentNode();
-                            if (pNode instanceof AbstractPackageNode && ((AbstractPackageNode) pNode).getChildren().size() == 1) {
-                                selectedPkgs.add((ParentType) pNode);
-                                continue;
-                            }
-                        }
-                        selectedChld.add((ChildrenType) node);
-                    }
-                }
-            }
-        }
-    }
-
-    protected boolean[] movePossible(List<ParentType> pkgs, List<ChildrenType> selectedChld) {
-        boolean onlyFullPackagesSelected = true;
-        HashSet<ChildrenType> allInPackages = new HashSet<ChildrenType>();
-        for (ParentType pkg : pkgs) {
-            boolean lock = false;
-            try {
-                lock = pkg.getModifyLock().readLock();
-                if (pkg.isExpanded()) {
-                    allInPackages.addAll(pkg.getChildren());
-                }
-            } finally {
-                pkg.getModifyLock().readUnlock(lock);
-            }
-        }
-
-        for (ChildrenType ch : selectedChld) {
-            if (!allInPackages.remove(ch)) {
-                onlyFullPackagesSelected = false;
-                break;
-            }
-        }
-        onlyFullPackagesSelected &= allInPackages.size() == 0;
-        if (pkgs.size() > 0 && selectedChld.size() > 0 && !onlyFullPackagesSelected) {
-            /* we don't allow moving of packages/children at the same time */
-            return new boolean[] { false, false };
-        }
-        ParentType sameParent = null;
-        for (ChildrenType child : selectedChld) {
-            if (sameParent == null) {
-                sameParent = child.getParentNode();
-            } else if (sameParent != child.getParentNode()) {
-                return new boolean[] { false, false };
-            }
-        }
-        /* move up check */
-        boolean moveUp = false;
-        PackageController<ParentType, ChildrenType> pc = this.getController();
-        int index = 0;
-        for (ParentType parent : pkgs) {
-            if (pc.indexOf(parent) != index++) {
-                moveUp = true;
-                break;
-            }
-        }
-        if (sameParent != null) {
-            boolean readL = sameParent.getModifyLock().readLock();
-            try {
-                index = 0;
-                for (ChildrenType child : selectedChld) {
-                    if (sameParent.indexOf(child) != index++) {
-                        moveUp = true;
-                        break;
-                    }
-                }
-            } finally {
-                sameParent.getModifyLock().readUnlock(readL);
-            }
-        }
-        /* move down check */
-        boolean moveDown = false;
-        index = pc.size() - 1;
-        for (int i = pkgs.size() - 1; i >= 0; i--) {
-            ParentType parent = pkgs.get(i);
-            if (pc.indexOf(parent) != index--) {
-                moveDown = true;
-                break;
-            }
-        }
-        if (sameParent != null) {
-            boolean readL = sameParent.getModifyLock().readLock();
-            try {
-                index = sameParent.getChildren().size() - 1;
-                for (int i = selectedChld.size() - 1; i >= 0; i--) {
-                    ChildrenType child = selectedChld.get(i);
-                    if (sameParent.indexOf(child) != index--) {
-                        moveDown = true;
-                        break;
-                    }
-                }
-            } finally {
-                sameParent.getModifyLock().readUnlock(readL);
-            }
-        }
-        return new boolean[] { moveUp, moveDown };
     }
 
     @Override
@@ -484,16 +335,14 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             super.onShortcutSelectAll();
             return;
         }
-
-        // help
-        ArrayList<AbstractNode> toSelect = new ArrayList<AbstractNode>();
-        SelectionInfo<ParentType, ChildrenType> selection = getSelectionInfo(true, true);
+        final ArrayList<AbstractNode> toSelect = new ArrayList<AbstractNode>();
+        final SelectionInfo<ParentType, ChildrenType> selection = getSelectionInfo(true, true);
         boolean selectall = true;
-        for (PackageView<ParentType, ChildrenType> pv : selection.getPackageViews()) {
-            if (pv.isExpanded()) {
-                toSelect.addAll(new SelectionInfo<ParentType, ChildrenType>(pv.getPackage(), null, true).getChildren());
+        for (final PackageView<ParentType, ChildrenType> packageView : selection.getPackageViews()) {
+            toSelect.add(packageView.getPackage());
+            if (packageView.isExpanded()) {
+                toSelect.addAll(packageView.getChildren());
             }
-            toSelect.add(pv.getPackage());
         }
         selectall = selection.getRawSelection().size() == toSelect.size();
         if (selectall) {
@@ -510,127 +359,117 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         return true;
     }
 
-    protected boolean moveUpPossible(java.util.List<ParentType> pkgs, java.util.List<ChildrenType> selectedChld) {
+    protected boolean moveUpPossible(SelectionInfo<ParentType, ChildrenType> selectionInfo) {
         if (getModel().isFilteredView()) {
             return false;
         }
-        // let's check if we have only full packages selected. that means, that selectedChld contains all links in the packages
-        boolean onlyFullPackagesSelected = true;
-        HashSet<ChildrenType> allInPackages = new HashSet<ChildrenType>();
-        for (ParentType pkg : pkgs) {
-            boolean lock = false;
-            try {
-                lock = pkg.getModifyLock().readLock();
-                if (pkg.isExpanded()) {
-                    allInPackages.addAll(pkg.getChildren());
-                }
-            } finally {
-                pkg.getModifyLock().readUnlock(lock);
-            }
-        }
 
-        for (ChildrenType ch : selectedChld) {
-            if (!allInPackages.remove(ch)) {
-                onlyFullPackagesSelected = false;
-                break;
-            }
-        }
-        onlyFullPackagesSelected &= allInPackages.size() == 0;
-        if (pkgs.size() > 0 && selectedChld.size() > 0 && !onlyFullPackagesSelected) {
-            /* we don't allow moving of packages/children at the same time */
-            return false;
-        }
-        ParentType sameParent = null;
-        for (ChildrenType child : selectedChld) {
-            if (sameParent == null) {
-                sameParent = child.getParentNode();
-            } else if (sameParent != child.getParentNode()) {
-                return false;
-            }
-        }
-        PackageController<ParentType, ChildrenType> pc = this.getController();
-        int index = 0;
-        for (ParentType parent : pkgs) {
-            if (pc.indexOf(parent) != index++) {
-                return true;
-            }
-        }
-        if (sameParent != null) {
-            boolean readL = sameParent.getModifyLock().readLock();
-            try {
-                index = 0;
-                for (ChildrenType child : selectedChld) {
-                    if (sameParent.indexOf(child) != index++) {
-                        return true;
-                    }
-                }
-            } finally {
-                sameParent.getModifyLock().readUnlock(readL);
-            }
-        }
-        return false;
+        // final ArrayList<PackageView<ParentType, ChildrenType>> selectedPackages = new ArrayList<PackageView<ParentType, ChildrenType>>();
+        // final ArrayList<PackageView<ParentType, ChildrenType>> selectedChildren = new ArrayList<PackageView<ParentType, ChildrenType>>();
+        // for (final PackageView<ParentType, ChildrenType> packageView : selectionInfo.getPackageViews()) {
+        // if (packageView.isPackageSelected() && packageView.isExpanded() == true && packageView.size() > 0) {
+        // /* mix of package and some its children */
+        // return false;
+        // }
+        //
+        // if (packageView.isPackageSelected()) {
+        // /* either package itself is selected or all its children */
+        // selectedPackages.add(packageView);
+        // } else {
+        // selectedChildren.add(packageView);
+        // }
+        // if (selectedPackages.size() > 0 && selectedChildren.size() > 0) {
+        // /* mix of selected children and packages */
+        // return false;
+        // }
+        // }
+        // if (selectedChildren.size() == 1) {
+        // final PackageView<ParentType, ChildrenType> packageView = selectedChildren.get(0);
+        // final ParentType pkg = packageView.getPackage();
+        // final boolean readL = pkg.getModifyLock().readLock();
+        // try {
+        // final List<ChildrenType> pkgChildren = pkg.getChildren();
+        // int index = 0;
+        // for (final ChildrenType child : packageView.getChildren()) {
+        // if (pkgChildren.indexOf(child) != index++) {
+        // return true;
+        // }
+        // }
+        // } finally {
+        // pkg.getModifyLock().readUnlock(readL);
+        // }
+        // } else if (selectedPackages.size() > 0) {
+        // final PackageController<ParentType, ChildrenType> pc = this.getController();
+        // int index = 0;
+        // for (final PackageView<ParentType, ChildrenType> packageView : selectedPackages) {
+        // if (pc.indexOf(packageView.getPackage()) != index++) {
+        // return true;
+        // }
+        // }
+        // }
+        return true;
     }
 
-    protected boolean moveDownPossible(java.util.List<ParentType> pkgs, java.util.List<ChildrenType> selectedChld) {
-        if (getModel().isFilteredView()) {
-            return false;
-        }
-        boolean onlyFullPackagesSelected = true;
-        HashSet<ChildrenType> allInPackages = new HashSet<ChildrenType>();
-        for (ParentType pkg : pkgs) {
-            boolean lock = false;
-            try {
-                lock = pkg.getModifyLock().readLock();
-                if (pkg.isExpanded()) {
-                    allInPackages.addAll(pkg.getChildren());
-                }
-            } finally {
-                pkg.getModifyLock().readUnlock(lock);
-            }
-        }
-
-        for (ChildrenType ch : selectedChld) {
-            if (!allInPackages.remove(ch)) {
-                onlyFullPackagesSelected = false;
-                break;
-            }
-        }
-        onlyFullPackagesSelected &= allInPackages.size() == 0;
-        if (pkgs.size() > 0 && selectedChld.size() > 0 && !onlyFullPackagesSelected) {
-            /* we don't allow moving of packages/children at the same time */
-            return false;
-        }
-        ParentType sameParent = null;
-        for (ChildrenType child : selectedChld) {
-            if (sameParent == null) {
-                sameParent = child.getParentNode();
-            } else if (sameParent != child.getParentNode()) {
-                return false;
-            }
-        }
-        PackageController<ParentType, ChildrenType> pc = this.getController();
-        int index = pc.size() - 1;
-        for (int i = pkgs.size() - 1; i >= 0; i--) {
-            ParentType parent = pkgs.get(i);
-            if (pc.indexOf(parent) != index--) {
-                return true;
-            }
-        }
-        if (sameParent != null) {
-            boolean readL = sameParent.getModifyLock().readLock();
-            try {
-                index = sameParent.getChildren().size() - 1;
-                for (int i = selectedChld.size() - 1; i >= 0; i--) {
-                    ChildrenType child = selectedChld.get(i);
-                    if (sameParent.indexOf(child) != index--) {
-                        return true;
-                    }
-                }
-            } finally {
-                sameParent.getModifyLock().readUnlock(readL);
-            }
-        }
-        return false;
+    protected boolean moveDownPossible(SelectionInfo<ParentType, ChildrenType> selectionInfo) {
+        // if (getModel().isFilteredView()) {
+        // return false;
+        // }
+        // boolean onlyFullPackagesSelected = true;
+        // HashSet<ChildrenType> allInPackages = new HashSet<ChildrenType>();
+        // for (ParentType pkg : pkgs) {
+        // boolean lock = false;
+        // try {
+        // lock = pkg.getModifyLock().readLock();
+        // if (pkg.isExpanded()) {
+        // allInPackages.addAll(pkg.getChildren());
+        // }
+        // } finally {
+        // pkg.getModifyLock().readUnlock(lock);
+        // }
+        // }
+        //
+        // for (ChildrenType ch : selectedChld) {
+        // if (!allInPackages.remove(ch)) {
+        // onlyFullPackagesSelected = false;
+        // break;
+        // }
+        // }
+        // onlyFullPackagesSelected &= allInPackages.size() == 0;
+        // if (pkgs.size() > 0 && selectedChld.size() > 0 && !onlyFullPackagesSelected) {
+        // /* we don't allow moving of packages/children at the same time */
+        // return false;
+        // }
+        // ParentType sameParent = null;
+        // for (ChildrenType child : selectedChld) {
+        // if (sameParent == null) {
+        // sameParent = child.getParentNode();
+        // } else if (sameParent != child.getParentNode()) {
+        // return false;
+        // }
+        // }
+        // PackageController<ParentType, ChildrenType> pc = this.getController();
+        // int index = pc.size() - 1;
+        // for (int i = pkgs.size() - 1; i >= 0; i--) {
+        // ParentType parent = pkgs.get(i);
+        // if (pc.indexOf(parent) != index--) {
+        // return true;
+        // }
+        // }
+        // if (sameParent != null) {
+        // boolean readL = sameParent.getModifyLock().readLock();
+        // try {
+        // index = sameParent.getChildren().size() - 1;
+        // for (int i = selectedChld.size() - 1; i >= 0; i--) {
+        // ChildrenType child = selectedChld.get(i);
+        // if (sameParent.indexOf(child) != index--) {
+        // return true;
+        // }
+        // }
+        // } finally {
+        // sameParent.getModifyLock().readUnlock(readL);
+        // }
+        // }
+        return true;
     }
 
     protected void initAppActions() {
@@ -647,24 +486,28 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             }
 
             public void actionPerformed(ActionEvent e) {
-                final java.util.List<ParentType> selectedPkgs = getSelectedPackages();
-                final java.util.List<ChildrenType> selectedChld = getSelectedChildren();
+                final SelectionInfo<ParentType, ChildrenType> selectionInfo = getSelectionInfo(true, true);
                 getController().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        boolean moveUpPossible = moveUpPossible(selectedPkgs, selectedChld);
-                        if (moveUpPossible == false) {
-                            return null;
-                        }
-                        PackageController<ParentType, ChildrenType> pc = getController();
-                        if (selectedPkgs.size() > 0) {
-                            /* move package to top of list */
-                            pc.move(selectedPkgs, null);
-                        }
-                        if (selectedChld.size() > 0) {
-                            /* move children to top of package */
-                            pc.move(selectedChld, selectedChld.get(0).getParentNode(), null);
+                        final boolean moveUpPossible = moveUpPossible(selectionInfo);
+                        if (moveUpPossible) {
+                            final PackageController<ParentType, ChildrenType> pc = getController();
+                            final ArrayList<ParentType> selectedPackages = new ArrayList<ParentType>();
+                            for (final PackageView<ParentType, ChildrenType> packageView : selectionInfo.getPackageViews()) {
+                                if (packageView.isPackageSelected()) {
+                                    selectedPackages.add(packageView.getPackage());
+                                }
+                            }
+                            if (selectedPackages.size() > 0) {
+                                /* move package to top of list */
+                                pc.move(selectedPackages, null);
+                            } else if (selectionInfo.getPackageViews().size() > 0) {
+                                final PackageView<ParentType, ChildrenType> packageView = selectionInfo.getPackageViews().get(0);
+                                /* move children to top of package */
+                                pc.move(selectionInfo.getChildren(), packageView.getPackage(), null);
+                            }
                         }
                         return null;
                     }
@@ -686,51 +529,57 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             }
 
             public void actionPerformed(ActionEvent e) {
-                final java.util.List<ParentType> selectedPkgs = getSelectedPackages();
-                final java.util.List<ChildrenType> selectedChld = getSelectedChildren();
+                final SelectionInfo<ParentType, ChildrenType> selectionInfo = getSelectionInfo(true, true);
                 getController().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        boolean moveUpPossible = moveUpPossible(selectedPkgs, selectedChld);
-                        if (moveUpPossible == false) {
-                            return null;
-                        }
-                        PackageController<ParentType, ChildrenType> pc = getController();
-                        if (selectedPkgs.size() > 0) {
-                            ParentType after = null;
-                            boolean readL = pc.readLock();
-                            try {
+                        final boolean moveUpPossible = moveUpPossible(selectionInfo);
+                        if (moveUpPossible) {
+                            final PackageController<ParentType, ChildrenType> pc = getController();
+                            final ArrayList<ParentType> selectedPackages = new ArrayList<ParentType>();
+                            for (final PackageView<ParentType, ChildrenType> packageView : selectionInfo.getPackageViews()) {
+                                if (packageView.isPackageSelected()) {
+                                    selectedPackages.add(packageView.getPackage());
+                                }
+                            }
+                            if (selectedPackages.size() > 0) {
+                                ParentType after = null;
+                                final boolean readL = pc.readLock();
                                 try {
-                                    int index = pc.indexOf(selectedPkgs.get(0)) - 2;
+                                    try {
+                                        final ParentType pkg = selectedPackages.get(0);
+                                        final int index = pc.indexOf(pkg) - 2;
+                                        if (index >= 0) {
+                                            /* move after this element */
+                                            after = pc.getPackages().get(index);
+                                        }/* else move to top */
+                                    } catch (final Throwable e) {
+                                        LogController.CL().log(e);
+                                    }
+                                } finally {
+                                    pc.readUnlock(readL);
+                                }
+                                pc.move(selectedPackages, after);
+                            } else if (selectionInfo.getPackageViews().size() > 0) {
+                                final PackageView<ParentType, ChildrenType> packageView = selectionInfo.getPackageViews().get(0);
+                                ChildrenType after = null;
+                                final ParentType pkg = packageView.getPackage();
+                                final boolean readL = pkg.getModifyLock().readLock();
+                                try {
+                                    final ChildrenType child = packageView.getChildren().get(0);
+                                    final int index = pkg.indexOf(child) - 2;
                                     if (index >= 0) {
                                         /* move after this element */
-                                        after = pc.getPackages().get(index);
+                                        after = pkg.getChildren().get(index);
                                     }/* else move to top */
                                 } catch (final Throwable e) {
-                                    Log.exception(e);
+                                    LogController.CL().log(e);
+                                } finally {
+                                    pkg.getModifyLock().readUnlock(readL);
                                 }
-                            } finally {
-                                pc.readUnlock(readL);
+                                pc.move(selectionInfo.getChildren(), pkg, after);
                             }
-                            pc.move(selectedPkgs, after);
-                        }
-                        if (selectedChld.size() > 0) {
-                            ChildrenType after = null;
-                            ParentType pkg = selectedChld.get(0).getParentNode();
-                            boolean readL = pkg.getModifyLock().readLock();
-                            try {
-                                int index = pkg.indexOf(selectedChld.get(0)) - 2;
-                                if (index >= 0) {
-                                    /* move after this element */
-                                    after = pkg.getChildren().get(index);
-                                }/* else move to top */
-                            } catch (final Throwable e) {
-                                Log.exception(e);
-                            } finally {
-                                pkg.getModifyLock().readUnlock(readL);
-                            }
-                            pc.move(selectedChld, pkg, after);
                         }
                         return null;
                     }
@@ -750,46 +599,52 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             }
 
             public void actionPerformed(ActionEvent e) {
-                final java.util.List<ParentType> selectedPkgs = getSelectedPackages();
-                final java.util.List<ChildrenType> selectedChld = getSelectedChildren();
+                final SelectionInfo<ParentType, ChildrenType> selectionInfo = getSelectionInfo(true, true);
                 getController().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        boolean moveDownPossible = moveDownPossible(selectedPkgs, selectedChld);
-                        if (moveDownPossible == false) {
-                            return null;
-                        }
-                        PackageController<ParentType, ChildrenType> pc = getController();
-                        if (selectedPkgs.size() > 0) {
-                            ParentType after = null;
-                            boolean readL = pc.readLock();
-                            try {
-                                try {
-                                    int index = Math.min(pc.getPackages().size() - 1, pc.indexOf(selectedPkgs.get(selectedPkgs.size() - 1)) + 1);
-                                    after = pc.getPackages().get(index);
-                                } catch (final Throwable e) {
-                                    Log.exception(e);
+                        final boolean moveDownPossible = moveDownPossible(selectionInfo);
+                        if (moveDownPossible) {
+                            final PackageController<ParentType, ChildrenType> pc = getController();
+                            final ArrayList<ParentType> selectedPackages = new ArrayList<ParentType>();
+                            for (final PackageView<ParentType, ChildrenType> packageView : selectionInfo.getPackageViews()) {
+                                if (packageView.isPackageSelected()) {
+                                    selectedPackages.add(packageView.getPackage());
                                 }
-                            } finally {
-                                pc.readUnlock(readL);
                             }
-                            pc.move(selectedPkgs, after);
-                        }
-                        if (selectedChld.size() > 0) {
-                            ChildrenType after = null;
-                            ParentType pkg = selectedChld.get(0).getParentNode();
-                            boolean readL = pkg.getModifyLock().readLock();
-                            try {
-                                /* move after after element or max at bottom */
-                                int index = Math.min(pkg.getChildren().size() - 1, pkg.indexOf(selectedChld.get(selectedChld.size() - 1)) + 1);
-                                after = pkg.getChildren().get(index);
-                            } catch (final Throwable e) {
-                                Log.exception(e);
-                            } finally {
-                                pkg.getModifyLock().readUnlock(readL);
+                            if (selectedPackages.size() > 0) {
+                                ParentType after = null;
+                                final boolean readL = pc.readLock();
+                                try {
+                                    try {
+                                        final ParentType pkg = selectedPackages.get(selectedPackages.size() - 1);
+                                        final int index = Math.min(pc.getPackages().size() - 1, pc.indexOf(pkg) + 1);
+                                        after = pc.getPackages().get(index);
+                                    } catch (final Throwable e) {
+                                        LogController.CL().log(e);
+                                    }
+                                } finally {
+                                    pc.readUnlock(readL);
+                                }
+                                pc.move(selectedPackages, after);
+                            } else if (selectionInfo.getPackageViews().size() > 0) {
+                                final PackageView<ParentType, ChildrenType> packageView = selectionInfo.getPackageViews().get(0);
+                                ChildrenType after = null;
+                                final ParentType pkg = packageView.getPackage();
+                                final boolean readL = pkg.getModifyLock().readLock();
+                                try {
+                                    /* move after after element or max at bottom */
+                                    final ChildrenType child = selectionInfo.getChildren().get(selectionInfo.getChildren().size() - 1);
+                                    final int index = Math.min(pkg.getChildren().size() - 1, pkg.indexOf(child) + 1);
+                                    after = pkg.getChildren().get(index);
+                                } catch (final Throwable e) {
+                                    LogController.CL().log(e);
+                                } finally {
+                                    pkg.getModifyLock().readUnlock(readL);
+                                }
+                                pc.move(packageView.getChildren(), pkg, after);
                             }
-                            pc.move(selectedChld, pkg, after);
                         }
                         return null;
                     }
@@ -809,43 +664,46 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             }
 
             public void actionPerformed(ActionEvent e) {
-                final java.util.List<ParentType> selectedPkgs = getSelectedPackages();
-                final java.util.List<ChildrenType> selectedChld = getSelectedChildren();
+                final SelectionInfo<ParentType, ChildrenType> selectionInfo = getSelectionInfo(true, true);
                 getController().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        boolean moveDownPossible = moveDownPossible(selectedPkgs, selectedChld);
-                        if (moveDownPossible == false) {
-                            return null;
-                        }
-                        PackageController<ParentType, ChildrenType> pc = getController();
-                        if (selectedPkgs.size() > 0) {
-                            ParentType after = null;
-                            boolean readL = pc.readLock();
-                            try {
+                        if (moveDownPossible(selectionInfo)) {
+                            final PackageController<ParentType, ChildrenType> pc = getController();
+                            final ArrayList<ParentType> selectedPackages = new ArrayList<ParentType>();
+                            for (final PackageView<ParentType, ChildrenType> packageView : selectionInfo.getPackageViews()) {
+                                if (packageView.isPackageSelected()) {
+                                    selectedPackages.add(packageView.getPackage());
+                                }
+                            }
+                            if (selectedPackages.size() > 0) {
+                                ParentType after = null;
+                                final boolean readL = pc.readLock();
                                 try {
-                                    after = pc.getPackages().get(pc.getPackages().size() - 1);
+                                    try {
+                                        after = pc.getPackages().get(pc.getPackages().size() - 1);
+                                    } catch (final Throwable e) {
+                                        LogController.CL().log(e);
+                                    }
+                                } finally {
+                                    pc.readUnlock(readL);
+                                }
+                                pc.move(selectedPackages, after);
+                            } else if (selectionInfo.getPackageViews().size() > 0) {
+                                final PackageView<ParentType, ChildrenType> packageView = selectionInfo.getPackageViews().get(0);
+                                ChildrenType after = null;
+                                final ParentType pkg = packageView.getPackage();
+                                final boolean readL = pkg.getModifyLock().readLock();
+                                try {
+                                    after = pkg.getChildren().get(pkg.getChildren().size() - 1);
                                 } catch (final Throwable e) {
                                     LogController.CL().log(e);
+                                } finally {
+                                    pkg.getModifyLock().readUnlock(readL);
                                 }
-                            } finally {
-                                pc.readUnlock(readL);
+                                pc.move(packageView.getChildren(), pkg, after);
                             }
-                            pc.move(selectedPkgs, after);
-                        }
-                        if (selectedChld.size() > 0) {
-                            ChildrenType after = null;
-                            ParentType pkg = selectedChld.get(0).getParentNode();
-                            boolean readL = pkg.getModifyLock().readLock();
-                            try {
-                                after = pkg.getChildren().get(pkg.getChildren().size() - 1);
-                            } catch (final Throwable e) {
-                                LogController.CL().log(e);
-                            } finally {
-                                pkg.getModifyLock().readUnlock(readL);
-                            }
-                            pc.move(selectedChld, pkg, after);
                         }
                         return null;
                     }
@@ -945,6 +803,8 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         return getModel().getSortColumn() == null;
     }
 
+    private final AlphaComposite alpha = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f);
+
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -960,8 +820,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         Graphics2D g2 = (Graphics2D) g;
         Composite comp = g2.getComposite();
         final Rectangle visibleRect = this.getVisibleRect();
-
-        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f));
+        g2.setComposite(alpha);
         if (filteredView) {
             g2.setColor(filterNotifyColor);
             g2.fillRect(visibleRect.x, visibleRect.y, visibleRect.x + visibleRect.width, visibleRect.y + visibleRect.height);
@@ -976,79 +835,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             }
         }
         g2.setComposite(comp);
-    }
-
-    @SuppressWarnings("unchecked")
-    public java.util.List<ParentType> getSelectedPackages() {
-        final java.util.List<ParentType> ret = new ArrayList<ParentType>();
-        int iMin = selectionModel.getMinSelectionIndex();
-        int iMax = selectionModel.getMaxSelectionIndex();
-        if ((iMin == -1) || (iMax == -1)) {
-            return ret;
-        }
-        List<AbstractNode> tableData = getModel().getTableData();
-        for (int i = iMin; i <= iMax; i++) {
-            if (selectionModel.isSelectedIndex(i)) {
-                final AbstractNode node = tableData.get(i);
-                if (node != null && node instanceof AbstractPackageNode<?, ?>) {
-                    ret.add((ParentType) node);
-                } else if (node != null && tableModel.isHideSinglePackage()) {
-                    Object pNode = ((AbstractPackageChildrenNode) node).getParentNode();
-                    if (pNode instanceof AbstractPackageNode && ((AbstractPackageNode) pNode).getChildren().size() == 1) {
-                        ret.add((ParentType) pNode);
-
-                    }
-                }
-            }
-        }
-        return ret;
-    }
-
-    @SuppressWarnings("unchecked")
-    public java.util.List<ChildrenType> getSelectedChildren() {
-        final java.util.List<ChildrenType> ret = new ArrayList<ChildrenType>();
-        int iMin = selectionModel.getMinSelectionIndex();
-        int iMax = selectionModel.getMaxSelectionIndex();
-        if ((iMin == -1) || (iMax == -1)) {
-            return ret;
-        }
-        List<AbstractNode> tableData = getModel().getTableData();
-        for (int i = iMin; i <= iMax; i++) {
-            if (selectionModel.isSelectedIndex(i)) {
-                final AbstractNode node = tableData.get(i);
-                if (node != null && node instanceof AbstractPackageChildrenNode<?>) {
-                    if (tableModel.isHideSinglePackage()) {
-                        Object pNode = ((AbstractPackageChildrenNode) node).getParentNode();
-                        if (pNode instanceof AbstractPackageNode && ((AbstractPackageNode) pNode).getChildren().size() == 1) {
-                            continue;
-
-                        }
-                    }
-                    ret.add((ChildrenType) node);
-                }
-            }
-        }
-        return ret;
-    }
-
-    @SuppressWarnings("unchecked")
-    public java.util.List<ChildrenType> getAllSelectedChildren(java.util.List<AbstractNode> selectedObjects) {
-        LinkedHashSet<ChildrenType> list = new LinkedHashSet<ChildrenType>();
-        for (final AbstractNode node : selectedObjects) {
-            if (node instanceof AbstractPackageChildrenNode<?>) {
-                list.add((ChildrenType) node);
-            } else {
-                boolean readL = ((AbstractPackageNode) node).getModifyLock().readLock();
-                try {
-                    for (final ChildrenType dl : ((ParentType) node).getChildren()) {
-                        list.add(dl);
-                    }
-                } finally {
-                    ((AbstractPackageNode) node).getModifyLock().readUnlock(readL);
-                }
-            }
-        }
-        return new ArrayList<ChildrenType>(list);
     }
 
 }

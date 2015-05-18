@@ -16,13 +16,10 @@ import javax.swing.JPopupMenu;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.gui.swing.jdgui.components.JDProgressBar;
 import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 import jd.nutils.Formatter;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
@@ -33,7 +30,7 @@ import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.controlling.DownloadLinkAggregator;
 import org.jdownloader.extensions.infobar.translate.T;
-import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
@@ -116,10 +113,14 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
     }
 
     public void showDialog() {
-        if (isVisible()) return;
+        if (isVisible()) {
+            return;
+        }
         InfoUpdater thread = new InfoUpdater();
         Thread oldThread = updater.getAndSet(thread);
-        if (oldThread != null) oldThread.interrupt();
+        if (oldThread != null) {
+            oldThread.interrupt();
+        }
         thread.start();
         WindowManager.getInstance().setVisible(this, true, FrameState.OS_DEFAULT);
 
@@ -127,8 +128,12 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
 
     public void hideDialog() {
         Thread thread = updater.getAndSet(null);
-        if (thread != null) thread.interrupt();
-        if (!isVisible()) return;
+        if (thread != null) {
+            thread.interrupt();
+        }
+        if (!isVisible()) {
+            return;
+        }
         GUIUtils.saveLastLocation(this);
         dispose();
     }
@@ -160,7 +165,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         public void run() {
             final Thread thread = Thread.currentThread();
             while (thread == updater.get()) {
-                final DownloadLinkAggregator dla = new DownloadLinkAggregator(new SelectionInfo<FilePackage, DownloadLink>(null, DownloadController.getInstance().getAllChildren(), false));
+                final DownloadLinkAggregator dla = new DownloadLinkAggregator(DownloadsTable.getInstance().getSelectionInfo(false, false));
                 new EDTRunner() {
 
                     @Override
@@ -234,8 +239,12 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
             /*
              * If distance to the upper and left screen border is less than DOCKING_DISTANCE, then dock the InfoDialog to the border.
              */
-            if (x < DOCKING_DISTANCE) x = 0;
-            if (y < DOCKING_DISTANCE) y = 0;
+            if (x < DOCKING_DISTANCE) {
+                x = 0;
+            }
+            if (y < DOCKING_DISTANCE) {
+                y = 0;
+            }
 
             DisplayMode dm = getGraphicsConfiguration().getDevice().getDisplayMode();
             int xMax = dm.getWidth() - w;
@@ -244,8 +253,12 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
             /*
              * If distance to the lower and right screen border is less than DOCKING_DISTANCE, then dock the InfoDialog to the border.
              */
-            if (x > xMax - DOCKING_DISTANCE) x = xMax;
-            if (y > yMax - DOCKING_DISTANCE) y = yMax;
+            if (x > xMax - DOCKING_DISTANCE) {
+                x = xMax;
+            }
+            if (y > yMax - DOCKING_DISTANCE) {
+                y = yMax;
+            }
 
             /*
              * Finally set the new location.

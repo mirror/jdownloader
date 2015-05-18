@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.linkgrabber;
 
+import java.util.Iterator;
 import java.util.List;
 
 import jd.controlling.linkcollector.LinkCollector;
@@ -61,11 +62,13 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
     }
 
     public java.util.List<AbstractNode> sort(final java.util.List<AbstractNode> data, ExtColumn<AbstractNode> column) {
-        PackageControllerTableModelData<CrawledPackage, CrawledLink> ret = (PackageControllerTableModelData<CrawledPackage, CrawledLink>) super.sort(data, column);
+        final PackageControllerTableModelData<CrawledPackage, CrawledLink> ret = (PackageControllerTableModelData<CrawledPackage, CrawledLink>) super.sort(data, column);
         boolean autoConfirm = ret.size() > 0 && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.getValue();
         if (!autoConfirm) {
-            for (CrawledLink l : ret.getAllChildrenNodes()) {
-                if (l.isAutoConfirmEnabled() && l.getLinkState() != AvailableLinkState.OFFLINE) {
+            final Iterator<CrawledLink> it = ret.getVisibleChildrenIterator();
+            while (it.hasNext()) {
+                final CrawledLink next = it.next();
+                if (next.isAutoConfirmEnabled() && next.getLinkState() != AvailableLinkState.OFFLINE) {
                     autoConfirm = true;
                     break;
                 }
@@ -132,7 +135,6 @@ public class LinkGrabberTableModel extends PackageControllerTableModel<CrawledPa
     }
 
     public void setVariantsColumnVisible(boolean b) {
-
         if (variantColumn != null) {
             variantColumn.setAutoVisible(b);
             this.getTable().updateColumns();

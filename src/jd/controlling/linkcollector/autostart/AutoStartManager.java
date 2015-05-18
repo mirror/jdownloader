@@ -1,6 +1,7 @@
 package jd.controlling.linkcollector.autostart;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -11,10 +12,13 @@ import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.utils.Application;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerSelectionInfo;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnDupesLinksAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnOfflineLinksAction;
@@ -71,18 +75,21 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                             break;
 
                         }
-                        java.util.List<AbstractNode> list = new ArrayList<AbstractNode>();
 
-                        SelectionInfo<CrawledPackage, CrawledLink> sel = new SelectionInfo<CrawledPackage, CrawledLink>(null, LinkCollector.getInstance().getPackages(), CFG_LINKGRABBER.CFG.isAutoStartConfirmSidebarFilterEnabled());
-
-                        for (CrawledLink l : sel.getChildren()) {
-                            if (l.getLinkState() == AvailableLinkState.OFFLINE) {
+                        final SelectionInfo<CrawledPackage, CrawledLink> selectionInfo;
+                        if (!Application.isHeadless()) {
+                            selectionInfo = LinkGrabberTable.getInstance().getSelectionInfo(false, CFG_LINKGRABBER.CFG.isAutoStartConfirmSidebarFilterEnabled());
+                        } else {
+                            selectionInfo = new PackageControllerSelectionInfo<CrawledPackage, CrawledLink>(LinkCollector.getInstance());
+                        }
+                        final List<AbstractNode> list = new ArrayList<AbstractNode>(selectionInfo.getChildren().size());
+                        for (final CrawledLink child : selectionInfo.getChildren()) {
+                            if (child.getLinkState() == AvailableLinkState.OFFLINE) {
                                 continue;
                             }
-
-                            if (l.isAutoConfirmEnabled() || autoConfirm) {
-                                list.add(l);
-                                if (l.isAutoStartEnabled()) {
+                            if (child.isAutoConfirmEnabled() || autoConfirm) {
+                                list.add(child);
+                                if (child.isAutoStartEnabled()) {
                                     autoStart = true;
                                 }
                             }
@@ -102,7 +109,7 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                             priority = null;
                         }
                         if (list.size() > 0) {
-                            ConfirmLinksContextAction.confirmSelection(new SelectionInfo<CrawledPackage, CrawledLink>(null, list, false), autoStart, CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm(), CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), priority, CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, onOfflineHandler, onDupesHandler);
+                            ConfirmLinksContextAction.confirmSelection(new SelectionInfo<CrawledPackage, CrawledLink>(null, list), autoStart, CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm(), CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), priority, CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, onOfflineHandler, onDupesHandler);
                         }
 
                         // lastReset = -1;

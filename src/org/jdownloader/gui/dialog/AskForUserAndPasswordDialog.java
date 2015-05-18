@@ -27,8 +27,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 
 public class AskForUserAndPasswordDialog extends InputDialog implements AskUsernameAndPasswordDialogInterface {
@@ -110,20 +108,9 @@ public class AskForUserAndPasswordDialog extends InputDialog implements AskUsern
 
             @Override
             public void windowGainedFocus(WindowEvent e) {
-                ArrayList<AbstractNode> links = new ArrayList<AbstractNode>();
-
-                links.add(downloadLink);
-                SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, links, true);
-
-                ArrayList<AbstractNode> corrected = new ArrayList<AbstractNode>();
-                for (PackageView<FilePackage, DownloadLink> pv : si.getPackageViews()) {
-                    if (pv.isFull()) {
-                        corrected.add(pv.getPackage());
-                    }
-                    corrected.addAll(pv.getChildren());
-                }
-
-                DownloadsTableModel.getInstance().setSelectedObjects(corrected);
+                final ArrayList<AbstractNode> selection = new ArrayList<AbstractNode>();
+                selection.add(downloadLink);
+                DownloadsTableModel.getInstance().setSelectedObjects(selection);
             }
         });
         return p;

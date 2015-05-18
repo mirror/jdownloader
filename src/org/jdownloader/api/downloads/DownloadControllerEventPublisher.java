@@ -161,9 +161,8 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         long afterUuid = -1l;
         PackageController<FilePackage, DownloadLink> controller = pkg.getControlledBy();
         if (controller != null) {
-            boolean locked = false;
+            boolean locked = controller.readLock();
             try {
-                locked = controller.readLock();
                 int index = controller.indexOf(pkg);
                 if (index > 0) {
                     FilePackage fp = controller.getPackages().get(index - 1);

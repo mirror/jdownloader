@@ -19,7 +19,6 @@ public class CreateDLCAction extends CustomizableTableContextAppAction<CrawledPa
     }
 
     public void actionPerformed(ActionEvent e) {
-
         new DLCFactory().createDLCByCrawledLinks(getSelection().getChildren());
     }
 

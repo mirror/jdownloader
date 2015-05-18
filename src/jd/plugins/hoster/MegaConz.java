@@ -63,7 +63,16 @@ public class MegaConz extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("%21", "!").replaceAll("%20", ""));
+        String url = link.getPluginPatternMatcher();
+        if (url.startsWith("chrome://")) {
+            final String fileID = getPublicFileID(link);
+            final String keyString = getPublicFileKey(link);
+            if (fileID != null && keyString != null) {
+                link.setUrlDownload("https://mega.co.nz/#!" + fileID + "!" + keyString);
+            }
+        } else {
+            link.setUrlDownload(url.replaceAll("%21", "!").replaceAll("%20", ""));
+        }
     }
 
     @Override
@@ -78,7 +87,6 @@ public class MegaConz extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-
         setBrowserExclusive();
         boolean publicFile = true;
         String fileID = getPublicFileID(link);

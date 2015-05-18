@@ -1,11 +1,15 @@
 package org.jdownloader.gui.views;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -18,15 +22,14 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
-import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelData;
-import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 
 public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
 
-    public static class PluginView<ChildrenType extends AbstractPackageChildrenNode> extends ArrayList<ChildrenType> {
+    public static class PluginView<ChildrenType> extends ArrayList<ChildrenType> {
 
         private final PluginForHost plugin;
 
@@ -44,57 +47,33 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
     };
 
-    public static class PackageView<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends ArrayList<ChildrenType> {
-        private final PackageType pkg;
-        private final boolean     packageIncluded;
-        private final int         pkgSize;
-        private final boolean     isExpanded;
+    public static interface PackageView<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
 
-        public PackageView(PackageType pkg, boolean packageIncluded) {
-            this.pkg = pkg;
-            boolean readL = pkg.getModifyLock().readLock();
-            try {
-                this.pkgSize = pkg.getChildren().size();
-                this.isExpanded = pkg.isExpanded();
-            } finally {
-                pkg.getModifyLock().readUnlock(readL);
-            }
-            this.packageIncluded = packageIncluded;
-        }
+        public List<ChildrenType> getChildren();
 
-        public List<ChildrenType> getChildren() {
-            return this;
-        }
+        public PackageType getPackage();
 
-        public PackageType getPackage() {
-            return pkg;
-        }
+        public boolean isPackageSelected();
 
-        public boolean isPackageSelected() {
-            return packageIncluded;
-        }
+        public List<ChildrenType> getSelectedChildren();
 
-        public boolean isExpanded() {
-            return isExpanded;
-        }
-
-        public int getPackageSize() {
-            return pkgSize;
-        }
-
-        public boolean isFull() {
-            return size() == pkgSize;
-        }
+        public boolean isExpanded();
     };
 
-    private final List<? extends AbstractNode>                                   rawSelection;
+    protected final List<AbstractNode> rawSelection;
+    private final AbstractNode         contextObject;
 
-    protected List<PackageControllerTableModelFilter<PackageType, ChildrenType>> childrenFilters = null;
+    public SelectionInfo(final AbstractNode contextObject) {
+        this(contextObject, new ArrayList<AbstractNode>(0));
+    }
 
-    private final AbstractNode                                                   contextObject;
+    protected SelectionInfo() {
+        this.contextObject = null;
+        this.rawSelection = new ArrayList<AbstractNode>();
+    }
 
     @SuppressWarnings("unchecked")
-    public SelectionInfo(final AbstractNode contextObject, final List<? extends AbstractNode> selection, final boolean applyTableFilter) {
+    public SelectionInfo(final AbstractNode contextObject, final List<? extends AbstractNode> selection) {
         this.contextObject = contextObject;
         if (selection == null || selection.size() == 0) {
             if (contextObject == null) {
@@ -105,9 +84,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                 this.rawSelection = rawSelection;
             }
         } else {
-            rawSelection = selection;
+            rawSelection = (List<AbstractNode>) selection;
         }
-
         final PackageControllerTable<PackageType, ChildrenType> table;
         if (contextObject != null) {
             if (contextObject instanceof DownloadLink || contextObject instanceof FilePackage) {
@@ -125,10 +103,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
             table = null;
         }
         if (table != null) {
-            if (applyTableFilter) {
-                final PackageControllerTableModelData<PackageType, ChildrenType> tableData = table.getModel().getTableData();
-                childrenFilters = tableData.getChildrenFilters();
-            }
             aggregate(table.getController().getQueue());
         } else {
             aggregate(null);
@@ -150,104 +124,351 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         }
     }
 
-    public boolean contains(AbstractPackageNode<?, ?> pkg) {
-        return getPackageViewsMap().containsKey(pkg);
-    }
-
     protected final ArrayList<ChildrenType> children = new ArrayList<ChildrenType>();
 
-    public boolean contains(AbstractPackageChildrenNode<?> child) {
-        return getChildren().contains(child);
+    public List<ChildrenType> getUnselectedChildren() {
+        return null;
+    }
+
+    public boolean contains(final AbstractPackageChildrenNode<?> child) {
+        final Object parentNode = child.getParentNode();
+        final PackageView<PackageType, ChildrenType> packageView = getPackageViewsMap().get(parentNode);
+        return (packageView != null && packageView.getChildren().contains(child)) || getChildren().contains(child);
+    }
+
+    private static class IndexedContainer<E> {
+        private final E object;
+
+        public E getObject() {
+            return object;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        private final int index;
+
+        private IndexedContainer(E object, int index) {
+            this.object = object;
+            this.index = index;
+        }
     }
 
     @SuppressWarnings("unchecked")
     protected void aggregate() {
-        // use cases:
-        // we use this class not only for real selections, but also for faked selections. that means, that the selection of a child without
-        // it's package is possible even if the package is collapsed
-        // some children of a expanded package with or without the package itself
-        // some children of a collapsed package with or without the package itself
-        // all children of a expanded package with or without the package itself
-        // all children of a collapsed package with or without the package itself
-        // no children, but the package colapsed or expanded
-
-        // if we selected a package, and ALL it's links, we want all
-        // links
-        // if we selected a package, and nly afew links, we probably
-        // want only these few links.
-        // if we selected a package, and it is NOT expanded, we want
-        // all
-        // links
-        final LinkedHashSet<ChildrenType> lastPackageChildren = new LinkedHashSet<ChildrenType>();
-        PackageView<PackageType, ChildrenType> lastPackageView = null;
-        for (AbstractNode node : getRawSelection()) {
-            if (node == null) {
-                continue;
-            } else if (node instanceof AbstractPackageNode) {
-                /* rawSelection contains package */
-                final PackageType currentPackage = (PackageType) node;
-                if (lastPackageView == null || lastPackageView.getPackage() != currentPackage) {
-                    aggregatePackagePackageView(lastPackageView, lastPackageChildren);
-                    lastPackageChildren.clear();
-                    lastPackageView = internalPackageView(currentPackage, true);
-                }
+        final ArrayList<IndexedContainer<PackageType>> packages = new ArrayList<IndexedContainer<PackageType>>();
+        ArrayList<IndexedContainer<ChildrenType>> children = new ArrayList<IndexedContainer<ChildrenType>>();
+        /**
+         * sort nodes into packages/children
+         */
+        final int rawSize = getRawSelection().size();
+        for (int rawIndex = 0; rawIndex < rawSize; rawIndex++) {
+            final AbstractNode node = getRawSelection().get(rawIndex);
+            if (node instanceof AbstractPackageNode) {
+                packages.add(new IndexedContainer<PackageType>((PackageType) node, rawIndex));
             } else if (node instanceof AbstractPackageChildrenNode) {
-                /* rawSelection contains child */
-                final ChildrenType currentChild = (ChildrenType) node;
-                final PackageType currentPackage = currentChild.getParentNode();
-                if (currentPackage != null) {
-                    if (lastPackageView == null || lastPackageView.getPackage() != currentPackage) {
-                        aggregatePackagePackageView(lastPackageView, lastPackageChildren);
-                        lastPackageChildren.clear();
-                        lastPackageView = internalPackageView(currentPackage, false);
-                    }
-                    lastPackageChildren.add(currentChild);
+                final ChildrenType child = (ChildrenType) node;
+                if (child.getParentNode() != null) {
+                    children.add(new IndexedContainer<ChildrenType>((ChildrenType) node, rawIndex));
                 }
             }
         }
-        aggregatePackagePackageView(lastPackageView, lastPackageChildren);
-    }
+        final Comparator<IndexedContainer<? extends AbstractNode>> uniqueCmp = new Comparator<IndexedContainer<? extends AbstractNode>>() {
 
-    private void aggregatePackagePackageView(PackageView<PackageType, ChildrenType> lastPackageView, LinkedHashSet<ChildrenType> lastPackageChildren) {
-        if (lastPackageView != null) {
-            final PackageType lastPackage = lastPackageView.getPackage();
-            PluginView<ChildrenType> lastPluginView = null;
-            if (lastPackageView.isPackageSelected() && (lastPackageView.isExpanded() == false || lastPackageChildren.size() == 0)) {
-                final boolean readL = lastPackage.getModifyLock().readLock();
-                try {
-                    final List<ChildrenType> packageChildren = lastPackage.getChildren();
-                    if (childrenFilters == null || childrenFilters.size() == 0) {
-                        children.addAll(packageChildren);
-                        lastPackageView.addAll(packageChildren);
-                        for (final ChildrenType child : packageChildren) {
-                            (lastPluginView = internalPluginView(child, lastPluginView)).add(child);
-                        }
-                    } else {
-                        childrenLoop: for (final ChildrenType child : packageChildren) {
-                            for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : childrenFilters) {
-                                if (filter.isFiltered(child)) {
-                                    continue childrenLoop;
-                                }
-                            }
-                            children.add(child);
-                            lastPackageView.add(child);
-                            (lastPluginView = internalPluginView(child, lastPluginView)).add(child);
-                        }
+            public int compare(long x, long y) {
+                return (x < y) ? -1 : ((x == y) ? 0 : 1);
+            }
+
+            @Override
+            public int compare(IndexedContainer<? extends AbstractNode> o1, IndexedContainer<? extends AbstractNode> o2) {
+                return compare(o1.getObject().getUniqueID().getID(), o2.getObject().getUniqueID().getID());
+            }
+        };
+
+        final Comparator<IndexedContainer<?>> indexCmp = new Comparator<IndexedContainer<?>>() {
+            public int compare(long x, long y) {
+                return (x < y) ? -1 : ((x == y) ? 0 : 1);
+            }
+
+            @Override
+            public int compare(IndexedContainer<?> o1, IndexedContainer<?> o2) {
+                return compare(o1.getIndex(), o2.getIndex());
+            }
+
+        };
+        /**
+         * sort packages by uuid
+         */
+        Collections.sort(packages, uniqueCmp);
+        PackageType lastPackage = null;
+        final HashSet<UniqueAlltimeID> selectedPackages = new HashSet<UniqueAlltimeID>();
+        /**
+         * filter duplicated packages
+         */
+        for (final IndexedContainer<PackageType> pkg : packages) {
+            if (lastPackage == null || lastPackage != pkg.getObject()) {
+                lastPackage = pkg.getObject();
+                selectedPackages.add(lastPackage.getUniqueID());
+            }
+        }
+        /**
+         * sort children by uuid
+         */
+        Collections.sort(children, uniqueCmp);
+        ChildrenType lastChild = null;
+        final ArrayList<IndexedContainer<ChildrenType>> selectedChildren = new ArrayList<IndexedContainer<ChildrenType>>();
+        /**
+         * filter duplicated children
+         */
+        for (final IndexedContainer<ChildrenType> child : children) {
+            if (lastChild == null || lastChild != child.getObject()) {
+                lastChild = child.getObject();
+                selectedChildren.add(child);
+            }
+        }
+        children.clear();
+        children = null;
+
+        /**
+         * sort selectedChildren into correct order
+         */
+        Collections.sort(selectedChildren, indexCmp);
+
+        /**
+         * sort children by package uuid
+         */
+        Collections.sort(selectedChildren, new Comparator<IndexedContainer<ChildrenType>>() {
+            public int compare(long x, long y) {
+                return (x < y) ? -1 : ((x == y) ? 0 : 1);
+            }
+
+            @Override
+            public int compare(IndexedContainer<ChildrenType> o1, IndexedContainer<ChildrenType> o2) {
+                return compare(o1.getObject().getParentNode().getUniqueID().getID(), o2.getObject().getParentNode().getUniqueID().getID());
+            }
+
+        });
+        lastPackage = null;
+        int index = 0;
+        final ArrayList<IndexedContainer<PackageView<PackageType, ChildrenType>>> fillPackages = new ArrayList<IndexedContainer<PackageView<PackageType, ChildrenType>>>();
+        final ArrayList<ChildrenType> fillChildren = new ArrayList<ChildrenType>();
+
+        int packageIndex = 0;
+        for (final IndexedContainer<ChildrenType> child : selectedChildren) {
+            if (lastPackage == null) {
+                lastPackage = child.getObject().getParentNode();
+                index = fillChildren.size();
+                packageIndex = child.getIndex();
+                fillChildren.add(child.getObject());
+            } else if (lastPackage != child.getObject().getParentNode()) {
+                final int finalIndex = index;
+                final int finalSize = fillChildren.size() - finalIndex;
+                final boolean isPackageSelected = selectedPackages.remove(lastPackage.getUniqueID());
+                final boolean isExpanded = lastPackage.isExpanded();
+                final PackageType pkg = lastPackage;
+                PackageView<PackageType, ChildrenType> packageView = new PackageView<PackageType, ChildrenType>() {
+
+                    @Override
+                    public boolean isPackageSelected() {
+                        return isPackageSelected;
                     }
-                } finally {
-                    lastPackage.getModifyLock().readUnlock(readL);
-                }
+
+                    @Override
+                    public boolean isExpanded() {
+                        return isExpanded;
+                    }
+
+                    @Override
+                    public List<ChildrenType> getSelectedChildren() {
+                        return fillChildren.subList(finalIndex, finalIndex + finalSize);
+                    }
+
+                    @Override
+                    public PackageType getPackage() {
+                        return pkg;
+                    }
+
+                    @Override
+                    public List<ChildrenType> getChildren() {
+                        return fillChildren.subList(finalIndex, finalIndex + finalSize);
+                    }
+                };
+                fillPackages.add(new IndexedContainer<PackageView<PackageType, ChildrenType>>(packageView, packageIndex));
+                index = fillChildren.size();
+                fillChildren.add(child.getObject());
+                lastPackage = child.getObject().getParentNode();
+                packageIndex = child.getIndex();
             } else {
-                children.addAll(lastPackageChildren);
-                lastPackageView.addAll(lastPackageChildren);
-                for (final ChildrenType child : lastPackageChildren) {
-                    (lastPluginView = internalPluginView(child, lastPluginView)).add(child);
-                }
+                fillChildren.add(child.getObject());
             }
+        }
+        if (lastPackage != null) {
+            final int finalIndex = index;
+            final int finalSize = fillChildren.size() - finalIndex;
+            final boolean isPackageSelected = selectedPackages.remove(lastPackage.getUniqueID());
+            final boolean isExpanded = lastPackage.isExpanded();
+            final PackageType pkg = lastPackage;
+            PackageView<PackageType, ChildrenType> packageView = new PackageView<PackageType, ChildrenType>() {
+
+                @Override
+                public boolean isPackageSelected() {
+                    return isPackageSelected;
+                }
+
+                @Override
+                public boolean isExpanded() {
+                    return isExpanded;
+                }
+
+                @Override
+                public List<ChildrenType> getSelectedChildren() {
+                    return fillChildren.subList(finalIndex, finalIndex + finalSize);
+                }
+
+                @Override
+                public PackageType getPackage() {
+                    return pkg;
+                }
+
+                @Override
+                public List<ChildrenType> getChildren() {
+                    return fillChildren.subList(finalIndex, finalIndex + finalSize);
+                }
+            };
+            fillPackages.add(new IndexedContainer<PackageView<PackageType, ChildrenType>>(packageView, packageIndex));
+        }
+        for (final IndexedContainer<PackageType> pkg : packages) {
+            if (selectedPackages.remove(pkg.getObject().getUniqueID())) {
+                final PackageType pkgO = pkg.getObject();
+                final boolean isExpanded = pkgO.isExpanded();
+                final int finalIndex = fillChildren.size();
+                final int finalSize;
+                final boolean readL = pkgO.getModifyLock().readLock();
+                try {
+                    finalSize = pkgO.getChildren().size();
+                    fillChildren.addAll(pkgO.getChildren());
+                } finally {
+                    pkgO.getModifyLock().readUnlock(readL);
+                }
+                PackageView<PackageType, ChildrenType> packageView = new PackageView<PackageType, ChildrenType>() {
+
+                    @Override
+                    public boolean isPackageSelected() {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean isExpanded() {
+                        return isExpanded;
+                    }
+
+                    @Override
+                    public List<ChildrenType> getSelectedChildren() {
+                        return new ArrayList<ChildrenType>(0);
+                    }
+
+                    @Override
+                    public PackageType getPackage() {
+                        return pkgO;
+                    }
+
+                    @Override
+                    public List<ChildrenType> getChildren() {
+                        return fillChildren.subList(finalIndex, finalIndex + finalSize);
+                    }
+                };
+                fillPackages.add(new IndexedContainer<PackageView<PackageType, ChildrenType>>(packageView, pkg.getIndex()));
+            }
+        }
+
+        /**
+         * sort PackageViews into correct order
+         */
+        Collections.sort(fillPackages, indexCmp);
+
+        /**
+         * fill PackageViews in correct order into this SelectionInfo
+         */
+        for (IndexedContainer<PackageView<PackageType, ChildrenType>> fillPackage : fillPackages) {
+            final PackageView<PackageType, ChildrenType> fillPackageView = fillPackage.getObject();
+            final boolean selected = fillPackageView.isPackageSelected();
+            final boolean expanded = fillPackageView.isExpanded();
+            final PackageType pkg = fillPackageView.getPackage();
+            final int finalIndex = this.children.size();
+            final int finalSize;
+            final boolean readL = pkg.getModifyLock().readLock();
+            try {
+                final List<ChildrenType> viewChildren = fillPackageView.getChildren();
+                finalSize = viewChildren.size();
+                this.children.addAll(viewChildren);
+            } finally {
+                pkg.getModifyLock().readUnlock(readL);
+            }
+            PackageView<PackageType, ChildrenType> packageView;
+            if (fillPackageView.getSelectedChildren().size() == 0) {
+                packageView = new PackageView<PackageType, ChildrenType>() {
+
+                    @Override
+                    public boolean isPackageSelected() {
+                        return selected;
+                    }
+
+                    @Override
+                    public boolean isExpanded() {
+                        return expanded;
+                    }
+
+                    @Override
+                    public List<ChildrenType> getSelectedChildren() {
+                        return new ArrayList<ChildrenType>(0);
+                    }
+
+                    @Override
+                    public PackageType getPackage() {
+                        return pkg;
+                    }
+
+                    @Override
+                    public List<ChildrenType> getChildren() {
+                        return SelectionInfo.this.children.subList(finalIndex, finalIndex + finalSize);
+                    }
+                };
+            } else {
+                packageView = new PackageView<PackageType, ChildrenType>() {
+
+                    @Override
+                    public boolean isPackageSelected() {
+                        return selected;
+                    }
+
+                    @Override
+                    public boolean isExpanded() {
+                        return expanded;
+                    }
+
+                    @Override
+                    public List<ChildrenType> getSelectedChildren() {
+                        return SelectionInfo.this.children.subList(finalIndex, finalIndex + finalSize);
+                    }
+
+                    @Override
+                    public PackageType getPackage() {
+                        return pkg;
+                    }
+
+                    @Override
+                    public List<ChildrenType> getChildren() {
+                        return SelectionInfo.this.children.subList(finalIndex, finalIndex + finalSize);
+                    }
+                };
+            }
+            addPackageView(packageView, pkg);
         }
     }
 
-    private final HashMap<PluginForHost, PluginView<ChildrenType>> pluginViews = new HashMap<PluginForHost, SelectionInfo.PluginView<ChildrenType>>();
+    private final HashMap<PluginForHost, PluginView<ChildrenType>> pluginViews          = new HashMap<PluginForHost, SelectionInfo.PluginView<ChildrenType>>();
+    protected final AtomicBoolean                                  pluginViewsInitiated = new AtomicBoolean(false);
 
     protected PluginView<ChildrenType> internalPluginView(ChildrenType node, PluginView<ChildrenType> lastPluginView) {
         final PluginForHost plugin = node instanceof CrawledLink ? ((CrawledLink) node).gethPlugin() : ((DownloadLink) node).getDefaultPlugin();
@@ -263,7 +484,14 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         return pv;
     }
 
-    public Collection<PluginView<ChildrenType>> getPluginViews() {
+    public synchronized Collection<PluginView<ChildrenType>> getPluginViews() {
+        if (pluginViewsInitiated.get() == false) {
+            PluginView<ChildrenType> lastPluginView = null;
+            for (final ChildrenType child : getChildren()) {
+                (lastPluginView = internalPluginView(child, lastPluginView)).add(child);
+            }
+            pluginViewsInitiated.set(true);
+        }
         return pluginViews.values();
     }
 
@@ -274,14 +502,9 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
      * @param pkg
      * @return
      */
-    protected PackageView<PackageType, ChildrenType> internalPackageView(PackageType pkg, boolean packageIncluded) {
-        PackageView<PackageType, ChildrenType> pv = getPackageView(pkg);
-        if (pv == null) {
-            pv = new PackageView<PackageType, ChildrenType>(pkg, packageIncluded);
-            getPackageViews().add(pv);
-            getPackageViewsMap().put(pkg, pv);
-        }
-        return pv;
+    protected void addPackageView(PackageView<PackageType, ChildrenType> packageView, PackageType pkg) {
+        getPackageViews().add(packageView);
+        getPackageViewsMap().put(pkg, packageView);
     }
 
     /**
@@ -340,11 +563,11 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     public PackageType getFirstPackage() {
         final AbstractNode context = getRawContext();
         if (context == null) {
-            final List<ChildrenType> lchildren = getChildren();
-            if (lchildren.size() == 0) {
+            final List<PackageView<PackageType, ChildrenType>> packageViews = getPackageViews();
+            if (packageViews.size() == 0) {
                 throw new BadContextException("Invalid Context");
             }
-            return lchildren.get(0).getParentNode();
+            return packageViews.get(0).getPackage();
         } else {
             return getContextPackage();
         }
@@ -364,7 +587,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
      *
      * @return
      */
-    public List<? extends AbstractNode> getRawSelection() {
+    public List<AbstractNode> getRawSelection() {
         return rawSelection;
     }
 
@@ -388,13 +611,82 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
+     * optimized version of containsAll
+     *
+     * 1.) compare list size
+     *
+     * 2.) sum up uuid(checkSumPackage) and fill them into an array(pkgUUIDs)
+     *
+     * 3.) sum up uuid(checkSumView)
+     *
+     * 4.) compare both sums
+     *
+     * 5.) fill uuid into an array(viewUUIDS)
+     *
+     * 6.) sort pkgUUIDs and viewUUIDS
+     *
+     * 7.) compare pkgUUIDs and viewUUIDS
+     *
+     * @param pkg
+     * @return
+     */
+    public boolean isPackageSelectionComplete(PackageType pkg) {
+        final PackageView<PackageType, ChildrenType> packageView = getPackageViewsMap().get(pkg);
+        if (packageView != null) {
+            long checkSumPackage = 0;
+            final long[] pkgUUIDs;
+            final boolean readL = pkg.getModifyLock().readLock();
+            final int size = packageView.getChildren().size();
+            int index = 0;
+            try {
+                if (pkg.getChildren().size() == size) {
+                    if (size == 0) {
+                        return true;
+                    }
+                    pkgUUIDs = new long[size];
+                    for (ChildrenType child : pkg.getChildren()) {
+                        final long childUUID = child.getUniqueID().getID();
+                        pkgUUIDs[index++] = childUUID;
+                        checkSumPackage += childUUID;
+                    }
+                } else {
+                    return false;
+                }
+            } finally {
+                pkg.getModifyLock().readUnlock(readL);
+            }
+            long checkSumView = 0;
+            for (ChildrenType child : packageView.getChildren()) {
+                checkSumView += child.getUniqueID().getID();
+            }
+            if (checkSumPackage == checkSumView) {
+                final long[] viewUUIDS = new long[size];
+                index = 0;
+                for (ChildrenType child : packageView.getChildren()) {
+                    viewUUIDS[index++] = child.getUniqueID().getID();
+                }
+                Arrays.sort(viewUUIDS);
+                Arrays.sort(pkgUUIDs);
+                if (viewUUIDS[0] == pkgUUIDs[0] && viewUUIDS[size - 1] == pkgUUIDs[size - 1]) {
+                    for (index = 0; index < size; index++) {
+                        if (viewUUIDS[index] != pkgUUIDs[index]) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * false if there are selected links
      *
      * @return
      */
     public boolean isEmpty() {
-        final List<ChildrenType> lchildren = getChildren();
-        return lchildren.size() == 0;
+        return getPackageViews().size() == 0 || getChildren().size() == 0;
     }
 
     /**
@@ -405,14 +697,6 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     public boolean isPackageContext() {
         final AbstractNode context = getRawContext();
         return context != null && context instanceof AbstractPackageNode;
-    }
-
-    public boolean isFullPackageSelection(PackageType pkg) {
-        final PackageView<PackageType, ChildrenType> ret = getPackageView(pkg);
-        if (ret == null) {
-            return false;
-        }
-        return ret.isFull();
     }
 
     public List<PackageView<PackageType, ChildrenType>> getPackageViews() {

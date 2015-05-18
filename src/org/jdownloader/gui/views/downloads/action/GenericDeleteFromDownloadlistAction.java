@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +20,7 @@ import org.appwork.swing.exttable.ExtTableEvent;
 import org.appwork.swing.exttable.ExtTableListener;
 import org.appwork.swing.exttable.ExtTableModelEventWrapper;
 import org.appwork.swing.exttable.ExtTableModelListener;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.ActionContext;
@@ -29,7 +31,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
@@ -39,35 +40,35 @@ import org.jdownloader.translate._JDT;
 
 public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction implements ExtTableListener, ActionContext, DownloadControllerListener, ExtTableModelListener {
 
-    public static final String                         DELETE_ALL                = "deleteAll";
-    public static final String                         DELETE_DISABLED           = "deleteDisabled";
-    public static final String                         DELETE_FAILED             = "deleteFailed";
-    public static final String                         DELETE_FINISHED           = "deleteFinished";
-    public static final String                         DELETE_OFFLINE            = "deleteOffline";
-    public static final String                         DELETE_MODE               = "deleteMode";
+    public static final String                                        DELETE_ALL                = "deleteAll";
+    public static final String                                        DELETE_DISABLED           = "deleteDisabled";
+    public static final String                                        DELETE_FAILED             = "deleteFailed";
+    public static final String                                        DELETE_FINISHED           = "deleteFinished";
+    public static final String                                        DELETE_OFFLINE            = "deleteOffline";
+    public static final String                                        DELETE_MODE               = "deleteMode";
     /**
-     * 
+     *
      */
-    private static final long                          serialVersionUID          = 1L;
+    private static final long                                         serialVersionUID          = 1L;
 
-    private DelayedRunnable                            delayer;
-    private boolean                                    deleteAll                 = false;
+    private final DelayedRunnable                                     delayer;
+    private boolean                                                   deleteAll                 = false;
 
-    private boolean                                    deleteDisabled            = false;
+    private boolean                                                   deleteDisabled            = false;
 
-    private boolean                                    deleteFailed              = false;
+    private boolean                                                   deleteFailed              = false;
 
-    private boolean                                    deleteFinished            = false;
+    private boolean                                                   deleteFinished            = false;
 
-    private boolean                                    deleteOffline             = false;
+    private boolean                                                   deleteOffline             = false;
 
-    private boolean                                    ignoreFiltered            = true;
+    private boolean                                                   ignoreFiltered            = true;
 
-    private DownloadLink                               lastLink;
+    protected WeakReference<DownloadLink>                             lastLink                  = new WeakReference<DownloadLink>(null);
 
-    private Modifier                                   deleteFilesToggleModifier = null;
+    private Modifier                                                  deleteFilesToggleModifier = null;
 
-    protected SelectionInfo<FilePackage, DownloadLink> selection;
+    protected WeakReference<SelectionInfo<FilePackage, DownloadLink>> selection                 = new WeakReference<SelectionInfo<FilePackage, DownloadLink>>(null);
 
     public static String getTranslationForDeleteFilesToggleModifier() {
         return _JDT._.GenericDeleteFromDownloadlistAction_getTranslationForDeleteFilesToggleModifier();
@@ -196,65 +197,53 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
     @Override
     public void actionPerformed(final ActionEvent e) {
-        final List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
+        final SelectionInfo<FilePackage, DownloadLink> finalSelection = selection.get();
+        if (finalSelection != null) {
+            DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-        switch (includedSelection.getSelectionType()) {
-
-        case UNSELECTED:
-
-            final List<PackageControllerTableModelFilter<FilePackage, DownloadLink>> filters = DownloadsTableModel.getInstance().getTableFilters();
-            boolean read = DownloadController.getInstance().readLock();
-            try {
-                for (FilePackage pkg : DownloadController.getInstance().getPackages()) {
-                    if (selection.isFullPackageSelection(pkg)) {
-                        continue;
-                    }
-                    boolean readL2 = pkg.getModifyLock().readLock();
-                    try {
-                        childs: for (DownloadLink child : pkg.getChildren()) {
-                            if (selection.contains(child)) {
-                                continue;
-                            }
-                            if (isIgnoreFiltered()) {
-                                for (PackageControllerTableModelFilter<FilePackage, DownloadLink> filter : filters) {
-                                    if (filter.isFiltered(child)) {
-                                        continue childs;
-                                    }
-                                }
-                            }
+                @Override
+                protected Void run() throws RuntimeException {
+                    final List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
+                    boolean createNewSelectionInfo = false;
+                    switch (includedSelection.getSelectionType()) {
+                    case NONE:
+                        return null;
+                    case UNSELECTED:
+                        for (final DownloadLink child : finalSelection.getUnselectedChildren()) {
                             if (checkLink(child)) {
                                 nodesToDelete.add(child);
+                            } else {
+                                createNewSelectionInfo = true;
                             }
                         }
-                    } finally {
-                        pkg.getModifyLock().readUnlock(readL2);
+                        break;
+                    default:
+                        for (final DownloadLink dl : finalSelection.getChildren()) {
+                            if (checkLink(dl)) {
+                                nodesToDelete.add(dl);
+                            } else {
+                                createNewSelectionInfo = true;
+                            }
+                        }
                     }
+                    if (nodesToDelete.size() > 0) {
+                        final SelectionInfo<FilePackage, DownloadLink> si;
+                        if (createNewSelectionInfo) {
+                            si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete);
+                        } else {
+                            si = finalSelection;
+                        }
+                        if (si.getChildren().size() > 0) {
+                            DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), byPassDialog.isBypassDialog());
+                            return null;
+                        }
+                    }
+                    Toolkit.getDefaultToolkit().beep();
+                    Dialog.getInstance().showErrorDialog(_GUI._.GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_());
+                    return null;
                 }
-            } finally {
-                DownloadController.getInstance().readUnlock(read);
-            }
-
-            break;
-
-        default:
-            for (final DownloadLink dl : selection.getChildren()) {
-                if (checkLink(dl)) {
-                    nodesToDelete.add(dl);
-                }
-            }
+            });
         }
-
-        if (nodesToDelete.size() > 0) {
-            final SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, false);
-            if (si.getChildren().size() > 0) {
-
-                DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), byPassDialog.isBypassDialog());
-                return;
-            }
-        }
-
-        Toolkit.getDefaultToolkit().beep();
-        Dialog.getInstance().showErrorDialog(_GUI._.GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_());
     }
 
     public boolean checkLink(DownloadLink link) {
@@ -541,86 +530,55 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
             @Override
             protected void runInEDT() {
-
+                SelectionInfo<FilePackage, DownloadLink> selectionInfo = null;
                 switch (includedSelection.getSelectionType()) {
                 case SELECTED:
-                    selection = getTable().getSelectionInfo();
+                    selection = new WeakReference<SelectionInfo<FilePackage, DownloadLink>>(selectionInfo = getTable().getSelectionInfo());
                     break;
                 case UNSELECTED:
-                    selection = getTable().getSelectionInfo();
-
-                    setVisible(true);
-
-                    if (lastLink != null && !selection.contains(lastLink)) {
-                        if (checkLink(lastLink)) {
+                    selection = new WeakReference<SelectionInfo<FilePackage, DownloadLink>>(selectionInfo = getTable().getSelectionInfo());
+                    final DownloadLink lastDownloadLink = lastLink.get();
+                    if (lastDownloadLink != null && !selectionInfo.contains(lastDownloadLink)) {
+                        if (checkLink(lastDownloadLink)) {
                             setEnabled(true);
                             return;
                         }
                     }
-                    final List<PackageControllerTableModelFilter<FilePackage, DownloadLink>> filters = DownloadsTableModel.getInstance().getTableFilters();
-                    boolean read = DownloadController.getInstance().readLock();
-                    try {
-                        for (FilePackage pkg : DownloadController.getInstance().getPackages()) {
-                            if (selection.isFullPackageSelection(pkg)) {
-                                continue;
-                            }
-                            boolean readL2 = pkg.getModifyLock().readLock();
-                            try {
-                                childs: for (DownloadLink child : pkg.getChildren()) {
-                                    if (selection.contains(child)) {
-                                        continue;
-                                    }
-                                    if (isIgnoreFiltered()) {
-                                        for (PackageControllerTableModelFilter<FilePackage, DownloadLink> filter : filters) {
-                                            if (filter.isFiltered(child)) {
-                                                continue childs;
-                                            }
-                                        }
-                                    }
-                                    if (checkLink(child)) {
-                                        setEnabled(true);
-                                        lastLink = child;
-                                        return;
-                                    }
-                                }
-                            } finally {
-                                pkg.getModifyLock().readUnlock(readL2);
+                    if (selectionInfo.getUnselectedChildren() != null) {
+                        for (final DownloadLink child : selectionInfo.getUnselectedChildren()) {
+                            if (checkLink(child)) {
+                                setEnabled(true);
+                                lastLink = new WeakReference<DownloadLink>(child);
+                                return;
                             }
                         }
-                    } finally {
-                        DownloadController.getInstance().readUnlock(read);
                     }
-
                     setEnabled(false);
-
                     return;
-
                 default:
                     if (isIgnoreFiltered()) {
-                        selection = getTable().getSelectionInfo(false, false);
+                        selectionInfo = getTable().getSelectionInfo(false, false);
                     } else {
-                        selection = getTable().getSelectionInfo(false, true);
-
+                        selectionInfo = getTable().getSelectionInfo(false, true);
                     }
+                    selection = new WeakReference<SelectionInfo<FilePackage, DownloadLink>>(selectionInfo);
                     break;
                 }
-
-                // we remember the last link and try it first
-                if (lastLink != null && selection.contains(lastLink)) {
-                    if (checkLink(lastLink)) {
-                        //
+                final DownloadLink lastDownloadLink = lastLink.get();
+                if (lastDownloadLink != null && !selectionInfo.contains(lastDownloadLink)) {
+                    if (checkLink(lastDownloadLink)) {
                         setEnabled(true);
                         return;
                     }
                 }
-                if (isDeleteAll() && !selection.isEmpty()) {
+                if (isDeleteAll() && !selectionInfo.isEmpty()) {
                     setEnabled(true);
                     return;
 
                 }
-                for (DownloadLink link : selection.getChildren()) {
-                    if (checkLink(link)) {
-                        lastLink = link;
+                for (final DownloadLink child : selectionInfo.getChildren()) {
+                    if (checkLink(child)) {
+                        lastLink = new WeakReference<DownloadLink>(child);
                         setEnabled(true);
                         return;
                     }
@@ -628,23 +586,6 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                 setEnabled(false);
             }
 
-            /**
-             * @param link
-             * @return
-             */
-
-        };
-
-    }
-
-    private void updateName() {
-
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                setName(createName());
-            }
         };
 
     }

@@ -22,7 +22,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 public abstract class AbstractPriorityActionEntry<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
     private final Priority    priority;

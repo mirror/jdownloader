@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
@@ -9,6 +10,7 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -52,7 +54,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
     /**
      * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
      * exist
-     * 
+     *
      * @param file
      * @return
      */
@@ -82,66 +84,70 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
             }
 
             final SelectionInfo<PackageType, ChildrenType> lselection = getSelection();
+            final List<PackageView<PackageType, ChildrenType>> incompletePackageViews = new ArrayList<PackageView<PackageType, ChildrenType>>(0);
             getQueue().add(new QueueAction<Object, RuntimeException>() {
 
                 @Override
                 protected Object run() {
-                    System.out.println(1);
-                    for (PackageView<PackageType, ChildrenType> pkg : lselection.getPackageViews()) {
-                        if (pkg.isFull()) {
-                            set(pkg.getPackage(), file.getAbsolutePath());
+                    for (final PackageView<PackageType, ChildrenType> packageView : lselection.getPackageViews()) {
+                        if (lselection.isPackageSelectionComplete(packageView.getPackage())) {
+                            set(packageView.getPackage(), file.getAbsolutePath());
+                        } else {
+                            incompletePackageViews.add(packageView);
                         }
                     }
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            for (final PackageView<PackageType, ChildrenType> packageView : incompletePackageViews) {
+                                final PackageType entry = packageView.getPackage();
+                                try {
+                                    File oldPath = LinkTreeUtils.getDownloadDirectory(entry);
+                                    File newPath = file;
+                                    if (oldPath.equals(newPath)) {
+                                        continue;
+                                    }
+                                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getName()), _JDT._.SetDownloadFolderAction_msg(entry.getName(), packageView.getChildren().size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
+
+                                    getQueue().add(new QueueAction<Object, RuntimeException>() {
+
+                                        @Override
+                                        protected Object run() {
+                                            set(entry, file.getAbsolutePath());
+                                            return null;
+                                        }
+                                    });
+                                    continue;
+                                } catch (DialogClosedException e1) {
+                                    return;
+                                } catch (DialogCanceledException e2) {
+                                    /* user clicked no */
+                                }
+                                getQueue().add(new QueueAction<Object, RuntimeException>() {
+
+                                    @Override
+                                    protected Object run() {
+                                        final PackageType pkg = createNewByPrototype(lselection, entry);
+                                        set(pkg, file.getAbsolutePath());
+                                        getQueue().add(new QueueAction<Object, RuntimeException>() {
+
+                                            @Override
+                                            protected Object run() {
+                                                move(pkg, packageView.getChildren());
+                                                return null;
+                                            }
+
+                                        });
+                                        return null;
+                                    }
+                                });
+                            }
+                        }
+                    };
                     return null;
                 }
             });
-            for (final PackageView<PackageType, ChildrenType> pkgView : lselection.getPackageViews()) {
-                if (pkgView.isFull()) {
-                    continue;
-                }
-                final PackageType entry = pkgView.getPackage();
-                try {
-                    File oldPath = LinkTreeUtils.getDownloadDirectory(entry);
-                    File newPath = file;
-                    if (oldPath.equals(newPath)) {
-                        continue;
-                    }
-
-                    Dialog.getInstance().showConfirmDialog(Dialog.LOGIC_DONOTSHOW_BASED_ON_TITLE_ONLY | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.SetDownloadFolderAction_actionPerformed_(entry.getName()), _JDT._.SetDownloadFolderAction_msg(entry.getName(), pkgView.getChildren().size()), null, _JDT._.SetDownloadFolderAction_yes(), _JDT._.SetDownloadFolderAction_no());
-
-                    getQueue().add(new QueueAction<Object, RuntimeException>() {
-
-                        @Override
-                        protected Object run() {
-                            set(entry, file.getAbsolutePath());
-                            return null;
-                        }
-                    });
-                    continue;
-                } catch (DialogClosedException e1) {
-                    return;
-                } catch (DialogCanceledException e2) {
-                    /* user clicked no */
-                }
-                getQueue().add(new QueueAction<Object, RuntimeException>() {
-
-                    @Override
-                    protected Object run() {
-                        final PackageType pkg = createNewByPrototype(lselection, entry);
-                        set(pkg, file.getAbsolutePath());
-                        getQueue().add(new QueueAction<Object, RuntimeException>() {
-
-                            @Override
-                            protected Object run() {
-                                move(pkg, pkgView.getChildren());
-                                return null;
-                            }
-
-                        });
-                        return null;
-                    }
-                });
-            }
         } catch (DialogNoAnswerException e1) {
         }
     }

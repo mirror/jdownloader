@@ -63,7 +63,7 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
 
     @Override
     protected void saveSaveTo(final String stringpath) {
-        new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(currentPackage, null, false)) {
+        new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(currentPackage)) {
             protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
 
                 return new File(stringpath);

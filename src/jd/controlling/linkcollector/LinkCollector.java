@@ -1093,9 +1093,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -2142,31 +2142,22 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public void moveLinksToDownloadList(SelectionInfo<CrawledPackage, CrawledLink> selection) {
-
-        java.util.List<FilePackage> filePackagesToAdd = new ArrayList<FilePackage>();
-
+        final List<FilePackage> filePackagesToAdd = new ArrayList<FilePackage>();
         boolean autostart = false;
-        List<DownloadLink> force = new ArrayList<DownloadLink>();
-
-        for (PackageView<CrawledPackage, CrawledLink> cp : selection.getPackageViews()) {
-            List<CrawledLink> links;
-
-            links = cp.getChildren();
-
-            java.util.List<FilePackage> convertedLinks = LinkCollector.getInstance().convert(links, true);
-            for (CrawledLink cl : links) {
+        final List<DownloadLink> force = new ArrayList<DownloadLink>();
+        for (final PackageView<CrawledPackage, CrawledLink> packageView : selection.getPackageViews()) {
+            final List<CrawledLink> links = packageView.getChildren();
+            final List<FilePackage> convertedLinks = LinkCollector.getInstance().convert(links, true);
+            for (final CrawledLink cl : links) {
                 autostart |= cl.isAutoStartEnabled();
                 if (cl.isForcedAutoStartEnabled()) {
                     force.add(cl.getDownloadLink());
                 }
             }
-
             if (convertedLinks != null) {
                 filePackagesToAdd.addAll(convertedLinks);
             }
-
         }
-
         /* convert all selected CrawledLinks to FilePackages */
         boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_ADD_AT_TOP.getValue();
 

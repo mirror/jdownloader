@@ -1,7 +1,6 @@
 package org.jdownloader.api.polling;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
@@ -19,6 +18,7 @@ import org.jdownloader.api.jd.AggregatedNumbersAPIStorable;
 import org.jdownloader.controlling.AggregatedCrawlerNumbers;
 import org.jdownloader.controlling.AggregatedNumbers;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerSelectionInfo;
 
 public class PollingAPIImpl implements PollingAPI {
 
@@ -55,21 +55,8 @@ public class PollingAPIImpl implements PollingAPI {
     private PollingResultAPIStorable getAggregatedNumbers() {
         PollingResultAPIStorable prs = new PollingResultAPIStorable();
         prs.setEventName("aggregatedNumbers");
-        SelectionInfo<FilePackage, DownloadLink> selDc = null;
-        boolean dcrl = dc.readLock();
-        try {
-            selDc = new SelectionInfo<FilePackage, DownloadLink>(null, dc.getPackages(), false);
-        } finally {
-            dc.readUnlock(dcrl);
-        }
-        boolean lcrl = lc.readLock();
-        SelectionInfo<CrawledPackage, CrawledLink> selLc = null;
-        try {
-            selLc = new SelectionInfo<CrawledPackage, CrawledLink>(null, lc.getPackages(), false);
-        } finally {
-            lc.readUnlock(lcrl);
-        }
-
+        final SelectionInfo<FilePackage, DownloadLink> selDc = new PackageControllerSelectionInfo<FilePackage, DownloadLink>(dc);
+        final SelectionInfo<CrawledPackage, CrawledLink> selLc = new PackageControllerSelectionInfo<CrawledPackage, CrawledLink>(lc);
         org.jdownloader.myjdownloader.client.json.JsonMap eventData = new org.jdownloader.myjdownloader.client.json.JsonMap();
         eventData.put("data", new AggregatedNumbersAPIStorable(new AggregatedNumbers(selDc), new AggregatedCrawlerNumbers(selLc)));
         prs.setEventData(eventData);

@@ -202,13 +202,21 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
         }
         if (table instanceof DownloadsTable) {
             final List<DownloadLink> nodesToDelete = new ArrayList<DownloadLink>();
+            boolean createNewSelectionInfo = false;
             for (final Object dl : selection.getChildren()) {
                 if (checkDownloadLink((DownloadLink) dl)) {
                     nodesToDelete.add((DownloadLink) dl);
+                } else {
+                    createNewSelectionInfo = true;
                 }
             }
             if (nodesToDelete.size() > 0) {
-                final SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete, false);
+                final SelectionInfo<FilePackage, DownloadLink> si;
+                if (createNewSelectionInfo) {
+                    si = new SelectionInfo<FilePackage, DownloadLink>(null, nodesToDelete);
+                } else {
+                    si = (SelectionInfo<FilePackage, DownloadLink>) selection;
+                }
                 if (si.getChildren().size() > 0) {
                     DownloadTabActionUtils.deleteLinksRequest(si, _GUI._.GenericDeleteFromDownloadlistAction_actionPerformed_ask_(createName()), getDeleteMode(), byPass.isBypassDialog());
                     return;
@@ -225,7 +233,6 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
                 CrawledLink dl = (CrawledLink) l;
                 if (checkCrawledLink(dl)) {
                     nodesToDelete.add(dl);
-
                     if (TYPE.OFFLINE == dl.getParentNode().getType()) {
                         continue;
                     }

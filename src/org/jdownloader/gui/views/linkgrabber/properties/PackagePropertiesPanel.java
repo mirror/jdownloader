@@ -57,7 +57,7 @@ public class PackagePropertiesPanel extends LinkPropertiesPanel {
 
     @Override
     protected void saveSaveTo(final String str) {
-        new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(currentPackage, null, false)) {
+        new SetDownloadFolderInLinkgrabberAction(new SelectionInfo<CrawledPackage, CrawledLink>(currentPackage)) {
             protected java.io.File dialog(java.io.File path) throws org.appwork.utils.swing.dialog.DialogClosedException, org.appwork.utils.swing.dialog.DialogCanceledException {
 
                 return new File(str);

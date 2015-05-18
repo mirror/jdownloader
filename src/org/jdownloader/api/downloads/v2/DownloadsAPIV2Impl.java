@@ -470,43 +470,36 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     @Override
     public void removeLinks(final long[] linkIds, final long[] packageIds) {
-
-        DownloadController dlc = DownloadController.getInstance();
-
-        dlc.writeLock();
-        dlc.removeChildren(getSelectionInfo(linkIds, packageIds).getChildren());
-        dlc.writeUnlock();
-
+        DownloadController.getInstance().removeChildren(getSelectionInfo(linkIds, packageIds).getChildren());
     }
 
     @Override
     public void renamePackage(Long packageId, String newName) {
-        DownloadController dlc = DownloadController.getInstance();
-        try {
-            dlc.writeLock();
-            for (FilePackage fp : dlc.getPackages()) {
-                if (packageId.equals(fp.getUniqueID().getID())) {
-                    fp.setName(newName);
-                    break;
+        if (packageId != null && newName != null) {
+            DownloadController dlc = DownloadController.getInstance();
+            FilePackage fp = null;
+            final boolean readL = dlc.readLock();
+            try {
+                for (final FilePackage pkg : dlc.getPackages()) {
+                    if (packageId.longValue() == pkg.getUniqueID().getID()) {
+                        fp = pkg;
+                        break;
+                    }
                 }
+            } finally {
+                dlc.readUnlock(readL);
             }
-        } finally {
-            dlc.writeUnlock();
+            if (fp != null) {
+                fp.setName(newName);
+            }
         }
-
     }
 
     @Override
     public void renameLink(Long linkId, String newName) {
-        DownloadController dlc = DownloadController.getInstance();
-        try {
-            dlc.writeLock();
-            DownloadLink link = dlc.getLinkByID(linkId);
-            if (link != null) {
-                link.setName(newName);
-            }
-        } finally {
-            dlc.writeUnlock();
+        final DownloadLink link = DownloadController.getInstance().getLinkByID(linkId);
+        if (link != null && newName != null) {
+            link.setName(newName);
         }
     }
 
@@ -526,7 +519,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         DownloadLink afterLink = afterLinkID <= 0 ? null : convertIdsToLinks(afterLinkID).get(0);
         FilePackage destpackage = convertIdsToPackages(destPackageID).get(0);
         dlc.move(selectedLinks, destpackage, afterLink);
-
     }
 
     @Override
@@ -578,27 +570,22 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
      * @return
      */
     public static SelectionInfo<FilePackage, DownloadLink> getSelectionInfo(long[] linkIds, long[] packageIds) {
-
-        return new SelectionInfo<FilePackage, DownloadLink>(null, convertIdsToObjects(linkIds, packageIds), false);
-
+        return new SelectionInfo<FilePackage, DownloadLink>(null, convertIdsToObjects(linkIds, packageIds));
     }
 
     public static List<AbstractNode> convertIdsToObjects(long[] linkIds, long[] packageIds) {
         final ArrayList<AbstractNode> ret = new ArrayList<AbstractNode>();
-
         return convertIdsToObjects(ret, linkIds, packageIds);
     }
 
     public static List<FilePackage> convertIdsToPackages(long... packageIds) {
         final List<FilePackage> ret = new ArrayList<FilePackage>();
-
         convertIdsToObjects(ret, null, packageIds);
         return ret;
     }
 
     public static List<DownloadLink> convertIdsToLinks(long... linkIds) {
         final List<DownloadLink> ret = new ArrayList<DownloadLink>();
-
         convertIdsToObjects(ret, linkIds, null);
         return ret;
     }
@@ -607,11 +594,8 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     public static <T extends AbstractNode> List<T> convertIdsToObjects(final List<T> ret, long[] linkIds, long[] packageIds) {
         final HashSet<Long> linklookUp = createLookupSet(linkIds);
         final HashSet<Long> packageLookup = createLookupSet(packageIds);
-
         DownloadController dlc = DownloadController.getInstance();
-
         if (linklookUp != null || packageLookup != null) {
-
             boolean readL = dlc.readLock();
             try {
                 main: for (FilePackage pkg : dlc.getPackages()) {
@@ -620,7 +604,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                         if ((packageLookup == null || packageLookup.size() == 0) && (linklookUp == null || linklookUp.size() == 0)) {
                             break main;
                         }
-
                     }
                     if (linklookUp != null) {
                         boolean readL2 = pkg.getModifyLock().readLock();
@@ -633,18 +616,15 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                                         break main;
                                     }
                                 }
-
                             }
                         } finally {
                             pkg.getModifyLock().readUnlock(readL2);
                         }
                     }
-
                 }
             } finally {
                 dlc.readUnlock(readL);
             }
-
         }
         return ret;
     }
@@ -662,18 +642,14 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     @Override
     public void setEnabled(boolean enabled, long[] linkIds, long[] packageIds) {
-
         for (DownloadLink dl : getSelectionInfo(linkIds, packageIds).getChildren()) {
             dl.setEnabled(enabled);
         }
-
     }
 
     @Override
     public void resetLinks(long[] linkIds, long[] packageIds) {
-
         DownloadWatchDog.getInstance().reset(getSelectionInfo(linkIds, packageIds).getChildren());
-
     }
 
     @Override

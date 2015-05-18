@@ -21,7 +21,7 @@ public enum SkipReason {
     FFMPEG_MISSING(_JDT._.DownloadLink_setSkipped_statusmessage_ffmpeg(), "ffmpeg"),
     FFPROBE_MISSING(_JDT._.DownloadLink_setSkipped_statusmessage_ffprobe(), "ffmpeg");
     private final String exp;
-    private String       iconKey;
+    private final String iconKey;
 
     private SkipReason(String exp, String iconKey) {
         this.exp = exp;
@@ -46,6 +46,7 @@ public enum SkipReason {
 
     private SkipReason(String exp) {
         this.exp = exp;
+        this.iconKey = IconKey.ICON_SKIPPED;
     }
 
     public String getExplanation(Object requestor) {

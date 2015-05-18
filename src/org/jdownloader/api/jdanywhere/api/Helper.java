@@ -23,10 +23,15 @@ public class Helper {
         boolean b = dlc.readLock();
         try {
             for (FilePackage fpkg : dlc.getPackages()) {
-                synchronized (fpkg) {
+                final boolean readL = fpkg.getModifyLock().readLock();
+                try {
                     for (DownloadLink link : fpkg.getChildren()) {
-                        if (link.getUniqueID().getID() == ID) { return link; }
+                        if (link.getUniqueID().getID() == ID) {
+                            return link;
+                        }
                     }
+                } finally {
+                    fpkg.getModifyLock().readUnlock(readL);
                 }
             }
         } finally {
@@ -36,15 +41,12 @@ public class Helper {
     }
 
     public static FilePackage getFilePackageFromID(long ID) {
-
         DownloadController dlc = DownloadController.getInstance();
         boolean b = dlc.readLock();
         try {
             for (FilePackage fpkg : dlc.getPackages()) {
                 if (fpkg.getUniqueID().getID() == ID) {
-                    synchronized (fpkg) {
-                        return fpkg;
-                    }
+                    return fpkg;
                 }
             }
         } finally {
@@ -54,33 +56,34 @@ public class Helper {
     }
 
     public static List<DownloadLink> getFilteredDownloadLinks(final List<Long> linkIds) {
-        if (linkIds == null) return null;
+        if (linkIds != null && linkIds.size() > 0) {
+            DownloadController dlc = DownloadController.getInstance();
+            boolean b = dlc.readLock();
+            try {
+                final int size = linkIds.size();
+                List<DownloadLink> sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                    @Override
+                    public int returnMaxResults() {
+                        return size;
+                    }
 
-        DownloadController dlc = DownloadController.getInstance();
-        List<DownloadLink> sdl;
-
-        boolean b = dlc.readLock();
-        try {
-            sdl = dlc.getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
-                @Override
-                public int returnMaxResults() {
-                    return 0;
-                }
-
-                @Override
-                public boolean acceptNode(DownloadLink node) {
-                    if (linkIds.contains(node.getUniqueID().getID())) return true;
-                    return false;
-                }
-            });
-        } finally {
-            dlc.readUnlock(b);
+                    @Override
+                    public boolean acceptNode(DownloadLink node) {
+                        return linkIds.contains(node.getUniqueID().getID());
+                    }
+                });
+                return sdl;
+            } finally {
+                dlc.readUnlock(b);
+            }
         }
-        return sdl;
+        return null;
     }
 
     public static byte[] compress(String str) throws IOException {
-        if (str == null || str.length() == 0) { return str.getBytes("UTF-8"); }
+        if (str == null || str.length() == 0) {
+            return str.getBytes("UTF-8");
+        }
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         GZIPOutputStream gzip = new GZIPOutputStream(out);
         gzip.write(str.getBytes("UTF-8"));
@@ -92,14 +95,22 @@ public class Helper {
 
     public static String getMessage(DownloadLink link) {
         PluginProgress prog = link.getPluginProgress();
-        if (prog != null) { return prog.getMessage(REQUESTOR); }
+        if (prog != null) {
+            return prog.getMessage(REQUESTOR);
+        }
         ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
-        if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) { return conditionalSkipReason.getMessage(null, null); }
+        if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
+            return conditionalSkipReason.getMessage(null, null);
+        }
         SkipReason skipReason = link.getSkipReason();
-        if (skipReason != null) { return skipReason.getExplanation(null); }
+        if (skipReason != null) {
+            return skipReason.getExplanation(null);
+        }
         FinalLinkState finalLinkState = link.getFinalLinkState();
         if (finalLinkState != null) {
-            if (FinalLinkState.CheckFailed(finalLinkState)) { return finalLinkState.getExplanation(null, link); }
+            if (FinalLinkState.CheckFailed(finalLinkState)) {
+                return finalLinkState.getExplanation(null, link);
+            }
             ExtractionStatus extractionStatus = link.getExtractionStatus();
             if (extractionStatus != null) {
                 switch (extractionStatus) {
