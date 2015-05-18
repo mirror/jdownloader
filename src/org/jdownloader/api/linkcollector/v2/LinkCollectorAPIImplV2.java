@@ -488,16 +488,19 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
     @Override
     public void renameLink(long linkId, String newName) throws BadParameterException {
-        CrawledLink lc = getLinkById(linkId);
-        lc.setName(newName);
+        final CrawledLink lc = getLinkById(linkId);
+        if (lc != null) {
+            lc.setName(newName);
+        }
 
     }
 
     @Override
     public void renamePackage(long packageId, String newName) throws BadParameterException {
-        CrawledPackage lc = getPackageByID(packageId);
-        lc.setName(newName);
-
+        final CrawledPackage lc = getPackageByID(packageId);
+        if (lc != null) {
+            lc.setName(newName);
+        }
     }
 
     @Override
@@ -568,97 +571,98 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
     @Override
     public List<LinkVariantStorableV2> getVariants(long linkid) throws BadParameterException {
-        ArrayList<LinkVariantStorableV2> ret = new ArrayList<LinkVariantStorableV2>();
+        final ArrayList<LinkVariantStorableV2> ret = new ArrayList<LinkVariantStorableV2>();
         CrawledLink cl = getLinkById(linkid);
-        for (LinkVariant lv : cl.getDownloadLink().getDefaultPlugin().getVariantsByLink(cl.getDownloadLink())) {
-            ret.add(new LinkVariantStorableV2(lv._getUniqueId(), CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? lv._getExtendedName() : lv._getName()));
+        if (cl != null) {
+            for (LinkVariant lv : cl.getDownloadLink().getDefaultPlugin().getVariantsByLink(cl.getDownloadLink())) {
+                ret.add(new LinkVariantStorableV2(lv._getUniqueId(), CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? lv._getExtendedName() : lv._getName()));
+            }
         }
         return ret;
     }
 
     @Override
     public void setVariant(long linkid, String variantID) throws BadParameterException {
-        CrawledLink cl = getLinkById(linkid);
-
-        for (LinkVariant lv : cl.getDownloadLink().getDefaultPlugin().getVariantsByLink(cl.getDownloadLink())) {
-            if (lv._getUniqueId().equals(variantID)) {
-                LinkCollector.getInstance().setActiveVariantForLink(cl, lv);
-
-                return;
+        final CrawledLink cl = getLinkById(linkid);
+        if (cl != null) {
+            for (LinkVariant lv : cl.getDownloadLink().getDefaultPlugin().getVariantsByLink(cl.getDownloadLink())) {
+                if (lv._getUniqueId().equals(variantID)) {
+                    LinkCollector.getInstance().setActiveVariantForLink(cl, lv);
+                    return;
+                }
             }
+            throw new BadParameterException("Unknown variantID");
         }
-        throw new BadParameterException("Unknown variantID");
-
     }
 
     @Override
     public void addVariantCopy(long linkid, final long destinationAfterLinkID, final long destinationPackageID, final String variantID) throws BadParameterException {
         // get link
         final CrawledLink link = getLinkById(linkid);
+        if (link != null) {
+            // move and add
+            LinkCollector.getInstance().getQueue().add(new QueueAction<Void, BadParameterException>() {
 
-        // move and add
-        LinkCollector.getInstance().getQueue().add(new QueueAction<Void, BadParameterException>() {
-
-            @Override
-            protected Void run() throws BadParameterException {
-                // search variant by id
-                LinkVariant v = null;
-                for (LinkVariant lv : link.getDownloadLink().getDefaultPlugin().getVariantsByLink(link.getDownloadLink())) {
-                    if (lv._getUniqueId().equals(variantID)) {
-                        v = lv;
-                        break;
-                    }
-                }
-                if (v == null) {
-                    throw new BadParameterException("Unknown variantID");
-                }
-
-                // create new downloadlink
-                final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getPluginPatternMatcher(), true);
-                dllink.setProperties(link.getDownloadLink().getProperties());
-
-                // create crawledlink
-                final CrawledLink cl = new CrawledLink(dllink);
-
-                final ArrayList<CrawledLink> list = new ArrayList<CrawledLink>();
-                list.add(cl);
-
-                cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), v);
-
-                // check if package already contains this variant
-
-                boolean readL = link.getParentNode().getModifyLock().readLock();
-
-                try {
-
-                    for (CrawledLink cLink : link.getParentNode().getChildren()) {
-                        if (dllink.getLinkID().equals(cLink.getLinkID())) {
-                            throw new BadParameterException("Variant is already in this package");
+                @Override
+                protected Void run() throws BadParameterException {
+                    // search variant by id
+                    LinkVariant v = null;
+                    for (LinkVariant lv : link.getDownloadLink().getDefaultPlugin().getVariantsByLink(link.getDownloadLink())) {
+                        if (lv._getUniqueId().equals(variantID)) {
+                            v = lv;
+                            break;
                         }
                     }
-                } finally {
-                    link.getParentNode().getModifyLock().readUnlock(readL);
+                    if (v == null) {
+                        throw new BadParameterException("Unknown variantID");
+                    }
+
+                    // create new downloadlink
+                    final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getPluginPatternMatcher(), true);
+                    dllink.setProperties(link.getDownloadLink().getProperties());
+
+                    // create crawledlink
+                    final CrawledLink cl = new CrawledLink(dllink);
+
+                    final ArrayList<CrawledLink> list = new ArrayList<CrawledLink>();
+                    list.add(cl);
+
+                    cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), v);
+
+                    // check if package already contains this variant
+
+                    boolean readL = link.getParentNode().getModifyLock().readLock();
+
+                    try {
+
+                        for (CrawledLink cLink : link.getParentNode().getChildren()) {
+                            if (dllink.getLinkID().equals(cLink.getLinkID())) {
+                                throw new BadParameterException("Variant is already in this package");
+                            }
+                        }
+                    } finally {
+                        link.getParentNode().getModifyLock().readUnlock(readL);
+                    }
+
+                    if (destinationPackageID < 0) {
+                        LinkCollector.getInstance().moveOrAddAt(link.getParentNode(), list, link.getParentNode().indexOf(link) + 1);
+                    } else {
+
+                        LinkCollector dlc = LinkCollector.getInstance();
+
+                        CrawledLink afterLink = destinationAfterLinkID <= 0 ? null : getLinkById(destinationAfterLinkID);
+                        CrawledPackage destpackage = getPackageByID(destinationPackageID);
+                        dlc.move(list, destpackage, afterLink);
+                    }
+
+                    java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+                    checkableLinks.add(cl);
+                    LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                    linkChecker.check(checkableLinks);
+                    return null;
                 }
-
-                if (destinationPackageID < 0) {
-                    LinkCollector.getInstance().moveOrAddAt(link.getParentNode(), list, link.getParentNode().indexOf(link) + 1);
-                } else {
-
-                    LinkCollector dlc = LinkCollector.getInstance();
-
-                    CrawledLink afterLink = destinationAfterLinkID <= 0 ? null : getLinkById(destinationAfterLinkID);
-                    CrawledPackage destpackage = getPackageByID(destinationPackageID);
-                    dlc.move(list, destpackage, afterLink);
-                }
-
-                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
-                checkableLinks.add(cl);
-                LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
-                linkChecker.check(checkableLinks);
-                return null;
-            }
-        });
-
+            });
+        }
     }
 
     public static InputStream getInputStream(String dataURL) throws IOException {
