@@ -89,7 +89,7 @@ public class WeltderwunderDeDecrypter extends PluginForDecrypt {
             final Entry<String, DownloadLink> next = it.next();
             final String qualityInfo = next.getKey();
             final DownloadLink dl = next.getValue();
-            if (cfg.getBooleanProperty(qualityInfo, false)) {
+            if (cfg.getBooleanProperty(qualityInfo, true)) {
                 newRet.add(dl);
             }
         }
