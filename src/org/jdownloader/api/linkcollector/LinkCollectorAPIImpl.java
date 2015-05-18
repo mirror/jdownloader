@@ -148,7 +148,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
         List<CrawledLinkAPIStorable> result = new ArrayList<CrawledLinkAPIStorable>();
         LinkCollector lc = LinkCollector.getInstance();
 
-        List<Long> packageUUIDs = new ArrayList<Long>();
+        final HashSet<Long> packageUUIDs = new HashSet<Long>();
         if (!queryParams._getQueryParam("packageUUIDs", List.class, new ArrayList()).isEmpty()) {
             List uuidsFromQuery = queryParams._getQueryParam("packageUUIDs", List.class, new ArrayList());
             for (Object o : uuidsFromQuery) {
@@ -169,8 +169,11 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             try {
                 matched = new ArrayList<CrawledPackage>();
                 for (CrawledPackage pkg : lc.getPackages()) {
-                    if (packageUUIDs.contains(pkg.getUniqueID().getID())) {
+                    if (packageUUIDs.remove(pkg.getUniqueID().getID())) {
                         matched.add(pkg);
+                        if (packageUUIDs.size() == 0) {
+                            break;
+                        }
                     }
                 }
             } finally {
@@ -322,7 +325,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
     @Override
     public Long getChildrenChanged(Long structureWatermark) {
-        LinkCollector lc = LinkCollector.getInstance();
+        final LinkCollector lc = LinkCollector.getInstance();
         if (lc.getChildrenChanges() != structureWatermark) {
             return lc.getChildrenChanges();
         } else {
@@ -356,7 +359,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
     @Override
     public boolean renameLink(Long packageId, Long linkId, String newName) {
-        LinkCollector lc = LinkCollector.getInstance();
+        final LinkCollector lc = LinkCollector.getInstance();
         CrawledLink crawledLink = null;
         final boolean readL = lc.readLock();
         try {
@@ -386,7 +389,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
     @Override
     public boolean renamePackage(Long packageId, String newName) {
-        LinkCollector lc = LinkCollector.getInstance();
+        final LinkCollector lc = LinkCollector.getInstance();
         CrawledPackage pkg = null;
         final boolean readL = lc.readLock();
         try {
@@ -434,7 +437,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
     @Override
     public boolean disableLinks(final List<Long> linkIds, final List<Long> packageIds) {
-        List<CrawledLink> sdl = getAllTheLinks(linkIds, packageIds);
+        final List<CrawledLink> sdl = getAllTheLinks(linkIds, packageIds);
         for (CrawledLink dl : sdl) {
             dl.setEnabled(false);
         }

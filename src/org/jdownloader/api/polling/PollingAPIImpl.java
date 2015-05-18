@@ -12,6 +12,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.remoteapi.APIQuery;
+import org.appwork.utils.Application;
 import org.jdownloader.api.captcha.CaptchaAPI;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.api.jd.AggregatedNumbersAPIStorable;
@@ -19,6 +20,8 @@ import org.jdownloader.controlling.AggregatedCrawlerNumbers;
 import org.jdownloader.controlling.AggregatedNumbers;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerSelectionInfo;
+import org.jdownloader.gui.views.downloads.table.DownloadsTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 
 public class PollingAPIImpl implements PollingAPI {
 
@@ -55,12 +58,18 @@ public class PollingAPIImpl implements PollingAPI {
     private PollingResultAPIStorable getAggregatedNumbers() {
         PollingResultAPIStorable prs = new PollingResultAPIStorable();
         prs.setEventName("aggregatedNumbers");
-        final SelectionInfo<FilePackage, DownloadLink> selDc = new PackageControllerSelectionInfo<FilePackage, DownloadLink>(dc);
-        final SelectionInfo<CrawledPackage, CrawledLink> selLc = new PackageControllerSelectionInfo<CrawledPackage, CrawledLink>(lc);
+        final SelectionInfo<FilePackage, DownloadLink> selDc;
+        final SelectionInfo<CrawledPackage, CrawledLink> selLc;
+        if (Application.isHeadless()) {
+            selDc = new PackageControllerSelectionInfo<FilePackage, DownloadLink>(dc);
+            selLc = new PackageControllerSelectionInfo<CrawledPackage, CrawledLink>(lc);
+        } else {
+            selDc = DownloadsTable.getInstance().getSelectionInfo(false, false);
+            selLc = LinkGrabberTable.getInstance().getSelectionInfo(false, false);
+        }
         org.jdownloader.myjdownloader.client.json.JsonMap eventData = new org.jdownloader.myjdownloader.client.json.JsonMap();
         eventData.put("data", new AggregatedNumbersAPIStorable(new AggregatedNumbers(selDc), new AggregatedCrawlerNumbers(selLc)));
         prs.setEventData(eventData);
-
         return prs;
     }
 
