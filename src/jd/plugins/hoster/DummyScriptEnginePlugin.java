@@ -1227,8 +1227,8 @@ public class DummyScriptEnginePlugin extends PluginForHost {
      *            Object that was previously parsed via any jsonToJavaObject function.
      *
      @param crawlstring
-     *            String that contains info on what to get in this format: /String/String/{<Integer (if you want to pick an entry out of an
-     *            array)>}/String
+     *            String that contains info on what to get in this format: /String/String/{number representing the number of the object
+     *            inside the ArrayList}/String/and_so_on
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static Object walkJson(final Object json, final String crawlstring) {
@@ -1240,6 +1240,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
         Object currentObject = json;
 
         LinkedHashMap<String, Object> tmp_linkedmap = null;
+        HashMap<String, Object> tmp_map = null;
         ArrayList<Object> tmp_list = null;
 
         try {
@@ -1247,13 +1248,18 @@ public class DummyScriptEnginePlugin extends PluginForHost {
                 if (currentObject instanceof LinkedHashMap) {
                     tmp_linkedmap = (LinkedHashMap<String, Object>) currentObject;
                     currentObject = tmp_linkedmap.get(crawlpart);
+                } else if (currentObject instanceof HashMap) {
+                    tmp_map = (HashMap<String, Object>) currentObject;
+                    currentObject = tmp_map.get(crawlpart);
                 } else if (currentObject instanceof ArrayList) {
                     int crawlentry_number = 0;
                     tmp_list = (ArrayList) currentObject;
                     final String crawlpart_crawlnumber = new Regex(crawlpart, "\\{(\\d+)\\}").getMatch(0);
-                    if (crawlpart_crawlnumber != null) {
-                        crawlentry_number = Integer.parseInt(crawlpart_crawlnumber);
+                    if (crawlpart_crawlnumber == null) {
+                        /* crawlpart does not match the DataType we have --> Return null */
+                        return null;
                     }
+                    crawlentry_number = Integer.parseInt(crawlpart_crawlnumber);
                     currentObject = tmp_list.get(crawlentry_number);
                 } else {
                     break;
@@ -1261,6 +1267,7 @@ public class DummyScriptEnginePlugin extends PluginForHost {
             }
 
         } catch (final Throwable e) {
+            e.printStackTrace();
             return null;
         }
 
