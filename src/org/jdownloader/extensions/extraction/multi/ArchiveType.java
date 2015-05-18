@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 import net.sf.sevenzipjbinding.ArchiveFormat;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -407,13 +408,13 @@ public enum ArchiveType {
                     return false;
                 }
                 if (signatureString.length() >= 8) {
-                    if (signatureString.startsWith("52617221")) {
+                    if (StringUtils.startsWithCaseInsensitive(signatureString, "526172211A0700")) {
                         if (signatureString.length() >= 22) {
                             final int flag = Integer.parseInt(Character.toString(signatureString.charAt(21)), 16);
                             return flag > 0 && ((flag % 2 != 0) || (flag % 20 >= 10));
                         }
                     }
-                    return false;
+                    return null;
                 }
             }
             return null;
