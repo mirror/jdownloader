@@ -200,7 +200,8 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                     for (final Object segmento : ressourcelist) {
                         final LinkedHashMap<String, Object> entry = (LinkedHashMap<String, Object>) segmento;
                         final LinkedHashMap<String, Object> playlist_data = (LinkedHashMap<String, Object>) entry.get("playlist_data");
-                        final ArrayList<Object> sources = (ArrayList) playlist_data.get("sources");
+                        final ArrayList<Object> sources_video = (ArrayList) playlist_data.get("sources");
+                        final Object sources_subtitle_o = playlist_data.get("subtitles");
 
                         final String encrypted_id = (String) entry.get("encrypted_id");
                         final String decrypted_id = Encoding.Base64Decode(encrypted_id);
@@ -213,7 +214,8 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             titlethis = titlethis.substring(0, 80);
                         }
 
-                        for (final Object sourceo : sources) {
+                        for (final Object sourceo : sources_video) {
+                            String subtitle = null;
                             mediaEntry = new HashMap<String, String>();
                             final LinkedHashMap<String, Object> entry_source = (LinkedHashMap<String, Object>) sourceo;
                             final Iterator<Entry<String, Object>> it = entry_source.entrySet().iterator();
@@ -237,7 +239,10 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             if (isEmpty(url) && isEmpty(fmt) && isEmpty(p) && isEmpty(d)) {
                                 continue;
                             }
-                            String subtitle = new Regex("still_broken", "\"subtitles\":\\[\\{\"src\":\"(http[^\"]+)\"").getMatch(0);
+                            if (sources_subtitle_o != null) {
+                                /* [0] = .srt, [1] = WEBVTT .vtt */
+                                subtitle = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(sources_subtitle_o, "{0}/src");
+                            }
                             if (subtitle != null) {
                                 mediaEntry.put("SubTitleUrl", subtitle.replace("\\", ""));
                             }
