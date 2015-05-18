@@ -226,6 +226,7 @@ public class MinhatecaComBr extends PluginForDecrypt {
                         return null;
                     }
                     filesize = Encoding.htmlDecode(filesize).trim();
+                    String ext = null;
                     String filename = new Regex(lnkinfo, "/([^<>\"/]*?)\" class=\"downloadAction\"").getMatch(0);
                     if (filename == null) {
                         filename = url_filename;
@@ -233,11 +234,18 @@ public class MinhatecaComBr extends PluginForDecrypt {
                     if (filename != null) {
                         filename = filename.replace("," + fid, "");
                         filename = Encoding.htmlDecode(filename);
-                    } else {
-                        if (filename == null) {
-                            filename = finfo.getMatch(0);
+                        if (filename.contains(".")) {
+                            final String old_ext = filename.substring(filename.lastIndexOf("."));
+                            if (!old_ext.matches("\\.[A-Za-z0-9]+")) {
+                                ext = new Regex(old_ext, "(\\.[A-Za-z0-9]+)").getMatch(0);
+                                if (ext != null) {
+                                    filename = filename.replace(old_ext, ext);
+                                }
+                            }
                         }
-                        final String ext = finfo.getMatch(1);
+                    } else {
+                        filename = finfo.getMatch(0);
+                        ext = finfo.getMatch(1);
                         if (ext == null || filename == null) {
                             logger.warning("Decrypter broken for link: " + parameter);
                             return null;
