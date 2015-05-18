@@ -263,7 +263,7 @@ public class DownloadLinkDownloadable implements Downloadable {
             case SHA256:
                 DigestInputStream is = null;
                 try {
-                    is = new DigestInputStream(fis = new FileInputStream(outputPartFile), MessageDigest.getInstance("SHA256".equals(type.name()) ? "SHA-256" : type.name()));
+                    is = new DigestInputStream(fis = new FileInputStream(outputPartFile), MessageDigest.getInstance(type.getDigest()));
                     while ((n = is.read(b)) >= 0) {
                         cur += n;
                         hashProgress.setCurrent(cur);
