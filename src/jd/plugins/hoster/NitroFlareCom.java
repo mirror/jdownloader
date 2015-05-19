@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2015  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -266,8 +266,8 @@ public class NitroFlareCom extends antiDDoSForHost {
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                    if ("".equals(c)) {
-                        // fixes timeout issues in our default JAC.................
+                    if (inValidate(c)) {
+                        // fixes timeout issues or client refresh, we have no idea at this stage
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     postPage("/ajax/freeDownload.php", "method=fetchDownload&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
@@ -385,6 +385,10 @@ public class NitroFlareCom extends antiDDoSForHost {
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode("recaptcha", cf, dummyLink);
+                    if (inValidate(c)) {
+                        // fixes timeout issues or client refresh, we have no idea at this stage
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
                     getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                     handleApiErrors(account, null);
                     if ("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code")) && i + 1 != repeat) {
@@ -483,6 +487,10 @@ public class NitroFlareCom extends antiDDoSForHost {
                     final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                     if (!inValidate(delay)) {
                         sleep((Long.parseLong(delay) * 1000) - (System.currentTimeMillis() - startTime), downloadLink);
+                    }
+                    if (inValidate(c)) {
+                        // fixes timeout issues or client refresh, we have no idea at this stage
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                     if (("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code"))) || (!inValidate(getJson("accessLink")) && !inValidate(getJson("recaptchaPublic")))) {
