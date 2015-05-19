@@ -266,6 +266,10 @@ public class NitroFlareCom extends antiDDoSForHost {
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                    if ("".equals(c)) {
+                        // fixes timeout issues in our default JAC.................
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
                     postPage("/ajax/freeDownload.php", "method=fetchDownload&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                     if (br.containsHTML("The captcha wasn't entered correctly|You have to fill the captcha")) {
                         continue;
