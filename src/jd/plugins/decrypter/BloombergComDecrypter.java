@@ -153,7 +153,7 @@ public class BloombergComDecrypter extends PluginForDecrypt {
                 formatstring_site_full = formatstring_site_full.substring(0, formatstring_site_full.lastIndexOf("_"));
             }
 
-            if ((formats.containsKey(formatstring_site_full) && cfg.getBooleanProperty(formatstring_site_full, false)) || (formats.containsKey(formatstring_site_half) && cfg.getBooleanProperty(formatstring_site_half, false))) {
+            if ((formats.containsKey(formatstring_site_full) && cfg.getBooleanProperty(formatstring_site_full, true)) || (formats.containsKey(formatstring_site_half) && cfg.getBooleanProperty(formatstring_site_half, true))) {
                 final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                 final String[] realFormatString;
                 if (formats.containsKey(formatstring_site_full)) {

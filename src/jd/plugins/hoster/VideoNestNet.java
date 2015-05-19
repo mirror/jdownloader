@@ -115,8 +115,8 @@ public class VideoNestNet extends PluginForHost {
     private void setConstants(final Account account) {
         if (account != null && account.getBooleanProperty("free")) {
             // free account
-            chunks = -2;
-            resumes = true;
+            chunks = 1;
+            resumes = false;
             acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (account != null && !account.getBooleanProperty("free")) {
@@ -127,8 +127,8 @@ public class VideoNestNet extends PluginForHost {
             directlinkproperty = "premlink";
         } else {
             // non account
-            chunks = -2;
-            resumes = true;
+            chunks = 1;
+            resumes = false;
             acctype = "Non Account";
             directlinkproperty = "freelink";
         }
@@ -571,6 +571,10 @@ public class VideoNestNet extends PluginForHost {
                     }
                 }
             }
+        }
+        if (dllink == null) {
+            /* Sometimes used for streaming */
+            dllink = cbr.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
         }
     }
 
