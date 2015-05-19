@@ -379,25 +379,18 @@ public class NitroFlareCom extends antiDDoSForHost {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(captcha);
                 // after 5 wrong guesses they ban ip/account
-                int repeat = 3;
-                for (int i = 0; i != repeat; i++) {
-                    rc.setId(recap);
-                    rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode("recaptcha", cf, dummyLink);
-                    if (inValidate(c)) {
-                        // fixes timeout issues or client refresh, we have no idea at this stage
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                    handleApiErrors(account, null);
-                    if ("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code")) && i + 1 != repeat) {
-                        continue;
-                    } else if ("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code")) && i + 1 == repeat) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    } else {
-                        break;
-                    }
+                rc.setId(recap);
+                rc.load();
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode("recaptcha", cf, dummyLink);
+                if (inValidate(c)) {
+                    // fixes timeout issues or client refresh, we have no idea at this stage
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                getPage(req + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                handleApiErrors(account, null);
+                if ("error".equalsIgnoreCase(getJson("type")) && "6".equalsIgnoreCase(getJson("code"))) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
             }
             final String expire = getJson("expiryDate");
