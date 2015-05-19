@@ -146,11 +146,11 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
         if (dl != null) {
             String hash = dl.getSha256Hash();
             if (!StringUtils.isEmpty(hash)) {
-                return "[SHA1] ".concat(hash);
+                return "[SHA256] ".concat(hash);
             }
             hash = dl.getSha1Hash();
             if (!StringUtils.isEmpty(hash)) {
-                return "[SHA256] ".concat(hash);
+                return "[SHA1] ".concat(hash);
             }
             hash = dl.getMD5Hash();
             if (!StringUtils.isEmpty(hash)) {
