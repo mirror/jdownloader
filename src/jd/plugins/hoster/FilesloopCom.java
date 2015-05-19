@@ -18,8 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -61,7 +61,7 @@ public class FilesloopCom extends PluginForHost {
 
     /* Last updated: 31.03.15 */
     private static final int                               defaultMAXDOWNLOADS  = 10;
-    private static final int                               defaultMAXCHUNKS     = 0;
+    private static final int                               defaultMAXCHUNKS     = 1;
     private static final boolean                           defaultRESUME        = true;
 
     private static Object                                  CTRLLOCK             = new Object();
@@ -322,11 +322,25 @@ public class FilesloopCom extends PluginForHost {
         }
 
         this.getAPISafe(DOMAIN + "list");
-        final String[] supportedhosts = br.getRegex("\"[^\"]+/(?:www\\.)?([^\"/]+\\.[^\"/]+)\"").getColumn(0);
-        ArrayList<String> supportedhostslist = new ArrayList(Arrays.asList(supportedhosts));
-        /* Small workaround for serverside wrong input */
-        if (supportedhostslist.contains("turbobit.biz")) {
-            supportedhostslist.add("turbobit.net");
+        ArrayList<String> supportedhostslist = new ArrayList();
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        final ArrayList<Object> ressourcelist = (ArrayList) entries.get("data");
+        for (final Object hostinfoo : ressourcelist) {
+            entries = (LinkedHashMap<String, Object>) hostinfoo;
+            final int maxchunks = this.correctChunks((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("max_connection"), defaultMAXCHUNKS));
+            String host = (String) entries.get("url");
+            host = host.replaceAll("https?://(www\\.)?", "");
+
+            boolean resumable = defaultRESUME;
+            final Object resumableo = entries.get("resumable");
+            if (resumableo instanceof Boolean) {
+                resumable = ((Boolean) resumableo).booleanValue();
+            } else {
+                resumable = Boolean.parseBoolean((String) resumableo);
+            }
+            hostMaxchunksMap.put(host, maxchunks);
+            hostResumeMap.put(host, resumable);
+            supportedhostslist.add(host);
         }
         account.setValid(true);
         account.setConcurrentUsePossible(true);
@@ -487,7 +501,8 @@ public class FilesloopCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             case 5:
-                logger.warning("Errorcode not yet supported!");
+                /* "invalid-file" --> The name itself has no meaning - its just a general error so we should retry */
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_apierror_invalidfile", 20, 5 * 60 * 1000l);
             case 666:
                 /* Unknown error */
                 statusMessage = "Unknown error";
@@ -499,6 +514,30 @@ public class FilesloopCom extends PluginForHost {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
             throw e;
         }
+    }
+
+    /** Corrects input so that it fits what we use in our plugins. */
+    private int correctChunks(int maxchunks) {
+        if (maxchunks < 1) {
+            maxchunks = 1;
+        } else if (maxchunks > 20) {
+            maxchunks = 20;
+        } else if (maxchunks > 1) {
+            maxchunks = -maxchunks;
+        }
+        /* Else maxchunks = 1 */
+        return maxchunks;
+    }
+
+    /** Corrects input so that it fits what we use in our plugins. */
+    private int correctMaxdls(int maxdls) {
+        if (maxdls < 1) {
+            maxdls = 1;
+        } else if (maxdls > 20) {
+            maxdls = 20;
+        }
+        /* Else we should have a valid value! */
+        return maxdls;
     }
 
     @Override
