@@ -41,9 +41,18 @@ public class ViceComDecrypter extends PluginForDecrypt {
         String externID = null;
 
         br.getPage(parameter);
-        final String externSource = br.getRegex("<div class=\"video\\-container youtube\">(.*?)</div>").getMatch(0);
+        String externSource = br.getRegex("<div class=\"video\\-container youtube\">(.*?)</div>").getMatch(0);
+        if (externSource == null) {
+            externSource = br.getRegex("<section class=\"video\\-wrapper\">(.*?)</section>").getMatch(0);
+        }
+        if (externSource == null) {
+            externSource = br.getRegex("<div class=\"resp-video-wrapper youtube-wrapper\">(.*?)</div><p>").getMatch(0);
+        }
         if (externSource != null) {
             externID = new Regex(externSource, "data-youtube-id=\"([^<>\"]*?)\"").getMatch(0);
+            if (externID == null) {
+                externID = new Regex(externSource, "youtube\\.com/embed/([^<>\"]*?)\"").getMatch(0);
+            }
             if (externID != null) {
                 externID = "https://www.youtube.com/watch?v=" + externID;
             }

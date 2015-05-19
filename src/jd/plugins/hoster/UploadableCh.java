@@ -155,6 +155,7 @@ public class UploadableCh extends PluginForHost {
         doFree(downloadLink);
     }
 
+    @SuppressWarnings("deprecation")
     private void doFree(final DownloadLink downloadLink) throws Exception {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
@@ -178,6 +179,7 @@ public class UploadableCh extends PluginForHost {
             if (br.containsHTML("\"fail\":\"timeLimit\"")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 20 * 60 * 1001l);
             }
+            boolean captchaFailed = true;
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.setId("6LdlJuwSAAAAAPJbPIoUhyqOJd7-yrah5Nhim5S3");
@@ -186,13 +188,14 @@ public class UploadableCh extends PluginForHost {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 br.postPage("http://www.uploadable.ch/checkReCaptcha.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_shortencode_field=" + fid);
-                if (br.containsHTML("\"success\":0")) {
+                if (br.containsHTML("\"success\":0") || br.toString().trim().equals("[]")) {
                     rc.reload();
                     continue;
                 }
+                captchaFailed = false;
                 break;
             }
-            if (br.containsHTML("\"success\":0")) {
+            if (captchaFailed) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
 

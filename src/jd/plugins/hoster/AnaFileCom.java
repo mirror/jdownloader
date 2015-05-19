@@ -65,7 +65,7 @@ public class AnaFileCom extends PluginForHost {
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(anafile\\.com|fileana\\.(biz|com)|filezana\\.biz|anafilez\\.com)";
+    private static final String            DOMAINS                      = "(anafile\\.com|fileana\\.(biz|com)|filezana\\.biz|anafilez\\.com|anafilz\\.com)";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -121,6 +121,7 @@ public class AnaFileCom extends PluginForHost {
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
@@ -514,6 +515,10 @@ public class AnaFileCom extends PluginForHost {
                     }
                 }
             }
+        }
+        if (dllink == null) {
+            dllink = new Regex(correctedBR, "\"(https?://(www\\.)?[a-z0-9\\.\\-]+:\\d+/d/[^<>\"]*?)\"").getMatch(0);
+
         }
         return dllink;
     }
