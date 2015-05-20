@@ -16,9 +16,13 @@
 
 package jd.plugins.hoster;
 
+import java.util.LinkedHashMap;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
+import jd.http.Request;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -135,13 +139,30 @@ public class DocsGoogleCom extends PluginForHost {
         String dllink = null;
         String streamLink = null;
         /* Download not possible ? Download stream! */
-        final String stream_map = br.getRegex("\"fmt_stream_map\":\"(.*?)\"").getMatch(0);
+        String stream_map = br.getRegex("\"fmt_stream_map\":\"(.*?)\"").getMatch(0);
         if (stream_map != null) {
             final String[] links = stream_map.split("\\|");
             streamLink = links[links.length - 1];
             streamLink = unescape(streamLink);
+        } else {
+            stream_map = br.getRegex("\"fmt_stream_map\",\"(.*?)\"").getMatch(0);
+            if (stream_map != null) {
+                final String[] links = stream_map.split("\\|");
+                streamLink = links[links.length - 1];
+                streamLink = unescape(streamLink);
+            }
         }
 
+        stream_map = br.getRegex("\"url_encoded_fmt_stream_map\",\"(.*?)\"").getMatch(0);
+        if (stream_map != null) {
+            final String[] links = stream_map.split("\\,");
+            for (int i = 0; i < links.length; i++) {
+                links[i] = unescape(links[i]);
+            }
+
+            final LinkedHashMap<String, String> query = Request.parseQuery(links[0]);
+            streamLink = Encoding.urlDecode(query.get("url"), false);
+        }
         br.getPage("https://docs.google.com/uc?id=" + getID(downloadLink) + "&export=download");
         final String fsize = br.getRegex("\\((\\d+M)\\)</span>").getMatch(0);
         if (fsize != null) {
@@ -151,7 +172,7 @@ public class DocsGoogleCom extends PluginForHost {
             // so its not possible to download at this time.
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download not possible at this point in time - wait or try with your google account!", 60 * 60 * 1000);
         }
-        if (br.containsHTML("<TITLE>Not Found</TITLE>")) {
+        if (br.containsHTML("<TITLE>Not Found</TITLE>") && streamLink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dllink = br.getRedirectLocation();
