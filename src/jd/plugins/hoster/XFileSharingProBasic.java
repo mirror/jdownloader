@@ -69,13 +69,19 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
     private static final String            DOMAINS                      = "(ForDevsToPlayWith\\.com)";
+    /* Linktypes */
+    private static final String            TYPE_NORMAL                  = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
+    private static final String            TYPE_EMBED                   = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+
+    private static final boolean           AUDIOHOSTER                  = false;
     private static final boolean           VIDEOHOSTER                  = false;
     private static final boolean           VIDEOHOSTER_2                = false;
+
     private static final boolean           SUPPORTSHTTPS                = false;
     private static final boolean           SUPPORTSHTTPS_FORCED         = false;
     private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
@@ -105,7 +111,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String                         fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.7.4
+    // XfileSharingProBasic Version 2.6.8.4
     // Tags: Script, template
     // mods:
     // limit-info:
@@ -117,13 +123,24 @@ public class XFileSharingProBasic extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/embed-", "/"));
-        /* link cleanup, but respect users protocol choosing or forced protocol */
-        if (!SUPPORTSHTTPS) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
-        } else if (SUPPORTSHTTPS && SUPPORTSHTTPS_FORCED) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
+        final String fuid = getFUIDFromURL(link);
+        final String protocol;
+        /* link cleanup, prefer https if possible */
+        if (SUPPORTSHTTPS || SUPPORTSHTTPS_FORCED) {
+            protocol = "https://";
+        } else {
+            protocol = "http://";
         }
+        final String corrected_downloadurl = protocol + "/" + NICE_HOST + fuid;
+        if (link.getDownloadURL().matches(TYPE_EMBED)) {
+            /* Make sure user gets the kind of content urls that he added to JD. */
+            try {
+                link.setContentUrl(link.getDownloadURL() + "/embed-" + fuid + ".html");
+            } catch (final Throwable e) {
+                /* Not available in 0.9.581 Stable */
+            }
+        }
+        link.setUrlDownload(corrected_downloadurl);
     }
 
     @Override
@@ -301,7 +318,25 @@ public class XFileSharingProBasic extends PluginForHost {
         if (dllink == null) {
             dllink = getDllink();
         }
-        /* Third, do they provide video hosting? */
+        /* Third, do they provide video/audio hosting? */
+        if (dllink == null && AUDIOHOSTER && downloadLink.getName().endsWith(".mp3")) {
+            try {
+                logger.info("Trying to get link via mp3embed");
+                final Browser brv = br.cloneBrowser();
+                brv.getPage("/mp3embed-" + fuid);
+                dllink = brv.getRedirectLocation();
+                if (dllink == null) {
+                    dllink = brv.getRegex("flashvars=\"file=(https?://[^<>\"]*?\\.mp3)\"").getMatch(0);
+                }
+                if (dllink == null) {
+                    logger.info("Failed to get link via mp3embed because: " + br.toString());
+                } else {
+                    logger.info("Successfully found link via mp3embed");
+                }
+            } catch (final Throwable e) {
+                logger.info("Failed to get link via mp3embed");
+            }
+        }
         if (dllink == null && VIDEOHOSTER) {
             try {
                 logger.info("Trying to get link via vidembed");
@@ -309,7 +344,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 brv.getPage("/vidembed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
-                    logger.info("Failed to get link via embed because: " + br.toString());
+                    logger.info("Failed to get link via vidembed because: " + br.toString());
                 } else {
                     logger.info("Successfully found link via vidembed");
                 }
@@ -810,9 +845,13 @@ public class XFileSharingProBasic extends PluginForHost {
         downloadLink.setFinalFileName(FFN);
     }
 
-    @SuppressWarnings("deprecation")
     private void setFUID(final DownloadLink dl) {
-        fuid = new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        fuid = getFUIDFromURL(dl);
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getFUIDFromURL(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
     }
 
     private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {

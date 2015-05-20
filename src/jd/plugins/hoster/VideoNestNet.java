@@ -80,6 +80,9 @@ public class VideoNestNet extends PluginForHost {
     // Site Setters
     // primary website url, take note of redirects
     private final String               COOKIE_HOST                  = "http://videonest.net";
+    /* Linktypes */
+    private static final String        TYPE_NORMAL                  = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
+    private static final String        TYPE_EMBED                   = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
     // domain names used within download links.
     private final String               DOMAINS                      = "(videonest\\.net)";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
@@ -1114,6 +1117,14 @@ public class VideoNestNet extends PluginForHost {
         } else if (!supportsHTTPS) {
             // link cleanup, but respect users protocol choosing.
             downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceFirst("https://", "http://"));
+        }
+        /* Make sure user gets the kind of content urls that he added to JD. */
+        try {
+            if (downloadLink.getDownloadURL().matches(TYPE_EMBED) && (downloadLink.getContentUrl() == null || !downloadLink.getContentUrl().endsWith(".html"))) {
+                downloadLink.setContentUrl(downloadLink.getDownloadURL() + ".html");
+            }
+        } catch (final Throwable e) {
+            /* Not available in 0.9.581 Stable */
         }
         // strip video hosting url's to reduce possible duped links.
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("/(vid)?embed-", "/"));
