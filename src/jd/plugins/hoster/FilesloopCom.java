@@ -56,6 +56,8 @@ public class FilesloopCom extends PluginForHost {
     private static HashMap<String, Integer>                hostMaxchunksMap     = new HashMap<String, Integer>();
     /* Contains <host><number of max possible simultan downloads> */
     private static HashMap<String, Integer>                hostMaxdlsMap        = new HashMap<String, Integer>();
+    /* Contains <host><number of max possible filesize> */
+    private static HashMap<String, Long>                   hostMaxfilesizeMap   = new HashMap<String, Long>();
     /* Contains <host><number of currently running simultan downloads> */
     private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap = new HashMap<String, AtomicInteger>();
 
@@ -102,19 +104,29 @@ public class FilesloopCom extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public boolean canHandle(final DownloadLink downloadLink, final Account account) {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
         }
+        final String currentHost = this.correctHost(downloadLink.getHost());
         /* Make sure that we do not start more than the allowed number of max simultan downloads for the current host. */
         synchronized (hostRunningDlsNumMap) {
-            final String currentHost = this.correctHost(downloadLink.getHost());
             if (hostRunningDlsNumMap.containsKey(currentHost) && hostMaxdlsMap.containsKey(currentHost)) {
                 final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
                 final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
                 if (currentRunningDlsForCurrentHost.get() >= maxDlsForCurrentHost) {
+                    return false;
+                }
+            }
+        }
+        /* Make sure that the file we want to download is not too big. */
+        synchronized (hostMaxfilesizeMap) {
+            final long downloadfilesize = downloadLink.getDownloadSize();
+            if (hostMaxfilesizeMap.containsKey(currentHost)) {
+                if (downloadfilesize > downloadfilesize) {
                     return false;
                 }
             }
@@ -327,9 +339,11 @@ public class FilesloopCom extends PluginForHost {
         final ArrayList<Object> ressourcelist = (ArrayList) entries.get("data");
         for (final Object hostinfoo : ressourcelist) {
             entries = (LinkedHashMap<String, Object>) hostinfoo;
+            final Object max_filesizeo = entries.get("max_filesize");
+            final int maxdownloads = this.correctMaxdls((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("max_download"), defaultMAXDOWNLOADS));
             final int maxchunks = this.correctChunks((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("max_connection"), defaultMAXCHUNKS));
-            String host = (String) entries.get("url");
-            host = host.replaceAll("https?://(www\\.)?", "");
+            String host = (String) entries.get("domain");
+            host = host.replace("www.", "");
 
             boolean resumable = defaultRESUME;
             final Object resumableo = entries.get("resumable");
@@ -339,7 +353,14 @@ public class FilesloopCom extends PluginForHost {
                 resumable = Boolean.parseBoolean((String) resumableo);
             }
             hostMaxchunksMap.put(host, maxchunks);
+            hostMaxdlsMap.put(host, maxdownloads);
             hostResumeMap.put(host, resumable);
+            if (max_filesizeo instanceof String) {
+                final String max_filesize = (String) max_filesizeo;
+                if (max_filesize.matches("\\d+")) {
+                    hostMaxfilesizeMap.put(host, Long.parseLong(max_filesize));
+                }
+            }
             supportedhostslist.add(host);
         }
         account.setValid(true);

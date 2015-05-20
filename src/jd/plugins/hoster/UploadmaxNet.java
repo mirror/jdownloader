@@ -42,6 +42,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadmax.net" }, urls = { "http://(www\\.)?uploadmax\\.net/file/[a-z0-9]+" }, flags = { 2 })
 public class UploadmaxNet extends PluginForHost {
@@ -111,7 +112,8 @@ public class UploadmaxNet extends PluginForHost {
             if (d == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = "http://www.uploadmax.net/get_file.php?h=" + fid + "&d=" + d + "&c=0";
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+            dllink = "http://www.uploadmax.net/get_file.php?h=" + fid + "&d=" + d + "&c=0&r=" + Encoding.urlEncode(recaptchaV2Response);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
