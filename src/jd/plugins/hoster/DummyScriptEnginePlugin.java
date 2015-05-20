@@ -913,7 +913,6 @@ public class DummyScriptEnginePlugin extends PluginForHost {
         public CompiledScript compile(java.io.Reader script) throws ScriptException {
             CompiledScript ret = null;
             Context cx = enterContext();
-
             try {
                 String fileName = (String) get(ScriptEngine.FILENAME);
                 if (fileName == null) {
