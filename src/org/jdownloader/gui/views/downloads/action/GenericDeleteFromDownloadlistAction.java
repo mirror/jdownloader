@@ -8,6 +8,7 @@ import java.util.List;
 
 import javax.swing.KeyStroke;
 
+import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
@@ -21,6 +22,7 @@ import org.appwork.swing.exttable.ExtTableListener;
 import org.appwork.swing.exttable.ExtTableModelEventWrapper;
 import org.appwork.swing.exttable.ExtTableModelListener;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.ActionContext;
@@ -199,7 +201,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     public void actionPerformed(final ActionEvent e) {
         final SelectionInfo<FilePackage, DownloadLink> finalSelection = selection.get();
         if (finalSelection != null) {
-            DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
@@ -209,11 +211,10 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                     case NONE:
                         return null;
                     case UNSELECTED:
+                        createNewSelectionInfo = true;
                         for (final DownloadLink child : finalSelection.getUnselectedChildren()) {
                             if (checkLink(child)) {
                                 nodesToDelete.add(child);
-                            } else {
-                                createNewSelectionInfo = true;
                             }
                         }
                         break;
@@ -238,8 +239,16 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                             return null;
                         }
                     }
-                    Toolkit.getDefaultToolkit().beep();
-                    Dialog.getInstance().showErrorDialog(_GUI._.GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_());
+                    new EDTHelper<Void>() {
+
+                        @Override
+                        public Void edtRun() {
+                            Toolkit.getDefaultToolkit().beep();
+                            Dialog.getInstance().showErrorDialog(_GUI._.GenericDeleteSelectedToolbarAction_actionPerformed_nothing_to_delete_());
+                            return null;
+                        }
+
+                    }.start(true);
                     return null;
                 }
             });

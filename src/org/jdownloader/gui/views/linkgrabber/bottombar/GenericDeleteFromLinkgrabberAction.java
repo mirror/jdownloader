@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.KeyStroke;
 
+import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -176,7 +177,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     public void actionPerformed(final ActionEvent e) {
         final SelectionInfo<CrawledPackage, CrawledLink> finalSelection = selection.get();
         if (finalSelection != null) {
-            LinkCollector.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
+            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
                 protected Void run() throws RuntimeException {
@@ -187,7 +188,8 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                         return null;
                     case UNSELECTED:
                         for (final CrawledLink child : finalSelection.getUnselectedChildren()) {
-                            if (checkLink(child)) {
+                            final CrawledPackage parentNode = child.getParentNode();
+                            if (parentNode != null && checkLink(child)) {
                                 if (child.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
                                     containsOnline.set(true);
                                 }
@@ -197,10 +199,10 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                         break;
                     default:
                         for (final CrawledLink dl : finalSelection.getChildren()) {
-                            if (checkLink(dl)) {
+                            final CrawledPackage parentNode = dl.getParentNode();
+                            if (parentNode != null && checkLink(dl)) {
                                 nodesToDelete.add(dl);
-                                final CrawledPackage parent = dl.getParentNode();
-                                if (parent != null && (TYPE.OFFLINE == parent.getType() || TYPE.POFFLINE == parent.getType())) {
+                                if ((TYPE.OFFLINE == parentNode.getType() || TYPE.POFFLINE == parentNode.getType())) {
                                     continue;
                                 }
                                 if (dl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {

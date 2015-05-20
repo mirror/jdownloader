@@ -30,6 +30,7 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 
+import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -52,6 +53,7 @@ import org.appwork.swing.exttable.ExtOverlayRowHighlighter;
 import org.appwork.swing.exttable.ExtTable;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -320,25 +322,29 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
-        final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
-        boolean containsOnline = false;
-        for (final CrawledLink dl : getSelectionInfo().getChildren()) {
+        final SelectionInfo<CrawledPackage, CrawledLink> selection = getSelectionInfo();
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-            nodesToDelete.add(dl);
-
-            if (TYPE.OFFLINE == dl.getParentNode().getType()) {
-                continue;
+            @Override
+            protected Void run() throws RuntimeException {
+                final List<CrawledLink> nodesToDelete = new ArrayList<CrawledLink>();
+                boolean containsOnline = false;
+                for (final CrawledLink dl : selection.getChildren()) {
+                    final CrawledPackage parentNode = dl.getParentNode();
+                    if (parentNode != null) {
+                        nodesToDelete.add(dl);
+                        if ((TYPE.OFFLINE == parentNode.getType() || TYPE.POFFLINE == parentNode.getType())) {
+                            continue;
+                        }
+                        if (dl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
+                            containsOnline = true;
+                        }
+                    }
+                }
+                LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, _GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all(), evt.isControlDown(), false, false, false, false);
+                return null;
             }
-            if (TYPE.POFFLINE == dl.getParentNode().getType()) {
-                continue;
-            }
-            if (dl.getDownloadLink().getAvailableStatus() != AvailableStatus.FALSE) {
-                containsOnline = true;
-
-            }
-
-        }
-        LinkCollector.requestDeleteLinks(nodesToDelete, containsOnline, _GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all(), evt.isControlDown(), false, false, false, false);
+        });
         return true;
     }
 

@@ -34,6 +34,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.TransferHandler;
 
+import jd.controlling.TaskQueue;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.AbstractBugFinderWindow;
 import jd.gui.swing.jdgui.DirectFeedback;
@@ -48,6 +49,7 @@ import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtCheckBoxMenuItem;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
@@ -62,6 +64,7 @@ import org.jdownloader.controlling.contextmenu.MenuLink;
 import org.jdownloader.controlling.contextmenu.SeparatorData;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 import org.jdownloader.gui.views.downloads.MenuManagerDownloadTabBottomBar;
 import org.jdownloader.gui.views.downloads.action.DownloadTabActionUtils;
@@ -187,7 +190,15 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
-        DownloadTabActionUtils.deleteLinksRequest(getSelectionInfo(), _GUI._.RemoveSelectionAction_actionPerformed_(), DeleteFileOptions.REMOVE_LINKS_ONLY, evt.isControlDown());
+        final SelectionInfo<FilePackage, DownloadLink> selectionInfo = getSelectionInfo();
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                DownloadTabActionUtils.deleteLinksRequest(selectionInfo, _GUI._.RemoveSelectionAction_actionPerformed_(), DeleteFileOptions.REMOVE_LINKS_ONLY, evt.isControlDown());
+                return null;
+            }
+        });
         return true;
 
     }

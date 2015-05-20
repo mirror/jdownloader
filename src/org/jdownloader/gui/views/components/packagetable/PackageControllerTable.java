@@ -32,7 +32,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
-import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
@@ -178,13 +177,11 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     /** access within EDT only **/
-    protected SelectionInfoCache          selectionOnly_TableData      = null;
+    protected SelectionInfoCache selectionOnly_TableData      = null;
     /** access within EDT only **/
-    protected SelectionInfoCache          selectionOnly_ControllerData = null;
+    protected SelectionInfoCache selectionOnly_ControllerData = null;
     /** access within EDT only **/
-    protected SelectionInfoCache          all_TableData                = null;
-
-    protected volatile SelectionInfoCache all_ControllerData           = null;
+    protected SelectionInfoCache all_TableData                = null;
 
     public SelectionInfo<ParentType, ChildrenType> getSelectionInfo(final boolean selectionOnly, final boolean useTableModelData) {
         if (selectionOnly) {
@@ -243,26 +240,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
                 }.getReturnValue();
             } else {
-                final long dataVersion = getModel().getController().getChildrenChanges();
-                SelectionInfoCache lall_ControllerData = all_ControllerData;
-                if (lall_ControllerData != null && lall_ControllerData.getDataVersion() == dataVersion) {
-                    return lall_ControllerData.selectionInfo;
-                }
-                return getModel().getController().getQueue().addWait(new QueueAction<SelectionInfo<ParentType, ChildrenType>, RuntimeException>(Queue.QueuePriority.HIGH) {
-
-                    @Override
-                    protected SelectionInfo<ParentType, ChildrenType> run() throws RuntimeException {
-                        final long dataVersion = getModel().getController().getChildrenChanges();
-                        SelectionInfoCache lall_ControllerData = all_ControllerData;
-                        if (lall_ControllerData != null && lall_ControllerData.getDataVersion() == dataVersion) {
-                            return lall_ControllerData.selectionInfo;
-                        }
-                        final SelectionInfo<ParentType, ChildrenType> selectionInfo = new PackageControllerSelectionInfo<ParentType, ChildrenType>(getModel().getController());
-                        lall_ControllerData = new SelectionInfoCache(-1, dataVersion, selectionInfo);
-                        all_ControllerData = lall_ControllerData;
-                        return selectionInfo;
-                    }
-                });
+                return getModel().getController().getSelectionInfo();
             }
         }
     }
