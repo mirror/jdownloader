@@ -19,17 +19,26 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerSelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.MergePosition;
 import org.jdownloader.logging.LogController;
 
 public abstract class PackageController<PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> implements AbstractNodeNotifier {
-    protected final AtomicLong                          structureChanged           = new AtomicLong(0);
-    protected final AtomicLong                          childrenChanged            = new AtomicLong(0);
-    protected final AtomicLong                          contentChanged             = new AtomicLong(0);
-    protected final LogSource                           logger                     = LogController.CL();
+    protected final AtomicLong structureChanged = new AtomicLong(System.currentTimeMillis());
+    protected final AtomicLong childrenChanged  = new AtomicLong(System.currentTimeMillis());
+    protected final AtomicLong backendChanged   = new AtomicLong(System.currentTimeMillis());
 
-    protected WeakHashMap<UniqueAlltimeID, PackageType> uniqueAlltimeIDPackageMap  = new WeakHashMap<UniqueAlltimeID, PackageType>();
-    protected WeakHashMap<UniqueAlltimeID, ChildType>   uniqueAlltimeIDChildrenMap = new WeakHashMap<UniqueAlltimeID, ChildType>();
+    public long getBackendChanged() {
+        return backendChanged.get();
+    }
+
+    protected final AtomicLong                                contentChanged             = new AtomicLong(System.currentTimeMillis());
+
+    protected final LogSource                                 logger                     = LogController.CL();
+
+    protected final WeakHashMap<UniqueAlltimeID, PackageType> uniqueAlltimeIDPackageMap  = new WeakHashMap<UniqueAlltimeID, PackageType>();
+    protected final WeakHashMap<UniqueAlltimeID, ChildType>   uniqueAlltimeIDChildrenMap = new WeakHashMap<UniqueAlltimeID, ChildType>();
 
     public long getPackageControllerChanges() {
         return structureChanged.get();
@@ -80,9 +89,9 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         return contentChanged.get();
     }
 
-    protected ArrayList<PackageType> packages = new ArrayList<PackageType>();
-    protected ModifyLock             lock     = new ModifyLock();
-    protected ModifyLock             mapLock  = new ModifyLock();
+    protected final ArrayList<PackageType> packages = new ArrayList<PackageType>();
+    protected final ModifyLock             lock     = new ModifyLock();
+    protected final ModifyLock             mapLock  = new ModifyLock();
 
     protected ModifyLock getMapLock() {
         return mapLock;
@@ -184,7 +193,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     } catch (final Throwable e) {
                         LogController.CL(true).log(e);
                     }
-                    structureChanged.incrementAndGet();
+                    structureChanged.set(backendChanged.incrementAndGet());
                     _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
                     return null;
                 }
@@ -280,10 +289,11 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     } finally {
                         getMapLock().writeUnlock();
                     }
-                    structureChanged.incrementAndGet();
+                    final long version = backendChanged.incrementAndGet();
+                    structureChanged.set(version);
                     if (isNew) {
                         if (pkg.getChildren().size() > 0) {
-                            childrenChanged.incrementAndGet();
+                            childrenChanged.set(version);
                         }
                         _controllerPackageNodeAdded(pkg, this.getQueuePrio());
                     } else {
@@ -386,12 +396,12 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         } finally {
                             getMapLock().writeUnlock();
                         }
-
+                        final long version = backendChanged.incrementAndGet();
                         if (remove.size() > 0) {
-                            childrenChanged.incrementAndGet();
+                            childrenChanged.set(version);
                             controller._controllerParentlessLinks(remove, this.getQueuePrio());
                         }
-                        controller.structureChanged.incrementAndGet();
+                        controller.structureChanged.set(version);
                         controller._controllerPackageNodeRemoved(pkg, this.getQueuePrio());
                         _controllerStructureChanged(this.getQueuePrio());
                     }
@@ -448,9 +458,10 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                 controller.removeChildren(cpkg, next.getValue(), true);
             }
         }
-        structureChanged.incrementAndGet();
+        final long version = backendChanged.incrementAndGet();
+        structureChanged.set(version);
         if (childrenRemoved) {
-            childrenChanged.incrementAndGet();
+            childrenChanged.set(version);
         }
 
     }
@@ -719,9 +730,10 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     } finally {
                         getMapLock().writeUnlock();
                     }
-                    structureChanged.incrementAndGet();
+                    final long version = backendChanged.incrementAndGet();
+                    structureChanged.set(version);
                     if (newChildren) {
-                        childrenChanged.incrementAndGet();
+                        childrenChanged.set(version);
                     }
                     _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());
                     _controllerStructureChanged(this.getQueuePrio());
@@ -782,10 +794,11 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         pkg.getModifyLock().writeUnlock();
                     }
                     if (links.size() > 0) {
-                        controller.structureChanged.incrementAndGet();
+                        final long version = backendChanged.incrementAndGet();
+                        controller.structureChanged.set(version);
                         if (doNotifyParentlessLinks) {
                             getMapLock().writeLock();
-                            childrenChanged.incrementAndGet();
+                            childrenChanged.set(version);
                             try {
                                 for (final ChildType child : links) {
                                     uniqueAlltimeIDChildrenMap.remove(child.getUniqueID());
@@ -920,6 +933,31 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         }
     }
 
+    protected volatile PackageControllerSelectionInfo<PackageType, ChildType> selectionInfo = null;
+
+    public SelectionInfo<PackageType, ChildType> getSelectionInfo() {
+        final long version = getBackendChanged();
+        PackageControllerSelectionInfo<PackageType, ChildType> lSelectionInfo = selectionInfo;
+        if (lSelectionInfo != null && lSelectionInfo.getBackendVersion() == version) {
+            return lSelectionInfo;
+        }
+        return getQueue().addWait(new QueueAction<SelectionInfo<PackageType, ChildType>, RuntimeException>(Queue.QueuePriority.HIGH) {
+
+            @Override
+            protected SelectionInfo<PackageType, ChildType> run() throws RuntimeException {
+                final long version = getBackendChanged();
+                PackageControllerSelectionInfo<PackageType, ChildType> lSelectionInfo = selectionInfo;
+                if (lSelectionInfo != null && lSelectionInfo.getBackendVersion() == version) {
+                    return lSelectionInfo;
+                }
+                lSelectionInfo = new PackageControllerSelectionInfo<PackageType, ChildType>(PackageController.this);
+                selectionInfo = lSelectionInfo;
+                return lSelectionInfo;
+            }
+        });
+
+    }
+
     public int lastIndexOf(PackageType pkg) {
         boolean readL = readLock();
         try {
@@ -983,7 +1021,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                                 }
                             }
                         } finally {
-                            structureChanged.incrementAndGet();
+                            structureChanged.set(backendChanged.incrementAndGet());
                         }
                     }
                     writeLock();
@@ -993,7 +1031,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     } finally {
                         writeUnlock();
                     }
-                    structureChanged.incrementAndGet();
+                    structureChanged.set(backendChanged.incrementAndGet());
                     if (sortPackages) {
                         for (final PackageType pkg : lpackages) {
                             _controllerPackageNodeStructureChanged(pkg, this.getQueuePrio());

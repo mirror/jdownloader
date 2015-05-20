@@ -17,7 +17,6 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.components.packagetable.PackageControllerSelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction.OnDupesLinksAction;
@@ -80,7 +79,7 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                         if (!Application.isHeadless()) {
                             selectionInfo = LinkGrabberTable.getInstance().getSelectionInfo(false, CFG_LINKGRABBER.CFG.isAutoStartConfirmSidebarFilterEnabled());
                         } else {
-                            selectionInfo = new PackageControllerSelectionInfo<CrawledPackage, CrawledLink>(LinkCollector.getInstance());
+                            selectionInfo = LinkCollector.getInstance().getSelectionInfo();
                         }
                         final List<AbstractNode> list = new ArrayList<AbstractNode>(selectionInfo.getChildren().size());
                         for (final CrawledLink child : selectionInfo.getChildren()) {
