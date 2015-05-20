@@ -227,32 +227,39 @@ public class MinhatecaComBr extends PluginForDecrypt {
                     }
                     filesize = Encoding.htmlDecode(filesize).trim();
                     String ext = null;
-                    String filename = new Regex(lnkinfo, "/([^<>\"/]*?)\" class=\"downloadAction\"").getMatch(0);
+                    String filename = new Regex(lnkinfo, "/([^<>\"/]*?)\" class=\"downloadAction").getMatch(0);
                     if (filename == null) {
                         filename = url_filename;
                     }
+                    final String finfoName;
+                    if (finfo.getMatch(0) != null && finfo.getMatch(1) != null) {
+                        finfoName = Encoding.htmlDecode(finfo.getMatch(0)).trim() + Encoding.htmlDecode(finfo.getMatch(1)).trim();
+                    } else {
+                        finfoName = null;
+                    }
                     if (filename != null) {
-                        filename = filename.replace("," + fid, "");
-                        filename = Encoding.htmlDecode(filename);
-                        if (filename.contains(".")) {
-                            final String old_ext = filename.substring(filename.lastIndexOf("."));
-                            if (!old_ext.matches("\\.[A-Za-z0-9]+")) {
-                                ext = new Regex(old_ext, "(\\.[A-Za-z0-9]+)").getMatch(0);
-                                if (ext != null) {
-                                    filename = filename.replace(old_ext, ext);
+                        if (filename.contains("*") && finfoName != null) {
+                            filename = finfoName;
+                        } else {
+                            filename = filename.replace("," + fid, "");
+                            filename = Encoding.htmlDecode(filename);
+                            if (filename.contains(".")) {
+                                final String old_ext = filename.substring(filename.lastIndexOf("."));
+                                if (!old_ext.matches("\\.[A-Za-z0-9]+")) {
+                                    ext = new Regex(old_ext, "(\\.[A-Za-z0-9]+)").getMatch(0);
+                                    if (ext != null) {
+                                        filename = filename.replace(old_ext, ext);
+                                    }
                                 }
                             }
                         }
                     } else {
-                        filename = finfo.getMatch(0);
-                        ext = finfo.getMatch(1);
-                        if (ext == null || filename == null) {
-                            logger.warning("Decrypter broken for link: " + parameter);
-                            return null;
-                        }
-                        filename = Encoding.htmlDecode(filename).trim() + Encoding.htmlDecode(ext).trim();
+                        filename = finfoName;
                     }
-
+                    if (filename == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
                     final DownloadLink dl = getDecryptedDownloadlink();
 
                     dl.setProperty("plain_filename", filename);
