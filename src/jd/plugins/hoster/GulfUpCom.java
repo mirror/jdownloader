@@ -56,7 +56,7 @@ public class GulfUpCom extends PluginForHost {
             }
             throw e;
         }
-        if (br.containsHTML("<title>الموقع مغلق !</title>")) {
+        if (br.containsHTML("<title>الموقع مغلق !</title>|Sorry We Can\\'t Find The File")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String ext = get("نوع الملف");

@@ -31,6 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vice.com" }, urls = { "https?://([A-Za-z0-9]+\\.)?vicedecrypted\\.com/.+" }, flags = { 0 })
 public class ViceCom extends PluginForHost {
 
@@ -63,11 +65,11 @@ public class ViceCom extends PluginForHost {
     /*
      * Small documentation of the vice.com (NOT ooyala) API which we cannot really use at this point as the articleIDs seem not to be
      * available via desktop website.
-     *
+     * 
      * User-Agent: okhttp/2.2.0
-     *
+     * 
      * Get array of current articles: vice.com/de/api/getvicetoday/0
-     *
+     * 
      * Get information about an article: vice.com/de/api/article/<article_ID>
      */
 
@@ -97,6 +99,7 @@ public class ViceCom extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        String ext = null;
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -130,11 +133,35 @@ public class ViceCom extends PluginForHost {
         /* This UA is not necessarily needed. */
         this.br.getHeaders().put("User-Agent", "Dalvik/1.6.0 (Linux; U; Android 4.4.4; A0001 Build/KTU84Q)");
         br.getPage("http://player.ooyala.com/sas/player_api/v1/authorization/embed_code/" + playerid + "/" + videoid + "?device=android_html&domain=www.ooyala.com&supportedFormats=mp4");
-        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         final String walk_string = "authorization_data/" + videoid + "/streams/{0}/url/data";
         DLLINK = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, walk_string);
-        if (DLLINK != null && !DLLINK.startsWith("http")) {
-            DLLINK = Encoding.Base64Decode(DLLINK);
+        if (DLLINK == null) {
+            /* No HTTP url available --> must be HLS.only */
+            br.getPage("http://player.ooyala.com/sas/player_api/v1/authorization/embed_code/" + playerid + "/" + videoid + "?device=android_html&domain=www.ooyala.com&supportedFormats=m3u8");
+            entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            DLLINK = (String) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, walk_string);
+            if (DLLINK != null) {
+                if (!DLLINK.startsWith("http")) {
+                    DLLINK = Encoding.Base64Decode(DLLINK);
+                }
+                if (!DLLINK.startsWith("http")) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getPage(DLLINK);
+                DLLINK = br.getRegex("(https?://player\\.ooyala\\.com/player/iphone/[^<>\"]*?\\.m3u8)").getMatch(0);
+            }
+            ext = ".mp4";
+        } else {
+            /* HTTP url available --> Decrypt it */
+            if (!DLLINK.startsWith("http")) {
+                DLLINK = Encoding.Base64Decode(DLLINK);
+            }
+            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            /* Make sure that we get a correct extension */
+            if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
+                ext = default_Extension;
+            }
         }
         if (DLLINK == null || !DLLINK.startsWith("http")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -144,58 +171,62 @@ public class ViceCom extends PluginForHost {
         filename = filename.trim();
         filename = encodeUnicode(filename);
         filename += "_AVC_640x360_600_AAC LC_128";
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
-        }
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
+        /* We cannot check the filesize for HLS urls */
+        if (!DLLINK.endsWith(".m3u8")) {
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
             try {
-                con = openConnection(br2, DLLINK);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", DLLINK);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                try {
+                    con = openConnection(br2, DLLINK);
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                downloadLink.setProperty("directlink", DLLINK);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        if (DLLINK.endsWith(".m3u8")) {
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, DLLINK);
+            dl.startDownload();
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                br.followConnection();
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */
