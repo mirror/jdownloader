@@ -106,6 +106,7 @@ public class ImageFap extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -128,13 +129,12 @@ public class ImageFap extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
-            // final String gallery_name = getGalleryName(downloadLink);
-            // String imagelink = br.getRegex("\"(http://fap\\.to/images/(full/)?\\d+/\\d+/.*?)\"").getMatch(0);
-            String imagelink = br.getRegex("name=\"mainPhoto\".*src=\"(http://img\\.imagefapusercontent\\.com/images/\\d+/.*?)\"").getMatch(0);
-            if (imagelink == null) {
-                String ID = new Regex(downloadLink.getDownloadURL(), "(\\d+)").getMatch(0);
-                imagelink = br.getRegex("href=\"http://img\\.imagefapusercontent\\.com/images/full/\\d+/\\d+/" + ID + "\\.jpe?g\" original=\"(http://fap.to/images/full/\\d+/\\d+/" + ID + "\\.jpe?g)\"").getMatch(0);
-            }
+            String imagelink = br.getRegex("name=\"mainPhoto\".*src=\"(https?://[a-z0-9\\.\\-]+\\.imagefapusercontent\\.com/[^<>\"]+)\"").getMatch(0);
+            // if (imagelink == null) {
+            // String ID = new Regex(downloadLink.getDownloadURL(), "(\\d+)").getMatch(0);
+            // imagelink = br.getRegex("href=\"http://img\\.imagefapusercontent\\.com/images/full/\\d+/\\d+/" + ID +
+            // "\\.jpe?g\" original=\"(http://fap.to/images/full/\\d+/\\d+/" + ID + "\\.jpe?g)\"").getMatch(0);
+            // }
             if (imagelink == null) {
                 final String returnID = new Regex(br, Pattern.compile("return lD\\(\\'(\\S+?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 if (returnID != null) {
