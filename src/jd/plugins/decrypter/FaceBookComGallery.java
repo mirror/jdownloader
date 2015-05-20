@@ -196,10 +196,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private void decryptAlbums() throws Exception {
-        if (!logged_in) {
-            logger.info("Cannot decrypt link without valid account: " + PARAMETER);
-            return;
-        }
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         String fpName = br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)\\- Photos \\| Facebook</title>").getMatch(0);
         final String profileID = getProfileID();
@@ -269,10 +265,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private void decryptPhotosOf() throws Exception {
-        if (!logged_in) {
-            logger.info("Cannot decrypt link without valid account: " + PARAMETER);
-            return;
-        }
         if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</")) {
             logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
@@ -356,10 +348,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private void decryptPicsProfile() throws Exception {
-        if (!logged_in) {
-            logger.info("Cannot decrypt link without valid account: " + PARAMETER);
-            return;
-        }
         String fpName = getPageTitle();
         final boolean profile_setlink = br.getURL().contains("&set=");
         boolean dynamicLoadAlreadyDecrypted = false;
@@ -585,10 +573,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private void decryptPhotoStreamTimeline() throws Exception {
-        if (!logged_in) {
-            logger.info("Cannot decrypt link without valid account: " + PARAMETER);
-            return;
-        }
         if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar</")) {
             logger.info("The link is either offline or an account is needed to grab it: " + PARAMETER);
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
@@ -711,9 +695,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     private void decryptVideoSet() throws IOException, DecrypterException {
-        if (!logged_in) {
-            logger.info("Decrypting video album without login: " + PARAMETER);
-        }
         getpagefirsttime(PARAMETER);
         if (br.containsHTML(CONTENTUNAVAILABLE)) {
             logger.info("Link offline: " + PARAMETER);
@@ -739,11 +720,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void decryptGroupsPhotos() throws Exception {
-        if (!logged_in) {
-            logger.info("Cannot decrypt link without valid account: " + PARAMETER);
-            return;
-        }
         String fpName = getPageTitle();
         final String rev = getRev();
         final String user = getUser();
@@ -885,10 +863,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     // TODO: Use this everywhere as it should work universal
     private void decryptPicsGeneral(String controller) throws Exception {
-        if (!logged_in) {
-            logger.info("Cannot decrypt link without valid account: " + PARAMETER);
-            return;
-        }
         String fpName = getPageTitle();
         final String rev = getRev();
         final String user = getUser();
@@ -1132,6 +1106,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     private boolean login() throws Exception {
         /** Login stuff begin */
         final PluginForHost facebookPlugin = JDUtilities.getPluginForHost("facebook.com");
