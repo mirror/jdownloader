@@ -17,9 +17,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.PluginWrapper;
-import jd.http.RandomUserAgent;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -39,8 +40,8 @@ public class UploadMbCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         // Remove unneeded stuff that could cause errors
-        String linkPart = new Regex(link.getDownloadURL(), "(uploadmb\\.com/dw\\.php\\?id=\\d+)").getMatch(0);
-        link.setUrlDownload("http://www." + linkPart);
+        fuid = new Regex(link.getDownloadURL(), "uploadmb\\.com/dw\\.php\\?id=(\\d+)").getMatch(0);
+        link.setUrlDownload("http://www.uploadmb.com/dw.php?id=" + fuid);
     }
 
     @Override
@@ -53,11 +54,17 @@ public class UploadMbCom extends PluginForHost {
         return -1;
     }
 
+    private final static AtomicReference<String> PHPSESSID = new AtomicReference<String>(null);
+    private final static AtomicReference<String> userAgent = new AtomicReference<String>(null);
+    private String                               fuid      = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        br = new Browser();
+        correctDownloadLink(link);
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getPage(link.getDownloadURL());
+        // without phpsession cookie, it will redirect to some bitcoin advertising (scam?).
+        getPhpSesId(link.getDownloadURL());
         if (br.containsHTML("(>The file you are requesting to download is not available<br>|Reasons for this \\(Invalid link, Violation of <a|The file you are requesting to download is not available)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -93,7 +100,6 @@ public class UploadMbCom extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = "http://www.uploadmb.com" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -103,6 +109,46 @@ public class UploadMbCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void getPhpSesId(final String page) throws IOException, PluginException {
+        br.setFollowRedirects(false);
+        if (PHPSESSID.get() != null) {
+            br.getHeaders().put("User-Agent", userAgent.get());
+            br.setCookie(this.getHost(), "PHPSESSID", PHPSESSID.get());
+            br.getPage(page);
+            final String redirect = br.getRedirectLocation();
+            if (redirect != null) {
+                // some adveritsing bullshit when phpsessid == null
+                if (redirect.matches(".+uploadmb\\.com/dvv\\.php\\?id=" + fuid)) {
+                    PHPSESSID.set(null);
+                    br = new Browser();
+                } else {
+                    br.getPage(redirect);
+                    return;
+                }
+            }
+            return;
+        }
+        // set a new user-agent
+        userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+        br.getHeaders().put("User-Agent", userAgent.get());
+        br.getPage(page);
+        final String redirect = br.getRedirectLocation();
+        if (redirect != null) {
+            // some adveritsing bullshit when phpsessid == null
+            if (redirect.matches(".+uploadmb\\.com/dvv\\.php\\?id=" + fuid)) {
+                br.getPage(redirect);
+            }
+        }
+        final String phpsessid = br.getCookie(this.getHost(), "PHPSESSID");
+        if (phpsessid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        PHPSESSID.set(phpsessid);
+        if (!br.getURL().equals(page)) {
+            br.getPage(page);
+        }
     }
 
     @Override
