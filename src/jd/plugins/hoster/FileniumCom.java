@@ -256,10 +256,10 @@ public class FileniumCom extends PluginForHost {
              */
             br.followConnection();
             if (br.containsHTML(">Error: Al recuperar enlace\\. No disponible temporalmente, disculpa las molestias<")) {
-                tempUnavailableHoster(60 * 60 * 1000l);
+                tempUnavailableHoster(10 * 60 * 1000l);
             } else if (br.containsHTML(">TRAFICO CONSUMIDO PARA")) {
                 logger.info("Traffic for the current host is exhausted");
-                tempUnavailableHoster(60 * 60 * 1000l);
+                tempUnavailableHoster(5 * 60 * 1000l);
             }
             generalErrorhandling(link, account);
             /* Seems like we're on the mainpage -> Maybe traffic exhausted */
