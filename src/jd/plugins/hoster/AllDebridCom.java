@@ -220,7 +220,7 @@ public class AllDebridCom extends antiDDoSForHost {
             } catch (final Throwable e) {
             }
             final String errormessage = link.getLinkStatus().getErrorMessage();
-            if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull"))) {
+            if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull") || "Unexpected rangeheader format:null".equals(errormessage))) {
                 /* unknown error, we disable multiple chunks */
                 if (link.getBooleanProperty(AllDebridCom.NOCHUNKS, false) == false) {
                     link.setProperty(AllDebridCom.NOCHUNKS, Boolean.valueOf(true));

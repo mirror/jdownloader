@@ -13,8 +13,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangastream.com" }, urls = { "http://(www\\.)?(mangastream|readms)\\.com/(read|r)/([a-z0-9\\-_%]+/){2}\\d+(\\?page=\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangastream.com" }, urls = { "http://(www\\.)?(mangastream|readms)\\.com/(read|r)/([a-z0-9\\-_%\\+]+/){2}\\d+(\\?page=\\d+)?" }, flags = { 0 })
 public class MngStrm extends PluginForDecrypt {
 
     public MngStrm(PluginWrapper wrapper) {
@@ -32,15 +34,22 @@ public class MngStrm extends PluginForDecrypt {
 
         url = url.replaceAll("\\?page=\\d+$", "");
         url = url.replace("/r/", "/read/");
+        url = url.replace("+", "%2B");
         if (!parameter.equals(url)) {
             parameter.setCryptedUrl(url);
         }
-        br.getPage(url + "/1");
+        final PluginForHost plugin = JDUtilities.getPluginForHost("mangastream.com");
+        if (plugin == null) {
+            throw new IllegalStateException("mangastream plugin not found!");
+        }
+        // set cross browser support
+        ((jd.plugins.hoster.Mangastream) plugin).setBrowser(br);
+        ((jd.plugins.hoster.Mangastream) plugin).getPage(url + "/1");
         if (br.containsHTML(">Page Not Found<|but unfortunately that chapter has expired or been removed from the website\\.[\r\n]</p>")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        String title = br.getRegex("<title>([^<>\"]*?) \\- Manga Stream</title>").getMatch(0);
+        String title = br.getRegex("<title>([^<>\"]*?) - Manga Stream</title>").getMatch(0);
         if (title == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
