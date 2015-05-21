@@ -240,7 +240,6 @@ public class FilesloopCom extends PluginForHost {
                 logger.warning("Final downloadlink is null");
                 handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
             }
-            // this.getAPISafe(DOMAIN + "dl?filelink=" + Encoding.urlEncode(dllink));
         }
         handleDL(account, link, dllink);
     }
