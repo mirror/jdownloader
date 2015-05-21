@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 
 import jd.config.NoOldJDDataBaseFoundException;
@@ -62,6 +63,7 @@ import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.io.J7FileList;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.zip.ZipIOReader;
@@ -410,13 +412,25 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     private ArrayList<File> findAvailableDownloadLists() {
         logger.info("Collect Lists");
-        File[] filesInCfg = Application.getResource("cfg/").listFiles();
+        File[] filesInCfg = null;
+        final File cfg = Application.getResource("cfg/");
+        if (Application.getJavaVersion() >= Application.JAVA17) {
+            try {
+                filesInCfg = J7FileList.findFiles(Pattern.compile("^downloadList.*?\\.zip$", Pattern.CASE_INSENSITIVE), cfg, true).toArray(new File[0]);
+            } catch (IOException e) {
+                logger.log(e);
+            }
+        }
+        if (filesInCfg == null) {
+            filesInCfg = Application.getResource("cfg/").listFiles();
+        }
         ArrayList<Long> sortedAvailable = new ArrayList<Long>();
         ArrayList<File> ret = new ArrayList<File>();
         if (filesInCfg != null) {
             for (File downloadList : filesInCfg) {
-                if (downloadList.isFile() && downloadList.getName().startsWith("downloadList")) {
-                    String counter = new Regex(downloadList.getName(), "downloadList(\\d+)\\.zip$").getMatch(0);
+                final String name = downloadList.getName();
+                if (name.startsWith("downloadList") && downloadList.isFile()) {
+                    String counter = new Regex(name, "downloadList(\\d+)\\.zip$").getMatch(0);
                     if (counter != null) {
                         sortedAvailable.add(Long.parseLong(counter));
                     }

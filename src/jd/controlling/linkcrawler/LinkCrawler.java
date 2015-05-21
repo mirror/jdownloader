@@ -78,6 +78,7 @@ public class LinkCrawler {
     private final AtomicInteger                            unhandledLinksCounter       = new AtomicInteger(0);
     private final AtomicInteger                            processedLinksCounter       = new AtomicInteger(0);
 
+    private final AtomicBoolean                            runningState                = new AtomicBoolean(false);
     private final AtomicInteger                            crawler                     = new AtomicInteger(0);
     private final static AtomicInteger                     CRAWLER                     = new AtomicInteger(0);
     private final ConcurrentHashMap<String, Object>        duplicateFinderContainer;
@@ -544,19 +545,28 @@ public class LinkCrawler {
     protected void checkFinishNotify() {
         if (crawler.decrementAndGet() == 0) {
             /* this LinkCrawler instance stopped, notify static counter */
-            CRAWLER.decrementAndGet();
-            synchronized (this) {
-                this.notifyAll();
+            final boolean event;
+            synchronized (LinkCrawler.this) {
+                if (crawler.get() == 0 && runningState.compareAndSet(true, false)) {
+                    event = CRAWLER.decrementAndGet() == 0;
+                } else {
+                    event = false;
+                }
             }
-            /*
-             * all tasks are done , we can now cleanup our duplicateFinder
-             */
-            duplicateFinderContainer.clear();
-            duplicateFinderCrawler.clear();
-            duplicateFinderFinal.clear();
-            duplicateFinderDeep.clear();
-            EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.STOPPED));
-            crawlerStopped();
+            if (event) {
+                synchronized (this) {
+                    this.notifyAll();
+                }
+                /*
+                 * all tasks are done , we can now cleanup our duplicateFinder
+                 */
+                duplicateFinderContainer.clear();
+                duplicateFinderCrawler.clear();
+                duplicateFinderFinal.clear();
+                duplicateFinderDeep.clear();
+                EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.STOPPED));
+                crawlerStopped();
+            }
         }
     }
 
@@ -569,9 +579,17 @@ public class LinkCrawler {
     private boolean checkStartNotify(int generation) {
         if (checkAllowStart(generation)) {
             if (crawler.getAndIncrement() == 0) {
-                CRAWLER.incrementAndGet();
-                EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.STARTED));
-                crawlerStarted();
+                final boolean event;
+                synchronized (LinkCrawler.this) {
+                    event = runningState.compareAndSet(false, true);
+                    if (event) {
+                        CRAWLER.incrementAndGet();
+                    }
+                }
+                if (event) {
+                    EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.STARTED));
+                    crawlerStarted();
+                }
             }
             return true;
         }
@@ -1670,9 +1688,9 @@ public class LinkCrawler {
     }
 
     public boolean waitForCrawling() {
-        while (crawler.get() > 0) {
+        while (isRunning()) {
             synchronized (LinkCrawler.this) {
-                if (crawler.get() > 0) {
+                if (isRunning()) {
                     try {
                         LinkCrawler.this.wait(1000);
                     } catch (InterruptedException e) {
@@ -1681,11 +1699,11 @@ public class LinkCrawler {
                 }
             }
         }
-        return crawler.get() == 0;
+        return isRunning() == false;
     }
 
     public boolean isRunning() {
-        return crawler.get() > 0;
+        return runningState.get();
     }
 
     public static boolean isCrawling() {
@@ -2189,7 +2207,7 @@ public class LinkCrawler {
         if (protocol != null) {
             final String host = Browser.getHost(cUrl, true);
             if (protocol != null && !StringUtils.containsIgnoreCase(host, "decrypted") && !StringUtils.containsIgnoreCase(host, "dummycnl.jdownloader.org") && !StringUtils.containsIgnoreCase(host, "yt.not.allowed")) {
-                if (cUrl.startsWith("http://") || cUrl.startsWith("https://") || cUrl.startsWith("ftp://")) {
+                if (cUrl.startsWith("http://") || cUrl.startsWith("https://") || cUrl.startsWith("ftp://") || cUrl.startsWith("file://")) {
                     return cUrl;
                 } else if (cUrl.startsWith("directhttp://")) {
                     return cUrl.substring("directhttp://".length());

@@ -42,13 +42,14 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
         } else {
             final ArrayList<File> ret = new ArrayList<File>();
             if (pattern != null && directory != null && directory.exists()) {
-                final File[] directoryFiles = directory.listFiles();
+                final String[] directoryFiles = directory.list();
                 if (directoryFiles != null) {
-                    for (final File directoryFile : directoryFiles) {
-                        final String directoryFilePath = directoryFile.getAbsolutePath();
+                    for (final String directoryFile : directoryFiles) {
+                        final String directoryFilePath = directoryFile;
                         if (pattern.matcher(directoryFilePath).matches()) {
-                            if (directoryFile.isFile()) {
-                                ret.add(directoryFile);
+                            final File dFile = new File(directory, directoryFile);
+                            if (dFile.isFile()) {
+                                ret.add(dFile);
                             }
                         }
                     }

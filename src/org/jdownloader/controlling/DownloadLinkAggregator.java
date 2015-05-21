@@ -94,13 +94,10 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
     }
 
     public DownloadLinkAggregator() {
-
     }
 
     public DownloadLinkAggregator(SelectionInfo<FilePackage, DownloadLink> si) {
-
         update(si.getChildren());
-
     }
 
     public void update(List<DownloadLink> children) {
