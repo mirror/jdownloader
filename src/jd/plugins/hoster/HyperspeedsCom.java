@@ -46,6 +46,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hyperspeeds.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class HyperspeedsCom extends PluginForHost {
 
+    /**
+     * TODO API: Return max downloadable filesize (especially for free accounts), return traffic information (if not unlimited), return host
+     * array based on account e.g. free accounts get another host list than premium, implement list of supported hosts via API, remove the
+     * website workaround
+     */
     private static final String                            DOMAIN               = "http://hyperspeeds.com/dl/debrid";
     private static final String                            NICE_HOST            = "hyperspeeds.com";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
@@ -58,8 +63,6 @@ public class HyperspeedsCom extends PluginForHost {
     private static HashMap<String, Integer>                hostMaxchunksMap     = new HashMap<String, Integer>();
     /* Contains <host><number of max possible simultan downloads> */
     private static HashMap<String, Integer>                hostMaxdlsMap        = new HashMap<String, Integer>();
-    /* Contains <host><number of max possible filesize> */
-    private static HashMap<String, Long>                   hostMaxfilesizeMap   = new HashMap<String, Long>();
     /* Contains <host><number of currently running simultan downloads> */
     private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap = new HashMap<String, AtomicInteger>();
 
@@ -103,7 +106,6 @@ public class HyperspeedsCom extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public boolean canHandle(final DownloadLink downloadLink, final Account account) {
         if (account == null) {
@@ -117,15 +119,6 @@ public class HyperspeedsCom extends PluginForHost {
                 final int maxDlsForCurrentHost = hostMaxdlsMap.get(currentHost);
                 final AtomicInteger currentRunningDlsForCurrentHost = hostRunningDlsNumMap.get(currentHost);
                 if (currentRunningDlsForCurrentHost.get() >= maxDlsForCurrentHost) {
-                    return false;
-                }
-            }
-        }
-        /* Make sure that the file we want to download is not too big. */
-        synchronized (hostMaxfilesizeMap) {
-            final long downloadfilesize = downloadLink.getDownloadSize();
-            if (hostMaxfilesizeMap.containsKey(currentHost)) {
-                if (downloadfilesize > downloadfilesize) {
                     return false;
                 }
             }
@@ -315,15 +308,21 @@ public class HyperspeedsCom extends PluginForHost {
         }
 
         /* TODO: Add API call for this once it's available */
+        // this.getAPISafe("/deb_hosters.php");
         this.getAPISafe("http://hyperspeeds.com/");
         ArrayList<String> supportedhostslist = new ArrayList();
         final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
         final String[] crippledHosts = br.getRegex("hosters\\-icons/([^<>\"]*?)\\.png").getColumn(0);
         for (final String crippledhost : crippledHosts) {
-            /* Go insane */
-            for (final String possibledomain : possible_domains) {
-                final String full_possible_host = crippledhost + "." + possibledomain;
-                supportedhostslist.add(full_possible_host);
+            if (crippledhost.equals("filecloud")) {
+                /* Workaround as .io is not in the array above also multiple filecloud's exist. */
+                supportedhostslist.add("filecloud.io");
+            } else {
+                /* Go insane */
+                for (final String possibledomain : possible_domains) {
+                    final String full_possible_host = crippledhost + "." + possibledomain;
+                    supportedhostslist.add(full_possible_host);
+                }
             }
         }
         account.setValid(true);
@@ -498,7 +497,7 @@ public class HyperspeedsCom extends PluginForHost {
     }
 
     private void handleAPIErrors(final Browser br) throws PluginException {
-        final String lang = System.getProperty("user.language");
+        // final String lang = System.getProperty("user.language");
         String statusMessage = null;
         try {
             switch (statuscode) {
@@ -516,6 +515,9 @@ public class HyperspeedsCom extends PluginForHost {
                 /* Should never happen */
                 statusMessage = "'link' parameter is empty";
                 handleErrorRetries(NICE_HOSTproperty + "timesfailed_linkparameterempty", 10, 5 * 60 * 1000l);
+            case 8:
+                statusMessage = "Host not supported by multihost or under maintenance";
+                tempUnavailableHoster(10 * 60 * 1000l);
             case 666:
                 /* Unknown error */
                 statusMessage = "Unknown error";

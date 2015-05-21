@@ -343,8 +343,7 @@ public class FilesloopCom extends PluginForHost {
             final Object max_filesizeo = entries.get("max_filesize");
             final int maxdownloads = this.correctMaxdls((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("max_download"), defaultMAXDOWNLOADS));
             final int maxchunks = this.correctChunks((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("max_connection"), defaultMAXCHUNKS));
-            String host = (String) entries.get("domain");
-            host = host.replace("www.", "");
+            final String host = ((String) entries.get("domain")).toLowerCase();
 
             boolean resumable = defaultRESUME;
             final Object resumableo = entries.get("resumable");
