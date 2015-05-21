@@ -24,13 +24,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicReference;
 
-import javax.swing.DefaultComboBoxModel;
 import javax.swing.Icon;
-import javax.swing.JLabel;
 import javax.swing.JList;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
+import javax.swing.ListCellRenderer;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
@@ -42,13 +40,18 @@ import jd.gui.swing.jdgui.views.settings.panels.urlordertable.UrlOrderTable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.StorageException;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.uio.ComboBoxDialogInterface;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.ProgressDialog;
+import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.IconKey;
@@ -63,6 +66,7 @@ import org.jdownloader.gui.views.downloads.MenuManagerDownloadTabBottomBar;
 import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
 import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.NewLinksInLinkgrabberAction;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -75,9 +79,8 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
     private static final long                     serialVersionUID = 1L;
 
-    private ComboBox<String>                      lng;
-    private String[]                              languages;
-    private Thread                                languageScanner;
+    private SettingsButton                        lng;
+
     private SettingsButton                        resetDialogs;
     private SettingsButton                        contextMenuManagerDownloadList;
     private SettingsButton                        contextMenuManagerLinkgrabber;
@@ -103,10 +106,9 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
     public GUISettings() {
         super();
 
-        lng = new ComboBox<String>(TranslationFactory.getDesiredLanguage()) {
-
-            @Override
-            protected void renderComponent(Component lbl, JList list, String value, int index, boolean isSelected, boolean cellHasFocus) {
+        lng = new SettingsButton(new AppAction() {
+            {
+                String value = TranslationFactory.getDesiredLanguage();
                 Locale loc = TranslationFactory.stringToLocale(value);
                 String set = loc.getDisplayName(Locale.ENGLISH);
                 if (StringUtils.isEmpty(set)) {
@@ -124,39 +126,185 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
                         set = set + "(" + value + ")";
                     }
                 }
-                ((JLabel) lbl).setText(set);
-            }
+                setName(_GUI._.change_language(set));
 
-        };
-        lng.addPopupMenuListener(new PopupMenuListener() {
-
-            @Override
-            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-                lng.setMaximumRowCount(8);
             }
 
             @Override
-            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
-                String newLng = lng.getSelectedItem();
-                if (!newLng.equals(TranslationFactory.getDesiredLanguage())) {
-                    JSonStorage.saveTo(Application.getResource("cfg/language.json"), newLng);
+            public void actionPerformed(ActionEvent e) {
 
-                    try {
-                        Dialog.getInstance().showConfirmDialog(0, _GUI._.GUISettings_save_language_changed_restart_required_title(), _GUI._.GUISettings_save_language_changed_restart_required_msg(), NewTheme.getInstance().getIcon("language", 32), null, null);
-                        RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
-                    } catch (DialogClosedException e2) {
+                final AtomicReference<List<String>> languages = new AtomicReference<List<String>>();
+                ProgressDialog p = new ProgressDialog(new ProgressGetter() {
 
-                    } catch (DialogCanceledException e2) {
+                    @Override
+                    public void run() throws Exception {
+                        List<String> list = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
+                        Collections.sort(list, new Comparator<String>() {
+
+                            @Override
+                            public int compare(String o1, String o2) {
+                                Locale lc1 = TranslationFactory.stringToLocale(o1);
+                                Locale lc2 = TranslationFactory.stringToLocale(o2);
+                                String v1 = lc1.getDisplayName(Locale.ENGLISH);
+                                String v2 = lc2.getDisplayName(Locale.ENGLISH);
+                                if (StringUtils.isEmpty(v1) && StringUtils.isEmpty(v2)) {
+                                    return 0;
+                                }
+                                if (StringUtils.isEmpty(v1) && !StringUtils.isEmpty(v2)) {
+                                    return 1;
+                                }
+                                if (StringUtils.isEmpty(v2) && !StringUtils.isEmpty(v1)) {
+                                    return -11;
+                                }
+                                return v1.compareToIgnoreCase(v2);
+                            }
+                        });
+                        languages.set(list);
 
                     }
+
+                    @Override
+                    public String getString() {
+                        return null;
+                    }
+
+                    @Override
+                    public int getProgress() {
+                        return -1;
+                    }
+
+                    @Override
+                    public String getLabelString() {
+                        return null;
+                    }
+                }, org.appwork.uio.UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.lit_please_wait(), "", null);
+
+                UIOManager.I().show(null, p);
+
+                ComboBoxDialog comboDialog = new ComboBoxDialog(0, _GUI._.languages_dialog_title(), _GUI._.languages_dialog_title(), languages.get().toArray(new String[] {}), languages.get().indexOf(TranslationFactory.getDesiredLanguage()), new AbstractIcon(IconKey.ICON_LANGUAGE, 32), _GUI._.languages_dialog_change_and_restart(), null, null) {
+                    @Override
+                    protected ListCellRenderer getRenderer(final ListCellRenderer orgRenderer) {
+                        return new ListCellRenderer() {
+
+                            @Override
+                            public Component getListCellRendererComponent(JList list, Object v, int index, boolean isSelected, boolean cellHasFocus) {
+                                if (v instanceof String) {
+                                    String value = (String) v;
+                                    Locale loc = TranslationFactory.stringToLocale(value);
+                                    String set = loc.getDisplayName(Locale.ENGLISH);
+                                    if (StringUtils.isEmpty(set)) {
+                                        int tmpIndex = value.indexOf("_");
+                                        if (tmpIndex >= 0) {
+                                            String tmp = value.substring(0, tmpIndex);
+                                            Locale tmpLoc = TranslationFactory.stringToLocale(tmp);
+                                            if (tmpLoc != null) {
+                                                set = tmpLoc.getDisplayName(Locale.ENGLISH);
+                                            }
+                                        }
+                                        if (StringUtils.isEmpty(set)) {
+                                            set = value;
+                                        } else {
+                                            set = set + "(" + value + ")";
+                                        }
+                                    }
+                                    return orgRenderer.getListCellRendererComponent(list, set, index, isSelected, cellHasFocus);
+
+                                }
+                                return orgRenderer.getListCellRendererComponent(list, v, index, isSelected, cellHasFocus);
+
+                            }
+
+                        };
+                    }
+
+                    @Override
+                    public boolean isRemoteAPIEnabled() {
+                        return false;
+                    }
+                };
+
+                int index = UIOManager.I().show(ComboBoxDialogInterface.class, comboDialog).getSelectedIndex();
+                if (index >= 0) {
+                    String newLng = languages.get().get(index);
+
+                    if (!newLng.equals(TranslationFactory.getDesiredLanguage())) {
+
+                        try {
+                            Dialog.getInstance().showConfirmDialog(0, _GUI._.GUISettings_save_language_changed_restart_required_title(), _GUI._.GUISettings_save_language_changed_restart_required_msg(), NewTheme.getInstance().getIcon("language", 32), null, null);
+                            JSonStorage.saveTo(Application.getResource("cfg/language.json"), newLng);
+                            RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
+                        } catch (DialogClosedException e2) {
+
+                        } catch (DialogCanceledException e2) {
+
+                        }
+                    }
+
                 }
             }
-
-            @Override
-            public void popupMenuCanceled(PopupMenuEvent e) {
-
-            }
         });
+
+        // lng = new ComboBox<String>(TranslationFactory.getDesiredLanguage()) {
+        //
+        // @Override
+        // protected void renderComponent(Component lbl, JList list, String value, int index, boolean isSelected, boolean cellHasFocus) {
+        // Locale loc = TranslationFactory.stringToLocale(value);
+        // String set = loc.getDisplayName(Locale.ENGLISH);
+        // if (StringUtils.isEmpty(set)) {
+        // int tmpIndex = value.indexOf("_");
+        // if (tmpIndex >= 0) {
+        // String tmp = value.substring(0, tmpIndex);
+        // Locale tmpLoc = TranslationFactory.stringToLocale(tmp);
+        // if (tmpLoc != null) {
+        // set = tmpLoc.getDisplayName(Locale.ENGLISH);
+        // }
+        // }
+        // if (StringUtils.isEmpty(set)) {
+        // set = value;
+        // } else {
+        // set = set + "(" + value + ")";
+        // }
+        // }
+        // ((JLabel) lbl).setText(set);
+        // }
+        //
+        // };
+        // lng.addPopupMenuListener(new PopupMenuListener() {
+        //
+        // @Override
+        // public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+        //
+        // if (lng.getModel().getSize() == 1) {
+        // loadLanguages();
+        // return;
+        // }
+        // lng.setMaximumRowCount(8);
+        //
+        // }
+        //
+        // @Override
+        // public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+        // String newLng = lng.getSelectedItem();
+        // if (!newLng.equals(TranslationFactory.getDesiredLanguage())) {
+        // JSonStorage.saveTo(Application.getResource("cfg/language.json"), newLng);
+        //
+        // try {
+        // Dialog.getInstance().showConfirmDialog(0, _GUI._.GUISettings_save_language_changed_restart_required_title(),
+        // _GUI._.GUISettings_save_language_changed_restart_required_msg(), NewTheme.getInstance().getIcon("language", 32), null, null);
+        // RestartController.getInstance().asyncRestart(new SmartRlyRestartRequest(true));
+        // } catch (DialogClosedException e2) {
+        //
+        // } catch (DialogCanceledException e2) {
+        //
+        // }
+        // }
+        // }
+        //
+        // @Override
+        // public void popupMenuCanceled(PopupMenuEvent e) {
+        //
+        // }
+        // });
 
         resetDialogs = new SettingsButton(new AppAction() {
             {
@@ -431,6 +579,41 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
 
     }
 
+    protected void loadLanguages() {
+
+        List<String> list = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
+        Collections.sort(list, new Comparator<String>() {
+
+            @Override
+            public int compare(String o1, String o2) {
+                Locale lc1 = TranslationFactory.stringToLocale(o1);
+                Locale lc2 = TranslationFactory.stringToLocale(o2);
+                String v1 = lc1.getDisplayName(Locale.ENGLISH);
+                String v2 = lc2.getDisplayName(Locale.ENGLISH);
+                if (StringUtils.isEmpty(v1) && StringUtils.isEmpty(v2)) {
+                    return 0;
+                }
+                if (StringUtils.isEmpty(v1) && !StringUtils.isEmpty(v2)) {
+                    return 1;
+                }
+                if (StringUtils.isEmpty(v2) && !StringUtils.isEmpty(v1)) {
+                    return -11;
+                }
+                return v1.compareToIgnoreCase(v2);
+            }
+        });
+        final String[] languages = list.toArray(new String[] {});
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                // lng.setModel(new DefaultComboBoxModel(languages));
+                // lng.setSelectedItem(TranslationFactory.getDesiredLanguage());
+            }
+        };
+
+    }
+
     @Override
     public Icon getIcon() {
         return NewTheme.I().getIcon("gui", 32);
@@ -450,45 +633,7 @@ public class GUISettings extends AbstractConfigPanel implements StateUpdateListe
             focus.setSelectedItem(CFG_GUI.CFG.getNewDialogFrameState());
             NewLinksInLinkgrabberAction newvalue = CFG_GUI.CFG.getNewLinksAction();
             linkgrabberfocus.setSelectedItem(newvalue);
-            // asynch loading, because listAvailableTranslations can take its time.
-            if (languages == null && languageScanner == null) {
-                languageScanner = new Thread("LanguageScanner") {
-                    public void run() {
-                        List<String> list = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
-                        Collections.sort(list, new Comparator<String>() {
 
-                            @Override
-                            public int compare(String o1, String o2) {
-                                Locale lc1 = TranslationFactory.stringToLocale(o1);
-                                Locale lc2 = TranslationFactory.stringToLocale(o2);
-                                String v1 = lc1.getDisplayName(Locale.ENGLISH);
-                                String v2 = lc2.getDisplayName(Locale.ENGLISH);
-                                if (StringUtils.isEmpty(v1) && StringUtils.isEmpty(v2)) {
-                                    return 0;
-                                }
-                                if (StringUtils.isEmpty(v1) && !StringUtils.isEmpty(v2)) {
-                                    return 1;
-                                }
-                                if (StringUtils.isEmpty(v2) && !StringUtils.isEmpty(v1)) {
-                                    return -11;
-                                }
-                                return v1.compareToIgnoreCase(v2);
-                            }
-                        });
-                        languages = list.toArray(new String[] {});
-                        new EDTRunner() {
-
-                            @Override
-                            protected void runInEDT() {
-                                lng.setModel(new DefaultComboBoxModel(languages));
-                                lng.setSelectedItem(TranslationFactory.getDesiredLanguage());
-                            }
-                        };
-                        languageScanner = null;
-                    }
-                };
-                languageScanner.start();
-            }
         } finally {
             setting = false;
         }
