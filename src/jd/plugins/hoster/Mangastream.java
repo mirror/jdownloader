@@ -3,7 +3,6 @@ package jd.plugins.hoster;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.FileOutputStream;
-import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
@@ -15,10 +14,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangastream.com" }, urls = { "mangastream:///read/[a-z0-9\\-_/]+" }, flags = { 0 })
-public class Mangastream extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangastream.com" }, urls = { "mangastream:///read/[a-z0-9-_/\\%\\+]+" }, flags = { 0 })
+public class Mangastream extends antiDDoSForHost {
 
     public Mangastream(PluginWrapper wrapper) {
         super(wrapper);
@@ -114,14 +112,18 @@ public class Mangastream extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         correctDownloadLink(downloadLink);
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("We couldn't find the page you were looking for") || br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
+    }
+
+    public void getPage(final String page) throws Exception {
+        super.getPage(page);
     }
 
     @Override
