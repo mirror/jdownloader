@@ -136,9 +136,9 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
                     lastChallenge.removeAll(remove);
                 }
                 // max 2 captchas per plugin and 30 minutes.
-                if (counter >= 10) {
-                    return false;
-                }
+                // if (counter >= 10) {
+                // return false;
+                // }
 
             }
             return true;
