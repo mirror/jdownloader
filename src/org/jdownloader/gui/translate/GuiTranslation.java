@@ -5935,4 +5935,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Start CRC task! This will validate data on storage device against input inside Checksum column" })
     String gui_table_contextmenu_runchecksum();
 
+    @Default(lngs = { "en" }, values = { "%s1 (click to change)" })
+    String change_language(String set);
+
+    @Default(lngs = { "en" }, values = { "Choose new language" })
+    String languages_dialog_title();
+
+    @Default(lngs = { "en" }, values = { "Save & Restart" })
+    String languages_dialog_change_and_restart();
+
 }
