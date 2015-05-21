@@ -58,6 +58,10 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         final String parameter = host + "/file/" + uid;
         br.setFollowRedirects(true);
         ((jd.plugins.hoster.Keep2ShareCc) plugin).getPage(parameter);
+        // empty folder
+        if (br.containsHTML("<span class=\"empty\">No results found\\.\\s*</span>")) {
+            return decryptedLinks;
+        }
         // Check if we have a single link or a folder
         if (br.containsHTML("class=\"summary\"")) {
             final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
