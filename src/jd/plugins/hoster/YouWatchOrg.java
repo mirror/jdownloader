@@ -357,7 +357,6 @@ public class YouWatchOrg extends PluginForHost {
         return fileInfo;
     }
 
-    @SuppressWarnings("unused")
     private void doFree(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
         if (account != null) {
             logger.info(account.getUser() + " @ " + acctype + " -> Free Download");
@@ -403,7 +402,8 @@ public class YouWatchOrg extends PluginForHost {
                 // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
                 download1 = cleanForm(download1);
                 // end of backward compatibility
-                download1.remove("method_premium");
+                // download1.remove("method_premium");
+                this.waitTime(System.currentTimeMillis(), downloadLink);
                 sendForm(download1);
                 checkErrors(downloadLink, account, false);
                 getDllink();
@@ -605,6 +605,9 @@ public class YouWatchOrg extends PluginForHost {
                 theLink.setProperty("pass", Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password supplied");
             }
+        }
+        if (cbr.containsHTML("id=\"enc_pp\"|id=\\'enc_pp\\'")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not yet downloadable: Video is still encoding or broken", 30 * 60 * 1000l);
         }
         // monitor this
         if (cbr.containsHTML("(class=\"err\">You have reached the download(-| )limit[^<]+for last[^<]+)")) {

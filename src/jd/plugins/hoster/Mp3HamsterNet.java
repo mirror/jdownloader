@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3hamster.net" }, urls = { "http://(www\\.)?mp3hamster\\.net/files\\.php\\?eq=[A-Za-z0-9%]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mp3hamster.net" }, urls = { "http://(www\\.)?mp3hamster\\.net/(files\\.php\\?eq=[A-Za-z0-9%]+|dll2/.+)" }, flags = { 0 })
 public class Mp3HamsterNet extends PluginForHost {
 
     public Mp3HamsterNet(PluginWrapper wrapper) {
@@ -42,26 +42,45 @@ public class Mp3HamsterNet extends PluginForHost {
 
     private String DLLINK = null;
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Referer", "http://mp3hamster.net/muz/");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Soory, this file was deleted<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Soory, this file was deleted<") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         DLLINK = br.getRegex("\"/download\\.php\\?eq=([^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("l1\"\\)\\.html\\(\"<a href=\\'(http[^<>\"]*?)\\'").getMatch(0);
+        }
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
-        final String filename = new Regex(Encoding.Base64Decode(Encoding.htmlDecode(DLLINK)), "\"title\":\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+        String filename = new Regex(Encoding.Base64Decode(Encoding.htmlDecode(DLLINK)), "\"title\":\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(DLLINK, "\\&name=([^<>\"\']+)").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = Encoding.htmlDecode(filename.trim());
+        if (!filename.endsWith(".mp3")) {
+            filename += ".mp3";
+        }
+        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        DLLINK = "http://mp3hamster.net/download.php?eq=" + DLLINK;
+        if (!DLLINK.startsWith("http")) {
+            DLLINK = "http://mp3hamster.net/download.php?eq=" + DLLINK;
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

@@ -94,8 +94,10 @@ public class MyMailRu extends PluginForHost {
             br.getPage("http://my.mail.ru/" + videourlpart + "/ajax?ajax_call=1&func_name=video.get_item&mna=&mnb=&arg_id=" + videoID + "&_=" + System.currentTimeMillis());
             br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
             if (br.containsHTML(html_private)) {
-                link.getLinkStatus().setStatusText("Private video");
-                return AvailableStatus.TRUE;
+                logger.info("Video is private or offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                // link.getLinkStatus().setStatusText("Private video");
+                // return AvailableStatus.TRUE;
             }
             if (br.containsHTML("b\\-video__layer\\-error")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -19,16 +19,19 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -38,16 +41,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filesloop.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
-public class FilesloopCom extends PluginForHost {
+import org.appwork.utils.formatter.TimeFormatter;
 
-    /* Using similar API (and same owner): esoubory.cz, filesloop.com */
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hyperspeeds.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
+public class HyperspeedsCom extends PluginForHost {
 
-    private static final String                            DOMAIN               = "http://www.filesloop.com/api/";
-    private static final String                            NICE_HOST            = "filesloop.com";
+    private static final String                            DOMAIN               = "http://hyperspeeds.com/dl/debrid";
+    private static final String                            NICE_HOST            = "hyperspeeds.com";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
-    private static final String                            PROPERTY_LOGINTOKEN  = "fileslooplogintoken";
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap   = new HashMap<Account, HashMap<String, Long>>();
     /* Contains <host><number of max possible chunks per download> */
@@ -62,8 +64,8 @@ public class FilesloopCom extends PluginForHost {
     private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap = new HashMap<String, AtomicInteger>();
 
     /* Last updated: 31.03.15 */
-    private static final int                               defaultMAXDOWNLOADS  = 10;
-    private static final int                               defaultMAXCHUNKS     = 1;
+    private static final int                               defaultMAXDOWNLOADS  = 20;
+    private static final int                               defaultMAXCHUNKS     = 0;
     private static final boolean                           defaultRESUME        = true;
 
     private static Object                                  CTRLLOCK             = new Object();
@@ -71,17 +73,17 @@ public class FilesloopCom extends PluginForHost {
     private static AtomicInteger                           maxPrem              = new AtomicInteger(1);
     private Account                                        currAcc              = null;
     private DownloadLink                                   currDownloadLink     = null;
-    private static String                                  currLogintoken       = null;
+    private static Object                                  LOCK                 = new Object();
 
     @SuppressWarnings("deprecation")
-    public FilesloopCom(PluginWrapper wrapper) {
+    public HyperspeedsCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.filesloop.com/premium/");
+        this.enablePremium("http://hyperspeeds.com/signup");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.filesloop.com/terms-of-use/";
+        return "http://hyperspeeds.com/page/terms";
     }
 
     private Browser newBrowser() {
@@ -94,9 +96,6 @@ public class FilesloopCom extends PluginForHost {
     private void setConstants(final Account acc, final DownloadLink dl) {
         this.currAcc = acc;
         this.currDownloadLink = dl;
-        if (currLogintoken == null) {
-            currLogintoken = this.getLoginToken();
-        }
     }
 
     @Override
@@ -180,7 +179,7 @@ public class FilesloopCom extends PluginForHost {
         if (dl.getConnection().getResponseCode() == 416) {
             logger.info("Resume impossible, disabling it for the next try");
             link.setChunksProgress(null);
-            link.setProperty(FilesloopCom.NORESUME, Boolean.valueOf(true));
+            link.setProperty(HyperspeedsCom.NORESUME, Boolean.valueOf(true));
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("json")) {
@@ -203,6 +202,7 @@ public class FilesloopCom extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = newBrowser();
+        final boolean forceNewLinkGeneration = true;
 
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
@@ -228,15 +228,17 @@ public class FilesloopCom extends PluginForHost {
             if (hostMaxchunksMap.isEmpty() || hostMaxdlsMap.isEmpty()) {
                 logger.info("Performing full login to set individual host limits");
                 this.fetchAccountInfo(account);
+            } else {
+                login(account, false);
             }
         }
         this.setConstants(account, link);
 
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
-        if (dllink == null) {
+        if (dllink == null || forceNewLinkGeneration) {
             /* request creation of downloadlink */
             br.setFollowRedirects(true);
-            this.getAPISafe(DOMAIN + "filelink?token=" + currLogintoken + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+            this.getAPISafe(DOMAIN + "/deb_api.php?link=" + Encoding.urlEncode(link.getDownloadURL()));
             dllink = getJson("link");
             if (dllink == null) {
                 logger.warning("Final downloadlink is null");
@@ -284,8 +286,9 @@ public class FilesloopCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         } else {
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(disableTime);
+            // logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
+            // tempUnavailableHoster(disableTime);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
@@ -297,36 +300,13 @@ public class FilesloopCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         br.setFollowRedirects(true);
 
-        if (!account.getUser().matches(".+@.+\\..+")) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
+        this.login(account, true);
 
-        this.getAPISafe(DOMAIN + "login?email=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass()));
-        currLogintoken = getJson("token");
+        final String accounttype = getJson("type");
+        final String validuntil = getJson("expiration");
 
-        if (currLogintoken == null) {
-            /* Should never happen */
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
-
-        account.setProperty(PROPERTY_LOGINTOKEN, currLogintoken);
-        this.getAPISafe(DOMAIN + "accountinfo?token=" + currLogintoken);
-
-        final String accounttype = getJson("premium");
-        final String validuntil = getJson("premium_to");
-
-        if (accounttype.equals("1")) {
-            ai.setValidUntil(Long.parseLong(validuntil) * 1000);
+        if (accounttype.equals("premium")) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd", Locale.ENGLISH));
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
         } else {
@@ -334,35 +314,17 @@ public class FilesloopCom extends PluginForHost {
             ai.setStatus("Registered (free) account");
         }
 
-        this.getAPISafe(DOMAIN + "list");
+        /* TODO: Add API call for this once it's available */
+        this.getAPISafe("http://hyperspeeds.com/");
         ArrayList<String> supportedhostslist = new ArrayList();
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        final ArrayList<Object> ressourcelist = (ArrayList) entries.get("data");
-        for (final Object hostinfoo : ressourcelist) {
-            entries = (LinkedHashMap<String, Object>) hostinfoo;
-            final Object max_filesizeo = entries.get("max_filesize");
-            final int maxdownloads = this.correctMaxdls((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("max_download"), defaultMAXDOWNLOADS));
-            final int maxchunks = this.correctChunks((int) jd.plugins.hoster.DummyScriptEnginePlugin.toLong(entries.get("max_connection"), defaultMAXCHUNKS));
-            String host = (String) entries.get("domain");
-            host = host.replace("www.", "");
-
-            boolean resumable = defaultRESUME;
-            final Object resumableo = entries.get("resumable");
-            if (resumableo instanceof Boolean) {
-                resumable = ((Boolean) resumableo).booleanValue();
-            } else {
-                resumable = Boolean.parseBoolean((String) resumableo);
+        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
+        final String[] crippledHosts = br.getRegex("hosters\\-icons/([^<>\"]*?)\\.png").getColumn(0);
+        for (final String crippledhost : crippledHosts) {
+            /* Go insane */
+            for (final String possibledomain : possible_domains) {
+                final String full_possible_host = crippledhost + "." + possibledomain;
+                supportedhostslist.add(full_possible_host);
             }
-            hostMaxchunksMap.put(host, maxchunks);
-            hostMaxdlsMap.put(host, maxdownloads);
-            hostResumeMap.put(host, resumable);
-            if (max_filesizeo instanceof String) {
-                final String max_filesize = (String) max_filesizeo;
-                if (max_filesize.matches("\\d+")) {
-                    hostMaxfilesizeMap.put(host, Long.parseLong(max_filesize));
-                }
-            }
-            supportedhostslist.add(host);
         }
         account.setValid(true);
         account.setConcurrentUsePossible(true);
@@ -372,6 +334,77 @@ public class FilesloopCom extends PluginForHost {
         hostMaxdlsMap.clear();
         ai.setMultiHostSupport(this, supportedhostslist);
         return ai;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /* Load cookies */
+                br.setCookiesExclusive(true);
+                this.br = newBrowser();
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(DOMAIN, key, value);
+                        }
+                    }
+                } else {
+                    br.setFollowRedirects(true);
+                    this.getAPISafe(DOMAIN + "/deb_login.php?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&api_key=apikeytest");
+                    final String cookietext = this.getJson("cookie");
+                    if (cookietext == null) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                    /* Get cookies from json and set them */
+                    final String[][] cookiePairs = new Regex(cookietext, "([^<>\"=;]+)=([^<>\"=;]+)").getMatches();
+                    for (final String[] cookiePair : cookiePairs) {
+                        final String key = cookiePair[0].trim();
+                        final String value = cookiePair[1];
+                        this.br.setCookie(DOMAIN, key, value);
+                    }
+                    /* Save cookies */
+                    final HashMap<String, String> cookies = new HashMap<String, String>();
+                    final Cookies add = this.br.getCookies(DOMAIN);
+                    for (final Cookie c : add.getCookies()) {
+                        cookies.put(c.getKey(), c.getValue());
+                    }
+                    account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                    account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                    account.setProperty("cookies", cookies);
+                }
+                /*
+                 * This call is always needed to check the account as the call before simply returns cookies but no useful information at
+                 * all.
+                 */
+                this.getAPISafe(DOMAIN + "/deb_account.php");
+                final String username = getJson("username");
+                final String email = getJson("email");
+                if (username == null && email == null || username.equals("null") || email.equals("null")) {
+                    /* 2nd failover, should not be needed! */
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
     }
 
     /**
@@ -410,10 +443,6 @@ public class FilesloopCom extends PluginForHost {
         this.br.postPage(accesslink, postdata);
         updatestatuscode();
         handleAPIErrors(this.br);
-    }
-
-    private String getLoginToken() {
-        return currAcc.getStringProperty(PROPERTY_LOGINTOKEN, null);
     }
 
     /** Performs slight domain corrections. */
@@ -462,19 +491,7 @@ public class FilesloopCom extends PluginForHost {
             error = null;
         }
         if (error != null) {
-            if (error.equalsIgnoreCase("invalid-email")) {
-                statuscode = 1;
-            } else if (error.equalsIgnoreCase("login-failed")) {
-                statuscode = 2;
-            } else if (error.equalsIgnoreCase("dl-token-invalid")) {
-                statuscode = 3;
-            } else if (error.equalsIgnoreCase("invalid-api-access")) {
-                statuscode = 4;
-            } else if (error.equalsIgnoreCase("invalid-file")) {
-                statuscode = 5;
-            } else {
-                statuscode = 666;
-            }
+            statuscode = Integer.parseInt(error);
         } else {
             statuscode = 0;
         }
@@ -489,42 +506,16 @@ public class FilesloopCom extends PluginForHost {
                 /* Everything ok */
                 break;
             case 1:
-                statusMessage = "Invalid account";
-                if ("de".equalsIgnoreCase(lang)) {
-                    statusMessage = "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                statusMessage = "Invalid username/password";
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
-                    statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             case 2:
-                statusMessage = "Invalid account";
-                if ("de".equalsIgnoreCase(lang)) {
-                    statusMessage = "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            case 3:
-                /* dl-token invalid --> Should never happen */
-                statusMessage = "dl token invalid";
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_dl_token_invalid", 10, 5 * 60 * 1000l);
-            case 4:
-                /* Fatal API failure - should never happen */
-                statusMessage = "Fatal API failure";
-                if ("de".equalsIgnoreCase(lang)) {
-                    statusMessage = "\r\nFataler API Fehler";
-                    this.currAcc.setError(AccountError.INVALID, statusMessage);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    statusMessage = "\r\nFatal API failure";
-                    this.currAcc.setError(AccountError.INVALID, statusMessage);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-            case 5:
-                /* "invalid-file" --> The name itself has no meaning - its just a general error so we should retry */
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_apierror_invalidfile", 20, 5 * 60 * 1000l);
+                /* Should never happen */
+                statusMessage = "'link' parameter is empty";
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_linkparameterempty", 10, 5 * 60 * 1000l);
             case 666:
                 /* Unknown error */
                 statusMessage = "Unknown error";
@@ -535,6 +526,22 @@ public class FilesloopCom extends PluginForHost {
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
             throw e;
+        }
+    }
+
+    /**
+     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+     *
+     * @param s
+     *            Imported String to match against.
+     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+     * @author raztoki
+     * */
+    private boolean inValidate(final String s) {
+        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -560,22 +567,6 @@ public class FilesloopCom extends PluginForHost {
         }
         /* Else we should have a valid value! */
         return maxdls;
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     @Override
