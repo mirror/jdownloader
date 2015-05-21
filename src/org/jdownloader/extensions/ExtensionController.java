@@ -34,6 +34,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.io.J7FileList;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -61,7 +62,7 @@ public class ExtensionController implements MenuExtenderHandler {
 
     /**
      * get the only existing instance of ExtensionController. This is a singleton
-     * 
+     *
      * @return
      */
     public static ExtensionController getInstance() {
@@ -264,11 +265,21 @@ public class ExtensionController implements MenuExtenderHandler {
     @SuppressWarnings("unchecked")
     private java.util.List<LazyExtension> loadJared() {
         java.util.List<LazyExtension> ret = new ArrayList<LazyExtension>();
-        File[] addons = Application.getResource("extensions").listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return name.endsWith(".jar");
+        File[] addons = null;
+        if (Application.getJavaVersion() >= Application.JAVA17) {
+            try {
+                addons = J7FileList.findFiles(Pattern.compile("^.*\\.jar$", Pattern.CASE_INSENSITIVE), Application.getResource("extensions"), true).toArray(new File[0]);
+            } catch (IOException e) {
+                logger.log(e);
             }
-        });
+        }
+        if (addons == null) {
+            addons = Application.getResource("extensions").listFiles(new FilenameFilter() {
+                public boolean accept(File dir, String name) {
+                    return name.endsWith(".jar");
+                }
+            });
+        }
 
         if (addons != null) {
             logger.info(Arrays.toString(addons));
@@ -433,11 +444,21 @@ public class ExtensionController implements MenuExtenderHandler {
         if (folders != null) {
             ClassLoader cl = getClass().getClassLoader();
             main: for (File f : folders) {
-                File[] modules = f.listFiles(new FilenameFilter() {
-                    public boolean accept(File dir, String name) {
-                        return name.endsWith("Extension.class");
+                File[] modules = null;
+                if (Application.getJavaVersion() >= Application.JAVA17) {
+                    try {
+                        modules = J7FileList.findFiles(Pattern.compile("^.*Extension\\.class$", Pattern.CASE_INSENSITIVE), f, true).toArray(new File[0]);
+                    } catch (IOException e) {
+                        logger.log(e);
                     }
-                });
+                }
+                if (modules == null) {
+                    modules = f.listFiles(new FilenameFilter() {
+                        public boolean accept(File dir, String name) {
+                            return name.endsWith("Extension.class");
+                        }
+                    });
+                }
                 boolean loaded = false;
                 if (modules != null) {
                     for (File module : modules) {
@@ -511,7 +532,7 @@ public class ExtensionController implements MenuExtenderHandler {
 
     /**
      * Returns a list of all currently running extensions
-     * 
+     *
      * @return
      */
     public java.util.List<AbstractExtension<?, ?>> getEnabledExtensions() {

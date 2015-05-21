@@ -507,13 +507,15 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         this.fileFilter = fileFilter;
         urlFilter.trimToSize();
         this.urlFilter = urlFilter;
-        getEventSender().fireEvent(new PackagizerControllerEvent() {
+        if (getEventSender().hasListener()) {
+            getEventSender().fireEvent(new PackagizerControllerEvent() {
 
-            @Override
-            public void sendTo(PackagizerControllerListener listener) {
-                listener.onPackagizerUpdate();
-            }
-        });
+                @Override
+                public void sendTo(PackagizerControllerListener listener) {
+                    listener.onPackagizerUpdate();
+                }
+            });
+        }
     }
 
     public void addAll(java.util.List<PackagizerRule> all) {
@@ -564,13 +566,15 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     public void runByFile(final CrawledLink link) {
-        getEventSender().fireEvent(new PackagizerControllerEvent() {
+        if (getEventSender().hasListener()) {
+            getEventSender().fireEvent(new PackagizerControllerEvent() {
 
-            @Override
-            public void sendTo(PackagizerControllerListener listener) {
-                listener.onPackagizerRunAfterLinkcheck(link);
-            }
-        });
+                @Override
+                public void sendTo(PackagizerControllerListener listener) {
+                    listener.onPackagizerRunAfterLinkcheck(link);
+                }
+            });
+        }
         if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) {
             return;
         }
@@ -626,13 +630,15 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     public void runByUrl(final CrawledLink link) {
-        getEventSender().fireEvent(new PackagizerControllerEvent() {
+        if (getEventSender().hasListener()) {
+            getEventSender().fireEvent(new PackagizerControllerEvent() {
 
-            @Override
-            public void sendTo(PackagizerControllerListener listener) {
-                listener.onPackagizerRunBeforeLinkcheck(link);
-            }
-        });
+                @Override
+                public void sendTo(PackagizerControllerListener listener) {
+                    listener.onPackagizerRunBeforeLinkcheck(link);
+                }
+            });
+        }
         if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) {
             return;
         }

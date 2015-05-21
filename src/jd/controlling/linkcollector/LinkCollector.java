@@ -21,6 +21,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 
 import jd.controlling.TaskQueue;
@@ -68,6 +69,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.io.J7FileList;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -1093,9 +1095,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -1416,13 +1418,26 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     private ArrayList<File> findAvailableCollectorLists() {
-        File[] filesInCfg = Application.getResource("cfg/").listFiles();
+        logger.info("Collect Lists");
+        File[] filesInCfg = null;
+        final File cfg = Application.getResource("cfg/");
+        if (Application.getJavaVersion() >= Application.JAVA17) {
+            try {
+                filesInCfg = J7FileList.findFiles(Pattern.compile("^linkcollector.*?\\.zip$", Pattern.CASE_INSENSITIVE), cfg, true).toArray(new File[0]);
+            } catch (IOException e) {
+                logger.log(e);
+            }
+        }
+        if (filesInCfg == null) {
+            filesInCfg = Application.getResource("cfg/").listFiles();
+        }
         ArrayList<Long> sortedAvailable = new ArrayList<Long>();
         ArrayList<File> ret = new ArrayList<File>();
         if (filesInCfg != null) {
             for (File collectorList : filesInCfg) {
-                if (collectorList.isFile() && collectorList.getName().startsWith("linkcollector")) {
-                    String counter = new Regex(collectorList.getName(), "linkcollector(\\d+)\\.zip$").getMatch(0);
+                final String name = collectorList.getName();
+                if (name.startsWith("linkcollector") && collectorList.isFile()) {
+                    String counter = new Regex(name, "linkcollector(\\d+)\\.zip$").getMatch(0);
                     if (counter != null) {
                         sortedAvailable.add(Long.parseLong(counter));
                     }
