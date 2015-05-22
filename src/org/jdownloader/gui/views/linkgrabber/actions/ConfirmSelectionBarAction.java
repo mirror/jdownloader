@@ -83,7 +83,6 @@ public class ConfirmSelectionBarAction extends ConfirmLinksContextAction impleme
     protected void update() {
         if (isSelectionOnly()) {
             selection = LinkGrabberTable.getInstance().getSelectionInfo();
-
         } else {
             selection = LinkGrabberTable.getInstance().getSelectionInfo(false, true);
         }
