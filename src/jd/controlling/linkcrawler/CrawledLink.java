@@ -106,7 +106,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     public void setDesiredPackageInfo(PackageInfo desiredPackageInfo) {
-        this.desiredPackageInfo = desiredPackageInfo;
+        if (desiredPackageInfo == null || desiredPackageInfo.isEmpty()) {
+            this.desiredPackageInfo = null;
+        } else {
+            this.desiredPackageInfo = desiredPackageInfo;
+        }
     }
 
     /**

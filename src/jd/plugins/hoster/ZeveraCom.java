@@ -43,6 +43,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zevera.com" }, urls = { "https?://\\w+\\.zevera\\.com/getFiles\\.as(p|h)x\\?ourl=.+" }, flags = { 2 })
@@ -363,19 +365,21 @@ public class ZeveraCom extends PluginForHost {
         // br.getPage(mServ + "/jDownloader.ashx?cmd=accountinfo");
         // grab website page instead.
         br.getPage(mServ + "/Member/Dashboard.aspx");
-        String expireTime = br.getRegex(">Expiration date:</label>.+?(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))<").getMatch(0);
-        String serverTime = br.getRegex(">Server time:</label>.+?(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))<").getMatch(0);
-        long eTime = 0, sTime = 0;
+        final String expire = br.getRegex(">Expiration date:</label>.+?txExpirationDate\">(.*?)</label").getMatch(0);
+        final String server = br.getRegex(">Server time:</label>.+?txServerTime\">(.*?)</label").getMatch(0);
+        String expireTime = new Regex(expire, "(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))").getMatch(0);
+        String serverTime = new Regex(server, "(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))").getMatch(0);
+        long eTime = -1, sTime = -1;
         if (expireTime != null) {
-            eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm:ss a", null);
-            if (sTime == -1) {
-                sTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm a", null);
+            eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm a", null);
+            if (eTime == -1) {
+                eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm:ss a", null);
             }
         }
         if (serverTime != null) {
-            sTime = TimeFormatter.getMilliSeconds(serverTime, "MM/dd/yyyy hh:mm:ss a", null);
+            sTime = TimeFormatter.getMilliSeconds(serverTime, "MM/dd/yyyy hh:mm a", null);
             if (sTime == -1) {
-                sTime = TimeFormatter.getMilliSeconds(serverTime, "MM/dd/yyyy hh:mm a", null);
+                sTime = TimeFormatter.getMilliSeconds(serverTime, "MM/dd/yyyy hh:mm:ss a", null);
             }
         }
         if (eTime >= 0 && sTime >= 0) {
@@ -386,8 +390,18 @@ public class ZeveraCom extends PluginForHost {
             // fail over..
             ai.setValidUntil(eTime);
         } else {
-            // epic fail?
-            logger.warning("Expire time could not be found/set. Please report to JDownloader Development Team");
+            if (StringUtils.contains(expire, "NEVER")) {
+                final String dayTraffic = br.getRegex(">Day Traffic left:</label>.+?txDayTrafficLeft\">(.*?)</label").getMatch(0);
+                if (dayTraffic != null) {
+                    final String dayTrafficLeft = new Regex(dayTraffic, "(\\d+ (MB|GB|TB))").getMatch(0);
+                    if (dayTrafficLeft != null) {
+                        ai.setTrafficLeft(SizeFormatter.getSize(dayTrafficLeft));
+                    }
+                }
+            } else {
+                // epic fail?
+                logger.warning("Expire time could not be found/set. Please report to JDownloader Development Team");
+            }
         }
         ai.setStatus("Premium User");
         try {

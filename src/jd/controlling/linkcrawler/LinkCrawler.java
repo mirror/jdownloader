@@ -1534,8 +1534,9 @@ public class LinkCrawler {
             // maybe it would be even better to merge the packageinfos
             // However. if there are crypted links in the container, it may be up to the decrypterplugin to decide
             // example: share-links.biz uses CNL to post links to localhost. the dlc origin get's lost on such a way
-            if (sourceCrawledLink.getDesiredPackageInfo() != null) {
-                destCrawledLink.setDesiredPackageInfo(sourceCrawledLink.getDesiredPackageInfo());
+            final PackageInfo dpi = sourceCrawledLink.getDesiredPackageInfo();
+            if (dpi != null) {
+                destCrawledLink.setDesiredPackageInfo(dpi.getCopy());
             }
             final ArchiveInfo destArchiveInfo;
             if (destCrawledLink.hasArchiveInfo()) {
@@ -1559,30 +1560,62 @@ public class LinkCrawler {
         if (link.getDownloadLink() != null) {
             final FilePackage fp = link.getDownloadLink().getFilePackage();
             if (!FilePackage.isDefaultFilePackage(fp)) {
-                PackageInfo fpi = link.getDesiredPackageInfo();
-                if (fpi == null) {
-                    fpi = new PackageInfo();
-                }
                 FilePackage dp = link.getDownloadLink().getFilePackage();
+                PackageInfo fpi = null;
                 if (dp.getDownloadDirectory() != null && !dp.getDownloadDirectory().equals(defaultDownloadFolder)) {
                     // do not set downloadfolder if it is the defaultfolder
+                    if (link.getDesiredPackageInfo() == null) {
+                        fpi = new PackageInfo();
+                    } else {
+                        fpi = link.getDesiredPackageInfo();
+                    }
                     fpi.setDestinationFolder(dp.getDownloadDirectory());
                 }
 
+                final String name;
                 if (Boolean.FALSE.equals(dp.getBooleanProperty(PACKAGE_CLEANUP_NAME, true))) {
-                    fpi.setName(dp.getName());
+                    name = dp.getName();
                 } else {
-                    fpi.setName(LinknameCleaner.cleanFileName(dp.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
+                    name = LinknameCleaner.cleanFileName(dp.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true);
+                }
+                if (StringUtils.isNotEmpty(name)) {
+                    if (fpi == null) {
+                        if (link.getDesiredPackageInfo() == null) {
+                            fpi = new PackageInfo();
+                        } else {
+                            fpi = link.getDesiredPackageInfo();
+                        }
+                    }
+                    fpi.setName(name);
                 }
 
                 if (dp.hasProperty(PACKAGE_ALLOW_MERGE)) {
                     if (Boolean.FALSE.equals(dp.getBooleanProperty(PACKAGE_ALLOW_MERGE, false))) {
+                        if (fpi == null) {
+                            if (link.getDesiredPackageInfo() == null) {
+                                fpi = new PackageInfo();
+                            } else {
+                                fpi = link.getDesiredPackageInfo();
+                            }
+                        }
                         fpi.setUniqueId(dp.getUniqueID());
                     } else {
-                        fpi.setUniqueId(null);
+                        if (fpi == null) {
+                            fpi = link.getDesiredPackageInfo();
+                        }
+                        if (fpi != null) {
+                            fpi.setUniqueId(null);
+                        }
                     }
                 }
                 if (dp.hasProperty(PACKAGE_IGNORE_VARIOUS)) {
+                    if (fpi == null) {
+                        if (link.getDesiredPackageInfo() == null) {
+                            fpi = new PackageInfo();
+                        } else {
+                            fpi = link.getDesiredPackageInfo();
+                        }
+                    }
                     if (Boolean.TRUE.equals(dp.getBooleanProperty(PACKAGE_IGNORE_VARIOUS, false))) {
                         fpi.setIgnoreVarious(true);
                     } else {
@@ -1600,10 +1633,12 @@ public class LinkCrawler {
         final DownloadLink dl = link.getDownloadLink();
         try {
             if (dl != null && dl.getDefaultPlugin().getLazyP().getClassName().endsWith("r.Offline")) {
-                PackageInfo dpi = link.getDesiredPackageInfo();
-                if (dpi == null) {
+                final PackageInfo dpi;
+                if (link.getDesiredPackageInfo() == null) {
                     dpi = new PackageInfo();
                     link.setDesiredPackageInfo(dpi);
+                } else {
+                    dpi = link.getDesiredPackageInfo();
                 }
                 dpi.setUniqueId(PERMANENT_OFFLINE_ID);
             }
