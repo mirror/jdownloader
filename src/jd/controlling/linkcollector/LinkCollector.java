@@ -26,7 +26,9 @@ import java.util.zip.ZipEntry;
 
 import jd.controlling.TaskQueue;
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerHandler;
 import jd.controlling.linkcollector.autostart.AutoStartManager;
@@ -78,6 +80,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.linkcrawler.GenericVariants;
@@ -1095,9 +1098,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -2156,17 +2159,57 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         return true;
     }
 
-    public void moveLinksToDownloadList(SelectionInfo<CrawledPackage, CrawledLink> selection) {
+    public static enum MoveLinksMode {
+        MANUAL,
+        AUTO
+    }
+
+    public final static class MoveLinksSettings {
+        final MoveLinksMode mode;
+
+        public final MoveLinksMode getMode() {
+            return mode;
+        }
+
+        public final Boolean getAutoStart() {
+            return autoStart;
+        }
+
+        public final Boolean getAutoForce() {
+            return autoForce;
+        }
+
+        final Boolean  autoStart;
+        final Boolean  autoForce;
+        final Priority autoPriority;
+
+        public final Priority getAutoPriority() {
+            return autoPriority;
+        }
+
+        public MoveLinksSettings(MoveLinksMode mode, Boolean autoStart, Boolean autoForce, Priority autoPriority) {
+            this.mode = mode;
+            this.autoForce = autoForce;
+            this.autoStart = autoStart;
+            this.autoPriority = autoPriority;
+        }
+    }
+
+    public void moveLinksToDownloadList(final MoveLinksSettings moveLinksSettings, SelectionInfo<CrawledPackage, CrawledLink> selection) {
         final List<FilePackage> filePackagesToAdd = new ArrayList<FilePackage>();
-        boolean autostart = false;
         final List<DownloadLink> force = new ArrayList<DownloadLink>();
+        final boolean forcedAutoStart = Boolean.TRUE.equals(moveLinksSettings.getAutoForce());
+        boolean autoStart = Boolean.TRUE.equals(moveLinksSettings.getAutoStart());
         for (final PackageView<CrawledPackage, CrawledLink> packageView : selection.getPackageViews()) {
             final List<CrawledLink> links = packageView.getChildren();
             final List<FilePackage> convertedLinks = LinkCollector.getInstance().convert(links, true);
             for (final CrawledLink cl : links) {
-                autostart |= cl.isAutoStartEnabled();
-                if (cl.isForcedAutoStartEnabled()) {
+                autoStart |= cl.isAutoStartEnabled();
+                if (cl.isForcedAutoStartEnabled() || forcedAutoStart) {
                     force.add(cl.getDownloadLink());
+                }
+                if (Priority.DEFAULT.equals(cl.getPriority())) {
+                    cl.setPriority(moveLinksSettings.getAutoPriority());
                 }
             }
             if (convertedLinks != null) {
@@ -2174,21 +2217,40 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
         }
         /* convert all selected CrawledLinks to FilePackages */
-        boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_ADD_AT_TOP.getValue();
-
+        final boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_ADD_AT_TOP.getValue();
         /* add the converted FilePackages to DownloadController */
         /**
          * addTop = 0, to insert the packages at the top
          *
          * addBottom = negative number -> add at the end
          */
+        final boolean finalAutoStart = autoStart;
         DownloadController.getInstance().addAllAt(filePackagesToAdd, addTop ? 0 : -(filePackagesToAdd.size() + 10));
-        if (force.size() > 0) {
-            DownloadWatchDog.getInstance().forceDownload(force);
-        } else if (autostart) {
-            DownloadWatchDog.getInstance().startDownloads();
-        }
+        DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
+            @Override
+            protected Void run() throws RuntimeException {
+                if (force.size() > 0) {
+                    DownloadWatchDog.getInstance().forceDownload(force);
+                    if (finalAutoStart) {
+                        DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
+
+                            @Override
+                            public void interrupt() {
+                            }
+
+                            @Override
+                            public void execute(DownloadSession currentSession) {
+                                currentSession.setForcedOnlyModeEnabled(false);
+                            }
+                        });
+                    }
+                } else if (finalAutoStart) {
+                    DownloadWatchDog.getInstance().startDownloads();
+                }
+                return null;
+            }
+        });
     }
 
     public void removeChildren(final List<CrawledLink> removechildren) {

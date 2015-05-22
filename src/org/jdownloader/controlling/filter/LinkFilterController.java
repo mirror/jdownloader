@@ -292,11 +292,13 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 } catch (NoDownloadLinkException e) {
                     continue;
                 }
-                if (!isTestInstance() && !lgr.checkOrigin(link)) {
-                    continue;
-                }
-                if (!isTestInstance() && !lgr.checkConditions(link)) {
-                    continue;
+                if (!isTestInstance()) {
+                    if (!!lgr.checkOrigin(link)) {
+                        continue;
+                    }
+                    if (!lgr.checkConditions(link)) {
+                        continue;
+                    }
                 }
                 if (!lgr.checkSource(link)) {
                     continue;
@@ -345,11 +347,13 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 } catch (NoDownloadLinkException e) {
                     throw new WTFException();
                 }
-                if (!isTestInstance() && !lgr.checkOrigin(link)) {
-                    continue;
-                }
-                if (!isTestInstance() && !lgr.checkConditions(link)) {
-                    continue;
+                if (!isTestInstance()) {
+                    if (!lgr.checkOrigin(link)) {
+                        continue;
+                    }
+                    if (!lgr.checkConditions(link)) {
+                        continue;
+                    }
                 }
                 if (!lgr.checkSource(link)) {
                     continue;
@@ -357,7 +361,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 if (!lgr.checkOnlineStatus(link)) {
                     continue;
                 }
-
                 if (!lgr.checkFileName(link)) {
                     continue;
                 }

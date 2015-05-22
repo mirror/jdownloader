@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
@@ -29,10 +30,10 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
     private final DelayedRunnable             delayer;
     private volatile boolean                  globalAutoStart;
     private volatile boolean                  globalAutoConfirm;
-    private long                              lastReset;
+    private volatile long                     lastReset;
     private final AutoStartManagerEventSender eventSender;
     private final int                         waittime;
-    private long                              lastStarted;
+    private volatile long                     lastStarted;
 
     public AutoStartManagerEventSender getEventSender() {
         return eventSender;
@@ -61,20 +62,20 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                         if (eventSender.hasListener()) {
                             eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.RUN));
                         }
-                        boolean autoConfirm = globalAutoConfirm;
-                        boolean autoStart = globalAutoStart;
-
+                        final boolean autoConfirm = globalAutoConfirm;
+                        final boolean autoStart;
                         switch (CFG_LINKGRABBER.CFG.getAutoConfirmManagerAutoStart()) {
-
                         case DISABLED:
                             autoStart = false;
                             break;
                         case ENABLED:
                             autoStart = true;
                             break;
-
+                        case AUTO:
+                        default:
+                            autoStart = globalAutoStart;
+                            break;
                         }
-
                         final SelectionInfo<CrawledPackage, CrawledLink> selectionInfo;
                         if (!Application.isHeadless()) {
                             selectionInfo = LinkGrabberTable.getInstance().getSelectionInfo(false, CFG_LINKGRABBER.CFG.isAutoStartConfirmSidebarFilterEnabled());
@@ -82,35 +83,36 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                             selectionInfo = LinkCollector.getInstance().getSelectionInfo();
                         }
                         final List<AbstractNode> list = new ArrayList<AbstractNode>(selectionInfo.getChildren().size());
+                        boolean createNewSelection = false;
                         for (final CrawledLink child : selectionInfo.getChildren()) {
                             if (child.getLinkState() == AvailableLinkState.OFFLINE) {
+                                createNewSelection = true;
                                 continue;
-                            }
-                            if (child.isAutoConfirmEnabled() || autoConfirm) {
-                                list.add(child);
-                                if (child.isAutoStartEnabled()) {
-                                    autoStart = true;
+                            } else {
+                                if (autoConfirm || child.isAutoConfirmEnabled()) {
+                                    list.add(child);
+                                } else {
+                                    createNewSelection = true;
                                 }
                             }
                         }
-                        OnOfflineLinksAction onOfflineHandler = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
-                        if (onOfflineHandler == OnOfflineLinksAction.GLOBAL) {
-                            onOfflineHandler = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
-                        }
-
-                        OnDupesLinksAction onDupesHandler = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
-                        if (onDupesHandler == OnDupesLinksAction.GLOBAL) {
-                            onDupesHandler = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
-                        }
-
-                        Priority priority = CFG_LINKGRABBER.CFG.getAutoConfirmManagerPiority();
-                        if (!CFG_LINKGRABBER.CFG.isAutoConfirmManagerAssignPriorityEnabled()) {
-                            priority = null;
-                        }
                         if (list.size() > 0) {
-                            ConfirmLinksContextAction.confirmSelection(new SelectionInfo<CrawledPackage, CrawledLink>(null, list), autoStart, CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm(), CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), priority, CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, onOfflineHandler, onDupesHandler);
+                            final OnOfflineLinksAction onOfflineHandler = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
+                            final OnDupesLinksAction onDupesHandler = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
+                            final Priority priority;
+                            if (!CFG_LINKGRABBER.CFG.isAutoConfirmManagerAssignPriorityEnabled()) {
+                                priority = null;
+                            } else {
+                                priority = CFG_LINKGRABBER.CFG.getAutoConfirmManagerPiority();
+                            }
+                            final SelectionInfo<CrawledPackage, CrawledLink> si;
+                            if (createNewSelection) {
+                                si = new SelectionInfo<CrawledPackage, CrawledLink>(null, list);
+                            } else {
+                                si = selectionInfo;
+                            }
+                            ConfirmLinksContextAction.confirmSelection(MoveLinksMode.AUTO, si, autoStart, CFG_LINKGRABBER.CFG.isAutoConfirmManagerClearListAfterConfirm(), CFG_LINKGRABBER.CFG.isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), priority, BooleanStatus.convert(CFG_LINKGRABBER.CFG.isAutoConfirmManagerForceDownloads()), onOfflineHandler, onDupesHandler);
                         }
-
                         // lastReset = -1;
                         if (delayer.isDelayerActive() == false && eventSender.hasListener()) {
                             eventSender.fireEvent(new AutoStartManagerEvent(this, AutoStartManagerEvent.Type.DONE));
@@ -123,7 +125,7 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
     }
 
     public void onLinkAdded(CrawledLink link) {
-        if (globalAutoStart || globalAutoConfirm || link.isAutoConfirmEnabled() || link.isAutoStartEnabled()) {
+        if (globalAutoStart || globalAutoConfirm || link.isAutoConfirmEnabled() || link.isAutoStartEnabled() || link.isForcedAutoStartEnabled()) {
             if (!delayer.isDelayerActive()) {
                 lastStarted = System.currentTimeMillis();
             }

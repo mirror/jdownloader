@@ -16,7 +16,15 @@ public enum BooleanStatus {
         }
     }
 
+    public static BooleanStatus convert(Boolean status) {
+        return status == null ? UNSET : (status ? TRUE : FALSE);
+    }
+
     public static BooleanStatus get(BooleanStatus status) {
         return status == null ? UNSET : status;
+    }
+
+    public static Boolean convert(BooleanStatus status) {
+        return status == null ? null : (status == TRUE ? Boolean.TRUE : Boolean.FALSE);
     }
 }

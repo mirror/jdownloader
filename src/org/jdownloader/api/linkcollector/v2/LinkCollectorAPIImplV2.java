@@ -14,6 +14,8 @@ import javax.swing.Icon;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CheckableLink;
@@ -477,7 +479,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
     @Override
     public void moveToDownloadlist(final long[] linkIds, final long[] packageIds) throws BadParameterException {
-        LinkCollector.getInstance().moveLinksToDownloadList(getSelectionInfo(linkIds, packageIds));
+        LinkCollector.getInstance().moveLinksToDownloadList(new MoveLinksSettings(MoveLinksMode.MANUAL, null, null, null), getSelectionInfo(linkIds, packageIds));
     }
 
     @Override

@@ -15,6 +15,8 @@ import javax.swing.ListCellRenderer;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.gui.swing.jdgui.JDGui;
@@ -247,7 +249,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
      */
     private static final long  serialVersionUID = -3937346180905569896L;
 
-    public static void confirmSelection(final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch, final Priority newPriority, final BooleanStatus forcedStart, final OnOfflineLinksAction handleOfflineLinks, final OnDupesLinksAction handleDupes) {
+    public static void confirmSelection(final MoveLinksMode moveLinksMode, final SelectionInfo<CrawledPackage, CrawledLink> selection, final boolean autoStart, final boolean clearLinkgrabber, final boolean doTabSwitch, final Priority newPriority, final BooleanStatus forcedStart, final OnOfflineLinksAction handleOfflineLinks, final OnDupesLinksAction handleDupes) {
 
         Thread thread = new Thread() {
 
@@ -269,7 +271,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                     if (extension != null) {
                         ConfirmIncompleteArchiveAction doAction = CFG_GUI.CFG.getConfirmIncompleteArchiveAction();
                         final ArchiveValidation result = ArchiveValidator.validate(selection, false);
-                        loop: for (Archive a : result.getArchives()) {
+                        for (Archive a : result.getArchives()) {
                             ConfirmIncompleteArchiveAction doActionForTheCurrentArchive = doAction;
                             final DummyArchive da = extension.createDummyArchive(a);
                             if (da.isComplete()) {
@@ -573,20 +575,6 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                         createNewSelectionInfo = true;
                         continue;
                     }
-                    if (forcedStart != null) {
-                        switch (forcedStart) {
-                        case FALSE:
-                            cl.setForcedAutoStartEnabled(false);
-                            break;
-                        case TRUE:
-                            cl.setForcedAutoStartEnabled(true);
-                            break;
-                        }
-                    }
-                    cl.setAutoStartEnabled(autoStart);
-                    if (newPriority != null) {
-                        cl.setPriority(newPriority);
-                    }
                     toMove.add(cl);
                 }
                 if (toDelete.size() > 0) {
@@ -598,9 +586,9 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                     return;
                 }
                 if (createNewSelectionInfo) {
-                    LinkCollector.getInstance().moveLinksToDownloadList(new SelectionInfo<CrawledPackage, CrawledLink>(null, toMove));
+                    LinkCollector.getInstance().moveLinksToDownloadList(new MoveLinksSettings(moveLinksMode, autoStart, BooleanStatus.convert(forcedStart), newPriority), new SelectionInfo<CrawledPackage, CrawledLink>(null, toMove));
                 } else {
-                    LinkCollector.getInstance().moveLinksToDownloadList(selection);
+                    LinkCollector.getInstance().moveLinksToDownloadList(new MoveLinksSettings(moveLinksMode, autoStart, BooleanStatus.convert(forcedStart), newPriority), selection);
                 }
 
                 if (doTabSwitch) {
@@ -716,25 +704,21 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         if (handleOffline == OnOfflineLinksAction.GLOBAL) {
             handleOffline = CFG_LINKGRABBER.CFG.getDefaultOnAddedOfflineLinksAction();
         }
-
         OnDupesLinksAction handleDupes = getHandleDupes();
         if (handleDupes == OnDupesLinksAction.GLOBAL) {
             handleDupes = CFG_LINKGRABBER.CFG.getDefaultOnAddedDupesLinksAction();
         }
-
         if (isSelectionOnly()) {
-
-            confirmSelection(getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline, handleDupes);
-
+            confirmSelection(MoveLinksMode.MANUAL, getSelection(), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline, handleDupes);
         } else {
-            confirmSelection(LinkGrabberTable.getInstance().getSelectionInfo(false, true), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline, handleDupes);
+            confirmSelection(MoveLinksMode.MANUAL, LinkGrabberTable.getInstance().getSelectionInfo(false, true), doAutostart(), isClearListAfterConfirm(), JsonConfig.create(LinkgrabberSettings.class).isAutoSwitchToDownloadTableOnConfirmDefaultEnabled(), isAssignPriorityEnabled() ? getPiority() : null, isForceDownloads() ? BooleanStatus.TRUE : BooleanStatus.FALSE, handleOffline, handleDupes);
         }
     }
 
     protected boolean doAutostart() {
-        boolean ret = autoStart == AutoStartOptions.ENABLED || (autoStart == AutoStartOptions.AUTO && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue());
+        final boolean ret = autoStart == AutoStartOptions.ENABLED || (autoStart == AutoStartOptions.AUTO && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue());
         if (metaCtrl && isCtrlToggle()) {
-            ret = !ret;
+            return !ret;
         }
         return ret;
     }

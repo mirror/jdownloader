@@ -9,6 +9,8 @@ import java.util.Set;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -341,8 +343,12 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     @Override
     public Boolean startDownloads(final List<Long> linkIds, final List<Long> packageIds) {
         final List<CrawledLink> lks = getAllTheLinks(linkIds, packageIds);
-        LinkCollector.getInstance().moveLinksToDownloadList(new SelectionInfo<CrawledPackage, CrawledLink>(null, lks));
-        return true;
+        if (lks.size() > 0) {
+            LinkCollector.getInstance().moveLinksToDownloadList(new MoveLinksSettings(MoveLinksMode.MANUAL, null, null, null), new SelectionInfo<CrawledPackage, CrawledLink>(null, lks));
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
