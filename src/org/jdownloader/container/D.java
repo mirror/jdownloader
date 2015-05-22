@@ -511,7 +511,6 @@ public class D extends PluginsC {
 
         cls = new ArrayList<CrawledLink>();
         CrawledLink nl;
-        PackageInfo dpi = new PackageInfo();
         int c = 0;
         NodeList ps = n.getChildNodes();
 
@@ -550,7 +549,7 @@ public class D extends PluginsC {
                     if (pc.length() > 0) {
                         pc = pc.substring(0, pc.length() - 3);
                     }
-
+                    final String comment = "from Container: " + d + " : " + pc;
                     for (int lcs = 0; lcs < ls.size(); lcs++) {
 
                         // // PluginForHost pHost =
@@ -562,10 +561,12 @@ public class D extends PluginsC {
                         // ).lastIndexOf("/")
                         // + 1), pHost.getHost(), null, true);
                         nl = new CrawledLink(ls.get(lcs));
+                        if (pws != null && pws.size() > 0) {
+                            nl.getArchiveInfo().getExtractionPasswords().addAll(pws);
+                        }
+                        final PackageInfo dpi = new PackageInfo();
+                        dpi.setComment(comment);
                         nl.setDesiredPackageInfo(dpi);
-
-                        nl.getArchiveInfo().getExtractionPasswords().addAll(pws);
-                        dpi.setComment("from Container: " + d + " : " + pc);
                         cls.add(nl);
                         // Log.L.info(""+links.get(linkCounter));
 
@@ -587,7 +588,7 @@ public class D extends PluginsC {
         CrawledLink nl;
         ;
         int c = 0;
-        PackageInfo dpi = new PackageInfo();
+
         NodeList ps = node.getChildNodes();
 
         for (int pc = 0; pc < ps.getLength(); pc++) {
@@ -629,7 +630,7 @@ public class D extends PluginsC {
                     if (pgc.length() > 0) {
                         pgc = pgc.substring(0, pgc.length() - 3);
                     }
-
+                    final String comment = "from Container: " + d + " : " + pc;
                     for (int lc = 0; lc < ls.size(); lc++) {
 
                         // PluginForHost pHost =
@@ -642,11 +643,13 @@ public class D extends PluginsC {
                         // + 1), pHost.getHost(), null, true);
 
                         nl = new CrawledLink(ls.get(lc));
+                        if (pws != null && pws.size() > 0) {
+                            nl.getArchiveInfo().getExtractionPasswords().addAll(pws);
+                        }
+                        final PackageInfo dpi = new PackageInfo();
+                        dpi.setComment(comment);
                         nl.setDesiredPackageInfo(dpi);
-                        nl.getArchiveInfo().getExtractionPasswords().addAll(pws);
-                        dpi.setComment("from Container: " + d + " : " + pc);
                         cls.add(nl);
-
                         c++;
                     }
                 }
@@ -694,7 +697,7 @@ public class D extends PluginsC {
             if (!ps.item(pgs).getNodeName().equals("package")) {
                 continue;
             }
-            PackageInfo dpi = new PackageInfo();
+            final PackageInfo dpi = new PackageInfo();
             String pn = Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("name").getNodeValue());
             String oos = ps.item(pgs).getAttributes().getNamedItem("passwords") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("passwords").getNodeValue());
             String cs2 = ps.item(pgs).getAttributes().getNamedItem("comment") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("comment").getNodeValue());
@@ -771,7 +774,7 @@ public class D extends PluginsC {
                     while (ls2.size() > s7.size()) {
                         s7.add(null);
                     }
-
+                    final List<String> pws = parsePassword(oos);
                     for (int lcs = 0; lcs < ls2.size(); lcs++) {
 
                         // PluginForHost pHost =
@@ -786,9 +789,11 @@ public class D extends PluginsC {
                         // ls2.get(lcs).substring(ls2.get(lcs).lastIndexOf("/")
                         // + 1);
                         nl = new CrawledLink(ls2.get(lcs));
-                        nl.setDesiredPackageInfo(dpi);
-                        nl.getArchiveInfo().getExtractionPasswords().addAll(parsePassword(oos));
-                        dpi.setComment("(Containerlinks) " + cs2 == null ? "" : cs2);
+
+                        if (pws != null && pws.size() > 0) {
+                            nl.getArchiveInfo().getExtractionPasswords().addAll(pws);
+                        }
+                        nl.setDesiredPackageInfo(dpi.getCopy());
                         if (n5.get(lcs) != null) {
                             nl.setName(n5.get(lcs));
                         }
