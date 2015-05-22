@@ -96,6 +96,7 @@ set_autoremovefiles_true=Autoeliminación de archivos activada
 set_autoremovelinks_false=Autoeliminación de Enlaces desactivada
 set_autoremovelinks_true=Autoeliminación de Enlaces activada
 settings_auto_extract_default=Extraer Archivos al finalizar la Descarga (Predeterminado)
+settings_blacklist_regex=No descomprimir archivos que coincidan con las siguientes expresiones regulares (Uno por línea)
 settings_cpupriority_high=Alta
 settings_cpupriority_low=Baja
 settings_cpupriority_middle=Mediana
