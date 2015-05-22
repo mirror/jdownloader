@@ -271,7 +271,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
              */
             return false;
         }
-        if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getValue()) {
+        if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.isEnabled()) {
             return false;
         }
         LinkgrabberFilterRule matchingFilter = null;
@@ -323,7 +323,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
              */
             return false;
         }
-        if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getValue()) {
+        if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.isEnabled()) {
             return false;
         }
         if (link.getDownloadLink() == null) {

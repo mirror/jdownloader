@@ -842,7 +842,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         }
                         if (crawledPackageName == null) {
                             final ExtractionExtension lArchiver = archiver;
-                            if (lArchiver != null && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.ARCHIVE_PACKAGIZER_ENABLED.getValue()) {
+                            if (lArchiver != null && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.ARCHIVE_PACKAGIZER_ENABLED.isEnabled()) {
                                 final CrawledLinkFactory clf = new CrawledLinkFactory(link);
                                 final Archive archive = lArchiver.buildArchive(clf);
                                 if (archive != null && archive.getArchiveFiles().size() > 1) {
@@ -874,7 +874,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                                 add.add(link);
                                 LinkCollector.this.moveOrAddAt(getPermanentOfflineCrawledPackage(), add, -1);
-                            } else if (!ignoreSpecialPackages && link.getLinkState() == AvailableLinkState.OFFLINE && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.OFFLINE_PACKAGE_ENABLED.getValue()) {
+                            } else if (!ignoreSpecialPackages && link.getLinkState() == AvailableLinkState.OFFLINE && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.OFFLINE_PACKAGE_ENABLED.isEnabled()) {
                                 java.util.List<CrawledLink> list = getIdentifiedMap(crawledPackageMapID, offlineMap);
                                 list.add(link);
                                 List<CrawledLink> add = new ArrayList<CrawledLink>(1);
@@ -2217,7 +2217,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
         }
         /* convert all selected CrawledLinks to FilePackages */
-        final boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_ADD_AT_TOP.getValue();
+        final boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_ADD_AT_TOP.isEnabled();
         /* add the converted FilePackages to DownloadController */
         /**
          * addTop = 0, to insert the packages at the top

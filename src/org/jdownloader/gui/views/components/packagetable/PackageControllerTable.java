@@ -138,7 +138,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         this.setShowVerticalLines(false);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-        sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.getValue() ? (LAFOptions.getInstance().getColorForTableSortedColumnView()) : null;
+        sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.isEnabled() ? (LAFOptions.getInstance().getColorForTableSortedColumnView()) : null;
         filterNotifyColor = CFG_GUI.CFG.isFilterHighlightEnabled() ? (LAFOptions.getInstance().getColorForTableFilteredView()) : null;
         wrapAroundEnabled = CFG_GUI.CFG.isTableWrapAroundEnabled();
         initAppActions();

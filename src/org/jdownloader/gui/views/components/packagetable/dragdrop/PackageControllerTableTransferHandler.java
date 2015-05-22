@@ -290,7 +290,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                     @Override
                     protected Void run() throws RuntimeException {
                         if (((PackageType) element).getCurrentSorter() == null) {
-                            table.getController().merge((PackageType) element, links, packages, org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR.DO_MERGE_TOP_BOTTOM.getValue() ? MergePosition.BOTTOM : MergePosition.TOP);
+                            table.getController().merge((PackageType) element, links, packages, org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR.DO_MERGE_TOP_BOTTOM.isEnabled() ? MergePosition.BOTTOM : MergePosition.TOP);
                         } else {
                             // we have a sorter.neither top nor bottom but sorted insert
                             table.getController().merge((PackageType) element, links, packages, MergePosition.SORTED);

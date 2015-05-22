@@ -81,7 +81,7 @@ public class Packagizer extends AbstractConfigPanel implements CheckBoxedEntry {
     }
 
     public boolean _isEnabled() {
-        return org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.getValue();
+        return org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled();
     }
 
     public String getDescription() {

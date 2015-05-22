@@ -153,7 +153,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
                 }
                 break;
             case OPEN_PROPERTIES_PANEL:
-                CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.setValue(CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.getValue() ? false : true);
+                CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.setValue(CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() ? false : true);
                 break;
             case RENAME:
                 startEditing(contextObject);
@@ -175,7 +175,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
                 }
                 break;
             case OPEN_PROPERTIES_PANEL:
-                CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.setValue(CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.getValue() ? false : true);
+                CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.setValue(CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() ? false : true);
                 break;
             case RENAME:
                 startEditing(contextObject);
@@ -202,9 +202,9 @@ public class FileColumn extends ExtTextColumn<AbstractNode> implements GenericCo
                 break;
             case OPEN_PROPERTIES_PANEL:
                 if (((AbstractPackageNode) contextObject).getControlledBy().equals(jd.controlling.downloadcontroller.DownloadController.getInstance())) {
-                    CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.setValue(CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.getValue() ? false : true);
+                    CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.setValue(CFG_GUI.DOWNLOADS_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() ? false : true);
                 } else if (((AbstractPackageNode) contextObject).getControlledBy().equals(jd.controlling.linkcollector.LinkCollector.getInstance())) {
-                    CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.setValue(CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.getValue() ? false : true);
+                    CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.setValue(CFG_GUI.LINKGRABBER_TAB_PROPERTIES_PANEL_VISIBLE.isEnabled() ? false : true);
                 }
                 break;
             case RENAME:
