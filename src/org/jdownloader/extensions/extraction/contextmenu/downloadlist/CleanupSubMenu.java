@@ -28,11 +28,9 @@ public class CleanupSubMenu extends MenuContainer {
     }
 
     private SelectionInfo<?, ?> getSelection() {
-        View view = MainTabbedPane.getInstance().getSelectedView();
-
+        final View view = MainTabbedPane.getInstance().getSelectedView();
         if (view instanceof DownloadsView) {
             return DownloadsTable.getInstance().getSelectionInfo(true, true);
-
         } else if (view instanceof LinkGrabberView) {
             return LinkGrabberTable.getInstance().getSelectionInfo();
         }
