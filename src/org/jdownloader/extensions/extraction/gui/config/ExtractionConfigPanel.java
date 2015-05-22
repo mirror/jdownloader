@@ -271,7 +271,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                 new EDTRunner() {
                     @Override
                     protected void runInEDT() {
-                        toggleDefaultEnabled.getComponent().setSelected(CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.getValue());
+                        toggleDefaultEnabled.getComponent().setSelected(CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.isEnabled());
                         toggleCustomizedPath.getComponent().setSelected(s.isCustomExtractionPathEnabled());
                         customPath.getComponent().setText(finalPath);
                         toggleDeleteArchives.getComponent().setSelectedItem(s.getDeleteArchiveFilesAfterExtractionAction());

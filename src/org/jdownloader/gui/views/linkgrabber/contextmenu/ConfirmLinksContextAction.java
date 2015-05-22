@@ -716,7 +716,7 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     protected boolean doAutostart() {
-        final boolean ret = autoStart == AutoStartOptions.ENABLED || (autoStart == AutoStartOptions.AUTO && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.getValue());
+        final boolean ret = autoStart == AutoStartOptions.ENABLED || (autoStart == AutoStartOptions.AUTO && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_START_ENABLED.isEnabled());
         if (metaCtrl && isCtrlToggle()) {
             return !ret;
         }

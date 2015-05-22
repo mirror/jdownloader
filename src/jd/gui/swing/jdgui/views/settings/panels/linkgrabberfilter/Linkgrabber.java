@@ -86,7 +86,7 @@ public class Linkgrabber extends AbstractConfigPanel implements CheckBoxedEntry 
     }
 
     public boolean _isEnabled() {
-        return org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getValue();
+        return org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.isEnabled();
     }
 
     public String getDescription() {

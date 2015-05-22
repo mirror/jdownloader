@@ -16,7 +16,7 @@ import org.jdownloader.images.AbstractIcon;
 public class AccountServiceCollection extends ServiceCollection<Account> {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID   = -6958497120849521678L;
     private DomainInfo        domainInfo;
@@ -51,7 +51,7 @@ public class AccountServiceCollection extends ServiceCollection<Account> {
     }
 
     public boolean isEnabled() {
-        return enabled && org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.getValue();
+        return enabled && org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled();
     }
 
     @Override

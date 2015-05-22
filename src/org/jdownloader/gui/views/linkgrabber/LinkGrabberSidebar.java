@@ -28,7 +28,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 public class LinkGrabberSidebar extends MigPanel {
 
     /**
-     * 
+     *
      */
     private static final long          serialVersionUID = 4006309139115917564L;
 
@@ -54,11 +54,11 @@ public class LinkGrabberSidebar extends MigPanel {
 
         //
         exceptionsFilterTable = new QuickFilterExceptionsTable(exceptions, table);
-        exceptionsFilterTable.setVisible(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_EXCEPTIONS_QUICKFILTER_ENABLED.getValue());
+        exceptionsFilterTable.setVisible(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_EXCEPTIONS_QUICKFILTER_ENABLED.isEnabled());
         hosterFilterTable = new QuickFilterHosterTable(hosterFilter, table);
-        hosterFilterTable.setVisible(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_HOSTER_QUICKFILTER_ENABLED.getValue());
+        hosterFilterTable.setVisible(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_HOSTER_QUICKFILTER_ENABLED.isEnabled());
         filetypeFilterTable = new QuickFilterTypeTable(filetypeFilter, table);
-        filetypeFilterTable.setVisible(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_FILETYPE_QUICKFILTER_ENABLED.getValue());
+        filetypeFilterTable.setVisible(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_FILETYPE_QUICKFILTER_ENABLED.isEnabled());
 
         // disable auto confirm if user closed sidebar
         org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
@@ -67,7 +67,7 @@ public class LinkGrabberSidebar extends MigPanel {
             }
 
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                if (org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getValue()) {
+                if (org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.isEnabled()) {
                     org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.setValue(org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.LINKGRABBER_AUTO_CONFIRM_ENABLED.getDefaultValue());
                 }
             }

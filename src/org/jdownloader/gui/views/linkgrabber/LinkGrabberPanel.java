@@ -450,7 +450,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         }
         String constrains = "spanx";
 
-        if (CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.getValue()) {
+        if (CFG_GUI.LINKGRABBER_SIDEBAR_VISIBLE.isEnabled()) {
             constrains = "";
             this.add(tableScrollPane, "");
             if (sidebarContainer == null) {
