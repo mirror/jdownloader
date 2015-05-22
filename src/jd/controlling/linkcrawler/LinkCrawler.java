@@ -1622,7 +1622,9 @@ public class LinkCrawler {
                         fpi.setIgnoreVarious(false);
                     }
                 }
-                link.setDesiredPackageInfo(fpi);
+                if (fpi != null) {
+                    link.setDesiredPackageInfo(fpi);
+                }
                 return fpi;
             }
         }

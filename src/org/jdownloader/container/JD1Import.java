@@ -65,7 +65,7 @@ public class JD1Import extends PluginsC {
             }
             if (packages != null && packages.size() > 0) {
                 for (FilePackage p : packages) {
-                    PackageInfo packageInfo = new PackageInfo();
+                    final PackageInfo packageInfo = new PackageInfo();
                     packageInfo.setComment(p.getComment());
                     packageInfo.setName(p.getName());
                     if (new File(p.getDownloadDirectory()).exists()) {
@@ -73,7 +73,9 @@ public class JD1Import extends PluginsC {
                     }
                     for (DownloadLink dl : p.getChildren()) {
                         CrawledLink cl = new CrawledLink(dl);
-                        cl.setDesiredPackageInfo(packageInfo);
+                        if (packageInfo.isNotEmpty()) {
+                            cl.setDesiredPackageInfo(packageInfo.getCopy());
+                        }
                         cls.add(cl);
                     }
                 }

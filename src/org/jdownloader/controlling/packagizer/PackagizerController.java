@@ -708,7 +708,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     protected void set(CrawledLink link, PackagizerRuleWrapper lgr) {
-        PackageInfo dpi = null;
         if (lgr.getRule().getChunks() >= 0) {
             /* customize chunk numbers */
             link.setChunks(lgr.getRule().getChunks());
@@ -716,11 +715,14 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (!StringUtils.isEmpty(lgr.getRule().getDownloadDestination())) {
             /* customize download destination folder */
             String path = replaceVariables(lgr.getRule().getDownloadDestination(), link, lgr);
+            final PackageInfo dpi;
             if (link.getDesiredPackageInfo() != null) {
                 dpi = link.getDesiredPackageInfo();
             } else {
                 dpi = new PackageInfo();
+                link.setDesiredPackageInfo(dpi);
             }
+            dpi.setPackagizerRuleMatched(true);
             dpi.setDestinationFolder(path);
         }
         if (lgr.getRule().getLinkEnabled() != null) {
@@ -729,11 +731,14 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (!StringUtils.isEmpty(lgr.getRule().getPackageName())) {
             /* customize package name */
             String name = replaceVariables(lgr.getRule().getPackageName(), link, lgr);
+            final PackageInfo dpi;
             if (link.getDesiredPackageInfo() != null) {
                 dpi = link.getDesiredPackageInfo();
             } else {
                 dpi = new PackageInfo();
+                link.setDesiredPackageInfo(dpi);
             }
+            dpi.setPackagizerRuleMatched(true);
             dpi.setName(name);
         }
         if (lgr.getRule().getPriority() != null) {
@@ -764,11 +769,6 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if ((b = lgr.getRule().isAutoForcedStartEnabled()) != null) {
             /* customize auto start */
             link.setForcedAutoStartEnabled(b);
-        }
-        if (dpi != null && link.getDesiredPackageInfo() == null) {
-            /* set desiredpackageinfo if not set yet */
-            link.setDesiredPackageInfo(dpi);
-            dpi.setPackagizerRuleMatched(true);
         }
     }
 
