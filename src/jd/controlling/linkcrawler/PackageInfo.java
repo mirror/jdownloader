@@ -21,6 +21,17 @@ public class PackageInfo {
         return name;
     }
 
+    public PackageInfo getCopy() {
+        final PackageInfo ret = new PackageInfo();
+        ret.setName(getName());
+        ret.setDestinationFolder(getDestinationFolder());
+        ret.setComment(getComment());
+        ret.setIgnoreVarious(isIgnoreVarious());
+        ret.setPackagizerRuleMatched(isPackagizerRuleMatched());
+        ret.setUniqueId(getUniqueId());
+        return ret;
+    }
+
     public void setName(String name) {
         if (StringUtils.isEmpty(name)) {
             name = null;
@@ -107,8 +118,16 @@ public class PackageInfo {
      * @param ignoreVarious
      *            the ignoreVarious to set
      */
-    public void setIgnoreVarious(boolean ignoreVarious) {
+    public void setIgnoreVarious(Boolean ignoreVarious) {
         this.ignoreVarious = ignoreVarious;
+    }
+
+    public boolean isEmpty() {
+        return !isNotEmpty();
+    }
+
+    public boolean isNotEmpty() {
+        return ignoreVarious != null || uniqueId != null || comment != null || destinationFolder != null || name != null || packagizerRuleMatched;
     }
 
 }
