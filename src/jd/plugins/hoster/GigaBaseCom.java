@@ -58,7 +58,9 @@ public class GigaBaseCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", AGENT);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>File not found or removed<|<title>Gigabase\\.com</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("<h3>\\s*File not found\\s*</h3>|>File not found or removed<|<title>Gigabase\\.com</title>")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML(SECURITYCAPTCHA)) {
             link.getLinkStatus().setStatusText("Can't check status, security captcha...");
             return AvailableStatus.UNCHECKABLE;
@@ -66,7 +68,9 @@ public class GigaBaseCom extends PluginForHost {
         final Regex fileInfo = br.getRegex("<small>Download file:</small><br/>([^<>\"]*?)<small>\\(([^<>\"]*?)\\)</small>");
         final String filename = fileInfo.getMatch(0);
         final String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -77,14 +81,20 @@ public class GigaBaseCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (br.containsHTML(SECURITYCAPTCHA)) {
             final Form captchaForm = br.getForm(0);
-            if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (captchaForm == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final String code = getCaptchaCode("http://www." + this.getHost() + "/captcha/?rnd=", downloadLink);
             captchaForm.put("captcha", code);
             br.submitForm(captchaForm);
-            if (br.containsHTML(SECURITYCAPTCHA)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML(SECURITYCAPTCHA)) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
         }
         String dllink = br.getRegex(">Download types</span><br/><span class=\"c3\"><a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/down/[^\"<>]+)").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/down/[^\"<>]+)").getMatch(0);
+        }
         if (dllink == null) {
             dllink = br.getRegex("href=\"/getfile/[^\"<>]*?(/free\\?step=[^\"<>]*?)&referer=").getMatch(0);
             dllink = downloadLink.getDownloadURL() + dllink;
@@ -116,13 +126,19 @@ public class GigaBaseCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = br.getRegex(">Download types</span><br/><span class=\"c3\"><a href=\"(http://.*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/down/[^\"<>]+)").getMatch(0);
-            if (dllink == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "Cannot download, maybe your country is blocked?!"); }
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/down/[^\"<>]+)").getMatch(0);
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Cannot download, maybe your country is blocked?!");
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("HTTP Status 404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("HTTP Status 404")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -136,9 +152,8 @@ public class GigaBaseCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-return true;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
 }
