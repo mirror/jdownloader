@@ -27,7 +27,6 @@ import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -41,7 +40,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up.4share.vn" }, urls = { "http://(www\\.)?(up\\.)?4share\\.vn/f/[a-z0-9]+/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up.4share.vn" }, urls = { "http://(?:www\\.)?(?:up\\.)?4share\\.vn/f/[a-f0-9]{16}" }, flags = { 2 })
 public class Up4ShareVn extends PluginForHost {
 
     private static final String MAINPAGE = "http://up.4share.vn/";
@@ -63,22 +62,20 @@ public class Up4ShareVn extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
         prepBR();
-        /* Offline links should also have nice filenames. */
-        link.setName(new Regex(link.getDownloadURL(), "4share\\.vn/f/([a-z0-9]+)/").getMatch(0));
         this.setBrowserExclusive();
         getPage(link.getDownloadURL());
         if (br.containsHTML(">FID Không hợp lệ\\!|file not found|File đã bị xóa\\?|File không tồn tại?| Error: FileLink da bi xoa")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // final Regex fInfo = br.getRegex(">Filename:  <strong>([^<>\"]*?)</strong>   \\(<strong>([^<>\"]*?)</strong> \\)<");
-        final Regex fInfo = br.getRegex("Tên File :  <strong>\\[Clip-sub\\]([^<>\"]*?)</strong> </h4>  Kích thước :\\s+<strong>([^<>\"]*?)</strong>");
-        final String filename = fInfo.getMatch(0);
-        final String filesize = fInfo.getMatch(1);
-        if (filename == null || filesize == null) {
+        final String filename = br.getRegex(">\\s*Tên File\\s*:\\s*<strong>([^<>\"]*?)</strong>").getMatch(0);
+        final String filesize = br.getRegex(">\\s*Kích thước\\s*:\\s*<strong>\\s*(\\d+(?:\\.\\d+)?\\s*(?:B(?:yte)?|KB|MB|GB))\\s*</strong>").getMatch(0);
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -197,9 +194,9 @@ public class Up4ShareVn extends PluginForHost {
         getPage(link.getDownloadURL());
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = br.getRegex("class=\\'\\'> <a href=\\'(http://.*?)\\'").getMatch(0);
+            dllink = br.getRegex("class=''> <a href='(http://.*?)'").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("(\\'|\")(http://sv\\d+\\.4share\\.vn/[^<>\"]*?)(\\'|\")").getMatch(1);
+                dllink = br.getRegex("('|\")(http://sv\\d+\\.4share\\.vn/[^<>\"]*?)\\1").getMatch(1);
             }
         }
         if (dllink == null) {
@@ -343,8 +340,8 @@ public class Up4ShareVn extends PluginForHost {
     }
 
     private void prepBR() {
-        this.br.setReadTimeout(3 * 60 * 1000);
-        this.br.setConnectTimeout(3 * 60 * 1000);
+        this.br.setReadTimeout(2 * 60 * 1000);
+        this.br.setConnectTimeout(2 * 60 * 1000);
     }
 
     @Override
@@ -365,6 +362,11 @@ public class Up4ShareVn extends PluginForHost {
             /* free accounts also have captchas */
             return true;
         }
+        return false;
+    }
+
+    public boolean hasAutoCaptcha() {
+        // recaptcha
         return false;
     }
 }
