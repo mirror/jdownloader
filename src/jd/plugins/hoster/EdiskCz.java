@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "edisk.cz" }, urls = { "http://(www\\.)??edisk\\.(cz|sk|eu)/([a-z]{2}/)?(stahni|download)/[0-9]+/.+\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "edisk.cz" }, urls = { "http://(?:www\\.)?edisk\\.(?:cz|sk|eu)/(?:[a-z]{2}/)?(?:stahni|download)/[0-9]+/.+\\.html" }, flags = { 2 })
 public class EdiskCz extends PluginForHost {
 
     private static final String MAINPAGE = "http://www.edisk.cz/";
@@ -45,25 +45,6 @@ public class EdiskCz extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         final String linkpart = new Regex(link.getDownloadURL(), "(stahni|download)/(.+)").getMatch(1);
         link.setUrlDownload("http://www.edisk.cz/en/download/" + linkpart);
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        login(account);
-        br.getPage("http://www.edisk.cz/moje-soubory");
-        String availabletraffic = br.getRegex("id=\"usercredit\">(\\d+)</span> MB</a>").getMatch(0);
-        if (availabletraffic == null) {
-            availabletraffic = br.getRegex("<strong>Kredit: </strong>(\\d+)</span>").getMatch(0);
-        }
-        if (availabletraffic != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic + "MB"));
-        } else {
-            account.setValid(false);
-        }
-        account.setValid(true);
-        ai.setStatus("Premium User");
-        return ai;
     }
 
     @Override
@@ -156,16 +137,16 @@ public class EdiskCz extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        login(account);
+        login(account, null);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        String fileID = new Regex(link.getDownloadURL(), "edisk\\.cz/stahni/(\\d+)/").getMatch(0);
+        String fileID = new Regex(link.getDownloadURL(), "/(\\d+)/[^/]+\\.html$").getMatch(0);
         String premiumPage = br.getRegex("\"(x-premium/\\d+)\"").getMatch(0);
         if (fileID == null || premiumPage == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://www.edisk.cz/cz/" + premiumPage, "");
+        br.postPage("/cz/" + premiumPage, "");
         String dllink = br.getRegex("class=\"wide\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("Pokud se tak nestane, <a href=\"(/stahni-.*?)\"").getMatch(0);
@@ -177,9 +158,6 @@ public class EdiskCz extends PluginForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!dllink.contains("edisk.cz")) {
-            dllink = "http://www.edisk.cz" + dllink;
-        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
@@ -189,7 +167,18 @@ public class EdiskCz extends PluginForHost {
         dl.startDownload();
     }
 
-    private void login(Account account) throws Exception {
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, ai);
+        return ai;
+    }
+
+    private void login(final Account account, final AccountInfo ia) throws Exception {
+        AccountInfo ai = ia;
+        if (ia == null) {
+            ai = account.getAccountInfo();
+        }
         this.setBrowserExclusive();
         prepBr();
         br.setFollowRedirects(true);
@@ -197,13 +186,26 @@ public class EdiskCz extends PluginForHost {
         if (br.getCookie(MAINPAGE, "randStr") == null || br.getCookie(MAINPAGE, "email") == null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        /* Check if credit = zero == free account - till now there is no better way to verify this!. */
-        if (br.containsHTML("/[a-z0-9]+\"><span class=\"bold\">0</span>")) {
+        if (!br.getURL().endsWith("/moje-soubory")) {
+            br.getPage("/moje-soubory");
+        }
+        String availabletraffic = br.getRegex("<strong>Kredit\\s*:\\s*</strong>\\s*(\\d+)\\s*</span>").getMatch(0);
+        if (availabletraffic != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic + "MB"));
+        }
+        if (availabletraffic == null || ai.getTrafficLeft() <= 0) {
+            account.setValid(false);
+            /* Check if credit = zero == free account - till now there is no better way to verify this!. */
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
+        }
+        account.setValid(true);
+        ai.setStatus("Premium Account");
+        if (ia == null) {
+            account.setAccountInfo(ai);
         }
     }
 
