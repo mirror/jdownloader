@@ -886,7 +886,7 @@ public class SubyShareCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+        final String space[] = new Regex(correctedBR, ">Storage:</strong>\\s*([0-9\\.]+)\\s*(KB|MB|GB|TB)?\\s*of").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             /* free users it's provided by default */
             ai.setUsedSpace(space[0] + " " + space[1]);
@@ -900,7 +900,7 @@ public class SubyShareCom extends PluginForHost {
             availabletraffic = new Regex(correctedBR, "Traffic available today <strong>([^<>\"]*?)</strong>").getMatch(0);
         }
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            availabletraffic.trim();
+            availabletraffic = availabletraffic.trim();
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
             if (!availabletraffic.startsWith("-")) {
                 ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
