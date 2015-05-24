@@ -70,7 +70,8 @@ public class Up4ShareVn extends PluginForHost {
         if (br.containsHTML(">FID Không hợp lệ\\!|file not found|File đã bị xóa\\?|File không tồn tại?| Error: FileLink da bi xoa")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex fInfo = br.getRegex(">Filename:  <strong>([^<>\"]*?)</strong>   \\(<strong>([^<>\"]*?)</strong> \\)<");
+        // final Regex fInfo = br.getRegex(">Filename:  <strong>([^<>\"]*?)</strong>   \\(<strong>([^<>\"]*?)</strong> \\)<");
+        final Regex fInfo = br.getRegex("Tên File :  <strong>\\[Clip-sub\\]([^<>\"]*?)</strong> </h4>  Kích thước :\\s+<strong>([^<>\"]*?)</strong>");
         final String filename = fInfo.getMatch(0);
         final String filesize = fInfo.getMatch(1);
         if (filename == null || filesize == null) {
