@@ -72,7 +72,7 @@ public class XArtCom extends PluginForHost {
         correctDownloadLink(parameter);
         String name = new Regex(parameter.getDownloadURL(), "([^/]+\\.(mov|mp4|wmv))").getMatch(0);
         if (name == null) {
-            name = new Regex(parameter.getDownloadURL(), "x\\-art.com/(.+)").getMatch(0);
+            name = new Regex(parameter.getDownloadURL(), "x-art.com/(.+)").getMatch(0);
         }
 
         parameter.setName(name);
@@ -111,7 +111,7 @@ public class XArtCom extends PluginForHost {
             int res_code = urlcon.getResponseCode();
             long dlsize = urlcon.getCompleteContentLength();
 
-            if (res_code == 200) {
+            if (res_code == 200 && !urlcon.getContentType().contains("text/html")) {
                 parameter.setDownloadSize(dlsize);
                 return AvailableStatus.TRUE;
             } else if (res_code == 404) {

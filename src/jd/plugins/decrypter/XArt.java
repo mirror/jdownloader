@@ -44,12 +44,11 @@ public class XArt extends PluginForDecrypt {
 
     @Override
     protected DownloadLink createDownloadlink(String link) {
-        link = link.replaceFirst("x\\-art\\.com", "x-artdecrypted.com");
+        link = link.replaceFirst("x-art\\.com", "x-artdecrypted.com");
         DownloadLink ret = super.createDownloadlink(link);
         try {
             ret.setContentUrl(link);
         } catch (Throwable e) {
-
         }
         return ret;
     }
@@ -76,8 +75,8 @@ public class XArt extends PluginForDecrypt {
         };
         String url = parameter.getCryptedUrl();
 
-        if (!url.contains("/members/")) {
-            url = url.replaceAll("x\\-art\\.com\\/", "x-art.com/members/");
+        if (!url.contains("/members/") && !url.contains("/download/")) {
+            url = url.replaceAll("x-art\\.com\\/", "x-art.com/members/");
         }
         if (url.matches("(https?://([^\r\n\t\"']+\\.)?x-art\\.com/[^\r\n\t\"']+\\.(mp4|wmv|mov|zip)[^\r\n\t\"']*)")) {
             ret.add(createDownloadlink(url));
