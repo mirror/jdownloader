@@ -46,7 +46,7 @@ public class MegarapidoNet extends PluginForHost {
 
     private static final String                            DOMAIN                       = "http://megarapido.net/";
     private static final String                            NICE_HOST                    = "megarapido.net";
-    private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|-)", "");
     private static final String                            NOCHUNKS                     = NICE_HOSTproperty + "NOCHUNKS";
     private static final String                            NORESUME                     = NICE_HOSTproperty + "NORESUME";
 
@@ -145,7 +145,7 @@ public class MegarapidoNet extends PluginForHost {
             final String dlurl = Encoding.urlEncode(link.getDownloadURL());
             String postData = "urllist=" + dlurl + "&links=" + dlurl + "&exibir=normal&usar=premium&user=" + userID + "&autoreset=";
             this.postAPISafe("/gerar.php?rand=0." + System.currentTimeMillis(), postData);
-            dllink = br.getRegex("(?:\\'|\")(https?://[a-z0-9\\-\\.]+\\.megarapido\\.net/[^<>\"\\']*?)(?:\\'|\")").getMatch(0);
+            dllink = br.getRegex("('|\")(https?://[a-z0-9-\\.]+\\.megarapido\\.net/[^<>]+)\\1").getMatch(0);
             if (dllink == null) {
                 /* Should never happen */
                 handleErrorRetries("dllinknull", 5);
@@ -248,24 +248,26 @@ public class MegarapidoNet extends PluginForHost {
         this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        br.getPage("/gerador");
+        if (!br.getURL().endsWith("/gerador")) {
+            br.getPage("/gerador");
+        }
         final Regex premium_time = br.getRegex("(\\d{1,2}) DIAS, (\\d{1,2}) HORAS, (\\d{1,2}) MINUTOS E (\\d{1,2}) SEGUNDOS");
         final String[][] time_matches = premium_time.getMatches();
         if (time_matches.length == 0) {
             /* Prevent downloads via free account - they have no traffic! */
             ai.setTrafficLeft(0);
-            ai.setStatus("Registered (free) account");
+            ai.setStatus("Free Account");
             account.setType(AccountType.FREE);
         } else {
             ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(time_matches[0][0]) * 24 * 60 * 60 * 1000 + Long.parseLong(time_matches[0][1]) * 60 * 60 * 1000l + Long.parseLong(time_matches[0][2]) * 60 * 1000l + Long.parseLong(time_matches[0][2]) * 1000l);
             ai.setUnlimitedTraffic();
-            ai.setStatus("Premium account");
+            ai.setStatus("Premium Account");
             account.setType(AccountType.PREMIUM);
         }
         account.setValid(true);
         final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String[] hostDomainsInfo = br.getRegex("class=\"has\\-tip\" title=\"([^<>\"]*?)\"").getColumn(0);
+        final String[] hostDomainsInfo = br.getRegex("class=\"has-tip\" title=\"([^<>\"]*?)\"").getColumn(0);
         for (final String domain : hostDomainsInfo) {
             final String crippledhost = domain.toLowerCase();
             /* First cover special cases */
@@ -337,7 +339,7 @@ public class MegarapidoNet extends PluginForHost {
 
                 this.postAPISafe("/painel_user/ajax/ajax.php", postData);
                 final String userLanguage = System.getProperty("user.language");
-                if (br.containsHTML(">Login ou Senha inválidos") || br.getCookie(DOMAIN, "MegaCookie") == null) {
+                if (br.containsHTML(">Login ou Senha inválidos") || br.getCookie(DOMAIN, "login") == null || br.getCookie(DOMAIN, "auth") == null) {
                     if ("de".equalsIgnoreCase(userLanguage)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -392,7 +394,7 @@ public class MegarapidoNet extends PluginForHost {
      * 0 = everything ok, 1-99 = "error"-errors
      */
     private void updatestatuscode() {
-        final String error = br.getRegex("class=alert\\-message error > ([^<>]*?)</div>").getMatch(0);
+        final String error = br.getRegex("class=alert-message error > ([^<>]*?)</div>").getMatch(0);
         if (error != null) {
             if (error.contains("Desculpe-nos, no momento o servidor")) {
                 statuscode = 1;
