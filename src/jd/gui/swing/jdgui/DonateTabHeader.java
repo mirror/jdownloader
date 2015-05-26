@@ -30,7 +30,6 @@ public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
 
             @Override
             public void mouseClicked(MouseEvent e) {
-
                 new DonateAction().actionPerformed(null);
             }
 
@@ -47,6 +46,7 @@ public class DonateTabHeader extends TabHeader implements PromotionTabHeader {
             @Override
             public void mousePressed(MouseEvent e) {
                 setShown();
+                new DonateAction().actionPerformed(null);
             }
 
             @Override

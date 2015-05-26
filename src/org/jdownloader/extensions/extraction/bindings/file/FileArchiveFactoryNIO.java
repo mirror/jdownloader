@@ -13,7 +13,7 @@ public class FileArchiveFactoryNIO {
 
     protected List<File> findFiles(Pattern pattern, File directory) {
         try {
-            return J7FileList.findFiles(pattern, directory, true);
+            return J7FileList.findFiles(pattern, directory, true, false);
         } catch (IOException e) {
             LogController.GL.log(e);
             return new ArrayList<File>();

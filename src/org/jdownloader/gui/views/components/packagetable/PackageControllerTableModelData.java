@@ -25,7 +25,7 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
         public List<? extends AbstractNode> getInvisibleChildren();
     }
 
-    private final static AtomicLong                                            VERSION              = new AtomicLong(0);
+    private final static AtomicLong                                            VERSION              = new AtomicLong(-1);
     private List<PackageControllerTableModelFilter<PackageType, ChildrenType>> packageFilters       = null;
     private List<PackageControllerTableModelFilter<PackageType, ChildrenType>> childrenFilters      = null;
     private List<PackageControllerTableModelCustomizer>                        tableModelCustomizer = null;
@@ -91,6 +91,10 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
                 } else {
                     return null;
                 }
+            }
+
+            @Override
+            public void remove() {
             }
         };
     }

@@ -315,7 +315,7 @@ public class JunoCloudMe extends PluginForHost {
             if (inValidate(fileInfo[1])) {
                 fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
                 if (inValidate(fileInfo[1])) {
-                    fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? (KB|MB|GB))").getMatch(0);
                     if (inValidate(fileInfo[1])) {
                         try {
                             // only needed in rare circumstances
