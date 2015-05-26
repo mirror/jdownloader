@@ -108,7 +108,10 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
             @Override
             public void run() {
-                ExtractionExtension.getInstance().getEventSender().removeListener(EventScripterExtension.this);
+                final ExtractionExtension instance = ExtractionExtension.getInstance();
+                if (instance != null) {
+                    instance.getEventSender().removeListener(EventScripterExtension.this);
+                }
             }
         });
     }
@@ -125,7 +128,10 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
             @Override
             public void run() {
-                ExtractionExtension.getInstance().getEventSender().addListener(EventScripterExtension.this);
+                final ExtractionExtension instance = ExtractionExtension.getInstance();
+                if (instance != null) {
+                    instance.getEventSender().addListener(EventScripterExtension.this);
+                }
             }
         });
         CFG_EVENT_CALLER.SCRIPTS.getEventSender().addListener(this);

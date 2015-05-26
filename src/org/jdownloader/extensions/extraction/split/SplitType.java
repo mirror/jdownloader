@@ -147,9 +147,10 @@ public enum SplitType {
             int count = 0;
             final int js = parseIndex("js");
             final int xz = parseIndex("xz");
+            final int db = parseIndex("db");
             for (int index = 0; index < bitset.length(); index++) {
-                if (index == js || index == xz) {
-                    /* exclude js,xz for validation */
+                if (index == js || index == xz || index == db) {
+                    /* exclude js,xz,db for validation */
                     continue;
                 }
                 if (bitset.get(index)) {

@@ -123,7 +123,7 @@ public class VidMe extends PluginForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || !con.isOK()) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
