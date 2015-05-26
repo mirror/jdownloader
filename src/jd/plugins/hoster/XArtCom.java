@@ -90,15 +90,10 @@ public class XArtCom extends PluginForHost {
             }
         }
 
-        // final check to prevent non account holders, else NPE happen!
-        if (account == null) {
-            parameter.getLinkStatus().setStatusText("Account required!");
-            logger.warning("You're required to have an Account with this provider in order to use this plugin!");
-            return AvailableStatus.UNCHECKABLE;
-        }
-
         this.setBrowserExclusive();
-        login(account, br, false);
+        if (account != null) {
+            login(account, br, false);
+        }
         br.setFollowRedirects(true);
 
         URLConnectionAdapter urlcon = null;
@@ -111,9 +106,13 @@ public class XArtCom extends PluginForHost {
             int res_code = urlcon.getResponseCode();
             long dlsize = urlcon.getCompleteContentLength();
 
-            if (res_code == 200 && !urlcon.getContentType().contains("text/html")) {
-                parameter.setDownloadSize(dlsize);
-                return AvailableStatus.TRUE;
+            if (res_code == 200) {
+                if (!urlcon.getContentType().contains("text/html")) {
+                    parameter.setDownloadSize(dlsize);
+                    return AvailableStatus.TRUE;
+                }
+                // unknown issue..
+                return AvailableStatus.FALSE;
             } else if (res_code == 404) {
                 return AvailableStatus.FALSE;
             } else if (res_code == 401) {
