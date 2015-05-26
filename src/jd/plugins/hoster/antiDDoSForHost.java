@@ -712,6 +712,16 @@ public abstract class antiDDoSForHost extends PluginForHost {
 
     /**
      * Wrapper<br/>
+     * Tries to return value given JSon Array of Key from JSon response provided Browser.
+     *
+     * @author raztoki
+     * */
+    protected final String getJsonArray(final Browser ibr, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(ibr.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
@@ -730,6 +740,56 @@ public abstract class antiDDoSForHost extends PluginForHost {
      */
     protected final String[] getJsonResultsFromArray(final String source) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to gather nested \"key\":{.*?} from default Browser
+     *
+     * @author raztoki
+     * @param key
+     * @return
+     */
+    protected final String getJsonNested(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonNested(br.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to gather nested \"key\":{.*?} from imported Browser
+     *
+     * @author raztoki
+     * @param key
+     * @return
+     */
+    protected final String getJsonNested(final Browser ibr, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonNested(ibr.toString(), key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to gather nested \"key\":{.*?} from source
+     *
+     * @author raztoki
+     * @param key
+     * @return
+     */
+    protected final String getJsonNested(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonNested(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Creates and or Ammends Strings ready for JSon requests, with the correct JSon formatting and escaping.
+     *
+     * @author raztoki
+     * @param source
+     * @param key
+     * @param value
+     * @return
+     */
+    protected final String ammendJson(final String source, final String key, final Object value) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.ammendJson(source, key, value);
     }
 
     /**

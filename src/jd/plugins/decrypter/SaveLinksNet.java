@@ -24,14 +24,14 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2,
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
 
 names = { "linkshield.org", "safelink.strike-up.net", "dwnlinks.com", "oxyl.me", "linkpacking.net", "resumable-link.info", "trollbridge.org", "safelinks.fr", "t9c.de", "deni1743-safelink.tk", "moesubs.tk", "lulusafe.tk", "matthy.tk", "hydelink.in", "safelinking.biz", "securelinking.tk", "filedp.com", "7pz.com", "mway.tk", "url-shortener.info", "rgf.me", "r4dm.com", "savelinks.net" },
 
 urls = { "http://(www\\.)?linkshield\\.org/(p|d)/[a-z0-9]+", "http://(www\\.)?safelink\\.strike-up\\.net/(p|d)/[a-z0-9]+", "http://(www\\.)?dwnlinks\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?oxyl\\.me/(p|d)/[a-z0-9]+", "http://(www\\.)?linkpacking\\.net/(p|d)/[a-z0-9]+", "http://(www\\.)?resumable\\-link\\.info/(p|d)/[a-z0-9]+", "http://(www\\.)?trollbridge\\.org/(p|d)/[a-z0-9]+", "http://(www\\.)?safelinks\\.fr/(p|d)/[a-z0-9]+", "http://(www\\.)?t9c\\.de/(p|d)/[a-z0-9]+", "http://(www\\.)?deni1743\\-safelink\\.tk/(p|d)/[a-z0-9]+", "http://(www\\.)?moesubs\\.tk/(p|d)/[a-z0-9]+", "http://(www\\.)?lulusafe\\.tk/(p|d)/[a-z0-9]+", "http://(www\\.)?matthy\\.tk/(p|d)/[a-z0-9]+", "http://(www\\.)?hydelink\\.in/(p|d)/[a-z0-9]+", "http://(www\\.)?safelinking\\.biz/(p|d)/[a-z0-9]+", "http://(www\\.)?securelinking\\.tk/(p|d)/[a-z0-9]+", "http://(www\\.)?filedp\\.com/(p|d)/[a-z0-9]+",
         "http://(www\\.)?7pz\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?mway\\.tk/(p|d)/[a-z0-9]+", "http://(www\\.)?url\\-shortener\\.info/(p|d)/[a-z0-9]+", "http://(www\\.)?rgf\\.me/(p|d)/[a-z0-9]+", "https?://(www\\.)?r4dm\\.com/(p|d)/[a-z0-9]+", "http://(www\\.)?savelinks\\.net/(p|d)/[a-z0-9]+" },
 
-flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+        flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class SaveLinksNet extends abstractSafeLinking {
 
     // Use this as generic plugin until JD2 comes out as stable. Remove these type of and do it all within SflnkgNt class!

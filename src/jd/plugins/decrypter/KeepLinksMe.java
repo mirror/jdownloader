@@ -25,7 +25,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keeplinks.me", "safemy.link" }, urls = { "https?://(www\\.)?keeplinks\\.(me|eu)/(p|d)/[a-z0-9]+", "http://(www\\.)?safemy\\.link/(p|d)/[a-z0-9]+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "keeplinks.me", "safemy.link" }, urls = { "https?://(www\\.)?keeplinks\\.(me|eu)/(p|d)/[a-z0-9]+", "http://(www\\.)?safemy\\.link/(p|d)/[a-z0-9]+" }, flags = { 0, 0 })
 public class KeepLinksMe extends abstractSafeLinking {
 
     public KeepLinksMe(PluginWrapper wrapper) {
@@ -43,7 +43,7 @@ public class KeepLinksMe extends abstractSafeLinking {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = super.decryptIt(param, progress);
+        ArrayList<DownloadLink> decryptedLinks = super.decryptIt_oldStyle(param, progress);
         return decryptedLinks;
     }
 
