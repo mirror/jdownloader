@@ -16,7 +16,7 @@ import org.jdownloader.translate._JDT;
 public class GenericChunksAction extends CustomizableSelectionAppAction implements ActionContext {
 
     /**
-     * 
+     *
      */
     private static final long  serialVersionUID = 1L;
     public final static String CHUNKS           = "CHUNKS";
@@ -29,11 +29,11 @@ public class GenericChunksAction extends CustomizableSelectionAppAction implemen
     }
 
     public void actionPerformed(ActionEvent e) {
+        final SelectionInfo<?, ?> selectionInfo = getSelection();
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
             protected Void run() throws RuntimeException {
-                SelectionInfo selectionInfo = getSelection();
                 if (selectionInfo != null) {
                     for (final Object dl : selectionInfo.getChildren()) {
                         if (dl instanceof DownloadLink) {

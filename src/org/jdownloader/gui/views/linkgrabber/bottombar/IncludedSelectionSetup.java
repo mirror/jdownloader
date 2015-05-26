@@ -10,15 +10,15 @@ import org.jdownloader.gui.views.linkgrabber.bottombar.GenericDeleteFromLinkgrab
 import org.jdownloader.translate._JDT;
 
 public class IncludedSelectionSetup implements ActionContext {
-    private boolean                     includeUnselectedLinks   = false;
-    private boolean                     includeSelectedLinks     = true;
-    private PackageControllerTable      table;
-    private PackageControllerTableModel model;
+    private boolean                           includeUnselectedLinks   = false;
+    private boolean                           includeSelectedLinks     = true;
+    private final PackageControllerTable      table;
+    private final PackageControllerTableModel model;
 
-    private ExtTableModelListener       modelListener;
-    private ExtTableListener            tableListener;
-    public static final String          INCLUDE_SELECTED_LINKS   = "includeSelectedLinks";
-    public static final String          INCLUDE_UNSELECTED_LINKS = "includeUnselectedLinks"; ;
+    private ExtTableModelListener             modelListener;
+    private ExtTableListener                  tableListener;
+    public static final String                INCLUDE_SELECTED_LINKS   = "includeSelectedLinks";
+    public static final String                INCLUDE_UNSELECTED_LINKS = "includeUnselectedLinks"; ;
 
     public IncludedSelectionSetup(PackageControllerTable table, ExtTableModelListener modelListener, ExtTableListener tableListener) {
         this.table = table;
@@ -41,7 +41,6 @@ public class IncludedSelectionSetup implements ActionContext {
     }
 
     public void updateListeners() {
-
         switch (getSelectionType()) {
         case ALL:
             table.getEventSender().removeListener(tableListener);
@@ -50,15 +49,12 @@ public class IncludedSelectionSetup implements ActionContext {
         case SELECTED:
         case UNSELECTED:
             table.getEventSender().addListener(tableListener, true);
-
             model.getEventSender().removeListener(modelListener);
             break;
-
         case NONE:
             table.getEventSender().removeListener(tableListener);
             model.getEventSender().removeListener(modelListener);
         }
-
     }
 
     public static String getTranslationForIncludeSelectedLinks() {
@@ -71,10 +67,7 @@ public class IncludedSelectionSetup implements ActionContext {
     }
 
     public void setIncludeSelectedLinks(boolean includeSelectedLinks) {
-
         this.includeSelectedLinks = includeSelectedLinks;
-        updateListeners();
-
     }
 
     public static String getTranslationForIncludeUnselectedLinks() {
@@ -87,9 +80,6 @@ public class IncludedSelectionSetup implements ActionContext {
     }
 
     public void setIncludeUnselectedLinks(boolean includeUnselectedLinks) {
-
         this.includeUnselectedLinks = includeUnselectedLinks;
-        updateListeners();
-
     }
 }

@@ -1566,6 +1566,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         } finally {
                             writeUnlock();
                         }
+                        final long version = backendChanged.incrementAndGet();
+                        childrenChanged.set(version);
+                        structureChanged.set(version);
                         eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.REFRESH_STRUCTURE));
                     } catch (final Throwable e) {
                         if (loadedList != null) {
@@ -2199,13 +2202,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         final List<FilePackage> filePackagesToAdd = new ArrayList<FilePackage>();
         final List<DownloadLink> force = new ArrayList<DownloadLink>();
         final boolean forcedAutoStart = Boolean.TRUE.equals(moveLinksSettings.getAutoForce());
+        final boolean autoMode = MoveLinksMode.AUTO.equals(moveLinksSettings.getMode());
         boolean autoStart = Boolean.TRUE.equals(moveLinksSettings.getAutoStart());
         for (final PackageView<CrawledPackage, CrawledLink> packageView : selection.getPackageViews()) {
             final List<CrawledLink> links = packageView.getChildren();
             final List<FilePackage> convertedLinks = LinkCollector.getInstance().convert(links, true);
             for (final CrawledLink cl : links) {
-                autoStart |= cl.isAutoStartEnabled();
-                if (cl.isForcedAutoStartEnabled() || forcedAutoStart) {
+                autoStart |= (autoMode && cl.isAutoStartEnabled());
+                if ((autoMode && cl.isForcedAutoStartEnabled()) || forcedAutoStart) {
                     force.add(cl.getDownloadLink());
                 }
                 if (Priority.DEFAULT.equals(cl.getPriority())) {
