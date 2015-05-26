@@ -47,7 +47,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nitroflare.com" }, urls = { "https?://(www\\.)?nitroflare\\.com/view/[A-Z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nitroflare.com" }, urls = { "https?://(www\\.)?nitroflare\\.com/(?:view|watch)/[A-Z0-9]+" }, flags = { 2 })
 public class NitroFlareCom extends antiDDoSForHost {
 
     private final String         language = System.getProperty("user.language");
@@ -67,7 +67,7 @@ public class NitroFlareCom extends antiDDoSForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
+        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://").replace(".com/watch/", ".com/view/"));
     }
 
     private void setConstants(final Account account) {
@@ -320,7 +320,7 @@ public class NitroFlareCom extends antiDDoSForHost {
      */
     private String validateAccount(final Account account) throws PluginException {
         synchronized (LOCK) {
-            final String user = account.getUser();
+            final String user = account.getUser().toLowerCase(Locale.ENGLISH);
             final String pass = account.getPass();
             if (inValidate(pass)) {
                 // throw new PluginException(LinkStatus.ERROR_PREMIUM,
@@ -357,6 +357,10 @@ public class NitroFlareCom extends antiDDoSForHost {
             }
             if (inValidate(user) || !user.matches(".+@.+")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou haven't provided a valid username (must be email address)!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            // check to see if the user added the email username with caps.. this can make login incorrect
+            if (!user.equals(account.getUser())) {
+                account.setUser(user);
             }
             // urlencode required!
             return "user=" + Encoding.urlEncode(user) + "&premiumKey=" + Encoding.urlEncode(pass);
