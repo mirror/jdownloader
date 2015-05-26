@@ -15,6 +15,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -77,8 +78,16 @@ public class AutoStartManager implements GenericConfigEventListener<Boolean> {
                             break;
                         }
                         final SelectionInfo<CrawledPackage, CrawledLink> selectionInfo;
-                        if (!Application.isHeadless()) {
-                            selectionInfo = LinkGrabberTable.getInstance().getSelectionInfo(false, CFG_LINKGRABBER.CFG.isAutoStartConfirmSidebarFilterEnabled());
+                        if (!Application.isHeadless() && CFG_LINKGRABBER.CFG.isAutoStartConfirmSidebarFilterEnabled()) {
+                            /* dirty workaround */
+                            selectionInfo = new EDTHelper<SelectionInfo<CrawledPackage, CrawledLink>>() {
+
+                                @Override
+                                public SelectionInfo<CrawledPackage, CrawledLink> edtRun() {
+                                    LinkGrabberTable.getInstance().getModel().fireStructureChange(true);
+                                    return LinkGrabberTable.getInstance().getSelectionInfo(false, true);
+                                }
+                            }.getReturnValue();
                         } else {
                             selectionInfo = LinkCollector.getInstance().getSelectionInfo();
                         }
