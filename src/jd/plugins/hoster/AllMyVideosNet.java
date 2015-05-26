@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allmyvideos.net", "allmyvids.de" }, urls = { "https?://(www\\.)?allmyvideos\\.net/([a-z0-9]{12}|v/v\\-[A-Za-z0-9]+)", "et65iuz549tgfr4u89ztg5zht58g590jh40erh7UNUSEDREGEXeTGig5rik" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allmyvideos.net", "allmyvids.de" }, urls = { "https?://(www\\.)?allmyvideos\\.net/((?:embed-)?[a-z0-9]{12}|v/v\\-[A-Za-z0-9]+)", "et65iuz549tgfr4u89ztg5zht58g590jh40erh7UNUSEDREGEXeTGig5rik" }, flags = { 0, 0 })
 public class AllMyVideosNet extends PluginForHost {
 
     public AllMyVideosNet(PluginWrapper wrapper) {
@@ -45,6 +45,12 @@ public class AllMyVideosNet extends PluginForHost {
 
     private static final String TYPE_OLD = "https?://(www\\.)?allmyvideos\\.net/v/v\\-[A-Za-z0-9]+";
 
+    @Override
+    public void correctDownloadLink(final DownloadLink downloadLink) {
+        // strip video hosting url's to reduce possible duped links.
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("/(vid)?embed-", "/"));
+    }
+
     /**
      * This site uses a modified XFS script
      *
@@ -53,6 +59,7 @@ public class AllMyVideosNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        correctDownloadLink(downloadLink);
         this.setBrowserExclusive();
         br.setCookie("http://allmyvideos.net/", "lang", "english");
         br.setFollowRedirects(true);
