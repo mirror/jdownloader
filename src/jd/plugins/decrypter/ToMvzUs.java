@@ -47,6 +47,7 @@ public class ToMvzUs extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
+        // cookie needed for seeing links!
         br.setCookie(this.getHost(), "links_tos", "1");
         br.getPage(parameter);
         if (br.getHttpConnection() == null || !br.getHttpConnection().isOK()) {
@@ -60,7 +61,7 @@ public class ToMvzUs extends PluginForDecrypt {
         // tv ep each mirror, movie each mirror.
         if (parameter.matches(wt)) {
             decryptWatch(decryptedLinks);
-            final String fpName = new Regex(parameter, "(?:watch_episode|watch_movie)/(.*?)/").getMatch(0);
+            final String fpName = new Regex(parameter, "(?:watch_episode|watch_movie)/(.+)/?").getMatch(0);
             if (fpName != null) {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName.replace("_", " "));
@@ -101,7 +102,7 @@ public class ToMvzUs extends PluginForDecrypt {
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return true;
+        return false;
     }
 
     public boolean hasAutoCaptcha() {
