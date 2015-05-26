@@ -1905,10 +1905,14 @@ public abstract class K2SApi extends PluginForHost {
         }
 
         /**
+         *
          * Tries to return value of key from JSon response, from String source.
          *
          * @author raztoki
-         * */
+         * @param source
+         * @param key
+         * @return
+         */
         public static String getJson(final String source, final String key) {
             String result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
             if (result == null) {
@@ -1935,7 +1939,10 @@ public abstract class K2SApi extends PluginForHost {
          * Tries to return value of key from JSon response, from provided Browser.
          *
          * @author raztoki
-         * */
+         * @param ibr
+         * @param key
+         * @return
+         */
         public static String getJson(final Browser ibr, final String key) {
             return getJson(ibr.toString(), key);
         }
@@ -1946,7 +1953,7 @@ public abstract class K2SApi extends PluginForHost {
          * @author raztoki
          * */
         public static String getJsonArray(final String source, final String key) {
-            String result = new Regex(source, "\"" + key + "\":(\\[.*?\\])(?:,|\\})").getMatch(0);
+            String result = new Regex(source, "\"" + Pattern.quote(key) + "\":(\\[.*?\\])(?:,|\\})").getMatch(0);
             if (result != null) {
                 result = unescape(result);
             }
@@ -1964,9 +1971,57 @@ public abstract class K2SApi extends PluginForHost {
             if (source == null) {
                 return null;
             }
-            final String[] result = new Regex(source, "\"([^\"]+)\"\\s*(?:,|\\])").getColumn(0);
+            String[] result = null;
+            // two types of actions can happen here. it could be series of [{"blah":"blah1"},{"blah":"blah2"}] or series of ["blah","blah2"]
+            if (source.startsWith("[{")) {
+                result = new Regex(source, "\\s*(?:\\[|,)\\s*(\\{.*?\\})\\s*").getColumn(0);
+            } else {
+                result = new Regex(source, "\\s*(?:\\[|,)\\s*\"([^\"]+)\"\\s*").getColumn(0);
+            }
             return result;
         }
+
+        /**
+         * pulls neested { } when object has key
+         *
+         * @author raztoki
+         * @param source
+         * @param key
+         * @return
+         */
+        public static String getJsonNested(final String source, final String key) {
+            if (source == null) {
+                return null;
+            }
+            final String result = new Regex(source, "\"" + Pattern.quote(key) + "\":\\{(.*?)\\}(?:,|\\})").getMatch(0);
+            return result;
+        }
+
+        /**
+         * Creates and or Ammends Strings ready for JSon requests, with the correct JSon formatting and escaping.
+         *
+         * @author raztoki
+         * @param source
+         * @param key
+         * @param value
+         * @return
+         */
+        public static String ammendJson(final String source, final String key, final Object value) {
+            if (key == null) {
+                return null;
+            }
+
+            String result = source;
+            if (result == null) {
+                result = "{";
+            } else {
+                result = result.substring(0, result.length() - 1) + ",";
+            }
+            final boolean useBracket = value instanceof String;
+            result = result.concat("\"" + key + "\":" + (useBracket ? "\"" : "") + (useBracket ? escape(value.toString()) : value) + (useBracket ? "\"" : "") + "}");
+            return result;
+        }
+
     }
 
 }

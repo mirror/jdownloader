@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
 //Similar to SafeUrlMe (safeurl.me)
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safelinking.net" }, urls = { "https?://(?:www\\.)?(safelinking\\.net/(?:p|d(?:/com)?)/[a-z0-9]+|sflk\\.in/[A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "safelinking.net" }, urls = { "https?://(?:www\\.)?(safelinking\\.net/(?:p|d(?:/com)?)/[a-f0-9]{10}|sflk\\.in/[a-f0-9]{10})" }, flags = { 0 })
 public class SflnkgNt extends abstractSafeLinking {
 
     public SflnkgNt(PluginWrapper wrapper) {
