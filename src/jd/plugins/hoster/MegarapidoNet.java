@@ -145,7 +145,7 @@ public class MegarapidoNet extends PluginForHost {
             final String dlurl = Encoding.urlEncode(link.getDownloadURL());
             String postData = "urllist=" + dlurl + "&links=" + dlurl + "&exibir=normal&usar=premium&user=" + userID + "&autoreset=";
             this.postAPISafe("/gerar.php?rand=0." + System.currentTimeMillis(), postData);
-            dllink = br.getRegex("('|\")(https?://[a-z0-9-\\.]+\\.megarapido\\.net/[^<>]+)\\1").getMatch(1);
+            dllink = br.getRegex("('|\")(https?://[a-z0-9-\\.]+\\.megarapido\\.net/.*?)\\1").getMatch(1);
             if (dllink == null) {
                 /* Should never happen */
                 handleErrorRetries("dllinknull", 5);
