@@ -19,6 +19,7 @@ import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.views.downloads.action.Modifier;
+import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 import org.jdownloader.images.NewTheme;
 
 public abstract class CustomizableAppAction extends AppAction {
@@ -31,10 +32,10 @@ public abstract class CustomizableAppAction extends AppAction {
     private HashSet<ActionContext> setupObjects;
 
     public List<ActionContext> getSetupObjects() {
-        if (setupObjects == null) {
-            return null;
+        if (setupObjects != null) {
+            return new ArrayList<ActionContext>(setupObjects);
         }
-        return new ArrayList<ActionContext>(setupObjects);
+        return null;
     }
 
     protected static ImageIcon getCheckBoxedIcon(String string, boolean selected, boolean enabled) {
@@ -44,7 +45,9 @@ public abstract class CustomizableAppAction extends AppAction {
     private long lastRequestUpdate;
 
     public void removeContextSetup(ActionContext contextSetup) {
-        this.setupObjects.remove(contextSetup);
+        if (setupObjects != null) {
+            this.setupObjects.remove(contextSetup);
+        }
     }
 
     public void addContextSetup(ActionContext contextSetup) {
@@ -59,7 +62,6 @@ public abstract class CustomizableAppAction extends AppAction {
         if (setupObjects != null) {
             fill(setupObjects);
         }
-
     }
 
     /**
@@ -69,7 +71,6 @@ public abstract class CustomizableAppAction extends AppAction {
         if (setupObjects2 != null && menuItemData != null) {
             for (ActionContext setupObject : setupObjects2) {
                 for (GetterSetter f : ReflectionUtils.getGettersSetteres(setupObject.getClass())) {
-
                     try {
                         if (f.getAnnotation(Customizer.class) != null) {
                             Object v = menuItemData.getActionData().fetchSetup(f.getKey());
@@ -92,6 +93,9 @@ public abstract class CustomizableAppAction extends AppAction {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                }
+                if (setupObject instanceof IncludedSelectionSetup) {
+                    ((IncludedSelectionSetup) setupObject).updateListeners();
                 }
             }
         }
@@ -201,7 +205,7 @@ public abstract class CustomizableAppAction extends AppAction {
     }
 
     /**
-     * 
+     *
      */
     public void applyMenuItemData() {
         if (menuItemData == null) {

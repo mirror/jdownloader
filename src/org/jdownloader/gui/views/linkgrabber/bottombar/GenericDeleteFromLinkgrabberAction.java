@@ -157,8 +157,6 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     public GenericDeleteFromLinkgrabberAction() {
         super();
         addContextSetup(byPassDialog = new ByPassDialogSetup());
-        initIncludeSelectionSupport();
-        setIconKey(IconKey.ICON_DELETE);
         delayer = new DelayedRunnable(500, 1500) {
 
             @Override
@@ -166,7 +164,8 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                 update();
             }
         };
-
+        initIncludeSelectionSupport();
+        setIconKey(IconKey.ICON_DELETE);
     }
 
     protected void initIncludeSelectionSupport() {
@@ -413,7 +412,6 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-        includedSelection.updateListeners();
         update();
 
     }

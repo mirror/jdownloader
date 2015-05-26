@@ -38,9 +38,7 @@ public abstract class CustomizableSelectionAppAction<PackageType extends Abstrac
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-        selection = null;
         selection = getSelection();
-
         setEnabled(hasSelection());
     }
 

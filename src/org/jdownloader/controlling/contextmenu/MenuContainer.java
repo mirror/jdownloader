@@ -14,7 +14,6 @@ public class MenuContainer extends MenuItemData {
     public MenuContainer() {
         super();
         setType(null);
-
     }
 
     public void add(Class<? extends AppAction> class1) {

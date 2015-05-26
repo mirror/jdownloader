@@ -502,6 +502,9 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     }
                     updateUniqueAlltimeIDMaps(lpackages);
                     dupeController.invalidate();
+                    final long version = backendChanged.incrementAndGet();
+                    childrenChanged.set(version);
+                    structureChanged.set(version);
                     eventSender.fireEvent(new DownloadControllerEventStructureRefresh());
                 } catch (final Throwable e) {
                     if (loadedList != null) {

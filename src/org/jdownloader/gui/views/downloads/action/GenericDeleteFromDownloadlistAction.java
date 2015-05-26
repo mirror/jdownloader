@@ -141,8 +141,6 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     public GenericDeleteFromDownloadlistAction() {
         super();
         addContextSetup(byPassDialog = new ByPassDialogSetup());
-        initIncludedSelectionSupport();
-        setIconKey(IconKey.ICON_DELETE);
         delayer = new DelayedRunnable(500, 1500) {
 
             @Override
@@ -150,7 +148,8 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                 update();
             }
         };
-
+        initIncludedSelectionSupport();
+        setIconKey(IconKey.ICON_DELETE);
     }
 
     protected void initIncludedSelectionSupport() {
@@ -166,11 +165,9 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                 case UNSELECTED:
                     DownloadController.getInstance().getEventSender().removeListener(GenericDeleteFromDownloadlistAction.this);
                     break;
-
                 case NONE:
                     DownloadController.getInstance().getEventSender().removeListener(GenericDeleteFromDownloadlistAction.this);
                 }
-
             }
         });
     }
@@ -501,7 +498,6 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-        includedSelection.updateListeners();
         update();
     }
 
@@ -526,7 +522,6 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
     public void setDeleteOffline(final boolean deleteOffline) {
         GenericDeleteFromDownloadlistAction.this.deleteOffline = deleteOffline;
-
     }
 
     public void setIgnoreFiltered(final boolean ignoreFiltered) {
@@ -539,7 +534,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
             @Override
             protected void runInEDT() {
-                SelectionInfo<FilePackage, DownloadLink> selectionInfo = null;
+                final SelectionInfo<FilePackage, DownloadLink> selectionInfo;
                 switch (includedSelection.getSelectionType()) {
                 case SELECTED:
                     selection = new WeakReference<SelectionInfo<FilePackage, DownloadLink>>(selectionInfo = getTable().getSelectionInfo());
