@@ -214,9 +214,11 @@ public class UploadRocketNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* Last chance, check for offline */
-            getFnameViaAbuseLink(altbr, link);
+            fileInfo[0] = getFnameViaAbuseLink(altbr, link);
             logger.warning("filename equals null, throwing \"plugin defect\"");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (inValidate(fileInfo[0])) {
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         if (fileInfo[2] != null && !fileInfo[2].equals("")) {
             link.setMD5Hash(fileInfo[2].trim());
