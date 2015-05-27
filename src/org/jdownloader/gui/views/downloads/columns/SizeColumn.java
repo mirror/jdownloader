@@ -25,7 +25,7 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 public class SizeColumn extends ExtColumn<AbstractNode> {
 
     /**
-     * 
+     *
      */
 
     protected RenderLabel    sizeRenderer;
@@ -101,7 +101,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
         this.formatter = new DecimalFormat("0.00") {
 
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1L;
 
@@ -124,7 +124,6 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
         this.sizeRenderer.setText(this.getSizeString(getBytes(value)));
         if (fileCountVisible) {
             if (value instanceof AbstractPackageNode) {
-
                 countRenderer.setText("[" + ((AbstractPackageNode) value).getView().getItems().size() + "]");
             } else {
                 countRenderer.setText("");
