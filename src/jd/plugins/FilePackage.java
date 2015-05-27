@@ -109,7 +109,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
                 }
 
                 @Override
-                public void aggregate() {
+                public FilePackageView aggregate() {
+                    return this;
                 }
 
                 @Override
