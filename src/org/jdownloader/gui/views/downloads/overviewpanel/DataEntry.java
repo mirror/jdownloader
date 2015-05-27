@@ -91,8 +91,12 @@ public abstract class DataEntry<T> {
         filtered.setText(string.toString());
     }
 
-    public void updateVisibility(boolean hasSelectedObjects) {
-        if (CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled() || (!CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled() && !CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled() && !CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled())) {
+    public void updateVisibility(final boolean hasSelectedObjects) {
+        final boolean smart = CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled();
+        final boolean visibleOnly = CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled();
+        final boolean selectedOnly = CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled();
+        final boolean totalVisible = CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled();
+        if (smart || (!visibleOnly && !totalVisible && !selectedOnly)) {
             if (hasSelectedObjects) {
                 filtered.setVisible(false);
                 total.setVisible(false);
@@ -103,9 +107,9 @@ public abstract class DataEntry<T> {
                 selected.setVisible(false);
             }
         } else {
-            filtered.setVisible(CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled());
-            total.setVisible(CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled());
-            selected.setVisible(CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled());
+            filtered.setVisible(visibleOnly);
+            total.setVisible(totalVisible);
+            selected.setVisible(selectedOnly);
         }
     }
 
