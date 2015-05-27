@@ -55,44 +55,45 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kenfiles.com" }, urls = { "https?://(www\\.)?kenfiles\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class KenfilesCom extends PluginForHost {
 
-    private String                         correctedBR                  = "";
-    private String                         passCode                     = null;
-    private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private String                         correctedBR                               = "";
+    private String                         passCode                                  = null;
+    private static final String            PASSWORDTEXT                              = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://kenfiles.com";
-    private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String            COOKIE_HOST                               = "http://kenfiles.com";
+    private static final String            NICE_HOST                                 = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String            NICE_HOSTproperty                         = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(kenfiles\\.com)";
-    private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
-    private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean           VIDEOHOSTER                  = false;
-    private static final boolean           VIDEOHOSTER_2                = false;
-    private static final boolean           SUPPORTSHTTPS                = false;
-    private static final boolean           SUPPORTSHTTPS_FORCED         = false;
-    private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
-    private final boolean                  ENABLE_RANDOM_UA             = false;
-    private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
+    private static final String            DOMAINS                                   = "(kenfiles\\.com)";
+    private static final String            MAINTENANCE                               = ">This server is in maintenance mode";
+    private static final String            MAINTENANCEUSERTEXT                       = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
+    private static final String            ALLWAIT_SHORT                             = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String            PREMIUMONLY1                              = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String            PREMIUMONLY2                              = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean           VIDEOHOSTER                               = false;
+    private static final boolean           VIDEOHOSTER_2                             = false;
+    private static final boolean           SUPPORTSHTTPS                             = false;
+    private static final boolean           SUPPORTSHTTPS_FORCED                      = false;
+    private static final boolean           SUPPORTS_ALT_AVAILABLECHECK               = true;
+    private final boolean                  ENABLE_RANDOM_UA                          = false;
+    private static AtomicReference<String> agent                                     = new AtomicReference<String>(null);
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = 1;
-    private static final int               FREE_MAXDOWNLOADS            = 1;
-    private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean           FREE_RESUME                               = true;
+    private static final int               FREE_MAXCHUNKS                            = 1;
+    private static final int               FREE_MAXDOWNLOADS                         = 1;
+    private static final boolean           ACCOUNT_FREE_RESUME                       = true;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS                    = 0;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS                 = 20;
+    private static final boolean           ACCOUNT_PREMIUM_RESUME                    = true;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS                 = 0;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS              = 20;
+    private static final boolean           ACCOUNT_PREMIUM_CONCURRENT_USAGE_POSSIBLE = true;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger           totalMaxSimultanFreeDownload              = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
-    private static AtomicInteger           maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
-    private static Object                  LOCK                         = new Object();
-    private String                         fuid                         = null;
+    private static AtomicInteger           maxFree                                   = new AtomicInteger(1);
+    private static AtomicInteger           maxPrem                                   = new AtomicInteger(1);
+    private static Object                  LOCK                                      = new Object();
+    private String                         fuid                                      = null;
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.6
@@ -143,7 +144,9 @@ public class KenfilesCom extends PluginForHost {
          * ai.setValidUntil(TimeFormatter.getMilliSeconds(monthAndDay + " " + year + " " + time, "MMMM dd yyyy hh:mm", null)); }
          */
         account.setValid(true);
-
+        maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        account.setConcurrentUsePossible(ACCOUNT_PREMIUM_CONCURRENT_USAGE_POSSIBLE);
         ai.setStatus("Premium User");
         return ai;
     }
@@ -184,6 +187,7 @@ public class KenfilesCom extends PluginForHost {
             if (!br.containsHTML("<h3>User Details </h3>")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(COOKIE_HOST);
@@ -346,6 +350,7 @@ public class KenfilesCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         // Make sure the download link is from premium
         if (!br.containsHTML(">Get Premium")) {
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             // make sure the download form exists
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) {
@@ -634,6 +639,11 @@ public class KenfilesCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return maxFree.get();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return maxPrem.get();
     }
 
     /* do not add @Override here to keep 0.* compatibility */
