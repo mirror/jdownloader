@@ -1,4 +1,5 @@
 ExampleMenuEntry=@%s1: %s2
+INTERVAL=Intervalo
 NONE=Nenhum
 ON_ARCHIVE_EXTRACTED=Extração de arquivo concluída
 ON_DOWNLOADS_PAUSE=Controlador de Downloads pausado
@@ -30,11 +31,13 @@ example_infoFile=Criar arquivo INFO na pasta de downloads com informações deta
 example_play_sound=Tocar um arquivo WAV
 example_script_name=Exemplo
 filepackage=// Pacote de arquivo
+interval_settings=Intervalo de chamadas em ms
 loading_editor_title=Carregando editor...
 none_trigger=// Este evento nunca será disparado.
 permission_msg=O script de evento '%s1' necessita permissão do disparador '%s2'.\r\nO script está tentando\r\n%s3\r.\nDeseja permitir isto? Se não tiver certeza, verifique seu script!
 permission_title=Permissões do Criador de Script de Evento necessárias!
 properties_for_eventtrigger=// ========= Propriedades do Disparador de Evento '%s1'  =========
+reset_link_on_low_speed=Redefinir download se a velocidade for baixa
 script_editor_title=Editor de script: %s1
 securityLoading=Você está tentando carregar e executar JavaScript de %s1. Por favor, tenha em mente que este script possui acesso total às Propriedades e Funções do Ambiente atual. Somente carregue código de confiança! Recomendamos carregar somente arquivos JavaScript locais confiáveis.
 securityLoading_title=Alerta de Segurança!
