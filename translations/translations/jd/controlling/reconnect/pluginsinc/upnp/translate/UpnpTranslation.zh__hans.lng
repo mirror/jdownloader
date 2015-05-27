@@ -1,4 +1,3 @@
-AutoDetectAction_run_failed=找到 UPNP 设备，但是不能执行重新连接。\n\n尝试 Live Header 重新连接来代替!
 AutoDetectUpnpAction_AutoDetectUpnpAction_=尝试在您的网络中查找全部 UPNP 重新连接设备。\n\n大多数 FritzBox 路由器可以以这种方式重新连接。
 UPNPReconnectInvoker_getName_=UPNP 路由器重新连接
 UPNPRouterPlugin_run_error=无法找到任何 UPNP 设置。尝试 Live Header 重新连接来代替!
