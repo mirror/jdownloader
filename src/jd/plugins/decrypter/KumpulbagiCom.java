@@ -98,7 +98,7 @@ public class KumpulbagiCom extends PluginForDecrypt {
         // }
 
         /* empty folder | no folder */
-        if (!br.containsHTML("id=\"fileId\"")) {
+        if (!br.containsHTML("name=\"fileId\"")) {
             try {
                 decryptedLinks.add(this.createOfflinelink(parameter));
             } catch (final Throwable ethr) {
