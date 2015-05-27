@@ -59,6 +59,7 @@ public class ImagePorterCom extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload("http://www.imageporter.com/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
@@ -444,6 +445,7 @@ public class ImagePorterCom extends PluginForHost {
         return true;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -473,6 +475,9 @@ public class ImagePorterCom extends PluginForHost {
                     }
                 }
             }
+        }
+        if (filename == null) {
+            filename = new Regex(BRBEFORE, "imageporter\\.com/down\\d+\\-[a-z0-9]+/([^<>\"]*?)\\.html\"").getMatch(0);
         }
         String filesize = new Regex(BRBEFORE, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {

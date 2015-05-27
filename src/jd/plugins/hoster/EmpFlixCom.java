@@ -59,28 +59,41 @@ public class EmpFlixCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(Error: Sorry, the movie you requested was not found|Check this hot video instead:</div>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Error: Sorry, the movie you requested was not found|Check this hot video instead:</div>)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.*?), Free Streaming Porn</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("class=\"leftSideView\">.*?<div class=\"line\">.*?<h2>(.*?)</h2>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("id=\"title\" name=\"title\" value=\"([^<>\"]*?)\"").getMatch(0);
+        }
         DLLINK = br.getRegex("addVariable\\(\\'config\\', \\'(http://.*?)\\'\\)").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("(\\'|\")(http://cdn\\.empflix\\.com/empflv(\\d+)?/.*?)(\\'|\")").getMatch(1);
             if (DLLINK == null) {
                 DLLINK = br.getRegex("id=\"config\" name=\"config\" value=\"(http://.*?)\"").getMatch(0);
                 if (DLLINK == null) {
-                    DLLINK = br.getRegex("flashvars\\.config = escape\\(\"(http://.*?)\"\\)").getMatch(0);
+                    DLLINK = br.getRegex("flashvars\\.config = escape\\(\"(.*?)\"\\)").getMatch(0);
                 }
             }
         }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        DLLINK = Encoding.htmlDecode(DLLINK);
+        if (DLLINK.startsWith("//")) {
+            DLLINK = "http:" + DLLINK;
+        }
         br.getPage(Encoding.htmlDecode(DLLINK));
         DLLINK = br.getRegex("<(file|videoLink)>(http://.*?)</(file|videoLink)>").getMatch(1);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
@@ -90,10 +103,11 @@ public class EmpFlixCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

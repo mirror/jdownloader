@@ -88,6 +88,8 @@ public class FilesloopCom extends PluginForHost {
         br = new Browser();
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
+        br.setReadTimeout(1 * 60 * 1000);
+        br.setConnectTimeout(1 * 60 * 1000);
         return br;
     }
 

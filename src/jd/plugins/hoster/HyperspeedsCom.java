@@ -41,6 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hyperspeeds.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
@@ -106,12 +107,18 @@ public class HyperspeedsCom extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public boolean canHandle(final DownloadLink downloadLink, final Account account) {
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
         }
+        long fsize = downloadLink.getVerifiedFileSize();
+        if (fsize == -1) {
+            fsize = downloadLink.getDownloadSize();
+        }
+        final long max_file_size = account.getLongProperty("max_file_size", -1);
         final String currentHost = this.correctHost(downloadLink.getHost());
         /* Make sure that we do not start more than the allowed number of max simultan downloads for the current host. */
         synchronized (hostRunningDlsNumMap) {
@@ -122,6 +129,10 @@ public class HyperspeedsCom extends PluginForHost {
                     return false;
                 }
             }
+        }
+        /* Make sure that our account type allows downloading a link with this filesize. */
+        if (fsize > max_file_size) {
+            return false;
         }
         return true;
     }
@@ -297,6 +308,7 @@ public class HyperspeedsCom extends PluginForHost {
 
         final String accounttype = getJson("type");
         final String validuntil = getJson("expiration");
+        final String max_file_size = getJson("max_file_size");
 
         if (accounttype.equals("premium")) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd", Locale.ENGLISH));
@@ -307,8 +319,16 @@ public class HyperspeedsCom extends PluginForHost {
             ai.setStatus("Registered (free) account");
         }
 
+        if (max_file_size != null) {
+            /* Usually only free accounts have max_file_size limits. */
+            account.setProperty("max_file_size", SizeFormatter.getSize(max_file_size));
+        } else {
+            /* Make sure that in case the users' account type changed we remove the old property. */
+            account.setProperty("max_file_size", Property.NULL);
+        }
+
         /* TODO: Add API call for this once it's available */
-        // this.getAPISafe("/deb_hosters.php");
+        this.getAPISafe("/deb_hosters.php");
         this.getAPISafe("http://hyperspeeds.com/");
         ArrayList<String> supportedhostslist = new ArrayList();
         final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
