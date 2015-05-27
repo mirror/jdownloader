@@ -137,12 +137,12 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
     }
 
     private PackageType getPreviousPackage(int currentIndex, ChildrenType childrenType) {
-        for (int index = currentIndex; index >= 0; index--) {
-            final AbstractNode node = tableModelData.get(index);
-            if (node instanceof AbstractPackageNode) {
-                return (PackageType) node;
-            }
-        }
+        // for (int index = currentIndex; index >= 0; index--) {
+        // final AbstractNode node = tableModelData.get(index);
+        // if (node instanceof AbstractPackageNode) {
+        // return (PackageType) node;
+        // }
+        // }
         /* TODO: fixme, support for hideSingleChildrenPackages */
         final int size = tableModelData.getModelDataPackages().size();
         for (int index = 0; index < size; index++) {
