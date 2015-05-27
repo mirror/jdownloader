@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.downloads.overviewpanel;
 import java.awt.event.HierarchyListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.Box;
 import javax.swing.JSeparator;
@@ -43,6 +44,24 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> implements DownloadControllerListener, HierarchyListener, GenericConfigEventListener<Boolean>, GUIListener {
 
+    private static final AtomicBoolean INCLUDE_DISABLED = new AtomicBoolean(false) {
+        {
+            final AtomicBoolean variable = this;
+            CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+                @Override
+                public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                    variable.set(Boolean.TRUE.equals(newValue));
+                }
+
+                @Override
+                public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                }
+            });
+            variable.set(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled());
+        }
+    };
+
     private final class FailedEntry extends DataEntry<AggregatedNumbers> {
         private FailedEntry(String label) {
             super(label);
@@ -50,14 +69,15 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
         @Override
         public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            final boolean includeDisabled = INCLUDE_DISABLED.get();
             if (total != null) {
-                setTotal(total.getFailedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setTotal(total.getFailedString(includeDisabled));
             }
             if (filtered != null) {
-                setFiltered(filtered.getFailedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setFiltered(filtered.getFailedString(includeDisabled));
             }
             if (selected != null) {
-                setSelected(selected.getFailedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setSelected(selected.getFailedString(includeDisabled));
             }
         }
 
@@ -74,14 +94,15 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
         @Override
         public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            final boolean includeDisabled = INCLUDE_DISABLED.get();
             if (total != null) {
-                setTotal(total.getSkippedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setTotal(total.getSkippedString(includeDisabled));
             }
             if (filtered != null) {
-                setFiltered(filtered.getSkippedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setFiltered(filtered.getSkippedString(includeDisabled));
             }
             if (selected != null) {
-                setSelected(selected.getSkippedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setSelected(selected.getSkippedString(includeDisabled));
             }
         }
 
@@ -98,14 +119,15 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
         @Override
         public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            final boolean includeDisabled = INCLUDE_DISABLED.get();
             if (total != null) {
-                setTotal(total.getFinishedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setTotal(total.getFinishedString(includeDisabled));
             }
             if (filtered != null) {
-                setFiltered(filtered.getFinishedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setFiltered(filtered.getFinishedString(includeDisabled));
             }
             if (selected != null) {
-                setSelected(selected.getFinishedString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setSelected(selected.getFinishedString(includeDisabled));
             }
         }
 
@@ -123,13 +145,13 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
         @Override
         public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
             if (total != null) {
-                setTotal(total.getConnections() + "");
+                setTotal(Long.toString(total.getConnections()));
             }
             if (filtered != null) {
-                setFiltered(filtered.getConnections() + "");
+                setFiltered(Long.toString(filtered.getConnections()));
             }
             if (selected != null) {
-                setSelected(selected.getConnections() + "");
+                setSelected(Long.toString(selected.getConnections()));
             }
         }
 
@@ -195,13 +217,13 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
         @Override
         public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
             if (total != null) {
-                setTotal(total.getLinkCount() + "");
+                setTotal(Integer.toString(total.getLinkCount()));
             }
             if (filtered != null) {
-                setFiltered(filtered.getLinkCount() + "");
+                setFiltered(Integer.toString(filtered.getLinkCount()));
             }
             if (selected != null) {
-                setSelected(selected.getLinkCount() + "");
+                setSelected(Integer.toString(selected.getLinkCount()));
             }
         }
 
@@ -219,13 +241,13 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
         @Override
         public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
             if (total != null) {
-                setTotal(total.getRunning() + "");
+                setTotal(Long.toString(total.getRunning()));
             }
             if (filtered != null) {
-                setFiltered(filtered.getRunning() + "");
+                setFiltered(Long.toString(filtered.getRunning()));
             }
             if (selected != null) {
-                setSelected(selected.getRunning() + "");
+                setSelected(Long.toString(selected.getRunning()));
             }
         }
 
@@ -242,14 +264,15 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
         @Override
         public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            final boolean includeDisabled = INCLUDE_DISABLED.get();
             if (total != null) {
-                setTotal(total.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setTotal(total.getLoadedBytesString(includeDisabled));
             }
             if (filtered != null) {
-                setFiltered(filtered.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setFiltered(filtered.getLoadedBytesString(includeDisabled));
             }
             if (selected != null) {
-                setSelected(selected.getLoadedBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setSelected(selected.getLoadedBytesString(includeDisabled));
             }
         }
 
@@ -266,14 +289,15 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
 
         @Override
         public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            final boolean includeDisabled = INCLUDE_DISABLED.get();
             if (total != null) {
-                setTotal(total.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setTotal(total.getTotalBytesString(includeDisabled));
             }
             if (filtered != null) {
-                setFiltered(filtered.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setFiltered(filtered.getTotalBytesString(includeDisabled));
             }
             if (selected != null) {
-                setSelected(selected.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setSelected(selected.getTotalBytesString(includeDisabled));
             }
         }
 
@@ -291,13 +315,13 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
         @Override
         public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
             if (total != null) {
-                setTotal(total.getPackageCount() + "");
+                setTotal(Integer.toString(total.getPackageCount()));
             }
             if (filtered != null) {
-                setFiltered(filtered.getPackageCount() + "");
+                setFiltered(Integer.toString(filtered.getPackageCount()));
             }
             if (selected != null) {
-                setSelected(selected.getPackageCount() + "");
+                setSelected(Integer.toString(selected.getPackageCount()));
             }
         }
 
@@ -310,7 +334,7 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> i
     /**
      *
      */
-    private static final long                   serialVersionUID = 7849517111823717677L;
+     private static final long                   serialVersionUID = 7849517111823717677L;
 
     private ListSelectionListener               listSelection;
     private TableModelListener                  tableListener;

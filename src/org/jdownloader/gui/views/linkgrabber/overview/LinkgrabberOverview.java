@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.linkgrabber.overview;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -19,6 +20,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.JDGui.Panels;
 import jd.gui.swing.jdgui.interfaces.View;
 
+import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.storage.config.handler.KeyHandler;
@@ -34,6 +36,24 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawlerNumbers> implements GenericConfigEventListener<Boolean>, LinkCollectorListener, GUIListener {
 
+    private static final AtomicBoolean INCLUDE_DISABLED = new AtomicBoolean(false) {
+        {
+            final AtomicBoolean variable = this;
+            CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+                @Override
+                public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                    variable.set(Boolean.TRUE.equals(newValue));
+                }
+
+                @Override
+                public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                }
+            });
+            variable.set(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled());
+        }
+    };
+
     private final class UnknownCountEntry extends DataEntry<AggregatedCrawlerNumbers> {
         private UnknownCountEntry(String label) {
             super(label);
@@ -42,13 +62,13 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
         @Override
         public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
             if (total != null) {
-                setTotal(total.getStatusUnknown() + "");
+                setTotal(Long.toString(total.getStatusUnknown()));
             }
             if (filtered != null) {
-                setFiltered(filtered.getStatusUnknown() + "");
+                setFiltered(Long.toString(filtered.getStatusUnknown()));
             }
             if (selected != null) {
-                setSelected(selected.getStatusUnknown() + "");
+                setSelected(Long.toString(selected.getStatusUnknown()));
             }
         }
 
@@ -66,13 +86,13 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
         @Override
         public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
             if (total != null) {
-                setTotal(total.getStatusOffline() + "");
+                setTotal(Long.toString(total.getStatusOffline()));
             }
             if (filtered != null) {
-                setFiltered(filtered.getStatusOffline() + "");
+                setFiltered(Long.toString(filtered.getStatusOffline()));
             }
             if (selected != null) {
-                setSelected(selected.getStatusOffline() + "");
+                setSelected(Long.toString(selected.getStatusOffline()));
             }
         }
 
@@ -90,13 +110,13 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
         @Override
         public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
             if (total != null) {
-                setTotal(total.getStatusOnline() + "");
+                setTotal(Long.toString(total.getStatusOnline()));
             }
             if (filtered != null) {
-                setFiltered(filtered.getStatusOnline() + "");
+                setFiltered(Long.toString(filtered.getStatusOnline()));
             }
             if (selected != null) {
-                setSelected(selected.getStatusOnline() + "");
+                setSelected(Long.toString(selected.getStatusOnline()));
             }
         }
 
@@ -114,13 +134,13 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
         @Override
         public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
             if (total != null) {
-                setTotal(total.getHoster().size() + "");
+                setTotal(Integer.toString(total.getHoster().size()));
             }
             if (filtered != null) {
-                setFiltered(filtered.getHoster().size() + "");
+                setFiltered(Integer.toString(filtered.getHoster().size()));
             }
             if (selected != null) {
-                setSelected(selected.getHoster().size() + "");
+                setSelected(Integer.toString(selected.getHoster().size()));
             }
         }
 
@@ -138,13 +158,13 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
         @Override
         public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
             if (total != null) {
-                setTotal(total.getLinkCount() + "");
+                setTotal(Integer.toString(total.getLinkCount()));
             }
             if (filtered != null) {
-                setFiltered(filtered.getLinkCount() + "");
+                setFiltered(Integer.toString(filtered.getLinkCount()));
             }
             if (selected != null) {
-                setSelected(selected.getLinkCount() + "");
+                setSelected(Integer.toString(selected.getLinkCount()));
             }
         }
 
@@ -161,14 +181,15 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
 
         @Override
         public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
+            final boolean includeDisabled = INCLUDE_DISABLED.get();
             if (total != null) {
-                setTotal(total.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setTotal(total.getTotalBytesString(includeDisabled));
             }
             if (filtered != null) {
-                setFiltered(filtered.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setFiltered(filtered.getTotalBytesString(includeDisabled));
             }
             if (selected != null) {
-                setSelected(selected.getTotalBytesString(CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_PANEL_INCLUDE_DISABLED_LINKS.isEnabled()));
+                setSelected(selected.getTotalBytesString(includeDisabled));
             }
         }
 
@@ -186,13 +207,13 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
         @Override
         public void setData(AggregatedCrawlerNumbers total, AggregatedCrawlerNumbers filtered, AggregatedCrawlerNumbers selected) {
             if (total != null) {
-                setTotal(total.getPackageCount() + "");
+                setTotal(Integer.toString(total.getPackageCount()));
             }
             if (filtered != null) {
-                setFiltered(filtered.getPackageCount() + "");
+                setFiltered(Integer.toString(filtered.getPackageCount()));
             }
             if (selected != null) {
-                setSelected(selected.getPackageCount() + "");
+                setSelected(Integer.toString(selected.getPackageCount()));
             }
         }
 
@@ -205,7 +226,7 @@ public class LinkgrabberOverview extends AbstractOverviewPanel<AggregatedCrawler
     /**
      *
      */
-    private static final long           serialVersionUID = -195024600818162517L;
+     private static final long           serialVersionUID = -195024600818162517L;
 
     private final ListSelectionListener selectionListener;
     private final TableModelListener    tableListener;

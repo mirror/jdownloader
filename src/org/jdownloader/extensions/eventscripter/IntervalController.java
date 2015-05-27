@@ -46,20 +46,18 @@ public class IntervalController {
                                                 if (settings.get("interval") != null) {
                                                     interval = Math.max(1000, ((Number) settings.get("interval")).longValue());
                                                 }
-
                                                 Object last = settings.get("lastFire");
                                                 long lastTs = 0l;
                                                 if (last != null) {
                                                     lastTs = ((Number) last).longValue();
                                                 }
                                                 long waitFor = interval - (System.currentTimeMillis() - lastTs);
-
                                                 if (waitFor <= 0) {
                                                     fire(scriptEntry, interval);
                                                     settings.put("lastFire", System.currentTimeMillis());
                                                     waitFor = interval;
                                                 }
-                                                minwait = Math.min(minwait, waitFor);
+                                                minwait = Math.max(500, Math.min(minwait, waitFor));
                                             } catch (Throwable e2) {
                                                 logger.log(e2);
                                                 minwait = 5000;

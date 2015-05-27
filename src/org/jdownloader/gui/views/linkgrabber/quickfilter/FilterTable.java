@@ -81,83 +81,83 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
     protected static final long                            SELECTION_REFRESH_MAX  = 100l;
     private static final DelayedRunnable                   SELECTIONUPDATER       = new DelayedRunnable(EXECUTER, SELECTION_REFRESH_MIN, SELECTION_REFRESH_MAX) {
 
-        @Override
-        public void delayedrun() {
-            if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.isEnabled()) {
-                LinkGrabberTableModel.getInstance().addTableModifier(LinkGrabberTableModel.getInstance().new TableDataModification() {
-                    final List<Filter>       selectedFilters      = getSelectedFilters();
-                    final List<AbstractNode> selectedCrawledLinks = new ArrayList<AbstractNode>();
+                                                                                      @Override
+                                                                                      public void delayedrun() {
+                                                                                          if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.isEnabled()) {
+                                                                                              LinkGrabberTableModel.getInstance().addTableModifier(LinkGrabberTableModel.getInstance().new TableDataModification() {
+                                                                                                  final List<Filter>       selectedFilters      = getSelectedFilters();
+                                                                                                  final List<AbstractNode> selectedCrawledLinks = new ArrayList<AbstractNode>();
 
-                    @Override
-                    protected void modifyTableData(List<CrawledPackage> packages) {
-                    }
+                                                                                                  @Override
+                                                                                                  protected void modifyTableData(List<CrawledPackage> packages) {
+                                                                                                  }
 
-                    @Override
-                    protected void modifyPackageData(CrawledPackage pkg, List<CrawledLink> unfilteredChildren) {
-                        boolean expand = false;
-                        for (CrawledLink link : unfilteredChildren) {
-                            for (Filter filter : selectedFilters) {
-                                if (filter.isFiltered(link)) {
-                                    expand = true;
-                                    selectedCrawledLinks.add(link);
-                                    break;
-                                }
-                            }
-                        }
-                        if (expand) {
-                            pkg.setExpanded(true);
-                        }
-                    }
+                                                                                                  @Override
+                                                                                                  protected void modifyPackageData(CrawledPackage pkg, List<CrawledLink> unfilteredChildren) {
+                                                                                                      boolean expand = false;
+                                                                                                      for (CrawledLink link : unfilteredChildren) {
+                                                                                                          for (Filter filter : selectedFilters) {
+                                                                                                              if (filter.isFiltered(link)) {
+                                                                                                                  expand = true;
+                                                                                                                  selectedCrawledLinks.add(link);
+                                                                                                                  break;
+                                                                                                              }
+                                                                                                          }
+                                                                                                      }
+                                                                                                      if (expand) {
+                                                                                                          pkg.setExpanded(true);
+                                                                                                      }
+                                                                                                  }
 
-                    @Override
-                    protected PackageControllerTableModelCustomizer finalizeTableModification() {
-                        return new PackageControllerTableModelCustomizer() {
+                                                                                                  @Override
+                                                                                                  protected PackageControllerTableModelCustomizer finalizeTableModification() {
+                                                                                                      return new PackageControllerTableModelCustomizer() {
 
-                            @Override
-                            public boolean customizedTableData() {
-                                LinkGrabberTableModel.getInstance().setSelectedObjects(selectedCrawledLinks);
-                                return false;
-                            }
-                        };
-                    }
+                                                                                                          @Override
+                                                                                                          public boolean customizedTableData() {
+                                                                                                              LinkGrabberTableModel.getInstance().setSelectedObjects(selectedCrawledLinks);
+                                                                                                              return false;
+                                                                                                          }
+                                                                                                      };
+                                                                                                  }
 
-                }, false);
+                                                                                              }, false);
 
-            }
-        }
-    };
+                                                                                          }
+                                                                                      }
+                                                                                  };
     protected static final long                            FILTER_REFRESH_MIN     = 500l;
     protected static final long                            FILTER_REFRESH_MAX     = 2000l;
     private static final DelayedRunnable                   FILTERTABLESUPDATER    = new DelayedRunnable(EXECUTER, FILTER_REFRESH_MIN, FILTER_REFRESH_MAX) {
-        @Override
-        public String getID() {
-            return "FilterTable";
-        }
+                                                                                      @Override
+                                                                                      public String getID() {
+                                                                                          return "FilterTable";
+                                                                                      }
 
-        @Override
-        public void delayedrun() {
-            try {
-                ArrayList<FilterTableDataUpdater> updater = new ArrayList<FilterTableDataUpdater>();
-                for (FilterTableUpdater filterTable : FILTERTABLES) {
-                    if (filterTable.getUpdate().getAndSet(false)) {
-                        updater.add(filterTable.getTable().getFilterTableDataUpdater());
-                    }
-                }
-                updateFilterTables(updater);
-            } catch (final Throwable e) {
-                LogController.GL.log(e);
-            }
-        }
+                                                                                      @Override
+                                                                                      public void delayedrun() {
+                                                                                          try {
+                                                                                              ArrayList<FilterTableDataUpdater> updater = new ArrayList<FilterTableDataUpdater>();
+                                                                                              for (FilterTableUpdater filterTable : FILTERTABLES) {
+                                                                                                  if (filterTable.getUpdate().getAndSet(false)) {
+                                                                                                      updater.add(filterTable.getTable().getFilterTableDataUpdater());
+                                                                                                  }
+                                                                                              }
+                                                                                              updateFilterTables(updater);
+                                                                                          } catch (final Throwable e) {
+                                                                                              LogController.GL.log(e);
+                                                                                          }
+                                                                                      }
 
-    };
+                                                                                  };
     private static final PropertyChangeListener            PROPERTYCHANGELISTENER = new PropertyChangeListener() {
 
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) {
-            updateAllFiltersInstant();
-        }
+                                                                                      @Override
+                                                                                      public void propertyChange(PropertyChangeEvent evt) {
+                                                                                          updateAllFiltersInstant();
+                                                                                      }
 
-    };
+                                                                                  };
 
     private static volatile Filter                         filterException        = null;
     private static volatile Thread                         filterExceptionThread  = null;
@@ -394,7 +394,7 @@ public abstract class FilterTable extends BasicJDTable<Filter> implements Packag
                 if (f == FilterTable.this) {
                     continue;
                 }
-                f.clearSelection();
+                f.getModel().clearSelection();
             }
             return true;
         }

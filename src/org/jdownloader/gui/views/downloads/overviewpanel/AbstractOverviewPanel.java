@@ -28,6 +28,7 @@ import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.Position;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -36,8 +37,9 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUIListener, GenericConfigEventListener<Boolean>, HierarchyListener {
 
     private List<DataEntry<T>>                        dataEntries;
-    protected final AtomicBoolean                     visible     = new AtomicBoolean(false);
-    protected final NullsafeAtomicReference<Timer>    updateTimer = new NullsafeAtomicReference<Timer>(null);
+    protected final AtomicBoolean                     visible      = new AtomicBoolean(false);
+    protected final NullsafeAtomicReference<Timer>    updateTimer  = new NullsafeAtomicReference<Timer>(null);
+    protected final AtomicBoolean                     hasSelection = new AtomicBoolean(false);
 
     protected final DelayedRunnable                   slowDelayer;
     protected final DelayedRunnable                   fastDelayer;
@@ -291,19 +293,20 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
 
     @Override
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-
-        new EDTRunner() {
+        new EDTHelper<Void>() {
 
             @Override
-            protected void runInEDT() {
-                boolean hasSelectedObjects = tableModel.hasSelectedObjects();
+            public Void edtRun() {
+                final SelectionInfo<?, ?> selectionInfo = tableModel.getTable().getSelectionInfo();
+                final boolean containsSelection = !selectionInfo.isEmpty();
+                hasSelection.set(containsSelection);
                 for (DataEntry di : dataEntries) {
-                    di.updateVisibility(hasSelectedObjects);
+                    di.updateVisibility(containsSelection);
                 }
                 fastDelayer.run();
+                return null;
             }
-        };
-
+        }.start(true);
     }
 
     @Override
@@ -369,21 +372,37 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
         final T total;
         final T filtered;
         final T selected;
-        final boolean smartInfo = CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled();
-        if (CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled()) {
-            total = createTotal();
+        final boolean smart = CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.isEnabled();
+        final boolean visibleOnly = CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled();
+        final boolean selectedOnly = CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled();
+        final boolean totalVisible = CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.isEnabled();
+        final boolean containsSelection = hasSelection.get();
+        if (smart || (!visibleOnly && !totalVisible && !selectedOnly)) {
+            if (containsSelection) {
+                filtered = null;
+                total = null;
+                selected = createSelected();
+            } else {
+                filtered = createFiltered();
+                total = null;
+                selected = null;
+            }
         } else {
-            total = null;
-        }
-        if ((CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.isEnabled() || smartInfo)) {
-            filtered = createFiltered();
-        } else {
-            filtered = null;
-        }
-        if ((CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.isEnabled() || smartInfo)) {
-            selected = createSelected();
-        } else {
-            selected = null;
+            if (totalVisible) {
+                total = createTotal();
+            } else {
+                total = null;
+            }
+            if (visibleOnly) {
+                filtered = createFiltered();
+            } else {
+                filtered = null;
+            }
+            if (selectedOnly) {
+                selected = createSelected();
+            } else {
+                selected = null;
+            }
         }
         new EDTRunner() {
 
@@ -393,15 +412,14 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
                     return;
                 }
                 for (DataEntry<T> entry : dataEntries) {
+                    entry.updateVisibility(containsSelection);
                     set(entry);
                 }
-
             }
 
             private void set(DataEntry<T> dataEntry) {
                 if (dataEntry != null) {
                     dataEntry.setData(total, filtered, selected);
-
                 }
             }
         }.waitForEDT();
