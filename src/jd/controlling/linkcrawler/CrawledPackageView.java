@@ -70,18 +70,15 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
     public void setItems(List<CrawledLink> updatedItems) {
         Temp tmp = new Temp();
-
+        final List<CrawledLink> items = new ArrayList<CrawledLink>(updatedItems);
         synchronized (this) {
-
             /* this is called for tablechanged, so update everything for given items */
-
-            for (CrawledLink item : updatedItems) {
+            for (CrawledLink item : items) {
                 // domain
                 tmp.domains.add(item.getDomainInfo());
                 addtoTmp(tmp, item);
             }
             writeTmpToFields(tmp);
-
             ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.domains);
             Collections.sort(lst, new Comparator<DomainInfo>() {
 
@@ -92,9 +89,9 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             });
 
             domainInfos = lst.toArray(new DomainInfo[] {});
-            updateAvailability(updatedItems.size(), tmp.newOffline, tmp.newOnline);
-            items = updatedItems;
-            availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, updatedItems.size());
+            updateAvailability(items.size(), tmp.newOffline, tmp.newOnline);
+            this.items = items;
+            availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, items.size());
         }
     }
 
@@ -109,7 +106,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         online = tmp.newOnline;
 
         updatesDone = tmp.lupdatesRequired;
-
     }
 
     protected void addtoTmp(Temp tmp, CrawledLink link) {
