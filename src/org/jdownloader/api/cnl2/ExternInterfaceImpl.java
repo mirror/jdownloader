@@ -162,27 +162,27 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 }
             }
 
-            private PackageInfo getPackageInfo(CrawledLink link) {
-                PackageInfo packageInfo = link.getDesiredPackageInfo();
-                if (packageInfo != null) {
-                    return packageInfo;
-                }
-                packageInfo = new PackageInfo();
-                link.setDesiredPackageInfo(packageInfo);
-                return packageInfo;
-            }
-
             @Override
             public void modifyCrawledLink(CrawledLink link) {
                 if (StringUtils.isNotEmpty(finalDestination)) {
-                    getPackageInfo(link).setDestinationFolder(finalDestination);
-                    getPackageInfo(link).setIgnoreVarious(true);
-                    getPackageInfo(link).setUniqueId(null);
+                    PackageInfo packageInfo = link.getDesiredPackageInfo();
+                    if (packageInfo == null) {
+                        packageInfo = new PackageInfo();
+                    }
+                    packageInfo.setDestinationFolder(finalDestination);
+                    packageInfo.setIgnoreVarious(true);
+                    packageInfo.setUniqueId(null);
+                    link.setDesiredPackageInfo(packageInfo);
                 }
                 if (StringUtils.isNotEmpty(finalPackageName)) {
-                    getPackageInfo(link).setName(finalPackageName);
-                    getPackageInfo(link).setIgnoreVarious(true);
-                    getPackageInfo(link).setUniqueId(null);
+                    PackageInfo packageInfo = link.getDesiredPackageInfo();
+                    if (packageInfo == null) {
+                        packageInfo = new PackageInfo();
+                    }
+                    packageInfo.setName(finalPackageName);
+                    packageInfo.setIgnoreVarious(true);
+                    packageInfo.setUniqueId(null);
+                    link.setDesiredPackageInfo(packageInfo);
                 }
                 DownloadLink dlLink = link.getDownloadLink();
                 if (dlLink != null) {
@@ -228,54 +228,88 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     // For My JD API
     @Override
-    public void add(RemoteAPIRequest request, String param1, String param2, String param3) throws InternalApiException {
-        String source = null;
+    public void add(RemoteAPIRequest request, RemoteAPIResponse response, String param1, String param2, String param3) throws InternalApiException {
         try {
-            source = request.getParameterbyKey("source");
-        } catch (IOException e) {
-        }
-        if (source == null) {
-            source = param1;
-        }
-        String urls = null;
-        try {
-            urls = request.getParameterbyKey("urls");
-        } catch (IOException e) {
-        }
-        if (urls == null) {
-            urls = param2;
-        }
-        String passwords = null;
-        try {
-            passwords = request.getParameterbyKey("passwords");
-        } catch (IOException e) {
-        }
-        if (passwords == null) {
-            passwords = param3;
-        }
-        LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, null), urls);
-        // String dir = HttpRequest.getParameterbyKey(request, "dir");
-        // if (!StringUtils.isEmpty(dir)) {
-        // job.setOutputFolder(new File(dir));
-        // }
-        job.setCustomSourceUrl(source);
-        // job.setCustomComment(comment);
-        // job.setPackageName(HttpRequest.getParameterbyKey(request, "package"));
-
-        if (StringUtils.isNotEmpty(passwords)) {
-            final HashSet<String> pws = new HashSet<String>();
-            pws.add(passwords);
-            job.setCrawledLinkModifierPrePackagizer(new CrawledLinkModifier() {
+            askPermission(request);
+            String source = null;
+            try {
+                source = request.getParameterbyKey("source");
+            } catch (IOException e) {
+            }
+            if (source == null) {
+                source = param1;
+            }
+            String urls = null;
+            try {
+                urls = request.getParameterbyKey("urls");
+            } catch (IOException e) {
+            }
+            if (urls == null) {
+                urls = param2;
+            }
+            String passwords = null;
+            try {
+                passwords = request.getParameterbyKey("passwords");
+            } catch (IOException e) {
+            }
+            if (passwords == null) {
+                passwords = param3;
+            }
+            final String finalPasswords = request.getParameterbyKey("passwords");
+            final String finalComment = request.getParameterbyKey("comment");
+            LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), urls);
+            final String finalDestination = request.getParameterbyKey("dir");
+            job.setCustomSourceUrl(source);
+            final String finalPackageName = request.getParameterbyKey("package");
+            final CrawledLinkModifier modifier = new CrawledLinkModifier() {
+                private HashSet<String> pws = null;
+                {
+                    if (StringUtils.isNotEmpty(finalPasswords)) {
+                        pws = new HashSet<String>();
+                        pws.add(finalPasswords);
+                    }
+                }
 
                 @Override
                 public void modifyCrawledLink(CrawledLink link) {
+                    if (StringUtils.isNotEmpty(finalDestination)) {
+                        PackageInfo packageInfo = link.getDesiredPackageInfo();
+                        if (packageInfo == null) {
+                            packageInfo = new PackageInfo();
+                        }
+                        packageInfo.setDestinationFolder(finalDestination);
+                        packageInfo.setIgnoreVarious(true);
+                        packageInfo.setUniqueId(null);
+                        link.setDesiredPackageInfo(packageInfo);
+                    }
+                    if (StringUtils.isNotEmpty(finalPackageName)) {
+                        PackageInfo packageInfo = link.getDesiredPackageInfo();
+                        if (packageInfo == null) {
+                            packageInfo = new PackageInfo();
+                        }
+                        packageInfo.setName(finalPackageName);
+                        packageInfo.setIgnoreVarious(true);
+                        packageInfo.setUniqueId(null);
+                        link.setDesiredPackageInfo(packageInfo);
+                    }
+                    DownloadLink dlLink = link.getDownloadLink();
+                    if (dlLink != null) {
+                        if (StringUtils.isNotEmpty(finalComment)) {
+                            dlLink.setComment(finalComment);
+                        }
+                    }
                     if (pws != null && pws.size() > 0) {
                         link.getArchiveInfo().getExtractionPasswords().addAll(pws);
                     }
                 }
-            });
+            };
+            job.setCrawledLinkModifierPrePackagizer(modifier);
+            if (StringUtils.isNotEmpty(finalPackageName) || StringUtils.isNotEmpty(finalDestination)) {
+                job.setCrawledLinkModifierPostPackagizer(modifier);
+            }
+            LinkCollector.getInstance().addCrawlerJob(job);
+        } catch (Throwable e) {
         }
-        LinkCollector.getInstance().addCrawlerJob(job);
     }
 
     public void addcrypted(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
@@ -425,27 +459,27 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                         }
                     }
 
-                    private PackageInfo getPackageInfo(CrawledLink link) {
-                        PackageInfo packageInfo = link.getDesiredPackageInfo();
-                        if (packageInfo != null) {
-                            return packageInfo;
-                        }
-                        packageInfo = new PackageInfo();
-                        link.setDesiredPackageInfo(packageInfo);
-                        return packageInfo;
-                    }
-
                     @Override
                     public void modifyCrawledLink(CrawledLink link) {
                         if (StringUtils.isNotEmpty(finalPackageName)) {
-                            getPackageInfo(link).setName(finalPackageName);
-                            getPackageInfo(link).setUniqueId(null);
-                            getPackageInfo(link).setIgnoreVarious(true);
+                            PackageInfo packageInfo = link.getDesiredPackageInfo();
+                            if (packageInfo == null) {
+                                packageInfo = new PackageInfo();
+                            }
+                            packageInfo.setName(finalPackageName);
+                            packageInfo.setUniqueId(null);
+                            packageInfo.setIgnoreVarious(true);
+                            link.setDesiredPackageInfo(packageInfo);
                         }
                         if (StringUtils.isNotEmpty(finalDestination)) {
-                            getPackageInfo(link).setDestinationFolder(finalDestination);
-                            getPackageInfo(link).setIgnoreVarious(true);
-                            getPackageInfo(link).setUniqueId(null);
+                            PackageInfo packageInfo = link.getDesiredPackageInfo();
+                            if (packageInfo == null) {
+                                packageInfo = new PackageInfo();
+                            }
+                            packageInfo.setDestinationFolder(finalDestination);
+                            packageInfo.setIgnoreVarious(true);
+                            packageInfo.setUniqueId(null);
+                            link.setDesiredPackageInfo(packageInfo);
                         }
                         if (pws != null && pws.size() > 0) {
                             link.getArchiveInfo().getExtractionPasswords().addAll(pws);

@@ -369,27 +369,20 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
 
             final CrawledLinkModifier modifier = new CrawledLinkModifier() {
 
-                private PackageInfo getPackageInfo(CrawledLink link, boolean createIfNotExisting) {
-                    PackageInfo packageInfo = link.getDesiredPackageInfo();
-                    if (packageInfo != null || createIfNotExisting == false) {
-                        return packageInfo;
-                    }
-                    packageInfo = new PackageInfo();
-                    link.setDesiredPackageInfo(packageInfo);
-                    return packageInfo;
-                }
-
                 @Override
                 public void modifyCrawledLink(CrawledLink link) {
                     if (StringUtils.isNotEmpty(j.getPackageName())) {
-                        PackageInfo existing = getPackageInfo(link, false);
+                        PackageInfo existing = link.getDesiredPackageInfo();
                         if (j.isOverwritePackagizerEnabled() || existing == null || StringUtils.isEmpty(existing.getName())) {
-                            existing = getPackageInfo(link, true);
+                            if (existing == null) {
+                                existing = new PackageInfo();
+                            }
                             existing.setName(j.getPackageName());
                             if (j.isOverwritePackagizerEnabled()) {
                                 existing.setIgnoreVarious(true);
                             }
                             existing.setUniqueId(null);
+                            link.setDesiredPackageInfo(existing);
                         }
                     }
 
@@ -415,14 +408,17 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                         }
                     }
                     if (StringUtils.isNotEmpty(j.getDownloadFolder())) {
-                        PackageInfo existing = getPackageInfo(link, false);
+                        PackageInfo existing = link.getDesiredPackageInfo();
                         if (j.isOverwritePackagizerEnabled() || existing == null || StringUtils.isEmpty(existing.getDestinationFolder())) {
-                            existing = getPackageInfo(link, true);
+                            if (existing == null) {
+                                existing = new PackageInfo();
+                            }
                             existing.setDestinationFolder(j.getDownloadFolder());
                             if (j.isOverwritePackagizerEnabled()) {
                                 existing.setIgnoreVarious(true);
                             }
                             existing.setUniqueId(null);
+                            link.setDesiredPackageInfo(existing);
                         }
                     }
                     if (j.getExtractPasswords() != null && j.getExtractPasswords().length > 0) {

@@ -1638,11 +1638,11 @@ public class LinkCrawler {
                 final PackageInfo dpi;
                 if (link.getDesiredPackageInfo() == null) {
                     dpi = new PackageInfo();
-                    link.setDesiredPackageInfo(dpi);
                 } else {
                     dpi = link.getDesiredPackageInfo();
                 }
                 dpi.setUniqueId(PERMANENT_OFFLINE_ID);
+                link.setDesiredPackageInfo(dpi);
             }
         } catch (final Throwable e) {
         }

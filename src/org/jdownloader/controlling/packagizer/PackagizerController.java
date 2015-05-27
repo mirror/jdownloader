@@ -720,10 +720,10 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 dpi = link.getDesiredPackageInfo();
             } else {
                 dpi = new PackageInfo();
-                link.setDesiredPackageInfo(dpi);
             }
             dpi.setPackagizerRuleMatched(true);
             dpi.setDestinationFolder(path);
+            link.setDesiredPackageInfo(dpi);
         }
         if (lgr.getRule().getLinkEnabled() != null) {
             link.setEnabled(lgr.getRule().getLinkEnabled());
@@ -736,10 +736,10 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 dpi = link.getDesiredPackageInfo();
             } else {
                 dpi = new PackageInfo();
-                link.setDesiredPackageInfo(dpi);
             }
             dpi.setPackagizerRuleMatched(true);
             dpi.setName(name);
+            link.setDesiredPackageInfo(dpi);
         }
         if (lgr.getRule().getPriority() != null) {
             /* customize priority */

@@ -250,24 +250,17 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         final BooleanStatus finalExtractStatus = this.extractToggle.isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE;
         final CrawledLinkModifier modifier = new CrawledLinkModifier() {
 
-            private PackageInfo getPackageInfo(CrawledLink link, boolean createIfNotExisting) {
-                PackageInfo packageInfo = link.getDesiredPackageInfo();
-                if (packageInfo != null || createIfNotExisting == false) {
-                    return packageInfo;
-                }
-                packageInfo = new PackageInfo();
-                link.setDesiredPackageInfo(packageInfo);
-                return packageInfo;
-            }
-
             @Override
             public void modifyCrawledLink(CrawledLink link) {
                 if (StringUtils.isNotEmpty(finalPackageName)) {
-                    PackageInfo existing = getPackageInfo(link, false);
+                    PackageInfo existing = link.getDesiredPackageInfo();
                     if (overwritePackagizerRules || existing == null || StringUtils.isEmpty(existing.getName())) {
-                        existing = getPackageInfo(link, true);
+                        if (existing == null) {
+                            existing = new PackageInfo();
+                        }
                         existing.setName(finalPackageName);
                         existing.setUniqueId(null);
+                        link.setDesiredPackageInfo(existing);
                     }
                 }
 
@@ -297,11 +290,14 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                     }
                 }
                 if (StringUtils.isNotEmpty(finalDestination)) {
-                    PackageInfo existing = getPackageInfo(link, false);
+                    PackageInfo existing = link.getDesiredPackageInfo();
                     if (overwritePackagizerRules || existing == null || StringUtils.isEmpty(existing.getDestinationFolder())) {
-                        existing = getPackageInfo(link, true);
+                        if (existing == null) {
+                            existing = new PackageInfo();
+                        }
                         existing.setDestinationFolder(finalDestination);
                         existing.setUniqueId(null);
+                        link.setDesiredPackageInfo(existing);
                     }
                 }
                 if (finalPasswords != null && finalPasswords.size() > 0) {
