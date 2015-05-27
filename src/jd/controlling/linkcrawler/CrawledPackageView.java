@@ -37,7 +37,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     }
 
     @Override
-    public void aggregate() {
+    public CrawledPackageView aggregate() {
         Temp tmp = new Temp();
 
         synchronized (this) {
@@ -53,6 +53,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             updateAvailability(updatedItems.size(), tmp.newOffline, tmp.newOnline);
             availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, updatedItems.size());
         }
+        return this;
     }
 
     private class Temp {
