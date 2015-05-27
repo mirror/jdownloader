@@ -39,10 +39,8 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
         final SelectionInfo<PackageType, ChildrenType> lselection = getSelection();
-        selection = lselection;
         if (hasSelection(lselection)) {
-            PackageType cp = lselection.getFirstPackage();
-
+            final PackageType cp = lselection.getFirstPackage();
             path = LinkTreeUtils.getRawDownloadDirectory(cp);
             if (path.getName().equals(cp.getName())) {
                 path = new File(path.getParentFile(), DownloadFolderChooserDialog.PACKAGETAG);

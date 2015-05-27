@@ -15,17 +15,27 @@ import org.jdownloader.gui.views.components.packagetable.context.SetDownloadFold
 
 public class SetDownloadFolderInDownloadTableAction extends SetDownloadFolderAction<FilePackage, DownloadLink> {
 
+    private final SelectionInfo<FilePackage, DownloadLink> selection;
+
     /**
      *
      */
 
     public SetDownloadFolderInDownloadTableAction() {
-
+        this(null);
     }
 
     public SetDownloadFolderInDownloadTableAction(SelectionInfo<FilePackage, DownloadLink> selectionInfo) {
         selection = selectionInfo;
         requestUpdate(this);
+    }
+
+    @Override
+    protected SelectionInfo<FilePackage, DownloadLink> getSelection() {
+        if (selection == null) {
+            return super.getSelection();
+        }
+        return selection;
     }
 
     @Override

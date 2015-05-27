@@ -691,11 +691,6 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
 
     }
 
-    public ConfirmLinksContextAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
-        this();
-        selection = selectionInfo;
-    }
-
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled()) {
             return;
@@ -757,11 +752,17 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     @Override
+    protected SelectionInfo<CrawledPackage, CrawledLink> getSelection() {
+        if (!isSelectionOnly()) {
+            return LinkGrabberTable.getInstance().getSelectionInfo(false, true);
+        } else {
+            return LinkGrabberTable.getInstance().getSelectionInfo(true, true);
+        }
+    }
+
+    @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-        if (!isSelectionOnly()) {
-            selection = LinkGrabberTable.getInstance().getSelectionInfo(false, true);
-        }
         onKeyModifier(-1);
         updateLabelAndIcon();
     }
