@@ -97,171 +97,168 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                 decryptedLinks.add(createDownloadlink(newparameter));
                 return decryptedLinks;
             }
-            // /d/ should redirect, but now apparently it stays on the short url link..
-            if (newparameter.matches(".*?/d/[a-f0-9]{10}")) {
-                br.getPage(newparameter);
-                newparameter = br.getRedirectLocation();
-                decryptedLinks.add(createDownloadlink(newparameter));
-                return decryptedLinks;
-            }
-            // i dono here.. id say short links are only for /d/ ? but just encase.
             parameter = newparameter;
         }
         br.getPage(parameter);
-        // now comes the json
-        ajaxPostPageRaw("/v1/protected", ammendJson(null, "hash", uid));
-        if (StringUtils.containsIgnoreCase(getJson(ajax, "message"), "not found")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
-        }
-        // we could also here check status?? maybe trust them that files are offline?? this way no captchas needed to find the links and
-        // confirm ourselves.
-        final String security = getJsonNested(ajax, "security");
-        final String useCaptcha = getJson(security, "useCaptcha");
-        final String captchaType = getJson(security, "captchaType");
-        final String usePassword = getJson(security, "usePassword");
-        if (!inValidate(security) && (Boolean.parseBoolean(useCaptcha) || Boolean.parseBoolean(usePassword))) {
-            int tries = 4;
-            for (int i = 0; i < tries; i++) {
-                String nextPost = null;
-                if (Boolean.parseBoolean(usePassword)) {
-                    // we need to get the password.
-                    String psw = null;
-                    if (i <= 1) {
-                        // only use this twice, once for auto solvemedia, and second time with manual captcha!
-                        psw = param.getDecrypterPassword();
-                    }
-                    if (psw == null || "".equals(psw)) {
-                        psw = getUserInput(parameter, param);
+        // /d/ should redirect, but now apparently it stays on the short url link..
+        if (parameter.matches(".*?/d/[a-f0-9]{10}")) {
+            final String link = br.getRedirectLocation();
+            if (link != null) {
+                decryptedLinks.add(createDownloadlink(link));
+            }
+        } else {
+            // now comes the json
+            ajaxPostPageRaw("/v1/protected", ammendJson(null, "hash", uid));
+            if (StringUtils.containsIgnoreCase(getJson(ajax, "message"), "not found")) {
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            // we could also here check status?? maybe trust them that files are offline?? this way no captchas needed to find the links and
+            // confirm ourselves.
+            final String security = getJsonNested(ajax, "security");
+            final String useCaptcha = getJson(security, "useCaptcha");
+            final String captchaType = getJson(security, "captchaType");
+            final String usePassword = getJson(security, "usePassword");
+            if (!inValidate(security) && (Boolean.parseBoolean(useCaptcha) || Boolean.parseBoolean(usePassword))) {
+                int tries = 4;
+                for (int i = 0; i < tries; i++) {
+                    String nextPost = null;
+                    if (Boolean.parseBoolean(usePassword)) {
+                        // we need to get the password.
+                        String psw = null;
+                        if (i <= 1) {
+                            // only use this twice, once for auto solvemedia, and second time with manual captcha!
+                            psw = param.getDecrypterPassword();
+                        }
                         if (psw == null || "".equals(psw)) {
-                            throw new DecrypterException(DecrypterException.PASSWORD);
+                            psw = getUserInput(parameter, param);
+                            if (psw == null || "".equals(psw)) {
+                                throw new DecrypterException(DecrypterException.PASSWORD);
+                            }
                         }
+                        nextPost = ammendJson(nextPost, "password", psw);
                     }
-                    nextPost = ammendJson(nextPost, "password", psw);
-                }
-                if (Boolean.parseBoolean(useCaptcha) && captchaType.matches("\\d+")) {
-                    // captchas:[
-                    // {name:"SolveMedia",id:0,isDefault:!0,enabled:!0,publicKey:solvemediaPublicKey,init:function(e){!function
-                    // t(){window.ACPuzzle?window.ACPuzzle.create(e.publicKey,"captcha",{lang:"en",size:"standard"}):setTimeout(t,500)}()},getModel:function(){return{answer:window.ACPuzzle.get_response(),challengeId:window.ACPuzzle.get_challenge()}},refresh:function(){window.ACPuzzle.reload()}},
-                    // {name:"Recaptcha",id:1,isDefaultBackup:!0,enabled:!0,publicKey:"6Lf5bAITAAAAABDTzSsLdgMDY1jeK6qE6IKGxvqk",init:function(e){window.renderRecaptchaCB=function(){grecaptcha.render(document.getElementById("recaptcha"),{sitekey:e.publicKey})},$.getScript("https://www.google.com/recaptcha/api.js?onload=renderRecaptchaCB&render=explicit",function(){})},getModel:function(e){return{answer:grecaptcha.getResponse(),challengeId:e.captcha2.publicKey}},refresh:function(){grecaptcha.reset()}},
-                    // {name:"Basic captcha",id:2},
-                    // {name:"3D captcha",id:3},
-                    // {name:"Fancy captcha",id:4,enabled:!0,init:function(){$.getScript("/assets/components/plugins/fancy_captcha/jquery.captcha.js",function(){$("#fancy").fancy_captcha({captchaDir:"/",url:baseUrl+"/fancy_captcha",imagesDir:"/assets/images/fancycaptcha"})})},getModel:function(e){return
-                    // window.fancyCaptcha?{answer:window.fancyCaptcha.answer}:null},refresh:function(){}},
-                    // {name:"QapTcha",id:5,enabled:!0,init:function(e){e.enableQaptcha=!0},getModel:function(e){return{answer:e.security.qaptcha?e.security.captcha2.key:"",challengeId:e.security.captcha2.key}}},
-                    // {name:"Simple Captcha",id:6},
-                    // {name:"Dotty Captcha",id:7},
-                    // {name:"Cool Captcha",id:8},
-                    // {name:"Standard Captcha",id:9},
-                    // {name:"Cats Captcha",id:10},
-                    // {name:"Circle Captcha",id:11}]
-                    // };
-                    final Browser captchaBr = br.cloneBrowser();
-                    // captcha handling yay!
-                    // at this given time its always solvemedia by default, recaptcha seems to be secondary default for the refresh/toggle
-                    // type
-                    switch (0) { // Integer.parseInt(captchaType)) {
-                    case 0: {
-                        PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                        jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
-                        sm.setChallengeKey(br.getHost().equalsIgnoreCase("safelinking.net") ? "OZ987i6xTzNs9lw5.MA-2Vxbc-UxFrLu" : "t62EJ1oSPvEIEl.tnmC0la5sdfLHDPsl");
-                        File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                        String code = getCaptchaCode(cf, param);
-                        String chid = sm.getChallenge(code);
-                        nextPost = ammendJson(nextPost, "answer", code);
-                        nextPost = ammendJson(nextPost, "challengeId", chid);
-                        nextPost = ammendJson(nextPost, "type", 0);
-                        break;
-                    }
-                    case 1: {
-                        // recaptcha2 !!!
-                        final String code = new CaptchaHelperCrawlerPluginConfidentCaptcha(this, br, "6Lf5bAITAAAAABDTzSsLdgMDY1jeK6qE6IKGxvqk").getToken();
-                        /* Sometimes that field already exists containing the value "manuel_challenge" */
-                        nextPost = ammendJson(nextPost, "answer", code);
-                        nextPost = ammendJson(nextPost, "challengeId", "6Lf5bAITAAAAABDTzSsLdgMDY1jeK6qE6IKGxvqk");
-                        nextPost = ammendJson(nextPost, "type", 1);
-                        break;
-                    }
-                    case 2: {
-                        final String url = "";
-                        final String code = getCaptchaCode(url, param);
-                        nextPost = ammendJson(nextPost, "securimage_response_field", code);
-                        nextPost = ammendJson(nextPost, "type", 2);
-                        break;
-                    }
-                    case 3: {
-                        final String url = "";
-                        final String code = getCaptchaCode(url, param);
-                        nextPost = ammendJson(nextPost, "3dcaptcha_response_field", code);
-                        nextPost = ammendJson(nextPost, "type", 3);
-                        break;
-                    }
-                    case 4: {
-                        captchaBr.getPage("/includes/captcha_factory/fancycaptcha.php?hash=" + uid);
-                        nextPost = ammendJson(nextPost, "fancy-captcha", captchaBr.toString().trim());
-                        nextPost = ammendJson(nextPost, "type", 4);
-                        break;
-                    }
-                    case 5: {
-                        captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        captchaBr.postPage("/includes/captcha_factory/Qaptcha.jquery.php?hash=" + uid, "action=qaptcha");
-                        if (!captchaBr.containsHTML("\"error\":false")) {
-                            logger.warning("Decrypter broken for link: " + parameter + "\n");
+                    if (Boolean.parseBoolean(useCaptcha) && captchaType.matches("\\d+")) {
+                        // captchas:[
+                        // {name:"SolveMedia",id:0,isDefault:!0,enabled:!0,publicKey:solvemediaPublicKey,init:function(e){!function t(){window.ACPuzzle?window.ACPuzzle.create(e.publicKey,"captcha",{lang:"en",size:"standard"}):setTimeout(t,500)}()},getModel:function(){return{answer:window.ACPuzzle.get_response(),challengeId:window.ACPuzzle.get_challenge()}},refresh:function(){window.ACPuzzle.reload()}},
+                        // {name:"Recaptcha",id:1,isDefaultBackup:!0,enabled:!0,publicKey:"6Lf5bAITAAAAABDTzSsLdgMDY1jeK6qE6IKGxvqk",init:function(e){window.renderRecaptchaCB=function(){grecaptcha.render(document.getElementById("recaptcha"),{sitekey:e.publicKey})},$.getScript("https://www.google.com/recaptcha/api.js?onload=renderRecaptchaCB&render=explicit",function(){})},getModel:function(e){return{answer:grecaptcha.getResponse(),challengeId:e.captcha2.publicKey}},refresh:function(){grecaptcha.reset()}},
+                        // {name:"Basic captcha",id:2},
+                        // {name:"3D captcha",id:3},
+                        // {name:"Fancy captcha",id:4,enabled:!0,init:function(){$.getScript("/assets/components/plugins/fancy_captcha/jquery.captcha.js",function(){$("#fancy").fancy_captcha({captchaDir:"/",url:baseUrl+"/fancy_captcha",imagesDir:"/assets/images/fancycaptcha"})})},getModel:function(e){return window.fancyCaptcha?{answer:window.fancyCaptcha.answer}:null},refresh:function(){}},
+                        // {name:"QapTcha",id:5,enabled:!0,init:function(e){e.enableQaptcha=!0},getModel:function(e){return{answer:e.security.qaptcha?e.security.captcha2.key:"",challengeId:e.security.captcha2.key}}},
+                        // {name:"Simple Captcha",id:6},
+                        // {name:"Dotty Captcha",id:7},
+                        // {name:"Cool Captcha",id:8},
+                        // {name:"Standard Captcha",id:9},
+                        // {name:"Cats Captcha",id:10},
+                        // {name:"Circle Captcha",id:11}]
+                        // };
+                        final Browser captchaBr = br.cloneBrowser();
+                        // captcha handling yay!
+                        // at this given time its always solvemedia by default, recaptcha seems to be secondary default for the refresh/toggle
+                        switch (0) { // Integer.parseInt(captchaType)) {
+                        case 0: {
+                            PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                            jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                            sm.setChallengeKey(br.getHost().equalsIgnoreCase("safelinking.net") ? "OZ987i6xTzNs9lw5.MA-2Vxbc-UxFrLu" : "t62EJ1oSPvEIEl.tnmC0la5sdfLHDPsl");
+                            File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                            String code = getCaptchaCode(cf, param);
+                            String chid = sm.getChallenge(code);
+                            nextPost = ammendJson(nextPost, "answer", code);
+                            nextPost = ammendJson(nextPost, "challengeId", chid);
+                            nextPost = ammendJson(nextPost, "type", 0);
+                            break;
+                        }
+                        case 1: {
+                            // recaptcha2 !!!
+                            final String code = new CaptchaHelperCrawlerPluginConfidentCaptcha(this, br, "6Lf5bAITAAAAABDTzSsLdgMDY1jeK6qE6IKGxvqk").getToken();
+                            /* Sometimes that field already exists containing the value "manuel_challenge" */
+                            nextPost = ammendJson(nextPost, "answer", code);
+                            nextPost = ammendJson(nextPost, "challengeId", "6Lf5bAITAAAAABDTzSsLdgMDY1jeK6qE6IKGxvqk");
+                            nextPost = ammendJson(nextPost, "type", 1);
+                            break;
+                        }
+                        case 2: {
+                            final String url = "";
+                            final String code = getCaptchaCode(url, param);
+                            nextPost = ammendJson(nextPost, "securimage_response_field", code);
+                            nextPost = ammendJson(nextPost, "type", 2);
+                            break;
+                        }
+                        case 3: {
+                            final String url = "";
+                            final String code = getCaptchaCode(url, param);
+                            nextPost = ammendJson(nextPost, "3dcaptcha_response_field", code);
+                            nextPost = ammendJson(nextPost, "type", 3);
+                            break;
+                        }
+                        case 4: {
+                            captchaBr.getPage("/includes/captcha_factory/fancycaptcha.php?hash=" + uid);
+                            nextPost = ammendJson(nextPost, "fancy-captcha", captchaBr.toString().trim());
+                            nextPost = ammendJson(nextPost, "type", 4);
+                            break;
+                        }
+                        case 5: {
+                            captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                            captchaBr.postPage("/includes/captcha_factory/Qaptcha.jquery.php?hash=" + uid, "action=qaptcha");
+                            if (!captchaBr.containsHTML("\"error\":false")) {
+                                logger.warning("Decrypter broken for link: " + parameter + "\n");
 
+                            }
+                            nextPost = ammendJson(nextPost, "iQapTcha", "");
+                            nextPost = ammendJson(nextPost, "type", 5);
+                            break;
                         }
-                        nextPost = ammendJson(nextPost, "iQapTcha", "");
-                        nextPost = ammendJson(nextPost, "type", 5);
-                        break;
-                    }
-                    case 7:
-                    case 8:
-                    case 9:
-                    case 10:
-                    case 11: {
-                        // unsupported types
-                        // short wait to prevent hammering
-                        Thread.sleep(2500);
-                        // maybe also good to clear cookies?
-                        br.getPage(br.getURL());
-                        continue;
-                    }
-                    case 12: {
-                        final String result = getCaptchaCode("/simplecaptcha/captcha.php", param);
-                        nextPost = ammendJson(nextPost, "captchatype", "Simple");
-                        nextPost = ammendJson(nextPost, "norobot", result);
-                        nextPost = ammendJson(nextPost, "type", 12);
-                        break;
-                    }
-                    }
-                    nextPost = ammendJson(nextPost, "hash", uid);
-                    ajaxPostPageRaw("/v1/captcha", nextPost);
-                    if (ajax.getHttpConnection().getResponseCode() == 422 && "true".equalsIgnoreCase(getJson(ajax, "captchaFail"))) {
-                        if (i + 1 > tries) {
-                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                        case 7:
+                        case 8:
+                        case 9:
+                        case 10:
+                        case 11: {
+                            // unsupported types
+                            // short wait to prevent hammering
+                            Thread.sleep(2500);
+                            // maybe also good to clear cookies?
+                            br.getPage(br.getURL());
+                            continue;
                         }
-                        // {"message":"SolveMedia response is not valid (checksum error).","captchaFail":true}
-                        // {"message":"puzzle expired","captchaFail":true}
-                        // session timed out (due to dialog been open for too long) or captcha solution is wrong!
-                        continue;
-                    } else if (ajax.getHttpConnection().getResponseCode() == 422 && "true".equalsIgnoreCase(getJson(ajax, "captchaFail"))) {
-                        // some catch for incorrect captcha or password.
-                        continue;
-                    } else if (ajax.getHttpConnection().getResponseCode() == 200) {
-                        // this seems good. be aware that the security string is still presence in the successful task
-                        break;
+                        case 12: {
+                            final String result = getCaptchaCode("/simplecaptcha/captcha.php", param);
+                            nextPost = ammendJson(nextPost, "captchatype", "Simple");
+                            nextPost = ammendJson(nextPost, "norobot", result);
+                            nextPost = ammendJson(nextPost, "type", 12);
+                            break;
+                        }
+                        }
+                        nextPost = ammendJson(nextPost, "hash", uid);
+                        ajaxPostPageRaw("/v1/captcha", nextPost);
+                        if (ajax.getHttpConnection().getResponseCode() == 422 && "true".equalsIgnoreCase(getJson(ajax, "captchaFail"))) {
+                            if (i + 1 > tries) {
+                                throw new DecrypterException(DecrypterException.CAPTCHA);
+                            }
+                            // {"message":"SolveMedia response is not valid (checksum error).","captchaFail":true}
+                            // {"message":"puzzle expired","captchaFail":true}
+                            // session timed out (due to dialog been open for too long) or captcha solution is wrong!
+                            continue;
+                        } else if (ajax.getHttpConnection().getResponseCode() == 422 && "true".equalsIgnoreCase(getJson(ajax, "captchaFail"))) {
+                            // some catch for incorrect captcha or password.
+                            continue;
+                        } else if (ajax.getHttpConnection().getResponseCode() == 200) {
+                            // this seems good. be aware that the security string is still presence in the successful task
+                            break;
+                        }
                     }
                 }
             }
-        }
-        final String linkss = getJsonArray(ajax, "links");
-        // lets get links now, these should be in an Json array
-        final String[] links = getJsonResultsFromArray(linkss);
-        if (links != null) {
-            for (final String link : links) {
-                // we want the url json
-                final String url = getJson(link, "url");
-                if (url != null) {
-                    decryptedLinks.add(createDownloadlink(url));
+            final String linkss = getJsonArray(ajax, "links");
+            // lets get links now, these should be in an Json array
+            final String[] links = getJsonResultsFromArray(linkss);
+            if (links != null) {
+                for (final String link : links) {
+                    // we want the url json
+                    final String url = getJson(link, "url");
+                    if (url != null) {
+                        decryptedLinks.add(createDownloadlink(url));
+                    }
                 }
             }
         }
