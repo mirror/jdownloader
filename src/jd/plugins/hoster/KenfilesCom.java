@@ -19,6 +19,9 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -26,12 +29,16 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -115,7 +122,78 @@ public class KenfilesCom extends PluginForHost {
 
     public KenfilesCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        ai.setUnlimitedTraffic();
+        /*
+         * Regex damnExpireStuff =
+         * br.getRegex("<p>Premuim account will expire on <b>([A-Za-z]+ \\d+)[a-z]{0,5} (\\d{4}), at (\\d+:\\d+) CET</b>"); String
+         * monthAndDay = damnExpireStuff.getMatch(0); String year = damnExpireStuff.getMatch(1); String time = damnExpireStuff.getMatch(2);
+         * if (monthAndDay == null && year == null && time == null) { account.setValid(false); return ai; } else {
+         * ai.setValidUntil(TimeFormatter.getMilliSeconds(monthAndDay + " " + year + " " + time, "MMMM dd yyyy hh:mm", null)); }
+         */
+        account.setValid(true);
+
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            // Load cookies
+            br.setCookiesExclusive(true);
+            final Object ret = account.getProperty("cookies", null);
+            boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+            if (acmatch) {
+                acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+            }
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (account.isValid()) {
+                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                        final String key = cookieEntry.getKey();
+                        final String value = cookieEntry.getValue();
+                        this.br.setCookie(COOKIE_HOST, key, value);
+                    }
+                    return;
+                }
+            }
+            br.setFollowRedirects(false);
+            LinkedHashMap<String, String> loginVars = new LinkedHashMap<String, String>();
+            loginVars.put("login", account.getUser());
+            loginVars.put("password", account.getPass());
+            loginVars.put("op", "login");
+            loginVars.put("redirect", "");
+            loginVars.put("password", account.getPass());
+            // Encoding.urlEncode(account.getPass());
+            br.postPage("http://kenfiles.com/", loginVars);
+            // String accountPage =
+            br.getPage("http://kenfiles.com/?op=my_account");
+            // logger.warning(accountPage);
+            if (!br.containsHTML("<h3>User Details </h3>")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            // Save cookies
+            final HashMap<String, String> cookies = new HashMap<String, String>();
+            final Cookies add = this.br.getCookies(COOKIE_HOST);
+            for (final Cookie c : add.getCookies()) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+            account.setProperty("name", Encoding.urlEncode(account.getUser()));
+            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+            account.setProperty("cookies", cookies);
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -255,6 +333,52 @@ public class KenfilesCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        /** Don't use the saved cookies, maybe they cause errors */
+        login(account, true);
+        br.setFollowRedirects(false);
+        // br.getPage(downloadLink.getDownloadURL());
+        // doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
+        br.getPage(downloadLink.getDownloadURL());
+        // Make sure the download link is from premium
+        if (!br.containsHTML(">Get Premium")) {
+            // make sure the download form exists
+            Form dlForm = br.getFormbyProperty("name", "F1");
+            if (dlForm == null) {
+                handlePluginBroken(downloadLink, "dlform_f1_null", 1);
+            }
+            sendForm(dlForm);
+            String dllink = getDllink();
+            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 503) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
+                }
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                correctBR();
+                checkServerErrors();
+                handlePluginBroken(downloadLink, "dllinknotfile", 3);
+            }
+            fixFilename(downloadLink);
+            dl.startDownload();
+        } else {
+            logger.warning(br.toString());
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        /*
+         * logger.warning(br.) String action = getAction(); dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, action,
+         * "pass=&waited=1", true, -2); if (dl.getConnection().getContentType().contains("html")) {
+         * logger.warning("The final dllink seems to not be a file!"); br.followConnection(); if
+         * (br.containsHTML(">Incorrect or expired download url<")) { throw new
+         * PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error (too many simultaneous downloads)", 30 * 60 *
+         * 1000l); } throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); } dl.startDownload();
+         */
     }
 
     @SuppressWarnings({ "unused", "deprecation" })
@@ -602,7 +726,7 @@ public class KenfilesCom extends PluginForHost {
             }
             if (dllink == null) {
                 // Try to get the download link from the page, as chances are we're currently on the final page
-                dllink = new Regex(correctedBR, "<a href\\= ?\"(https?://\\w+\\.\\w+.com(\\:\\d+)?/free/\\w+/[A-Za-z0-9\\_\\-\\.]+\\.\\w+)\">").getMatch(0);
+                dllink = new Regex(correctedBR, "<a href\\= ?\"(https?://\\w+\\.\\w+.com(\\:\\d+)?/(premium)?(free)?/\\w+/[A-Za-z0-9\\_\\-\\.]+\\.\\w+)\">").getMatch(0);
             }
         }
         return dllink;
