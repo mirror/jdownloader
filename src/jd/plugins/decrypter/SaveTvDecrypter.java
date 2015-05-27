@@ -47,7 +47,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/archive/VideoArchive\\.cfm" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/archive/(?:VideoArchive|Horizontal)\\.cfm" }, flags = { 0 })
 public class SaveTvDecrypter extends PluginForDecrypt {
 
     public SaveTvDecrypter(PluginWrapper wrapper) {
