@@ -99,16 +99,12 @@ public class PackagizerLinkSandbox {
         if (link == null) {
             return;
         }
-        getDesiredPackageInfo().setDestinationFolder(destinationFolder);
-    }
-
-    private PackageInfo getDesiredPackageInfo() {
-        PackageInfo dpi = link.getDesiredPackageInfo();
-        if (dpi == null) {
-            dpi = new PackageInfo();
-            link.setDesiredPackageInfo(dpi);
+        PackageInfo packageInfo = link.getDesiredPackageInfo();
+        if (packageInfo == null) {
+            packageInfo = new PackageInfo();
         }
-        return dpi;
+        packageInfo.setDestinationFolder(destinationFolder);
+        link.setDesiredPackageInfo(packageInfo);
     }
 
     // if (lgr.getRule().getLinkEnabled() != null) {
@@ -132,7 +128,12 @@ public class PackagizerLinkSandbox {
         if (link == null) {
             return;
         }
-        getDesiredPackageInfo().setName(name);
+        PackageInfo packageInfo = link.getDesiredPackageInfo();
+        if (packageInfo == null) {
+            packageInfo = new PackageInfo();
+        }
+        packageInfo.setName(name);
+        link.setDesiredPackageInfo(packageInfo);
     }
 
     // if (lgr.getRule().getPriority() != null) {

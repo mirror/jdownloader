@@ -386,15 +386,6 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         }
         final HashSet<String> finalExtPws = extPws;
         final CrawledLinkModifier modifier = new CrawledLinkModifier() {
-            private PackageInfo getPackageInfo(CrawledLink link) {
-                PackageInfo packageInfo = link.getDesiredPackageInfo();
-                if (packageInfo != null) {
-                    return packageInfo;
-                }
-                packageInfo = new PackageInfo();
-                link.setDesiredPackageInfo(packageInfo);
-                return packageInfo;
-            }
 
             @Override
             public void modifyCrawledLink(CrawledLink link) {
@@ -402,15 +393,25 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                     link.getArchiveInfo().getExtractionPasswords().addAll(finalExtPws);
                 }
                 if (StringUtils.isNotEmpty(query.getPackageName())) {
-                    getPackageInfo(link).setName(query.getPackageName());
-                    getPackageInfo(link).setIgnoreVarious(true);
-                    getPackageInfo(link).setUniqueId(null);
+                    PackageInfo packageInfo = link.getDesiredPackageInfo();
+                    if (packageInfo == null) {
+                        packageInfo = new PackageInfo();
+                    }
+                    packageInfo.setName(query.getPackageName());
+                    packageInfo.setIgnoreVarious(true);
+                    packageInfo.setUniqueId(null);
+                    link.setDesiredPackageInfo(packageInfo);
                 }
                 link.setPriority(fp);
                 if (StringUtils.isNotEmpty(query.getDestinationFolder())) {
-                    getPackageInfo(link).setDestinationFolder(query.getDestinationFolder());
-                    getPackageInfo(link).setIgnoreVarious(true);
-                    getPackageInfo(link).setUniqueId(null);
+                    PackageInfo packageInfo = link.getDesiredPackageInfo();
+                    if (packageInfo == null) {
+                        packageInfo = new PackageInfo();
+                    }
+                    packageInfo.setDestinationFolder(query.getDestinationFolder());
+                    packageInfo.setIgnoreVarious(true);
+                    packageInfo.setUniqueId(null);
+                    link.setDesiredPackageInfo(packageInfo);
                 }
                 DownloadLink dlLink = link.getDownloadLink();
                 if (dlLink != null) {
