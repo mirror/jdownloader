@@ -300,9 +300,6 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
                 final SelectionInfo<?, ?> selectionInfo = tableModel.getTable().getSelectionInfo();
                 final boolean containsSelection = !selectionInfo.isEmpty();
                 hasSelection.set(containsSelection);
-                for (DataEntry di : dataEntries) {
-                    di.updateVisibility(containsSelection);
-                }
                 fastDelayer.run();
                 return null;
             }
