@@ -95,7 +95,7 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
                 } else if (node instanceof AbstractPackageChildrenNode) {
                     final ChildrenType child = (ChildrenType) node;
                     if (lastPackage == null) {
-                        final PackageType pkg = getPreviousPackage(selectionIndex);
+                        final PackageType pkg = getPreviousPackage(selectionIndex, child);
                         lastPackage = getPackageData(lastPackageIndex, pkg);
                         lastPackageSelected = false;
                     }
@@ -136,11 +136,19 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
         return unselectedChildren;
     }
 
-    private PackageType getPreviousPackage(int currentIndex) {
+    private PackageType getPreviousPackage(int currentIndex, ChildrenType childrenType) {
         for (int index = currentIndex; index >= 0; index--) {
             final AbstractNode node = tableModelData.get(index);
             if (node instanceof AbstractPackageNode) {
                 return (PackageType) node;
+            }
+        }
+        /* TODO: fixme, support for hideSingleChildrenPackages */
+        final int size = tableModelData.getModelDataPackages().size();
+        for (int index = 0; index < size; index++) {
+            final PackageControllerTableModelDataPackage next = tableModelData.getModelDataPackages().get(index);
+            if (next.getVisibleChildren().contains(childrenType)) {
+                return (PackageType) next.getPackage();
             }
         }
         throw new WTFException("No PreviousPackage?!");
