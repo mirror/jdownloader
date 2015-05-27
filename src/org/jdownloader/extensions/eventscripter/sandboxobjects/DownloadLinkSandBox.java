@@ -19,32 +19,34 @@ import org.jdownloader.plugins.DownloadPluginProgress;
 @ScriptAPI(description = "The context download list link")
 public class DownloadLinkSandBox {
 
-    private DownloadLink              downloadLink;
-    private DownloadLinkAPIStorableV2 storable;
+    private final DownloadLink              downloadLink;
+    private final DownloadLinkAPIStorableV2 storable;
 
     public DownloadLinkSandBox(DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
         storable = org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl.toStorable(LinkQueryStorable.FULL, downloadLink, this);
-
     }
 
     public DownloadLinkSandBox() {
+        downloadLink = null;
         storable = new DownloadLinkAPIStorableV2();
-
     }
 
     /**
      * returns how long the downloadlink is in progress
-     * 
+     *
      * @return
      */
     public long getDownloadTime() {
-        long time = downloadLink.getView().getDownloadTime();
-        PluginProgress progress = downloadLink.getPluginProgress();
-        if (progress instanceof DownloadPluginProgress) {
-            time = time + ((DownloadPluginProgress) progress).getDuration();
+        if (downloadLink != null) {
+            long time = downloadLink.getView().getDownloadTime();
+            PluginProgress progress = downloadLink.getPluginProgress();
+            if (progress instanceof DownloadPluginProgress) {
+                time = time + ((DownloadPluginProgress) progress).getDuration();
+            }
+            return time;
         }
-        return time;
+        return -1;
     }
 
     public void reset() {
@@ -75,7 +77,6 @@ public class DownloadLinkSandBox {
         if (downloadLink == null) {
             return null;
         }
-
         return downloadLink.getComment();
     }
 
@@ -83,7 +84,6 @@ public class DownloadLinkSandBox {
         if (downloadLink == null) {
             return "c:/I am a dummy folder/";
         }
-
         return downloadLink.getFileOutput();
     }
 
@@ -133,45 +133,31 @@ public class DownloadLinkSandBox {
     }
 
     public long getSpeed() {
-
         return storable.getSpeed();
-
     }
 
     public String getStatus() {
-
         return storable.getStatus();
-
     }
 
     public String getHost() {
-
         return storable.getHost();
-
     }
 
     public boolean isSkipped() {
-
         return storable.isSkipped();
-
     }
 
     public boolean isRunning() {
-
         return storable.isRunning();
-
     }
 
     public boolean isEnabled() {
-
         return storable.isEnabled();
-
     }
 
     public boolean isFinished() {
-
         return storable.isFinished();
-
     }
 
     public String getExtractionStatus() {
