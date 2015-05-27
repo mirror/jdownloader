@@ -54,6 +54,7 @@ public class LiveMixTapesCom extends PluginForHost {
         this.enablePremium("http://www.livemixtapes.com/signup.html");
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("livemixtapesdecrypted.com/", "livemixtapes.com/"));
     }

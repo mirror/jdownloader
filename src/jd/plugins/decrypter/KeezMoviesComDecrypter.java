@@ -72,7 +72,7 @@ public class KeezMoviesComDecrypter extends PluginForDecrypt {
         }
         externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
         if (externID == null) {
-            externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+            externID = br.getRegex("embed\\.redtube\\.com/(?:player/)?\\?id=(\\d+)").getMatch(0);
         }
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);

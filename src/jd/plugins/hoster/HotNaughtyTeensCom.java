@@ -45,12 +45,13 @@ public class HotNaughtyTeensCom extends PluginForHost {
         return "http://www.hotnaughtyteens.com/Pages/150/legal_terms.html";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.containsHTML("#player")) {
+        if (!br.containsHTML("id=\"mediaplayer\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<div id=\"title_bar\">([^<>\"]*?)</div>").getMatch(0);

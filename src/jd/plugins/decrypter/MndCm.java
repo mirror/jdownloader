@@ -35,6 +35,7 @@ public class MndCm extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -44,17 +45,23 @@ public class MndCm extends PluginForDecrypt {
             // Not available in old 0.9.581 Stable
         }
         String url = parameter.toString();
-        SubConfiguration cfg = SubConfiguration.getConfig("jamendo.com");
+        final SubConfiguration cfg = SubConfiguration.getConfig("jamendo.com");
         if (url.contains("/album") || url.contains("list/a")) {
             String AlbumID = new Regex(url, "list/a(\\d+)").getMatch(0);
             br.setFollowRedirects(true);
             br.getPage("http://www.jamendo.com/en/album/" + AlbumID);
+            if (!url.contains("/album") && !url.contains("list/a")) {
+                decryptedLinks.add(this.createOfflinelink(url));
+                return decryptedLinks;
+            }
             String Album = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
             String Artist = br.getRegex("og:description\" content=\"Album by (.*?)\"").getMatch(0);
             String Tracks[][] = br.getRegex("<a href='/en/track/(\\d+).*?' >(.*?)</").getMatches();
             FilePackage fp = FilePackage.getInstance();
             String packageName = "";
-            if (Album != null) packageName = packageName + Album;
+            if (Album != null) {
+                packageName = packageName + Album;
+            }
             if (Artist != null) {
                 if (packageName.length() > 0) {
                     packageName = " - " + packageName;

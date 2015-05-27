@@ -163,13 +163,11 @@ public class CrhyRllCom extends PluginForDecrypt {
             }
 
             final String configUrlDecode = Encoding.htmlDecode(configUrlSearch.getMatch(0));
-            /** TODO: Fix this broken errorhandling */
-            // final String configErrorHandling = new Regex(configUrlDecode, "pop_out_disable_message=([^&\\?]+)").getMatch(0);
-            // if (configErrorHandling != null) {
-            // logger.info("Link can only be decrypted if you own and add a crunchyroll.com account! Crunchyroll Error Message: " +
-            // Encoding.htmlDecode(configErrorHandling.replace("+", " ")) + " :: " + cryptedLink.getCryptedUrl());
-            // return decryptedLinks;
-            // }
+            final String configErrorHandling = new Regex(configUrlDecode, "pop_out_disable_message=([^&\\?]+)").getMatch(0);
+            if (configErrorHandling != null && configErrorHandling.equals("Only+Premium+and+Premium%2B+Members+can+pop+out+this+video.+Get+your+membership+today%21")) {
+                logger.info("Link can only be decrypted if you own and add a crunchyroll.com account! Crunchyroll Error Message: " + Encoding.htmlDecode(configErrorHandling.replace("+", " ")) + " :: " + cryptedLink.getCryptedUrl());
+                return decryptedLinks;
+            }
             final Regex configUrl = new Regex(configUrlDecode, CrhyRllCom.CONFIG_URL);
             if (!configUrl.matches()) {
                 throw new DecrypterException("Invalid config url");
