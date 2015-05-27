@@ -328,7 +328,7 @@ public class HyperspeedsCom extends PluginForHost {
         }
 
         /* TODO: Add API call for this once it's available */
-        this.getAPISafe("/deb_hosters.php");
+        // this.getAPISafe("/deb_hosters.php");
         this.getAPISafe("http://hyperspeeds.com/");
         ArrayList<String> supportedhostslist = new ArrayList();
         final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };

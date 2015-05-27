@@ -106,10 +106,8 @@ public class KumpulbagiCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("http://" + this.getHost() + "/action/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(req_token));
-            if (dllink == null) {
-                dllink = br.getRegex("\"DownloadUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
-            }
+            br.postPage("http://" + this.getHost() + "/action/DownloadFile?location=fi&f=" + fid, "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(req_token));
+            dllink = br.getRegex("\"DownloadUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

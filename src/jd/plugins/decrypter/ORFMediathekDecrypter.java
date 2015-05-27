@@ -76,6 +76,7 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
         String parameter = param.toString();
 
         try {
+            this.br.setLoadLimit(this.br.getLoadLimit() * 2);
             br.getPage(parameter);
         } catch (final BrowserException e) {
             if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
@@ -95,14 +96,14 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                 br.getPage(parameter);
             }
         } else if (status != 200) {
-            final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=default&hash=default");
+            final DownloadLink link = this.createOfflinelink(parameter);
             link.setAvailable(false);
             link.setProperty("offline", true);
             decryptedLinks.add(link);
             return decryptedLinks;
         }
         if (br.containsHTML("(404 \\- Seite nicht gefunden\\.|area_headline error_message\">Keine Sendung vorhanden<)") || !br.containsHTML("class=\"video_headline\"")) {
-            final DownloadLink link = createDownloadlink(parameter.replace("http://", "decrypted://") + "&quality=default&hash=default");
+            final DownloadLink link = this.createOfflinelink(parameter);
             link.setAvailable(false);
             link.setProperty("offline", true);
             link.setName(new Regex(parameter, "tvthek\\.orf\\.at/programs/(.+)").getMatch(0));
