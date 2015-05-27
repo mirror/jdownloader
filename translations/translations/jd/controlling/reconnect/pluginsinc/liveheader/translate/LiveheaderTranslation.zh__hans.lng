@@ -31,7 +31,6 @@ LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm=这个服务当前不可
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=服务不可用
 LiveHeaderDetectionWizard_runOnlineScan_warning_badhost=路由器 IP ‘%s1’无效!
 LiveHeaderDetectionWizard_runOnlineScan_warning_badip=在 http://%s1 处似乎没有 Web 界面。\n\n路由器 IP 可能无效。\n\n\n\n无论如何都继续?
-LiveHeaderDetectionWizard_sendRouter_reconnectFailed=重新连接失败。 您只可以共享工作中的重新连接设置。
 LiveHeaderDetectionWizard_uploadData_sent_failed=我们注意到，您的脚本已存在于我们的数据库中。\n无论如何都谢谢。
 LiveHeaderDetectionWizard_uploadData_sent_ok=谢谢您!\n\n我们添加了您的脚本到我们的路由器重新连接数据库。
 LiveHeaderDetectionWizard_userConfirm_loginstext=登录将不会上传。无论如何请输入它们。\n\n在上传前，我们需要它们来从您的重新连接设置中删除任何敏感信息。\n\n如果您不了解它们，留空，或询问您的网络管理员。
