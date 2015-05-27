@@ -293,7 +293,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
                     continue;
                 }
                 if (!isTestInstance()) {
-                    if (!!lgr.checkOrigin(link)) {
+                    if (!lgr.checkOrigin(link)) {
                         continue;
                     }
                     if (!lgr.checkConditions(link)) {
