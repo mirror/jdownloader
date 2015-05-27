@@ -1028,6 +1028,7 @@ public class Uploadedto extends PluginForHost {
         if (br.containsHTML("No connection to database")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
         }
+        //
         checkGeneralErrors();
         if (throwPluginDefect) {
             logger.info("ErrorCode: unknown\r\n" + br);
@@ -1831,7 +1832,7 @@ public class Uploadedto extends PluginForHost {
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
      * English.
-     *
+     * 
      * @param key
      * @return
      */
