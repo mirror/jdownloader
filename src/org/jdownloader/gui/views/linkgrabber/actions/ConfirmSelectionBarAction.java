@@ -1,5 +1,8 @@
 package org.jdownloader.gui.views.linkgrabber.actions;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -10,6 +13,7 @@ import org.appwork.swing.exttable.ExtTableModelEventWrapper;
 import org.appwork.swing.exttable.ExtTableModelListener;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.controlling.contextmenu.ActionContext;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.ConfirmLinksContextAction;
@@ -54,13 +58,11 @@ public class ConfirmSelectionBarAction extends ConfirmLinksContextAction impleme
 
     protected void updateListeners() {
         if (isSelectionOnly()) {
-
             LinkGrabberTableModel.getInstance().getEventSender().removeListener(this);
             LinkGrabberTable.getInstance().getEventSender().addListener(this, true);
         } else {
             LinkGrabberTable.getInstance().getEventSender().removeListener(this);
             LinkGrabberTableModel.getInstance().getEventSender().addListener(this, true);
-
         }
         switch (getAutoStart()) {
         case AUTO:
@@ -74,19 +76,21 @@ public class ConfirmSelectionBarAction extends ConfirmLinksContextAction impleme
     @Override
     public ConfirmLinksContextAction setAutoStart(AutoStartOptions autoStart) {
         ConfirmLinksContextAction ret = super.setAutoStart(autoStart);
-
         updateListeners();
-
         return ret;
     }
 
-    protected void update() {
-        if (isSelectionOnly()) {
-            selection = LinkGrabberTable.getInstance().getSelectionInfo();
+    @Override
+    protected SelectionInfo<CrawledPackage, CrawledLink> getSelection() {
+        if (!isSelectionOnly()) {
+            return LinkGrabberTable.getInstance().getSelectionInfo(false, true);
         } else {
-            selection = LinkGrabberTable.getInstance().getSelectionInfo(false, true);
+            return LinkGrabberTable.getInstance().getSelectionInfo(true, true);
         }
-        setEnabled(!selection.isEmpty());
+    }
+
+    protected void update() {
+        setEnabled(hasSelection());
     }
 
     @Override
