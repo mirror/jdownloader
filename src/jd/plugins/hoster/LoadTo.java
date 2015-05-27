@@ -23,6 +23,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -35,14 +38,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "load.to" }, urls = { "http://(www\\.)?load\\.to/[A-Za-z0-9]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "load.to" }, urls = { "http://(www\\.)?load\\.to/[A-Za-z0-9]+/" }, flags = { 2 })
 public class LoadTo extends PluginForHost {
 
     public LoadTo(PluginWrapper wrapper) {
         super(wrapper);
+        this.setConfigElements();
     }
 
     @Override
@@ -60,12 +65,20 @@ public class LoadTo extends PluginForHost {
         return 2000;
     }
 
+    /* Settings stuff */
+    private static final String            ENABLE_UNLIMITED_MAXDLS      = "ENABLE_UNLIMITED_MAXDLS";
+
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections
     // fail. .:. use [1-20]
-    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(getMaxdls());
     // don't touch the following!
     private static AtomicInteger           maxFree                      = new AtomicInteger(1);
     private final String                   INVALIDLINKS                 = "http://(www\\.)?load\\.to/(news|imprint|faq)/";
+
+    /* Connection stuff */
+    private static final boolean           FREE_RESUME                  = true;
+    private static final int               FREE_MAXCHUNKS               = 1;
+    private static final int               FREE_MAXDOWNLOADS            = 1;
 
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
 
@@ -116,7 +129,7 @@ public class LoadTo extends PluginForHost {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode("recaptcha", cf, downloadLink);
                 final String postData = "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&returnUrl=" + Encoding.urlEncode(br.getURL());
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, postData, true, 1);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, postData, FREE_RESUME, FREE_MAXCHUNKS);
                 if (dl.getConnection().getContentType().contains("html")) {
                     br.followConnection();
                     if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)") || br.getURL().contains("load.to/?e=3")) {
@@ -151,7 +164,7 @@ public class LoadTo extends PluginForHost {
                 final String chid = sm.getChallenge(code);
 
                 final String postData = "adcopy_response=" + code + "&adcopy_challenge=" + Encoding.urlEncode(chid) + "&returnUrl=" + Encoding.urlEncode(br.getURL());
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, postData, true, 1);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, postData, FREE_RESUME, FREE_MAXCHUNKS);
                 if (dl.getConnection().getContentType().contains("html")) {
                     br.followConnection();
                     if (br.containsHTML("solvemedia\\.com/papi/") || br.getURL().contains("load.to/?e=3")) {
@@ -169,7 +182,7 @@ public class LoadTo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, "", true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, "", FREE_RESUME, FREE_MAXCHUNKS);
         }
         this.sleep(2 * 1000, downloadLink);
         final URLConnectionAdapter con = dl.getConnection();
@@ -242,6 +255,19 @@ public class LoadTo extends PluginForHost {
     @Override
     public void init() {
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
+    }
+
+    @SuppressWarnings("deprecation")
+    private static int getMaxdls() {
+        if (SubConfiguration.getConfig("load.to").getBooleanProperty(ENABLE_UNLIMITED_MAXDLS, false)) {
+            return 20;
+        } else {
+            return FREE_MAXDOWNLOADS;
+        }
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_UNLIMITED_MAXDLS, JDL.L("plugins.hoster.loadto.enable_unlimited_maxdls", "Enable unlimited (=20) max simultaneous downloads?\r\n<html><p style=\"color:#F62817\"><b>Warning:</b> This can cause server errors- or captcha loops!</p></html>")).setDefaultValue(false));
     }
 
     @Override

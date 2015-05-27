@@ -97,7 +97,7 @@ public class SaveTv extends PluginForHost {
     private static final String  PROPERTY_DOWNLOADLINK_NOCHUNKS            = "NOCHUNKS";
     private static final String  PROPERTY_DOWNLOADLINK_ADSFREEFAILED_COUNT = "current_no_ads_free_available_retries";
 
-    /* Host plugin settings stuff */
+    /* Settings stuff */
     private static final String  USEORIGINALFILENAME                       = "USEORIGINALFILENAME";
     private static final String  PREFERADSFREE                             = "PREFERADSFREE";
     private static final String  ADS_FREE_UNAVAILABLE_MAXRETRIES           = "ADS_FREE_UNAVAILABLE_MAXRETRIES";

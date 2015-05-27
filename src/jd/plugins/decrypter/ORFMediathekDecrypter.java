@@ -373,13 +373,14 @@ public class ORFMediathekDecrypter extends PluginForDecrypt {
                             if (!isEmpty(subtitleUrl)) {
                                 final String name_subtitle = fileName + ".srt";
                                 final DownloadLink subtitle = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                                subtitle.setAvailable(true);
-                                subtitle.setFinalFileName(name_subtitle);
-                                subtitle.setContentUrl(data);
                                 subtitle.setProperty("directURL", subtitleUrl);
                                 subtitle.setProperty("directName", name_subtitle);
                                 subtitle.setProperty("streamingType", "subtitle");
                                 subtitle.setProperty("mainlink", data);
+                                subtitle.setAvailable(true);
+                                subtitle.setFinalFileName(name_subtitle);
+                                subtitle.setContentUrl(data);
+                                subtitle.setLinkID(video_id_detailed + "_" + fmt + "_subtitle");
                                 part.add(subtitle);
                                 vIdTemp = fileName;
                             }

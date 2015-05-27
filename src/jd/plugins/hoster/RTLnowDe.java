@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.text.DecimalFormat;
+import java.util.LinkedHashMap;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -29,7 +31,6 @@ import javax.xml.xpath.XPathFactory;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -42,11 +43,12 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtlnow.rtl.de", "rtlnitronow.de", "voxnow.de", "superrtlnow.de", "rtl2now.rtl2.de", "n-tvnow.de" }, urls = { "http://(www\\.)?rtl\\-now\\.rtl\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?rtlnitronow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?voxnow\\.de//?([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?superrtlnow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?rtl2now\\.rtl2\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+", "http://(www\\.)?n\\-tvnow\\.de/([\\w-]+/)?[\\w-]+\\.php\\?(container_id|player|film_id)=.+" }, flags = { 32, 32, 32, 32, 32, 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowtv.de" }, urls = { "https?://(www\\.)?nowtv\\.de/(?:rtl|vox|rtl2|rtlnitro|superrtl|ntv)/[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 3 })
 public class RTLnowDe extends PluginForHost {
 
     public RTLnowDe(final PluginWrapper wrapper) {
@@ -54,26 +56,27 @@ public class RTLnowDe extends PluginForHost {
         setConfigElements();
     }
 
-    /* Tags: rtl-interactive.de, RTL */
+    /* Tags: rtl-interactive.de, RTL, rtlnow, rtl-now */
     /* General information: The "filmID" is a number which is usually in the html as "film_id" or in the XML 'generate' URL as "para1" */
     /* https?://(www\\.)?<host>/hds/videos/<filmID>/manifest\\-hds\\.f4m */
-    private String               HDSTYPE_NEW          = "https?://(www\\.)?[a-z0-0\\-\\.]+/hds/videos/\\d+/manifest\\-hds\\.f4m";
+    private final String                  HDSTYPE_NEW_MANIFEST = "https?://(www\\.)?[a-z0-0\\-\\.]+/hds/videos/\\d+/manifest\\-hds\\.f4m";
     /*
      * http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/abr/videos/<seriesID (same for app episodes of one series>/<videoIUD(same for all
-     * qualities/versions of a video)>/V_\\d+_[A-Z0-9]+_16-\\d+_\\d+_abr\\-<bitrate - usually 550, 1000 or
-     * 1500)>_[a-f0-9]{30}\\.mp4\\.f4m\\?cb=\\d+
+     * qualities/versions of a video)>/V_\\d+[A-Za-z0-9\\-_]+abr\\-<bitrate - usually 550, 1000 or 1500)>_[a-f0-9]{30}\\.mp4\\.f4m\\?cb=\\d+
      */
-    private String               HDSTYPE_NEW_DETAILED = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/abr/videos/\\d+/\\d+/V_\\d+_[A-Z0-9]+_16-\\d+_\\d+_abr\\-\\d+_[a-f0-9]{30}\\.mp4\\.f4m\\?cb=\\d+";
+    private final String                  HDSTYPE_NEW_DETAILED = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/abr/videos/\\d+/\\d+/V_\\d+[A-Za-z0-9\\-_]+_abr\\-\\d+_[a-f0-9]{30,}\\.mp4\\.f4m\\?cb=\\d+";
     /*
      * http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/<seriesID (same for app episodes of one
      * series>/V_\\d+_[A-Z0-9]+_E\\d+_\\d+_h264-mq_<[a-f0-9] usually {30,}>\\.f4v\\.f4m\\?ts=\\d+
      */
-    // http://hds.fra.rtlnow.de/hds-vod-enc/rtlnow/videos/7947/V_680273_CWRW_E68173_116557_h264-mq_433c5d3b9df8489a7e62bb68ff11eff.f4v.f4m?ts=1429140440
-    private String               HDSTYPE_OLD          = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/\\d+/V_\\d+_[A-Z0-9]+_E\\d+_\\d+_h264-mq_[a-f0-9]+\\.f4v\\.f4m\\?ts=\\d+";
-    private Document             doc;
-    private static final boolean ALLOW_RTMP           = true;
-    private Account              currAcc              = null;
-    private DownloadLink         currDownloadLink     = null;
+    private final String                  HDSTYPE_OLD          = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/\\d+/V_\\d+_[A-Z0-9]+_E\\d+_\\d+_h264-mq_[a-f0-9]+\\.f4v\\.f4m\\?ts=\\d+";
+    private Document                      doc;
+    private static final boolean          ALLOW_RTMP           = false;
+    private static final boolean          ALLOW_HLS            = true;
+    private Account                       currAcc              = null;
+    private DownloadLink                  currDownloadLink     = null;
+    private LinkedHashMap<String, Object> entries              = null;
+    private LinkedHashMap<String, Object> format               = null;
 
     /* Thx https://github.com/bromix/plugin.video.rtl-now.de/blob/master/resources/lib/rtlinteractive/client.py */
     // private String apiUrl = null;
@@ -183,20 +186,105 @@ public class RTLnowDe extends PluginForHost {
         this.currDownloadLink = dl;
     }
 
+    @SuppressWarnings({ "deprecation", "unchecked" })
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        setConstants(null, downloadLink);
+        setBrowserExclusive();
+        String filename = null;
+        final String addedlink = downloadLink.getDownloadURL();
+        final Regex urlinfo = new Regex(addedlink, "/([a-z0-9\\-]+)/([a-z0-9\\-]+)$");
+        final String apiurl = "https://api.nowtv.de/v3/movies/" + urlinfo.getMatch(0) + "/" + urlinfo.getMatch(1) + "?fields=*,format,files,breakpoints,paymentPaytypes,trailers,pictures";
+        br.getPage(apiurl);
+        entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+        format = (LinkedHashMap<String, Object>) entries.get("format");
+        if (br.containsHTML("<\\!\\-\\- Payment\\-Teaser \\-\\->")) {
+            downloadLink.getLinkStatus().setStatusText("Download nicht möglich (muss gekauft werden)");
+            return AvailableStatus.TRUE;
+        }
+        final String episode_str = new Regex(addedlink, "folge\\-(\\d+)").getMatch(0);
+        final long season = DummyScriptEnginePlugin.toLong(entries.get("season"), -1);
+        long episode = DummyScriptEnginePlugin.toLong(entries.get("episode"), -1);
+        if (episode == -1 && episode_str != null) {
+            episode = Long.parseLong(episode_str);
+        }
+        final String description = (String) entries.get("articleLong");
+        String title = (String) entries.get("title");
+        String title_series = (String) format.get("title");
+        if (title == null || title_series == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        title = encodeUnicode(title);
+        title_series = encodeUnicode(title_series);
+
+        filename = title_series;
+        if (season != -1 && episode != -1) {
+            final DecimalFormat df = new DecimalFormat("00");
+            filename += "_S" + df.format(season) + "E" + df.format(episode);
+        }
+        filename += "_" + title;
+        filename += ".mp4";
+
+        try {
+            if (FilePackage.isDefaultFilePackage(downloadLink.getFilePackage())) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(title_series);
+                fp.add(downloadLink);
+            }
+            if (description != null && downloadLink.getComment() == null) {
+                downloadLink.setComment(description);
+            }
+        } catch (final Throwable e) {
+        }
+        downloadLink.setFinalFileName(filename);
+        return AvailableStatus.TRUE;
+    }
+
+    /* Last revision with old handling: */
     @SuppressWarnings("deprecation")
     private void download(final DownloadLink downloadLink) throws Exception {
-        String rtmp_playpath = downloadLink.getStringProperty("rlnowrtmpplaypath", null);
-        rtmp_playpath = null;
-        String contentUrl = br.getRegex("data:\'(.*?)\'").getMatch(0);
-        final String ivw = br.getRegex("ivw:\'(.*?)\',").getMatch(0);
-        final String client = br.getRegex("id:\'(.*?)\'").getMatch(0);
-        final String swfurl = br.getRegex("swfobject\\.embedSWF\\(\"(.*?)\",").getMatch(0);
-        String dllink = null;
-        if (contentUrl == null || ivw == null || client == null || swfurl == null) {
+        final boolean isFree = ((Boolean) entries.get("free")).booleanValue();
+        String url_hds = null;
+        String url_hls = null;
+        final long isHDS = DummyScriptEnginePlugin.toLong(format.get("flashHds"), -1);
+        final String movieID = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("id"), -1));
+        if (movieID.equals("-1") || isHDS == -1) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (isHDS != 1) {
+            /* TODO: Check this case! */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage("http://rtl-now.rtl.de/hds/videos/" + movieID + "/manifest-hds.f4m?&ts=" + System.currentTimeMillis());
+        final String[] hdsurls = br.getRegex("<media (.*?)/>").getColumn(0);
+        if (hdsurls == null || hdsurls.length == 0) {
+            if (!isFree) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Nur zahlende Benutzer können dieses Video herunterladen");
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type or paid episode");
+        }
+        /* Get the highest quality available */
+        long maxBitrate = 0;
+        for (final String hdssource : hdsurls) {
+            final String url = new Regex(hdssource, "href=\"(http[^<>\"]*?)\"").getMatch(0);
+            final String bitrate_str = new Regex(hdssource, "bitrate=\"(\\d+)\"").getMatch(0);
+            if (url == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final long bitrate_long = Long.parseLong(bitrate_str);
+            if (bitrate_long > maxBitrate) {
+                url_hds = url;
+                maxBitrate = bitrate_long;
+            }
+        }
+        if (url_hds == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        contentUrl = Encoding.urlDecode(downloadLink.getHost() + contentUrl, true);
+        String rtmp_playpath = downloadLink.getStringProperty("rlnowrtmpplaypath", null);
+        String contentUrl = br.getRegex("data:\'(.*?)\'").getMatch(0);
+        String dllink = null;
+
         if (contentUrl != null) {
             contentUrl = "http://" + contentUrl;
             downloadLink.setProperty("rlnowcontenturl", contentUrl);
@@ -256,28 +344,35 @@ public class RTLnowDe extends PluginForHost {
             }
             ((RTMPDownload) dl).startDownload();
 
+        } else if (ALLOW_HLS && url_hds.matches(this.HDSTYPE_NEW_DETAILED)) {
+            url_hls = url_hds.replace("hds", "hls");
+            url_hls = url_hls.replace(".f4m", ".m3u8");
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, url_hls);
+            dl.startDownload();
         } else {
             /* TODO */
             if (true) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type");
+            }
+            if (url_hds.matches(this.HDSTYPE_NEW_DETAILED)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type / encrypted HDS");
             }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (dllink.matches(this.HDSTYPE_NEW)) {
-                logger.info("2nd attempt to get final hds url");
-                /* TODO */
-                if (true) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type / encrypted HDS");
-                }
-                final XPath xPath = xmlParser(dllink);
-                final NodeList nl = (NodeList) xPath.evaluate("/manifest/media", doc, XPathConstants.NODESET);
-                final Node n = nl.item(0);
-                dllink = n.getAttributes().getNamedItem("href").getTextContent();
-            }
-            br.getPage(dllink);
-            String hds = parseManifest();
+            // if (dllink.matches(this.HDSTYPE_NEW_MANIFEST)) {
+            // logger.info("2nd attempt to get final hds url");
+            // /* TODO */
+            // if (true) {
+            // throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type / encrypted HDS");
+            // }
+            // final XPath xPath = xmlParser(dllink);
+            // final NodeList nl = (NodeList) xPath.evaluate("/manifest/media", doc, XPathConstants.NODESET);
+            // final Node n = nl.item(0);
+            // dllink = n.getAttributes().getNamedItem("href").getTextContent();
+            // }
+            // br.getPage(dllink);
+            // final String hds = parseManifest();
 
-            dl = new HDSDownloader(downloadLink, br, hds);
+            dl = new HDSDownloader(downloadLink, br, url_hds);
             dl.startDownload();
 
         }
@@ -346,65 +441,15 @@ public class RTLnowDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String redirect = br.getRegex("window\\.location\\.href = \"(/[^<>\"]*?)\"").getMatch(0);
-        if (redirect != null) {
-            br.getPage(redirect);
-        }
-        if (br.containsHTML("<\\!\\-\\- Payment\\-Teaser \\-\\->")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich (muss gekauft werden)");
-        }
-        final String ageCheck = br.getRegex("(Aus Jugendschutzgründen nur zwischen \\d+ und \\d+ Uhr abrufbar\\!)").getMatch(0);
-        if (ageCheck != null) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ageCheck, 10 * 60 * 60 * 1000l);
-        }
+        /* TODO: Fix this! */
+        // if (br.containsHTML("<\\!\\-\\- Payment\\-Teaser \\-\\->")) {
+        // throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich (muss gekauft werden)");
+        // }
+        // final String ageCheck = br.getRegex("(Aus Jugendschutzgründen nur zwischen \\d+ und \\d+ Uhr abrufbar\\!)").getMatch(0);
+        // if (ageCheck != null) {
+        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ageCheck, 10 * 60 * 60 * 1000l);
+        // }
         download(downloadLink);
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        setConstants(null, downloadLink);
-        setBrowserExclusive();
-        final String dllink = downloadLink.getDownloadURL();
-        br.getPage(dllink);
-        if (br.containsHTML("<\\!\\-\\- Payment\\-Teaser \\-\\->")) {
-            downloadLink.getLinkStatus().setStatusText("Download nicht möglich (muss gekauft werden)");
-            return AvailableStatus.TRUE;
-        }
-        String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\">").getMatch(0);
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String folge = br.getRegex("Folge: '(.*?)'").getMatch(0);
-        if (folge == null) {
-            folge = new Regex(dllink, "folge\\-(\\d+)").getMatch(0);
-        }
-        if (folge != null && filename.contains(folge)) {
-            filename = filename.substring(0, filename.lastIndexOf("-")).trim();
-        }
-        final String season = dllink.contains("season=") ? new Regex(dllink, "season=(\\d+)").getMatch(0) : "0";
-        if (!season.equals("0")) {
-            filename += " - Staffel " + season;
-        }
-        filename = filename.trim();
-
-        if (folge == null) {
-            return AvailableStatus.FALSE;
-        }
-        folge = folge.trim();
-        if (folge.endsWith(".")) {
-            folge = folge.substring(0, folge.length() - 1);
-        }
-        try {
-            if (FilePackage.isDefaultFilePackage(downloadLink.getFilePackage())) {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(filename.replaceAll(folge, ""));
-                fp.add(downloadLink);
-            }
-        } catch (final Throwable e) {
-        }
-        downloadLink.setName(filename + "__" + folge + ".flv");
-        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -437,6 +482,22 @@ public class RTLnowDe extends PluginForHost {
         } catch (final Throwable e2) {
             return null;
         }
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     // private long crc32Hash(final String wahl) throws UnsupportedEncodingException {
