@@ -17,9 +17,9 @@ public class Spinner extends ExtSpinner implements SettingsComponent {
     /**
      * 
      */
-    private static final long                     serialVersionUID = 1L;
-    private final StateUpdateEventSender<Spinner> eventSender;
-    private final AtomicInteger                   setting          = new AtomicInteger(0);
+    private static final long               serialVersionUID = 1L;
+    private StateUpdateEventSender<Spinner> eventSender;
+    private final AtomicInteger             setting          = new AtomicInteger(0);
 
     public Spinner(int min, int max) {
         this(new SpinnerNumberModel(min, min, max, 1));
@@ -27,31 +27,40 @@ public class Spinner extends ExtSpinner implements SettingsComponent {
 
     public Spinner(SpinnerNumberModel extSpinnerConfigModel) {
         super(extSpinnerConfigModel);
+        init();
+
+    }
+
+    protected void init() {
         setEditor(new JSpinner.NumberEditor(this, "#"));
+
         eventSender = new StateUpdateEventSender<Spinner>();
+        // JComponent comp = getEditor();
+        // JFormattedTextField field = (JFormattedTextField) comp.getComponent(0);
+        // field.addActionListener(new ActionListener() {
+        //
+        // @Override
+        // public void actionPerformed(ActionEvent e) {
+        // System.out.println(1 + " -a " + (setting.get() == 0));
+        // if (setting.get() == 0) {
+        // eventSender.fireEvent(new StateUpdateEvent<Spinner>(Spinner.this));
+        // }
+        // }
+        // });
         this.addChangeListener(new ChangeListener() {
 
             public void stateChanged(ChangeEvent e) {
+                // System.out.println(1 + " -c " + (setting.get() == 0));
                 if (setting.get() == 0) {
                     eventSender.fireEvent(new StateUpdateEvent<Spinner>(Spinner.this));
                 }
             }
         });
-
     }
 
     public Spinner(IntegerKeyHandler cfg) {
         super(new ConfigIntSpinnerModel(cfg));
-        setEditor(new JSpinner.NumberEditor(this, "#"));
-        eventSender = new StateUpdateEventSender<Spinner>();
-        this.addChangeListener(new ChangeListener() {
-
-            public void stateChanged(ChangeEvent e) {
-                if (setting.get() == 0) {
-                    eventSender.fireEvent(new StateUpdateEvent<Spinner>(Spinner.this));
-                }
-            }
-        });
+        init();
     }
 
     @Override
@@ -65,14 +74,39 @@ public class Spinner extends ExtSpinner implements SettingsComponent {
 
     }
 
-    @Override
-    public void setValue(Object value) {
+    public void setValue(Number value) {
         setting.getAndIncrement();
         try {
             super.setValue(value);
         } finally {
             setting.decrementAndGet();
         }
+    }
+
+    public void setValue(long value) {
+        setting.getAndIncrement();
+        try {
+            super.setValue(value);
+        } finally {
+            setting.decrementAndGet();
+        }
+    }
+
+    public void setValue(int value) {
+        setting.getAndIncrement();
+        try {
+            super.setValue(value);
+        } finally {
+            setting.decrementAndGet();
+        }
+    }
+
+    /**
+     * @deprecated USer {@link #setValue(int)} or {@link #setValue(long)} or {@link #setValue(Number)} instead!!
+     */
+    public void setValue(Object value) {
+
+        super.setValue(value);
 
     }
 

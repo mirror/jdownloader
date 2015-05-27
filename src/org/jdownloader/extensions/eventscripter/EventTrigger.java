@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.Application;
@@ -275,6 +276,47 @@ public enum EventTrigger implements LabelInterface {
         public String getAPIDescription() {
             return defaultAPIDescription(this);
         }
+    },
+    INTERVAL {
+        @Override
+        public String getLabel() {
+            return T._.INTERVAL();
+        }
+
+        @Override
+        public TriggerSetupPanel createSettingsPanel(final HashMap<String, Object> settings) {
+            final Spinner spinner = new Spinner(1000, Integer.MAX_VALUE);
+            try {
+                spinner.setValue(((Number) settings.get("interval")).intValue());
+            } catch (Throwable e) {
+                spinner.setValue(1000);
+            }
+            TriggerSetupPanel ret = new TriggerSetupPanel(0) {
+                public void save() {
+                    settings.put("interval", ((Number) spinner.getValue()).intValue());
+
+                };
+            };
+
+            ret.addPair(T._.interval_settings(), null, spinner);
+            return ret;
+        }
+
+        public boolean isSynchronous() {
+            // scripts should be able to modify the link
+            return false;
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+            HashMap<String, Object> props = new HashMap<String, Object>();
+            props.put("interval", 1000);
+
+            return props;
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
     };
 
     public String getAPIDescription() {
@@ -330,6 +372,10 @@ public enum EventTrigger implements LabelInterface {
 
     public boolean isSynchronous() {
         return false;
+    }
+
+    public TriggerSetupPanel createSettingsPanel(HashMap<String, Object> settings) {
+        return null;
     }
 
 }

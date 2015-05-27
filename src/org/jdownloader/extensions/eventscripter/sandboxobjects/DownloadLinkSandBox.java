@@ -5,6 +5,7 @@ import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginProgress;
 
 import org.jdownloader.api.downloads.v2.DownloadLinkAPIStorableV2;
 import org.jdownloader.api.downloads.v2.LinkQueryStorable;
@@ -13,6 +14,7 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
+import org.jdownloader.plugins.DownloadPluginProgress;
 
 @ScriptAPI(description = "The context download list link")
 public class DownloadLinkSandBox {
@@ -23,11 +25,35 @@ public class DownloadLinkSandBox {
     public DownloadLinkSandBox(DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
         storable = org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl.toStorable(LinkQueryStorable.FULL, downloadLink, this);
+
     }
 
     public DownloadLinkSandBox() {
         storable = new DownloadLinkAPIStorableV2();
 
+    }
+
+    /**
+     * returns how long the downloadlink is in progress
+     * 
+     * @return
+     */
+    public long getDownloadTime() {
+        long time = downloadLink.getView().getDownloadTime();
+        PluginProgress progress = downloadLink.getPluginProgress();
+        if (progress instanceof DownloadPluginProgress) {
+            time = time + ((DownloadPluginProgress) progress).getDuration();
+        }
+        return time;
+    }
+
+    public void reset() {
+        if (downloadLink == null) {
+            return;
+        }
+        ArrayList<DownloadLink> l = new ArrayList<DownloadLink>();
+        l.add(downloadLink);
+        DownloadWatchDog.getInstance().reset(l);
     }
 
     public ArchiveSandbox getArchive() {

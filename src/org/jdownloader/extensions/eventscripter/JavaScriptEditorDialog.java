@@ -2,8 +2,10 @@ package org.jdownloader.extensions.eventscripter;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.swing.Box;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JScrollPane;
@@ -42,6 +44,8 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
     private JScrollPane                           apiScrollbar;
     private JScrollPane                           scrollpane;
     private EventScripterExtension                extension;
+    private TriggerSetupPanel                     settingsPanel;
+    private HashMap<String, Object>               settingsMap;
 
     public JavaScriptEditorDialog(EventScripterExtension extension, ScriptEntry entry) {
         super(Dialog.STYLE_HIDE_ICON, T._.script_editor_title(entry.getName()), null, _GUI._.lit_save(), null);
@@ -69,13 +73,16 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
 
     @Override
     public JComponent layoutDialogContent() {
-
-        p = new MigPanel("ins 0,wrap 1", "[grow,fill]", "[][grow,fill][grow,fill]");
+        // dummy. @see #relayout
+        p = new MigPanel("ins 0,wrap 1,debug", "[grow,fill]", "[][][grow,fill][grow,fill]");
         toolbar = new JToolBar();
         toolbar.setRollover(true);
         toolbar.setFloatable(false);
         toolbar.setPreferredSize(new Dimension(-1, 22));
         p.add(toolbar);
+        settingsMap = entry.getEventTriggerSettings();
+        settingsPanel = entry.getEventTrigger().createSettingsPanel(settingsMap);
+
         final JEditorPane defaults = new JEditorPane();
         // defaults.setFocusable(false);
         p.add(apiScrollbar = new JScrollPane(defaults) {
@@ -184,12 +191,19 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
     protected void relayout() {
         p.removeAll();
         if (CFG_EVENT_CALLER.CFG.isAPIPanelVisible()) {
-            p.setLayout("ins 0,wrap 1", "[grow,fill]", "[][][grow,fill]");
+            p.setLayout("ins 0,wrap 1", "[grow,fill]", "[][][][grow,fill]");
         } else {
-            p.setLayout("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]");
+            p.setLayout("ins 0,wrap 1", "[grow,fill]", "[][][grow,fill]");
         }
 
         p.add(toolbar);
+
+        if (settingsPanel != null) {
+            p.add(settingsPanel);
+        } else {
+            p.add(Box.createGlue());
+        }
+
         if (CFG_EVENT_CALLER.CFG.isAPIPanelVisible()) {
 
             p.add(apiScrollbar, "height 200:n:n");
@@ -308,5 +322,13 @@ public class JavaScriptEditorDialog extends AbstractDialog<Object> {
                 return editor.getText();
             }
         }.getReturnValue();
+    }
+
+    public HashMap<String, Object> getEventTriggerSetup() {
+        if (settingsPanel != null) {
+            settingsPanel.save();
+            return settingsMap;
+        }
+        return null;
     }
 }
