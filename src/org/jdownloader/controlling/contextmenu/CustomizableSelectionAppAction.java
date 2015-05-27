@@ -12,14 +12,9 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 
 public abstract class CustomizableSelectionAppAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableAppAction {
-    // to set up a static selection that does not change any more
-    protected SelectionInfo<PackageType, ChildrenType> selection = null;
 
     @SuppressWarnings("unchecked")
     protected SelectionInfo<PackageType, ChildrenType> getSelection() {
-        if (selection != null) {
-            return selection;
-        }
         final View view = MainTabbedPane.getInstance().getSelectedView();
         if (view instanceof DownloadsView) {
             return (SelectionInfo<PackageType, ChildrenType>) DownloadsTable.getInstance().getSelectionInfo();
@@ -30,21 +25,19 @@ public abstract class CustomizableSelectionAppAction<PackageType extends Abstrac
         }
     }
 
-    protected boolean hasSelection(SelectionInfo<PackageType, ChildrenType> selection2) {
+    protected boolean hasSelection(SelectionInfo<?, ?> selection2) {
         return selection2 != null && !selection2.isEmpty();
-
     }
 
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-        selection = getSelection();
         setEnabled(hasSelection());
     }
 
     protected boolean hasSelection() {
-        SelectionInfo<?, ?> sel = getSelection();
-        return sel != null && !sel.isEmpty();
+        final SelectionInfo<?, ?> selectionInfo = getSelection();
+        return hasSelection(selectionInfo);
     }
 
 }

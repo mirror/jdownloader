@@ -21,27 +21,28 @@ import org.jdownloader.gui.views.components.packagetable.context.SetDownloadFold
 public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderAction<CrawledPackage, CrawledLink> {
 
     /**
-     * 
+     *
      */
-    private static final long serialVersionUID = -6632019767606316873L;
+    private static final long                                serialVersionUID = -6632019767606316873L;
+    private final SelectionInfo<CrawledPackage, CrawledLink> selection;
 
     public SetDownloadFolderInLinkgrabberAction() {
-
+        this(null);
     }
 
     public SetDownloadFolderInLinkgrabberAction(SelectionInfo<CrawledPackage, CrawledLink> selectionInfo) {
-        this();
         selection = selectionInfo;
-
     }
 
     @Override
     protected SelectionInfo<CrawledPackage, CrawledLink> getSelection() {
-        return super.getSelection();
+        if (selection == null) {
+            return super.getSelection();
+        }
+        return selection;
     }
 
     protected File dialog(File path) throws DialogClosedException, DialogCanceledException {
-
         CrawledPackage cp = getSelection().getFirstPackage();
         try {
             cp = getSelection().getFirstPackage();

@@ -26,7 +26,7 @@ import org.jdownloader.images.NewTheme;
 
 public class EnabledAction extends CustomizableTableContextAppAction {
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = -1733286276459073749L;
 
@@ -50,8 +50,9 @@ public class EnabledAction extends CustomizableTableContextAppAction {
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-        if (selection != null) {
-            switch (state = getState(selection)) {
+        final SelectionInfo<?, ?> selectionInfo = getSelection();
+        if (selectionInfo != null) {
+            switch (state = getState(selectionInfo)) {
             case MIXED_DISABLE:
                 setSmallIcon(state.icon);
                 setName(_GUI._.EnabledAction_EnabledAction_disable());
@@ -103,10 +104,10 @@ public class EnabledAction extends CustomizableTableContextAppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) {
+        final SelectionInfo<?, ?> lSelection = getSelection();
+        if (!isEnabled() && hasSelection(lSelection)) {
             return;
         }
-        final SelectionInfo<?, ?> lSelection = selection;
         final State lState = state;
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
