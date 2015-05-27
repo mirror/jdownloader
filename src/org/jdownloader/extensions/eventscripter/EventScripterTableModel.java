@@ -216,6 +216,7 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
                             if (d.getCloseReason() == CloseReason.OK) {
                                 String script = d.getScript();
                                 if (script != null) {
+                                    editing.setEventTriggerSettings(d.getEventTriggerSetup());
                                     editing.setScript(script);
                                     extension.save(getTableData());
                                 }

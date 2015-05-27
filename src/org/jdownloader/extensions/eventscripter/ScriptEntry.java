@@ -1,5 +1,7 @@
 package org.jdownloader.extensions.eventscripter;
 
+import java.util.HashMap;
+
 import org.appwork.storage.Storable;
 
 public class ScriptEntry implements Storable {
@@ -36,7 +38,12 @@ public class ScriptEntry implements Storable {
         this.script = script;
     }
 
-    private String script;
+    private String                  script;
+    private HashMap<String, Object> eventTriggerSettings;
+
+    public void setEventTriggerSettings(HashMap<String, Object> eventTriggerSettings) {
+        this.eventTriggerSettings = eventTriggerSettings;
+    }
 
     public EventTrigger getEventTrigger() {
         if (eventTrigger == null) {
@@ -47,5 +54,12 @@ public class ScriptEntry implements Storable {
 
     public void setEventTrigger(EventTrigger eventTrigger) {
         this.eventTrigger = eventTrigger;
+    }
+
+    public HashMap<String, Object> getEventTriggerSettings() {
+        if (eventTriggerSettings == null) {
+            eventTriggerSettings = new HashMap<String, Object>();
+        }
+        return eventTriggerSettings;
     }
 }

@@ -97,6 +97,8 @@ public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripter
                 ArrayList<ExampleMenuEntry> lst = new ArrayList<ExampleMenuEntry>();
                 lst.add(new ExampleMenuEntry(getExtension(), "infofile.js", EventTrigger.ON_PACKAGE_FINISHED, T._.example_infoFile()));
                 lst.add(new ExampleMenuEntry(getExtension(), "playsound.js", EventTrigger.ON_DOWNLOAD_CONTROLLER_STOPPED, T._.example_play_sound()));
+                lst.add(new ExampleMenuEntry(getExtension(), "speedReset.js", EventTrigger.INTERVAL, T._.reset_link_on_low_speed()));
+
                 java.util.Collections.sort(lst, new Comparator<ExampleMenuEntry>() {
 
                     @Override

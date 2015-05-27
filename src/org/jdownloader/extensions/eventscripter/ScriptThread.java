@@ -183,6 +183,7 @@ public class ScriptThread extends Thread {
     }
 
     public Object evalTrusted(String preloadClasses) {
+        // System.out.println(preloadClasses);
         return JSHtmlUnitPermissionRestricter.evaluateTrustedString(cx, getScope(), preloadClasses, "", 1, null);
     }
 

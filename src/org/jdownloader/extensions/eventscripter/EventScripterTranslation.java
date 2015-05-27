@@ -138,4 +138,13 @@ public interface EventScripterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download Controller stopped" })
     String ON_DOWNLOADS_STOPPED();
 
+    @Default(lngs = { "en" }, values = { "Interval" })
+    String INTERVAL();
+
+    @Default(lngs = { "en" }, values = { "Call interval in ms" })
+    String interval_settings();
+
+    @Default(lngs = { "en" }, values = { "Reset a Download if the speed is low" })
+    String reset_link_on_low_speed();
+
 }

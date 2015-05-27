@@ -77,6 +77,8 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     private EventScripterConfigPanel   configPanel = null;
     private volatile List<ScriptEntry> entries     = new ArrayList<ScriptEntry>();
 
+    private IntervalController         intervalController;
+
     @Override
     public boolean isHeadlessRunnable() {
         return true;
@@ -160,6 +162,13 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                 }
             }
         });
+
+        intervalController = new IntervalController(this);
+
+    }
+
+    public List<ScriptEntry> getEntries() {
+        return entries;
     }
 
     @Override
@@ -320,6 +329,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         } else {
             this.entries = new ArrayList<ScriptEntry>(entries);
         }
+        intervalController.update();
     }
 
     public void save(final List<ScriptEntry> tableData) {
