@@ -38,9 +38,8 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
     @Override
     public CrawledPackageView aggregate() {
-        Temp tmp = new Temp();
-
         synchronized (this) {
+            Temp tmp = new Temp();
             /* this is called for repaint, so only update values that could have changed for existing items */
             List<CrawledLink> updatedItems = getItems();
 
