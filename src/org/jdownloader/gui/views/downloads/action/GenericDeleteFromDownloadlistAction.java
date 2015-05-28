@@ -561,9 +561,9 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
                     return;
                 default:
                     if (isIgnoreFiltered()) {
-                        selectionInfo = getTable().getSelectionInfo(false, false);
-                    } else {
                         selectionInfo = getTable().getSelectionInfo(false, true);
+                    } else {
+                        selectionInfo = getTable().getSelectionInfo(false, false);
                     }
                     selection = new WeakReference<SelectionInfo<FilePackage, DownloadLink>>(selectionInfo);
                     break;
