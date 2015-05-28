@@ -46,14 +46,18 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
          */
         final SelectionInfo<PackageType, ChildrenType> selectionInfo = table.getSelectionInfo(true, true);
         Transferable ret = null;
-        if (selectionInfo.getChildren().size() > 0 || selectionInfo.getPackageViews().size() > 0) {
+        if (selectionInfo.getPackageViews().size() > 0) {
             final ArrayList<PackageType> packages = new ArrayList<PackageType>(selectionInfo.getPackageViews().size());
+            final ArrayList<ChildrenType> children = new ArrayList<ChildrenType>(selectionInfo.getPackageViews().size());
             for (PackageView<PackageType, ChildrenType> packageView : selectionInfo.getPackageViews()) {
                 if (packageView.isPackageSelected()) {
                     packages.add(packageView.getPackage());
                 }
+                if (packageView.isExpanded()) {
+                    children.addAll(packageView.getSelectedChildren());
+                }
             }
-            PackageControllerTableTransferable<PackageType, ChildrenType> ret2 = new PackageControllerTableTransferable<PackageType, ChildrenType>(packages, selectionInfo.getChildren(), table);
+            PackageControllerTableTransferable<PackageType, ChildrenType> ret2 = new PackageControllerTableTransferable<PackageType, ChildrenType>(packages, children, table);
             ret = customizeTransferable(ret2);
         }
         return ret;
