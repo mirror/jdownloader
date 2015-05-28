@@ -59,9 +59,10 @@ public abstract class antiDDoSForHost extends PluginForHost {
         return false;
     }
 
-    protected static HashMap<String, Cookies>     antiDDoSCookies = new HashMap<String, Cookies>();
-    protected final WeakHashMap<Browser, Boolean> browserPrepped  = new WeakHashMap<Browser, Boolean>();
-    protected static AtomicReference<String>      agent           = new AtomicReference<String>(null);
+    protected static final String                 cfRequireCookies = "cfduid|cf_clearance";
+    protected static HashMap<String, Cookies>     antiDDoSCookies  = new HashMap<String, Cookies>();
+    protected final WeakHashMap<Browser, Boolean> browserPrepped   = new WeakHashMap<Browser, Boolean>();
+    protected static AtomicReference<String>      agent            = new AtomicReference<String>(null);
 
     protected Browser prepBrowser(final Browser prepBr, final String host) {
         if ((browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
@@ -522,7 +523,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 // refresh these with every getPage/postPage/submitForm?
                 final Cookies add = ibr.getCookies(ibr.getHost());
                 for (final Cookie c : add.getCookies()) {
-                    if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
+                    if (new Regex(c.getKey(), cfRequireCookies).matches()) {
                         cookies.add(c);
                     }
                 }
