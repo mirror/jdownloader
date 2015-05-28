@@ -16,14 +16,9 @@
 
 package jd.plugins.hoster;
 
-import java.util.HashSet;
-import java.util.Random;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -31,7 +26,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/(?:(?:(?:iframe|cdn|view)\\.php)?\\?ref=|validatehash\\.php\\?hashkey=)[A-Za-z0-9]+" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/(?:(?:(?:iframe|cdn|view|genembedv2)\\.php)?\\?ref=|validatehash\\.php\\?hashkey=)[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoMegaTv extends antiDDoSForHost {
 
     public VideoMegaTv(PluginWrapper wrapper) {
@@ -43,16 +40,10 @@ public class VideoMegaTv extends antiDDoSForHost {
         return "http://videomega.tv/terms.html";
     }
 
-    private static final String TYPE_HASH   = "http://(www\\.)?videomega\\.tv/(?:view\\.php\\?ref=|validatehash\\.php\\?hashkey=)[A-Za-z0-9]+";
-    private static final String TYPE_NORMAL = "http://(www\\.)?videomega\\.tv/(?:(?:iframe|cdn)\\.php)?\\?ref=[A-Za-z0-9]+";
-
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().matches(TYPE_NORMAL)) {
-            link.setUrlDownload("http://videomega.tv/?ref=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
-        } else {
-            link.setUrlDownload("http://videomega.tv/?ref=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
-        }
+        link.setUrlDownload("http://videomega.tv/view.php?ref=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        link.setContentUrl("http://videomega.tv/genembedv2.php?ref=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
     }
 
     @Override
@@ -71,36 +62,28 @@ public class VideoMegaTv extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         br = new Browser();
         fuid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        // Check filename from decrypter first, if any
+        if (link.getFinalFileName() == null) {
+            link.setFinalFileName(fuid + ".mp4");
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        if (link.getDownloadURL().matches(TYPE_HASH)) {
-            // lets set all referrer to home page
-            br.getHeaders().put("Referer", "http://videomega.tv/");
-            br.getPage("http://videomega.tv/iframe.php?ref=" + fuid + "&width=800&height=400");
-            if (br.getHttpConnection().getResponseCode() == 404) {
+        // lets set all referrer to home page
+        br.getHeaders().put("Referer", "http://videomega.tv/");
+        getPage("http://videomega.tv/view.php?ref=" + fuid);
+        String dllink = br.getRegex("<source src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink != null) {
+            URLConnectionAdapter con = br.openGetConnection(dllink);
+            Long size = con.getContentLength();
+            link.setDownloadSize(SizeFormatter.getSize(String.valueOf(size)));
+            if (size < 88000) {
+                logger.info("ContentLength too small: " + size + ", broken video.");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        } else {
-            br.getHeaders().put("Referer", "http://videomega.tv/");
-            final String page = "http://videomega.tv/?ref=" + fuid + "&width=800&height=400";
-            getPage(page);
-            String redirect = br.getRedirectLocation();
-            if (redirect != null) {
-                if (redirect.contains("google.com/")) {
-                    // without referer it will most likely redirect to google
-                    br.getHeaders().put("Referer", page);
-                    getPage(page);
-                    redirect = br.getRedirectLocation();
-                }
-                if (!redirect.contains("videomega.tv/")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-            }
-            if (br.containsHTML(">VIDEO NOT FOUND")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            con.disconnect();
         }
-        link.setFinalFileName(fuid + ".mp4");
+        // br is empty here, re-get the page
+        getPage("http://videomega.tv/view.php?ref=" + fuid);
         return AvailableStatus.TRUE;
     }
 
@@ -109,93 +92,14 @@ public class VideoMegaTv extends antiDDoSForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         String dllink = null;
         requestFileInformation(downloadLink);
-        // cdn
-        Browser js = br.cloneBrowser();
-        js.getHeaders().put("Accept", "*/*");
-        getPage(js, "/cdn.js");
-        final String javascript = br.getRegex("<script[^\r\n]+ref=\"" + fuid + ".*?</script>").getMatch(-1);
-        final String width = new Regex(javascript, "width=\"(\\d+)\"").getMatch(0);
-        final String height = new Regex(javascript, "height=\"(\\d+)\"").getMatch(0);
-        getPage("/view.php?ref=" + fuid + "&width=" + (width == null ? "800" : width) + "&height=" + (height == null ? "400" : height));
-        if (br.containsHTML(">Sorry an error has occurred converting this video\\.<")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster issue converting video.", 30 * 60 * 1000l);
+        /* New way */
+        dllink = br.getRegex("<source src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        final String id = br.getRegex("id: \"(\\d+)\"").getMatch(0);
+        if (dllink == null || id == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String[] escaped = br.getRegex("document\\.write\\(unescape\\(\"([^<>\"]*?)\"").getColumn(0);
-        if (escaped != null && escaped.length > 0) {
-            /* Old way */
-            for (String escape : escaped) {
-                Browser br2 = br.cloneBrowser();
-                escape = Encoding.htmlDecode(escape);
-                dllink = new Regex(escape, "file:\\s*\"(https?://[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = new Regex(escape, "\"(https?://([a-z0-9]+\\.){1,}videomega\\.tv/vid(?:eo)?s/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+\\.mp4)\"").getMatch(0);
-                }
-                if (dllink == null) {
-                    if (!escaped[escaped.length - 1].equals(escape)) {
-                        // this tests if link is last in array
-                        continue;
-                    }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                try {
-                    dl = jd.plugins.BrowserAdapter.openDownload(br2, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
-                } catch (final Exception t) {
-                    if (!escaped[escaped.length - 1].equals(escape)) {
-                        // this tests if link is last in array
-                        continue;
-                    }
-                    throw t;
-                }
-                if (dl.getConnection().getContentType().contains("html")) {
-                    if (!escaped[escaped.length - 1].equals(escape)) {
-                        // this tests if link is last in array
-                        continue;
-                    }
-                    handleServerErrors();
-                    br2.followConnection();
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                dl.startDownload();
-                break;
-            }
-        } else {
-            /* New way */
-            dllink = br.getRegex("<source src=\"(http://[^<>\"]*?)\"").getMatch(0);
-            final String id = br.getRegex("id: \"(\\d+)\"").getMatch(0);
-            if (dllink == null || id == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            // this is needed
-            String ran = "";
-            while (ran.length() < 12) {
-                ran = new Random().nextLong() + "";
-            }
-            ran = ran.substring(1, 11);
-            br.setCookie(this.getHost(), "_ga", "GA1.2.62223824" + ran + "." + System.currentTimeMillis());
-            br.setCookie(this.getHost(), "_gat", "1");
-            Browser adbr = br.cloneBrowser();
-            adbr.getHeaders().put("Accept", "*/*");
-            final String[] adlinks = br.getRegex("\"(/[A-Z0-9]+/ad\\.php[^<>\"]*?)\"").getColumn(0);
-            final HashSet<String> dupe = new HashSet<String>();
-            if (adlinks != null) {
-                getPage(adbr, adlinks[0]);
-                adbr = br.cloneBrowser();
-                adbr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-                getPage(adbr, adlinks[0]);
-                adbr = br.cloneBrowser();
-                adbr.getHeaders().put("Accept", "*/*");
-                getPage(adbr, adlinks[0]);
-            }
-        }
-        br.getHeaders().put("Accept", "*/*");
-        br.getHeaders().put("Accept-Encoding", "identity;q=1, *;q=0");
-        // purge unexpected cookies
-        final Cookies cookies = br.getCookies(this.getHost());
-        for (final Cookie c : cookies.getCookies()) {
-            if (!c.getKey().matches("__cfduid|_ga.*")) {
-                br.getCookies(this.getHost()).remove(c);
-            }
-        }
+        // br.getHeaders().put("Accept", "*/*");
+        // br.getHeaders().put("Accept-Encoding", "identity;q=1, *;q=0");
         dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
