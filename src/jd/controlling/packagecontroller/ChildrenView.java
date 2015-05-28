@@ -13,7 +13,7 @@ public abstract class ChildrenView<T> {
         UNKNOWN;
     }
 
-    abstract public void setItems(List<T> items);
+    abstract public ChildrenView<T> setItems(List<T> items);
 
     abstract public ChildrenView<T> aggregate();
 

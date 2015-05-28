@@ -421,7 +421,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         dls.put("uuid", dl.getUniqueID().getID());
 
         FilePackageView fpView = new FilePackageView(dl.getFilePackage());
-        fpView.setItems(null);
+        fpView.aggregate();
         FilePackageAPIStorableV2 dpss = RemoteAPIController.getInstance().getDownloadsAPIV2().setStatus(new FilePackageAPIStorableV2(), fpView);
         dls.put("statusIconKey", dpss.getStatusIconKey());
         dls.put("status", dpss.getStatus());
