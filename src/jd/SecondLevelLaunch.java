@@ -1059,7 +1059,7 @@ public class SecondLevelLaunch {
                 case WINDOWS_XP:
                     try {
                         LOG.info("AntiVirusProduct START");
-                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter", "path", "AntiVirusProduct").getStdOutString(charSet));
+                        LOG.info(CrossSystem.getNewLine() + ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter", "path", "AntiVirusProduct").getStdOutString(charSet));
                     } catch (Throwable e1) {
                         LOG.log(e1);
                     } finally {
@@ -1067,7 +1067,7 @@ public class SecondLevelLaunch {
                     }
                     try {
                         LOG.info("FirewallProduct START");
-                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter", "path", "FirewallProduct").getStdOutString(charSet));
+                        LOG.info(CrossSystem.getNewLine() + ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter", "path", "FirewallProduct").getStdOutString(charSet));
                     } catch (Throwable e1) {
                         LOG.log(e1);
                     } finally {
@@ -1079,7 +1079,7 @@ public class SecondLevelLaunch {
                 case WINDOWS_VISTA:
                     try {
                         LOG.info("AntiVirusProduct START");
-                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "AntiVirusProduct").getStdOutString(charSet));
+                        LOG.info(CrossSystem.getNewLine() + ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "AntiVirusProduct").getStdOutString(charSet));
                     } catch (Throwable e1) {
                         LOG.log(e1);
                     } finally {
@@ -1087,7 +1087,7 @@ public class SecondLevelLaunch {
                     }
                     try {
                         LOG.info("FirewallProduct START");
-                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "FirewallProduct").getStdOutString(charSet));
+                        LOG.info(CrossSystem.getNewLine() + ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "FirewallProduct").getStdOutString(charSet));
                     } catch (Throwable e1) {
                         LOG.log(e1);
                     } finally {
@@ -1095,7 +1095,7 @@ public class SecondLevelLaunch {
                     }
                     try {
                         LOG.info("AntiSpywareProduct START");
-                        LOG.info(ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "AntiSpywareProduct").getStdOutString(charSet));
+                        LOG.info(CrossSystem.getNewLine() + ProcessBuilderFactory.runCommand("wmic", "/NAMESPACE:\\\\root\\SecurityCenter2", "path", "AntiSpywareProduct").getStdOutString(charSet));
                     } catch (Throwable e1) {
                         LOG.log(e1);
                     } finally {
