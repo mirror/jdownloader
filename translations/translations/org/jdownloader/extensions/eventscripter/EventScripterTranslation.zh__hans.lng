@@ -1,2 +1,5 @@
+ON_ARCHIVE_EXTRACTED=压缩文档提取完成
 ON_DOWNLOAD_CONTROLLER_START=一个下载开始
 ON_DOWNLOAD_CONTROLLER_STOPPED=一个下载停止
+allow=允许
+editor_autoformat=自动格式
