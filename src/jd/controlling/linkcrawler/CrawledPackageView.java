@@ -68,9 +68,15 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         long                        lupdatesRequired  = updatesRequired.get();
     }
 
-    public void setItems(List<CrawledLink> updatedItems) {
-        Temp tmp = new Temp();
-        final List<CrawledLink> items = new ArrayList<CrawledLink>(updatedItems);
+    @Override
+    public CrawledPackageView setItems(List<CrawledLink> updatedItems) {
+        final Temp tmp = new Temp();
+        final List<CrawledLink> items;
+        if (updatedItems == null || updatedItems.size() == 0) {
+            items = new ArrayList<CrawledLink>(0);
+        } else {
+            items = new ArrayList<CrawledLink>(updatedItems);
+        }
         synchronized (this) {
             /* this is called for tablechanged, so update everything for given items */
             for (CrawledLink item : items) {
@@ -93,6 +99,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             this.items = items;
             availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, items.size());
         }
+        return this;
     }
 
     protected void writeTmpToFields(Temp tmp) {

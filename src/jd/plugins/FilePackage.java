@@ -114,7 +114,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
                 }
 
                 @Override
-                public void setItems(List<DownloadLink> updatedItems) {
+                public FilePackageView setItems(List<DownloadLink> updatedItems) {
+                    return this;
                 }
 
                 @Override

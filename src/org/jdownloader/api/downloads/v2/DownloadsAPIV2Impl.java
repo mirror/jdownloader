@@ -227,7 +227,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();
         FilePackageAPIStorableV2 fps = new FilePackageAPIStorableV2(fp);
         FilePackageView fpView = new FilePackageView(fp);
-        fpView.setItems(null);
+        fpView.aggregate();
 
         if (queryParams.isPriority()) {
             fps.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(fp.getPriorityEnum().name()));
