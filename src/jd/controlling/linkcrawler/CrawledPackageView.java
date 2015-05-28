@@ -8,29 +8,31 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.ChildrenView;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelData.PackageControllerTableModelDataPackage;
 import org.jdownloader.gui.views.downloads.columns.AvailabilityColumn;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 
 public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
-    protected volatile long                      fileSize                 = 0;
-    private volatile DomainInfo[]                domainInfos;
-    protected volatile boolean                   enabled                  = false;
-    private volatile int                         offline                  = 0;
-    private volatile int                         online                   = 0;
-    private volatile java.util.List<CrawledLink> items                    = new ArrayList<CrawledLink>();
-    private final AtomicLong                     updatesRequired          = new AtomicLong(0);
-    private volatile long                        updatesDone              = -1;
+    protected volatile long                fileSize                 = 0;
+    private volatile DomainInfo[]          domainInfos;
+    protected volatile boolean             enabled                  = false;
+    private volatile int                   offline                  = 0;
+    private volatile int                   online                   = 0;
+    private volatile int                   items                    = 0;
+    private final AtomicLong               updatesRequired          = new AtomicLong(0);
+    private volatile long                  updatesDone              = -1;
 
-    private volatile String                      commonSourceUrl;
-    private volatile String                      availabilityColumnString = null;
-    private volatile ChildrenAvailablility       availability             = ChildrenAvailablility.UNKNOWN;
+    private volatile String                commonSourceUrl;
+    private volatile String                availabilityColumnString = null;
+    private volatile ChildrenAvailablility availability             = ChildrenAvailablility.UNKNOWN;
 
     public CrawledPackageView() {
         domainInfos = new DomainInfo[0];
@@ -41,16 +43,17 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         synchronized (this) {
             Temp tmp = new Temp();
             /* this is called for repaint, so only update values that could have changed for existing items */
-            List<CrawledLink> updatedItems = getItems();
-
-            for (CrawledLink item : updatedItems) {
-                addtoTmp(tmp, item);
-
+            final PackageControllerTableModelDataPackage tableModelDataPackage = getTableModelDataPackage();
+            int size = 0;
+            if (tableModelDataPackage != null) {
+                for (AbstractNode item : tableModelDataPackage.getVisibleChildren()) {
+                    size++;
+                    addtoTmp(tmp, (CrawledLink) item);
+                }
             }
-
             writeTmpToFields(tmp);
-            updateAvailability(updatedItems.size(), tmp.newOffline, tmp.newOnline);
-            availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, updatedItems.size());
+            updateAvailability(size, tmp.newOffline, tmp.newOnline);
+            availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, size);
         }
         return this;
     }
@@ -69,20 +72,16 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     }
 
     @Override
-    public CrawledPackageView setItems(List<CrawledLink> updatedItems) {
+    public CrawledPackageView setItems(List<CrawledLink> items) {
         final Temp tmp = new Temp();
-        final List<CrawledLink> items;
-        if (updatedItems == null || updatedItems.size() == 0) {
-            items = new ArrayList<CrawledLink>(0);
-        } else {
-            items = new ArrayList<CrawledLink>(updatedItems);
-        }
         synchronized (this) {
             /* this is called for tablechanged, so update everything for given items */
-            for (CrawledLink item : items) {
-                // domain
-                tmp.domains.add(item.getDomainInfo());
-                addtoTmp(tmp, item);
+            if (items != null) {
+                for (CrawledLink item : items) {
+                    // domain
+                    tmp.domains.add(item.getDomainInfo());
+                    addtoTmp(tmp, item);
+                }
             }
             writeTmpToFields(tmp);
             ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.domains);
@@ -95,9 +94,13 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             });
 
             domainInfos = lst.toArray(new DomainInfo[] {});
-            updateAvailability(items.size(), tmp.newOffline, tmp.newOnline);
-            this.items = items;
-            availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, items.size());
+            if (items == null) {
+                this.items = 0;
+            } else {
+                this.items = items.size();
+            }
+            updateAvailability(this.items, tmp.newOffline, tmp.newOnline);
+            availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, this.items);
         }
         return this;
     }
@@ -171,11 +174,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         return commonSourceUrl;
     }
 
-    public void clear() {
-        items = new ArrayList<CrawledLink>();
-        domainInfos = new DomainInfo[0];
-    }
-
     public DomainInfo[] getDomainInfos() {
         return domainInfos;
     }
@@ -194,11 +192,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
     public long getFileSize() {
         return fileSize;
-    }
-
-    @Override
-    public List<CrawledLink> getItems() {
-        return items;
     }
 
     @Override
@@ -222,6 +215,11 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
             return availabilityColumnString;
         }
         return null;
+    }
+
+    @Override
+    public int size() {
+        return items;
     }
 
 }

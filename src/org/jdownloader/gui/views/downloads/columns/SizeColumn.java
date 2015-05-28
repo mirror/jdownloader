@@ -124,7 +124,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
         this.sizeRenderer.setText(this.getSizeString(getBytes(value)));
         if (fileCountVisible) {
             if (value instanceof AbstractPackageNode) {
-                countRenderer.setText("[" + ((AbstractPackageNode) value).getView().getItems().size() + "]");
+                countRenderer.setText("[" + ((AbstractPackageNode) value).getView().size() + "]");
             } else {
                 countRenderer.setText("");
             }
@@ -253,7 +253,7 @@ public class SizeColumn extends ExtColumn<AbstractNode> {
 
     protected int getNumberOfItems(AbstractNode o) {
         if (o instanceof AbstractPackageNode) {
-            return ((AbstractPackageNode) o).getView().getItems().size();
+            return ((AbstractPackageNode) o).getView().size();
         }
         return 1;
     }

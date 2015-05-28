@@ -173,7 +173,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
                 }
                 if (queryParams.isChildCount()) {
-                    cps.setChildCount(view.getItems().size());
+                    cps.setChildCount(view.size());
 
                 }
                 if (queryParams.isPriority()) {

@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.ChildrenView;
 
 import org.jdownloader.gui.views.linkgrabber.quickfilter.FilterTable;
 
@@ -41,6 +42,14 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
 
     protected List<AbstractNode> getFilteredChildren() {
         return filteredChildren;
+    }
+
+    protected void add(PackageControllerTableModelDataPackage tableModelDataPackage) {
+        final ChildrenView<?> view = tableModelDataPackage.getPackage().getView();
+        if (view != null) {
+            view.setTableModelDataPackage(tableModelDataPackage);
+        }
+        modelDataPackages.add(tableModelDataPackage);
     }
 
     public List<PackageControllerTableModelDataPackage> getModelDataPackages() {
@@ -136,7 +145,7 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
 
     /*
      * updates the filtered flag
-     *
+     * 
      * we don't want quickfilters to count as filtered state, users will still be able to move/dragdrop stuff
      */
     private void updateFilteredState() {

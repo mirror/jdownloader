@@ -22,7 +22,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import jd.config.Property;
@@ -61,11 +60,15 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         FP = new FilePackage() {
 
             final private FilePackageView view             = new FilePackageView(this) {
-                List<DownloadLink> empty = Collections.unmodifiableList(new ArrayList<DownloadLink>(0));
 
                 @Override
                 public boolean isEnabled() {
                     return false;
+                }
+
+                @Override
+                public int size() {
+                    return 0;
                 }
 
                 @Override
@@ -121,15 +124,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
                 @Override
                 public String getCommonSourceUrl() {
                     return null;
-                }
-
-                @Override
-                public void clear() {
-                }
-
-                @Override
-                public List<DownloadLink> getItems() {
-                    return empty;
                 }
 
                 @Override
