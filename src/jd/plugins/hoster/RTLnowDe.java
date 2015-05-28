@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -71,8 +72,8 @@ public class RTLnowDe extends PluginForHost {
      */
     private final String                  HDSTYPE_OLD          = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/\\d+/V_\\d+_[A-Z0-9]+_E\\d+_\\d+_h264-mq_[a-f0-9]+\\.f4v\\.f4m\\?ts=\\d+";
     private Document                      doc;
-    private static final boolean          ALLOW_RTMP           = false;
     private static final boolean          ALLOW_HLS            = true;
+    private static final boolean          ALLOW_RTMP           = true;
     private Account                       currAcc              = null;
     private DownloadLink                  currDownloadLink     = null;
     private LinkedHashMap<String, Object> entries              = null;
@@ -193,8 +194,7 @@ public class RTLnowDe extends PluginForHost {
         setBrowserExclusive();
         String filename = null;
         final String addedlink = downloadLink.getDownloadURL();
-        final Regex urlinfo = new Regex(addedlink, "/([a-z0-9\\-]+)/([a-z0-9\\-]+)$");
-        final String apiurl = "https://api.nowtv.de/v3/movies/" + urlinfo.getMatch(0) + "/" + urlinfo.getMatch(1) + "?fields=*,format,files,breakpoints,paymentPaytypes,trailers,pictures";
+        final String apiurl = "https://api.nowtv.de/v3/movies/" + getURLPart(downloadLink) + "?fields=*,format,files,breakpoints,paymentPaytypes,trailers,pictures,isDrm";
         br.getPage(apiurl);
         entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         format = (LinkedHashMap<String, Object>) entries.get("format");
@@ -240,99 +240,106 @@ public class RTLnowDe extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    /* Last revision with old handling: */
-    @SuppressWarnings("deprecation")
+    /* Last revision with old handling: BEFORE 30393 */
+    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     private void download(final DownloadLink downloadLink) throws Exception {
         final boolean isFree = ((Boolean) entries.get("free")).booleanValue();
+        final boolean isDRM = ((Boolean) entries.get("isDrm")).booleanValue();
         String url_hds = null;
         String url_hls = null;
-        final long isHDS = DummyScriptEnginePlugin.toLong(format.get("flashHds"), -1);
+        String url_rtmp = null;
+        boolean isHDS = (DummyScriptEnginePlugin.toLong(format.get("flashHds"), -1) == 1);
+        long bitrate_max = 0;
+        long bitrate_temp = 0;
         final String movieID = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("id"), -1));
-        if (movieID.equals("-1") || isHDS == -1) {
+        if (movieID.equals("-1")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (isHDS != 1) {
-            /* TODO: Check this case! */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (isDRM) {
+            /* There really is no way to download these videos and if, you will get encrypted trash data so let's just stop here. */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type");
         }
         br.getPage("http://rtl-now.rtl.de/hds/videos/" + movieID + "/manifest-hds.f4m?&ts=" + System.currentTimeMillis());
         final String[] hdsurls = br.getRegex("<media (.*?)/>").getColumn(0);
         if (hdsurls == null || hdsurls.length == 0) {
-            if (!isFree) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Nur zahlende Benutzer können dieses Video herunterladen");
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type or paid episode");
+            isHDS = false;
         }
-        /* Get the highest quality available */
-        long maxBitrate = 0;
-        for (final String hdssource : hdsurls) {
-            final String url = new Regex(hdssource, "href=\"(http[^<>\"]*?)\"").getMatch(0);
-            final String bitrate_str = new Regex(hdssource, "bitrate=\"(\\d+)\"").getMatch(0);
-            if (url == null) {
+        if (isHDS) {
+            /* hds/hls */
+            /* Get the highest quality available */
+            for (final String hdssource : hdsurls) {
+                final String url = new Regex(hdssource, "href=\"(http[^<>\"]*?)\"").getMatch(0);
+                final String bitrate_str = new Regex(hdssource, "bitrate=\"(\\d+)\"").getMatch(0);
+                if (url == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                bitrate_temp = Long.parseLong(bitrate_str);
+                if (bitrate_temp > bitrate_max) {
+                    url_hds = url;
+                    bitrate_max = bitrate_temp;
+                }
+            }
+            if (url_hds == null) {
+                /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final long bitrate_long = Long.parseLong(bitrate_str);
-            if (bitrate_long > maxBitrate) {
-                url_hds = url;
-                maxBitrate = bitrate_long;
+        } else {
+            /* check if rtmp is possible */
+            final String apiurl = "https://api.nowtv.de/v3/movies/" + getURLPart(downloadLink) + "?fields=files";
+            br.getPage(apiurl);
+            entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "files/items");
+            if (ressourcelist == null || ressourcelist.size() == 0) {
+                if (!isFree) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich (muss gekauft werden)");
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        if (url_hds == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-
-        String rtmp_playpath = downloadLink.getStringProperty("rlnowrtmpplaypath", null);
-        String contentUrl = br.getRegex("data:\'(.*?)\'").getMatch(0);
-        String dllink = null;
-
-        if (contentUrl != null) {
-            contentUrl = "http://" + contentUrl;
-            downloadLink.setProperty("rlnowcontenturl", contentUrl);
-
-            XPath xPath = xmlParser(contentUrl + "&ts=" + System.currentTimeMillis() / 1000);
-            final String query = "/data/playlist/videoinfo";
-
-            dllink = xPath.evaluate(query + "/filename", doc);
-            // final String fkcont = xPath.evaluate("/data/fkcontent", doc);
-            // final String timetp = xPath.evaluate("/data/timetype", doc);
-            // final String season = xPath.evaluate("/data/season", doc);
-        }
-        if (rtmp_playpath == null && dllink != null && dllink.matches(HDSTYPE_OLD)) {
-            rtmp_playpath = new Regex(dllink, "(\\d+/V_[^<>\"/]*?\\.(?:f4v|mp4))").getMatch(0);
-            downloadLink.setProperty("rlnowdllink", dllink);
-        }
-        if ((dllink != null && dllink.startsWith("rtmp")) || rtmp_playpath != null && ALLOW_RTMP) {
-            /* Either we already got rtmp urls or we can try to build them via the playpath-part of our HDS manifest url. */
-            String rtmpurl = null;
-            // rtmp_playpath = rtmp_playpath.replace(".mp4", ".f4v");
-            final String host = downloadLink.getHost();
-            String app = null;
-            if (dllink != null && dllink.startsWith("rtmp")) {
-                /* Old rtmpe links, sometimes still existant --> Extract playpath */
-                rtmp_playpath = "mp4:" + new Regex(dllink, "rtmpe?://[^/]+/[^/]+/(.+)").getMatch(0);
-            } else {
-                rtmp_playpath = "mp4:" + rtmp_playpath;
+            for (final Object quality_o : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) quality_o;
+                bitrate_temp = DummyScriptEnginePlugin.toLong(entries.get("bitrate"), -1);
+                if (bitrate_temp > bitrate_max) {
+                    url_rtmp = (String) entries.get("path");
+                    bitrate_max = bitrate_temp;
+                }
             }
-            app = new Regex(host, "([a-z0-9\\-]+now)").getMatch(0);
+            if (url_rtmp == null) {
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+
+            // throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type");
+        }
+
+        if (ALLOW_HLS && url_hds != null && url_hds.matches(this.HDSTYPE_NEW_DETAILED)) {
+            url_hls = url_hds.replace("hds", "hls");
+            url_hls = url_hls.replace(".f4m", ".m3u8");
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, url_hls);
+            dl.startDownload();
+        } else if (url_rtmp != null && ALLOW_RTMP) {
+            final Regex urlregex = new Regex(url_rtmp, "/([^/]+)/(\\d+/.+)");
+            /*
+             * Either we already got rtmp urls or we can try to build them via the playpath-part of our HDS manifest url (see code BEFORE
+             * rev 30393)
+             */
+            String app = urlregex.getMatch(0);
             if (app == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            app = app.replace("-", "");
-            /* Correct app for some rare cases */
-            if (app.equals("rtlnitronow")) {
-                app = "nitronow";
-            }
+            app = convertAppToRealApp(app);
+            /* We don't need the exact url of the video, especially because we do not even always have it. An url of the mainpage is enough! */
+            final String pageURL = convertAppToMainpage(app);
+            final String rtmp_playpath = "mp4:" + urlregex.getMatch(1);
             /* Either use fms-fra[1-32].rtl.de or just fms.rtl.de */
-            rtmpurl = "rtmpe://fms.rtl.de/" + app + "/";
+            final String rtmpurl = "rtmpe://fms.rtl.de/" + app + "/";
 
-            /* Save the playpath for future usage. */
-            downloadLink.setProperty("rlnowrtmpplaypath", rtmp_playpath);
             downloadLink.setProperty("FLVFIXER", true);
             dl = new RTMPDownload(this, downloadLink, rtmpurl);
             final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
             rtmp.setPlayPath(rtmp_playpath);
-            rtmp.setPageUrl(downloadLink.getDownloadURL());
+            rtmp.setPageUrl(pageURL);
             rtmp.setSwfVfy("http://cdn.static-fra.de/now/vodplayer.swf");
             rtmp.setFlashVer("WIN 14,0,0,145");
             rtmp.setApp(app);
@@ -344,12 +351,6 @@ public class RTLnowDe extends PluginForHost {
             }
             ((RTMPDownload) dl).startDownload();
 
-        } else if (ALLOW_HLS && url_hds.matches(this.HDSTYPE_NEW_DETAILED)) {
-            url_hls = url_hds.replace("hds", "hls");
-            url_hls = url_hls.replace(".f4m", ".m3u8");
-            checkFFmpeg(downloadLink, "Download a HLS Stream");
-            dl = new HLSDownloader(downloadLink, br, url_hls);
-            dl.startDownload();
         } else {
             /* TODO */
             if (true) {
@@ -376,6 +377,37 @@ public class RTLnowDe extends PluginForHost {
             dl.startDownload();
 
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getURLPart(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "/([a-z0-9\\-]+/[a-z0-9\\-]+)$").getMatch(0);
+    }
+
+    /** Corrects the rtmpdump app-parameter for some rare cases */
+    private String convertAppToRealApp(final String input) {
+        final String output;
+        if (input.equals("rtlnitronow")) {
+            output = "nitronow";
+        } else if (input.equals("n-tvnow")) {
+            output = "ntvnow";
+        } else {
+            output = input;
+        }
+        return output;
+    }
+
+    /** Returns the main URL that fits the given rtmpdump-app. */
+    private String convertAppToMainpage(final String input) {
+        final String output;
+        if (input.equals("nitronow")) {
+            output = "http://www.rtlnitronow.de/";
+        } else if (input.equals("ntvnow")) {
+            output = "http://www.n-tvnow.de/";
+        } else {
+            output = "http://www." + input + ".de/";
+        }
+        return output;
     }
 
     private String parseManifest() {
@@ -442,9 +474,6 @@ public class RTLnowDe extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         /* TODO: Fix this! */
-        // if (br.containsHTML("<\\!\\-\\- Payment\\-Teaser \\-\\->")) {
-        // throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich (muss gekauft werden)");
-        // }
         // final String ageCheck = br.getRegex("(Aus Jugendschutzgründen nur zwischen \\d+ und \\d+ Uhr abrufbar\\!)").getMatch(0);
         // if (ageCheck != null) {
         // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ageCheck, 10 * 60 * 60 * 1000l);

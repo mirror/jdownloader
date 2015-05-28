@@ -51,51 +51,6 @@ public class XupIn extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        br.setDebug(true);
-        this.requestFileInformation(downloadLink);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        Form download = br.getForm(0);
-        if (download == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String passCode = null;
-        if (download.hasInputFieldByName("vpass")) {
-            if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = getUserInput(null, downloadLink);
-            } else {
-                /* gespeicherten PassCode holen */
-                passCode = downloadLink.getStringProperty("pass", null);
-            }
-            download.put("vpass", passCode);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download);
-        if (dl.getConnection().getContentType().contains("html")) {
-            String page = br.loadConnection(dl.getConnection()) + "";// +"" due
-            // to
-            // refaktor
-            // compatibilities.
-            // old
-            // <ref10000
-            // returns
-            // String.
-            // else
-            // Request
-            // INstance
-            if (page.contains("richtige Passwort erneut ein")) {
-                downloadLink.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.xupin.errors.passwrong", "Password wrong"));
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
-        }
-        dl.startDownload();
-
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -120,6 +75,60 @@ public class XupIn extends PluginForHost {
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         downloadLink.setName(filename.trim());
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        br.setDebug(true);
+        this.requestFileInformation(downloadLink);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        Form download = br.getForm(0);
+        if (download == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String passCode = null;
+        if (download.hasInputFieldByName("vpass")) {
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = getUserInput(null, downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+            download.put("vpass", passCode);
+        }
+        if (download.hasInputFieldByName("vchep")) {
+            final String code = this.getCaptchaCode("http://www0.xup.in/captcha.php", downloadLink);
+            download.put("vchep", code);
+        }
+        download.remove(null);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, download);
+        if (dl.getConnection().getContentType().contains("html")) {
+            String page = br.loadConnection(dl.getConnection()) + "";// +"" due
+            // to
+            // refaktor
+            // compatibilities.
+            // old
+            // <ref10000
+            // returns
+            // String.
+            // else
+            // Request
+            // INstance
+            if (page.contains("richtige Passwort erneut ein")) {
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.xupin.errors.passwrong", "Password wrong"));
+            }
+            if (br.containsHTML(">Die Sicherheitsfrage wurde falsch eingegeben|/captcha\\.php\"")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            logger.warning("Unexpected error occured");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
+        dl.startDownload();
+
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */

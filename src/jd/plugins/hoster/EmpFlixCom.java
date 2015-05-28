@@ -90,11 +90,14 @@ public class EmpFlixCom extends PluginForHost {
             DLLINK = "http:" + DLLINK;
         }
         br.getPage(Encoding.htmlDecode(DLLINK));
-        DLLINK = br.getRegex("<(file|videoLink)>(http://.*?)</(file|videoLink)>").getMatch(1);
+        DLLINK = br.getRegex("<(file|videoLink)>(.*?)</(file|videoLink)>").getMatch(1);
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
+        if (DLLINK.startsWith("//")) {
+            DLLINK = "http:" + DLLINK;
+        }
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
         Browser br2 = br.cloneBrowser();

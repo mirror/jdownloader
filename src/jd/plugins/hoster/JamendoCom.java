@@ -60,10 +60,14 @@ public class JamendoCom extends PluginForHost {
             dlurl = "http://storage-new.newjamendo.com/download/track/" + TrackID + "/";
         } else if (link.getStringProperty("linktype", "webtrack").equalsIgnoreCase("downloadAlbum")) {
             String AlbumID = new Regex(link.getDownloadURL(), "/download/album/(\\d+)").getMatch(0);
-            if (AlbumID == null) AlbumID = new Regex(link.getDownloadURL(), "/download/a(\\d+)").getMatch(0);
+            if (AlbumID == null) {
+                AlbumID = new Regex(link.getDownloadURL(), "/download/a(\\d+)").getMatch(0);
+            }
             dlurl = "http://storage-new.newjamendo.com/download/a" + AlbumID + "/";
         }
-        if (dlurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlurl, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -72,6 +76,7 @@ public class JamendoCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         String TrackDownloadID = new Regex(parameter.getDownloadURL(), "/download/track/(\\d+)").getMatch(0);
@@ -80,7 +85,9 @@ public class JamendoCom extends PluginForHost {
             br.getPage("http://www.jamendo.com/en/track/" + TrackDownloadID);
             String Track = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
             String Artist = br.getRegex("og:description\" content=\"Track by (.*?) - \\d").getMatch(0);
-            if (Track == null || Artist == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (Track == null || Artist == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             parameter.setName(Artist + " - " + Track + ".mp3");
             parameter.setProperty("linktype", "downloadTrack");
             return AvailableStatus.TRUE;
@@ -91,7 +98,9 @@ public class JamendoCom extends PluginForHost {
             br.getPage("http://www.jamendo.com/en/track/" + TrackID);
             String Track = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
             String Artist = br.getRegex("og:description\" content=\"Track by (.*?) - \\d").getMatch(0);
-            if (Track == null || Artist == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (Track == null || Artist == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             parameter.setName(Artist + " - " + Track + ".mp3");
             if (getPluginConfig().getBooleanProperty(PREFER_HIGHQUALITY, true)) {
                 parameter.setProperty("linktype", "downloadTrack");
@@ -101,15 +110,21 @@ public class JamendoCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         String AlbumDownloadID = new Regex(parameter.getDownloadURL(), "/download/album/(\\d+)").getMatch(0);
-        if (AlbumDownloadID == null) AlbumDownloadID = new Regex(parameter.getDownloadURL(), "/download/a(\\d+)").getMatch(0);
+        if (AlbumDownloadID == null) {
+            AlbumDownloadID = new Regex(parameter.getDownloadURL(), "/download/a(\\d+)").getMatch(0);
+        }
         if (AlbumDownloadID != null) {
             br.setFollowRedirects(true);
             br.getPage("http://www.jamendo.com/en/list/a" + AlbumDownloadID);
             String Album = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
             String Artist = br.getRegex("og:description\" content=\"Album by (.*?)\"").getMatch(0);
-            if (Album == null || Artist == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (Album == null || Artist == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String packageName = "";
-            if (Album != null) packageName = packageName + Album;
+            if (Album != null) {
+                packageName = packageName + Album;
+            }
             if (Artist != null) {
                 if (packageName.length() > 0) {
                     packageName = " - " + packageName;
