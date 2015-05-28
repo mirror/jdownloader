@@ -42,24 +42,24 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         private long bytesDone  = -1;
     }
 
-    private final FilePackage                     fp;
+    private final FilePackage              fp;
 
-    protected volatile long                       lastUpdateTimestamp      = -1;
+    protected volatile long                lastUpdateTimestamp      = -1;
 
-    protected volatile boolean                    lastRunningState         = false;
-    protected volatile long                       finishedDate             = -1;
-    protected volatile long                       estimatedETA             = -1;
+    protected volatile boolean             lastRunningState         = false;
+    protected volatile long                finishedDate             = -1;
+    protected volatile long                estimatedETA             = -1;
 
-    private volatile int                          offline                  = 0;
-    private volatile int                          online                   = 0;
-    private final AtomicLong                      updatesRequired          = new AtomicLong(0);
-    private volatile long                         updatesDone              = -1;
-    private volatile String                       availabilityColumnString = null;
-    private volatile ChildrenAvailablility        availability             = ChildrenAvailablility.UNKNOWN;
+    private volatile int                   offline                  = 0;
+    private volatile int                   online                   = 0;
+    private final AtomicLong               updatesRequired          = new AtomicLong(0);
+    private volatile long                  updatesDone              = -1;
+    private volatile String                availabilityColumnString = null;
+    private volatile ChildrenAvailablility availability             = ChildrenAvailablility.UNKNOWN;
 
-    private volatile java.util.List<DownloadLink> items                    = new ArrayList<DownloadLink>();
+    private volatile int                   items                    = 0;
 
-    protected static final long                   GUIUPDATETIMEOUT         = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
+    protected static final long            GUIUPDATETIMEOUT         = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
 
     public boolean isEnabled() {
         return enabledCount > 0;
@@ -123,7 +123,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     public int getDisabledCount() {
-        return Math.max(0, getItems().size() - enabledCount);
+        return Math.max(0, size() - enabledCount);
     }
 
     public long getFinishedDate() {
@@ -216,11 +216,11 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
 
     private final static Comparator<DomainInfo> DOMAININFOCOMPARATOR = new Comparator<DomainInfo>() {
 
-        @Override
-        public int compare(DomainInfo o1, DomainInfo o2) {
-            return o1.getTld().compareTo(o2.getTld());
-        }
-    };
+                                                                         @Override
+                                                                         public int compare(DomainInfo o1, DomainInfo o2) {
+                                                                             return o1.getTld().compareTo(o2.getTld());
+                                                                         }
+                                                                     };
 
     @Override
     public FilePackageView setItems(List<DownloadLink> updatedItems) {
@@ -229,36 +229,36 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         synchronized (this) {
             /* this is called for tablechanged, so update everything for given items */
             final Temp tmp = new Temp();
-                    final boolean readL = fp.getModifyLock().readLock();
-                    try {
-                        tmp.children = fp.getChildren().size();
-                        for (final DownloadLink link : fp.getChildren()) {
-                            tmp.newInfos.add(link.getDomainInfo());
-                            addLinkToTemp(tmp, link);
-                        }
-                    } finally {
-                        fp.getModifyLock().readUnlock(readL);
-                    }
-                    for (final LinkInfo linkInfo : tmp.linkInfos.values()) {
-                        if (linkInfo.bytesTotal >= 0) {
-                            tmp.newSize += linkInfo.bytesTotal;
-                        } else {
-                            tmp.newUnknownFileSizes++;
-                        }
-                        if (linkInfo.bytesDone >= 0) {
-                            tmp.newDone += linkInfo.bytesDone;
-                        }
-                    }
-                    writeTempToFields(tmp);
-                    if (updatedItems == null || updatedItems.size() == 0) {
-                        this.items = new ArrayList<DownloadLink>(0);
-                    } else {
-                        this.items = new ArrayList<DownloadLink>(updatedItems);
-                    }
-                    updatesDone = lupdatesRequired;
-                    final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.newInfos);
-                    Collections.sort(lst, DOMAININFOCOMPARATOR);
-                    infos = lst.toArray(new DomainInfo[tmp.newInfos.size()]);
+            final boolean readL = fp.getModifyLock().readLock();
+            try {
+                tmp.children = fp.getChildren().size();
+                for (final DownloadLink link : fp.getChildren()) {
+                    tmp.newInfos.add(link.getDomainInfo());
+                    addLinkToTemp(tmp, link);
+                }
+            } finally {
+                fp.getModifyLock().readUnlock(readL);
+            }
+            for (final LinkInfo linkInfo : tmp.linkInfos.values()) {
+                if (linkInfo.bytesTotal >= 0) {
+                    tmp.newSize += linkInfo.bytesTotal;
+                } else {
+                    tmp.newUnknownFileSizes++;
+                }
+                if (linkInfo.bytesDone >= 0) {
+                    tmp.newDone += linkInfo.bytesDone;
+                }
+            }
+            writeTempToFields(tmp);
+            if (updatedItems == null) {
+                this.items = 0;
+            } else {
+                this.items = updatedItems.size();
+            }
+            updatesDone = lupdatesRequired;
+            final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(tmp.newInfos);
+            Collections.sort(lst, DOMAININFOCOMPARATOR);
+            infos = lst.toArray(new DomainInfo[tmp.newInfos.size()]);
         }
         return this;
     }
@@ -655,17 +655,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         }
     }
 
-    @Override
-    public void clear() {
-        infos = new DomainInfo[0];
-        items = new ArrayList<DownloadLink>();
-    }
-
-    @Override
-    public List<DownloadLink> getItems() {
-        return items;
-    }
-
     public int getOfflineCount() {
         return offline;
     }
@@ -720,12 +709,16 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     public String getDownloadDirectory() {
-
         return fp.getDownloadDirectory();
     }
 
     public boolean isRunning() {
         return lastRunningState;
+    }
+
+    @Override
+    public int size() {
+        return items;
     }
 
 }

@@ -85,7 +85,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                     infomap.put("size", view.getFileSize());
                 }
                 if (queryParams._getQueryParam("childCount", Boolean.class, false)) {
-                    infomap.put("childCount", pkg.getChildren());
+                    infomap.put("childCount", view.size());
                 }
                 if (queryParams._getQueryParam("hosts", Boolean.class, false)) {
                     Set<String> hosts = new HashSet<String>();
