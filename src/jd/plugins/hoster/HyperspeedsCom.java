@@ -517,7 +517,6 @@ public class HyperspeedsCom extends PluginForHost {
     }
 
     private void handleAPIErrors(final Browser br) throws PluginException {
-        // final String lang = System.getProperty("user.language");
         String statusMessage = null;
         try {
             switch (statuscode) {
@@ -533,8 +532,27 @@ public class HyperspeedsCom extends PluginForHost {
                 }
             case 2:
                 /* Should never happen */
-                statusMessage = "'link' parameter is empty";
+                statusMessage = "'link' parameter is empty or 'http://' is missing";
                 handleErrorRetries(NICE_HOSTproperty + "timesfailed_linkparameterempty", 10, 5 * 60 * 1000l);
+            case 3:
+                /* Should never happen */
+                statusMessage = "Host not supported by multihost or unknown linktype";
+                tempUnavailableHoster(5 * 60 * 1000l);
+            case 4:
+                /* Should never happen */
+                statusMessage = "This filehost is only enabled in Premium mode or Link dead or filehoster not supported";
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_host_unsupported_or_link_dead", 10, 5 * 60 * 1000l);
+            case 5:
+                /* Also covered within canHandle - should never happen here! */
+                statusMessage = "You can only generate & download links during happy hours";
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, this.getHost() + ": You can only generate & download links during happy hours", 1 * 60 * 1000l);
+            case 6:
+                statusMessage = "Free account limits exceeded!";
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree account limits exceeded!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            case 7:
+                /* Also covered within canHandle - should never happen here! */
+                statusMessage = "File is too big to download with this multihost/account";
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is too big to download with this multihost/account", 1 * 60 * 1000l);
             case 8:
                 statusMessage = "Host not supported by multihost or under maintenance";
                 tempUnavailableHoster(10 * 60 * 1000l);

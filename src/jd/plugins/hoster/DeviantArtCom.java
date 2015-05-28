@@ -145,8 +145,11 @@ public class DeviantArtCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename;
+        String filename_server = null;
         if (link.getDownloadURL().matches(LINKTYPE_STATUS)) {
             filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        } else if (link.getDownloadURL().matches(LINKTYPE_JOURNAL)) {
+            filename = br.getRegex("title>([^<>\"]*?)\\- DeviantArt</title>").getMatch(0);
         } else {
             filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
         }
@@ -160,7 +163,10 @@ public class DeviantArtCom extends PluginForHost {
         if (this.getPluginConfig().getBooleanProperty(FORCEHTMLDOWNLOAD, false) || link.getDownloadURL().matches(LINKTYPE_JOURNAL) || link.getDownloadURL().matches(LINKTYPE_STATUS)) {
             HTMLALLOWED = true;
             DLLINK = br.getURL();
-            filename = findServerFilename(filename);
+            filename_server = findServerFilename(filename);
+            if (filename_server != null) {
+                filename = filename_server;
+            }
             ext = "html";
         } else if (br.containsHTML(TYPE_DOWNLOADALLOWED_PDF)) {
             ext = "pdf";
