@@ -468,9 +468,9 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
                     return;
                 default:
                     if (isIgnoreFiltered()) {
-                        selectionInfo = LinkGrabberTable.getInstance().getSelectionInfo(false, false);
-                    } else {
                         selectionInfo = LinkGrabberTable.getInstance().getSelectionInfo(false, true);
+                    } else {
+                        selectionInfo = LinkGrabberTable.getInstance().getSelectionInfo(false, false);
                     }
                     selection = new WeakReference<SelectionInfo<CrawledPackage, CrawledLink>>(selectionInfo);
                     break;
