@@ -186,7 +186,7 @@ public class HitFileNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
@@ -194,6 +194,7 @@ public class HitFileNet extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
@@ -224,7 +225,14 @@ public class HitFileNet extends PluginForHost {
         br.getPage("/download/free/" + fileID);
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().equals(downloadLink.getDownloadURL().replace("www.", ""))) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, JDL.LF("plugins.hoster.hitfilenet.only4premium", "This file is only available for premium users!"));
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
             }
             logger.warning("Unexpected redirect!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
