@@ -23,7 +23,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(www\\.)?crunchyroll\\.com(\\.br)?/(?!forumtopic)[\\w\\_\\-]+/[\\w\\_\\-]+\\-[0-9]+" }, flags = { 2 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(?:www\\.)?crunchyroll\\.com(?:\\.br)?/(?!forumtopic)[\\w\\_\\-]+/[\\w\\_\\-]+\\-[0-9]+" }, flags = { 2 })
 public class CrhyRllCom extends PluginForDecrypt {
 
     // Define the video quality codes used for RTMP
@@ -96,14 +96,12 @@ public class CrhyRllCom extends PluginForDecrypt {
         try {
             // Attempt to login
             this.setBrowserExclusive();
-            final PluginForHost plugin = JDUtilities.getPluginForHost("crunchyroll.com");
-            if (plugin != null) {
-                final Account account = AccountController.getInstance().getValidAccount(plugin);
-                if (account != null) {
-                    try {
-                        ((jd.plugins.hoster.CrunchyRollCom) plugin).login(account, this.br, false, true);
-                    } catch (final Throwable e) {
-                    }
+            loadPlugin();
+            final Account account = AccountController.getInstance().getValidAccount(plugin);
+            if (account != null) {
+                try {
+                    ((jd.plugins.hoster.CrunchyRollCom) plugin).login(account, this.br, false);
+                } catch (final Throwable e) {
                 }
             }
             // set utf-8
@@ -111,7 +109,7 @@ public class CrhyRllCom extends PluginForDecrypt {
             // Load the linked page
             this.br.setFollowRedirects(true);
             cryptedLink.setCryptedUrl(cryptedLink.getCryptedUrl().replace("crunchyroll.com.br/", "crunchyroll.com/"));
-            this.br.getPage(cryptedLink.getCryptedUrl());
+            getPage(cryptedLink.getCryptedUrl());
             if (br.getURL().equals("http://www.crunchyroll.com/") || br.containsHTML("Sorry, this video is not available in your region due to licensing restrictions")) {
                 logger.info("Link offline: " + cryptedLink.getCryptedUrl());
                 final DownloadLink offline = createDownloadlink("directhttp://" + cryptedLink.getCryptedUrl());
@@ -236,9 +234,9 @@ public class CrhyRllCom extends PluginForDecrypt {
             }
 
             // Get subtitles
-            br.postPage(configUrlDecode, "current_page=" + cryptedLink.getCryptedUrl());
+            postPage(configUrlDecode, "current_page=" + cryptedLink.getCryptedUrl());
             final String mediaId = br.getRegex("<media_id>(\\d+)</media_id>").getMatch(0);
-            br.postPage("http://www.crunchyroll.com/xml/", "req=RpcApiSubtitle%5FGetListing&media%5Fid=" + mediaId);
+            postPage("http://www.crunchyroll.com/xml/", "req=RpcApiSubtitle%5FGetListing&media%5Fid=" + mediaId);
             final String[][] subtitles = this.br.getRegex(CrhyRllCom.CONFIG_SUBS).getMatches();
 
             // Loop through each subtitles xml found
@@ -314,10 +312,9 @@ public class CrhyRllCom extends PluginForDecrypt {
 
         String name = null;
         try {
-            // Use a feature where you are redirected to the full-url if you go
-            // to a shortened version
+            // Use a feature where you are redirected to the full-url if you go to a shortened version
             br.setFollowRedirects(false);
-            br.getPage("http://www.crunchyroll.com/a/a-" + videoId);
+            getPage(br, "http://www.crunchyroll.com/a/a-" + videoId);
             name = this.nameFromVideoUrl(br.getRedirectLocation());
         } catch (final Throwable e) {
         }
@@ -351,8 +348,9 @@ public class CrhyRllCom extends PluginForDecrypt {
      *            The DownloadLink file to check
      * @param br
      *            The browser to use to load the XML file with. If null, uses different browser
+     * @throws Exception
      */
-    public void setAndroid(final DownloadLink downloadLink, Browser br) throws IOException, PluginException {
+    public void setAndroid(final DownloadLink downloadLink, Browser br) throws Exception {
         if (br == null) {
             br = this.br;
         }
@@ -364,8 +362,7 @@ public class CrhyRllCom extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid URL (could not find media id)");
         }
 
-        // If the download does not yet have a filename, set a temporary
-        // filename
+        // If the download does not yet have a filename, set a temporary filename
         String filename = "CrunchyRoll." + mediaId + SUFFIX_ANDROID;
         if (downloadLink.getFinalFileName() == null) {
             downloadLink.setFinalFileName(filename + EXT_UNKNOWN);
@@ -381,7 +378,7 @@ public class CrhyRllCom extends PluginForDecrypt {
         androidBr.setHeader("X-Application-Name", "com.crunchyroll.crunchyroid");
         androidBr.setHeader("X-Device-Product", "htc_ace");
         androidBr.setHeader("X-Device-Is-GoogleTV", "0");
-        androidBr.getPage(downloadLink.getDownloadURL());
+        getPage(androidBr, downloadLink.getDownloadURL());
 
         // Check if we can actually get the video
         if (androidBr.containsHTML("Video not found")) {
@@ -452,8 +449,9 @@ public class CrhyRllCom extends PluginForDecrypt {
      *            The DownloadLink file to check
      * @param br
      *            The browser to use to load the XML file with. If null, uses different browser
+     * @throws Exception
      */
-    public void setRTMP(final DownloadLink downloadLink, Browser br) throws IOException, PluginException {
+    public void setRTMP(final DownloadLink downloadLink, Browser br) throws Exception {
         if (br == null) {
             br = this.br;
         }
@@ -508,7 +506,7 @@ public class CrhyRllCom extends PluginForDecrypt {
             // Get the XML file for the given quality code
             final String url = configUrl.getMatch(0) + quality + configUrl.getMatch(3);
             br.setFollowRedirects(true);
-            br.postPage(url, "current_page=" + downloadLink.getDownloadURL());
+            postPage(br, url, "current_page=" + downloadLink.getDownloadURL());
 
             // Does the file actually exist?
             if (br.containsHTML("<msg>Media not found</msg>")) {
@@ -547,6 +545,37 @@ public class CrhyRllCom extends PluginForDecrypt {
             return;
         }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Quality not available (try using premium)");
+    }
+
+    private PluginForHost plugin = null;
+
+    private void getPage(final String parameter) throws Exception {
+        getPage(br, parameter);
+    }
+
+    private void getPage(final Browser br, final String parameter) throws Exception {
+        loadPlugin();
+        ((jd.plugins.hoster.CrunchyRollCom) plugin).setBrowser(br);
+        ((jd.plugins.hoster.CrunchyRollCom) plugin).getPage(br, parameter);
+    }
+
+    private void postPage(final String page, final String postData) throws Exception {
+        postPage(br, page, postData);
+    }
+
+    private void postPage(final Browser br, final String page, final String postData) throws Exception {
+        loadPlugin();
+        ((jd.plugins.hoster.CrunchyRollCom) plugin).setBrowser(br);
+        ((jd.plugins.hoster.CrunchyRollCom) plugin).postPage(br, page, postData);
+    }
+
+    public void loadPlugin() {
+        if (plugin == null) {
+            plugin = JDUtilities.getPluginForHost("crunchyroll.com");
+            if (plugin == null) {
+                throw new IllegalStateException("crunchyroll.com hoster plugin not found!");
+            }
+        }
     }
 
     /* NO OVERRIDE!! */

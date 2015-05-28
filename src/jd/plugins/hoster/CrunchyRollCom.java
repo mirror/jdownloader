@@ -21,7 +21,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -38,7 +37,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -53,7 +51,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -71,7 +68,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://www\\.crunchyroll\\.com/(xml/\\?req=RpcApiVideoPlayer_GetStandardConfig\\&media_id=[0-9]+.*|xml/\\?req=RpcApiSubtitle_GetXml\\&subtitle_script_id=[0-9]+.*|android_rpc/\\?req=RpcApiAndroid_GetVideoWithAcl\\&media_id=[0-9]+.*)" }, flags = { 2 })
-public class CrunchyRollCom extends PluginForHost {
+public class CrunchyRollCom extends antiDDoSForHost {
 
     static private Object                                    lock                 = new Object();
     static private HashMap<Account, HashMap<String, String>> loginCookies         = new HashMap<Account, HashMap<String, String>>();
@@ -87,7 +84,7 @@ public class CrunchyRollCom extends PluginForHost {
 
     /**
      * Decrypt and convert the downloaded file from CrunchyRoll's own encrypted xml format into its .ass equivalent.
-     * 
+     *
      * @param downloadLink
      *            The DownloadLink to convert to .ass
      */
@@ -259,7 +256,7 @@ public class CrunchyRollCom extends PluginForHost {
 
     /**
      * Download the given file using the HTTP Android method. The file will be mp4 and have subtitles hardcoded.
-     * 
+     *
      * @param downloadLink
      *            The DownloadLink to try and download using RTMP
      */
@@ -280,7 +277,7 @@ public class CrunchyRollCom extends PluginForHost {
     /**
      * Attempt to download the given file using RTMP (rtmpdump). Needs to use the properties "valid", "rtmphost", "rtmpfile", "rtmpswf",
      * "swfdir". These are set by jd.plugins.decrypter.CrchyRollCom.setRMP() through requestFileInformation()
-     * 
+     *
      * @param downloadLink
      *            The DownloadLink to try and download using RTMP
      */
@@ -308,7 +305,7 @@ public class CrunchyRollCom extends PluginForHost {
 
     /**
      * Download subtitles and convert them to .ass
-     * 
+     *
      * @param downloadLink
      *            The DownloadLink to try and download convert to .ass
      */
@@ -330,7 +327,7 @@ public class CrunchyRollCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            this.login(account, this.br, true, true);
+            this.login(account, this.br, true);
             // TODO Find the expiration date of the premium status
         } catch (final PluginException e) {
             account.setValid(false);
@@ -378,7 +375,7 @@ public class CrunchyRollCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         downloadLink.setProperty("valid", false);
-        this.login(account, this.br, false, true);
+        this.login(account, this.br, false);
         this.requestFileInformation(downloadLink);
         if (downloadLink.getDownloadURL().contains(CrunchyRollCom.RCP_API_VIDEO_PLAYER)) {
             this.downloadRTMP(downloadLink);
@@ -391,17 +388,15 @@ public class CrunchyRollCom extends PluginForHost {
 
     /**
      * Attempt to log into crunchyroll.com using the given account. Cookies are cached to 'loginCookies'.
-     * 
+     *
      * @param account
      *            The account to use to log in.
      * @param br
      *            The browser to use to log in. This is the browser where the cookies will be saved.
      * @param refresh
      *            Should new cookies be retrieved (fresh login) even if cookies have previously been cached.
-     * @param showDialog
-     *            Display warning dialog if login fails.
      */
-    public void login(final Account account, Browser br, final boolean refresh, final boolean showDialog) throws Exception {
+    public void login(final Account account, Browser br, final boolean refresh) throws Exception {
         synchronized (CrunchyRollCom.lock) {
             if (br == null) {
                 br = this.br;
@@ -416,8 +411,10 @@ public class CrunchyRollCom extends PluginForHost {
                             // Save cookies to the browser
                             for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                                 final String key = cookieEntry.getKey();
-                                final String value = cookieEntry.getValue();
-                                br.setCookie("crunchyroll.com", key, value);
+                                if (!key.matches(cfRequireCookies)) {
+                                    final String value = cookieEntry.getValue();
+                                    br.setCookie("crunchyroll.com", key, value);
+                                }
                             }
                             return;
                         }
@@ -435,14 +432,19 @@ public class CrunchyRollCom extends PluginForHost {
 
                 // Load the login page (actually log in)
                 br.setFollowRedirects(true);
-                br.postPage("https://www.crunchyroll.com/?a=formhandler", post);
-
-                // Check if we successfully logged in
-                if (!br.containsHTML("Welcome back, .+?!")) {
-                    // Not successful, display dialog if we were asked to
-                    if (showDialog) {
-                        UserIO.getInstance().requestMessageDialog(0, "Crunchyroll Login Error", "Account check needed for crunchyroll.com!");
+                postPage("https://www.crunchyroll.com/?a=formhandler", post);
+                // redirect => via standard means, then another direct => via Meta/JavaScript only
+                String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+;\\s*url=(.*?)\"").getMatch(0);
+                if (redirect == null) {
+                    redirect = br.getRegex("document.location.href=\"(.*?)\"").getMatch(0);
+                    if (redirect != null) {
+                        redirect = redirect.replace("\\/", "/");
                     }
+                }
+                if (redirect != null) {
+                    br.getPage(redirect);
+                }
+                if (br.getCookie(this.getHost(), "c_userid") == null && br.getCookie(this.getHost(), "c_userkey") == null) {
                     // Set account to invalid and quit
                     account.setValid(false);
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -457,7 +459,9 @@ public class CrunchyRollCom extends PluginForHost {
                 // Get the cookies saved into the browser
                 final Cookies cYT = br.getCookies("crunchyroll.com");
                 for (final Cookie c : cYT.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
+                    if (!c.getKey().matches(cfRequireCookies)) {
+                        cookies.put(c.getKey(), c.getValue());
+                    }
                 }
                 // Save the cookies to the cache
                 CrunchyRollCom.loginCookies.put(account, cookies);
@@ -471,7 +475,7 @@ public class CrunchyRollCom extends PluginForHost {
     /**
      * Pad and format version numbers so that the String.compare() method can be used simply. ("9.10.2", ".", 4) would result in
      * "000900100002".
-     * 
+     *
      * @param version
      *            The version number string to format (e.g. '9.10.2')
      * @param sep
@@ -499,7 +503,7 @@ public class CrunchyRollCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         downloadLink.setProperty("valid", false);
 
         // Try and find which download type it is
@@ -509,7 +513,7 @@ public class CrunchyRollCom extends PluginForHost {
                 final Account account = AccountController.getInstance().getValidAccount(this);
                 if (account != null) {
                     try {
-                        this.login(account, this.br, false, true);
+                        this.login(account, this.br, false);
                     } catch (final Exception e) {
                     }
                 }
@@ -542,13 +546,12 @@ public class CrunchyRollCom extends PluginForHost {
                 downloadLink.setFinalFileName(downloadLink.getStringProperty("filename") + ".ass");
             }
             /* Get xml page here to find possible errors */
-            br.getPage(downloadLink.getDownloadURL());
+            getPage(downloadLink.getDownloadURL());
             if (br.containsHTML("<error>No Permission</error>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
 
-            // Get the HTTP response headers of the XML file to check for
-            // validity
+            // Get the HTTP response headers of the XML file to check for validity
             URLConnectionAdapter conn = null;
             try {
                 conn = this.br.openGetConnection(downloadLink.getDownloadURL());
@@ -603,7 +606,7 @@ public class CrunchyRollCom extends PluginForHost {
 
     /**
      * Generate the AES decryption key based on the subtitle's id using some obfuscation and SHA-1 hashing.
-     * 
+     *
      * @param id
      *            The id of the subtitles to generate the key for
      * @param size
@@ -644,4 +647,20 @@ public class CrunchyRollCom extends PluginForHost {
         }
         return key;
     }
+
+    /**
+     * because stable is lame!
+     * */
+    public void setBrowser(final Browser ibr) {
+        this.br = ibr;
+    }
+
+    public void getPage(final Browser ibr, final String page) throws Exception {
+        super.getPage(ibr, page);
+    }
+
+    public void postPage(final Browser ibr, final String page, final String postData) throws Exception {
+        super.postPage(ibr, page, postData);
+    }
+
 }
