@@ -244,12 +244,16 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public String getName() {
         final String lname = name;
         if (lname != null) {
-            CrawledPackage lparent = this.getParentNode();
-            String packageName = null;
-            if (lparent != null) {
-                packageName = lparent.getName();
+            if (lname.contains("<jd:")) {
+                final CrawledPackage lparent = this.getParentNode();
+                String packageName = null;
+                if (lparent != null) {
+                    packageName = lparent.getName();
+                }
+                return CrossSystem.alleviatePathParts(PackagizerController.replaceDynamicTags(lname, packageName));
+            } else {
+                return lname;
             }
-            return PackagizerController.replaceDynamicTags(lname, packageName);
         }
         final DownloadLink dlLink = getDownloadLink();
         if (dlLink != null) {
@@ -288,7 +292,9 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
             }
         }
         if (name != null) {
-            name = CrossSystem.alleviatePathParts(name);
+            if (!name.contains("<jd:")) {
+                name = CrossSystem.alleviatePathParts(name);
+            }
             if (StringUtils.equals(name, this.name)) {
                 return;
             }
