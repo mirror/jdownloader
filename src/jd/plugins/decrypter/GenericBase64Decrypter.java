@@ -28,11 +28,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "re-direcciona.me", "asianspankee.com", "mediaboom.org", "bookgn.com", "vip-files.net", "url4u.org", "tunesies.com", "xtragfx.com", "psdkeys.com" },
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tinymoviez.info", "re-direcciona.me", "asianspankee.com", "mediaboom.org", "bookgn.com", "vip-files.net", "url4u.org", "tunesies.com", "xtragfx.com", "psdkeys.com" },
 
-urls = { "http://(www\\.)?re-direcciona\\.me/(I|r)/[A-Za-z0-9=]+", "http://asianspankee\\.com/\\?goto=[A-Za-z0-9=%]+", "http://(www\\.)?mediaboom\\.org/engine/go\\.php\\?url=[A-Za-z0-9=%]+", "http://(www\\.)?bookgn\\.com/engine/go\\.php\\?url=[A-Za-z0-9=%]+", "http://(www\\.)?vip\\-files\\.net/download\\.php\\?e=[A-Za-z0-9=%]+", "http://www\\.url4u\\.org/[A-Za-z0-9=%]+", "https?://(www\\.)?tunesies\\.com/go/[a-zA-Z0-9_/\\+\\=\\-]+", "https?://(www\\.)?xtragfx\\.com/engine/go\\.php\\?url=[A-Za-z0-9=%]+", "https?://(www\\.)?psdkeys\\.com/engine/go\\.php\\?url=[A-Za-z0-9=%]+" },
+urls = { "http://(www\\.)?tinymoviez\\.info/download\\.php\\?link=[a-zA-Z0-9_/\\+\\=\\-]+", "http://(www\\.)?re-direcciona\\.me/(I|r)/[A-Za-z0-9=]+", "http://asianspankee\\.com/\\?goto=[A-Za-z0-9=%]+", "http://(www\\.)?mediaboom\\.org/engine/go\\.php\\?url=[A-Za-z0-9=%]+", "http://(www\\.)?bookgn\\.com/engine/go\\.php\\?url=[A-Za-z0-9=%]+", "http://(www\\.)?vip\\-files\\.net/download\\.php\\?e=[A-Za-z0-9=%]+", "http://www\\.url4u\\.org/[A-Za-z0-9=%]+", "https?://(www\\.)?tunesies\\.com/go/[a-zA-Z0-9_/\\+\\=\\-]+", "https?://(www\\.)?xtragfx\\.com/engine/go\\.php\\?url=[A-Za-z0-9=%]+", "https?://(www\\.)?psdkeys\\.com/engine/go\\.php\\?url=[A-Za-z0-9=%]+" },
 
-flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GenericBase64Decrypter extends PluginForDecrypt {
 
     public GenericBase64Decrypter(final PluginWrapper wrapper) {
