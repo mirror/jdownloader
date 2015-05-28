@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kumpulbagi.com" }, urls = { "http://kumpulbagi\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kumpulbagi.com" }, urls = { "http://kumpulbagi\\.com/[a-z0-9\\-_]+/[a-z0-9\\-_]+(/[^\\s]+)?" }, flags = { 0 })
 public class KumpulbagiCom extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -71,9 +71,9 @@ public class KumpulbagiCom extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        final String chomikid = br.getRegex("type=\"hidden\" name=\"ChomikId\" value=\"(\\d+)\"").getMatch(0);
-        final String folderid = br.getRegex("name=\"FolderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
-        final String reqtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
+        // final String chomikid = br.getRegex("type=\"hidden\" name=\"ChomikId\" value=\"(\\d+)\"").getMatch(0);
+        // final String folderid = br.getRegex("name=\"FolderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
+        // final String reqtoken = br.getRegex("name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
         // if (br.containsHTML("class=\"LoginToFolderForm\"")) {
         // final String foldername = br.getRegex("id=\"FolderName\" name=\"FolderName\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
         // if (reqtoken == null || chomikid == null || folderid == null || foldername == null) {
@@ -109,10 +109,11 @@ public class KumpulbagiCom extends PluginForDecrypt {
 
         /* Differ between single links and folders */
         if (br.containsHTML("id=\"fileDetails\"")) {
-            String filename = br.getRegex("Baixar: <b>([^<>\"]*?)</b>").getMatch(0);
-            final String filesize = br.getRegex("class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
-            final String fid = br.getRegex("name=\"FileId\" value=\"(\\d+)\"").getMatch(0);
+            String filename = br.getRegex("Gratis:</span>([^<>\"]*?)</h2>").getMatch(0);
+            final String filesize = br.getRegex("class=\"file_size\">\\s*([^<>\"]*?)\\s*</div>").getMatch(0);
+            final String fid = br.getRegex("name=\"fileId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
             if (filename == null || filesize == null || fid == null) {
+                logger.info("filename: " + filename + ", filesize: " + filesize + ", fid: " + fid);
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
