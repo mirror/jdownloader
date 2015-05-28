@@ -84,7 +84,8 @@ public class ConfirmHashValuesAction extends CustomizableTableContextAppAction i
         main: for (Entry<String, List<CrawledLink>> se : map.entrySet()) {
             List<CrawledLink> list = se.getValue();
             String md5 = null;
-            String sha = null;
+            String sha1 = null;
+            String sha256 = null;
             for (CrawledLink cl : list) {
                 if (cl.getDownloadLink().getMD5Hash() != null) {
                     if (md5 != null && !StringUtils.equalsIgnoreCase(md5, cl.getDownloadLink().getMD5Hash())) {
@@ -94,13 +95,20 @@ public class ConfirmHashValuesAction extends CustomizableTableContextAppAction i
                         md5 = cl.getDownloadLink().getMD5Hash();
                     }
                 }
-
                 if (cl.getDownloadLink().getSha1Hash() != null) {
-                    if (sha != null && !StringUtils.equalsIgnoreCase(sha, cl.getDownloadLink().getSha1Hash())) {
+                    if (sha1 != null && !StringUtils.equalsIgnoreCase(sha1, cl.getDownloadLink().getSha1Hash())) {
                         // hashes do not match
                         continue main;
                     } else {
-                        sha = cl.getDownloadLink().getSha1Hash();
+                        sha1 = cl.getDownloadLink().getSha1Hash();
+                    }
+                }
+                if (cl.getDownloadLink().getSha256Hash() != null) {
+                    if (sha256 != null && !StringUtils.equalsIgnoreCase(sha256, cl.getDownloadLink().getSha256Hash())) {
+                        // hashes do not match
+                        continue main;
+                    } else {
+                        sha256 = cl.getDownloadLink().getSha256Hash();
                     }
                 }
             }
@@ -108,8 +116,11 @@ public class ConfirmHashValuesAction extends CustomizableTableContextAppAction i
                 if (md5 != null) {
                     cl.getDownloadLink().setMD5Hash(md5);
                 }
-                if (sha != null) {
-                    cl.getDownloadLink().setSha1Hash(sha);
+                if (sha1 != null) {
+                    cl.getDownloadLink().setSha1Hash(sha1);
+                }
+                if (sha256 != null) {
+                    cl.getDownloadLink().setSha1Hash(sha256);
                 }
             }
         }
