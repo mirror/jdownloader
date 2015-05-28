@@ -245,8 +245,10 @@ public class Music163Com extends PluginForHost {
                     dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
                     /* Sometimes HQ versions of songs are officially available but directlinks return 404 on download attempt. */
                     if (dl.getConnection().getResponseCode() != 200 || dl.getConnection().getContentType().contains("html")) {
+                        logger.info("Version " + quality + " is NOT downloadable");
                         continue;
                     }
+                    logger.info("Version " + quality + " is downloadable --> Starting download");
                     trackDownloadable = true;
                     break;
                 }
