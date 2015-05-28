@@ -8,6 +8,7 @@ import javax.swing.Icon;
 import javax.swing.JLabel;
 
 import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.gui.swing.jdgui.GUIUtils;
 import jd.plugins.Account;
 
 import org.appwork.swing.MigPanel;
@@ -207,9 +208,9 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
                 }
 
                 if (!StringUtils.isEmpty(accountType)) {
-                    str = _GUI._.CandidateAccountColumn_getStringValue_account_type(account.getUser(), account.getHoster(), accountType);
+                    str = _GUI._.CandidateAccountColumn_getStringValue_account_type(GUIUtils.getAccountName(account.getUser()), account.getHoster(), accountType);
                 } else {
-                    str = _GUI._.CandidateAccountColumn_getStringValue_account(account.getUser(), account.getHoster());
+                    str = _GUI._.CandidateAccountColumn_getStringValue_account(GUIUtils.getAccountName(account.getUser()), account.getHoster());
                 }
             } else {
                 if (icon == null) {
@@ -324,15 +325,15 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
 
         this.addColumn(new AccountColumn(_GUI._.CandidateTooltipTableModel_account())
 
-        );
+                );
 
         this.addColumn(new GatewayColumn(_GUI._.CandidateTooltipTableModel_gateway())
 
-        );
+                );
 
         this.addColumn(new ResultColumn(_GUI._.CandidateTooltipTableModel_result())
 
-        );
+                );
 
         this.sortColumn = sorton;
     }

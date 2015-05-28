@@ -9,6 +9,7 @@ import javax.swing.SwingUtilities;
 
 import jd.controlling.downloadcontroller.HistoryEntry;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.GUIUtils;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 
@@ -103,9 +104,9 @@ public class CandidateAccountColumn extends ExtTextColumn<AbstractNode> {
                     }
 
                     if (!StringUtils.isEmpty(accountType)) {
-                        str = _GUI._.CandidateAccountColumn_getStringValue_account_type(account.getUser(), account.getHoster(), accountType);
+                        str = _GUI._.CandidateAccountColumn_getStringValue_account_type(GUIUtils.getAccountName(account.getUser()), account.getHoster(), accountType);
                     } else {
-                        str = _GUI._.CandidateAccountColumn_getStringValue_account(account.getUser(), account.getHoster());
+                        str = _GUI._.CandidateAccountColumn_getStringValue_account(GUIUtils.getAccountName(account.getUser()), account.getHoster());
                     }
                 } else {
                     if (icon == null) {
