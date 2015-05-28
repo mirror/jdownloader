@@ -1098,9 +1098,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -2203,12 +2203,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         final List<DownloadLink> force = new ArrayList<DownloadLink>();
         final boolean forcedAutoStart = Boolean.TRUE.equals(moveLinksSettings.getAutoForce());
         final boolean autoMode = MoveLinksMode.AUTO.equals(moveLinksSettings.getMode());
-        boolean autoStart = Boolean.TRUE.equals(moveLinksSettings.getAutoStart());
+        boolean autoStartLinks = false;
         for (final PackageView<CrawledPackage, CrawledLink> packageView : selection.getPackageViews()) {
             final List<CrawledLink> links = packageView.getChildren();
             final List<FilePackage> convertedLinks = LinkCollector.getInstance().convert(links, true);
             for (final CrawledLink cl : links) {
-                autoStart |= (autoMode && cl.isAutoStartEnabled());
+                autoStartLinks |= cl.isAutoStartEnabled();
                 if ((autoMode && cl.isForcedAutoStartEnabled()) || forcedAutoStart) {
                     force.add(cl.getDownloadLink());
                 }
@@ -2228,7 +2228,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
          *
          * addBottom = negative number -> add at the end
          */
-        final boolean finalAutoStart = autoStart;
+        final boolean finalAutoStart;
+        if (autoMode) {
+            finalAutoStart = autoStartLinks;
+        } else {
+            final Boolean autoStart = moveLinksSettings.getAutoStart();
+            if (autoStart != null) {
+                finalAutoStart = autoStart.booleanValue();
+            } else {
+                finalAutoStart = autoStartLinks;
+            }
+        }
+
         DownloadController.getInstance().addAllAt(filePackagesToAdd, addTop ? 0 : -(filePackagesToAdd.size() + 10));
         DownloadController.getInstance().getQueue().add(new QueueAction<Void, RuntimeException>() {
 
