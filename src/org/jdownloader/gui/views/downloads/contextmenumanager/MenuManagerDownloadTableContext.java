@@ -39,6 +39,7 @@ import org.jdownloader.gui.views.downloads.action.PackageNameAction;
 import org.jdownloader.gui.views.downloads.action.PropertiesAction;
 import org.jdownloader.gui.views.downloads.action.ResetAction;
 import org.jdownloader.gui.views.downloads.action.ResumeAction;
+import org.jdownloader.gui.views.downloads.action.RunCheckSumAction;
 import org.jdownloader.gui.views.downloads.action.SetDownloadFolderInDownloadTableAction;
 import org.jdownloader.gui.views.downloads.action.SkipAction;
 import org.jdownloader.gui.views.downloads.action.SplitPackagesByHost;
@@ -62,7 +63,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static MenuManagerDownloadTableContext getInstance() {
@@ -149,7 +150,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         more.add(new SeparatorData());
         more.add(new MenuItemData(new ActionData(MergeToPackageAction.class)));
         more.add(new MenuItemData(new ActionData(SplitPackagesByHost.class)));
-
+        more.add(new MenuItemData(new ActionData(RunCheckSumAction.class)));
         more.add(new MenuItemData(new ActionData(CreateDLCAction.class)));
         return more;
     }

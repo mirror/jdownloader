@@ -5932,8 +5932,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "For this feature, 2 advanced options are required:\r\nBrowserCaptchaSolver: Google Com Cookie Value HSID\r\n*BrowserCaptchaSolver: Google Com Cookie Value SID\r\n\r\nPlease enter both." })
     String Recaptcha_cookie_help_msg_both_cookies();
 
-    @Default(lngs = { "en" }, values = { "Start CRC task! This will validate data on storage device against input inside Checksum column" })
+    @Default(lngs = { "en" }, values = { "Start CRC task!" })
     String gui_table_contextmenu_runchecksum();
+
+    @Default(lngs = { "en" }, values = { "This will validate data on storage device against Checksum column reference." })
+    String gui_table_contextmnu_runcheksum_explaination();
 
     @Default(lngs = { "en" }, values = { "%s1 (click to change)" })
     String change_language(String set);
