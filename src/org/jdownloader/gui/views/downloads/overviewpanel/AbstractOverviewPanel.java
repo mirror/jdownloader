@@ -46,6 +46,8 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
     private final GenericConfigEventListener<Boolean> relayoutListener;
     protected final PackageControllerTableModel       tableModel;
 
+    private static final ScheduledExecutorService     SERVICE      = DelayedRunnable.getNewScheduledExecutorService();
+
     public AbstractOverviewPanel(PackageControllerTableModel tableModel) {
         super("ins 0", "[][grow,fill][]", "[grow,fill]");
         this.tableModel = tableModel;
@@ -76,15 +78,14 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
         };
         layoutInfoPanel(info);
         add(info, "pushy,growy");
-        final ScheduledExecutorService queue = DelayedRunnable.getNewScheduledExecutorService();
-        slowDelayer = new DelayedRunnable(queue, 500, 5000) {
+        slowDelayer = new DelayedRunnable(SERVICE, 500, 5000) {
 
             @Override
             public void delayedrun() {
                 update();
             }
         };
-        fastDelayer = new DelayedRunnable(queue, 50, 200) {
+        fastDelayer = new DelayedRunnable(SERVICE, 50, 200) {
 
             @Override
             public void delayedrun() {

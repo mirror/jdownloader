@@ -18,6 +18,7 @@ import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
@@ -102,19 +103,14 @@ public class VariantColumn extends ExtComboColumn<AbstractNode, LinkVariant> {
             final CrawledLink link = (CrawledLink) value;
 
             final HashSet<String> dupeSet = new HashSet<String>();
-
-            LinkCollector lc = LinkCollector.getInstance();
-
-            boolean readL = link.getParentNode().getModifyLock().readLock();
-
+            final CrawledPackage parent = link.getParentNode();
+            final boolean readL = parent.getModifyLock().readLock();
             try {
-
-                for (CrawledLink cl : link.getParentNode().getChildren()) {
+                for (CrawledLink cl : parent.getChildren()) {
                     dupeSet.add(cl.getLinkID());
-
                 }
             } finally {
-                link.getParentNode().getModifyLock().readUnlock(readL);
+                parent.getModifyLock().readUnlock(readL);
             }
             popup.add(new JSeparator());
             JMenu m = new JMenu(_GUI._.VariantColumn_fillPopup_add());

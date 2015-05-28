@@ -157,7 +157,7 @@ public class GenericDeleteFromLinkgrabberAction extends CustomizableAppAction im
     public GenericDeleteFromLinkgrabberAction() {
         super();
         addContextSetup(byPassDialog = new ByPassDialogSetup());
-        delayer = new DelayedRunnable(500, 1500) {
+        delayer = new DelayedRunnable(TaskQueue.TIMINGQUEUE, 500, 1500) {
 
             @Override
             public void delayedrun() {

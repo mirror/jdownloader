@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractButton;
 import javax.swing.Icon;
 
+import jd.controlling.TaskQueue;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.panels.MyJDownloaderSettingsPanel;
@@ -71,7 +72,7 @@ public class MyJDownloaderAction extends AbstractToolBarAction {
             super(MyJDownloaderAction.this);
             setIcon(new AbstractIcon(getIconKey(), 22));
             setHideActionText(true);
-            iconDelayer = new DelayedRunnable(500, 2000) {
+            iconDelayer = new DelayedRunnable(TaskQueue.TIMINGQUEUE, 500, 2000) {
 
                 @Override
                 public void delayedrun() {

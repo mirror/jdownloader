@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.AbstractAction;
@@ -91,11 +92,11 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
     protected SearchComboBox<PackageHistoryEntry> packagename;
     protected ExtTextField                        password;
     protected PseudoCombo<Priority>               priority;
-    private DelayedRunnable                       saveDelayer;
+    private final DelayedRunnable                 saveDelayer;
     protected final AtomicInteger                 savingLock  = new AtomicInteger(0);
     protected final AtomicInteger                 settingLock = new AtomicInteger(0);
-    private DelayedRunnable                       updateDelayer;
-
+    private final DelayedRunnable                 updateDelayer;
+    private static final ScheduledExecutorService SERVICE     = DelayedRunnable.getNewScheduledExecutorService();
     private String                                lastSavedPath;
     private UniqueAlltimeID                       lastSavedPathUniqueID;
     private long                                  lastSavedPathTimeStamp;
@@ -144,7 +145,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
         LAFOptions.getInstance().applyPanelBackground(this);
         config = JsonConfig.create(LinkgrabberSettings.class);
 
-        saveDelayer = new DelayedRunnable(500l, 2000l) {
+        saveDelayer = new DelayedRunnable(SERVICE, 500l, 2000l) {
 
             @Override
             public void delayedrun() {
@@ -163,7 +164,7 @@ public abstract class AbstractNodePropertiesPanel extends MigPanel implements Ac
             }
 
         };
-        updateDelayer = new DelayedRunnable(1000l, 2000l) {
+        updateDelayer = new DelayedRunnable(SERVICE, 1000l, 2000l) {
 
             @Override
             public void delayedrun() {
