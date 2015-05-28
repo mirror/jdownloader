@@ -30,11 +30,12 @@ public class FilePackagePropertiesPanel extends DownloadLinkPropertiesPanel {
 
     @Override
     protected List<Archive> loadArchives() {
-        final boolean readL2 = currentPackage.getModifyLock().readLock();
+        final FilePackage pkg = currentPackage;
+        final boolean readL2 = pkg.getModifyLock().readLock();
         try {
-            return ArchiveValidator.getArchivesFromPackageChildren(currentPackage.getChildren(), 2);
+            return ArchiveValidator.getArchivesFromPackageChildren(pkg.getChildren(), 2);
         } finally {
-            currentPackage.getModifyLock().readUnlock(readL2);
+            pkg.getModifyLock().readUnlock(readL2);
         }
     }
 

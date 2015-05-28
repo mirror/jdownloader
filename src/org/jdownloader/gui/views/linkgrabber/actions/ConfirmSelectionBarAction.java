@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.linkgrabber.actions;
 
+import jd.controlling.TaskQueue;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 
@@ -25,7 +26,7 @@ public class ConfirmSelectionBarAction extends ConfirmLinksContextAction impleme
 
     public ConfirmSelectionBarAction() {
         super();
-        delayer = new DelayedRunnable(500, 1000) {
+        delayer = new DelayedRunnable(TaskQueue.TIMINGQUEUE, 500, 1000) {
 
             @Override
             public void delayedrun() {

@@ -1933,10 +1933,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         fos = new FileOutputStream(file) {
                             @Override
                             public void close() throws IOException {
-                                if (getChannel().isOpen()) {
-                                    getChannel().force(true);
+                                try {
+                                    if (getChannel().isOpen()) {
+                                        getChannel().force(true);
+                                    }
+                                } finally {
+                                    super.close();
                                 }
-                                super.close();
                             }
                         };
                         zip = new ZipIOWriter(new BufferedOutputStream(fos, bufferSize));

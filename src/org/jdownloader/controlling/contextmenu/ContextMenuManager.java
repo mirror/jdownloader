@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ScheduledExecutorService;
 
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
@@ -38,15 +39,17 @@ import org.jdownloader.controlling.contextmenu.gui.MenuManagerDialogInterface;
 import org.jdownloader.logging.LogController;
 
 public abstract class ContextMenuManager<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
-    protected DelayedRunnable updateDelayer;
+    protected final DelayedRunnable               updateDelayer;
+    private static final ScheduledExecutorService SERVICE = DelayedRunnable.getNewScheduledExecutorService();
 
     public ContextMenuManager() {
         if (Application.isHeadless()) {
+            updateDelayer = null;
             return;
         }
         config = JsonConfig.create(Application.getResource("cfg/menus_v2/" + getStorageKey()), ContextMenuConfigInterface.class);
         logger = LogController.getInstance().getLogger(getClass().getName());
-        updateDelayer = new DelayedRunnable(1000l, 2000) {
+        updateDelayer = new DelayedRunnable(SERVICE, 1000l, 2000) {
             @Override
             public String getID() {
                 return "MenuManager-" + ContextMenuManager.this.getClass();

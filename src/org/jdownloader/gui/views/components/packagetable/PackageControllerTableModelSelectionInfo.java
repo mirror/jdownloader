@@ -42,10 +42,11 @@ public class PackageControllerTableModelSelectionInfo<PackageType extends Abstra
         for (final PackageControllerTableModelDataPackage modelDataPackage : tableModelData.getModelDataPackages()) {
             final PackageType pkg = (PackageType) modelDataPackage.getPackage();
             final int index = children.size();
-            for (final AbstractNode node : modelDataPackage.getVisibleChildren()) {
+            final List<? extends AbstractNode> visible = modelDataPackage.getVisibleChildren();
+            for (final AbstractNode node : visible) {
                 children.add((ChildrenType) node);
             }
-            final int size = modelDataPackage.getVisibleChildren().size();
+            final int size = visible.size();
             final PackageView<PackageType, ChildrenType> packageView = new PackageView<PackageType, ChildrenType>() {
 
                 @Override

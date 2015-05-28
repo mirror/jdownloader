@@ -141,7 +141,7 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
     public GenericDeleteFromDownloadlistAction() {
         super();
         addContextSetup(byPassDialog = new ByPassDialogSetup());
-        delayer = new DelayedRunnable(500, 1500) {
+        delayer = new DelayedRunnable(TaskQueue.TIMINGQUEUE, 500, 1500) {
 
             @Override
             public void delayedrun() {

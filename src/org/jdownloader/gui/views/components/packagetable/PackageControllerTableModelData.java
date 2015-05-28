@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.components.packagetable;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -26,15 +27,16 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
         public List<? extends AbstractNode> getInvisibleChildren();
     }
 
-    private final static AtomicLong                                            VERSION              = new AtomicLong(-1);
-    private List<PackageControllerTableModelFilter<PackageType, ChildrenType>> packageFilters       = null;
-    private List<PackageControllerTableModelFilter<PackageType, ChildrenType>> childrenFilters      = null;
-    private List<PackageControllerTableModelCustomizer>                        tableModelCustomizer = null;
-    private final long                                                         version              = VERSION.incrementAndGet();
-    private boolean                                                            filtered             = false;
-    private final List<PackageControllerTableModelDataPackage>                 modelDataPackages    = new ArrayList<PackageControllerTableModelDataPackage>();
-    private final List<AbstractNode>                                           filteredChildren     = new ArrayList<AbstractNode>();
-    private final List<AbstractNode>                                           hiddenChildren       = new ArrayList<AbstractNode>();
+    private final static AtomicLong                                            VERSION                          = new AtomicLong(-1);
+    private List<PackageControllerTableModelFilter<PackageType, ChildrenType>> packageFilters                   = null;
+    private List<PackageControllerTableModelFilter<PackageType, ChildrenType>> childrenFilters                  = null;
+    private List<PackageControllerTableModelCustomizer>                        tableModelCustomizer             = null;
+    private final long                                                         version                          = VERSION.incrementAndGet();
+    private boolean                                                            filtered                         = false;
+    private final List<PackageControllerTableModelDataPackage>                 modelDataPackages                = new ArrayList<PackageControllerTableModelDataPackage>();
+    private final List<AbstractNode>                                           filteredChildren                 = new ArrayList<AbstractNode>();
+    private final List<AbstractNode>                                           hiddenChildren                   = new ArrayList<AbstractNode>();
+    private final BitSet                                                       hiddenPackagesSingleChildIndices = new BitSet();
 
     protected List<AbstractNode> getHiddenChildren() {
         return hiddenChildren;
@@ -42,6 +44,15 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
 
     protected List<AbstractNode> getFilteredChildren() {
         return filteredChildren;
+    }
+
+    protected void addHiddenPackageSingleChild(AbstractNode node) {
+        hiddenPackagesSingleChildIndices.set(this.size());
+        add(node);
+    }
+
+    public boolean isHiddenPackageSingleChildIndex(int index) {
+        return hiddenPackagesSingleChildIndices.get(index);
     }
 
     protected void add(PackageControllerTableModelDataPackage tableModelDataPackage) {
@@ -145,7 +156,7 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
 
     /*
      * updates the filtered flag
-     * 
+     *
      * we don't want quickfilters to count as filtered state, users will still be able to move/dragdrop stuff
      */
     private void updateFilteredState() {
@@ -184,6 +195,10 @@ public class PackageControllerTableModelData<PackageType extends AbstractPackage
 
     public boolean isFiltered() {
         return filtered;
+    }
+
+    public boolean isHideSingleChildPackages() {
+        return !hiddenPackagesSingleChildIndices.isEmpty();
     }
 
 }
