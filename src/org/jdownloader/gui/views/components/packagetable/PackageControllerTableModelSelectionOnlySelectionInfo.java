@@ -101,7 +101,7 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
                             lastPackageSelected = false;
                             lastPackageSelectedChildren.clear();
                         }
-                        final PackageType pkg = getPackage(child);
+                        final PackageType pkg = getPackage(lastPackageIndex.get(), child);
                         lastPackage = getPackageData(lastPackageIndex, pkg);
                         lastPackageSelected = true;
                         lastPackageSelectedChildren.add(child);
@@ -149,9 +149,9 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
         return unselectedChildren;
     }
 
-    private PackageType getPackage(ChildrenType childrenType) {
+    private PackageType getPackage(int lastPackageIndex, ChildrenType childrenType) {
         final int size = tableModelData.getModelDataPackages().size();
-        for (int index = 0; index < size; index++) {
+        for (int index = lastPackageIndex; index < size; index++) {
             final PackageControllerTableModelDataPackage next = tableModelData.getModelDataPackages().get(index);
             if (next.getVisibleChildren().contains(childrenType)) {
                 return (PackageType) next.getPackage();
