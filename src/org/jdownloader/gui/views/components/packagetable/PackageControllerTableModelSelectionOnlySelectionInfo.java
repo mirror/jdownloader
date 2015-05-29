@@ -139,6 +139,14 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
                     }
                     lastPackage = getPackageData(lastPackageIndex, (PackageType) node);
                 } else if (node instanceof AbstractPackageChildrenNode) {
+                    if (tableModelData.isHiddenPackageSingleChildIndex(selectionIndex)) {
+                        if (lastPackage != null) {
+                            for (final AbstractNode child : lastPackage.getVisibleChildren()) {
+                                unselectedChildren.add((ChildrenType) child);
+                            }
+                        }
+                        lastPackage = null;
+                    }
                     if (!selectionModel.isSelectedIndex(selectionIndex)) {
                         unselectedChildren.add((ChildrenType) node);
                         lastPackage = null;
