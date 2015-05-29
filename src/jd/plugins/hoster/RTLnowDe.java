@@ -194,7 +194,10 @@ public class RTLnowDe extends PluginForHost {
         setBrowserExclusive();
         String filename = null;
         final String addedlink = downloadLink.getDownloadURL();
-        final String apiurl = "https://api.nowtv.de/v3/movies/" + getURLPart(downloadLink) + "?fields=*,format,files,breakpoints,paymentPaytypes,trailers,pictures,isDrm";
+        final String urlpart = getURLPart(downloadLink);
+        /* urlpart is the same throughout different TV stations so it is a reliable way to detect duplicate urls. */
+        downloadLink.setLinkID(urlpart);
+        final String apiurl = "https://api.nowtv.de/v3/movies/" + urlpart + "?fields=*,format,files,breakpoints,paymentPaytypes,trailers,pictures,isDrm";
         br.getPage(apiurl);
         entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         format = (LinkedHashMap<String, Object>) entries.get("format");
@@ -241,7 +244,7 @@ public class RTLnowDe extends PluginForHost {
     }
 
     /* Last revision with old handling: BEFORE 30393 */
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private void download(final DownloadLink downloadLink) throws Exception {
         final boolean isFree = ((Boolean) entries.get("free")).booleanValue();
         final boolean isDRM = ((Boolean) entries.get("isDrm")).booleanValue();

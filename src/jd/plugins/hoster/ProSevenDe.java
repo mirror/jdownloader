@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -41,9 +42,11 @@ public class ProSevenDe extends PluginForHost {
     /** Tags: prosiebensat1.de, */
     /** Interesting extern lib: https://github.com/bromix/repository.bromix.storage/tree/master/plugin.video.7tv */
 
-    private static AtomicReference<String> agent   = new AtomicReference<String>(null);
+    private static final String            URLTEXT_NO_FLASH = "no_flash_de";
+    private static AtomicReference<String> agent_hbbtv      = new AtomicReference<String>(null);
+    private static AtomicReference<String> agent_normal     = new AtomicReference<String>(null);
     private HashMap<String, String>        fileDesc;
-    private String                         clipUrl = null;
+    private String                         clipUrl          = null;
 
     public ProSevenDe(final PluginWrapper wrapper) {
         super(wrapper);
@@ -60,10 +63,15 @@ public class ProSevenDe extends PluginForHost {
     }
 
     private void prepareBrowser() {
-        if (agent.get() == null) {
+        if (agent_hbbtv.get() == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
-            agent.set(jd.plugins.hoster.MediafireCom.hbbtvUserAgent());
+            agent_hbbtv.set(jd.plugins.hoster.MediafireCom.hbbtvUserAgent());
+        }
+        if (agent_normal.get() == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent_normal.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
     }
 
@@ -71,6 +79,7 @@ public class ProSevenDe extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
+        prepareBrowser();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         /* Possible API (needs video-ID) http://hbbtv.sat1.de/video_center?action=action.get.clip&clip_id=<videoid>&category_id=123&order=1 */
@@ -111,7 +120,10 @@ public class ProSevenDe extends PluginForHost {
         String app;
         if (protocol.equals("rtmpe://")) {
             app = "psdvodrtmpdrm";
-            /* We can still get rtmpe urls via the old API but they won't work anyways. */
+            /*
+             * We can still get rtmpe urls via the old API but they won't work anyways as they use handshake type 9 which (our) rtmpdump
+             * does not support.
+             */
             throw new PluginException(LinkStatus.ERROR_FATAL, "rtmpe:// not supported!");
         } else {
             app = "psdvodrtmp";
@@ -145,6 +157,7 @@ public class ProSevenDe extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
+        br.setFollowRedirects(false);
         /* Let's find the downloadlink */
         final String clipID = br.getRegex("\"clip_id\":[\t\n\r ]*?\"(\\d+)\"").getMatch(0);
         if (clipID == null) {
@@ -156,23 +169,31 @@ public class ProSevenDe extends PluginForHost {
          * >&client_name
          * =kolibri-1.11.3-hotfix1&client_id=<clientid>&server_id=<serverid>&source_ids=0%2C6%2C4&callback=_kolibri_jsonp_callbacks ._5236
          */
-        br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clipID + "&app=moveplayer&method=2&callback=SIMVideoPlayer.FlashPlayer.jsonpCallback");
+        /* HLS (does not work as a workaround for for rtmpe streams): http://vas.sim-technik.de/video/playlist.m3u8?ClipID=<ClipID> */
+        // http://vas.sim-technik.de/video/video.json?clipid=clipID&app=megapp&method=4&drm=marlin2
+
+        /*
+         * First try to get a http stream --> Faster downloadspeed & more reliable/stable connection than rtmp and slightly better
+         * videoquality
+         */
+        this.br = new Browser();
+        /* User-Agent not necessarily needed */
+        br.getHeaders().put("User-Agent", agent_hbbtv.get());
+        br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clipID + "&app=hbbtv&type=1&method=1&callback=video" + clipID);
         getDllink();
         if (clipUrl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /* Workaround to avoid rtmpe --> Does not work (yet) */
-        // if (clipUrl.startsWith(Encoding.Base64Decode("cnRtcGU6Ly8="))) {
-        // logger.info("Trying to avoid unsupported protocol");
-        // this.br = new Browser();
-        // br.getHeaders().put("User-Agent", agent.get());
-        // br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clipID + "&app=hbbtv&type=1&method=1&callback=video" +
-        // clipID);
-        // getDllink();
-        // }
-        // http://vas.sim-technik.de/video/video.json?clipid=clipID&app=megapp&method=4&drm=marlin2
-        if (clipUrl == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (clipUrl.contains(URLTEXT_NO_FLASH)) {
+            this.br = new Browser();
+            /* User-Agent not necessarily needed */
+            br.getHeaders().put("User-Agent", agent_normal.get());
+            /* http stream not available --> It's either rtmp or rtmpe */
+            br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clipID + "&app=moveplayer&method=2&callback=SIMVideoPlayer.FlashPlayer.jsonpCallback");
+            getDllink();
+            if (clipUrl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
 
         if (clipUrl.contains("/not_available_")) {
@@ -184,7 +205,7 @@ public class ProSevenDe extends PluginForHost {
             downloadRTMP(downloadLink);
         } else {
             /* Happens if usually the clip is streamed via rtmpe --> No HbbTV version available either. */
-            if (clipUrl.contains("no_flash_de")) {
+            if (clipUrl.contains(URLTEXT_NO_FLASH)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol rtmpe:// not supported");
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, clipUrl, true, 0);

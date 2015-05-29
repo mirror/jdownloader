@@ -264,27 +264,28 @@ public class SharerepoCom extends PluginForHost {
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "class=\"title\">([^<>\"]*?)</strong>").getMatch(0);
         }
-        if (fileInfo[1] == null) {
-            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-            if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                // next two are details from sharing box
-                if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
-                    if (fileInfo[1] == null) {
-                        fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
-                        // generic failover#1
-                        if (fileInfo[1] == null) {
-                            fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-                        }
-                        // generic failover#2
-                        if (fileInfo[1] == null) {
-                            fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
-                        }
-                    }
-                }
-            }
-        }
+        /* Filesize is never given for this host */
+        // if (fileInfo[1] == null) {
+        // fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+        // if (fileInfo[1] == null) {
+        // fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+        // // next two are details from sharing box
+        // if (fileInfo[1] == null) {
+        // fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
+        // if (fileInfo[1] == null) {
+        // fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
+        // // generic failover#1
+        // if (fileInfo[1] == null) {
+        // fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+        // }
+        // // generic failover#2
+        // if (fileInfo[1] == null) {
+        // fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
+        // }
+        // }
+        // }
+        // }
+        // }
         if (fileInfo[2] == null) {
             fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }

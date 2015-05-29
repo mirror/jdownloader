@@ -44,6 +44,7 @@ public class FiveSingCom extends PluginForHost {
 
     private static final String CRIPPLEDLINK = "http://(www\\.)?5sing\\.kugou\\.com/(f|y)c/\\d+\\.html";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();

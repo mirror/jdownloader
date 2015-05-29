@@ -233,6 +233,7 @@ public class FilesloopCom extends PluginForHost {
             }
         }
         this.setConstants(account, link);
+        login(false);
 
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
@@ -307,21 +308,7 @@ public class FilesloopCom extends PluginForHost {
             }
         }
 
-        this.getAPISafe(DOMAIN + "login?email=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass()));
-        currLogintoken = getJson("token");
-
-        if (currLogintoken == null) {
-            /* Should never happen */
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
-
-        account.setProperty(PROPERTY_LOGINTOKEN, currLogintoken);
+        login(true);
         this.getAPISafe(DOMAIN + "accountinfo?token=" + currLogintoken);
 
         final String accounttype = getJson("premium");
@@ -373,6 +360,31 @@ public class FilesloopCom extends PluginForHost {
         hostMaxdlsMap.clear();
         ai.setMultiHostSupport(this, supportedhostslist);
         return ai;
+    }
+
+    private void login(final boolean force) throws IOException, PluginException {
+        if (currLogintoken != null && !force) {
+            this.getAPISafe(DOMAIN + "checktoken?token=" + currLogintoken);
+            if (br.containsHTML("\"status\":\"invalid\"")) {
+                logger.info("Current logintoken is still valid");
+                return;
+            } else {
+                logger.info("Current logintoken is invalid --> Performing full login");
+            }
+        }
+        this.getAPISafe(DOMAIN + "login?email=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass()));
+        currLogintoken = getJson("token");
+        if (currLogintoken == null) {
+            /* Should never happen */
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+        this.currAcc.setProperty(PROPERTY_LOGINTOKEN, currLogintoken);
     }
 
     /**
