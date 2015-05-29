@@ -1,4 +1,5 @@
 ExampleMenuEntry=@%s1: %s2
+INTERVAL=指定間隔
 NONE=無し
 ON_ARCHIVE_EXTRACTED=圧縮ファイル解凍完了時
 ON_DOWNLOADS_PAUSE=ダウンロードコントローラー一時停止
@@ -30,11 +31,13 @@ example_infoFile=ダウンロードフォルダに詳細情報をinfoファイ�
 example_play_sound=WAVファイルを再生する
 example_script_name=例
 filepackage=// ファイルパッケージ
+interval_settings=呼出し間隔(㍉秒)
 loading_editor_title=エディタを読込中...
 none_trigger=// このイベントは絶対にトリガーになりません
 permission_msg=イベントスクリプト"%s1"がトリガー"%s2"用の許可を要求しています\nこのスクリプトは以下を試行しています:\n%s3\nこのスクリプトを許可しますか?\n挙動がよく分らない場合はスクリプトの内容を確認して下さい!
 permission_title=イベントスクリプトが許可を必要としています!
 properties_for_eventtrigger=// ========= イベントトリガ %s1 用プロパティ  =========
+reset_link_on_low_speed=低速時にダウンロードをリセット
 script_editor_title=スクリプトエディタ: %s1
 securityLoading=%s1からJavaScriptを読み込み、実行しようとしています。このスクリプトが現在の環境プロパティや関数への完全なアクセス権を持つ事に注意して下さい。絶対に信頼できるコードだけを読み込むようにして下さい! 我々開発者一同は、独自に作成したローカルなJavaScriptだけを読み込む事を推奨します。
 securityLoading_title=セキュリティ警告!
