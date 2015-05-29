@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -50,7 +49,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thefile.me" }, urls = { "https?://(www\\.)?thefile\\.me/[A-Za-z0-9]+" }, flags = { 2 })
-public class TheFileMe extends PluginForHost {
+public class TheFileMe extends antiDDoSForHost {
 
     public TheFileMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -118,13 +117,13 @@ public class TheFileMe extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename;
         String filesize;
         if (available_CHECK_OVER_INFO_PAGE) {
-            br.getPage(link.getDownloadURL() + "~i");
+            getPage(link.getDownloadURL() + "~i");
             if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -135,7 +134,7 @@ public class TheFileMe extends PluginForHost {
             }
             filesize = br.getRegex("Filesize:[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
         } else {
-            br.getPage(link.getDownloadURL());
+            getPage(link.getDownloadURL());
             if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
                 link.setName(getFID(link));
                 link.getLinkStatus().setStatusText(errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT);
@@ -192,7 +191,7 @@ public class TheFileMe extends PluginForHost {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
             } else {
                 if (available_CHECK_OVER_INFO_PAGE) {
-                    br.getPage(downloadLink.getDownloadURL());
+                    getPage(downloadLink.getDownloadURL());
                 }
                 handleErrors();
                 /* Passwords are usually before waittime. */
@@ -310,7 +309,7 @@ public class TheFileMe extends PluginForHost {
         return br.getRegex("\"(https?://(www\\.)?(?:[A-Za-z0-9\\.]+\\.)?" + domains + "/[^<>\"\\?]*?\\?download_token=[A-Za-z0-9]+)\"").getMatch(0);
     }
 
-    private void handlePassword(final DownloadLink dl) throws PluginException, IOException {
+    private void handlePassword(final DownloadLink dl) throws Exception {
         if (br.getURL().contains("/file_password.html")) {
             logger.info("Current link is password protected");
             String passCode = dl.getStringProperty("pass", null);
@@ -323,7 +322,7 @@ public class TheFileMe extends PluginForHost {
                 }
                 dl.setProperty("pass", passCode);
             }
-            br.postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFID(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
+            postPage(br.getURL(), "submit=access+file&submitme=1&file=" + this.getFID(dl) + "&filePassword=" + Encoding.urlEncode(passCode));
             if (br.getURL().contains("/file_password.html")) {
                 logger.info("User entered incorrect password --> Retrying");
                 dl.setProperty("pass", Property.NULL);
@@ -403,22 +402,6 @@ public class TheFileMe extends PluginForHost {
         return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     private String getProtocol() {
         if ((this.br.getURL() != null && this.br.getURL().contains("https://")) || supportshttps_FORCED) {
             return "https://";
@@ -461,11 +444,11 @@ public class TheFileMe extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage(this.getProtocol() + this.getHost() + "/");
+                getPage(this.getProtocol() + this.getHost() + "/");
                 final String lang = System.getProperty("user.language");
                 final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                 if (useOldLoginMethod) {
-                    br.postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                    postPage(this.getProtocol() + this.getHost() + "/login." + type, "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
                     if (br.containsHTML(">Your username and password are invalid<") || !br.containsHTML("/logout\\.html\">logout \\(")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -474,11 +457,11 @@ public class TheFileMe extends PluginForHost {
                         }
                     }
                 } else {
-                    br.getPage(this.getProtocol() + this.getHost() + "/login." + type);
+                    getPage(this.getProtocol() + this.getHost() + "/login." + type);
                     final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                    br.postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     if (!br.containsHTML("\"login_status\":\"success\"")) {
                         if ("de".equalsIgnoreCase(lang)) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -487,7 +470,7 @@ public class TheFileMe extends PluginForHost {
                         }
                     }
                 }
-                br.getPage(loginstart + this.getHost() + "/account_home." + type);
+                getPage(loginstart + this.getHost() + "/account_home." + type);
                 if (!br.containsHTML("class=\"badge badge\\-success\">PAID USER</span>")) {
                     account.setProperty("free", true);
                 } else {
@@ -533,7 +516,7 @@ public class TheFileMe extends PluginForHost {
             MAXPREM.set(account_FREE_MAXDOWNLOADS);
             ai.setStatus("Registered (free) account");
         } else {
-            br.getPage("http://" + this.getHost() + "/upgrade." + type);
+            getPage("http://" + this.getHost() + "/upgrade." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
             final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
@@ -578,7 +561,7 @@ public class TheFileMe extends PluginForHost {
         login(account, false);
         if (account.getBooleanProperty("free", false)) {
             if (!available_CHECK_OVER_INFO_PAGE) {
-                br.getPage(link.getDownloadURL());
+                getPage(link.getDownloadURL());
             }
             doFree(link, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
         } else {
