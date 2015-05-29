@@ -370,6 +370,7 @@ public class FilesloopCom extends PluginForHost {
                 return;
             } else {
                 logger.info("Current logintoken is invalid --> Performing full login");
+                return;
             }
         }
         this.getAPISafe(DOMAIN + "login?email=" + Encoding.urlEncode(this.currAcc.getUser()) + "&password=" + Encoding.urlEncode(this.currAcc.getPass()));

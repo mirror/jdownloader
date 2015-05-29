@@ -165,38 +165,50 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             fpName = new Regex(parameter, "tele5\\.de/([\\w/\\-]+)\\.html").getMatch(0);
         }
 
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("kaltura_player_")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
 
+        final String[] youtubeurls = br.getRegex("\"(https?://(www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getColumn(0);
         final String[] videosinfo = br.getRegex("kWidget\\.(?:thumb)?Embed\\(\\{(.*?)</script>").getColumn(0);
-        if (videosinfo == null || videosinfo.length == 0) {
+        if ((videosinfo == null || videosinfo.length == 0) && (youtubeurls == null || youtubeurls.length == 0)) {
+            if (!br.containsHTML("kaltura_player_")) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
             return null;
         }
 
-        ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
-        for (final String videosource : videosinfo) {
-            HashMap<String, DownloadLink> foundLinks = getURLsFromMedianac(br, decryptedhost, videosource, formats);
+        if (videosinfo != null && videosinfo.length > 0) {
+            for (final String videosource : videosinfo) {
+                HashMap<String, DownloadLink> foundLinks = getURLsFromMedianac(br, decryptedhost, videosource, formats);
 
-            /* Now add the links the user wants. */
-            final Iterator<Entry<String, DownloadLink>> it = foundLinks.entrySet().iterator();
-            while (it.hasNext()) {
-                final Entry<String, DownloadLink> next = it.next();
-                final String qualityInfo = next.getKey();
-                final DownloadLink dl = next.getValue();
-                if (cfg.getBooleanProperty(qualityInfo, false)) {
-                    newRet.add(dl);
+                /* Now add the links the user wants. */
+                final Iterator<Entry<String, DownloadLink>> it = foundLinks.entrySet().iterator();
+                while (it.hasNext()) {
+                    final Entry<String, DownloadLink> next = it.next();
+                    final String qualityInfo = next.getKey();
+                    final DownloadLink dl = next.getValue();
+                    if (cfg.getBooleanProperty(qualityInfo, false)) {
+                        decryptedLinks.add(dl);
+                    }
                 }
             }
         }
 
-        if (newRet.size() > 1) {
+        if (youtubeurls != null && youtubeurls.length > 0) {
+            for (final String yturl : youtubeurls) {
+                decryptedLinks.add(createDownloadlink(yturl));
+            }
+        }
+
+        if (decryptedLinks.size() > 1) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName);
-            fp.addLinks(newRet);
+            fp.addLinks(decryptedLinks);
         }
-        decryptedLinks.addAll(newRet);
+        decryptedLinks.addAll(decryptedLinks);
 
         return decryptedLinks;
     }

@@ -50,7 +50,7 @@ public class FiveSingCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("FileNotFind") || br.getURL().contains("5sing.com/404.htm")) {
+        if (br.getURL().contains("FileNotFind") || br.getURL().contains("5sing.com/404.htm") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String extension = br.getRegex("(<em>)?格式：(</em>)?([^<>\"]*?)(<|&)").getMatch(2);
