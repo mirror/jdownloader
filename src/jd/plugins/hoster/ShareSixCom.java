@@ -167,13 +167,16 @@ public class ShareSixCom extends PluginForHost {
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?(?:sharesix|filenuke)\\.com/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = fnameregex.getMatch(0);
+        }
+        if (filename == null) {
+            filename = new Regex(correctedBR, ">Download File ([^<>\"]*?) \\([^<>\\(\\)]+\\)<").getMatch(0);
+        }
+        if (filename == null) {
+            filename = new Regex(correctedBR, ">Download File(.*?)</").getMatch(0);
             if (filename == null) {
-                filename = new Regex(correctedBR, ">Download File(.*?)</").getMatch(0);
-                if (filename == null) {
-                    // generic regex will pick up false positives (html)
-                    // adjust to make work with COOKIE_HOST
-                    filename = new Regex(correctedBR, "(?i)Filename: ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                }
+                // generic regex will pick up false positives (html)
+                // adjust to make work with COOKIE_HOST
+                filename = new Regex(correctedBR, "(?i)Filename: ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
             }
         }
         /* @ in filename triggers email protection */
