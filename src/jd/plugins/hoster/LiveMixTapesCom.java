@@ -59,6 +59,7 @@ public class LiveMixTapesCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("livemixtapesdecrypted.com/", "livemixtapes.com/"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();

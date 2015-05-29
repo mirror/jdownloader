@@ -174,22 +174,20 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         if (videosinfo == null || videosinfo.length == 0) {
             return null;
         }
-        HashMap<String, DownloadLink> foundLinks_all = new HashMap<String, DownloadLink>();
 
-        /* parse flash url */
         ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
         for (final String videosource : videosinfo) {
             HashMap<String, DownloadLink> foundLinks = getURLsFromMedianac(br, decryptedhost, videosource, formats);
-            foundLinks_all.putAll(foundLinks);
-        }
 
-        final Iterator<Entry<String, DownloadLink>> it = foundLinks_all.entrySet().iterator();
-        while (it.hasNext()) {
-            final Entry<String, DownloadLink> next = it.next();
-            final String qualityInfo = next.getKey();
-            final DownloadLink dl = next.getValue();
-            if (cfg.getBooleanProperty(qualityInfo, false)) {
-                newRet.add(dl);
+            /* Now add the links the user wants. */
+            final Iterator<Entry<String, DownloadLink>> it = foundLinks.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, DownloadLink> next = it.next();
+                final String qualityInfo = next.getKey();
+                final DownloadLink dl = next.getValue();
+                if (cfg.getBooleanProperty(qualityInfo, false)) {
+                    newRet.add(dl);
+                }
             }
         }
 

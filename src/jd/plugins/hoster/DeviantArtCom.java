@@ -150,6 +150,9 @@ public class DeviantArtCom extends PluginForHost {
             filename = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         } else if (link.getDownloadURL().matches(LINKTYPE_JOURNAL)) {
             filename = br.getRegex("title>([^<>\"]*?)\\- DeviantArt</title>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("title>([^<>\"]*?)on DeviantArt</title>").getMatch(0);
+            }
         } else {
             filename = br.getRegex(GENERALFILENAMEREGEX).getMatch(0);
         }
