@@ -24,6 +24,7 @@ import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
 import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
 import org.jdownloader.gui.views.downloads.action.CollapseExpandContextAction;
+import org.jdownloader.gui.views.downloads.action.ConfirmHashValuesDownloadAction;
 import org.jdownloader.gui.views.downloads.action.CopyGenericContextAction;
 import org.jdownloader.gui.views.downloads.action.CreateDLCAction;
 import org.jdownloader.gui.views.downloads.action.ForceDownloadAction;
@@ -151,6 +152,7 @@ public class MenuManagerDownloadTableContext extends ContextMenuManager<FilePack
         more.add(new MenuItemData(new ActionData(MergeToPackageAction.class)));
         more.add(new MenuItemData(new ActionData(SplitPackagesByHost.class)));
         more.add(new MenuItemData(new ActionData(RunCheckSumAction.class)));
+        more.add(new MenuItemData(new ActionData(ConfirmHashValuesDownloadAction.class)));
         more.add(new MenuItemData(new ActionData(CreateDLCAction.class)));
         return more;
     }

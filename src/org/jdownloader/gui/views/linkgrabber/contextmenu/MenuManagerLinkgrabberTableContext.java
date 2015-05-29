@@ -27,7 +27,7 @@ import org.jdownloader.gui.views.components.packagetable.context.SetCommentActio
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadPassword;
 import org.jdownloader.gui.views.components.packagetable.context.URLEditorAction;
 import org.jdownloader.gui.views.downloads.action.CollapseExpandContextAction;
-import org.jdownloader.gui.views.downloads.action.ConfirmHashValuesAction;
+import org.jdownloader.gui.views.downloads.action.ConfirmHashValuesLinkgrabberAction;
 import org.jdownloader.gui.views.downloads.action.CopyGenericContextAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 import org.jdownloader.gui.views.downloads.context.submenu.DeleteMenuContainer;
@@ -43,7 +43,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static MenuManagerLinkgrabberTableContext getInstance() {
@@ -119,7 +119,7 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         mr.add(opt = new OptionalContainer(false));
         opt.add(CollapseExpandContextAction.class);
         opt.add(CopyGenericContextAction.class);
-        opt.add(ConfirmHashValuesAction.class);
+        opt.add(ConfirmHashValuesLinkgrabberAction.class);
 
         return mr;
     }
@@ -173,10 +173,10 @@ public class MenuManagerLinkgrabberTableContext extends ContextMenuManager<Crawl
         PriorityMenuContainer priority;
         priority = new PriorityMenuContainer();
         priority.add(new MenuItemData(new ActionData(PriorityLowerAction.class)));
-        priority.add(new MenuItemData(new ActionData(PriorityDefaultAction.class)));
         priority.add(new MenuItemData(new ActionData(PriorityHighAction.class)));
         priority.add(new MenuItemData(new ActionData(PriorityHigherAction.class)));
         priority.add(new MenuItemData(new ActionData(PriorityHighestAction.class)));
+        priority.add(new MenuItemData(new ActionData(PriorityDefaultAction.class)));
         return priority;
     }
 

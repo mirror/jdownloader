@@ -22,11 +22,11 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.gui.views.linkgrabber.bottombar.IncludedSelectionSetup;
 
-public class ConfirmHashValuesAction extends CustomizableTableContextAppAction implements ActionContext, ExtTableListener, ExtTableModelListener {
+public class ConfirmHashValuesLinkgrabberAction extends CustomizableTableContextAppAction implements ActionContext, ExtTableListener, ExtTableModelListener {
 
     private IncludedSelectionSetup includedSelection;
 
-    public ConfirmHashValuesAction() {
+    public ConfirmHashValuesLinkgrabberAction() {
         super(true, true);
         setIconKey(IconKey.ICON_HASHSUM);
 
