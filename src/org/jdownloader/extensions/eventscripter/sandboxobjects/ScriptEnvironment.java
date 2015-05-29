@@ -521,6 +521,21 @@ public class ScriptEnvironment {
 
     }
 
+    @ScriptAPI(description = "Stop Downloads")
+    public static void stopDownloads() {
+        DownloadWatchDog.getInstance().stopDownloads();
+    }
+
+    @ScriptAPI(description = "Start Downloads")
+    public static void startDownloads() {
+        DownloadWatchDog.getInstance().startDownloads();
+    }
+
+    @ScriptAPI(description = "Pause/Unpause Downloads")
+    public static void setDownloadsPaused(boolean paused) {
+        DownloadWatchDog.getInstance().pauseDownloadWatchDog(paused);
+    }
+
     @ScriptAPI(description = "Check if Download Controller is in IDLE State")
     public static boolean isDownloadControllerIdle() {
         return DownloadWatchDog.getInstance().isIdle();
@@ -541,7 +556,7 @@ public class ScriptEnvironment {
         return DownloadWatchDog.getInstance().isStopping();
     }
 
-    @ScriptAPI(description = "Log to stderr and to JDownload Log")
+    @ScriptAPI(description = "Log to stderr and to JDownloader Log Files")
     public static void log(Object... objects) {
 
         if (objects != null && objects.length == 1) {

@@ -397,7 +397,7 @@ public class UpdateController implements UpdateCallbackInterface {
             InstallLog awfoverview = handler.createAWFInstallLog();
             logger.info(JSonStorage.toString(awfoverview));
             if (awfoverview.getSourcePackages().size() == 0) {
-                logger.info("Nothing to install");
+                logger.info("Nothing to install " + handler.isGuiVisible());
                 // Thread.sleep(1000);
                 handler.setGuiFinished(null);
                 if (settings.isAutohideGuiIfThereAreNoUpdatesEnabled()) {

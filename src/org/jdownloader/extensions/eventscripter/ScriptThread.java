@@ -22,6 +22,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.reflection.Clazz;
@@ -257,7 +258,11 @@ public class ScriptThread extends Thread {
                 evalUNtrusted(js);
 
             } else {
-                String js = IO.readFileToString(new File(fileOrUrl));
+                File file = new File(fileOrUrl);
+                if (!file.exists()) {
+                    file = Application.getResource(fileOrUrl);
+                }
+                String js = IO.readFileToString(file);
                 logger.info(js);
                 evalUNtrusted(js);
 
