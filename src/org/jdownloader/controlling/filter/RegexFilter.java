@@ -69,20 +69,19 @@ public class RegexFilter extends Filter implements Storable {
 
     public int calcPlaceholderCount() {
         int i = 0;
-        try {
-            Matcher matcher = Pattern.compile("\\(.*?\\)", Pattern.CASE_INSENSITIVE).matcher(LinkgrabberFilterRuleWrapper.createPattern(regex, useRegex).pattern());
-            while (matcher.find()) {
-                // System.out.println(matcher.group());
-                i++;
+        if (isEnabled()) {
+            try {
+                Matcher matcher = Pattern.compile("\\(.*?\\)", Pattern.CASE_INSENSITIVE).matcher(LinkgrabberFilterRuleWrapper.createPattern(regex, useRegex).pattern());
+                while (matcher.find()) {
+                    // System.out.println(matcher.group());
+                    i++;
+                }
+            } catch (Throwable e) {
+                e.printStackTrace();
             }
-        } catch (Throwable e) {
-            e.printStackTrace();
         }
         return i;
 
     }
 
-    public boolean matches(String downloadURL) {
-        return false;
-    }
 }
