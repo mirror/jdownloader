@@ -145,4 +145,9 @@ public class EventScripterConfigPanel extends ExtensionConfigPanel<EventScripter
     public void updateContents() {
 
     }
+
+    public void refresh() {
+        // table.repaint();
+        model.update();
+    }
 }

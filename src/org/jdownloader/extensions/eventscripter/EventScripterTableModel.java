@@ -47,7 +47,7 @@ public class EventScripterTableModel extends ExtTableModel<ScriptEntry> implemen
         update();
     }
 
-    private void update() {
+    public void update() {
         new EDTRunner() {
 
             @Override

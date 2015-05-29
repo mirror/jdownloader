@@ -45,6 +45,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.RemoteAPIInternalEventListener;
@@ -280,7 +281,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     }
 
     public void runScript(ScriptEntry script, HashMap<String, Object> props) {
-        new ScriptThread(script, props, getLogger()).start();
+        new ScriptThread(this, script, props, getLogger()).start();
 
     }
 
@@ -573,6 +574,22 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         case START:
         case START_CRACK_PASSWORD:
         case START_EXTRACTION:
+        }
+    }
+
+    public void refreshScripts() {
+        if (intervalController != null) {
+            intervalController.update();
+
+        }
+        if (configPanel != null) {
+            new EDTRunner() {
+
+                @Override
+                protected void runInEDT() {
+                    configPanel.refresh();
+                }
+            };
         }
     }
 }
