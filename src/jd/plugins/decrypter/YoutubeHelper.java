@@ -1275,7 +1275,17 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         }
     }
 
+    /**
+     * this method calls an API which has been deprecated by youtube. TODO: Find new API!
+     *
+     * @deprecated
+     * @param vid
+     * @throws IOException
+     */
     private void doFeedScan(YoutubeClipData vid) throws IOException {
+        if (true) {
+            return;
+        }
         String checkName = cfg.getFilenamePattern() + cfg.getPackagePattern() + cfg.getVideoFilenamePattern() + cfg.getAudioFilenamePattern() + cfg.getSubtitleFilenamePattern() + cfg.getImageFilenamePattern();
         boolean extended = false;
         // only load extra page, if we need the properties
@@ -1302,7 +1312,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 DatatypeFactory f = DatatypeFactory.newInstance();
                 XMLGregorianCalendar xgc = f.newXMLGregorianCalendar(date);
 
-                // vid.date = xgc.toGregorianCalendar().getTime().getTime();
+                vid.date = xgc.toGregorianCalendar().getTime().getTime();
 
             }
 
