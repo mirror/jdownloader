@@ -40,15 +40,17 @@ public class ScriptThread extends Thread {
     private Context                 cx;
     private LogSource               logger;
     private ScriptThread            delegate;
+    private EventScripterExtension  extension;
 
     public LogSource getLogger() {
         return logger;
     }
 
-    public ScriptThread(ScriptEntry script, HashMap<String, Object> props, LogSource logSource) {
+    public ScriptThread(EventScripterExtension eventScripterExtension, ScriptEntry script, HashMap<String, Object> props, LogSource logSource) {
         this.script = script;
         this.props = props;
         this.logger = logSource;
+        this.extension = eventScripterExtension;
     }
 
     @Override
@@ -65,36 +67,47 @@ public class ScriptThread extends Thread {
 
     @Override
     public void run() {
-        scope = new Global();
-        cx = Context.enter();
-        cx.setOptimizationLevel(-1);
-        scope.init(cx);
-        cx.setOptimizationLevel(-1);
-        cx.setLanguageVersion(Context.VERSION_1_5);
+        synchronized (script) {
 
-        try {
+            if (!script.isEnabled()) {
+                return;
+            }
+            scope = new Global();
+            cx = Context.enter();
+            cx.setOptimizationLevel(-1);
+            scope.init(cx);
+            cx.setOptimizationLevel(-1);
+            cx.setLanguageVersion(Context.VERSION_1_5);
 
-            String preloadClasses = preInitClasses();
+            try {
 
-            evalTrusted(preloadClasses);
-            // required by some libraries
-            evalTrusted("global=this;");
+                String preloadClasses = preInitClasses();
 
-            initEnvironment();
-            cleanupClasses();
-            evalUNtrusted(script.getScript());
-            // ProcessBuilderFactory.runCommand(commandline);
-        } catch (Throwable e) {
-            logger.log(e);
-            notifyAboutException(e);
+                evalTrusted(preloadClasses);
+                // required by some libraries
+                evalTrusted("global=this;");
 
-        } finally {
-            Context.exit();
+                initEnvironment();
+                cleanupClasses();
+                evalUNtrusted(script.getScript());
+                // ProcessBuilderFactory.runCommand(commandline);
+            } catch (Throwable e) {
+                logger.log(e);
+                notifyAboutException(e);
+
+            } finally {
+                Context.exit();
+            }
         }
     }
 
     public void notifyAboutException(Throwable e) {
+
         Dialog.getInstance().showExceptionDialog("An Error Occured", e.getMessage(), e);
+        if (script != null) {
+            script.setEnabled(false);
+            extension.refreshScripts();
+        }
     }
 
     private String preInitClasses() {
