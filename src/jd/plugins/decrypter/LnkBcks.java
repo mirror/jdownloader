@@ -59,7 +59,7 @@ public class LnkBcks extends antiDDoSForDecrypt {
         String[] a = new String[getAnnotationNames().length];
         int i = 0;
         for (final String domain : getAnnotationNames()) {
-            a[i] = "http://(?:[a-f0-9]{8}\\." + Pattern.quote(domain) + "/|(?:www\\.)?" + Pattern.quote(domain) + "/(?:(?:link/)?[a-f0-9]{8}|[0-9a-zA-Z]{5}/url/[a-f0-9]+))";
+            a[i] = "http://(?:[a-f0-9]{8}\\." + Pattern.quote(domain) + "/|(?:www\\.)?" + Pattern.quote(domain) + "/(?:(?:link/)?[a-f0-9]{8}|[0-9a-zA-Z]{5}/url/[a-f0-9]+|[a-zA-Z0-9]{4,5}))";
             i++;
         }
         return a;
