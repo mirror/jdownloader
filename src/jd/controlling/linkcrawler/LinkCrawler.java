@@ -1138,7 +1138,7 @@ public class LinkCrawler {
     }
 
     protected LinkCrawlerRule matchesDeepDecryptRule(CrawledLink link, String url) {
-        if (linkCrawlerRules != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+        if (linkCrawlerRules != null && (StringUtils.startsWithCaseInsensitive(url, "http://") || StringUtils.startsWithCaseInsensitive(url, "https://"))) {
             Integer knownDepth = null;
             for (final LinkCrawlerRule rule : linkCrawlerRules) {
                 if (rule.isEnabled() && LinkCrawlerRule.RULE.DEEPDECRYPT.equals(rule.getRule()) && rule.matches(url)) {
