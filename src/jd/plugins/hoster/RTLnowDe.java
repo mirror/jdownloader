@@ -199,6 +199,9 @@ public class RTLnowDe extends PluginForHost {
         downloadLink.setLinkID(urlpart);
         final String apiurl = "https://api.nowtv.de/v3/movies/" + urlpart + "?fields=*,format,files,breakpoints,paymentPaytypes,trailers,pictures,isDrm";
         br.getPage(apiurl);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         format = (LinkedHashMap<String, Object>) entries.get("format");
         if (br.containsHTML("<\\!\\-\\- Payment\\-Teaser \\-\\->")) {
