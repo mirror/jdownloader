@@ -341,6 +341,12 @@ public class FilesloopCom extends PluginForHost {
             } else {
                 resumable = Boolean.parseBoolean((String) resumableo);
             }
+
+            /* WTF they pur their own domain in there... */
+            if (host.equals("filesloop.com")) {
+                continue;
+            }
+
             hostMaxchunksMap.put(host, maxchunks);
             hostMaxdlsMap.put(host, maxdownloads);
             hostResumeMap.put(host, resumable);
@@ -366,10 +372,9 @@ public class FilesloopCom extends PluginForHost {
         if (currLogintoken != null && !force) {
             this.getAPISafe(DOMAIN + "checktoken?token=" + currLogintoken);
             if (br.containsHTML("\"status\":\"invalid\"")) {
-                logger.info("Current logintoken is still valid");
-                return;
-            } else {
                 logger.info("Current logintoken is invalid --> Performing full login");
+            } else {
+                logger.info("Current logintoken is still valid");
                 return;
             }
         }
