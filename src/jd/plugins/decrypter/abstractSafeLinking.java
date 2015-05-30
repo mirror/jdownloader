@@ -84,7 +84,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         // setuid
         uid = getUID(parameter);
         // shortlink i assume
-        if (parameter.matches(regexLinkShort())) {
+        if (parameter.matches(regexLinkShort()) && !parameter.matches(".+/[a-zA-Z0-9]{7}")) {
             // currently https does not work with short links!
             br.getPage(parameter.replace("https://", "http://"));
             String newparameter = br.getRedirectLocation();
@@ -140,11 +140,13 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                     }
                     if (Boolean.parseBoolean(useCaptcha) && captchaType.matches("\\d+")) {
                         // captchas:[
-                        // {name:"SolveMedia",id:0,isDefault:!0,enabled:!0,publicKey:solvemediaPublicKey,init:function(e){!function t(){window.ACPuzzle?window.ACPuzzle.create(e.publicKey,"captcha",{lang:"en",size:"standard"}):setTimeout(t,500)}()},getModel:function(){return{answer:window.ACPuzzle.get_response(),challengeId:window.ACPuzzle.get_challenge()}},refresh:function(){window.ACPuzzle.reload()}},
+                        // {name:"SolveMedia",id:0,isDefault:!0,enabled:!0,publicKey:solvemediaPublicKey,init:function(e){!function
+                        // t(){window.ACPuzzle?window.ACPuzzle.create(e.publicKey,"captcha",{lang:"en",size:"standard"}):setTimeout(t,500)}()},getModel:function(){return{answer:window.ACPuzzle.get_response(),challengeId:window.ACPuzzle.get_challenge()}},refresh:function(){window.ACPuzzle.reload()}},
                         // {name:"Recaptcha",id:1,isDefaultBackup:!0,enabled:!0,publicKey:"6Lf5bAITAAAAABDTzSsLdgMDY1jeK6qE6IKGxvqk",init:function(e){window.renderRecaptchaCB=function(){grecaptcha.render(document.getElementById("recaptcha"),{sitekey:e.publicKey})},$.getScript("https://www.google.com/recaptcha/api.js?onload=renderRecaptchaCB&render=explicit",function(){})},getModel:function(e){return{answer:grecaptcha.getResponse(),challengeId:e.captcha2.publicKey}},refresh:function(){grecaptcha.reset()}},
                         // {name:"Basic captcha",id:2},
                         // {name:"3D captcha",id:3},
-                        // {name:"Fancy captcha",id:4,enabled:!0,init:function(){$.getScript("/assets/components/plugins/fancy_captcha/jquery.captcha.js",function(){$("#fancy").fancy_captcha({captchaDir:"/",url:baseUrl+"/fancy_captcha",imagesDir:"/assets/images/fancycaptcha"})})},getModel:function(e){return window.fancyCaptcha?{answer:window.fancyCaptcha.answer}:null},refresh:function(){}},
+                        // {name:"Fancy captcha",id:4,enabled:!0,init:function(){$.getScript("/assets/components/plugins/fancy_captcha/jquery.captcha.js",function(){$("#fancy").fancy_captcha({captchaDir:"/",url:baseUrl+"/fancy_captcha",imagesDir:"/assets/images/fancycaptcha"})})},getModel:function(e){return
+                        // window.fancyCaptcha?{answer:window.fancyCaptcha.answer}:null},refresh:function(){}},
                         // {name:"QapTcha",id:5,enabled:!0,init:function(e){e.enableQaptcha=!0},getModel:function(e){return{answer:e.security.qaptcha?e.security.captcha2.key:"",challengeId:e.security.captcha2.key}}},
                         // {name:"Simple Captcha",id:6},
                         // {name:"Dotty Captcha",id:7},
@@ -155,7 +157,8 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                         // };
                         final Browser captchaBr = br.cloneBrowser();
                         // captcha handling yay!
-                        // at this given time its always solvemedia by default, recaptcha seems to be secondary default for the refresh/toggle
+                        // at this given time its always solvemedia by default, recaptcha seems to be secondary default for the
+                        // refresh/toggle
                         switch (0) { // Integer.parseInt(captchaType)) {
                         case 0: {
                             PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
@@ -238,9 +241,6 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                             // {"message":"SolveMedia response is not valid (checksum error).","captchaFail":true}
                             // {"message":"puzzle expired","captchaFail":true}
                             // session timed out (due to dialog been open for too long) or captcha solution is wrong!
-                            continue;
-                        } else if (ajax.getHttpConnection().getResponseCode() == 422 && "true".equalsIgnoreCase(getJson(ajax, "captchaFail"))) {
-                            // some catch for incorrect captcha or password.
                             continue;
                         } else if (ajax.getHttpConnection().getResponseCode() == 200) {
                             // this seems good. be aware that the security string is still presence in the successful task
@@ -350,7 +350,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
     }
 
     protected String getUID(final String parameter) {
-        return new Regex(parameter, "/(?:p|d)/([a-z0-9]+)$").getMatch(0);
+        return new Regex(parameter, "/([A-Za-z0-9]+)$").getMatch(0);
     }
 
     protected boolean isOffline() {
