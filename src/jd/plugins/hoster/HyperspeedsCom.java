@@ -315,6 +315,8 @@ public class HyperspeedsCom extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
         } else {
+            /* TODO: Remove this hardcoded value. This is the max. number of daily downloads for free accounts. */
+            account.setMaxSimultanDownloads(2);
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
         }
@@ -548,6 +550,7 @@ public class HyperspeedsCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, this.getHost() + ": You can only generate & download links during happy hours", 1 * 60 * 1000l);
             case 6:
                 statusMessage = "Free account limits exceeded!";
+                this.currAcc.getAccountInfo().setTrafficLeft(0);
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree account limits exceeded!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 7:
                 /* Also covered within canHandle - should never happen here! */

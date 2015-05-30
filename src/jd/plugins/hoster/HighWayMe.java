@@ -288,7 +288,8 @@ public class HighWayMe extends PluginForHost {
         int account_maxdls = ((Number) info_account.get("max_connection")).intValue();
         account_maxdls = this.correctMaxdls(account_maxdls);
         final int account_resume = ((Number) info_account.get("resume")).intValue();
-        final long free_traffic = ((Number) info_account.get("free_traffic")).longValue();
+        /* TODO: Real traffic is missing. */
+        final long free_traffic_max_daily = ((Number) info_account.get("free_traffic")).longValue();
         final long premium_bis = ((Number) info_account.get("premium_bis")).longValue();
         final long premium_traffic = ((Number) info_account.get("premium_traffic")).longValue();
         final long premium_traffic_max = ((Number) info_account.get("premium_max")).longValue();
@@ -300,7 +301,8 @@ public class HighWayMe extends PluginForHost {
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
         } else {
-            ai.setTrafficLeft(free_traffic);
+            ai.setTrafficLeft(free_traffic_max_daily);
+            ai.setTrafficMax(free_traffic_max_daily);
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
         }
