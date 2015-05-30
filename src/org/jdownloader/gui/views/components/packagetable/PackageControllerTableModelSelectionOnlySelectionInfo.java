@@ -126,33 +126,46 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
     public synchronized List<ChildrenType> getUnselectedChildren() {
         if (unselectedChildrenInitialized.get() == false && selectionModel != null) {
             unselectedChildrenInitialized.set(true);
-            PackageControllerTableModelDataPackage lastPackage = null;
             final AtomicInteger lastPackageIndex = new AtomicInteger(0);
             final int maxSize = tableModelData.size();
+            final ArrayList<ChildrenType> unselected = new ArrayList<ChildrenType>();
             for (int selectionIndex = 0; selectionIndex < maxSize; selectionIndex++) {
                 final AbstractNode node = tableModelData.get(selectionIndex);
+                final boolean isSelected = selectionModel.isSelectedIndex(selectionIndex);
                 if (node instanceof AbstractPackageNode) {
-                    if (lastPackage != null) {
-                        for (final AbstractNode child : lastPackage.getVisibleChildren()) {
-                            unselectedChildren.add((ChildrenType) child);
-                        }
-                    }
-                    lastPackage = getPackageData(lastPackageIndex, (PackageType) node);
-                } else if (node instanceof AbstractPackageChildrenNode) {
-                    if (tableModelData.isHiddenPackageSingleChildIndex(selectionIndex)) {
-                        if (lastPackage != null) {
-                            for (final AbstractNode child : lastPackage.getVisibleChildren()) {
+                    unselectedChildren.addAll(unselected);
+                    unselected.clear();
+                    final PackageType pkg = (PackageType) node;
+                    final PackageControllerTableModelDataPackage pkgData = getPackageData(lastPackageIndex, pkg);
+                    if (!pkgData.isExpanded()) {
+                        if (!isSelected) {
+                            for (final AbstractNode child : pkgData.getVisibleChildren()) {
                                 unselectedChildren.add((ChildrenType) child);
                             }
                         }
-                        lastPackage = null;
+                    } else {
+                        if (!isSelected) {
+                            for (final AbstractNode child : pkgData.getVisibleChildren()) {
+                                unselected.add((ChildrenType) child);
+                            }
+                        }
                     }
-                    if (!selectionModel.isSelectedIndex(selectionIndex)) {
-                        unselectedChildren.add((ChildrenType) node);
-                        lastPackage = null;
+                } else if (node instanceof AbstractPackageChildrenNode) {
+                    final boolean hidden = tableModelData.isHiddenPackageSingleChildIndex(selectionIndex);
+                    if (hidden) {
+                        unselectedChildren.addAll(unselected);
+                        unselected.clear();
+                        if (!isSelected) {
+                            unselectedChildren.add((ChildrenType) node);
+                        }
+                    } else {
+                        if (isSelected) {
+                            unselected.remove(node);
+                        }
                     }
                 }
             }
+            unselectedChildren.addAll(unselected);
         }
         return unselectedChildren;
     }

@@ -160,6 +160,10 @@ public class ImDbCom extends PluginForHost {
             con = br.openGetConnection(directlink);
         } else {
             con = br.openHeadConnection(directlink);
+            if (!con.isOK()) {
+                br.followConnection();
+                con = br.openGetConnection(directlink);
+            }
         }
         return con;
     }
