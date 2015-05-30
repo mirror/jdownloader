@@ -84,7 +84,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         // setuid
         uid = getUID(parameter);
         // shortlink i assume
-        if (parameter.matches(regexLinkShort()) && !parameter.matches(".+/[a-zA-Z0-9]{7}")) {
+        if (parameter.matches(regexLinkShort())) {
             // currently https does not work with short links!
             br.getPage(parameter.replace("https://", "http://"));
             String newparameter = br.getRedirectLocation();
@@ -297,7 +297,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         ajax = br.cloneBrowser();
         ajax.getHeaders().put("Accept", "application/json, text/plain, */*");
         ajax.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
-        ajax.getHeaders().put("Origin", br.getBaseURL());
+        ajax.getHeaders().put("Origin", new Regex(br.getURL(), "https?://[^/]+").getMatch(-1));
     }
 
     public ArrayList<DownloadLink> decryptIt_oldStyle(final CryptedLink param, final ProgressController progress) throws Exception {
@@ -395,6 +395,19 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         return "https?://[^/]*" + getShortHost() + "/[a-zA-Z0-9]+";
     }
 
+    /**
+     * according to safelinking admin
+     *
+     * @return
+     */
+    protected static final String regexBase58() {
+        return "[123456789abcdefghijklmnopqrstuwxyzABCDEFGHIJKLMNPQRSTUWXYZ]{7}";
+    }
+
+    protected String regexLinkBase58() {
+        return "https?://[^/]*" + regexSupportedDomains() + "/" + regexBase58();
+    }
+
     protected String getShortHost() {
         return "";
     }
@@ -408,7 +421,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
     }
 
     protected String correctLink(final String string) {
-        final String s = string.replaceFirst("^https?://", enforcesHTTPS() && supportsHTTPS() ? "https://" : "http://");
+        final String s = string.replaceFirst("^https?://", enforcesHTTPS() || supportsHTTPS() ? "https://" : "http://");
         return s;
     }
 
