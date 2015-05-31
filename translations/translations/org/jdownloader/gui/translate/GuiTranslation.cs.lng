@@ -1648,6 +1648,7 @@ gui_table_contextmenu_runchecksum=Spustit úlohu CRC! To ověří data v úložn
 gui_table_contextmenu_stopmark=Nastavit nebo odebrat Stopku
 gui_table_contextmenu_stopmark_set=Zastavit po tomto stahování
 gui_table_contextmenu_stopmark_unset=Odebrat Stopku
+gui_table_contextmnu_runcheksum_explaination=Toto ověří data v úložném zařízení proti odkazu ve sloupci Kontrolní součet.
 gui_treetable_error_plugin=Chyba doplňku
 gui_treetable_tooltip_priority0=Výchozí priorita
 gui_treetable_tooltip_priority1=Vysoká priorita
