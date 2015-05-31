@@ -1648,6 +1648,7 @@ gui_table_contextmenu_runchecksum=Iniciar tarefa CRC! Isto validará os dados no
 gui_table_contextmenu_stopmark=Definir/Remover marca de Pausa
 gui_table_contextmenu_stopmark_set=Baixar até aqui
 gui_table_contextmenu_stopmark_unset=Remover Marca de Pausa
+gui_table_contextmnu_runcheksum_explaination=Isto validará os dados do dispositivo de armazenamento contra a referência da coluna Checksum.
 gui_treetable_error_plugin=Erro no Plugin
 gui_treetable_tooltip_priority0=Sem Prioridade
 gui_treetable_tooltip_priority1=Prioridade Média
