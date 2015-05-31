@@ -809,9 +809,9 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 formatter.setTimeZone(TimeZone.getDefault());
                 date = this.br.getRegex("<strong[^>]*>Published on ([A-Za-z]{3} \\d{1,2}, \\d{4})</strong>").getMatch(0);
             }
-            // yyyy-mm-dd (20150508)
+            // yyyy-MM-dd (20150508)
             if (date == null) {
-                formatter = new SimpleDateFormat("yyyy-mm-dd", locale);
+                formatter = new SimpleDateFormat("yyyy-MM-dd", locale);
                 formatter.setTimeZone(TimeZone.getDefault());
                 date = this.br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d{4}-\\d{2}-\\d{2})\">").getMatch(0);
             }
