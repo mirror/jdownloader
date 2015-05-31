@@ -500,6 +500,12 @@ public class PremiumizeMe extends PluginForHost {
                 }
                 tempUnavailableHoster(account, downloadLink, 30 * 60 * 1000);
                 break;
+            case 500:
+                /* link limit reached, disable plugin for this link */
+                if (statusMessage == null) {
+                    statusMessage = "Error: link limit reached";
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 3 * 60 * 1000l);
             case 502:
                 /* unknown technical error, block host for 3 mins */
                 if (statusMessage == null) {
