@@ -151,7 +151,7 @@ public class FilepackPl extends antiDDoSForHost {
                 }
             }
 
-            filesize = br.getRegex("(?:Filesize|Wielkość Pliku):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
+            filesize = br.getRegex("(?:Filesize|Wielkość Pliku|Rozmiar):[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
 
         } else {
             getPage(link.getDownloadURL());
@@ -417,7 +417,7 @@ public class FilepackPl extends antiDDoSForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
