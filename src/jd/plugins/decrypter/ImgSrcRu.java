@@ -180,7 +180,7 @@ public class ImgSrcRu extends PluginForDecrypt {
         // first link = album uid (uaid), these uid's are not transferable to picture ids (upid). But once you are past album page
         // br.getURL() is the correct upid.
         if (br.getURL().contains("/a" + uaid)) {
-            String currentID = br.getRegex("<img class=(cur|big) src=('|\")?https?://.+imgsrc\\.ru/[a-z]/" + username + "/\\d+/(\\d+)").getMatch(2);
+            String currentID = br.getRegex("<img class=(cur|big) src=('|\")?https?://[^/]*(?:imgsrc\\.ru|icdn\\.ru)/[a-z]/" + username + "/\\d+/(\\d+)").getMatch(2);
             if (currentID == null) {
                 currentID = br.getRegex("/abuse\\.php\\?id=(\\d+)").getMatch(0);
             }
@@ -222,7 +222,7 @@ public class ImgSrcRu extends PluginForDecrypt {
     }
 
     private boolean parseNextPage(CryptedLink param) throws Exception {
-        String nextPage = br.getRegex("<a href=(\"|')?(/" + username + "/\\d+\\.html(\\?pwd=[a-z0-9]{32})?)(\"|')?>(▶|&#9654;)</a>").getMatch(1);
+        String nextPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + username + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32})?)\\1>(▶|&#9654;|&#9658;)</a>").getMatch(1);
         if (nextPage != null) {
             if (!getPage(nextPage, param)) {
                 return false;
