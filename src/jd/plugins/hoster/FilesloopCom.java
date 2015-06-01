@@ -239,6 +239,9 @@ public class FilesloopCom extends PluginForHost {
         if (dllink == null) {
             /* request creation of downloadlink */
             br.setFollowRedirects(true);
+            /* Make sure that the file exists - unnecessary step in my opinion but admin wanted to have it implemented this way. */
+            this.getAPISafe(DOMAIN + "exists?token=" + currLogintoken + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
+            /* Create downloadlink */
             this.getAPISafe(DOMAIN + "filelink?token=" + currLogintoken + "&url=" + Encoding.urlEncode(link.getDownloadURL()));
             dllink = getJson("link");
             if (dllink == null) {
@@ -472,7 +475,7 @@ public class FilesloopCom extends PluginForHost {
     }
 
     /**
-     * 0 = everything ok, 1-99 = official errorcodes, 100-199 = login-errors, 666 = hell
+     * 0 = everything ok, 1-99 = official errorcodes, 100-199 = other errors, 666 = hell
      */
     private void updatestatuscode() {
         /* First look for errorcode */
@@ -495,7 +498,13 @@ public class FilesloopCom extends PluginForHost {
                 statuscode = 666;
             }
         } else {
-            statuscode = 0;
+            final String exists = this.getJson("exists");
+            if ("false".equals(exists)) {
+                statuscode = 100;
+            } else {
+                /* Seems like everything is fine */
+                statuscode = 0;
+            }
         }
     }
 
@@ -544,6 +553,9 @@ public class FilesloopCom extends PluginForHost {
             case 5:
                 /* "invalid-file" --> The name itself has no meaning - its just a general error so we should retry */
                 handleErrorRetries(NICE_HOSTproperty + "timesfailed_apierror_invalidfile", 20, 5 * 60 * 1000l);
+            case 100:
+                /* File offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 666:
                 /* Unknown error */
                 statusMessage = "Unknown error";

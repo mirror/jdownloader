@@ -274,7 +274,7 @@ public class HyperspeedsCom extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     * 
+     *
      * @param error
      *            : The name of the error
      * @param maxRetries
@@ -290,9 +290,8 @@ public class HyperspeedsCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         } else {
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
-            // logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
-            // tempUnavailableHoster(disableTime);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
+            tempUnavailableHoster(disableTime);
         }
     }
 
@@ -431,7 +430,7 @@ public class HyperspeedsCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -477,13 +476,13 @@ public class HyperspeedsCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlSlot
      *            (+1|-1)
      * */
@@ -544,7 +543,7 @@ public class HyperspeedsCom extends PluginForHost {
                 /* Should never happen */
                 statusMessage = "This filehost is only enabled in Premium mode or Link dead or filehoster not supported";
                 // handleErrorRetries(NICE_HOSTproperty + "timesfailed_host_unsupported_or_link_dead", 10, 5 * 60 * 1000l);
-                tempUnavailableHoster(10 * 60 * 1000l);
+                tempUnavailableHoster(5 * 60 * 1000l);
             case 5:
                 /* Also covered within canHandle - should never happen here! */
                 statusMessage = "You can only generate & download links during happy hours";
@@ -565,6 +564,7 @@ public class HyperspeedsCom extends PluginForHost {
                 statusMessage = "Unknown error";
                 logger.info(NICE_HOST + ": Unknown API error");
                 // handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 10, 5 * 60 * 1000l);
+                /* TODO: Remove this once the plugin is tested well enough */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } catch (final PluginException e) {
@@ -575,7 +575,7 @@ public class HyperspeedsCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.

@@ -290,7 +290,8 @@ public class HighWayMe extends PluginForHost {
         final int account_resume = ((Number) info_account.get("resume")).intValue();
         /* TODO: Real traffic is missing. */
         final long free_traffic_max_daily = ((Number) info_account.get("free_traffic")).longValue();
-        long free_traffic_left = free_traffic_max_daily;
+        long free_traffic_left = ((Number) info_account.get("remain_free_traffic")).longValue();
+
         final long premium_bis = ((Number) info_account.get("premium_bis")).longValue();
         final long premium_traffic = ((Number) info_account.get("premium_traffic")).longValue();
         final long premium_traffic_max = ((Number) info_account.get("premium_max")).longValue();
@@ -308,7 +309,7 @@ public class HighWayMe extends PluginForHost {
                 ai.setTrafficMax(free_traffic_max_daily);
             } else {
                 /* User has less traffic than downloadable daily for free users --> Show real traffic left. */
-                ai.setTrafficLeft(free_traffic_max_daily);
+                ai.setTrafficLeft(free_traffic_left);
                 ai.setTrafficMax(free_traffic_max_daily);
             }
             account.setType(AccountType.FREE);

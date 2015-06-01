@@ -74,6 +74,10 @@ import org.jdownloader.DomainInfo;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "save.tv" }, urls = { "https?://(www\\.)?save\\.tv/STV/M/obj/archive/VideoArchiveDetails\\.cfm\\?TelecastID=\\d+" }, flags = { 2 })
 public class SaveTv extends PluginForHost {
 
+    /**
+     * Status 01.06.2015: HD downloads via API do not seem to work anymore. API only always contains HQ instead of HD. Either general
+     * serverside issues or they limited the HD versions to only appear when new API keys are used.
+     */
     /* Static information */
     private static final String  APIKEY_android_1_9_2                      = "Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz";
     /* "Reserve" API Keys - Date: 02.02.2015 */
