@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
@@ -46,31 +47,34 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage\\.premium\\.to/file/[A-Z0-9]+" }, flags = { 2 })
 public class PremiumTo extends PluginForHost {
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new HashMap<Account, HashMap<String, Long>>();
-    private static HashMap<String, Integer>                connectionLimits               = new HashMap<String, Integer>();
-    private static AtomicBoolean                           shareOnlineLocked              = new AtomicBoolean(false);
-    private final String                                   noChunks                       = "noChunks";
-    private static Object                                  LOCK                           = new Object();
-    private final String                                   normalTraffic                  = "normalTraffic";
-    private final String                                   specialTraffic                 = "specialTraffic";
+    private static WeakHashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new WeakHashMap<Account, HashMap<String, Long>>();
+    private static HashMap<String, Integer>                    connectionLimits               = new HashMap<String, Integer>();
+    private static AtomicBoolean                               shareOnlineLocked              = new AtomicBoolean(false);
 
-    private static final String                            lang                           = System.getProperty("user.language");
-    private static final String                            CLEAR_DOWNLOAD_HISTORY_STORAGE = "CLEAR_DOWNLOAD_HISTORY";
-    private static final String                            type_storage                   = "https?://storage\\.premium\\.to/file/[A-Z0-9]+";
-    private static final String                            type_torrent                   = "https?://torrent\\d*\\.premium\\.to/.+";
+    private final String                                       noChunks                       = "noChunks";
+    private static Object                                      LOCK                           = new Object();
+    private final String                                       normalTraffic                  = "normalTraffic";
+    private final String                                       specialTraffic                 = "specialTraffic";
 
-    private static final String                            API_BASE                       = "http://api.premium.to/";
+    private static final String                                lang                           = System.getProperty("user.language");
+    private static final String                                CLEAR_DOWNLOAD_HISTORY_STORAGE = "CLEAR_DOWNLOAD_HISTORY";
+    private static final String                                type_storage                   = "https?://storage\\.premium\\.to/file/[A-Z0-9]+";
+    private static final String                                type_torrent                   = "https?://torrent\\d*\\.premium\\.to/.+";
+
+    private static final String                                API_BASE                       = "http://api.premium.to/";
 
     public PremiumTo(PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(2 * 1000L);
         this.enablePremium("http://premium.to/");
         setConfigElements();
-        /* limit connections for share-online to one */
-        connectionLimits.put("share-online.biz", 1);
-        /* limit connections for keep2share to one */
-        connectionLimits.put("keep2share.cc", 1);
-        connectionLimits.put("k2s.cc", 1);
+        synchronized (connectionLimits) {
+            /* limit connections for share-online to one */
+            connectionLimits.put("share-online.biz", 1);
+            /* limit connections for keep2share to one */
+            connectionLimits.put("keep2share.cc", 1);
+            connectionLimits.put("k2s.cc", 1);
+        }
     }
 
     @Override
@@ -477,7 +481,17 @@ public class PremiumTo extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-
+        if (account != null) {
+            synchronized (hostUnavailableMap) {
+                final HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+                if (unavailableMap != null) {
+                    final Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
+                    if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                        return false;
+                    }
+                }
+            }
+        }
         if (downloadLink.getHost().equals("share-online.biz")) {
             if (shareOnlineLocked.get()) {
                 return false;
@@ -527,8 +541,10 @@ public class PremiumTo extends PluginForHost {
     }
 
     private int getConnections(String host) {
-        if (connectionLimits.containsKey(host)) {
-            return connectionLimits.get(host);
+        synchronized (connectionLimits) {
+            if (connectionLimits.containsKey(host)) {
+                return connectionLimits.get(host);
+            }
         }
         // default is up to 10 connections
         return -10;

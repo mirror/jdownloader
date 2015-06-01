@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.WeakHashMap;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -39,7 +40,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "multihosters.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class MultihostersCom extends PluginForHost {
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+    private static WeakHashMap<Account, HashMap<String, Long>> hostUnavailableMap = new WeakHashMap<Account, HashMap<String, Long>>();
 
     public MultihostersCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -258,6 +259,17 @@ public class MultihostersCom extends PluginForHost {
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (account != null) {
+            synchronized (hostUnavailableMap) {
+                final HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+                if (unavailableMap != null) {
+                    final Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
+                    if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                        return false;
+                    }
+                }
+            }
+        }
         return true;
     }
 
