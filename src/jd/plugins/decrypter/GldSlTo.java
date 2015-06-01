@@ -78,6 +78,12 @@ public class GldSlTo extends PluginForDecrypt {
             } catch (final Throwable e) {
                 // Not available in old 0.9.581 Stable
             }
+            // br.setCookie("goldesel.to", "__utma", "222304525.384242273.1432990594.1432990594.1433159390.2");
+            // br.setCookie("goldesel.to", "__utmz", "222304525.1432990594.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none)");
+            // br.setCookie("goldesel.to", "__utmb", "222304525.1.10.1433159390");
+            // br.setCookie("goldesel.to", "__utmc", "222304525");
+            /* IMPORTANT */
+            br.setCookie("goldesel.to", "__utmt", "1");
             br.postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID));
             if (br.containsHTML("Klicke in den gestrichelten Kreis, der sich somit von den anderen unterscheidet")) {
                 for (int i = 1; i <= 3; i++) {

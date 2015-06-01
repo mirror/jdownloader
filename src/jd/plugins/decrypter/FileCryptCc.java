@@ -197,7 +197,7 @@ public class FileCryptCc extends PluginForDecrypt {
         for (final String singleLink : links) {
             final Browser br2 = br.cloneBrowser();
             br2.getPage("http://filecrypt.cc/Link/" + singleLink + ".html");
-            if (br2.containsHTML("friendlyduck.com/")) {
+            if (br2.containsHTML("friendlyduck.com/") || br2.containsHTML("filecrypt\\.cc/usenet\\.html")) {
                 /* Advertising */
                 continue;
             }

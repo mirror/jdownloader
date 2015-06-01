@@ -38,16 +38,21 @@ public class VideozerUsDecrypter extends PluginForDecrypt {
         final String parameter = param.toString();
         br.getPage(parameter);
         final DownloadLink main = createDownloadlink(parameter.replace("videozer.us/", "videozerdecrypted.us/"));
+        String externID = br.getRegex("file: \\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (externID != null && !externID.endsWith(".mp4")) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("file=(https?://(www\\.)?youtube\\.com/[^<>\"\\&]*?)").getMatch(0);
+        if (externID != null && !externID.endsWith(".mp4")) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         if (!br.containsHTML("id=\"video\\-player\"")) {
             main.setFinalFileName(new Regex(parameter, "videozer\\.us/([A-Za-z0-9\\-_]+)\\.html" + ".mp4").getMatch(0));
             main.setAvailable(false);
             main.setProperty("offline", true);
             decryptedLinks.add(main);
-            return decryptedLinks;
-        }
-        String externID = br.getRegex("file: \\'(http[^<>\"]*?)\\'").getMatch(0);
-        if (externID != null && !externID.endsWith(".mp4")) {
-            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         decryptedLinks.add(main);
