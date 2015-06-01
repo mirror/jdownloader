@@ -99,6 +99,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     /* Some supported url patterns */
     private static final String     PATTERN_SHORT                           = "https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+";
+    private static final String     PATTERN_URL_EXTERN                      = "https?://(?:www\\.)?vk\\.com/away\\.php\\?to=.+";
     private static final String     PATTERN_GENERAL_AUDIO                   = "https?://(www\\.)?vk\\.com/audio.*?";
     private static final String     PATTERN_AUDIO_ALBUM                     = "https?://(www\\.)?vk\\.com/(audio(\\.php)?\\?id=(\\-)?\\d+|audios(\\-)?\\d+)";
     private static final String     PATTERN_AUDIO_PAGE                      = "https?://(www\\.)?vk\\.com/page\\-\\d+_\\d+";
@@ -232,6 +233,10 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.warning("vk.com: Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
                 return null;
             }
+            decryptedLinks.add(createDownloadlink(finallink));
+            return decryptedLinks;
+        } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_URL_EXTERN)) {
+            final String finallink = new Regex(CRYPTEDLINK_ORIGINAL, "\\?to=(.+)").getMatch(0);
             decryptedLinks.add(createDownloadlink(finallink));
             return decryptedLinks;
         } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_SINGLE)) {
@@ -393,6 +398,7 @@ public class VKontakteRu extends PluginForDecrypt {
             } catch (final BrowserException e) {
                 logger.warning("Browser exception thrown: " + e.getMessage());
                 logger.warning("Decrypter failed for link: " + CRYPTEDLINK_FUNCTIONAL);
+                e.printStackTrace();
             } catch (final DecrypterException e) {
                 try {
                     if (e.getMessage().equals(EXCEPTION_ACCPROBLEM)) {
@@ -935,8 +941,6 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final int numberOfEntrys = Integer.parseInt(numberofentries);
         int totalCounter = 0;
-        int onlineCounter = 0;
-        int offlineCounter = 0;
         while (totalCounter < numberOfEntrys) {
             try {
                 if (this.isAbort()) {
@@ -981,33 +985,13 @@ public class VKontakteRu extends PluginForDecrypt {
                     singleVideo = singleVideo.replace("\"", "");
                     logger.info("Decrypting video " + totalCounter + " / " + numberOfEntrys);
                     final String completeVideolink = getProtocoll() + "vk.com/video" + singleVideo;
-                    try {
-                        getPage(br, completeVideolink);
-                        decryptSingleVideo(completeVideolink);
-                    } catch (final DecrypterException e) {
-                        /* Catch offline case and handle it */
-                        final DownloadLink offline = createOffline(completeVideolink);
-                        decryptedLinks.add(offline);
-                    }
-                    if (decryptedLinks == null) {
-                        logger.warning("Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL + "\n");
-                        logger.warning("stopped at: " + completeVideolink);
-                        decryptedLinks = null;
-                        return;
-                    } else if (decryptedLinks.size() == 0) {
-                        offlineCounter++;
-                        logger.info("Continuing, found " + offlineCounter + " offline/invalid videolinks so far...");
-                        continue;
-                    }
-                    onlineCounter++;
+                    this.decryptedLinks.add(createDownloadlink(completeVideolink));
                 } finally {
                     totalCounter++;
                 }
             }
         }
-        logger.info("Total links found: " + totalCounter);
-        logger.info("Total online links: " + onlineCounter);
-        logger.info("Total offline links: " + offlineCounter);
+        logger.info("Total videolinks found: " + totalCounter);
     }
 
     /** Same function in hoster and decrypterplugin, sync it!! */
