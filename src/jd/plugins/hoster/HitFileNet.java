@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -51,13 +52,25 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
 
-    private final String         UA                  = RandomUserAgent.generate();
-    private static final String  RECAPTCHATEXT       = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static final String  CAPTCHATEXT         = "hitfile\\.net/captcha/";
-    private static final String  MAINPAGE            = "http://hitfile.net";
-    public static Object         LOCK                = new Object();
-    private static final String  BLOCKED             = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
-    private static final boolean ENABLE_CRYPTO_STUFF = false;
+    private final String         UA                           = RandomUserAgent.generate();
+    private static final String  RECAPTCHATEXT                = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+    private static final String  CAPTCHATEXT                  = "hitfile\\.net/captcha/";
+    private static final String  MAINPAGE                     = "http://hitfile.net";
+    public static Object         LOCK                         = new Object();
+    private static final String  BLOCKED                      = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
+    private static final boolean ENABLE_CRYPTO_STUFF          = false;
+
+    /* Connection stuff */
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = 1;
+    private static final int     FREE_MAXDOWNLOADS            = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    /* don't touch the following! */
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     public HitFileNet(final PluginWrapper wrapper) {
         super(wrapper);
@@ -186,12 +199,12 @@ public class HitFileNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return maxFree.get();
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @SuppressWarnings("deprecation")
@@ -207,8 +220,9 @@ public class HitFileNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex fileInfo = br.getRegex("class=\\'file-icon\\d+ [a-z0-9]+\\'></span><span>(.*?)</span>[\n\t\r ]+<span style=\"color: #626262; font\\-weight: bold; font\\-size: 14px;\">\\((.*?)\\)</span>");
-        final String filesize = fileInfo.getMatch(1);
+        String filesize = fileInfo.getMatch(1);
         if (filesize != null) {
+            filesize = filesize.replace("б", "b");
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
         }
         String downloadUrl = null, waittime = null;
@@ -435,12 +449,20 @@ public class HitFileNet extends PluginForHost {
             }
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l);
         }
-        dl.startDownload();
+        try {
+            /* add a download slot */
+            controlFree(+1);
+            /* start the dl */
+            dl.startDownload();
+        } finally {
+            /* remove download slot */
+            controlFree(-1);
+        }
     }
 
     @Override
@@ -456,7 +478,7 @@ public class HitFileNet extends PluginForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 logger.info("No traffic left...");
@@ -629,6 +651,25 @@ public class HitFileNet extends PluginForHost {
             return null;
         }
         return result != null ? result.toString() : null;
+    }
+
+    /**
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
+     *
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
+     *
+     * @param controlFree
+     *            (+1|-1)
+     */
+    private synchronized void controlFree(final int num) {
+        logger.info("maxFree was = " + maxFree.get());
+        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+        logger.info("maxFree now = " + maxFree.get());
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
