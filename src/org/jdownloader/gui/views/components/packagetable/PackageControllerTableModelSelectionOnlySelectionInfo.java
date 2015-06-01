@@ -24,6 +24,13 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
     private ListSelectionModel                                               selectionModel = null;
     private final AbstractNode                                               rawContext;
 
+    public static interface SelectionOnlyPackageView<PackageType, ChildrenType> extends PackageView {
+
+        public List<ChildrenType> getVisibleChildren();
+
+        public List<ChildrenType> getInvisibleChildren();
+    }
+
     protected PackageControllerTableModelSelectionOnlySelectionInfo(final AbstractNode contextObject, final PackageControllerTableModel<PackageType, ChildrenType> tableModel) {
         super();
         this.rawContext = contextObject;
@@ -213,7 +220,7 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
                     children.add((ChildrenType) node);
                 }
                 final int size = visible.size();
-                final PackageView<PackageType, ChildrenType> packageView = new PackageView<PackageType, ChildrenType>() {
+                final SelectionOnlyPackageView<PackageType, ChildrenType> packageView = new SelectionOnlyPackageView<PackageType, ChildrenType>() {
 
                     @Override
                     public List<ChildrenType> getChildren() {
@@ -228,6 +235,16 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
                     @Override
                     public boolean isPackageSelected() {
                         return packageSelected;
+                    }
+
+                    @Override
+                    public List<ChildrenType> getVisibleChildren() {
+                        return (List<ChildrenType>) pkgData.getVisibleChildren();
+                    }
+
+                    @Override
+                    public List<ChildrenType> getInvisibleChildren() {
+                        return (List<ChildrenType>) pkgData.getVisibleChildren();
                     }
 
                     @Override
@@ -248,11 +265,21 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
                     children.add((ChildrenType) node);
                 }
                 final int size = visible.size();
-                final PackageView<PackageType, ChildrenType> packageView = new PackageView<PackageType, ChildrenType>() {
+                final SelectionOnlyPackageView<PackageType, ChildrenType> packageView = new SelectionOnlyPackageView<PackageType, ChildrenType>() {
 
                     @Override
                     public List<ChildrenType> getChildren() {
                         return children.subList(index, index + size);
+                    }
+
+                    @Override
+                    public List<ChildrenType> getVisibleChildren() {
+                        return (List<ChildrenType>) pkgData.getVisibleChildren();
+                    }
+
+                    @Override
+                    public List<ChildrenType> getInvisibleChildren() {
+                        return (List<ChildrenType>) pkgData.getVisibleChildren();
                     }
 
                     @Override
@@ -285,11 +312,21 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
                             children.add((ChildrenType) node);
                         }
                         final int size = visible.size();
-                        final PackageView<PackageType, ChildrenType> packageView = new PackageView<PackageType, ChildrenType>() {
+                        final SelectionOnlyPackageView<PackageType, ChildrenType> packageView = new SelectionOnlyPackageView<PackageType, ChildrenType>() {
 
                             @Override
                             public List<ChildrenType> getChildren() {
                                 return children.subList(index, index + size);
+                            }
+
+                            @Override
+                            public List<ChildrenType> getVisibleChildren() {
+                                return (List<ChildrenType>) pkgData.getVisibleChildren();
+                            }
+
+                            @Override
+                            public List<ChildrenType> getInvisibleChildren() {
+                                return (List<ChildrenType>) pkgData.getVisibleChildren();
                             }
 
                             @Override
@@ -318,7 +355,7 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
                 }
                 children.addAll(selectedChildren);
                 final int size = selectedChildren.size();
-                final PackageView<PackageType, ChildrenType> packageView = new PackageView<PackageType, ChildrenType>() {
+                final SelectionOnlyPackageView<PackageType, ChildrenType> packageView = new SelectionOnlyPackageView<PackageType, ChildrenType>() {
 
                     @Override
                     public List<ChildrenType> getChildren() {
@@ -343,6 +380,16 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
                     @Override
                     public List<ChildrenType> getSelectedChildren() {
                         return children.subList(index, index + size);
+                    }
+
+                    @Override
+                    public List<ChildrenType> getVisibleChildren() {
+                        return (List<ChildrenType>) pkgData.getVisibleChildren();
+                    }
+
+                    @Override
+                    public List<ChildrenType> getInvisibleChildren() {
+                        return (List<ChildrenType>) pkgData.getVisibleChildren();
                     }
                 };
                 addPackageView(packageView, pkg);
