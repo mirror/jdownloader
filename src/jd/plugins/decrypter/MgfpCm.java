@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.{1}|photo/\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+)" }, flags = { 0 })
 public class MgfpCm extends PluginForDecrypt {
 
     public MgfpCm(PluginWrapper wrapper) {
@@ -39,6 +39,7 @@ public class MgfpCm extends PluginForDecrypt {
     }
 
     private static final String type_invalid = "https?://(www\\.)?imagefap\\.com/gallery/search=.+";
+    private String              gid          = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -46,6 +47,10 @@ public class MgfpCm extends PluginForDecrypt {
         allPages.add("0");
         br.setFollowRedirects(false);
         String parameter = param.toString();
+        gid = new Regex(parameter, "(?:pictures|gallery)/(\\d+)/").getMatch(0);
+        if (gid == null) {
+            gid = new Regex(parameter, "gallery\\.php\\?p?gid=(\\d+)").getMatch(0);
+        }
         if (parameter.matches(type_invalid)) {
             final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
             link.setFinalFileName(new Regex(parameter, "imagefap\\.com/(.+)").getMatch(0));
@@ -71,6 +76,7 @@ public class MgfpCm extends PluginForDecrypt {
                 br.getPage("http://www.imagefap.com/gallery.php?view=2");
             } else if (!parameter.contains("view=2")) {
                 parameter = addParameter(parameter, "view=2");
+                parameter = addParameter(parameter, "gid=" + gid);
             }
             try {
                 br.getPage(parameter);
@@ -138,7 +144,7 @@ public class MgfpCm extends PluginForDecrypt {
             /**
              * Max number of images per page = 1000, if we got more we always have at least 2 pages
              */
-            final String[] pages = br.getRegex("<a class=link3 href=\"\\?(pgid=\\&amp;gid=\\d+\\&amp;page=|gid=\\d+\\&amp;page=)(\\d+)").getColumn(1);
+            final String[] pages = br.getRegex("<a class=link3 href=\"\\?(pgid=&(?:amp;)?gid=\\d+&(?:amp;)?page=|gid=\\d+&(?:amp;)?page=)(\\d+)").getColumn(1);
             if (pages != null && pages.length != 0) {
                 for (final String page : pages) {
                     if (!allPages.contains(page)) {
