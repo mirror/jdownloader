@@ -41,6 +41,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel.TOGGLEMODE;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelSelectionOnlySelectionInfo.SelectionOnlyPackageView;
 import org.jdownloader.gui.views.components.packagetable.actions.SortPackagesDownloadOrdnerOnColumn;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -320,7 +321,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         for (final PackageView<ParentType, ChildrenType> packageView : selection.getPackageViews()) {
             toSelect.add(packageView.getPackage());
             if (packageView.isExpanded()) {
-                toSelect.addAll(packageView.getChildren());
+                toSelect.addAll(((SelectionOnlyPackageView) packageView).getVisibleChildren());
             }
         }
         selectall = selection.getRawSelection().size() == toSelect.size();
