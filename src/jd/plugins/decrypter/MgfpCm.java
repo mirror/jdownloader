@@ -47,7 +47,7 @@ public class MgfpCm extends PluginForDecrypt {
         allPages.add("0");
         br.setFollowRedirects(false);
         String parameter = param.toString();
-        gid = new Regex(parameter, "(?:pictures|gallery)/(\\d+)/").getMatch(0);
+        gid = new Regex(parameter, "(?:pictures|gallery)/(\\d+)/?").getMatch(0);
         if (gid == null) {
             gid = new Regex(parameter, "gallery\\.php\\?p?gid=(\\d+)").getMatch(0);
         }
