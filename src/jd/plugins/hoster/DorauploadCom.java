@@ -261,6 +261,9 @@ public class DorauploadCom extends PluginForHost {
                 }
             }
         }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "File: <font style=\"[^\"]+\">([^<>\"]*?)<").getMatch(0);
+        }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {
