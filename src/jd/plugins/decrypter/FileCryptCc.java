@@ -19,8 +19,10 @@ package jd.plugins.decrypter;
 import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -41,6 +43,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10})\\.html" }, flags = { 0 })
@@ -133,6 +138,30 @@ public class FileCryptCc extends PluginForDecrypt {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 submitForm(captchaForm);
+            } else if (captchaForm != null && captchaForm.containsHTML("solvemedia\\.com/papi/")) {
+                final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                File cf = null;
+                try {
+                    cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                } catch (final Exception e) {
+                    if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                    }
+                    throw e;
+                }
+                final String code = getCaptchaCode(cf, param);
+                if ("".equals(code)) {
+                    if (counter + 1 < retry) {
+                        continue;
+                    } else {
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    }
+                }
+                final String chid = sm.getChallenge(code);
+                captchaForm.put("adcopy_response", Encoding.urlEncode(code));
+                captchaForm.put("adcopy_challenge", chid);
+                submitForm(captchaForm);
             } else if (captcha != null) {
                 // they use recaptcha response field key for non recaptcha.. math sum and text =
                 // http://filecrypt.cc/captcha/captcha.php?namespace=container
@@ -173,7 +202,12 @@ public class FileCryptCc extends PluginForDecrypt {
             if (!mirror.endsWith("mirror=0")) {
                 br.getPage(mirror);
             }
-            /* First try DLC, then single links */
+            // Use clicknload first as it doesn't rely on JD service.jdownloader.org, which can go down!
+            handleCnl2(decryptedLinks, parameter);
+            if (!decryptedLinks.isEmpty()) {
+                return decryptedLinks;
+            }
+            /* Second try DLC, then single links */
             final String dlc_id = br.getRegex("DownloadDLC\\('([^<>\"]*?)'\\)").getMatch(0);
             if (dlc_id != null) {
                 logger.info("DLC found - trying to add it");
@@ -184,9 +218,7 @@ public class FileCryptCc extends PluginForDecrypt {
             logger.info("DLC successfully added");
             return decryptedLinks;
         }
-
         // this isn't always shown, see 104061178D - raztoki 20141118
-
         logger.info("Trying single link handling");
         final String[] links = br.getRegex("openLink\\('([^<>\"]*?)'").getColumn(0);
         if (links == null || links.length == 0) {
@@ -229,6 +261,32 @@ public class FileCryptCc extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    private void handleCnl2(final ArrayList<DownloadLink> decryptedLinks, final String parameter) throws UnsupportedEncodingException {
+        Form cnl = null;
+        final Form[] forms = br.getForms();
+        for (final Form f : forms) {
+            if (f.hasInputFieldByName("jk")) {
+                cnl = f;
+                break;
+            }
+        }
+        if (cnl != null) {
+            final HashMap<String, String> infos = new HashMap<String, String>();
+            infos.put("crypted", Encoding.urlDecode(cnl.getInputField("crypted").getValue(), false));
+            infos.put("jk", Encoding.urlDecode(cnl.getInputField("jk").getValue(), false));
+            String source = cnl.getInputField("source").getValue();
+            if (StringUtils.isEmpty(source)) {
+                source = parameter.toString();
+            } else {
+                infos.put("source", source);
+            }
+            infos.put("source", source);
+            final String json = JSonStorage.toString(infos);
+            final DownloadLink dl = createDownloadlink("http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")));
+            decryptedLinks.add(dl);
+        }
     }
 
     private final boolean containsCaptcha() {
