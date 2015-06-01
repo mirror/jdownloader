@@ -68,6 +68,7 @@ import org.jdownloader.gui.views.ArraySet;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.SoundSettings;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class ScriptEnvironment {
     private static HashMap<String, Object>                       GLOBAL_PROPERTIES = new HashMap<String, Object>();
@@ -410,6 +411,16 @@ public class ScriptEnvironment {
             }
         }
 
+    }
+
+    @ScriptAPI(description = "Set the Speedlimit in bytes/second. Values<=0 -> Disable Limiter", parameters = { "speedlimit in bytes/second" })
+    public static void setSpeedlimit(int bps) throws EnvironmentException {
+        if (bps > 0) {
+            CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.setValue(bps);
+            CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.setValue(true);
+        } else {
+            CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.setValue(false);
+        }
     }
 
     @ScriptAPI(description = "Get a DownloadList Link by it's uuid", parameters = { "uuid" })

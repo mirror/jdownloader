@@ -10,6 +10,7 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.statistics.StatsManager;
 
 public class OpenURLAction extends AppAction {
 
@@ -34,7 +35,11 @@ public class OpenURLAction extends AppAction {
         } catch (final Throwable e2) {
             LogController.CL().log(e2);
         }
-        if (StringUtils.isEmpty(url)) url = info.getTld();
+        if (StringUtils.isEmpty(url)) {
+            url = info.getTld();
+        }
+        StatsManager.I().track("buypremium/" + "accountmanager/buy/" + id + "/" + url);
+
         CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(url, id));
     }
 }

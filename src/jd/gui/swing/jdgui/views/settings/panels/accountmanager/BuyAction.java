@@ -38,6 +38,7 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.premium.BuyAndAddPremiumAccount;
 import org.jdownloader.premium.BuyAndAddPremiumDialogInterface;
+import org.jdownloader.statistics.StatsManager;
 
 public class BuyAction extends AbstractAction {
     /**
@@ -202,6 +203,7 @@ public class BuyAction extends AbstractAction {
                             if (StringUtils.isEmpty(url)) {
                                 url = buyIt.getPremiumUrl();
                             }
+                            StatsManager.I().track("buypremium/" + "accountmanager/buy/" + (table == null ? "/context" : "/table") + url);
                             CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(url, "accountmanager" + (table == null ? "/context" : "/table")));
                             try {
                                 BuyAndAddPremiumAccount dia;
