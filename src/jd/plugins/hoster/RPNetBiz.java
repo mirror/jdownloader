@@ -146,6 +146,8 @@ public class RPNetBiz extends PluginForHost {
         br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + URLEncoder.encode(account.getPass(), "UTF-8") + "&action=showAccountInformation");
         if (br.toString().contains("Invalid authentication.")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid User : API Key", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else if (br.containsHTML("IP Ban in effect for")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your accounr is temporarily banned", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         JSonObject node = (JSonObject) new JSonFactory(br.toString()).parse();
         JSonObject accountInfo = (JSonObject) node.get("accountInfo");

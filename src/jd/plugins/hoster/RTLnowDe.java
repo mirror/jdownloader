@@ -57,6 +57,10 @@ public class RTLnowDe extends PluginForHost {
         setConfigElements();
     }
 
+    /* Settings */
+    private final String                  DEFAULTTIMEOUT       = "DEFAULTTIMEOUT";
+    private final String                  MINIMUM_FILESIZE     = "MINIMUM_FILESIZE";
+
     /* Tags: rtl-interactive.de, RTL, rtlnow, rtl-now */
     /* General information: The "filmID" is a number which is usually in the html as "film_id" or in the XML 'generate' URL as "para1" */
     /* https?://(www\\.)?<host>/hds/videos/<filmID>/manifest\\-hds\\.f4m */
@@ -247,8 +251,12 @@ public class RTLnowDe extends PluginForHost {
     }
 
     /* Last revision with old handling: BEFORE 30393 */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     private void download(final DownloadLink downloadLink) throws Exception {
+        final String[] duration_str = ((String) entries.get("duration")).split(":");
+        long duration = Long.parseLong(duration_str[0]) * 60 * 60;
+        duration += Long.parseLong(duration_str[1]) * 60;
+        duration += Long.parseLong(duration_str[2]);
         final boolean isFree = ((Boolean) entries.get("free")).booleanValue();
         final boolean isDRM = ((Boolean) entries.get("isDrm")).booleanValue();
         String url_hds = null;
@@ -324,6 +332,11 @@ public class RTLnowDe extends PluginForHost {
             dl = new HLSDownloader(downloadLink, br, url_hls);
             dl.startDownload();
         } else if (url_rtmp != null && ALLOW_RTMP) {
+            final long calculated_filesize = ((bitrate_max * 1000) / 8) * duration;
+            final long calculated_filesize_minimum = (long) (calculated_filesize * 0.9);
+            logger.info("Calculated filesize: " + calculated_filesize);
+            logger.info("Minimum filesize: " + calculated_filesize_minimum);
+
             final Regex urlregex = new Regex(url_rtmp, "/([^/]+)/(\\d+/.+)");
             /*
              * Either we already got rtmp urls or we can try to build them via the playpath-part of our HDS manifest url (see code BEFORE
@@ -340,22 +353,29 @@ public class RTLnowDe extends PluginForHost {
             /* Either use fms-fra[1-32].rtl.de or just fms.rtl.de */
             final String rtmpurl = "rtmpe://fms.rtl.de/" + app + "/";
 
-            downloadLink.setProperty("FLVFIXER", true);
-            dl = new RTMPDownload(this, downloadLink, rtmpurl);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            try {
+                downloadLink.setProperty("FLVFIXER", true);
+                dl = new RTMPDownload(this, downloadLink, rtmpurl);
+                final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
-            rtmp.setPlayPath(rtmp_playpath);
-            rtmp.setPageUrl(pageURL);
-            rtmp.setSwfVfy("http://cdn.static-fra.de/now/vodplayer.swf");
-            rtmp.setFlashVer("WIN 14,0,0,145");
-            rtmp.setApp(app);
-            rtmp.setUrl(rtmpurl);
-            rtmp.setResume(true);
-            rtmp.setRealTime();
-            if (!getPluginConfig().getBooleanProperty("DEFAULTTIMEOUT", false)) {
-                rtmp.setTimeOut(-1);
+                rtmp.setPlayPath(rtmp_playpath);
+                rtmp.setPageUrl(pageURL);
+                rtmp.setSwfVfy("http://cdn.static-fra.de/now/vodplayer.swf");
+                rtmp.setFlashVer("WIN 14,0,0,145");
+                rtmp.setApp(app);
+                rtmp.setUrl(rtmpurl);
+                rtmp.setResume(true);
+                rtmp.setRealTime();
+                if (!getPluginConfig().getBooleanProperty(DEFAULTTIMEOUT, false)) {
+                    rtmp.setTimeOut(-1);
+                }
+                ((RTMPDownload) dl).startDownload();
+            } finally {
+                if (this.getPluginConfig().getBooleanProperty(MINIMUM_FILESIZE, false) && downloadLink.getDownloadCurrent() < calculated_filesize_minimum) {
+                    downloadLink.setChunksProgress(null);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Downloaded file is too small", 5 * 60 * 1000l);
+                }
             }
-            ((RTMPDownload) dl).startDownload();
 
         } else {
             /* TODO */
@@ -546,7 +566,8 @@ public class RTLnowDe extends PluginForHost {
     // }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "DEFAULTTIMEOUT", JDL.L("plugins.hoster.rtlnowde.enabledeafulttimeout", "Enable default timeout?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DEFAULTTIMEOUT, JDL.L("plugins.hoster.rtlnowde.enabledeafulttimeout", "Enable default timeout?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MINIMUM_FILESIZE, JDL.L("plugins.hoster.rtlnowde.enable_minimum_filesize", "Enable minimum filesize to try to prevent too small/crippled files?")).setDefaultValue(false));
     }
 
 }
