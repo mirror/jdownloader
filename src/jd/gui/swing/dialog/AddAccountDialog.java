@@ -67,6 +67,7 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
+import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 
 public class AddAccountDialog extends AbstractDialog<Integer> {
@@ -291,6 +292,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                 if (plugin == null || StringUtils.isEmpty(url = plugin.getBuyPremiumUrl())) {
                     return;
                 }
+                StatsManager.I().track("buypremium/accountmanager/add/table/" + url);
                 CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(url, "accountmanager/table"));
             }
         });
