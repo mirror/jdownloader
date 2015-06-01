@@ -108,6 +108,28 @@ public class VKontakteRuHoster extends PluginForHost {
         return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
+    public static String URLDecode(String urlCoded) throws IOException {
+        final String cp1251 = URLDecoder.decode(urlCoded, "cp1251");
+        final String utf8 = URLDecoder.decode(urlCoded, "UTF-8");
+        int cp1251Count = 0;
+        int utf8Count = 0;
+        for (int index = 0; index < cp1251.length(); index++) {
+            if ('\uFFFD' == cp1251.charAt(index)) {
+                cp1251Count++;
+            }
+        }
+        for (int index = 0; index < utf8.length(); index++) {
+            if ('\uFFFD' == utf8.charAt(index)) {
+                utf8Count++;
+            }
+        }
+        if (cp1251Count < utf8Count) {
+            return cp1251;
+        } else {
+            return utf8;
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -142,13 +164,8 @@ public class VKontakteRuHoster extends PluginForHost {
                     }
                     if (filename != null) {
                         try {
-                            final String cp1251 = URLDecoder.decode(filename, "cp1251");
-                            final String utf8 = URLDecoder.decode(filename, "UTF-8");
-                            if (cp1251.length() < utf8.length()) {
-                                link.setFinalFileName(cp1251);
-                            } else {
-                                link.setFinalFileName(utf8);
-                            }
+                            final String urlDecoded = URLDecode(filename);
+                            link.setFinalFileName(urlDecoded);
                         } catch (final Throwable e) {
                             link.setName(filename);
                         }
