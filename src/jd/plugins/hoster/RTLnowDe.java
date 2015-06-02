@@ -353,28 +353,34 @@ public class RTLnowDe extends PluginForHost {
             /* Either use fms-fra[1-32].rtl.de or just fms.rtl.de */
             final String rtmpurl = "rtmpe://fms.rtl.de/" + app + "/";
 
-            try {
-                downloadLink.setProperty("FLVFIXER", true);
-                dl = new RTMPDownload(this, downloadLink, rtmpurl);
-                final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            downloadLink.setProperty("FLVFIXER", true);
+            dl = new RTMPDownload(this, downloadLink, rtmpurl);
+            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
-                rtmp.setPlayPath(rtmp_playpath);
-                rtmp.setPageUrl(pageURL);
-                rtmp.setSwfVfy("http://cdn.static-fra.de/now/vodplayer.swf");
-                rtmp.setFlashVer("WIN 14,0,0,145");
-                rtmp.setApp(app);
-                rtmp.setUrl(rtmpurl);
-                rtmp.setResume(true);
-                rtmp.setRealTime();
-                if (!getPluginConfig().getBooleanProperty(DEFAULTTIMEOUT, false)) {
-                    rtmp.setTimeOut(-1);
-                }
-                ((RTMPDownload) dl).startDownload();
-            } finally {
-                if (this.getPluginConfig().getBooleanProperty(MINIMUM_FILESIZE, false) && downloadLink.getDownloadCurrent() < calculated_filesize_minimum) {
+            rtmp.setPlayPath(rtmp_playpath);
+            rtmp.setPageUrl(pageURL);
+            rtmp.setSwfVfy("http://cdn.static-fra.de/now/vodplayer.swf");
+            rtmp.setFlashVer("WIN 14,0,0,145");
+            rtmp.setApp(app);
+            rtmp.setUrl(rtmpurl);
+            rtmp.setResume(true);
+            rtmp.setRealTime();
+            if (!getPluginConfig().getBooleanProperty(DEFAULTTIMEOUT, false)) {
+                rtmp.setTimeOut(-1);
+            }
+
+            final boolean downloadSuccessful = ((RTMPDownload) dl).startDownload();
+
+            if (this.getPluginConfig().getBooleanProperty(MINIMUM_FILESIZE, false) && downloadLink.getDownloadCurrent() < calculated_filesize_minimum && downloadSuccessful) {
+                /*
+                 * Maybe the downloaded file is too small - some rtmp servers tend to just stop after small files even though the download
+                 * is by far not complete --> Reset progress and try again later!
+                 */
+                try {
                     downloadLink.setChunksProgress(null);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Downloaded file is too small", 5 * 60 * 1000l);
+                } catch (final Throwable e) {
                 }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Downloaded file is too small", 5 * 60 * 1000l);
             }
 
         } else {
@@ -423,7 +429,7 @@ public class RTLnowDe extends PluginForHost {
         return output;
     }
 
-    /** Returns the main URL that fits the given rtmpdump-app. */
+    /** Returns the main URL that fits the given rtmpdump-app */
     private String convertAppToMainpage(final String input) {
         final String output;
         if (input.equals("nitronow")) {

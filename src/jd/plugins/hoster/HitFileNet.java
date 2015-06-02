@@ -52,30 +52,34 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
 
-    private final String         UA                           = RandomUserAgent.generate();
-    private static final String  RECAPTCHATEXT                = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static final String  CAPTCHATEXT                  = "hitfile\\.net/captcha/";
-    private static final String  MAINPAGE                     = "http://hitfile.net";
-    public static Object         LOCK                         = new Object();
-    private static final String  BLOCKED                      = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
-    private static final boolean ENABLE_CRYPTO_STUFF          = false;
+    /* Settings */
+    private static final String  SETTING_JAC                          = "SETTING_JAC";
+    private static final String  SETTING_FREE_PARALLEL_DOWNLOADSTARTS = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
+
+    private final String         UA                                   = RandomUserAgent.generate();
+    private static final String  RECAPTCHATEXT                        = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+    private static final String  CAPTCHATEXT                          = "hitfile\\.net/captcha/";
+    private static final String  MAINPAGE                             = "http://hitfile.net";
+    public static Object         LOCK                                 = new Object();
+    private static final String  BLOCKED                              = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
+    private static final boolean ENABLE_CRYPTO_STUFF                  = false;
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME                          = true;
+    private static final int     FREE_MAXCHUNKS                       = 1;
+    private static final int     FREE_MAXDOWNLOADS                    = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME               = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS            = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS         = 20;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger totalMaxSimultanFreeDownload         = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
-    private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger maxFree                              = new AtomicInteger(1);
 
+    @SuppressWarnings("deprecation")
     public HitFileNet(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-
         this.enablePremium("http://hitfile.net/premium/emoney/5");
     }
 
@@ -199,7 +203,11 @@ public class HitFileNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return maxFree.get();
+        if (this.getPluginConfig().getBooleanProperty(SETTING_FREE_PARALLEL_DOWNLOADSTARTS, false)) {
+            return FREE_MAXDOWNLOADS;
+        } else {
+            return maxFree.get();
+        }
     }
 
     @Override
@@ -300,7 +308,7 @@ public class HitFileNet extends PluginForHost {
             captchaForm.remove(null);
             for (int i = 1; i <= 2; i++) {
                 String captchaCode;
-                if (!getPluginConfig().getBooleanProperty("JAC", false) || i == 2) {
+                if (!getPluginConfig().getBooleanProperty(SETTING_JAC, false) || i == 2) {
                     captchaCode = getCaptchaCode("hitfile.net.disabled", captchaUrl, downloadLink);
                 } else if (captchaUrl.contains("/basic/")) {
                     logger.info("Handling basic captchas");
@@ -465,6 +473,7 @@ public class HitFileNet extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -501,7 +510,17 @@ public class HitFileNet extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "JAC", JDL.L("plugins.hoster.hitfile.jac", "Enable JAC?")).setDefaultValue(true));
+        String lang_jac = null;
+        String lang_free_dlstarts = null;
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            lang_jac = "Aktiviere JAC Captchaerkennung?";
+            lang_free_dlstarts = "Aktiviere parallele Downloadstarts im free Download Modus?\r\n<html><p style=\"color:#F62817\"><b>Warnung: Diese Einstellung kann zu unnötig vielen nicht akzeptierten Captchaeingaben führen!</b></p></html>";
+        } else {
+            lang_jac = "Activate JAC captcha recognition?";
+            lang_free_dlstarts = "Activate parallel downloadstarts in free mode?\r\n<html><p style=\"color:#F62817\"><b>Warning: This setting can lead to a lot of non-accepted captcha popups!</b></p></html>";
+        }
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_JAC, JDL.L("plugins.hoster.hitfile.jac", lang_jac)).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_FREE_PARALLEL_DOWNLOADSTARTS, JDL.L("plugins.hoster.hitfile.simultan_Free_downloadstarts", lang_free_dlstarts)).setDefaultValue(false));
     }
 
     private String hf(final int i) {

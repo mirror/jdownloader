@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boobinspector.com" }, urls = { "http://(www\\.)?boobinspector\\.com/videos/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boobinspector.com" }, urls = { "http://(www\\.)?boobinspectordecrypted\\.com/videos/\\d+" }, flags = { 0 })
 public class BoobInspectorCom extends PluginForHost {
 
     public BoobInspectorCom(PluginWrapper wrapper) {
@@ -44,12 +44,18 @@ public class BoobInspectorCom extends PluginForHost {
         return "http://www.boobinspector.com/legal#terms";
     }
 
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("boobinspectordecrypted.com/", "boobinspector.com/"));
+    }
+
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
