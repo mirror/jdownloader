@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.SortedMap;
@@ -55,7 +54,6 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "invitationfile.com" }, urls = { "https?://(www\\.)?invitationfile\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class InvitationfileCom extends PluginForHost {
@@ -64,7 +62,7 @@ public class InvitationfileCom extends PluginForHost {
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://invitationfile.com";
+    private static final String            COOKIE_HOST                  = "http://www.invitationfile.com";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
@@ -85,7 +83,7 @@ public class InvitationfileCom extends PluginForHost {
     private static final boolean           SUPPORTSHTTPS                = false;
     private static final boolean           SUPPORTSHTTPS_FORCED         = false;
     private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
-    private final boolean                  ENABLE_RANDOM_UA             = false;
+    private final boolean                  ENABLE_RANDOM_UA             = true;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Waittime stuff */
     private static final boolean           WAITFORCED                   = false;
@@ -1038,6 +1036,7 @@ public class InvitationfileCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        br = new Browser();
         final AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
@@ -1047,32 +1046,39 @@ public class InvitationfileCom extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
-        if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
-            /* free users it's provided by default */
-            ai.setUsedSpace(space[0] + " " + space[1]);
-        } else if ((space != null && space.length != 0) && space[0] != null) {
-            /* premium users the Mb value isn't provided for some reason... */
-            ai.setUsedSpace(space[0] + "Mb");
-        }
+        // final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+        // if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
+        // /* free users it's provided by default */
+        // ai.setUsedSpace(space[0] + " " + space[1]);
+        // } else if ((space != null && space.length != 0) && space[0] != null) {
+        // /* premium users the Mb value isn't provided for some reason... */
+        // ai.setUsedSpace(space[0] + "Mb");
+        // }
         account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
-        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            availabletraffic.trim();
+        final String[] availabletraffic = new Regex(correctedBR, ">My download quota left today:.*?Use ([-\\d\\.]+ (?:KB|MB|GB|TB)) of ([-\\d\\.]+ (?:KB|MB|GB|TB))<").getRow(0);
+        if (availabletraffic != null && availabletraffic.length == 2) {
             /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
-            if (!availabletraffic.startsWith("-")) {
-                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            if (!availabletraffic[0].startsWith("-")) {
+                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic[0]));
             } else {
                 ai.setTrafficLeft(0);
+            }
+            if (availabletraffic[1] != null) {
+                ai.setTrafficMax(SizeFormatter.getSize(availabletraffic[1]));
             }
         } else {
             ai.setUnlimitedTraffic();
         }
-        /* If the premium account is expired we'll simply accept it as a free account. */
-        final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
         long expire_milliseconds = 0;
-        if (expire != null) {
-            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
+        /* If the premium account is expired we'll simply accept it as a free account. */
+        // final String expire = new Regex(correctedBR,
+        // "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+        // if (expire != null) {
+        // expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
+        // }
+        final String dl = br.getRegex(regexDaysLeft).getMatch(0);
+        if (dl != null) {
+            expire_milliseconds = Integer.parseInt(dl) * 24 * 60 * 60 * 1000l;
         }
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
@@ -1084,7 +1090,7 @@ public class InvitationfileCom extends PluginForHost {
             } catch (final Throwable e) {
                 /* not available in old Stable 0.9.581 */
             }
-            ai.setStatus("Registered (free) account");
+            ai.setStatus("Free Account");
         } else {
             ai.setValidUntil(expire_milliseconds);
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
@@ -1096,10 +1102,12 @@ public class InvitationfileCom extends PluginForHost {
             } catch (final Throwable e) {
                 /* not available in old Stable 0.9.581 */
             }
-            ai.setStatus("Premium account");
+            ai.setStatus("Premium Account");
         }
         return ai;
     }
+
+    private String regexDaysLeft = ">Premium left time:</b></font></td>\\s*<td><b>(\\d+) Day</b>";
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
@@ -1139,10 +1147,20 @@ public class InvitationfileCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                // this seems to be required
+                try {
+                    br.cloneBrowser().openGetConnection("/app/asset/image/header_bg.png");
+                    br.cloneBrowser().openGetConnection("/app/asset/image/logo.png");
+                    br.cloneBrowser().openGetConnection("/app/asset/image/header_button_register.png");
+                } catch (final Exception e) {
+                }
                 loginform.put("username", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
+                Thread.sleep(5357);
                 submitForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                // they don't seem to set any premium cookies... they must attach to the PHPSESSID cookie
+                // if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                if (!br.getURL().endsWith("/account/info")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -1151,10 +1169,7 @@ public class InvitationfileCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                if (!br.getURL().contains("/?op=my_account")) {
-                    getPage("/?op=my_account");
-                }
-                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
+                if (!new Regex(correctedBR, regexDaysLeft).matches()) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);
