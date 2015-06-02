@@ -1,5 +1,6 @@
 package jd.controlling.linkcrawler;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -50,6 +51,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Files;
+import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -737,66 +739,82 @@ public class LinkCrawler {
                 Browser br = null;
                 try {
                     processedLinksCounter.incrementAndGet();
-                    br = new Browser();
-                    br.setFollowRedirects(false);
-                    final URLConnectionAdapter connection = openCrawlDeeperConnection(br, source);
-                    final LinkCrawlerRule matchingRule = source.getMatchingRule();
-                    if (matchingRule != null && LinkCrawlerRule.RULE.FOLLOWREDIRECT.equals(matchingRule.getRule())) {
-                        try {
-                            br.getHttpConnection().disconnect();
-                        } catch (Throwable e) {
-                        }
-                        final CrawledLink followRedirectLink = crawledLinkFactorybyURL(connection.getRequest().getUrl());
-                        forwardCrawledLinkInfos(source, followRedirectLink, lm, sourceURLs, true);
-                        final ArrayList<CrawledLink> followRedirectLinks = new ArrayList<CrawledLink>();
-                        followRedirectLinks.add(followRedirectLink);
-                        crawl(generation, followRedirectLinks);
-                    } else {
-                        final List<CrawledLink> inspectedLinks = getDeepInspector().deepInspect(this, br, connection, source);
-                        /*
-                         * downloadable content, we use directhttp and distribute the url
-                         */
-                        if (inspectedLinks != null) {
-                            if (inspectedLinks.size() >= 0) {
-                                final boolean singleDest = inspectedLinks.size() == 1;
-                                for (final CrawledLink possibleCryptedLink : inspectedLinks) {
-                                    forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
+                    if (StringUtils.startsWithCaseInsensitive(source.getURL(), "file://")) {
+                        final File file = new File(new URL(source.getURL()).toURI());
+                        if (file.exists() && file.isFile()) {
+                            final int readLimit = Math.max(1 * 1024 * 1024, CONFIG.getDeepDecryptLoadLimit());
+                            final String fileContent = new String(IO.readFile(file, readLimit), "UTF-8");
+                            final List<CrawledLink> fileContentLinks = find(fileContent, null, false);
+                            if (fileContentLinks != null) {
+                                final boolean singleDest = fileContentLinks.size() == 1;
+                                for (final CrawledLink fileContentLink : fileContentLinks) {
+                                    forwardCrawledLinkInfos(source, fileContentLink, lm, sourceURLs, singleDest);
                                 }
-                                crawl(generation, inspectedLinks);
+                                crawl(generation, fileContentLinks);
                             }
+                        }
+                    } else {
+                        br = new Browser();
+                        br.setFollowRedirects(false);
+                        final URLConnectionAdapter connection = openCrawlDeeperConnection(br, source);
+                        final LinkCrawlerRule matchingRule = source.getMatchingRule();
+                        if (matchingRule != null && LinkCrawlerRule.RULE.FOLLOWREDIRECT.equals(matchingRule.getRule())) {
+                            try {
+                                br.getHttpConnection().disconnect();
+                            } catch (Throwable e) {
+                            }
+                            final CrawledLink followRedirectLink = crawledLinkFactorybyURL(connection.getRequest().getUrl());
+                            forwardCrawledLinkInfos(source, followRedirectLink, lm, sourceURLs, true);
+                            final ArrayList<CrawledLink> followRedirectLinks = new ArrayList<CrawledLink>();
+                            followRedirectLinks.add(followRedirectLink);
+                            crawl(generation, followRedirectLinks);
                         } else {
-                            /* try to load the webpage and find links on it */
-                            // We need browser currentURL and not sourceURL, because of possible redirects will change domain and or
-                            // relative
-                            // path.
-                            final String finalBaseUrl = new Regex(br.getURL(), "(https?://.*?)(\\?|$)").getMatch(0);
-                            final String browserContent = br.toString();
-                            final List<CrawledLink> possibleCryptedLinks = find(br.getURL(), null, false);
-                            if (possibleCryptedLinks != null) {
-                                final boolean singleDest = possibleCryptedLinks.size() == 1;
-                                for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
-                                    forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
+                            final List<CrawledLink> inspectedLinks = getDeepInspector().deepInspect(this, br, connection, source);
+                            /*
+                             * downloadable content, we use directhttp and distribute the url
+                             */
+                            if (inspectedLinks != null) {
+                                if (inspectedLinks.size() >= 0) {
+                                    final boolean singleDest = inspectedLinks.size() == 1;
+                                    for (final CrawledLink possibleCryptedLink : inspectedLinks) {
+                                        forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
+                                    }
+                                    crawl(generation, inspectedLinks);
                                 }
-                                if (possibleCryptedLinks.size() == 1) {
-                                    /* first check if the url itself can be handled */
-                                    final CrawledLink link = possibleCryptedLinks.get(0);
-                                    link.setUnknownHandler(new UnknownCrawledLinkHandler() {
+                            } else {
+                                /* try to load the webpage and find links on it */
+                                // We need browser currentURL and not sourceURL, because of possible redirects will change domain and or
+                                // relative
+                                // path.
+                                final String finalBaseUrl = new Regex(br.getURL(), "(https?://.*?)(\\?|$)").getMatch(0);
+                                final String browserContent = br.toString();
+                                final List<CrawledLink> possibleCryptedLinks = find(br.getURL(), null, false);
+                                if (possibleCryptedLinks != null) {
+                                    final boolean singleDest = possibleCryptedLinks.size() == 1;
+                                    for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
+                                        forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
+                                    }
+                                    if (possibleCryptedLinks.size() == 1) {
+                                        /* first check if the url itself can be handled */
+                                        final CrawledLink link = possibleCryptedLinks.get(0);
+                                        link.setUnknownHandler(new UnknownCrawledLinkHandler() {
 
-                                        @Override
-                                        public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
-                                            /* unhandled url, lets parse the content on it */
-                                            final List<CrawledLink> possibleCryptedLinks2 = lc.find(browserContent, finalBaseUrl, false);
-                                            if (possibleCryptedLinks2 != null && possibleCryptedLinks2.size() > 0) {
-                                                final boolean singleDest = possibleCryptedLinks2.size() == 1;
-                                                for (final CrawledLink possibleCryptedLink : possibleCryptedLinks2) {
-                                                    forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
+                                            @Override
+                                            public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
+                                                /* unhandled url, lets parse the content on it */
+                                                final List<CrawledLink> possibleCryptedLinks2 = lc.find(browserContent, finalBaseUrl, false);
+                                                if (possibleCryptedLinks2 != null && possibleCryptedLinks2.size() > 0) {
+                                                    final boolean singleDest = possibleCryptedLinks2.size() == 1;
+                                                    for (final CrawledLink possibleCryptedLink : possibleCryptedLinks2) {
+                                                        forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
+                                                    }
+                                                    lc.crawl(generation, possibleCryptedLinks2);
                                                 }
-                                                lc.crawl(generation, possibleCryptedLinks2);
                                             }
-                                        }
-                                    });
+                                        });
+                                    }
+                                    crawl(generation, possibleCryptedLinks);
                                 }
-                                crawl(generation, possibleCryptedLinks);
                             }
                         }
                     }
@@ -804,7 +822,9 @@ public class LinkCrawler {
                     LogController.CL().log(e);
                 } finally {
                     try {
-                        br.getHttpConnection().disconnect();
+                        if (br != null) {
+                            br.getHttpConnection().disconnect();
+                        }
                     } catch (Throwable e) {
                     }
                 }
@@ -1260,7 +1280,7 @@ public class LinkCrawler {
     }
 
     protected LinkCrawlerRule matchesDeepDecryptRule(CrawledLink link, String url) {
-        if (linkCrawlerRules != null && (StringUtils.startsWithCaseInsensitive(url, "http://") || StringUtils.startsWithCaseInsensitive(url, "https://"))) {
+        if (linkCrawlerRules != null && (StringUtils.startsWithCaseInsensitive(url, "file://") || StringUtils.startsWithCaseInsensitive(url, "http://") || StringUtils.startsWithCaseInsensitive(url, "https://"))) {
             Integer knownDepth = null;
             for (final LinkCrawlerRule rule : linkCrawlerRules) {
                 if (rule.isEnabled() && LinkCrawlerRule.RULE.DEEPDECRYPT.equals(rule.getRule()) && rule.matches(url)) {
