@@ -28,6 +28,7 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -160,7 +161,14 @@ public class XHamsterCom extends PluginForHost {
         if (aa != null) {
             login(this.br, aa, false);
         }
-        br.getPage(downloadLink.getDownloadURL());
+        try {
+            br.getPage(downloadLink.getDownloadURL());
+        } catch (final BrowserException e) {
+            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 410) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            throw e;
+        }
         // embeded correction
         if (downloadLink.getDownloadURL().contains(".com/xembed.php")) {
             String realpage = br.getRegex("main_url=(http[^\\&]+)").getMatch(0);

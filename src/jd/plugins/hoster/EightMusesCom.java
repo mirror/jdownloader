@@ -68,7 +68,7 @@ public class EightMusesCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<b>Notice</b>:")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = new Regex(downloadLink.getDownloadURL(), "8muses\\.com/(.+)").getMatch(0);
+        String filename = new Regex(downloadLink.getDownloadURL(), "8muses\\.com/picture/(?:\\d+\\-)?(.+)").getMatch(0);
         filename = filename.replace("/", "_");
         DLLINK = br.getRegex("\"(//s\\.8muses\\.com/../_data/[^<>\"]*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) {

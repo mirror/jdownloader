@@ -425,7 +425,7 @@ public class ChoMikujPl extends PluginForDecrypt {
         // Herausfinden wie viele Seiten der Link hat
         int pageCount = 1;
         if (param.toString().matches(PAGEDECRYPTLINK)) {
-            pageCount = Integer.parseInt(new Regex(param.toString(), ",(\\d+)$").getMatch(0));
+            pageCount = Integer.parseInt(new Regex(parameter, ",(\\d+)$").getMatch(0));
         } else {
             pageCount = getPageCount(parameter);
         }
@@ -453,7 +453,7 @@ public class ChoMikujPl extends PluginForDecrypt {
             }
 
             for (int i = 1; i <= pageCount; i++) {
-                final DownloadLink dl = createDownloadlink("http://chomikujpagedecrypt.pl/result/" + Encoding.Base64Decode(parameter + "," + i));
+                final DownloadLink dl = createDownloadlink("http://chomikujpagedecrypt.pl/result/" + Encoding.Base64Encode(parameter + "," + i));
                 dl.setProperty("reallink", parameter);
                 fp.add(dl);
                 try {
