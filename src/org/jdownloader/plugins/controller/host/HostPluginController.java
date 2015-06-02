@@ -46,7 +46,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
 
     /**
      * get the only existing instance of HostPluginController. This is a singleton
-     * 
+     *
      * @return
      */
     public static HostPluginController getInstance() {
@@ -57,7 +57,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
     private volatile List<LazyHostPlugin>        lastKnownPlugins = null;
     private final AtomicLong                     lastModification = new AtomicLong(-1l);
     private volatile LazyHostPlugin              fallBackPlugin   = null;
-    private final ModifyLock                     lock             = new ModifyLock();
+    private static final ModifyLock              LOCK             = new ModifyLock();
 
     public LazyHostPlugin getFallBackPlugin() {
         ensureLoaded();
@@ -202,11 +202,12 @@ public class HostPluginController extends PluginController<PluginForHost> {
             }
             LogController.setRebirthLogger(null);
             validateCache();
-            if (lastKnownPlugins != null) {
+            final List<LazyHostPlugin> lLastKnownPlugins = lastKnownPlugins;
+            if (lLastKnownPlugins != null) {
                 final AtomicLong lastModification = new AtomicLong(this.lastModification.get());
                 final Thread saveThread = new Thread("@HostPluginController:save") {
                     public void run() {
-                        save(lastKnownPlugins, lastModification);
+                        save(lLastKnownPlugins, lastModification);
                     };
                 };
                 saveThread.setDaemon(true);
@@ -239,11 +240,11 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     private List<LazyHostPlugin> loadFromCache(final AtomicLong lastFolderModification) throws IOException {
-        final boolean readL = lock.readLock();
+        final boolean readL = LOCK.readLock();
         try {
             return LazyHostPluginCache.read(Application.getTempResource(getCache()), lastFolderModification);
         } finally {
-            lock.readUnlock(readL);
+            LOCK.readUnlock(readL);
         }
     }
 
@@ -392,16 +393,20 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     private void save(List<LazyHostPlugin> save, final AtomicLong lastFolderModification) {
-        lock.writeLock();
-        final File cache = Application.getTempResource(getCache());
-        try {
-            LazyHostPluginCache.write(save, cache, lastFolderModification);
-        } catch (final Throwable e) {
-            LogController.CL(false).log(e);
-            cache.delete();
-        } finally {
-            lock.writeUnlock();
-            FileCreationManager.getInstance().delete(Application.getTempResource(TMP_INVALIDPLUGINS), null);
+        if (save != null) {
+            LOCK.writeLock();
+            final File cache = Application.getTempResource(getCache());
+            try {
+                LazyHostPluginCache.write(save, cache, lastFolderModification);
+            } catch (final Throwable e) {
+                final LogSource log = LogController.CL(false);
+                log.log(e);
+                log.close();
+                cache.delete();
+            } finally {
+                LOCK.writeUnlock();
+                FileCreationManager.getInstance().delete(Application.getTempResource(TMP_INVALIDPLUGINS), null);
+            }
         }
     }
 

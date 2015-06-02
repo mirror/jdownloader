@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +15,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.appwork.utils.IO;
 import org.appwork.utils.awfc.AWFCUtils;
+import org.appwork.utils.net.CountingInputStream;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 
 public class LazyCrawlerPluginCache {
@@ -46,31 +46,35 @@ public class LazyCrawlerPluginCache {
         final ArrayList<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>();
         if (file.exists()) {
             final ByteArrayOutputStream byteBuffer = readFile(file);
-            final InputStream bis = new ByteArrayInputStream(byteBuffer.toByteArray(), 0, byteBuffer.size());
-            final AWFCUtils is = new AWFCUtils(bis);
-            if (CACHEVERSION != is.readShort()) {
-                throw new IOException("Outdated CacheVersion");
-            }
-            final long lastModified = is.readLong();
-            final int lazyPluginClassSize = is.readShort();
-            final byte[] sha256 = new byte[32];
-            final byte[] stringBuffer = new byte[32767];
-            for (int lazyPluginClassIndex = 0; lazyPluginClassIndex < lazyPluginClassSize; lazyPluginClassIndex++) {
-                final LazyPluginClass lazyPluginClass = new LazyPluginClass(is.readString(stringBuffer), is.ensureRead(32, sha256), is.readLong(), (int) is.readLong(), is.readLong());
-                final int lazyCrawlerPluginSize = is.readShort();
-                for (int lazyHostPluginIndex = 0; lazyHostPluginIndex < lazyCrawlerPluginSize; lazyHostPluginIndex++) {
-                    final LazyCrawlerPlugin lazyCrawlerPlugin = new LazyCrawlerPlugin(lazyPluginClass, is.readString(stringBuffer), is.readString(stringBuffer), null, null);
-                    lazyCrawlerPlugin.setPluginUsage(is.readLongOptimized());
-                    final int flags = is.ensureRead();
-                    lazyCrawlerPlugin.setHasConfig((flags & (1 << 1)) != 0);
-                    if ((flags & (1 << 4)) != 0) {
-                        lazyCrawlerPlugin.setConfigInterface(is.readString(stringBuffer));
-                    }
-                    ret.add(lazyCrawlerPlugin);
+            final CountingInputStream bis = new CountingInputStream(new ByteArrayInputStream(byteBuffer.toByteArray(), 0, byteBuffer.size()));
+            try {
+                final AWFCUtils is = new AWFCUtils(bis);
+                if (CACHEVERSION != is.readShort()) {
+                    throw new IOException("Outdated CacheVersion");
                 }
-            }
-            if (lastModification != null) {
-                lastModification.set(lastModified);
+                final long lastModified = is.readLong();
+                final int lazyPluginClassSize = is.readShort();
+                final byte[] sha256 = new byte[32];
+                final byte[] stringBuffer = new byte[32767];
+                for (int lazyPluginClassIndex = 0; lazyPluginClassIndex < lazyPluginClassSize; lazyPluginClassIndex++) {
+                    final LazyPluginClass lazyPluginClass = new LazyPluginClass(is.readString(stringBuffer), is.ensureRead(32, sha256), is.readLong(), (int) is.readLong(), is.readLong());
+                    final int lazyCrawlerPluginSize = is.readShort();
+                    for (int lazyHostPluginIndex = 0; lazyHostPluginIndex < lazyCrawlerPluginSize; lazyHostPluginIndex++) {
+                        final LazyCrawlerPlugin lazyCrawlerPlugin = new LazyCrawlerPlugin(lazyPluginClass, is.readString(stringBuffer), is.readString(stringBuffer), null, null);
+                        lazyCrawlerPlugin.setPluginUsage(is.readLongOptimized());
+                        final int flags = is.ensureRead();
+                        lazyCrawlerPlugin.setHasConfig((flags & (1 << 1)) != 0);
+                        if ((flags & (1 << 4)) != 0) {
+                            lazyCrawlerPlugin.setConfigInterface(is.readString(stringBuffer));
+                        }
+                        ret.add(lazyCrawlerPlugin);
+                    }
+                }
+                if (lastModification != null) {
+                    lastModification.set(lastModified);
+                }
+            } catch (final IOException e) {
+                throw new IOException(e.getMessage() + " (" + bis.transferedBytes() + "/" + bis.available() + ")", e);
             }
         }
         return ret;
@@ -124,7 +128,9 @@ public class LazyCrawlerPluginCache {
                     }
                 }
             }
+            bos.flush();
             bos.close();
+            fos.close();
             fos = null;
         } finally {
             if (fos != null) {

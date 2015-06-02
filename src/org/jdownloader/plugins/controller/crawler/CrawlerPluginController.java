@@ -30,7 +30,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     private static final Object                                           INSTANCELOCK      = new Object();
     private static volatile MinTimeWeakReference<CrawlerPluginController> INSTANCE          = null;
     private static final AtomicBoolean                                    CACHE_INVALIDATED = new AtomicBoolean(false);
-    private final ModifyLock                                              lock              = new ModifyLock();
+    private static final ModifyLock                                       LOCK              = new ModifyLock();
+    private static final AtomicLong                                       LATESTVERSION     = new AtomicLong(0);
 
     public static boolean isCacheInvalidated() {
         return CACHE_INVALIDATED.get();
@@ -68,10 +69,11 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     @Override
     protected void finalize() throws Throwable {
-        save(list, lastModification);
+        save(list, new AtomicLong(this.lastModification.get()));
     };
 
     private volatile List<LazyCrawlerPlugin> list             = null;
+    private final long                       currentVersion   = LATESTVERSION.incrementAndGet();
     private final AtomicLong                 lastModification = new AtomicLong(-1l);
 
     private String getCache() {
@@ -149,10 +151,11 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                     logger.info("@CrawlerPluginController: init took " + (System.currentTimeMillis() - completeTimeStamp));
                 }
                 logger.close();
-                if (list != null) {
+                if (llist != null) {
+                    final AtomicLong lastModification = new AtomicLong(this.lastModification.get());
                     Thread saveThread = new Thread("@CrawlerPluginController:save") {
                         public void run() {
-                            save(list, lastModification);
+                            save(llist, lastModification);
                         };
                     };
                     saveThread.setDaemon(true);
@@ -165,11 +168,11 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     private List<LazyCrawlerPlugin> loadFromCache(final AtomicLong lastFolderModification) throws IOException {
-        final boolean readL = lock.readLock();
+        final boolean readL = LOCK.readLock();
         try {
             return LazyCrawlerPluginCache.read(Application.getTempResource(getCache()), lastFolderModification);
         } finally {
-            lock.readUnlock(readL);
+            LOCK.readUnlock(readL);
         }
     }
 
@@ -256,17 +259,23 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         return retList;
     }
 
+    private boolean isCurrentVersion() {
+        return currentVersion == LATESTVERSION.get();
+    }
+
     private void save(List<LazyCrawlerPlugin> save, final AtomicLong lastFolderModification) {
-        if (list != null) {
-            lock.writeLock();
+        if (save != null && isCurrentVersion()) {
+            LOCK.writeLock();
             final File cache = Application.getTempResource(getCache());
             try {
                 LazyCrawlerPluginCache.write(save, cache, lastFolderModification);
             } catch (final Throwable e) {
-                LogController.CL(false).log(e);
+                final LogSource log = LogController.CL(false);
+                log.log(e);
+                log.close();
                 cache.delete();
             } finally {
-                lock.writeUnlock();
+                LOCK.writeUnlock();
                 FileCreationManager.getInstance().delete(Application.getResource(HostPluginController.TMP_INVALIDPLUGINS), null);
             }
         }
