@@ -25,19 +25,16 @@ public abstract class AbstractToolBarAction extends CustomizableAppAction implem
 
     public AbstractToolBarAction() {
         super();
-
         GUIEventSender.getInstance().addListener(this, true);
         onGuiMainTabSwitch(null, MainTabbedPane.getInstance().getSelectedView());
     }
 
     @Override
     public void onGuiMainTabSwitch(View oldView, View newView) {
-
         if (isVisibleInAllTabs()) {
             setVisible(true);
             return;
         }
-
         if (isVisibleInDownloadTab() && newView instanceof DownloadsView) {
             setVisible(true);
             return;
@@ -46,9 +43,7 @@ public abstract class AbstractToolBarAction extends CustomizableAppAction implem
             setVisible(true);
             return;
         }
-
         setVisible(false);
-
     }
 
     public static final String ITEM_VISIBLE_FOR_SELECTIONS = "itemVisibleForSelections";

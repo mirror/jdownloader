@@ -35,6 +35,7 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -303,45 +304,46 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
     }
 
     void updateGUI() {
-        new EDTRunner() {
-            protected void runInEDT() {
-                try {
-                    String str = getRouterName();
+        if (!Application.isHeadless()) {
+            new EDTRunner() {
+                protected void runInEDT() {
+                    try {
+                        String str = getRouterName();
 
-                    if (settings.getRouterData().getManufactor() != null && settings.getRouterData().getManufactor().length() > 0) {
-                        if (str.length() > 0) {
-                            str += " - ";
+                        if (settings.getRouterData().getManufactor() != null && settings.getRouterData().getManufactor().length() > 0) {
+                            if (str.length() > 0) {
+                                str += " - ";
+                            }
+                            str += settings.getRouterData().getManufactor();
                         }
-                        str += settings.getRouterData().getManufactor();
+                        LiveHeaderReconnect.this.txtName.setText(str);
+                    } catch (final Throwable e) {
+                        // throws an Throwable if the caller
+                        // is a changelistener of this field's document
                     }
-                    LiveHeaderReconnect.this.txtName.setText(str);
-                } catch (final Throwable e) {
-                    // throws an Throwable if the caller
-                    // is a changelistener of this field's document
-                }
-                try {
-                    LiveHeaderReconnect.this.txtIP.setText(settings.getRouterIP());
-                } catch (final Throwable e) {
-                    // throws an Throwable if the caller
-                    // is a changelistener of this field's document
-                }
-                try {
-                    LiveHeaderReconnect.this.txtPassword.setPassword(settings.getPassword().toCharArray());
-                } catch (final Throwable e) {
-                    // throws an Throwable if the caller
-                    // is a changelistener of this field's document
-                }
-                try {
-                    LiveHeaderReconnect.this.txtUser.setText(settings.getUserName());
-                } catch (final Throwable e) {
-                    // throws an Throwable if the caller
-                    // is a changelistener of this field's document
+                    try {
+                        LiveHeaderReconnect.this.txtIP.setText(settings.getRouterIP());
+                    } catch (final Throwable e) {
+                        // throws an Throwable if the caller
+                        // is a changelistener of this field's document
+                    }
+                    try {
+                        LiveHeaderReconnect.this.txtPassword.setPassword(settings.getPassword().toCharArray());
+                    } catch (final Throwable e) {
+                        // throws an Throwable if the caller
+                        // is a changelistener of this field's document
+                    }
+                    try {
+                        LiveHeaderReconnect.this.txtUser.setText(settings.getUserName());
+                    } catch (final Throwable e) {
+                        // throws an Throwable if the caller
+                        // is a changelistener of this field's document
+                    }
+
                 }
 
-            }
-
-        };
-
+            };
+        }
     }
 
     public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
@@ -349,43 +351,41 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
 
     public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
         if (keyHandler.isChildOf(settings)) {
-
             updateGUI();
             if (!keyHandler.getKey().equalsIgnoreCase("AlreadySendToCollectServer2")) {
                 settings.setAlreadySendToCollectServer3(false);
             }
         } else {
-            // disabled
-            RouterSendAction action = new RouterSendAction(this);
-            if (!action.isEnabled()) {
-                return;
-            }
-            LogController.CL().info("Successful reonnects in a row: " + JsonConfig.create(ReconnectConfig.class).getSuccessCounter());
-            synchronized (this) {
+            if (!Application.isHeadless()) {
+                // disabled
+                RouterSendAction action = new RouterSendAction(this);
+                if (!action.isEnabled()) {
+                    return;
+                }
+                LogController.CL().info("Successful reonnects in a row: " + JsonConfig.create(ReconnectConfig.class).getSuccessCounter());
+                synchronized (this) {
+                    if (!settings.isAlreadySendToCollectServer3() && ReconnectPluginController.getInstance().getActivePlugin() == this) {
+                        if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() > 3) {
+                            if (CloseReason.OK == UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN, T._.LiveHeaderReconnect_onConfigValueModified_ask_title(), T._.LiveHeaderReconnect_onConfigValueModified_ask_msg(), icon, null, null) {
 
-                if (!settings.isAlreadySendToCollectServer3() && ReconnectPluginController.getInstance().getActivePlugin() == this) {
-                    if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() > 3) {
-                        if (CloseReason.OK == UIOManager.I().show(ConfirmDialogInterface.class, new ConfirmDialog(UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN, T._.LiveHeaderReconnect_onConfigValueModified_ask_title(), T._.LiveHeaderReconnect_onConfigValueModified_ask_msg(), icon, null, null) {
+                                {
+                                    setTimeout(5 * 60 * 1000);
+                                }
 
-                            {
-                                setTimeout(5 * 60 * 1000);
+                            }).getCloseReason()) {
+
+                                action.actionPerformed(null);
+
                             }
-
-                        }).getCloseReason()) {
-
-                            action.actionPerformed(null);
-
+                            settings.setAlreadySendToCollectServer3(true);
                         }
-                        settings.setAlreadySendToCollectServer3(true);
                     }
                 }
             }
         }
-
     }
 
     public void setSetup(ReconnectResult reconnectResult) {
-
         if (reconnectResult.getInvoker() instanceof LiveHeaderInvoker) {
             LiveHeaderInvoker i = (LiveHeaderInvoker) reconnectResult.getInvoker();
             RouterData rd = ((LiveHeaderReconnectResult) reconnectResult).getRouterData();
@@ -395,17 +395,17 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
             settings.setUserName(i.getUser());
             settings.setRouterIP(i.getRouter());
             // changed script.reset router sender state
-            if (i.getScript() != null && i.getScript().equals(JsonConfig.create(LiveHeaderReconnectSettings.class).getScript())) {
-                JsonConfig.create(LiveHeaderReconnectSettings.class).setAlreadySendToCollectServer3(false);
+            final LiveHeaderReconnectSettings liveHeaderReconnectSettings = JsonConfig.create(LiveHeaderReconnectSettings.class);
+            if (i.getScript() != null && i.getScript().equals(liveHeaderReconnectSettings.getScript())) {
+                liveHeaderReconnectSettings.setAlreadySendToCollectServer3(false);
             }
 
             settings.setScript(i.getScript());
-
-            JsonConfig.create(ReconnectConfig.class).setSecondsBeforeFirstIPCheck((int) reconnectResult.getOfflineDuration() / 1000);
-            JsonConfig.create(ReconnectConfig.class).setSecondsToWaitForIPChange((int) (reconnectResult.getMaxSuccessDuration() / 1000));
-            JsonConfig.create(ReconnectConfig.class).setSecondsToWaitForOffline((int) reconnectResult.getMaxOfflineDuration() / 1000);
+            final ReconnectConfig reconnectConfig = JsonConfig.create(ReconnectConfig.class);
+            reconnectConfig.setSecondsBeforeFirstIPCheck((int) reconnectResult.getOfflineDuration() / 1000);
+            reconnectConfig.setSecondsToWaitForIPChange((int) (reconnectResult.getMaxSuccessDuration() / 1000));
+            reconnectConfig.setSecondsToWaitForOffline((int) reconnectResult.getMaxOfflineDuration() / 1000);
             updateGUI();
-
         }
     }
 

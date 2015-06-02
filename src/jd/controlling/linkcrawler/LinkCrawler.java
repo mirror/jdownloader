@@ -1,5 +1,6 @@
 package jd.controlling.linkcrawler;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -25,11 +26,15 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
+import jd.controlling.HTACCESSController;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -42,12 +47,23 @@ import jd.plugins.PluginsC;
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.swing.dialog.LoginDialog;
+import org.appwork.utils.swing.dialog.LoginDialogInterface;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.BasicAuth;
+import org.jdownloader.auth.InvalidBasicAuthFormatException;
+import org.jdownloader.auth.Login;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.UrlProtection;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.LazyPluginClass;
@@ -60,6 +76,7 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.translate._JDT;
 
 public class LinkCrawler {
 
@@ -596,6 +613,103 @@ public class LinkCrawler {
         return false;
     }
 
+    protected URLConnectionAdapter openCrawlDeeperConnection(Browser br, CrawledLink source) throws IOException {
+        final HashSet<String> loopAvoid = new HashSet<String>();
+        Request request = new GetRequest(source.getURL());
+        loopAvoid.add(request.getUrl());
+        URLConnectionAdapter connection = null;
+        for (int i = 0; i < 10; i++) {
+            final ArrayList<String> basicAuths = new ArrayList<String>();
+            final String basicAuthinURL = new Regex(request.getUrl(), "https?://(.+)@.*?($|/)").getMatch(0);
+            if (basicAuthinURL != null) {
+                basicAuths.add("Basic " + Encoding.Base64Encode(basicAuthinURL));
+            }
+            final List<Login> knownAuths = AuthenticationController.getInstance().getSortedLoginsList(request.getUrl());
+            if (knownAuths != null) {
+                for (final Login knownAuth : knownAuths) {
+                    final String basicAuth = knownAuth.toBasicAuth();
+                    if (StringUtils.isNotEmpty(basicAuth)) {
+                        basicAuths.add(basicAuth);
+                    }
+                }
+            }
+            basicAuths.add("");
+            basicAuths.add(null);
+            authLoop: for (String basicAuth : basicAuths) {
+                if (connection != null) {
+                    connection.setAllowedResponseCodes(new int[] { connection.getResponseCode() });
+                    br.followConnection();
+                }
+                final boolean ask = basicAuth == null;
+                boolean remember = false;
+                if (ask) {
+                    final LoginDialog loginDialog = new LoginDialog(UIOManager.LOGIC_COUNTDOWN, _GUI._.AskForPasswordDialog_AskForPasswordDialog_title_(), _JDT._.Plugin_requestLogins_message(), new AbstractIcon(IconKey.ICON_PASSWORD, 32));
+                    loginDialog.setTimeout(60 * 1000);
+                    final LoginDialogInterface handle = UIOManager.I().show(LoginDialogInterface.class, loginDialog);
+                    final String userNameAndPassword;
+                    if (handle.getCloseReason() == CloseReason.OK) {
+                        userNameAndPassword = handle.getUsername() + ":" + handle.getPassword();
+                        remember = handle.isRememberSelected();
+                    } else {
+                        userNameAndPassword = null;
+                    }
+                    if (StringUtils.isEmpty(userNameAndPassword)) {
+                        return connection;
+                    } else {
+                        basicAuth = "Basic " + Encoding.Base64Encode(userNameAndPassword);
+                    }
+                }
+                request = request.cloneRequest();
+                if (StringUtils.isNotEmpty(basicAuth)) {
+                    request.getHeaders().put("Authorization", basicAuth);
+                } else {
+                    request.getHeaders().remove("Authorization");
+                }
+                connection = br.openRequestConnection(request);
+                if (connection.getResponseCode() == 401 || connection.getResponseCode() == 403) {
+                    if (connection.getHeaderField("WWW-Authenticate") == null) {
+                        return connection;
+                    }
+                    if (StringUtils.isNotEmpty(basicAuth)) {
+                        try {
+                            AuthenticationController.getInstance().invalidate(new BasicAuth(basicAuth), request.getUrl());
+                        } catch (InvalidBasicAuthFormatException ignore) {
+                        }
+                    }
+                    continue authLoop;
+                } else if (connection.isOK()) {
+                    if (StringUtils.isNotEmpty(basicAuth)) {
+                        try {
+                            final BasicAuth auth = new BasicAuth(basicAuth);
+                            if (ask && remember) {
+                                HTACCESSController.getInstance().addValidatedAuthentication(request.getUrl(), auth.getUsername(), auth.getPassword());
+                            }
+                            AuthenticationController.getInstance().validate(auth, request.getUrl());
+                        } catch (InvalidBasicAuthFormatException ignore) {
+                        }
+                    }
+                    break authLoop;
+                } else {
+                    return connection;
+                }
+            }
+            final String location = request.getLocation();
+            if (location != null) {
+                try {
+                    br.followConnection();
+                } catch (Throwable e) {
+                }
+                if (loopAvoid.add(location) == false) {
+                    return connection;
+                }
+                request = br.createRedirectFollowingRequest(request);
+            } else {
+                return connection;
+            }
+        }
+        return connection;
+    }
+
     protected void crawlDeeper(final int generation, final CrawledLink source) {
         final CrawledLinkModifier sourceLinkModifier = source.getCustomCrawledLinkModifier();
         source.setCustomCrawledLinkModifier(null);
@@ -625,69 +739,65 @@ public class LinkCrawler {
                     processedLinksCounter.incrementAndGet();
                     br = new Browser();
                     br.setFollowRedirects(false);
-                    String url = source.getURL();
-                    final HashSet<String> loopAvoid = new HashSet<String>();
-                    loopAvoid.add(url);
-                    br.openGetConnection(url);
-                    for (int i = 0; i < 10; i++) {
-                        if (br.getRedirectLocation() != null) {
-                            try {
-                                br.followConnection();
-                            } catch (Throwable e) {
-                            }
-                            url = br.getRedirectLocation();
-                            if (loopAvoid.add(url) == false) {
-                                break;
-                            }
-                            br.openGetConnection(url);
-                        } else {
-                            break;
+                    final URLConnectionAdapter connection = openCrawlDeeperConnection(br, source);
+                    final LinkCrawlerRule matchingRule = source.getMatchingRule();
+                    if (matchingRule != null && LinkCrawlerRule.RULE.FOLLOWREDIRECT.equals(matchingRule.getRule())) {
+                        try {
+                            br.getHttpConnection().disconnect();
+                        } catch (Throwable e) {
                         }
-                    }
-                    final List<CrawledLink> inspectedLinks = getDeepInspector().deepInspect(this, br, br.getHttpConnection(), source);
-                    /*
-                     * downloadable content, we use directhttp and distribute the url
-                     */
-                    if (inspectedLinks != null) {
-                        if (inspectedLinks.size() >= 0) {
-                            final boolean singleDest = inspectedLinks.size() == 1;
-                            for (final CrawledLink possibleCryptedLink : inspectedLinks) {
-                                forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
-                            }
-                            crawl(generation, inspectedLinks);
-                        }
+                        final CrawledLink followRedirectLink = crawledLinkFactorybyURL(connection.getRequest().getUrl());
+                        forwardCrawledLinkInfos(source, followRedirectLink, lm, sourceURLs, true);
+                        final ArrayList<CrawledLink> followRedirectLinks = new ArrayList<CrawledLink>();
+                        followRedirectLinks.add(followRedirectLink);
+                        crawl(generation, followRedirectLinks);
                     } else {
-                        /* try to load the webpage and find links on it */
-                        // We need browser currentURL and not sourceURL, because of possible redirects will change domain and or relative
-                        // path.
-                        final String finalBaseUrl = new Regex(br.getURL(), "(https?://.*?)(\\?|$)").getMatch(0);
-                        final String browserContent = br.toString();
-                        final List<CrawledLink> possibleCryptedLinks = find(url, null, false);
-                        if (possibleCryptedLinks != null) {
-                            final boolean singleDest = possibleCryptedLinks.size() == 1;
-                            for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
-                                forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
+                        final List<CrawledLink> inspectedLinks = getDeepInspector().deepInspect(this, br, connection, source);
+                        /*
+                         * downloadable content, we use directhttp and distribute the url
+                         */
+                        if (inspectedLinks != null) {
+                            if (inspectedLinks.size() >= 0) {
+                                final boolean singleDest = inspectedLinks.size() == 1;
+                                for (final CrawledLink possibleCryptedLink : inspectedLinks) {
+                                    forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
+                                }
+                                crawl(generation, inspectedLinks);
                             }
-                            if (possibleCryptedLinks.size() == 1) {
-                                /* first check if the url itself can be handled */
-                                final CrawledLink link = possibleCryptedLinks.get(0);
-                                link.setUnknownHandler(new UnknownCrawledLinkHandler() {
+                        } else {
+                            /* try to load the webpage and find links on it */
+                            // We need browser currentURL and not sourceURL, because of possible redirects will change domain and or
+                            // relative
+                            // path.
+                            final String finalBaseUrl = new Regex(br.getURL(), "(https?://.*?)(\\?|$)").getMatch(0);
+                            final String browserContent = br.toString();
+                            final List<CrawledLink> possibleCryptedLinks = find(br.getURL(), null, false);
+                            if (possibleCryptedLinks != null) {
+                                final boolean singleDest = possibleCryptedLinks.size() == 1;
+                                for (final CrawledLink possibleCryptedLink : possibleCryptedLinks) {
+                                    forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
+                                }
+                                if (possibleCryptedLinks.size() == 1) {
+                                    /* first check if the url itself can be handled */
+                                    final CrawledLink link = possibleCryptedLinks.get(0);
+                                    link.setUnknownHandler(new UnknownCrawledLinkHandler() {
 
-                                    @Override
-                                    public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
-                                        /* unhandled url, lets parse the content on it */
-                                        final List<CrawledLink> possibleCryptedLinks2 = lc.find(browserContent, finalBaseUrl, false);
-                                        if (possibleCryptedLinks2 != null && possibleCryptedLinks2.size() > 0) {
-                                            final boolean singleDest = possibleCryptedLinks2.size() == 1;
-                                            for (final CrawledLink possibleCryptedLink : possibleCryptedLinks2) {
-                                                forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
+                                        @Override
+                                        public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
+                                            /* unhandled url, lets parse the content on it */
+                                            final List<CrawledLink> possibleCryptedLinks2 = lc.find(browserContent, finalBaseUrl, false);
+                                            if (possibleCryptedLinks2 != null && possibleCryptedLinks2.size() > 0) {
+                                                final boolean singleDest = possibleCryptedLinks2.size() == 1;
+                                                for (final CrawledLink possibleCryptedLink : possibleCryptedLinks2) {
+                                                    forwardCrawledLinkInfos(source, possibleCryptedLink, lm, sourceURLs, singleDest);
+                                                }
+                                                lc.crawl(generation, possibleCryptedLinks2);
                                             }
-                                            lc.crawl(generation, possibleCryptedLinks2);
                                         }
-                                    }
-                                });
+                                    });
+                                }
+                                crawl(generation, possibleCryptedLinks);
                             }
-                            crawl(generation, possibleCryptedLinks);
                         }
                     }
                 } catch (Throwable e) {
@@ -905,7 +1015,7 @@ public class LinkCrawler {
         return null;
     }
 
-    protected Boolean distributeDeeper(final int generation, final String url, final CrawledLink link) {
+    protected Boolean distributeDeeperOrFollowRedirect(final int generation, final String url, final CrawledLink link) {
         try {
             new URL(link.getURL());
         } catch (MalformedURLException e) {
@@ -913,7 +1023,8 @@ public class LinkCrawler {
         }
         try {
             LinkCrawlerRule rule = null;
-            if ((rule = matchesDeepDecryptRule(link, url)) != null || link.isCrawlDeep()) {
+            /* do not change order, it is important to check redirect first */
+            if ((rule = matchesFollowRedirectRule(link, url)) != null || (link.isCrawlDeep() || (rule = matchesDeepDecryptRule(link, url)) != null)) {
                 if (link != null) {
                     link.setMatchingRule(rule);
                 }
@@ -1109,7 +1220,7 @@ public class LinkCrawler {
                             /* lets retry this crawledLink */
                             continue mainloopretry;
                         }
-                        final Boolean ret = distributeDeeper(generation, url, possibleCryptedLink);
+                        final Boolean ret = distributeDeeperOrFollowRedirect(generation, url, possibleCryptedLink);
                         if (Boolean.FALSE.equals(ret)) {
                             return;
                         } else if (Boolean.TRUE.equals(ret)) {
@@ -1127,9 +1238,20 @@ public class LinkCrawler {
     }
 
     protected LinkCrawlerRule matchesDirectHTTPRule(CrawledLink link, String url) {
-        if (linkCrawlerRules != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+        if (linkCrawlerRules != null && (StringUtils.startsWithCaseInsensitive(url, "http://") || StringUtils.startsWithCaseInsensitive(url, "https://"))) {
             for (final LinkCrawlerRule rule : linkCrawlerRules) {
                 if (rule.isEnabled() && LinkCrawlerRule.RULE.DIRECTHTTP.equals(rule.getRule()) && rule.matches(url)) {
+                    return rule;
+                }
+            }
+        }
+        return null;
+    }
+
+    protected LinkCrawlerRule matchesFollowRedirectRule(CrawledLink link, String url) {
+        if (linkCrawlerRules != null && (StringUtils.startsWithCaseInsensitive(url, "http://") || StringUtils.startsWithCaseInsensitive(url, "https://"))) {
+            for (final LinkCrawlerRule rule : linkCrawlerRules) {
+                if (rule.isEnabled() && LinkCrawlerRule.RULE.FOLLOWREDIRECT.equals(rule.getRule()) && rule.matches(url)) {
                     return rule;
                 }
             }
@@ -2337,7 +2459,9 @@ public class LinkCrawler {
                 if (br != null) {
                     br.setLoadLimit(limit);
                 }
-                if (urlConnection.getRequest().getLocation() == null && (urlConnection.isContentDisposition() || ((urlConnection.getContentType() != null && !urlConnection.getContentType().contains("text")))) || urlConnection.getCompleteContentLength() > limit) {
+
+                final String contentType = urlConnection.getContentType();
+                if (urlConnection.getRequest().getLocation() == null && (urlConnection.isContentDisposition() || !StringUtils.containsIgnoreCase(contentType, "text") || urlConnection.getCompleteContentLength() > limit)) {
                     try {
                         urlConnection.disconnect();
                     } catch (Throwable e) {

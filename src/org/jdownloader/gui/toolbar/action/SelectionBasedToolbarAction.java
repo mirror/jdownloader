@@ -25,7 +25,7 @@ public abstract class SelectionBasedToolbarAction extends AbstractToolBarAction 
         try {
             LinkGrabberTableModel.getInstance().getTable().getEventSender().removeListener(this);
             DownloadsTableModel.getInstance().getTable().getEventSender().removeListener(this);
-
+            final PackageControllerTable<?, ?> table;
             if (newView instanceof LinkGrabberView) {
                 table = LinkGrabberTableModel.getInstance().getTable();
                 setEnabled(true);
@@ -36,6 +36,7 @@ public abstract class SelectionBasedToolbarAction extends AbstractToolBarAction 
                 table = null;
                 setEnabled(false);
             }
+            this.table = table;
             if (table != null) {
                 table.getEventSender().addListener(this, true);
             }
@@ -43,21 +44,17 @@ public abstract class SelectionBasedToolbarAction extends AbstractToolBarAction 
         } catch (Exception e) {
             onSelectionUpdate();
             setEnabled(false);
+        } finally {
+            super.onGuiMainTabSwitch(oldView, newView);
         }
-
-        super.onGuiMainTabSwitch(oldView, newView);
-
     }
 
     @Override
     public void onExtTableEvent(ExtTableEvent<?> event) {
         switch (event.getType()) {
         case SELECTION_CHANGED:
-
             onSelectionUpdate();
-
         }
-
     }
 
     public PackageControllerTable<?, ?> getTable() {
