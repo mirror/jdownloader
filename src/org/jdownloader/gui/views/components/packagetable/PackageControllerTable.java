@@ -313,22 +313,21 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     public void onShortcutSelectAll() {
         if (!CFG_GUI.CFG.isTwoStepCtrlASelectionEnabled()) {
             super.onShortcutSelectAll();
-            return;
-        }
-        final ArrayList<AbstractNode> toSelect = new ArrayList<AbstractNode>();
-        final SelectionInfo<ParentType, ChildrenType> selection = getSelectionInfo(true, true);
-        boolean selectall = true;
-        for (final PackageView<ParentType, ChildrenType> packageView : selection.getPackageViews()) {
-            toSelect.add(packageView.getPackage());
-            if (packageView.isExpanded()) {
-                toSelect.addAll(((SelectionOnlyPackageView) packageView).getVisibleChildren());
-            }
-        }
-        selectall = selection.getRawSelection().size() == toSelect.size();
-        if (selectall) {
-            super.onShortcutSelectAll();
         } else {
-            getModel().setSelectedObjects(toSelect);
+            final ArrayList<AbstractNode> toSelect = new ArrayList<AbstractNode>();
+            final SelectionInfo<ParentType, ChildrenType> selection = getSelectionInfo(true, true);
+            for (final PackageView<ParentType, ChildrenType> packageView : selection.getPackageViews()) {
+                toSelect.add(packageView.getPackage());
+                if (packageView.isExpanded()) {
+                    toSelect.addAll(((SelectionOnlyPackageView) packageView).getVisibleChildren());
+                }
+            }
+            final boolean selectall = selection.getRawSelection().size() == toSelect.size();
+            if (selectall) {
+                super.onShortcutSelectAll();
+            } else {
+                getModel().setSelectedObjects(toSelect);
+            }
         }
     }
 
