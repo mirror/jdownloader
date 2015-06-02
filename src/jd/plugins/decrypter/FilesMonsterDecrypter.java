@@ -43,8 +43,8 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public static final String  FILENAMEREGEX            = "\">File name:</td>[\t\n\r ]+<td>(.*?)</td>";
-    public static final String  FILESIZEREGEX            = "\">File size:</td>[\t\n\r ]+<td>(.*?)</td>";
+    public static final String  FILENAMEREGEX            = "\">File name:</td>[\t\n\r ]+<[^<>]+>(.*?)</td>";
+    public static final String  FILESIZEREGEX            = "\">File size:</td>[\t\n\r ]+<[^<>]+>(.*?)</td>";
     private static final String ADDLINKSACCOUNTDEPENDANT = "ADDLINKSACCOUNTDEPENDANT";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
