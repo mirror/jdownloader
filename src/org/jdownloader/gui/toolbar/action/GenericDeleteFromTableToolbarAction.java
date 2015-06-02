@@ -105,7 +105,6 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
         GUIEventSender.getInstance().addListener(this, true);
         onGuiMainTabSwitch(null, MainTabbedPane.getInstance().getSelectedView());
         update();
-
     }
 
     private Modifier deleteFilesToggleModifier = null;
@@ -202,11 +201,12 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
 
     @Override
     public void actionPerformed(final ActionEvent e) {
+        final PackageControllerTable<?, ?> ltable = table;
         final SelectionInfo<?, ?> lselection = selection.get();
-        if (table == null || lselection == null || lselection.isEmpty()) {
+        if (ltable == null || lselection == null || lselection.isEmpty()) {
             return;
         }
-        if (table instanceof DownloadsTable) {
+        if (ltable instanceof DownloadsTable) {
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
@@ -244,7 +244,7 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
                     return null;
                 }
             });
-        } else if (table instanceof LinkGrabberTable) {
+        } else if (ltable instanceof LinkGrabberTable) {
             TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
                 @Override
@@ -579,74 +579,77 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
     }
 
     protected void update() {
-        new EDTRunner() {
+        if (lastDownloadLink != null && lastCrawledLink != null) {
+            new EDTRunner() {
 
-            @Override
-            protected void runInEDT() {
-                final SelectionInfo<?, ?> selectionInfo;
-                if (table == null) {
-                    selection = new WeakReference<SelectionInfo<?, ?>>(null);
-                    return;
-                } else {
-                    if (isOnlySelectedItems()) {
-                        selectionInfo = table.getSelectionInfo(true, true);
+                @Override
+                protected void runInEDT() {
+                    final SelectionInfo<?, ?> selectionInfo;
+                    final PackageControllerTable<?, ?> ltable = table;
+                    if (ltable == null) {
+                        selection = new WeakReference<SelectionInfo<?, ?>>(null);
+                        return;
                     } else {
-                        if (isIgnoreFiltered()) {
-                            selectionInfo = table.getSelectionInfo(false, true);
+                        if (isOnlySelectedItems()) {
+                            selectionInfo = ltable.getSelectionInfo(true, true);
                         } else {
-                            selectionInfo = table.getSelectionInfo(false, false);
+                            if (isIgnoreFiltered()) {
+                                selectionInfo = ltable.getSelectionInfo(false, true);
+                            } else {
+                                selectionInfo = ltable.getSelectionInfo(false, false);
+                            }
                         }
-                    }
-                    selection = new WeakReference<SelectionInfo<?, ?>>(selectionInfo);
-                    if (table instanceof DownloadsTable) {
-                        // we remember the last link and try it first
-                        final DownloadLink lastDl = lastDownloadLink.get();
-                        if (lastDl != null && selectionInfo.contains(lastDl)) {
-                            if (checkDownloadLink(lastDl)) {
+                        selection = new WeakReference<SelectionInfo<?, ?>>(selectionInfo);
+                        if (ltable instanceof DownloadsTable) {
+                            // we remember the last link and try it first
+                            final DownloadLink lastDl = lastDownloadLink.get();
+                            if (lastDl != null && selectionInfo.contains(lastDl)) {
+                                if (checkDownloadLink(lastDl)) {
+                                    setEnabled(true);
+                                    return;
+                                }
+                            }
+                            if (isDeleteAll() && !selectionInfo.isEmpty()) {
                                 setEnabled(true);
                                 return;
                             }
-                        }
-                        if (isDeleteAll() && !selectionInfo.isEmpty()) {
-                            setEnabled(true);
-                            return;
-                        }
-                        for (Object link : selectionInfo.getChildren()) {
-                            if (checkDownloadLink((DownloadLink) link)) {
-                                lastDownloadLink = new WeakReference<DownloadLink>((DownloadLink) link);
-                                setEnabled(true);
-                                return;
+                            for (Object link : selectionInfo.getChildren()) {
+                                if (checkDownloadLink((DownloadLink) link)) {
+                                    lastDownloadLink = new WeakReference<DownloadLink>((DownloadLink) link);
+                                    setEnabled(true);
+                                    return;
+                                }
                             }
-                        }
-                        setEnabled(false);
-                    } else if (table instanceof LinkGrabberTable) {
-                        final CrawledLink lastCl = lastCrawledLink.get();
-                        // we remember the last link and try it first
-                        if (lastCl != null && selectionInfo.contains(lastCl)) {
-                            if (checkCrawledLink(lastCl)) {
-                                setEnabled(true);
-                                return;
+                            setEnabled(false);
+                        } else if (ltable instanceof LinkGrabberTable) {
+                            final CrawledLink lastCl = lastCrawledLink.get();
+                            // we remember the last link and try it first
+                            if (lastCl != null && selectionInfo.contains(lastCl)) {
+                                if (checkCrawledLink(lastCl)) {
+                                    setEnabled(true);
+                                    return;
+                                }
                             }
-                        }
-                        for (Object link : selectionInfo.getChildren()) {
-                            if (checkCrawledLink((CrawledLink) link)) {
-                                setEnabled(true);
-                                lastCrawledLink = new WeakReference<CrawledLink>((CrawledLink) link);
-                                return;
+                            for (Object link : selectionInfo.getChildren()) {
+                                if (checkCrawledLink((CrawledLink) link)) {
+                                    setEnabled(true);
+                                    lastCrawledLink = new WeakReference<CrawledLink>((CrawledLink) link);
+                                    return;
+                                }
                             }
+                            setEnabled(false);
                         }
-                        setEnabled(false);
                     }
                 }
-            }
-        };
-
+            };
+        }
     }
 
     private void updateListeners() {
         LinkGrabberTableModel.getInstance().getTable().getEventSender().removeListener(this);
         DownloadsTableModel.getInstance().getTable().getEventSender().removeListener(this);
-        View newView = MainTabbedPane.getInstance().getSelectedView();
+        final View newView = MainTabbedPane.getInstance().getSelectedView();
+        final PackageControllerTable<?, ?> table;
         if (newView instanceof LinkGrabberView) {
             table = LinkGrabberTableModel.getInstance().getTable();
             if (isOnlySelectedItems()) {
@@ -674,6 +677,7 @@ public class GenericDeleteFromTableToolbarAction extends AbstractToolBarAction i
             table = null;
             setEnabled(false);
         }
+        this.table = table;
         update();
     }
 

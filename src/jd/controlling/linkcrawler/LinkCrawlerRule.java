@@ -8,7 +8,8 @@ public class LinkCrawlerRule {
 
     public static enum RULE {
         DIRECTHTTP,
-        DEEPDECRYPT
+        DEEPDECRYPT,
+        FOLLOWREDIRECT
     }
 
     protected boolean enabled         = true;
