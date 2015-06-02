@@ -268,6 +268,9 @@ public class BoxNet extends PluginForHost {
                     fid = br.getRegex("var single_item_collection = \\{ (\\d+) : item \\};").getMatch(0);
                     if (fid == null) {
                         fid = br.getRegex("itemTypedID: \"f_(\\d+)\"").getMatch(0);
+                        if (fid == null) {
+                            fid = br.getRegex("data-file-id=\\s*\"(\\d+)\"").getMatch(0);
+                        }
                     }
                 }
             }
