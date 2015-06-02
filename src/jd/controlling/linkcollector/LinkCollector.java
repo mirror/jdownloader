@@ -98,6 +98,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkgrabberSearchField;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -2010,8 +2011,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 for (int removeIndex = linkcollectorLists.size() - 1; removeIndex >= keepXOld; removeIndex--) {
                                     final File remove = linkcollectorLists.remove(removeIndex);
                                     if (remove != null) {
-
-                                        logger.info("Delete outdated CollectorList: " + remove + " " + FileCreationManager.getInstance().delete(remove, null));
+                                        final boolean delete = FileCreationManager.getInstance().delete(remove, null);
+                                        if (LogController.getInstance().isDebugMode()) {
+                                            logger.info("Delete outdated CollectorList: " + remove + " " + delete);
+                                        }
                                     }
                                 }
                             }

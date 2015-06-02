@@ -82,6 +82,7 @@ import org.jdownloader.controlling.download.DownloadControllerEventStructureRefr
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.controlling.lists.DupeManager;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.CleanAfterDownloadAction;
@@ -989,7 +990,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                             for (int removeIndex = downloadLists.size() - 1; removeIndex >= keepXOld; removeIndex--) {
                                 final File remove = downloadLists.remove(removeIndex);
                                 if (remove != null) {
-                                    logger.info("Delete outdated DownloadList: " + remove + " " + FileCreationManager.getInstance().delete(remove, null));
+                                    final boolean delete = FileCreationManager.getInstance().delete(remove, null);
+                                    if (LogController.getInstance().isDebugMode()) {
+                                        logger.info("Delete outdated DownloadList: " + remove + " " + delete);
+                                    }
                                 }
                             }
                         }
