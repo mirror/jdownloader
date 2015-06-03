@@ -8,6 +8,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 import org.jdownloader.captcha.v2.solver.jac.JACSolver;
@@ -39,6 +40,9 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
         if (job.getChallenge() instanceof BasicCaptchaChallenge) {
             super.enqueue(job);
         }
+        if (RecaptchaV2Challenge.FALLBACK_ENABLED && job.getChallenge() instanceof RecaptchaV2Challenge) {
+            super.enqueue(job);
+        }
     }
 
     @Override
@@ -60,6 +64,12 @@ public class DialogBasicCaptchaSolver extends AbstractDialogSolver<String> {
             if (job.getChallenge() instanceof BasicCaptchaChallenge) {
                 BasicCaptchaChallenge captchaChallenge = (BasicCaptchaChallenge) job.getChallenge();
                 String result = solveBasicCaptchaChallenge(job, captchaChallenge);
+                if (result != null) {
+                    job.addAnswer(new CaptchaResponse(captchaChallenge, this, result, 100));
+                }
+            } else if (RecaptchaV2Challenge.FALLBACK_ENABLED && job.getChallenge() instanceof RecaptchaV2Challenge) {
+                RecaptchaV2Challenge captchaChallenge = (RecaptchaV2Challenge) job.getChallenge();
+                String result = solveBasicCaptchaChallenge(job, captchaChallenge.createBasicCaptchaChallenge());
                 if (result != null) {
                     job.addAnswer(new CaptchaResponse(captchaChallenge, this, result, 100));
                 }

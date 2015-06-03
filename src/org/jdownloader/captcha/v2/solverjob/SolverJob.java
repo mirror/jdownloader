@@ -61,6 +61,9 @@ public class SolverJob<T> {
     }
 
     public void addAnswer(AbstractResponse<T> abstractResponse) {
+        if (!abstractResponse.getChallenge().validateResponse(abstractResponse)) {
+            return;
+        }
         boolean kill = false;
         boolean isAlive;
         synchronized (LOCK) {

@@ -85,7 +85,6 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.SoundSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
-import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
@@ -566,7 +565,6 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
             public void actionPerformed(ActionEvent e) {
                 cancel();
-                StatsManager.I().track("click/captchadialog/hate/" + hosterInfo.getTld());
                 PremiumInfoDialog d = new PremiumInfoDialog(hosterInfo, _GUI._.PremiumInfoDialog_PremiumInfoDialog_(hosterInfo.getTld()), "CaptchaDialog");
                 try {
                     Dialog.getInstance().showDialog(d);
