@@ -147,4 +147,46 @@ public interface EventScripterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Reset a Download if the speed is low" })
     String reset_link_on_low_speed();
 
+    @Default(lngs = { "en" }, values = { "Toolbar Button Pressed" })
+    String TOOLBAR_BUTTON();
+
+    @Default(lngs = { "en" }, values = { "You have to add a custom EventScripter Button to the Toolbar using the Menu Manager." })
+    String TOOLBAR_BUTTON_explain();
+
+    @Default(lngs = { "en" }, values = { "Main Menu Button Pressed" })
+    String MAIN_MENU_BUTTON();
+
+    @Default(lngs = { "en" }, values = { "You have to add a custom EventScripter Button to the Main Menu using the Menu Manager." })
+    String MAIN_MENU_BUTTON_explain();
+
+    @Default(lngs = { "en" }, values = { "You have to add a custom EventScripter Button to the Linkgrabber Bottombar menu using the Menu Manager." })
+    String LINKGRABBER_BOTTOM_BAR_BUTTON_explain();
+
+    @Default(lngs = { "en" }, values = { "Linkgrabber Bottombar Button Pressed" })
+    String LINKGRABBER_BOTTOM_BAR_BUTTON();
+
+    @Default(lngs = { "en" }, values = { "You have to add a custom EventScripter Button to the Downloadlist Bottombar menu using the Menu Manager." })
+    String DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON_explain();
+
+    @Default(lngs = { "en" }, values = { "Downloadlist Bottombar Button Pressed" })
+    String DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON();
+
+    @Default(lngs = { "en" }, values = { "You have to add a custom EventScripter Button to the Linkgrabber Context menu using the Menu Manager." })
+    String LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON_explain();
+
+    @Default(lngs = { "en" }, values = { "Linkgrabber Contextmenu Button Pressed" })
+    String LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON();
+
+    @Default(lngs = { "en" }, values = { "You have to add a custom EventScripter Button to the Downloadlist Context menu using the Menu Manager." })
+    String DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON_explain();
+
+    @Default(lngs = { "en" }, values = { "Downloadlist Contextmenu Button Pressed" })
+    String DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON();
+
+    @Default(lngs = { "en" }, values = { "Traymenu Button Pressed" })
+    String TRAY_BUTTON();
+
+    @Default(lngs = { "en" }, values = { "You have to add a custom EventScripter Button to the Traymenu using the Menu Manager." })
+    String TRAY_BUTTON_explain();
+
 }

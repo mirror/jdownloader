@@ -34,6 +34,8 @@ import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.interfaces.View;
 import jd.plugins.AddonPanel;
 import net.sourceforge.htmlunit.corejs.javascript.Context;
 import net.sourceforge.htmlunit.corejs.javascript.Script;
@@ -64,14 +66,29 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.ArchiveSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.CrawlerJobSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadLinkSandBox;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadlistSelectionSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.EventSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.FilePackageSandBox;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.LinkgrabberSelectionSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.PackagizerLinkSandbox;
 import org.jdownloader.extensions.extraction.ExtractionEvent;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.ExtractionListener;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.jdtrayicon.MenuManagerTrayIcon;
+import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
+import org.jdownloader.gui.mainmenu.container.OptionalContainer;
+import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.downloads.DownloadsView;
+import org.jdownloader.gui.views.downloads.MenuManagerDownloadTabBottomBar;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
+import org.jdownloader.gui.views.downloads.table.DownloadsTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
+import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
+import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 
 public class EventScripterExtension extends AbstractExtension<EventScripterConfig, EventScripterTranslation> implements MenuExtenderHandler, DownloadWatchdogListener, GenericConfigEventListener<Object>, RemoteAPIInternalEventListener, FileCreationListener, LinkCollectorListener, PackagizerControllerListener, ExtractionListener {
 
@@ -107,6 +124,14 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         FileCreationManager.getInstance().getEventSender().removeListener(this);
         LinkCollector.getInstance().getEventsender().removeListener(this);
 
+        MenuManagerTrayIcon.getInstance().unregisterExtender(this);
+
+        MenuManagerMainToolbar.getInstance().unregisterExtender(this);
+        MenuManagerMainmenu.getInstance().unregisterExtender(this);
+        MenuManagerDownloadTabBottomBar.getInstance().unregisterExtender(this);
+        MenuManagerDownloadTableContext.getInstance().unregisterExtender(this);
+        MenuManagerLinkgrabberTabBottombar.getInstance().unregisterExtender(this);
+        MenuManagerLinkgrabberTableContext.getInstance().unregisterExtender(this);
         SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
 
             @Override
@@ -126,6 +151,13 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
         FileCreationManager.getInstance().getEventSender().addListener(this);
         DownloadWatchDog.getInstance().getEventSender().addListener(this);
         RemoteAPIController.getInstance().getEventSender().addListener(this);
+        MenuManagerMainToolbar.getInstance().registerExtender(this);
+        MenuManagerMainmenu.getInstance().registerExtender(this);
+        MenuManagerDownloadTabBottomBar.getInstance().registerExtender(this);
+        MenuManagerDownloadTableContext.getInstance().registerExtender(this);
+        MenuManagerLinkgrabberTabBottombar.getInstance().registerExtender(this);
+        MenuManagerLinkgrabberTableContext.getInstance().registerExtender(this);
+        MenuManagerTrayIcon.getInstance().registerExtender(this);
 
         SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
 
@@ -196,6 +228,38 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     @Override
     public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
 
+        if (manager instanceof MenuManagerMainmenu) {
+            OptionalContainer opt = new OptionalContainer(false);
+            opt.add(GenericEventScriptTriggerMainmenuAction.class);
+            return opt;
+        } else if (manager instanceof MenuManagerDownloadTabBottomBar) {
+            OptionalContainer opt = new OptionalContainer(false);
+            opt.add(GenericEventScriptTriggerMainmenuAction.class);
+            return opt;
+        } else if (manager instanceof MenuManagerDownloadTableContext) {
+            OptionalContainer opt = new OptionalContainer(false);
+            opt.add(GenericEventScriptTriggerContextMenuAction.class);
+            return opt;
+        } else if (manager instanceof MenuManagerLinkgrabberTableContext) {
+            OptionalContainer opt = new OptionalContainer(false);
+            opt.add(GenericEventScriptTriggerContextMenuAction.class);
+            return opt;
+
+        } else if (manager instanceof MenuManagerLinkgrabberTabBottombar) {
+            OptionalContainer opt = new OptionalContainer(false);
+            opt.add(GenericEventScriptTriggerMainmenuAction.class);
+            return opt;
+        } else if (manager instanceof MenuManagerTrayIcon) {
+            OptionalContainer opt = new OptionalContainer(false);
+            opt.add(GenericEventScriptTriggerMainmenuAction.class);
+            return opt;
+        } else if (manager instanceof MenuManagerMainToolbar) {
+
+            OptionalContainer opt = new OptionalContainer(false);
+            opt.add(GenericEventScriptTriggerToolbarAction.class);
+            return opt;
+
+        }
         return null;
     }
 
@@ -592,4 +656,38 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
             };
         }
     }
+
+    public void triggerAction(String name, String iconKey, String shortCutString, EventTrigger downloadTableContextMenuButton, SelectionInfo selectionInfo) {
+        for (ScriptEntry script : entries) {
+            if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && downloadTableContextMenuButton == script.getEventTrigger()) {
+                try {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    props.put("name", name);
+                    props.put("icon", iconKey);
+                    props.put("shortCutString", shortCutString);
+                    props.put("menu", downloadTableContextMenuButton.name());
+
+                    View view = MainTabbedPane.getInstance().getSelectedView();
+
+                    if (view instanceof DownloadsView) {
+                        if (downloadTableContextMenuButton == EventTrigger.DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON) {
+                            props.put("dlSelection", new DownloadlistSelectionSandbox(selectionInfo));
+                        } else {
+                            props.put("dlSelection", new DownloadlistSelectionSandbox(DownloadsTable.getInstance().getSelectionInfo()));
+                        }
+                    } else if (view instanceof LinkGrabberView) {
+                        if (downloadTableContextMenuButton == EventTrigger.LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON) {
+                            props.put("lgSelection", new DownloadlistSelectionSandbox(selectionInfo));
+                        } else {
+                            props.put("lgSelection", new LinkgrabberSelectionSandbox(LinkGrabberTable.getInstance().getSelectionInfo()));
+                        }
+                    }
+                    runScript(script, props);
+                } catch (Throwable e) {
+                    getLogger().log(e);
+                }
+            }
+        }
+    }
+
 }

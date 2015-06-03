@@ -1,23 +1,40 @@
 package org.jdownloader.extensions.eventscripter;
 
+import java.awt.event.ActionEvent;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import javax.swing.JLabel;
+
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.Application;
 import org.appwork.utils.reflection.Clazz;
+import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.ArchiveSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.CrawlerJobSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadLinkSandBox;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.DownloadlistSelectionSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.EventSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.FilePackageSandBox;
+import org.jdownloader.extensions.eventscripter.sandboxobjects.LinkgrabberSelectionSandbox;
 import org.jdownloader.extensions.eventscripter.sandboxobjects.PackagizerLinkSandbox;
+import org.jdownloader.gui.jdtrayicon.MenuManagerTrayIcon;
+import org.jdownloader.gui.mainmenu.MenuManagerMainmenu;
+import org.jdownloader.gui.toolbar.MenuManagerMainToolbar;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.ArraySet;
+import org.jdownloader.gui.views.downloads.MenuManagerDownloadTabBottomBar;
+import org.jdownloader.gui.views.downloads.contextmenumanager.MenuManagerDownloadTableContext;
+import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 
 public enum EventTrigger implements LabelInterface {
     ON_DOWNLOAD_CONTROLLER_START {
@@ -310,6 +327,371 @@ public enum EventTrigger implements LabelInterface {
         public HashMap<String, Object> getTestProperties() {
             HashMap<String, Object> props = new HashMap<String, Object>();
             props.put("interval", 1000);
+
+            return props;
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
+    },
+    TOOLBAR_BUTTON {
+        @Override
+        public String getLabel() {
+            return T._.TOOLBAR_BUTTON();
+        }
+
+        @Override
+        public TriggerSetupPanel createSettingsPanel(final HashMap<String, Object> settings) {
+
+            TriggerSetupPanel ret = new TriggerSetupPanel(0) {
+                public void save() {
+
+                };
+            };
+            ret.add(new JLabel(T._.TOOLBAR_BUTTON_explain()), "spanx");
+
+            SettingsButton toolbarManager = new SettingsButton(new AppAction() {
+                {
+                    setName(_GUI._.gui_config_menumanager_toolbar());
+
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+
+                            MenuManagerMainToolbar.getInstance().openGui();
+                        }
+                    };
+
+                }
+            });
+            ret.addPair("", null, toolbarManager);
+            return ret;
+        }
+
+        public boolean isSynchronous() {
+            // scripts should be able to modify the link
+            return false;
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+            HashMap<String, Object> props = new HashMap<String, Object>();
+            props.put("name", "MyMenuButton");
+
+            return props;
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
+    },
+    MAIN_MENU_BUTTON {
+        @Override
+        public String getLabel() {
+            return T._.MAIN_MENU_BUTTON();
+        }
+
+        @Override
+        public TriggerSetupPanel createSettingsPanel(final HashMap<String, Object> settings) {
+
+            TriggerSetupPanel ret = new TriggerSetupPanel(0) {
+                public void save() {
+
+                };
+            };
+            ret.add(new JLabel(T._.MAIN_MENU_BUTTON_explain()), "spanx");
+
+            ret.addPair("", null, new SettingsButton(new AppAction() {
+                {
+                    setName(_GUI._.gui_config_menumanager_mainmenu());
+
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            MenuManagerMainmenu.getInstance().openGui();
+                        }
+                    };
+
+                }
+            }));
+            return ret;
+        }
+
+        public boolean isSynchronous() {
+            // scripts should be able to modify the link
+            return false;
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+            return EventTrigger.TRAY_BUTTON.getTestProperties();
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
+    },
+    DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON {
+        @Override
+        public String getLabel() {
+            return T._.DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON();
+        }
+
+        @Override
+        public TriggerSetupPanel createSettingsPanel(final HashMap<String, Object> settings) {
+
+            TriggerSetupPanel ret = new TriggerSetupPanel(0) {
+                public void save() {
+
+                };
+            };
+            ret.add(new JLabel(T._.DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON_explain()), "spanx");
+            ret.addPair("", null, new SettingsButton(new AppAction() {
+                {
+                    setName(_GUI._.gui_config_menumanager_downloadlist());
+
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST);
+
+                            MenuManagerDownloadTableContext.getInstance().openGui();
+                        }
+                    };
+
+                }
+            }));
+            return ret;
+        }
+
+        public boolean isSynchronous() {
+            // scripts should be able to modify the link
+            return false;
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+            return EventTrigger.TRAY_BUTTON.getTestProperties();
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
+    },
+    LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON {
+        @Override
+        public String getLabel() {
+            return T._.LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON();
+        }
+
+        @Override
+        public TriggerSetupPanel createSettingsPanel(final HashMap<String, Object> settings) {
+
+            TriggerSetupPanel ret = new TriggerSetupPanel(0) {
+                public void save() {
+
+                };
+            };
+            ret.add(new JLabel(T._.LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON_explain()), "spanx");
+            ret.addPair("", null, new SettingsButton(new AppAction() {
+                {
+                    setName(_GUI._.gui_config_menumanager_linkgrabber());
+
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            JDGui.getInstance().requestPanel(JDGui.Panels.LINKGRABBER);
+
+                            MenuManagerLinkgrabberTableContext.getInstance().openGui();
+                        }
+                    };
+
+                }
+            }));
+            return ret;
+        }
+
+        public boolean isSynchronous() {
+            // scripts should be able to modify the link
+            return false;
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+            return EventTrigger.TRAY_BUTTON.getTestProperties();
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
+    },
+    DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON {
+        @Override
+        public String getLabel() {
+            return T._.DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON();
+        }
+
+        @Override
+        public TriggerSetupPanel createSettingsPanel(final HashMap<String, Object> settings) {
+
+            TriggerSetupPanel ret = new TriggerSetupPanel(0) {
+                public void save() {
+
+                };
+            };
+            ret.add(new JLabel(T._.DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON_explain()), "spanx");
+            ret.addPair("", null, new SettingsButton(new AppAction() {
+                {
+                    setName(_GUI._.gui_config_menumanager_downloadBottom());
+
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+
+                            MenuManagerDownloadTabBottomBar.getInstance().openGui();
+                        }
+                    };
+
+                }
+            }));
+            return ret;
+        }
+
+        public boolean isSynchronous() {
+            // scripts should be able to modify the link
+            return false;
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+            return EventTrigger.TRAY_BUTTON.getTestProperties();
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
+    },
+    LINKGRABBER_BOTTOM_BAR_BUTTON {
+        @Override
+        public String getLabel() {
+            return T._.LINKGRABBER_BOTTOM_BAR_BUTTON();
+        }
+
+        @Override
+        public TriggerSetupPanel createSettingsPanel(final HashMap<String, Object> settings) {
+
+            TriggerSetupPanel ret = new TriggerSetupPanel(0) {
+                public void save() {
+
+                };
+            };
+            ret.add(new JLabel(T._.LINKGRABBER_BOTTOM_BAR_BUTTON_explain()), "spanx");
+            ret.addPair("", null, new SettingsButton(new AppAction() {
+                {
+                    setName(_GUI._.gui_config_menumanager_linkgrabberBottom());
+
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+
+                            MenuManagerLinkgrabberTabBottombar.getInstance().openGui();
+                        }
+                    };
+
+                }
+            }));
+            return ret;
+        }
+
+        public boolean isSynchronous() {
+            // scripts should be able to modify the link
+            return false;
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+
+            return EventTrigger.TRAY_BUTTON.getTestProperties();
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
+    },
+    TRAY_BUTTON {
+        @Override
+        public String getLabel() {
+            return T._.TRAY_BUTTON();
+        }
+
+        @Override
+        public TriggerSetupPanel createSettingsPanel(final HashMap<String, Object> settings) {
+
+            TriggerSetupPanel ret = new TriggerSetupPanel(0) {
+                public void save() {
+
+                };
+            };
+            ret.add(new JLabel(T._.TRAY_BUTTON_explain()), "spanx");
+            ret.addPair("", null, new SettingsButton(new AppAction() {
+                {
+                    setName(_GUI._.gui_config_menumanager_traymenu());
+
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            MenuManagerTrayIcon.getInstance().openGui();
+                        }
+                    };
+
+                }
+            }));
+            return ret;
+        }
+
+        public boolean isSynchronous() {
+            // scripts should be able to modify the link
+            return false;
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+            HashMap<String, Object> props = new HashMap<String, Object>();
+            props.put("name", "MyMenuButton");
+            props.put("icon", "myIconKey");
+            props.put("shortCutString", "myShortcut");
+            props.put("menu", "TriggerName");
+            props.put("dlSelection", new DownloadlistSelectionSandbox());
+            props.put("lgSelection", new LinkgrabberSelectionSandbox());
 
             return props;
         }

@@ -241,7 +241,13 @@ public class DialogApiImpl implements EventPublisher, DialogApiInterface {
                 } else if (key.startsWith("is")) {
                     key = key.substring(2);
                 }
+
                 Object value = data.get(key);
+                // TODO: the webinterface seems to return dontshowagain instead of dontshowagainselected.(confirm dialog eventscripter:
+                // {dontshowagain=true, closereason=OK}) This workaround must be available until this is fixed
+                if ("dontshowagainselected".equals(key) && value == null) {
+                    value = data.get("dontshowagain");
+                }
                 String json = JSonStorage.serializeToJson(value);
                 Object retValue = JSonStorage.restoreFromString(json, new TypeRef(method.getGenericReturnType()) {
                 });
