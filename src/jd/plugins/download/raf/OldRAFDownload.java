@@ -48,9 +48,11 @@ import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashResult;
+import jd.plugins.download.SparseFile;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
@@ -932,6 +934,12 @@ public class OldRAFDownload extends DownloadInterface {
                 outputFinalCompleteFile = new File(finalFileOutput);
             }
             outputPartFile = new File(downloadable.getFileOutputPart());
+            try {
+                if (Application.getJavaVersion() >= Application.JAVA17) {
+                    SparseFile.createSparseFile(outputPartFile);
+                }
+            } catch (IOException e) {
+            }
             outputPartFileRaf = new RandomAccessFile(outputPartFile, "rw");
         } catch (Exception e) {
             LogSource.exception(logger, e);
