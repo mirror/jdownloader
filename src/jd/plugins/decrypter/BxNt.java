@@ -113,9 +113,13 @@ public class BxNt extends PluginForDecrypt {
                     decryptedLinks.add(fina);
                     return decryptedLinks;
                 }
-                /* Okay seems like our code failed */
-                logger.warning("Decrypt failed for link: " + cryptedlink);
-                return null;
+                // new failover
+                final DownloadLink dl = createDownloadlink("https://www.boxdecrypted.com/shared/" + new Regex(cryptedlink, "([a-z0-9]+)$").getMatch(0));
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+                // /* Okay seems like our code failed */
+                // logger.warning("Decrypt failed for link: " + cryptedlink);
+                // return null;
             }
             final String[] filelinkinfo = json_Text.split("\"unidb_formats\":");
             for (final String singleflinkinfo : filelinkinfo) {
