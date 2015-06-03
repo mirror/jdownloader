@@ -5947,4 +5947,19 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Save & Restart" })
     String languages_dialog_change_and_restart();
 
+    @Default(lngs = { "en" }, values = { "Install Extension: %s1" })
+    String installExtension_remote_title(String toInstall);
+
+    @Default(lngs = { "en" }, values = { "Do you really want to install this extension module: %s1?" })
+    String installExtension_remote_rly(String toInstall);
+
+    @Default(lngs = { "en" }, values = { "Please wait. The installation is in progress. Click to continue." })
+    String installExtension_remote_wait();
+
+    @Default(lngs = { "en" }, values = { "Restart now" })
+    String lit_restart_now();
+
+    @Default(lngs = { "en" }, values = { "later" })
+    String lit_later();
+
 }

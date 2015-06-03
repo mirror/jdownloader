@@ -82,7 +82,7 @@ public class AdvancedConfigAPIEntry extends AdvancedConfigEntryDataStorable impl
     }
 
     @SuppressWarnings("unused")
-    protected AdvancedConfigAPIEntry(/* Storable */) {
+    public AdvancedConfigAPIEntry(/* Storable */) {
         super();
     }
 
