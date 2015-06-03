@@ -11,10 +11,10 @@ import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.logging.LogController;
 
 public class IP {
-    public static final String IP_PATTERN = "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b";
+    public static final String IP_PATTERN = "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b";
 
     /**
-     * validates the adress, and returns an IP instance or throws an exception in case of validation errors
+     * validates the address, and returns an IP instance or throws an exception in case of validation errors
      *
      * @param ip
      * @return
