@@ -28,6 +28,11 @@ public abstract class Challenge<T> {
         return accountLogin;
     }
 
+    // can be overridden to validate a response before adding it to the job
+    public boolean validateResponse(AbstractResponse<T> response) {
+        return true;
+    }
+
     public void setAccountLogin(boolean accountLogin) {
         this.accountLogin = accountLogin;
     }
