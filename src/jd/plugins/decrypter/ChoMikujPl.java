@@ -72,6 +72,30 @@ public class ChoMikujPl extends PluginForDecrypt {
             parameter = Encoding.Base64Decode(base);
         } else {
             parameter = param.toString().replace("chomikuj.pl//", "chomikuj.pl/");
+            // Check for multi page folder
+            br.getPage(parameter);
+            if (br.containsHTML("fileListPage")) {
+                Integer pageCount = 1;
+                while (true) {
+                    if (!br.containsHTML("rel=\"" + (pageCount + 1) + "\" ")) {
+                        break;
+                    }
+                    pageCount = pageCount + 1;
+                }
+                logger.info("pageCount: " + pageCount);
+                FilePackage fp = FilePackage.getInstance();
+                for (int i = 2; i <= pageCount; i++) {
+                    final DownloadLink dl = createDownloadlink("http://chomikujpagedecrypt.pl/result/" + Encoding.Base64Encode(parameter + "," + i));
+                    dl.setProperty("reallink", parameter);
+                    fp.add(dl);
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                        /* does not exist in 09581 */
+                    }
+                    decryptedLinks.add(dl);
+                }
+            }
         }
         if (parameter.matches(UNSUPPORTED)) {
             logger.info("Unsupported/invalid link: " + parameter);
@@ -424,10 +448,10 @@ public class ChoMikujPl extends PluginForDecrypt {
 
         // Herausfinden wie viele Seiten der Link hat
         int pageCount = 1;
-        if (parameter.matches(PAGEDECRYPTLINK)) {
+        if (param.toString().matches(PAGEDECRYPTLINK)) {
             pageCount = Integer.parseInt(new Regex(parameter, ",(\\d+)$").getMatch(0));
         } else {
-            pageCount = getPageCount(parameter);
+            // pageCount = getPageCount(parameter);
         }
         if (pageCount == -1) {
             logger.warning("Error, couldn't successfully find the number of pages for link: " + parameter);
