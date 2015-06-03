@@ -16,8 +16,10 @@
 
 package jd.plugins;
 
+import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Browser;
 import jd.http.Request;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
@@ -74,6 +76,12 @@ public class BrowserAdapter {
                     String redirectUrl = request.getUrl();
                     if (redirectUrl.matches("https?://block\\.malwarebytes\\.org")) {
                         throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Malwarebytes");
+                    }
+                    // local IP based network filters/blocks?
+                    final String ip = new Regex(redirectUrl, "^https?://(" + IP.IP_PATTERN + ")").getMatch(0);
+                    if (IP.isLocalIP(ip) && new Regex(redirectUrl, "/cgi-bin/blockpage\\.cgi\\?ws-session=\\d+$").matches()) {
+                        // websense block. example log jdlog://6965119980341
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Blocked by Websense");
                     }
                     if (lastRedirectUrl != null && redirectUrl.equals(lastRedirectUrl)) {
                         // some providers don't like fast redirects, as they use this for preparing final file. lets add short wait based on
