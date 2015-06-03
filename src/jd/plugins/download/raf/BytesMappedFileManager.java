@@ -19,70 +19,72 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.logging.LogController;
 
 public class BytesMappedFileManager {
-    
+
     private static final class BytesMappedFileStorable implements Storable, FileBytesMapViewInterface {
         private long[][] markedAreas = null;
         private String   name        = null;
         private long     finalSize   = -1;
-        
+
         private BytesMappedFileStorable(/* Storable */) {
         }
-        
+
         public BytesMappedFileStorable(BytesMappedFile bytesMappedFile) {
             this.name = bytesMappedFile.getFile().getName();
             FileBytesMapView view = new FileBytesMapView(bytesMappedFile.getFileBytesMap());
             this.finalSize = view.getFinalSize();
             this.markedAreas = view.getMarkedAreas();
         }
-        
+
         public String getName() {
             return name;
         }
-        
+
         public void setName(String name) {
             this.name = name;
         }
-        
+
         public long getFinalSize() {
             return finalSize;
         }
-        
+
         public void setFinalSize(long finalSize) {
             this.finalSize = finalSize;
         }
-        
+
         public long[][] getMarkedAreas() {
             return markedAreas;
         }
-        
+
         public void setMarkedAreas(long[][] markedAreas) {
             this.markedAreas = markedAreas;
         }
-        
+
     }
-    
+
     private final HashMap<File, BytesMappedFile> openFiles = new HashMap<File, BytesMappedFile>();
     private static final BytesMappedFileManager  INSTANCE  = new BytesMappedFileManager();
-    
+
     public static BytesMappedFileManager getInstance() {
         return INSTANCE;
     }
-    
+
     private BytesMappedFileManager() {
     }
-    
+
     public synchronized FileBytesMapView getFileBytesMapView(File file) throws IOException {
         final File mapFile = getMapFile(file);
         BytesMappedFile ret = openFiles.get(mapFile);
-        if (ret != null) return new FileBytesMapView(ret.getFileBytesMap());
+        if (ret != null) {
+            return new FileBytesMapView(ret.getFileBytesMap());
+        }
         return new FileBytesMapView(readFileBytesMap(file));
     }
-    
+
     public synchronized BytesMappedFile get(File file) throws IOException {
         final File mapFile = getMapFile(file);
         return openFiles.get(mapFile);
     }
-    
+
     public synchronized BytesMappedFile lock(File file) throws IOException {
         final File mapFile = getMapFile(file);
         BytesMappedFile ret = openFiles.get(mapFile);
@@ -95,8 +97,8 @@ public class BytesMappedFileManager {
                 LogController.CL(true).severe("PartFileReset:File:" + file + "|Length:" + file.length() + "|FileBytesMap:" + fileBytesMap);
                 fileBytesMap.reset();
             }
-            ret = new BytesMappedFile(file, fileBytesMap) {
-                
+            ret = new BytesMappedFile(file, fileBytesMap, true) {
+
                 @Override
                 protected void onFlushed() throws IOException {
                     write(this);
@@ -108,7 +110,7 @@ public class BytesMappedFileManager {
         ret.lock();
         return ret;
     }
-    
+
     public synchronized Boolean unlock(BytesMappedFile mappedFile) throws IOException {
         LogController.CL(true).severe("unlock:File:" + mappedFile.getFile());
         final File mapFile = getMapFile(mappedFile.getFile());
@@ -123,7 +125,7 @@ public class BytesMappedFileManager {
         }
         return null;
     }
-    
+
     public synchronized BytesMappedFile open(BytesMappedFile mappedFile, BytesMappedFileCallback callback) throws IOException {
         final File mapFile = getMapFile(mappedFile.getFile());
         final BytesMappedFile ret = openFiles.get(mapFile);
@@ -134,7 +136,7 @@ public class BytesMappedFileManager {
         }
         return null;
     }
-    
+
     public synchronized BytesMappedFile open(File file, BytesMappedFileCallback callback) throws IOException {
         final File mapFile = getMapFile(file);
         BytesMappedFile ret = openFiles.get(mapFile);
@@ -147,7 +149,7 @@ public class BytesMappedFileManager {
                 LogController.CL(true).severe("PartFileReset:File:" + file + "|Length:" + file.length() + "|FileBytesMap:" + fileBytesMap);
                 fileBytesMap.reset();
             }
-            ret = new BytesMappedFile(file, fileBytesMap) {
+            ret = new BytesMappedFile(file, fileBytesMap, true) {
                 @Override
                 protected void onFlushed() throws IOException {
                     write(this);
@@ -159,7 +161,7 @@ public class BytesMappedFileManager {
         ret.open(callback);
         return ret;
     }
-    
+
     public synchronized Boolean close(BytesMappedFile mappedFile, BytesMappedFileCallback callback) throws IOException {
         LogController.CL(true).severe("close:File:" + mappedFile.getFile());
         final File mapFile = getMapFile(mappedFile.getFile());
@@ -174,11 +176,11 @@ public class BytesMappedFileManager {
         }
         return null;
     }
-    
+
     public static String getFileBytesMapID(File file) {
         return getFileBytesMapID(file.getName());
     }
-    
+
     public static String getFileBytesMapID(String fileName) {
         final String name;
         if (CrossSystem.isWindows() || DownloadWatchDog.getInstance().isForceMirrorDetectionCaseInsensitive()) {
@@ -190,12 +192,12 @@ public class BytesMappedFileManager {
         String ext = Files.getExtension(name);
         return name.length() + "-" + Hash.getMD5(name) + "." + ext + ".jdresume";
     }
-    
+
     public static File getMapFile(File file) {
         File parentFile = file.getParentFile();
         return new File(parentFile, getFileBytesMapID(file));
     }
-    
+
     protected FileBytesMap readFileBytesMap(File file) throws IOException {
         File mapFile = getMapFile(file);
         final FileBytesMap ret = new FileBytesMap();
@@ -204,7 +206,9 @@ public class BytesMappedFileManager {
                 byte[] bytes = IO.readFile(mapFile);
                 BytesMappedFileStorable storable = JSonStorage.stringToObject(new String(bytes, "UTF-8"), new TypeRef<BytesMappedFileStorable>() {
                 }, null);
-                if (storable != null) ret.set(storable);
+                if (storable != null) {
+                    ret.set(storable);
+                }
             } catch (final IOException e) {
                 LogController.CL(true).log(e);
                 throw e;
@@ -212,7 +216,7 @@ public class BytesMappedFileManager {
         }
         return ret;
     }
-    
+
     public void write(BytesMappedFile bytesMappedFile) throws IOException {
         synchronized (bytesMappedFile) {
             File file = bytesMappedFile.getFile();
