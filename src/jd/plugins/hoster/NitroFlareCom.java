@@ -499,6 +499,9 @@ public class NitroFlareCom extends antiDDoSForHost {
             handleApiErrors(account, downloadLink);
             dllink = getJson("url");
             if (inValidate(dllink)) {
+                if (br.toString().matches("Connect failed: Can't connect to local MySQL server.+")) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
