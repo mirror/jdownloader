@@ -8,12 +8,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
+import javax.swing.JComponent;
 import javax.swing.filechooser.FileFilter;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.config.SubConfiguration;
+import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -22,6 +26,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.uio.CloseReason;
 import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -81,32 +86,40 @@ public class DLCFactory extends D {
         }
     }
 
-    public void createDLC(List<DownloadLink> links) {
-
+    public void createDLC(final List<DownloadLink> links) {
         try {
-
-            String xml = createContainerString(links);
-
-            encryptAndWriteXML(xml);
+            final String xml = createContainerString(links);
+            encryptAndWriteXML(xml, getPreSetFileName(links));
         } catch (DialogCanceledException e) {
-
         } catch (DialogClosedException e) {
-
         } catch (IOException e) {
             Dialog.getInstance().showExceptionDialog("DLC Error", e.getMessage(), e);
         }
-
     }
 
-    public void createDLCByCrawledLinks(List<CrawledLink> links) {
+    private String getPreSetFileName(final List<? extends AbstractPackageChildrenNode<?>> nodes) {
+        if (nodes != null && nodes.size() > 0) {
+            if (nodes.size() == 1) {
+                final String name = nodes.get(0).getName();
+                return LinknameCleaner.cleanFileName(name, false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, false) + ".dlc";
+            } else {
+                for (AbstractPackageChildrenNode node : nodes) {
+                    final AbstractPackageNode parent = ((AbstractPackageNode) nodes.get(0).getParentNode());
+                    if (parent != null) {
+                        return parent.getName() + ".dlc";
+                    }
+                }
+            }
+        }
+        return null;
+    }
 
+    public void createDLCByCrawledLinks(final List<CrawledLink> links) {
         try {
-            String xml = createContainerStringByCrawledLinks(links);
-            encryptAndWriteXML(xml);
+            final String xml = createContainerStringByCrawledLinks(links);
+            encryptAndWriteXML(xml, getPreSetFileName(links));
         } catch (DialogCanceledException e) {
-
         } catch (DialogClosedException e) {
-
         } catch (Exception e) {
             Dialog.getInstance().showExceptionDialog("DLC Error", e.getMessage(), e);
         }
@@ -118,16 +131,26 @@ public class DLCFactory extends D {
      * @throws DialogCanceledException
      * @throws IOException
      */
-    protected void encryptAndWriteXML(String xml) throws DialogClosedException, DialogCanceledException, IOException {
-        ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.CreateDLCAction_actionPerformed_title_(), null, null);
+    protected void encryptAndWriteXML(String xml, final String preSetFilename) throws DialogClosedException, DialogCanceledException, IOException {
+        ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.CreateDLCAction_actionPerformed_title_(), null, null) {
+
+            @Override
+            public JComponent layoutDialogContent() {
+                final JComponent ret = super.layoutDialogContent();
+                final File parent = fc.getCurrentDirectory();
+                if (parent != null && StringUtils.isNotEmpty(preSetFilename)) {
+                    fc.setSelectedFile(new File(parent, CrossSystem.alleviatePathParts(preSetFilename)));
+                }
+                return ret;
+            }
+
+        };
         d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
         d.setFileFilter(new FileFilter() {
 
             @Override
             public String getDescription() {
-
                 return "*.dlc (DownloadLinkContainer)";
-
             }
 
             @Override
@@ -140,22 +163,19 @@ public class DLCFactory extends D {
         d.setMultiSelection(false);
         Dialog.I().showDialog(d);
         File file = d.getSelectedFile();
-
         if (file == null) {
             new MessageDialogImpl(0, _GUI._.DLCFactory_createDLCByCrawledLinks_nofile_title(), _GUI._.DLCFactory_createDLCByCrawledLinks_nofile_msg(), NewTheme.I().getIcon(IconKey.ICON_WARNING, 32), null).show();
             return;
         }
-
-        if (!file.getAbsolutePath().endsWith(".dlc")) {
-            file = new File(file.getAbsolutePath() + ".dlc");
+        String fileName = CrossSystem.alleviatePathParts(file.getName());
+        if (!StringUtils.endsWithCaseInsensitive(fileName, ".dlc")) {
+            fileName = fileName + ".dlc";
         }
-
-        if (writeDLC(file, xml)) {
-            return;
+        file = new File(file.getParentFile(), fileName);
+        if (!writeDLC(file, xml)) {
+            logger.severe("Container creation failed");
+            Dialog.getInstance().showErrorDialog("Container encryption failed");
         }
-        logger.severe("Container creation failed");
-
-        Dialog.getInstance().showErrorDialog("Container encryption failed");
     }
 
     /**
