@@ -28,6 +28,7 @@ import jd.plugins.download.raf.OldRAFDownload;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
@@ -92,6 +93,12 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                 outputFinalCompleteFile = new File(finalFileOutput);
             }
             outputPartFile = new File(downloadable.getFileOutputPart());
+            try {
+                if (Application.getJavaVersion() >= Application.JAVA17) {
+                    SparseFile.createSparseFile(outputPartFile);
+                }
+            } catch (IOException e) {
+            }
             outputPartFileRaf = new RandomAccessFile(outputPartFile, "rw");
         } catch (Exception e) {
             LogSource.exception(logger, e);
