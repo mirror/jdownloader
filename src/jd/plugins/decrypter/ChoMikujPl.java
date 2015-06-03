@@ -424,7 +424,7 @@ public class ChoMikujPl extends PluginForDecrypt {
 
         // Herausfinden wie viele Seiten der Link hat
         int pageCount = 1;
-        if (param.toString().matches(PAGEDECRYPTLINK)) {
+        if (parameter.matches(PAGEDECRYPTLINK)) {
             pageCount = Integer.parseInt(new Regex(parameter, ",(\\d+)$").getMatch(0));
         } else {
             pageCount = getPageCount(parameter);
