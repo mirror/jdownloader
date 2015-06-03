@@ -180,9 +180,6 @@ public class VimeoCom extends PluginForHost {
             // match refreshed qualities to stored reference, to make sure we have the same format for resume! we never want to cross over!
             if (downloadLink.getStringProperty("videoQuality", null).equalsIgnoreCase(quality[2])) {
                 finalURL = quality[0];
-                if (finalURL != null && !finalURL.startsWith("http")) {
-                    finalURL = MAINPAGE + finalURL;
-                }
                 break;
             }
         }
@@ -379,8 +376,8 @@ public class VimeoCom extends PluginForHost {
             if (passCode == null) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
             }
-            br.postPage(url, "password=" + Encoding.urlEncode(passCode) + "&token=" + xsrft);
-            if (br.containsHTML("This is a private video")) {
+            br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode) + "&token=" + xsrft);
+            if (br.containsHTML(containsPass)) {
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
             }
