@@ -1,5 +1,15 @@
+DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON=İndirme Listesi Alt Çubuk Düğmesine Basıldı
+DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON_explain=Menü Yöneticisini kullanarak özel bir Olay Betiği Yazar Düğmesini, İndirme Listesi Alt Çubuk menüsüne eklemek zorundasınız.
+DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON=İndirme Listesi Bağlam Menüsü Düğmesine Basıldı
+DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON_explain=Menü Yöneticisini kullanarak özel bir Olay Betiği Yazar Düğmesini, İndirme Listesi Bağlam menüsüne eklemek zorundasınız.
 ExampleMenuEntry=@%s1: %s2
 INTERVAL=Aralık
+LINKGRABBER_BOTTOM_BAR_BUTTON=Bağlantı Yakalayıcı Alt Çubuk Düğmesine Basıldı
+LINKGRABBER_BOTTOM_BAR_BUTTON_explain=Menü Yöneticisini kullanarak özel bir Olay Betiği Yazar Düğmesini, Bağlantı Yakalayıcı Alt Çubuk menüsüne eklemek zorundasınız.
+LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON=Bağlantı Yakalayıcı Bağlam Menüsü Düğmesine Basıldı
+LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON_explain=Menü Yöneticisini kullanarak özel bir Olay Betiği Yazar Düğmesini, Bağlantı Yakalayıcı Bağlam menüsüne eklemek zorundasınız.
+MAIN_MENU_BUTTON=Ana Menü Düğmesine Basıldı
+MAIN_MENU_BUTTON_explain=Menü Yöneticisini kullanarak özel bir Olay Betiği Yazar Düğmesini, Ana Menüye eklemek zorundasınız.
 NONE=Hiçbiri
 ON_ARCHIVE_EXTRACTED=Arşiv çıkartma tamamlandı
 ON_DOWNLOADS_PAUSE=İndirme Denetleyicisi duraklatıldı
@@ -14,6 +24,10 @@ ON_NEW_FILE=Yeni bir dosya oluşturulmuş
 ON_OUTGOING_REMOTE_API_EVENT=Uzak API Olayı atıldı
 ON_PACKAGE_FINISHED=Paket tamamlandı
 ON_PACKAGIZER=Paketleyici Kancası
+TOOLBAR_BUTTON=Araç Çubuğu Menüsü Düğmesine Basıldı
+TOOLBAR_BUTTON_explain=Menü Yöneticisini kullanarak özel bir Olay Betiği Yazar Düğmesini, Araç Çubuğuna eklemek zorundasınız.
+TRAY_BUTTON=Tepsi Menüsü Düğmesine Basıldı
+TRAY_BUTTON_explain=Menü Yöneticisini kullanarak özel bir Olay Betiği Yazar Düğmesini, Tepsi Menüsüne eklemek zorundasınız.
 allow=izin ver
 btnExampleScripts=Örnek Betikler
 classes=/* ===== Class'lar ===== */
