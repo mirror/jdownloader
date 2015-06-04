@@ -21,7 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser.BrowserException;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -29,8 +29,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fakku.net" }, urls = { "https?://(www\\.)?fakku\\.net/((viewmanga|viewonline)\\.php\\?id=\\d+|[a-z0-9\\-_]+/[a-z0-9\\-_]+/read)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fakku.net" }, urls = { "https?://(www\\.)?fakku\\.net/((viewmanga|viewonline)\\.php\\?id=\\d+|[a-z0-9\\-_]+/[a-z0-9\\-_]+/read)" }, flags = { 0 })
 public class FakkuNet extends PluginForDecrypt {
 
     public FakkuNet(PluginWrapper wrapper) {
@@ -43,50 +44,34 @@ public class FakkuNet extends PluginForDecrypt {
         String parameter = param.toString().replace("http://", "https://");
         final String url_filename = new Regex(parameter, "fakku\\.net/manga/([^<>\"]*?)/read").getMatch(0);
         br.setFollowRedirects(true);
-        try {
-            br.getPage(parameter);
-        } catch (final BrowserException e) {
-            if (br.getHttpConnection().getResponseCode() == 410) {
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                if (url_filename != null) {
-                    offline.setFinalFileName(url_filename);
-                }
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
-                return decryptedLinks;
-            }
-            throw e;
-        }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("id=\"error\"")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setFinalFileName(url_filename);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+        br.setAllowedResponseCodes(410);
+        br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 410) {
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("id=\"error\"")) {
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        final String json_array = br.getRegex("window\\.params\\.thumbs = \\[(.*?)\\];").getMatch(0);
-        String main_part = br.getRegex("(\\'|\")((https?:)?//t\\.fakku\\.net/images/[^<>\"]+/images/)(\\'|\")").getMatch(1);
+        final String json_array = br.getRegex("window\\.params\\.thumbs = (\\[.*?\\]);").getMatch(0);
+        String main_part = br.getRegex("('|\")((?:https?:)?//t\\.fakku\\.net/images/[^<>\"]+/images/)\\1").getMatch(1);
         if (json_array == null || main_part == null || fpName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        if (!main_part.startsWith("https:")) {
-            main_part = "https:" + main_part;
-        }
+        main_part = Request.getLocation(main_part, br.getRequest());
         fpName = Encoding.htmlDecode(fpName.trim());
         final DecimalFormat df = new DecimalFormat("000");
-        final String allThumbs[] = json_array.split(",");
+        final String allThumbs[] = JSonUtils.getJsonResultsFromArray(json_array);
         if (allThumbs == null || allThumbs.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         int counter = 1;
         for (String thumb : allThumbs) {
-            thumb = thumb.replace("\"", "");
+            thumb = JSonUtils.unescape(thumb);
             final String thumb_number = new Regex(thumb, "/thumbs/(\\d+)\\.thumb\\.jpg").getMatch(0);
             final DownloadLink dl = createDownloadlink("directhttp://" + main_part + thumb_number + ".jpg");
             dl.setFinalFileName(fpName + " - " + df.format(counter) + ".jpg");
