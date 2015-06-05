@@ -302,7 +302,6 @@ public class SecondLevelLaunch {
      */
 
     public static void mainStart(final String args[]) {
-
         SecondLevelLaunch.LOG = LogController.GL;
         /* setup JSPermission */
         try {

@@ -238,9 +238,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
         }
         if (queryParams.isBytesTotal()) {
-
             fps.setBytesTotal(fpView.getSize());
-
         }
         if (queryParams.isChildCount()) {
             fps.setChildCount(fp.size());
@@ -251,7 +249,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             for (int j = 0; j < hosts.length; j++) {
                 hosts[j] = di[j].getTld();
             }
-
             fps.setHosts(hosts);
         }
 
@@ -259,11 +256,9 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             fps.setSpeed(dwd.getDownloadSpeedbyFilePackage(fp));
         }
         if (queryParams.isStatus()) {
-
             setStatus(fps, fpView);
         }
         if (queryParams.isFinished()) {
-
             fps.setFinished(fpView.isFinished());
         }
         if (queryParams.isEta()) {
@@ -271,12 +266,10 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         }
         if (queryParams.isBytesLoaded()) {
             fps.setBytesLoaded(fpView.getDone());
-
         }
 
         if (queryParams.isComment()) {
             fps.setComment(fp.getComment());
-
         }
         if (queryParams.isEnabled()) {
             fps.setEnabled(fpView.isEnabled());
@@ -284,7 +277,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         if (queryParams.isRunning()) {
             fps.setRunning(dwd.getRunningFilePackages().contains(fp));
         }
-
         return fps;
     }
 
@@ -369,6 +361,9 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             if (extractionStatus != null) {
                 dls.setExtractionStatus(extractionStatus.name());
             }
+        }
+        if (queryParams.isComment()) {
+            dls.setComment(dl.getComment());
         }
 
         dls.setPackageUUID(dl.getParentNode().getUniqueID().getID());

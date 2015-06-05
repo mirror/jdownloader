@@ -45,6 +45,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashResult;
@@ -54,6 +55,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.DownloadPluginProgress;
@@ -479,19 +481,27 @@ public class OldRAFDownload extends DownloadInterface {
             if (connected.get() == false) {
                 connect();
             }
-            if (connection != null && connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
-                /* GZIP Encoding kann weder chunk noch resume */
-                /* hier dann auch den final filesize check prüfen */
-                setResume(false);
-                setChunkNum(1);
+            if (connection != null) {
+                final String contentEncoding = connection.getHeaderField("Content-Encoding");
+                boolean skipVerifyFileSizeCheck = true;
+                if (downloadable instanceof DownloadLinkDownloadable) {
+                    final String displayName = ((DownloadLinkDownloadable) downloadable).getDownloadLinkController().getProcessingPlugin().getLazyP().getDisplayName();
+                    if (StringUtils.equalsIgnoreCase(displayName, "directhttp") || StringUtils.equalsIgnoreCase(displayName, "http links")) {
+                        skipVerifyFileSizeCheck = false;
+                    }
+                }
+                if (StringUtils.containsIgnoreCase(contentEncoding, "gzip") && (downloadable.getVerifiedFileSize() < 0 || skipVerifyFileSizeCheck)) {
+                    /* GZIP Encoding kann weder chunk noch resume */
+                    /* hier dann auch den final filesize check prüfen */
+                    setResume(false);
+                    setChunkNum(1);
+                }
+                final String transferEncoding = connection.getHeaderField("Transfer-Encoding");
+                if (StringUtils.containsIgnoreCase(transferEncoding, "chunked") && (downloadable.getVerifiedFileSize() < 0 || skipVerifyFileSizeCheck)) {
+                    setResume(false);
+                    setChunkNum(1);
+                }
             }
-            if (connection != null && connection.getHeaderField("Transfer-Encoding") != null && connection.getHeaderField("Transfer-Encoding").equalsIgnoreCase("chunked")) {
-                /* hier dann auch den final filesize check prüfen */
-                downloadable.setVerifiedFileSize(-1);
-                setResume(false);
-                setChunkNum(1);
-            }
-
             // Erst hier Dateinamen holen, somit umgeht man das Problem das bei
             // mehrfachAufruf von connect entstehen kann
             if (this.downloadable.getFinalFileName() == null && ((connection != null && connection.isContentDisposition()) || this.allowFilenameFromURL)) {
