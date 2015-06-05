@@ -335,6 +335,9 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                     logger.log(e);
                 }
             }
+            if (queryParams.isComment()) {
+                cls.setComment(cl.getComment());
+            }
             if (queryParams.isBytesTotal()) {
                 cls.setBytesTotal(cl.getSize());
             }
@@ -351,7 +354,6 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             }
             if (queryParams.isEnabled()) {
                 cls.setEnabled(cl.isEnabled());
-
             }
             cls.setPackageUUID(cl.getParentNode().getUniqueID().getID());
 

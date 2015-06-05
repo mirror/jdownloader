@@ -582,6 +582,9 @@ public class DirectHTTP extends PluginForHost {
          * replace with br.setCurrentURL(null); in future (after 0.9)
          */
         this.br = new Browser();/* needed to clean referer */
+        if (!raz) {
+            this.br.getHeaders().put("Accept-Encoding", "identity");
+        }
         br.setDefaultSSLTrustALL(isSSLTrustALL());
         if (auth != null) {
             this.br.getHeaders().put("Authorization", auth);
@@ -603,6 +606,11 @@ public class DirectHTTP extends PluginForHost {
             downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
         }
         this.setCustomHeaders(this.br, downloadLink);
+        if (resume && downloadLink.getVerifiedFileSize() > 0) {
+            downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
+        } else {
+            downloadLink.setProperty("ServerComaptibleForByteRangeRequest", Property.NULL);
+        }
         if (downloadLink.getStringProperty("post", null) != null) {
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), downloadLink.getStringProperty("post", null), resume, chunks);
         } else {
