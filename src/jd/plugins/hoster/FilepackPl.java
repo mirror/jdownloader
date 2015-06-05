@@ -583,7 +583,8 @@ public class FilepackPl extends antiDDoSForHost {
                 if (traffics.length != 0) {
                     String trafficMax = traffics[0][1];
                     String trafficUsed = traffics[0][0];
-                    ai.setTrafficMax(Long.valueOf(trafficMax));
+                    // trafficMax for Premium is "30 GB" so Long.valueOf(trafficMax) will throw exception
+                    ai.setTrafficMax(trafficMax);
                     ai.setTrafficLeft(SizeFormatter.getSize(trafficMax) - SizeFormatter.getSize(trafficUsed));
                 }
             }
