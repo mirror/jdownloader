@@ -69,6 +69,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/(file/|\\?id=)?[\\w]+|ul\\.to/(file/|\\?id=)?[\\w]+)" }, flags = { 2 })
@@ -168,9 +169,22 @@ public class Uploadedto extends PluginForHost {
                 return AvailableStatus.UNCHECKABLE;
             }
             name = name.trim();
-            try {
-                name = URLDecoder.decode(name, "UTF-8");
-            } catch (final Throwable e) {
+            if (StringUtils.contains(name, "filename*")) {
+                final String fakeHeader = " ".concat(name.substring(name.indexOf("filename*")));
+                final String contentName = HTTPConnectionUtils.getFileNameFromDispositionHeader(fakeHeader);
+                if (contentName != null) {
+                    name = contentName;
+                } else {
+                    try {
+                        name = URLDecoder.decode(name, "UTF-8");
+                    } catch (final Throwable e) {
+                    }
+                }
+            } else {
+                try {
+                    name = URLDecoder.decode(name, "UTF-8");
+                } catch (final Throwable e) {
+                }
             }
             downloadLink.setFinalFileName(name.trim());
             downloadLink.setDownloadSize(SizeFormatter.getSize(size));
@@ -415,9 +429,22 @@ public class Uploadedto extends PluginForHost {
                         dl.setAvailable(false);
                     } else {
                         String name = infos[hit][4].trim();
-                        try {
-                            name = URLDecoder.decode(name, "UTF-8");
-                        } catch (final Throwable e) {
+                        if (StringUtils.contains(name, "filename*")) {
+                            final String fakeHeader = " ".concat(name.substring(name.indexOf("filename*")));
+                            final String contentName = HTTPConnectionUtils.getFileNameFromDispositionHeader(fakeHeader);
+                            if (contentName != null) {
+                                name = contentName;
+                            } else {
+                                try {
+                                    name = URLDecoder.decode(name, "UTF-8");
+                                } catch (final Throwable e) {
+                                }
+                            }
+                        } else {
+                            try {
+                                name = URLDecoder.decode(name, "UTF-8");
+                            } catch (final Throwable e) {
+                            }
                         }
                         dl.setFinalFileName(name);
                         long size = SizeFormatter.getSize(infos[hit][2]);
@@ -1832,7 +1859,7 @@ public class Uploadedto extends PluginForHost {
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
      * English.
-     * 
+     *
      * @param key
      * @return
      */
