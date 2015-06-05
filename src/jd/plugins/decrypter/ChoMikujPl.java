@@ -72,28 +72,28 @@ public class ChoMikujPl extends PluginForDecrypt {
             parameter = Encoding.Base64Decode(base);
         } else {
             parameter = param.toString().replace("chomikuj.pl//", "chomikuj.pl/");
-            // Check for multi page folder
-            br.getPage(parameter);
-            if (br.containsHTML("fileListPage")) {
-                Integer pageCount = 1;
-                while (true) {
-                    if (!br.containsHTML("rel=\"" + (pageCount + 1) + "\" ")) {
-                        break;
+            // Check for page 1 of multi page folder
+            if (!parameter.contains(",")) {
+                br.getPage(parameter);
+                if (br.containsHTML("fileListPage")) {
+                    FilePackage fp = FilePackage.getInstance();
+                    Integer pageNum = 1;
+                    while (true) {
+                        if (!br.containsHTML("class=\"\" rel=\"" + (pageNum + 1) + "\" ")) {
+                            break;
+                        }
+                        pageNum = pageNum + 1;
+                        final DownloadLink dl = createDownloadlink("http://chomikujpagedecrypt.pl/result/" + Encoding.Base64Encode(parameter + "," + pageNum));
+                        dl.setProperty("reallink", parameter);
+                        fp.add(dl);
+                        try {
+                            distribute(dl);
+                        } catch (final Throwable e) {
+                            /* does not exist in 09581 */
+                        }
+                        decryptedLinks.add(dl);
                     }
-                    pageCount = pageCount + 1;
-                }
-                logger.info("pageCount: " + pageCount);
-                FilePackage fp = FilePackage.getInstance();
-                for (int i = 2; i <= pageCount; i++) {
-                    final DownloadLink dl = createDownloadlink("http://chomikujpagedecrypt.pl/result/" + Encoding.Base64Encode(parameter + "," + i));
-                    dl.setProperty("reallink", parameter);
-                    fp.add(dl);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        /* does not exist in 09581 */
-                    }
-                    decryptedLinks.add(dl);
+                    logger.info("Number of page: " + pageNum);
                 }
             }
         }
