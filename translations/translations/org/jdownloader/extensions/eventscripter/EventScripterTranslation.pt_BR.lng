@@ -1,5 +1,15 @@
+DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON=Botão da Barra Inferior da LIsta de Downloads Pressionado
+DOWNLOAD_TABLE_BOTTOM_BAR_BUTTON_explain=Você precisa adicionar um Botão personalizado do Script de Evento ao menu da Barra Inferior da Lista de Downloads usando o Gerenciador de Menu.
+DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON=Botão do Menu de Contexto da Lista de Downloads Pressionado
+DOWNLOAD_TABLE_CONTEXT_MENU_BUTTON_explain=Você precisa adicionar um Botão personalizado do Script de Evento ao menu de Contexto da Lista de Downloads usando o Gerenciador de Menu.
 ExampleMenuEntry=@%s1: %s2
 INTERVAL=Intervalo
+LINKGRABBER_BOTTOM_BAR_BUTTON=Botão da Barra Inferior da Captura de Links Pressionado
+LINKGRABBER_BOTTOM_BAR_BUTTON_explain=Você precisa adicionar um Botão personalizado do Script de Evento ao menu da Barra Inferior da Captura de Links usando o Gerenciador de Menu.
+LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON=Botão do Menu de Contexto da Captura de Links Pressionado
+LINKGRABBER_TABLE_CONTEXT_MENU_BUTTON_explain=Você precisa adicionar um Botão personalizado do Script de Evento ao menu de Contexto da Captura de Links usando o Gerenciador de Menu.\r\n
+MAIN_MENU_BUTTON=Botão do Menu Principal Pressionado
+MAIN_MENU_BUTTON_explain=Você precisa adicionar um Botão personalizado do Script de Evento no Menu Principal usando o Gerenciador de Menu.
 NONE=Nenhum
 ON_ARCHIVE_EXTRACTED=Extração de arquivo concluída
 ON_DOWNLOADS_PAUSE=Controlador de Downloads pausado
@@ -14,6 +24,10 @@ ON_NEW_FILE=O novo arquivo foi criado
 ON_OUTGOING_REMOTE_API_EVENT=Evento API remoto disparado
 ON_PACKAGE_FINISHED=Pacote concluído
 ON_PACKAGIZER=Gancho do Criador de Pacotes
+TOOLBAR_BUTTON=Botão da Barra de Ferramentas Pressionado
+TOOLBAR_BUTTON_explain=Você precisa adicionar um Botão personalizado do Script de Evento na Barra de Ferramentas usando o Gerenciador de Menu.
+TRAY_BUTTON=Botão do Menu da Área de Notificação Pressionado
+TRAY_BUTTON_explain=Você precisa adicionar um Botão personalizado do Script de Evento no menu da Área de Notificação usando o Gerenciador de Menu.
 allow=permitir
 btnExampleScripts=Scripts de exemplo
 classes=/* ===== Classes ===== */
