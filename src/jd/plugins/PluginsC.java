@@ -18,12 +18,12 @@ package jd.plugins;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.nutils.Formatter;
-import jd.nutils.encoding.Encoding;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
@@ -45,7 +45,7 @@ import org.jdownloader.translate._JDT;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können
- * 
+ *
  * @author astaldo/JD-Team
  */
 
@@ -129,7 +129,7 @@ public abstract class PluginsC {
 
     /**
      * Diese Methode liefert eine URL zurück, von der aus der Download gestartet werden kann
-     * 
+     *
      * @param downloadLink
      *            Der DownloadLink, dessen URL zurückgegeben werden soll
      * @return Die URL als String
@@ -140,7 +140,7 @@ public abstract class PluginsC {
 
     /**
      * Liefert alle in der Containerdatei enthaltenen Dateien als DownloadLinks zurück.
-     * 
+     *
      * @param filename
      *            Die Containerdatei
      * @return Ein ArrayList mit DownloadLinks
@@ -153,9 +153,8 @@ public abstract class PluginsC {
         return askFileDeletion;
     }
 
-    public synchronized void initContainer(String filename, final byte[] bs) throws IOException {
-        File file = new File(filename);
-        if (filename == null || !file.exists() || !file.isFile()) {
+    public synchronized void initContainer(File file, final byte[] bs) throws IOException {
+        if (file == null || !file.exists() || !file.isFile()) {
             return;
         }
 
@@ -212,30 +211,31 @@ public abstract class PluginsC {
         boolean showException = true;
         try {
             /* extract filename from url */
-            String url = Encoding.urlDecode(source.getURL(), true);
-            String file = new Regex(url, "file://(.+)").getMatch(0);
-            if (file != null && new File(file).exists()) {
-                final CrawledLink origin = source.getOriginLink();
-                if (origin != null && !StringUtils.containsIgnoreCase(origin.getURL(), "file://")) {
-                    askFileDeletion = false;
-                } else if (origin != null) {
-                    url = Encoding.urlDecode(origin.getURL(), true);
-                    String originFile = new Regex(url, "file://(.+)").getMatch(0);
-                    if (originFile != null && !file.equalsIgnoreCase(originFile)) {
-                        logger.fine("Do not ask - just delete: " + origin.getURL());
+            final String currentURI = new Regex(source.getURL(), "(file:/.+)").getMatch(0);
+            if (currentURI != null) {
+                final File file = new File(new URI(currentURI));
+                if (file != null && file.exists()) {
+                    final CrawledLink origin = source.getOriginLink();
+                    if (origin != null && !StringUtils.containsIgnoreCase(origin.getURL(), "file:/")) {
                         askFileDeletion = false;
+                    } else if (origin != null) {
+                        final String originURI = new Regex(origin.getURL(), "(file:/.+)").getMatch(0);
+                        if (originURI != null && !currentURI.equalsIgnoreCase(originURI)) {
+                            logger.fine("Do not ask - just delete: " + origin.getURL());
+                            askFileDeletion = false;
+                        }
                     }
-                }
-                if (askFileDeletion) {
-                    String tmp = Application.getTempResource("").getAbsolutePath();
-                    String rel = Files.getRelativePath(tmp, file);
-                    if (rel != null) {
-                        logger.fine("Do not ask - just delete: " + origin.getURL());
-                        askFileDeletion = false;
+                    if (askFileDeletion) {
+                        final String tmp = Application.getTempResource("").getAbsolutePath();
+                        final String rel = Files.getRelativePath(tmp, file.getAbsolutePath());
+                        if (rel != null) {
+                            logger.fine("Do not ask - just delete: " + origin.getURL());
+                            askFileDeletion = false;
+                        }
                     }
+                    initContainer(file, null);
+                    retLinks = getContainedDownloadlinks();
                 }
-                initContainer(file, null);
-                retLinks = getContainedDownloadlinks();
             } else {
                 throw new Throwable("Invalid Container: " + source.getURL());
             }

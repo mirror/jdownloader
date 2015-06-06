@@ -213,7 +213,13 @@ public class DLCFactory extends D {
         java.util.List<CrawledLink> filter = new ArrayList<CrawledLink>();
         // filter
         for (CrawledLink l : links) {
-            String url = l.getDownloadLink().getPluginPatternMatcher();
+            final String contentURL = l.getDownloadLink().getContentUrl();
+            final String url;
+            if (contentURL != null) {
+                url = contentURL;
+            } else {
+                url = l.getDownloadLink().getPluginPatternMatcher();
+            }
             if (url == null) {
                 continue;
             }

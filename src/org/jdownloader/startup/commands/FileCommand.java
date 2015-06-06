@@ -1,5 +1,6 @@
 package org.jdownloader.startup.commands;
 
+import java.io.File;
 import java.util.Arrays;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
@@ -22,7 +23,7 @@ public class FileCommand extends AbstractStartupCommand {
 
         for (String s : parameters) {
             if (StringUtils.isNotEmpty(s)) {
-                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.START_PARAMETER, null), "file://" + s));
+                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.START_PARAMETER, null), new File(s).toURI().toString()));
             }
         }
 

@@ -578,7 +578,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
                 File tmp = Application.getTempResource(fileName);
                 byte[] write = IO.readStream(-1, LinkCollectorAPIImplV2.getInputStream(content));
                 IO.writeToFile(tmp, write);
-                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD), "file://" + tmp.getAbsolutePath()));
+                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD), tmp.toURI().toString()));
             } catch (IOException e) {
                 e.printStackTrace();
             }

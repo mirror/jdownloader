@@ -315,14 +315,14 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
     public void addcrypted(RemoteAPIResponse response, RemoteAPIRequest request) throws InternalApiException {
         try {
             askPermission(request);
-            String dlcContent = request.getParameterbyKey("crypted");
+            final String dlcContent = request.getParameterbyKey("crypted");
             if (dlcContent == null) {
                 throw new IllegalArgumentException("no DLC Content available");
             }
-            String dlc = dlcContent.trim().replace(" ", "+");
-            File tmp = Application.getTempResource("jd_" + System.currentTimeMillis() + ".dlc");
+            final String dlc = dlcContent.trim().replace(" ", "+");
+            final File tmp = Application.getTempResource("jd_" + System.currentTimeMillis() + ".dlc");
             IO.writeToFile(tmp, dlc.getBytes("UTF-8"));
-            String url = "file://" + tmp.getAbsolutePath();
+            final String url = tmp.toURI().toString();
             clickAndLoad2Add(new LinkOriginDetails(LinkOrigin.CNL, request.getRequestHeaders().getValue("user-agent")), url, request);
             writeString(response, request, "success\r\n", true);
         } catch (Throwable e) {

@@ -44,6 +44,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.updatev2.UpdateController;
 import org.w3c.dom.Document;
@@ -61,7 +62,7 @@ public class D extends PluginsC {
     private HashMap<String, String> header;
 
     public D() {
-        super("DLC", "file://.+\\.dlc", "$Revision$");
+        super("DLC", "file:/.+\\.dlc", "$Revision$");
         b3 = new byte[] { 77, 69, 84, 65, 45, 73, 78, 70, 47, 74, 68, 79, 87, 78, 76, 79, 65, 46, 68, 83, 65 };
         d = new byte[] { -44, 47, 74, 116, 56, -46, 20, 9, 17, -53, 0, 8, -47, 121, 1, 75 };
         // kk = (byte[]) SubConfiguration.getConfig(new String(new byte[] { 97,
@@ -727,7 +728,11 @@ public class D extends PluginsC {
                         if (data.item(entry).getNodeName().equalsIgnoreCase("url")) {
                             String sls = Encoding.Base64Decode(data.item(entry).getTextContent());
                             String[] lsr = HTMLParser.getHttpLinks(sls, null);
-                            if (lsr.length == 0) {
+                            final boolean none = lsr.length == 0;
+                            if (none && StringUtils.isNotEmpty(sls)) {
+                                lsr = Regex.getLines(sls);
+                            }
+                            if (none) {
                                 while (true) {
                                     logger.warning("Failed DLC Decoding. Try to decode again");
                                     String old = sls;
@@ -735,21 +740,20 @@ public class D extends PluginsC {
                                     if (old.equals(sls)) {
                                         break;
                                     }
-                                    lsr = HTMLParser.getHttpLinks(sls, null);
                                 }
                             }
                             // workaround. we accidently stored wrong youtube links (pluginpatternmatcher instead of contentUrl in the dlcs.
-
-                            if (sls.startsWith("youtubev2://")) {
-                                String[] ytInfo = new Regex(sls, "youtubev2\\:\\/\\/(.*?)/(.*?)/").getRow(0);
-                                if (ytInfo != null && ytInfo.length >= 2) {
-                                    // convert to decrypter link
-                                    sls = "http://www.youtube.com/watch?v=" + ytInfo[1] + "&variant=" + ytInfo[0];
-
-                                }
+                            if (HTMLParser.getProtocol(sls) != null) {
+                                ls2.add(sls);
                             }
-                            ls2.add(sls);
                             for (String link : lsr) {
+                                if (link.startsWith("youtubev2://")) {
+                                    String[] ytInfo = new Regex(link, "youtubev2\\:\\/\\/(.*?)/(.*?)/").getRow(0);
+                                    if (ytInfo != null && ytInfo.length >= 2) {
+                                        // convert to decrypter link
+                                        link = "http://www.youtube.com/watch?v=" + ytInfo[1] + "&variant=" + ytInfo[0];
+                                    }
+                                }
                                 if (!sls.trim().equals(link.trim())) {
                                     ls2.add(link);
                                 }
@@ -966,7 +970,13 @@ public class D extends PluginsC {
         java.util.List<DownloadLink> filter = new ArrayList<DownloadLink>();
         // filter
         for (DownloadLink l : links) {
-            String url = l.getPluginPatternMatcher();
+            final String contentURL = l.getContentUrl();
+            final String url;
+            if (contentURL != null) {
+                url = contentURL;
+            } else {
+                url = l.getPluginPatternMatcher();
+            }
 
             if (url == null) {
                 continue;

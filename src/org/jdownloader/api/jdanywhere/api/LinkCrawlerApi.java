@@ -133,10 +133,10 @@ public class LinkCrawlerApi implements ILinkCrawlerApi {
             if (dlcContent == null) {
                 throw new IllegalArgumentException("no DLC Content available");
             }
-            String dlc = dlcContent.trim().replace(" ", "+");
-            File tmp = Application.getTempResource("jd_" + System.currentTimeMillis() + ".dlc");
+            final String dlc = dlcContent.trim().replace(" ", "+");
+            final File tmp = Application.getTempResource("jd_" + System.currentTimeMillis() + ".dlc");
             IO.writeToFile(tmp, dlc.getBytes("UTF-8"));
-            String url = "file://" + tmp.getAbsolutePath();
+            final String url = tmp.toURI().toString();
             LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD, null), url);
             LinkCollector.getInstance().addCrawlerJob(job);
         } catch (Throwable e) {

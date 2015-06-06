@@ -2,13 +2,12 @@ package org.jdownloader.extensions.infobar;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
-import java.io.File;
-import java.util.List;
 
 import javax.swing.JComponent;
 import javax.swing.TransferHandler;
 
-import org.appwork.utils.Regex;
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.linkcollector.LinkOrigin;
 
 public class DragDropHandler extends TransferHandler {
 
@@ -36,46 +35,20 @@ public class DragDropHandler extends TransferHandler {
 
     private static final boolean isDataFlavorSupported(DataFlavor[] transferFlavors) {
         for (DataFlavor flavor : transferFlavors) {
-            if (flavor.equals(DataFlavor.javaFileListFlavor)) return true;
-            if (flavor.equals(DataFlavor.stringFlavor)) return true;
+            if (flavor.equals(DataFlavor.javaFileListFlavor)) {
+                return true;
+            }
+            if (flavor.equals(DataFlavor.stringFlavor)) {
+                return true;
+            }
         }
         return false;
     }
 
-    @SuppressWarnings("unchecked")
     private static final boolean importTransferable(Transferable t) {
         try {
-
-            if (t.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-                String files = (String) t.getTransferData(DataFlavor.stringFlavor);
-
-                String linuxfiles[] = new Regex(files, "file://(.*?)(\r\n|\r|\n)").getColumn(0);
-                if (linuxfiles != null && linuxfiles.length > 0) {
-                    for (String file : linuxfiles) {
-                        // JDController.loadContainerFile(new
-                        // File(file.trim()));
-                    }
-                } else {
-                    // JDController.distributeLinks(files);
-                }
-
-                return true;
-            } else if (t.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                List<File> files = (List<File>) t.getTransferData(DataFlavor.javaFileListFlavor);
-                // TODO
-                // OptionalPluginWrapper unrar =
-                // JDUtilities.getOptionalPlugin("unrar");
-                // boolean extract = (unrar != null && unrar.isEnabled());
-                // if (extract)
-                // JDController.getInstance().fireControlEvent(ControlEvent.CONTROL_ON_FILEOUTPUT,
-                // files.toArray(new File[] {}));
-
-                for (File file : files) {
-                    // JDController.loadContainerFile(file);
-                }
-
-                return true;
-            }
+            ClipboardMonitoring.processSupportedTransferData(t, LinkOrigin.TOOLBAR);
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
         }

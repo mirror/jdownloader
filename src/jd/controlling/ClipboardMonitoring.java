@@ -624,7 +624,7 @@ public class ClipboardMonitoring {
                     if (sb.length() > 0) {
                         sb.append("\r\n");
                     }
-                    sb.append("file://" + f.getPath());
+                    sb.append(f.toURI().toString());
                 }
             }
         }

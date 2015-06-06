@@ -3,6 +3,7 @@ package jd.controlling.linkcrawler;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -739,8 +740,8 @@ public class LinkCrawler {
                 Browser br = null;
                 try {
                     processedLinksCounter.incrementAndGet();
-                    if (StringUtils.startsWithCaseInsensitive(source.getURL(), "file://")) {
-                        final File file = new File(new URL(source.getURL()).toURI());
+                    if (StringUtils.startsWithCaseInsensitive(source.getURL(), "file:/")) {
+                        final File file = new File(new URI(source.getURL()));
                         if (file.exists() && file.isFile()) {
                             final int readLimit = Math.max(1 * 1024 * 1024, CONFIG.getDeepDecryptLoadLimit());
                             final String fileContent = new String(IO.readFile(file, readLimit), "UTF-8");
@@ -1108,7 +1109,7 @@ public class LinkCrawler {
                             /* WTF, no URL?! let's continue */
                             continue mainloop;
                         }
-                        if (url.startsWith("file://")) {
+                        if (url.startsWith("file:/")) {
                             /*
                              * first we will walk through all available container plugins
                              */
@@ -1280,7 +1281,7 @@ public class LinkCrawler {
     }
 
     protected LinkCrawlerRule matchesDeepDecryptRule(CrawledLink link, String url) {
-        if (linkCrawlerRules != null && (StringUtils.startsWithCaseInsensitive(url, "file://") || StringUtils.startsWithCaseInsensitive(url, "http://") || StringUtils.startsWithCaseInsensitive(url, "https://"))) {
+        if (linkCrawlerRules != null && (StringUtils.startsWithCaseInsensitive(url, "file:/") || StringUtils.startsWithCaseInsensitive(url, "http://") || StringUtils.startsWithCaseInsensitive(url, "https://"))) {
             Integer knownDepth = null;
             for (final LinkCrawlerRule rule : linkCrawlerRules) {
                 if (rule.isEnabled() && LinkCrawlerRule.RULE.DEEPDECRYPT.equals(rule.getRule()) && rule.matches(url)) {
@@ -2386,7 +2387,7 @@ public class LinkCrawler {
         if (protocol != null) {
             final String host = Browser.getHost(cUrl, true);
             if (protocol != null && !StringUtils.containsIgnoreCase(host, "decrypted") && !StringUtils.containsIgnoreCase(host, "dummycnl.jdownloader.org") && !StringUtils.containsIgnoreCase(host, "yt.not.allowed")) {
-                if (cUrl.startsWith("http://") || cUrl.startsWith("https://") || cUrl.startsWith("ftp://") || cUrl.startsWith("file://")) {
+                if (cUrl.startsWith("http://") || cUrl.startsWith("https://") || cUrl.startsWith("ftp://") || cUrl.startsWith("file:/")) {
                     return cUrl;
                 } else if (cUrl.startsWith("directhttp://")) {
                     return cUrl.substring("directhttp://".length());
