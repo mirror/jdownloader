@@ -345,8 +345,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
             if (sb.length() > 0) {
                 sb.append("\r\n");
             }
-            sb.append("file://");
-            sb.append(file.getPath());
+            sb.append(file.toURI().toString());
         }
         LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MAC_DOCK, null), sb.toString()));
     }

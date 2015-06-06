@@ -25,7 +25,7 @@ import jd.plugins.DownloadLink;
 
 /**
  * Im JDController wird das ganze App gesteuert. Events werden deligiert.
- * 
+ *
  * @author JD-Team/astaldo
  */
 public class JDController {
@@ -43,7 +43,7 @@ public class JDController {
     @Deprecated
     public ArrayList<DownloadLink> getContainerLinks(File file) {
         final LinkCrawler lc = LinkCrawler.newInstance();
-        lc.crawl("file://" + file.getAbsolutePath());
+        lc.crawl(file.toURI().toString());
         lc.waitForCrawling();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>(lc.getCrawledLinks().size());
         for (final CrawledLink link : lc.getCrawledLinks()) {

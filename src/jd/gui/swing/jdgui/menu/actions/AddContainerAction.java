@@ -44,13 +44,16 @@ public class AddContainerAction extends CustomizableAppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        File[] ret = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", _GUI._.gui_filechooser_loaddlc(), UserIO.FILES_ONLY, new JDFileFilter(null, ContainerPluginController.getInstance().getContainerExtensions(null), true), true);
-        if (ret == null) return;
-        StringBuilder sb = new StringBuilder();
-        for (File r : ret) {
-            if (sb.length() > 0) sb.append("\r\n");
-            sb.append("file://");
-            sb.append(r.getAbsolutePath());
+        final File[] files = UserIO.getInstance().requestFileChooser("_LOADSAVEDLC", _GUI._.gui_filechooser_loaddlc(), UserIO.FILES_ONLY, new JDFileFilter(null, ContainerPluginController.getInstance().getContainerExtensions(null), true), true);
+        if (files == null || files.length == 0) {
+            return;
+        }
+        final StringBuilder sb = new StringBuilder();
+        for (final File file : files) {
+            if (sb.length() > 0) {
+                sb.append("\r\n");
+            }
+            sb.append(file.toURI().toString());
         }
         LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.ADD_CONTAINER_ACTION, null), sb.toString()));
     }

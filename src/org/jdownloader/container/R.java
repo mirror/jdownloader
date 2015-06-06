@@ -34,7 +34,7 @@ import jd.plugins.PluginsC;
 
 public class R extends PluginsC {
     public R() {
-        super("RSDF", "file://.+\\.rsdf", "$Revision$");
+        super("RSDF", "file:/.+\\.rsdf", "$Revision$");
         // TODO Auto-generated constructor stub
     }
 

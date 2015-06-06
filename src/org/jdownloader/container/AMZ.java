@@ -27,7 +27,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class AMZ extends PluginsC {
 
     public AMZ() {
-        super("Amazon Mp3", "file://.+\\.amz", "$Revision$");
+        super("Amazon Mp3", "file:/.+\\.amz", "$Revision$");
 
     }
 
@@ -58,7 +58,9 @@ public class AMZ extends PluginsC {
             HashMap<String, FilePackage> fps = new HashMap<String, FilePackage>();
             for (String track[] : tracks) {
                 PluginForHost plg = JDUtilities.getPluginForHost("DirectHTTP");
-                if (plg == null) continue;
+                if (plg == null) {
+                    continue;
+                }
                 String name = track[3] + "." + Encoding.htmlDecode(track[2]) + "." + track[5];
                 DownloadLink link = new DownloadLink(plg, name, "DirectHTTP", Encoding.htmlOnlyDecode(track[0]), true);
                 link.setAvailable(true);

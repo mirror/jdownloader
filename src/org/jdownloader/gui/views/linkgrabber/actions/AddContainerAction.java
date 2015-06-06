@@ -23,7 +23,7 @@ public class AddContainerAction extends CustomizableAppAction {
     /**
      * @param selection
      *            TODO
-     * 
+     *
      */
     public AddContainerAction() {
 
@@ -42,7 +42,7 @@ public class AddContainerAction extends CustomizableAppAction {
     public void actionPerformed(ActionEvent e) {
 
         try {
-            String exts = ContainerPluginController.getInstance().getContainerExtensions(null);
+            final String exts = ContainerPluginController.getInstance().getContainerExtensions(null);
 
             ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.AddContainerAction_actionPerformed_(), null, null);
             d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
@@ -51,16 +51,17 @@ public class AddContainerAction extends CustomizableAppAction {
             d.setMultiSelection(true);
             Dialog.I().showDialog(d);
 
-            File[] filterFiles = d.getSelection();
-            if (filterFiles == null) return;
+            final File[] files = d.getSelection();
+            if (files == null || files.length == 0) {
+                return;
+            }
 
             final StringBuilder sb = new StringBuilder();
-            for (File r : filterFiles) {
+            for (final File file : files) {
                 if (sb.length() > 0) {
                     sb.append("\r\n");
                 }
-                sb.append("file://");
-                sb.append(r.getAbsolutePath());
+                sb.append(file.toURI().toString());
             }
             LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.ADD_CONTAINER_ACTION, null), sb.toString()));
         } catch (DialogNoAnswerException e1) {
