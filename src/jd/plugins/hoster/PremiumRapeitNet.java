@@ -145,7 +145,7 @@ public class PremiumRapeitNet extends antiDDoSForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     *
+     * 
      * @param dl
      *            : The DownloadLink
      * @param error
@@ -201,6 +201,7 @@ public class PremiumRapeitNet extends antiDDoSForHost {
             }
             ac.setMultiHostSupport(this, supportedHosts);
         }
+        // These information are not available (anymore). 20150606
         String traffic_left = br.getRegex("Available premium bandwidth: <strong>([^<>\"]+)</strong>").getMatch(0);
         String traffic_downloaded = br.getRegex("Total used premium bandwidth: <strong>([^<>\"]+)</strong>").getMatch(0);
         if (traffic_left != null && traffic_downloaded != null) {
@@ -316,6 +317,9 @@ public class PremiumRapeitNet extends antiDDoSForHost {
         String dllink;
         final String url = Encoding.urlEncode(link.getDownloadURL());
         postPage(MAINPAGE, "inputlink=" + url);
+        if (br.containsHTML(">You can't generate files until you have available premium bandwidth")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNo premium bandwidth", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
         dllink = br.getRegex("href=\"(https?://[a-z0-9]+\\.rapeit\\.net(:\\d+)?/dl/[^<>\"]+)\" target=\"_blank\"").getMatch(0);
         if (dllink == null) {
             if (br.getRedirectLocation() != null && br.getRedirectLocation().matches("https?://premium\\.rapeit\\.net/?")) {
