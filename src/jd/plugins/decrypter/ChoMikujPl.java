@@ -444,51 +444,65 @@ public class ChoMikujPl extends PluginForDecrypt {
                 saveLink = parameter;
             }
         }
-        logger.info("Looking how many pages we got here for link " + parameter + " ...");
+        // logger.info("Looking how many pages we got here for link " + parameter + " ...");
 
         // Herausfinden wie viele Seiten der Link hat
         int pageCount = 1;
-        if (param.toString().matches(PAGEDECRYPTLINK)) {
-            pageCount = Integer.parseInt(new Regex(parameter, ",(\\d+)$").getMatch(0));
-        } else {
-            // pageCount = getPageCount(parameter);
-        }
-        if (pageCount == -1) {
-            logger.warning("Error, couldn't successfully find the number of pages for link: " + parameter);
-            return null;
-        } else if (pageCount == 0) {
-            pageCount = 1;
+        if (false) {
+            if (param.toString().matches(PAGEDECRYPTLINK)) {
+                pageCount = Integer.parseInt(new Regex(parameter, ",(\\d+)$").getMatch(0));
+            } else {
+                // pageCount = getPageCount(parameter);
+            }
+            if (pageCount == -1) {
+                logger.warning("Error, couldn't successfully find the number of pages for link: " + parameter);
+                return null;
+            } else if (pageCount == 0) {
+                pageCount = 1;
+            }
         }
 
         // More than one page? Every page goes back into the decrypter as a
         // single link!
         if (pageCount > 1 && !param.toString().matches(PAGEDECRYPTLINK)) {
-            logger.info("Found " + pageCount + " pages. Adding those for the decryption now.");
+            if (false) {
+                logger.info("Found " + pageCount + " pages. Adding those for the decryption now.");
 
-            if (decryptFolders) {
-                logger.info("Getting directories from the first page");
-                final Browser tempBr = br.cloneBrowser();
-                prepareBrowser(parameter, tempBr);
+                if (decryptFolders) {
+                    logger.info("Getting directories from the first page");
+                    final Browser tempBr = br.cloneBrowser();
+                    prepareBrowser(parameter, tempBr);
 
-                final String folderTable = tempBr.getRegex("<div id=\"foldersList\">[\t\n\r ]+<table>(.*?)</table>[\t\n\r ]+</div>").getMatch(0);
-                if (folderTable != null) {
-                    allFolders = new Regex(folderTable, "<a href=\"(/[^<>\"]*?)\" rel=\"\\d+\" title=\"([^<>\"]*?)\"").getMatches();
+                    final String folderTable = tempBr.getRegex("<div id=\"foldersList\">[\t\n\r ]+<table>(.*?)</table>[\t\n\r ]+</div>").getMatch(0);
+                    if (folderTable != null) {
+                        allFolders = new Regex(folderTable, "<a href=\"(/[^<>\"]*?)\" rel=\"\\d+\" title=\"([^<>\"]*?)\"").getMatches();
+                    }
+                }
+
+                for (int i = 1; i <= pageCount; i++) {
+                    final DownloadLink dl = createDownloadlink("http://chomikujpagedecrypt.pl/result/" + Encoding.Base64Encode(parameter + "," + i));
+                    dl.setProperty("reallink", parameter);
+                    fp.add(dl);
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                        /* does not exist in 09581 */
+                    }
+                    decryptedLinks.add(dl);
                 }
             }
 
-            for (int i = 1; i <= pageCount; i++) {
-                final DownloadLink dl = createDownloadlink("http://chomikujpagedecrypt.pl/result/" + Encoding.Base64Encode(parameter + "," + i));
-                dl.setProperty("reallink", parameter);
-                fp.add(dl);
-                try {
-                    distribute(dl);
-                } catch (final Throwable e) {
-                    /* does not exist in 09581 */
-                }
-                decryptedLinks.add(dl);
-            }
         } else {
             /* Decrypt all pages, start with 1 (not 0 as it was before) */
+            pageCount = 1;
+            if (param.toString().matches(PAGEDECRYPTLINK)) {
+                pageCount = Integer.parseInt(new Regex(parameter, ",(\\d+)$").getMatch(0));
+            } else {
+                String pn = new Regex(param.toString(), "(,\\d{1,3})$").getMatch(0);
+                if (pn != null) {
+                    pageCount = Integer.parseInt(new Regex(param.toString(), ",(\\d+)$").getMatch(0));
+                }
+            }
             logger.info("Decrypting page " + pageCount + " of link: " + parameter);
             final Browser tempBr = br.cloneBrowser();
             prepareBrowser(parameter, tempBr);
