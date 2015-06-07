@@ -123,7 +123,7 @@ public class ImgclickNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        final String[] fileInfo = new String[3];
+        final String[] fileInfo = new String[2];
         final Browser altbr = br.cloneBrowser();
         br.setFollowRedirects(true);
         correctDownloadLink(link);
@@ -190,9 +190,6 @@ public class ImgclickNet extends PluginForHost {
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (fileInfo[2] != null && !fileInfo[2].equals("")) {
-            link.setMD5Hash(fileInfo[2].trim());
-        }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(fileInfo[0].trim());
         if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
@@ -244,9 +241,6 @@ public class ImgclickNet extends PluginForHost {
                     fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                 }
             }
-        }
-        if (fileInfo[2] == null) {
-            fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         }
         return fileInfo;
     }
@@ -311,9 +305,6 @@ public class ImgclickNet extends PluginForHost {
         if (dllink == null) {
             checkErrors(downloadLink, false);
             Form download1 = getFormByKey("op", "download1");
-            if (download1 == null) {
-                download1 = br.getForm(0);
-            }
             if (download1 != null) {
                 download1.remove("method_premium");
                 /* stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable! */
@@ -337,9 +328,9 @@ public class ImgclickNet extends PluginForHost {
             }
         }
         if (dllink == null) {
-            Form dlForm = br.getFormbyProperty("name", "F1");
+            Form dlForm = getForm2(downloadLink);
             if (dlForm == null) {
-                handlePluginBroken(downloadLink, "dlform_f1_null", 3);
+                handlePluginBroken(downloadLink, "dlForm_null", 3);
             }
             /* how many forms deep do you want to try? */
             int repeat = 2;
@@ -351,13 +342,6 @@ public class ImgclickNet extends PluginForHost {
                 if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
                     password = true;
                     logger.info("The downloadlink seems to be password protected.");
-                }
-                /* md5 can be on the subsequent pages - it is to be found very rare in current XFS versions */
-                if (downloadLink.getMD5Hash() == null) {
-                    String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-                    if (md5hash != null) {
-                        downloadLink.setMD5Hash(md5hash.trim());
-                    }
                 }
                 /* Captcha START */
                 if (correctedBR.contains(";background:#ccc;text-align")) {
@@ -459,22 +443,13 @@ public class ImgclickNet extends PluginForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
                 dllink = getDllink();
-                if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
+                if (dllink != null) {
+                    break;
+                }
+                dlForm = getForm2(downloadLink);
+                if (dlForm == null || i + 1 == repeat) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
-                    dlForm = br.getFormbyProperty("name", "F1");
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
-                    continue;
-                } else {
-                    try {
-                        validateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
-                    break;
                 }
             }
         }
@@ -501,6 +476,14 @@ public class ImgclickNet extends PluginForHost {
             /* remove download slot */
             controlFree(-1);
         }
+    }
+
+    private Form getForm2(final DownloadLink downloadlink) {
+        Form dlForm = br.getFormbyProperty("name", "F1");
+        if (dlForm == null) {
+            dlForm = getFormByKey("op", "view");
+        }
+        return dlForm;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
