@@ -141,6 +141,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
             dl.setProperty("mainlink", PARAMETER);
             dl.setProperty("directname", fname);
             dl.setFinalFileName(fname);
+            dl.setContentUrl(PARAMETER);
             if (SubConfiguration.getConfig("playvid.com").getBooleanProperty(FASTLINKCHECK, false)) {
                 dl.setAvailable(true);
             }
