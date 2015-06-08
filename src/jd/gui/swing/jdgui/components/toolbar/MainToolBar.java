@@ -99,7 +99,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
     private static MainToolBar         INSTANCE         = null;
 
-    private SpeedMeterPanel            speedmeter;
+    private volatile SpeedMeterPanel   speedmeter;
     private JRootPane                  rootpane;
 
     private boolean                    initDone         = false;
@@ -143,17 +143,13 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
                                 if (true) {
                                     QuickSettingsPopup pu = new QuickSettingsPopup();
                                     pu.show((Component) e.getSource(), e.getX(), e.getY());
-
                                 }
                             }
-
                         });
-
                         CFG_GUI.SPEED_METER_VISIBLE.getEventSender().addListener(MainToolBar.this, false);
                     }
                 };
                 DownloadWatchDog.getInstance().getEventSender().addListener(MainToolBar.this);
-
             }
 
         });
@@ -190,7 +186,7 @@ public class MainToolBar extends JToolBar implements MouseListener, DownloadWatc
 
     /**
      * USed to register the shortcuts to the rootpane during init
-     * 
+     *
      * @param jdGui
      */
     public void registerAccelerators(final JDGui jdGui) {

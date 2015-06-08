@@ -82,6 +82,8 @@ public class RealDebridCom extends PluginForHost {
         super(wrapper);
         this.enablePremium(mProt + mName + "/");
         setConfigElements();
+        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
+        Browser.setRequestIntervalLimitGlobal("rdb.so", 500);
     }
 
     @Override
@@ -108,7 +110,7 @@ public class RealDebridCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dl.getDownloadURL());
-            if (con.isContentDisposition()) {
+            if (con.isContentDisposition() && con.isOK()) {
                 if (dl.getFinalFileName() == null) {
                     dl.setFinalFileName(getFileNameFromHeader(con));
                 }
@@ -119,8 +121,7 @@ public class RealDebridCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } catch (final Throwable e) {
-            dl.setAvailable(false);
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return AvailableStatus.UNCHECKABLE;
         } finally {
             try {
                 /* make sure we close connection */
@@ -152,7 +153,10 @@ public class RealDebridCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
+        final AvailableStatus status = requestFileInformation(downloadLink);
+        if (AvailableStatus.UNCHECKABLE.equals(status)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
+        }
         handleDL(null, downloadLink, downloadLink.getDownloadURL());
     }
 
@@ -170,7 +174,10 @@ public class RealDebridCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, false);
         showMessage(link, "Task 1: Check URL validity!");
-        requestFileInformation(link);
+        final AvailableStatus status = requestFileInformation(link);
+        if (AvailableStatus.UNCHECKABLE.equals(status)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
+        }
         showMessage(link, "Task 2: Download begins!");
         handleDL(account, link, link.getDownloadURL());
     }
