@@ -45,6 +45,7 @@ import jd.plugins.components.YoutubeStreamData;
 import jd.plugins.components.YoutubeSubtitleInfo;
 import jd.plugins.components.YoutubeVariant;
 import jd.plugins.components.YoutubeVariantInterface;
+import jd.plugins.components.youtube.VideoResolution;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.GroupLogic;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig.IfUrlisAPlaylistAction;
@@ -661,7 +662,7 @@ public class TbCmV2 extends PluginForDecrypt {
                                     if (cfg.isBestVideoVariant1080pLimitEnabled()) {
                                         for (VariantInfo vv : e.getValue()) {
                                             try {
-                                                if (vv.getVariant().getiTagVideo().getQualityRating() < YoutubeITAG.VIDEO_RESOLUTION_1440P) {
+                                                if (vv.getVariant().getiTagVideo().getQualityRating() < VideoResolution.P_1440.getRating()) {
                                                     decryptedLinks.add(createLink(vv, e.getValue()));
                                                     added = true;
                                                     break;
@@ -938,7 +939,7 @@ public class TbCmV2 extends PluginForDecrypt {
 
     /**
      * Parse a playlist id and return all found video ids
-     *
+     * 
      * @param decryptedLinks
      * @param dupeCheckSet
      * @param base

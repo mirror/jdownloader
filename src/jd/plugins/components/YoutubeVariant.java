@@ -9,6 +9,8 @@ import javax.swing.Icon;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.youtube.AudioBitrate;
+import jd.plugins.components.youtube.AudioCodec;
 
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -670,7 +672,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.AAC_128 - 0.00000360;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_128.getRating() - 0.00000360;
         }
     },
     DEMUX_AAC_128_360P_V4("AAC_128", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
@@ -686,7 +688,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.AAC_128 - 0.00000360;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_128.getRating() - 0.00000360;
         }
     },
 
@@ -704,7 +706,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         @Override
         public double getQualityRating() {
             // -0,0001 because its better to load the 360p to demux
-            return YoutubeITAG.AAC_128 - 0.00000720;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_128.getRating() - 0.00000720;
         }
     },
     DEMUX_AAC_128_720P_V1("AAC_128", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V1, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
@@ -721,7 +723,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         @Override
         public double getQualityRating() {
             // -0,0001 because its better to load the 360p to demux
-            return YoutubeITAG.AAC_128 - 0.00000720;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_128.getRating() - 0.00000720;
         }
     },
     DEMUX_AAC_152_720P_3D_V3("AAC_152", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V3, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
@@ -737,7 +739,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.AAC_152 - 0.00000720;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_152.getRating() - 0.00000720;
         }
     },
     DEMUX_AAC_152_720P_V3("AAC_152", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V3, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
@@ -753,7 +755,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.AAC_152 - 0.00000720;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_152.getRating() - 0.00000720;
         }
     },
     DEMUX_AAC_192_720P_3D_V4("AAC_192", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
@@ -769,7 +771,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.AAC_192 - 0.00000720;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_192.getRating() - 0.00000720;
         }
     },
     DEMUX_AAC_192_720P_V4("AAC_192", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
@@ -785,7 +787,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.AAC_192 - 0.00000720;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_192.getRating() - 0.00000720;
         }
     },
     DEMUX_AAC_96_360P_3D_V1("AAC_96", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_3D_V1, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
@@ -801,7 +803,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.AAC_96 - 0.00000360;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_96.getRating() - 0.00000360;
         }
     },
     DEMUX_AAC_96_360P_V1("AAC_96", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "aac", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_V1, null, null, null, YoutubeMp4ToAACAudio.getInstance()) {
@@ -817,7 +819,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.AAC_96 - 0.00000360;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_96.getRating() - 0.00000360;
         }
     },
 
@@ -834,7 +836,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.AAC_128 + BETTER_BECAUSE_M4A - 0.00000360;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_128.getRating() + BETTER_BECAUSE_M4A - 0.00000360;
         }
     },
     DEMUX_M4A_128_360P_V4("M4A_128", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
@@ -850,7 +852,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.AAC_128 + BETTER_BECAUSE_M4A - 0.00000360;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_128.getRating() + BETTER_BECAUSE_M4A - 0.00000360;
         }
     },
     DEMUX_M4A_128_720P_3D_V1("M4A_128", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V1, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
@@ -867,7 +869,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         @Override
         public double getQualityRating() {
             // -0.0001 because loading DEMUX_M4A_128_360P_V4 would be better
-            return YoutubeITAG.AAC_128 + BETTER_BECAUSE_M4A - 0.00000720;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_128.getRating() + BETTER_BECAUSE_M4A - 0.00000720;
         }
     },
     DEMUX_M4A_128_720P_V1("M4A_128", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V1, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
@@ -884,7 +886,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         @Override
         public double getQualityRating() {
             // -0.0001 because loading DEMUX_M4A_128_360P_V4 would be better
-            return YoutubeITAG.AAC_128 + BETTER_BECAUSE_M4A - 0.00000720;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_128.getRating() + BETTER_BECAUSE_M4A - 0.00000720;
         }
     },
     DEMUX_M4A_152_720P_3D_V3("M4A_152", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D_V3, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
@@ -900,7 +902,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.AAC_152 + BETTER_BECAUSE_M4A - 0.00000720;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_152.getRating() + BETTER_BECAUSE_M4A - 0.00000720;
         }
     },
     DEMUX_M4A_152_720P_V3("M4A_152", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_V3, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
@@ -916,7 +918,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.AAC_152 + BETTER_BECAUSE_M4A - 0.00000720;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_152.getRating() + BETTER_BECAUSE_M4A - 0.00000720;
         }
     },
     DEMUX_M4A_192_720P_3D_V4("M4A_192", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC_3D, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
@@ -932,7 +934,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.AAC_192 + BETTER_BECAUSE_M4A - 0.00000720;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_192.getRating() + BETTER_BECAUSE_M4A - 0.00000720;
         }
     },
     DEMUX_M4A_192_720P_V4("M4A_192", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_720P_H264_AUDIO_AAC, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
@@ -948,7 +950,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.AAC_192 + BETTER_BECAUSE_M4A - 0.00000720;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_192.getRating() + BETTER_BECAUSE_M4A - 0.00000720;
         }
     },
 
@@ -965,7 +967,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.AAC_96 + BETTER_BECAUSE_M4A - 0.00000360;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_96.getRating() + BETTER_BECAUSE_M4A - 0.00000360;
         }
     },
     DEMUX_M4A_96_360P_V1("M4A_96", YoutubeVariantInterface.VariantGroup.AUDIO, YoutubeVariantInterface.DownloadType.VIDEO, "m4a", YoutubeITAG.MP4_VIDEO_360P_H264_AUDIO_AAC_V1, null, null, null, YoutubeMp4ToM4aAudio.getInstance()) {
@@ -981,7 +983,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.AAC_96 + BETTER_BECAUSE_M4A - 0.00000360;
+            return AudioCodec.AAC.getRating() + AudioBitrate.KBIT_96.getRating() + BETTER_BECAUSE_M4A - 0.00000360;
         }
     },
     FLV_240_LOW(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "flv", YoutubeITAG.FLV_VIDEO_LOW_240P_H263_AUDIO_MP3, null, null, null, null) {
@@ -1134,7 +1136,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         @Override
         public double getQualityRating() {
             // slightly higher rating as MP3_2. audio quality is the same, but total size is less
-            return YoutubeITAG.MP3_64 + 0.0001;
+            return AudioCodec.MP3.getRating() + AudioBitrate.KBIT_64.getRating() + 0.0001;
         }
 
         @Override
@@ -1162,7 +1164,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
         @Override
         public double getQualityRating() {
-            return YoutubeITAG.MP3_64;
+            return AudioCodec.MP3.getRating() + AudioBitrate.KBIT_64.getRating();
         }
 
         @Override
@@ -2092,7 +2094,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         this.type = type;
         this.iTagVideo = video;
         this.iTagAudio = audio;
-        this.qualityRating = 0d + (video != null ? video.qualityRating : 0) + (audio != null ? audio.qualityRating : 0) + (data != null ? data.qualityRating : 0);
+        this.qualityRating = 0d + (video != null ? video.getQualityRating() : 0) + (audio != null ? audio.getQualityRating() : 0) + (data != null ? data.getQualityRating() : 0);
         this.iTagData = data;
         this.converter = converter;
         this.filenameModifier = filenameModifier;

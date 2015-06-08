@@ -456,6 +456,11 @@ public class YoutubeDashV2 extends PluginForHost {
         void setSubtitleCopyforEachVideoVariant(boolean b);
 
         boolean isSubtitleCopyforEachVideoVariant();
+
+        @AboutConfig
+        HashMap<String, Double> getRatingMap();
+
+        void setRatingMap(HashMap<String, Double> map);
     }
 
     @Override
