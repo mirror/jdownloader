@@ -24,11 +24,10 @@ import java.util.Map;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -39,6 +38,7 @@ import jd.plugins.PluginException;
 
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PremiumaxNet extends antiDDoSForHost {
@@ -68,6 +68,11 @@ public class PremiumaxNet extends antiDDoSForHost {
     }
 
     @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
+    @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
         final AccountInfo ac = new AccountInfo();
@@ -75,31 +80,24 @@ public class PremiumaxNet extends antiDDoSForHost {
         br.setReadTimeout(60 * 1000);
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
-        if (!login(account, true)) {
-            final String lang = System.getProperty("user.language");
-            if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder Login Captcha falsch eingegeben!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or wrong login captcha input!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
-        getPage("http://www.premiumax.net/profile/");
+        login(account, true);
+        getPage("/profile/");
         boolean is_freeaccount = false;
         final String expire = br.getRegex("<span>Premium until: </span><strong>([^<>\"]*?)</strong>").getMatch(0);
         if (expire != null) {
             ac.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy hh:mm", Locale.ENGLISH));
-            ac.setStatus("Premium account");
+            ac.setStatus("Premium Account");
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
         } else {
-            ac.setStatus("Registered (free) user");
+            ac.setStatus("Free Account");
             is_freeaccount = true;
             account.setMaxSimultanDownloads(20);
             account.setConcurrentUsePossible(true);
         }
         ac.setUnlimitedTraffic();
         // now let's get a list of all supported hosts:
-        getPage("http://www.premiumax.net/hosts.html");
+        getPage("/hosts.html");
         final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] hostDomainsInfo = br.getRegex("(<img src=\"/assets/images/hosts/.*?)</tr>").getColumn(0);
@@ -155,26 +153,27 @@ public class PremiumaxNet extends antiDDoSForHost {
         if (dllink == null) {
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            postPage("http://www.premiumax.net/direct_link.html?rand=0." + System.currentTimeMillis(), "captcka=&key=indexKEY&urllist=" + Encoding.urlEncode(link.getDownloadURL()));
-            if (br.containsHTML("temporary problem")) {
-                logger.info("Current hoster is temporarily not available via premiumax.net -> Disabling it");
-                tempUnavailableHoster(60 * 60 * 1000l);
-            } else if (br.containsHTML("You do not have the rights to download from")) {
-                logger.info("Current hoster is not available via this premiumax.net account -> Disabling it");
-                tempUnavailableHoster(60 * 60 * 1000l);
-            } else if (br.containsHTML("We do not support your link")) {
-                logger.info("Current hoster is not supported by premiumax.net -> Disabling it");
-                tempUnavailableHoster(3 * 60 * 60 * 1000l);
-            } else if (br.containsHTML("You only can download")) {
-                /* We're too fast - usually this should not happen */
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Too many connections active, try again in some seconds...");
-            } else if (br.containsHTML("> Our server can\\'t connect to")) {
-                handleErrorRetries("cantconnect", 20, 5 * 60 * 1000l);
-            }
-
-            dllink = br.getRegex("\"(http://(www\\.)?premiumax\\.net/dl/[a-z0-9]+/?)\"").getMatch(0);
+            postPage("/direct_link.html?rand=0." + System.currentTimeMillis(), "captcka=&key=indexKEY&urllist=" + Encoding.urlEncode(link.getDownloadURL()));
+            dllink = br.getRegex("\"(https?://(www\\.)?premiumax\\.net/dl/[a-z0-9]+/?)\"").getMatch(0);
             if (dllink == null) {
-                handleErrorRetries("dllinknullerror", 50, 5 * 60 * 1000l);
+                if (br.containsHTML("temporary problem")) {
+                    logger.info("Current hoster is temporarily not available via premiumax.net -> Disabling it");
+                    tempUnavailableHoster(60 * 60 * 1000l);
+                } else if (br.containsHTML("You do not have the rights to download from")) {
+                    logger.info("Current hoster is not available via this premiumax.net account -> Disabling it");
+                    tempUnavailableHoster(60 * 60 * 1000l);
+                } else if (br.containsHTML("We do not support your link")) {
+                    logger.info("Current hoster is not supported by premiumax.net -> Disabling it");
+                    tempUnavailableHoster(3 * 60 * 60 * 1000l);
+                } else if (br.containsHTML("You only can download")) {
+                    /* We're too fast - usually this should not happen */
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Too many connections active, try again in some seconds...");
+                } else if (br.containsHTML("> Our server can't connect to")) {
+                    handleErrorRetries("cantconnect", 20, 5 * 60 * 1000l);
+                } else {
+                    // final failover! dllink == null
+                    handleErrorRetries("dllinknullerror", 50, 5 * 60 * 1000l);
+                }
             }
         }
 
@@ -284,12 +283,13 @@ public class PremiumaxNet extends antiDDoSForHost {
     @SuppressWarnings("unchecked")
     private boolean login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
+            final boolean ifrd = br.isFollowingRedirects();
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
                 final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                boolean acmatch = Encoding.urlEncode(account.getUser().toLowerCase()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser().toLowerCase())));
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
@@ -300,6 +300,12 @@ public class PremiumaxNet extends antiDDoSForHost {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
                             br.setCookie(MAINPAGE, key, value);
+                        }
+                        // re-use same agent from cached session.
+                        final String ua = account.getStringProperty("ua", null);
+                        if (ua != null && !ua.equals(userAgent.get())) {
+                            // cloudflare routine sets user-agent on first request.
+                            userAgent.set(ua);
                         }
                         /* Avoids unnerving login captchas */
                         if (force) {
@@ -319,21 +325,37 @@ public class PremiumaxNet extends antiDDoSForHost {
                     }
                 }
                 getPage("http://www.premiumax.net/");
-                final String stayin = br.getRegex("type=\"hidden\" name=\"stayloggedin\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (stayin == null) {
+                // lets use form, if they change shit we can at least have it fairly well detected. static posts will break easier/quicker.
+                final Form login = br.getFormByInputFieldKeyValue("password", null);
+                if (login == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                final DownloadLink dummyLink = new DownloadLink(this, "Account", "premiumax.net", "http://premiumax.net", true);
-                String captchaURL = br.getRegex("<td><a href=\"http://(?:www\\.)?premiumax\\.net//#login_re\"><img src=\"(http://[^<>\"]*?)\"").getMatch(0);
-                if (captchaURL == null) {
-                    captchaURL = "http://www.premiumax.net/veriword.php";
+                // seem to only accept username when it was to lower case within webbrowser.
+                login.put("username", Encoding.urlEncode(account.getUser().toLowerCase()));
+                login.put("password", Encoding.urlEncode(account.getPass()));
+                // old captcha type
+                if (login.containsHTML("div class=\"g-recaptcha\"")) {
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "premiumax.net", "http://premiumax.net", true);
+                    this.setDownloadLink(dummyLink);
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                } else {
+                    // left in as a fail over.
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "premiumax.net", "http://premiumax.net", true);
+                    String captchaURL = br.getRegex("<td><a href=\"http://(?:www\\.)?premiumax\\.net//#login_re\"><img src=\"(http://[^<>\"]*?)\"").getMatch(0);
+                    if (captchaURL == null) {
+                        captchaURL = "/veriword.php";
+                    }
+                    final String code = getCaptchaCode(captchaURL, dummyLink);
+                    login.put("formcode", Encoding.urlEncode(code));
                 }
-                final String code = getCaptchaCode(captchaURL, dummyLink);
-                postPage("http://www.premiumax.net/", "serviceButtonValue=login&service=login&stayloggedin=" + stayin + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&formcode=" + code);
+                login.put("serviceButtonValue", "login");
+                login.put("service", "login");
+                br.submitForm(login);
                 if (br.getCookie(MAINPAGE, "WebLoginPE") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -341,19 +363,19 @@ public class PremiumaxNet extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("name", Encoding.urlEncode(account.getUser().toLowerCase()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(MAINPAGE));
+                account.setProperty("ua", br.getHeaders().get("User-Agent"));
                 return true;
             } catch (final PluginException e) {
+                account.setProperty("name", Property.NULL);
+                account.setProperty("password", Property.NULL);
                 account.setProperty("cookies", Property.NULL);
-                return false;
+                account.setProperty("ua", Property.NULL);
+                throw e;
+            } finally {
+                br.setFollowRedirects(ifrd);
             }
         }
     }
