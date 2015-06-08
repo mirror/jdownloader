@@ -468,7 +468,7 @@ public class FilesMonsterCom extends PluginForHost {
         String expires = br.getRegex("<span>\\s*Valid until: <span class='green'>([^<>\"]+)</span>").getMatch(0);
         if (expires == null) {
             // picks up expired accounts.
-            expires = br.getRegex("<span.*?>Expire(?:s|d):\\s*(\\d{2}/\\d{2}/\\d{2})</span>").getMatch(0);
+            expires = br.getRegex("(?:<span.*?>Expire(?:s|d):|<span class=\"expire-date\\s*\">)\\s*(\\d{2}/\\d{2}/\\d{2})\\s*</span>").getMatch(0);
         }
         long ms = 0;
         if (expires != null) {
