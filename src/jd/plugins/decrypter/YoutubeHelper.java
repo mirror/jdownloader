@@ -1,6 +1,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
@@ -14,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
 
@@ -51,6 +53,8 @@ import jd.plugins.components.YoutubeStreamData;
 import jd.plugins.components.YoutubeSubtitleInfo;
 import jd.plugins.components.YoutubeVariant;
 import jd.plugins.components.YoutubeVariantInterface;
+import jd.plugins.components.youtube.AudioCodec;
+import jd.plugins.components.youtube.MediaQualityInterface;
 import jd.plugins.hoster.YoutubeDashV2.SubtitleVariant;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.utils.locale.JDL;
@@ -77,7 +81,30 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.statistics.StatsManager;
 
 public class YoutubeHelper implements YoutubeHelperInterface {
+    static {
 
+        HashMap<String, Double> ratings = PluginJsonConfig.get(YoutubeConfig.class).getRatingMap();
+        if (ratings != null) {
+            for (Entry<String, Double> es : ratings.entrySet()) {
+                try {
+                    int i = es.getKey().indexOf(".");
+                    if (i > 0) {
+                        String enu = es.getKey().substring(0, i);
+                        String fieldName = es.getKey().substring(i + 1);
+
+                        Class<?> cls = Class.forName(AudioCodec.class.getPackage().getName() + "." + enu);
+                        Field field = cls.getField(fieldName.toUpperCase(Locale.ENGLISH));
+                        ((MediaQualityInterface) field.get(null)).setRating(es.getValue());
+                        LogController.GL.info("Set Youtube Rating " + es.getKey() + " = " + es.getValue());
+                        // field.set(null, es.getValue());
+                    }
+                } catch (Throwable e) {
+                    LogController.GL.log(e);
+                }
+            }
+        }
+
+    }
     public static final String    PAID_VIDEO        = "Paid Video:";
 
     protected static final String YT_CHANNEL_ID     = "YT_CHANNEL_ID";
@@ -662,12 +689,12 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     /**
      * *
-     *
+     * 
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     *
+     * 
      * @return
      * @throws IOException
      * @throws PluginException
@@ -1277,7 +1304,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     /**
      * this method calls an API which has been deprecated by youtube. TODO: Find new API!
-     *
+     * 
      * @deprecated
      * @param vid
      * @throws IOException
