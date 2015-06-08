@@ -85,7 +85,7 @@ public class FilerockNet extends PluginForHost {
     private static final boolean           WAITFORCED                   = false;
     private static final int               WAITSECONDSMIN               = 3;
     private static final int               WAITSECONDSMAX               = 100;
-    private static final int               WAITSECONDSFORCED            = 5;
+    private static final int               WAITSECONDSFORCED            = 20;
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
     private static final int               FREE_MAXCHUNKS               = -5;
@@ -701,19 +701,14 @@ public class FilerockNet extends PluginForHost {
         int wait = 0;
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /* Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(0);
+        String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>\\s*(\\d+)\\s*</span>").getMatch(1);
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, "<span id=\"countdown_str\">Wait <span id=\"\\w+\">(\\d+)</span>").getMatch(0);
+        }
         if (ttt != null) {
             wait = Integer.parseInt(ttt);
-            if (WAITFORCED && (wait >= WAITSECONDSMAX || wait <= WAITSECONDSMIN)) {
-                logger.warning("Wait exceeds max/min, using forced wait!");
-                wait = WAITSECONDSFORCED;
-            }
-        } else if (WAITFORCED) {
-            int i = 0;
-            while (i <= WAITSECONDSMIN) {
-                i += new Random().nextInt(WAITSECONDSMIN);
-            }
-            wait = i;
+        } else {
+            wait = WAITSECONDSFORCED + new Random().nextInt(10);
         }
         wait -= passedTime;
         if (wait > 0) {
