@@ -411,7 +411,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
                             // Save cookies to the browser
                             for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                                 final String key = cookieEntry.getKey();
-                                if (!key.matches(cfRequireCookies)) {
+                                if (!key.matches(cfRequiredCookies)) {
                                     final String value = cookieEntry.getValue();
                                     br.setCookie("crunchyroll.com", key, value);
                                 }
@@ -459,7 +459,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
                 // Get the cookies saved into the browser
                 final Cookies cYT = br.getCookies("crunchyroll.com");
                 for (final Cookie c : cYT.getCookies()) {
-                    if (!c.getKey().matches(cfRequireCookies)) {
+                    if (!c.getKey().matches(cfRequiredCookies)) {
                         cookies.put(c.getKey(), c.getValue());
                     }
                 }

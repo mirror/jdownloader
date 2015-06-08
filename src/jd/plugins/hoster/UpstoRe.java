@@ -225,16 +225,16 @@ public class UpstoRe extends antiDDoSForHost {
                         }
                         // re-use same agent from cached session.
                         final String ua = account.getStringProperty("ua", null);
-                        if (ua != null && !ua.equals(agent.get())) {
+                        if (ua != null && !ua.equals(userAgent.get())) {
                             // cloudflare routine sets user-agent on first request.
-                            agent.set(ua);
+                            userAgent.set(ua);
                         }
                         return;
                     }
                 }
                 // dump previous set user-agent
-                if (agent.get() != null) {
-                    agent.set(null);
+                if (userAgent.get() != null) {
+                    userAgent.set(null);
                 }
                 if (!isMail(account.getUser())) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your mailadress in the 'username' field!\r\nBitte gib deine E-Mail Adresse in das 'Benutzername' Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -286,7 +286,7 @@ public class UpstoRe extends antiDDoSForHost {
         account.setProperty("cookies", Property.NULL);
         account.setProperty("lastlogin", Property.NULL);
         account.setProperty("ua", Property.NULL);
-        agent.set(null);
+        userAgent.set(null);
     }
 
     /**

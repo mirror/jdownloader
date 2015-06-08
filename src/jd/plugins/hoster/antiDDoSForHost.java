@@ -59,10 +59,10 @@ public abstract class antiDDoSForHost extends PluginForHost {
         return false;
     }
 
-    protected static final String                 cfRequireCookies = "cfduid|cf_clearance";
+    protected static final String                 cfRequiredCookies = "cfduid|cf_clearance";
     protected static HashMap<String, Cookies>     antiDDoSCookies  = new HashMap<String, Cookies>();
     protected final WeakHashMap<Browser, Boolean> browserPrepped   = new WeakHashMap<Browser, Boolean>();
-    protected static AtomicReference<String>      agent            = new AtomicReference<String>(null);
+    protected static AtomicReference<String>      userAgent        = new AtomicReference<String>(null);
 
     protected Browser prepBrowser(final Browser prepBr, final String host) {
         if ((browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
@@ -88,12 +88,12 @@ public abstract class antiDDoSForHost extends PluginForHost {
             }
         }
         if (useRUA()) {
-            if (agent.get() == null) {
+            if (userAgent.get() == null) {
                 /* we first have to load the plugin, before we can reference it */
                 JDUtilities.getPluginForHost("mediafire.com");
-                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+                userAgent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
             }
-            prepBr.getHeaders().put("User-Agent", agent.get());
+            prepBr.getHeaders().put("User-Agent", userAgent.get());
         }
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.getHeaders().put("Accept-Charset", null);
@@ -372,7 +372,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
      * @version 0.03
      * @author raztoki
      **/
-    private void antiDDoS(final Browser ibr) throws Exception {
+    protected final void antiDDoS(final Browser ibr) throws Exception {
         if (ibr == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -523,7 +523,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 // refresh these with every getPage/postPage/submitForm?
                 final Cookies add = ibr.getCookies(ibr.getHost());
                 for (final Cookie c : add.getCookies()) {
-                    if (new Regex(c.getKey(), cfRequireCookies).matches()) {
+                    if (new Regex(c.getKey(), cfRequiredCookies).matches()) {
                         cookies.add(c);
                     }
                 }
@@ -576,6 +576,34 @@ public abstract class antiDDoSForHost extends PluginForHost {
 
     protected final boolean isNewJD() {
         return System.getProperty("jd.revision.jdownloaderrevision") != null ? true : false;
+    }
+
+    /**
+     * Wrapper to return all browser cookies except cloudflare session cookies.
+     *
+     * @param host
+     * @return
+     */
+    protected final HashMap<String, String> fetchCookies(final String host) {
+        return fetchCookies(br, host);
+    }
+
+    /**
+     * Generic method return all browser cookies except cloudflare session cookies.
+     *
+     * @param br
+     * @param host
+     * @return
+     */
+    protected final HashMap<String, String> fetchCookies(final Browser br, final String host) {
+        final HashMap<String, String> cookies = new HashMap<String, String>();
+        final Cookies add = br.getCookies(host);
+        for (final Cookie c : add.getCookies()) {
+            if (!c.getKey().matches(cfRequiredCookies)) {
+                cookies.put(c.getKey(), c.getValue());
+            }
+        }
+        return cookies;
     }
 
     private static Object        DIALOGLOCK  = new Object();
