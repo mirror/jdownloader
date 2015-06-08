@@ -62,11 +62,12 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends PluginForHost {
 
-    private final String                  UA                       = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.72 Safari/537.36";
+    private final String                  UA                       = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.81 Safari/537.36";
     private final String                  FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
     private final String                  downloadLimitReached     = "<strong>Achtung! Sie haben ein Limit|Sie haben Ihre Download Zeitfrist erreicht\\.<";
     private final String                  PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\".*?<a href=\"(.*?)\"";
@@ -331,7 +332,7 @@ public class DepositFiles extends PluginForHost {
     }
 
     private String getDllink() throws Exception {
-        String crap = br.getRegex("document\\.getElementById\\(\\'download_container\\'\\)\\.innerHTML = \\'(.*?\\';)").getMatch(0);
+        String crap = br.getRegex("document\\.getElementById\\('download_container'\\)\\.innerHTML = '(.*?';)").getMatch(0);
         if (crap == null && br.containsHTML("download_container")) {
             crap = br.getRegex("download_container.*load\\((.*?)\n").getMatch(0);
         } else {
@@ -342,7 +343,7 @@ public class DepositFiles extends PluginForHost {
             return finallink;
         }
         if (crap != null) {
-            crap = crap.replaceAll("(\\'| |;|\\+|\\(|\\)|\t|\r|\n)", "");
+            crap = crap.replaceAll("('| |;|\\+|\\(|\\)|\t|\r|\n)", "");
             final String[] lol = HTMLParser.getHttpLinks(crap, "");
             if (lol == null || lol.length == 0) {
                 if (!crap.contains("depositfiles") && crap.contains("php?")) {
@@ -452,25 +453,17 @@ public class DepositFiles extends PluginForHost {
                     }
                     downloadLink.setProperty("pass", passCode);
                 }
-                final String fid = br.getRegex("var fid = \\'(.*?)\\';").getMatch(0);
+                final String fid = br.getRegex("var fid = '(.*?)';").getMatch(0);
                 final String wait = br.getRegex("Please wait (\\d+) sec").getMatch(0);
-                final String id = this.br.getRegex("Recaptcha\\.create\\(\\'([^\"\\']+)\\'").getMatch(0);
                 dllink = getDllink();
-                if (dllink != null && fid != null && id != null) {
+                if (dllink != null && fid != null && br.containsHTML("/recaptcha/api/js/recaptcha_ajax\\.js")) {
                     /*
                      * seems something wrong with wait time parsing so we do wait each time to be sure
                      */
                     long timeBefore = System.currentTimeMillis();
-                    Form dlForm = new Form();
-                    dlForm.setMethod(MethodType.GET);
-                    dlForm.put("fid", fid);
-                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.setForm(dlForm);
-                    rc.setId(id);
-                    rc.load();
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                    // recaptcha v2.
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+
                     int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
                     int waitThis = 62;
                     if (wait != null) {
@@ -489,8 +482,7 @@ public class DepositFiles extends PluginForHost {
                     br.getHeaders().put("Accept-Language", "de");
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.setFollowRedirects(true);
-                    br.getPage(dllink);
-                    br.getPage("/get_file.php?fid=" + fid + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
+                    br.getPage("/get_file.php?fid=" + fid + "&challenge=null&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&response=null");
                     if (br.containsHTML("(onclick=\"check_recaptcha|load_recaptcha)")) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }

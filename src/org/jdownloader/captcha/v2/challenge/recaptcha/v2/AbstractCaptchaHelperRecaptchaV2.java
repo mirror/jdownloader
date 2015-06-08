@@ -29,8 +29,8 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
     }
 
     /**
-     * 
-     * 
+     *
+     *
      * @author raztoki
      * @since JD2
      * @return
@@ -41,12 +41,12 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
 
     /**
      * will auto find api key, based on google default &lt;div&gt;, @Override to make customised finder.
-     * 
+     *
      * @author raztoki
      * @since JD2
      * @return
      */
-    public static String getRecaptchaV2ApiKey(final String source) {
+    public String getRecaptchaV2ApiKey(final String source) {
         String apiKey = null;
         if (source == null) {
             return null;
@@ -64,11 +64,12 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
             }
         }
         if (apiKey == null) {
-            final String jssource = new Regex(source, "grecaptcha\\.render\\(('|\")\\w+\\1, \\{(.*?)\\}\\)").getMatch(1);
+            final String jssource = new Regex(source, "grecaptcha\\.render\\(.*?, \\{(.*?)\\}\\);").getMatch(0);
             if (jssource != null) {
                 apiKey = new Regex(jssource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)([\\w-]+)\\2").getMatch(2);
             }
         }
         return apiKey;
     }
+
 }
