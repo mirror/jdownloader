@@ -146,6 +146,8 @@ public class AllDebridCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nToo many incorrect attempts at login!\r\nYou've been blocked for 6 hours", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else if (hash1.equalsIgnoreCase(JDHash.getMD5(br.toString()))) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou've been blocked from the API!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else if (br.getHttpConnection().getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "500 internal server error", 15 * 60 * 1000l);
         }
     }
 
@@ -271,6 +273,8 @@ public class AllDebridCom extends antiDDoSForHost {
             }
             updatestatuscode();
             handleAPIErrors(br);
+            // we need a final error handling for situations when
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         handleDL(account, link, genlink);
     }
