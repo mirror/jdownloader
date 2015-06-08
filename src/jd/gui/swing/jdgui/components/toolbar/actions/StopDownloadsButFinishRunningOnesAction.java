@@ -47,8 +47,7 @@ public class StopDownloadsButFinishRunningOnesAction extends AbstractToolBarActi
             @Override
             public void interrupt() {
             }
-        });
-
+        }, true);
     }
 
     private boolean            hideIfDownloadsAreStopped     = false;

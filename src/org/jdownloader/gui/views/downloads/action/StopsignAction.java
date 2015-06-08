@@ -56,7 +56,7 @@ public class StopsignAction extends CustomizableTableContextAppAction<FilePackag
             @Override
             public void interrupt() {
             }
-        });
+        }, true);
         DownloadsTableModel.getInstance().setStopSignColumnVisible(true);
 
     }
