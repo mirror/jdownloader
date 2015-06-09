@@ -64,7 +64,7 @@ public abstract class AbstractCaptchaHelperRecaptchaV2<T extends Plugin> {
             }
         }
         if (apiKey == null) {
-            final String jssource = new Regex(source, "grecaptcha\\.render\\(.*?, \\{(.*?)\\}\\);").getMatch(0);
+            final String jssource = new Regex(source, "recaptcha\\.render\\(.*?, \\{(.*?)\\}\\);").getMatch(0);
             if (jssource != null) {
                 apiKey = new Regex(jssource, "('|\"|)sitekey\\1\\s*:\\s*('|\"|)([\\w-]+)\\2").getMatch(2);
             }
