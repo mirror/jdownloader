@@ -22,7 +22,11 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
     private final PackageControllerTableModel<PackageType, ChildrenType>     tableModel;
     private final PackageControllerTableModelData<PackageType, ChildrenType> tableModelData;
     private ListSelectionModel                                               selectionModel = null;
-    private final AbstractNode                                               rawContext;
+    private volatile AbstractNode                                            rawContext     = null;
+
+    protected void setRawContext(AbstractNode rawContext) {
+        this.rawContext = rawContext;
+    }
 
     public static interface SelectionOnlyPackageView<PackageType, ChildrenType> extends PackageView {
 
