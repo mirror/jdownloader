@@ -1,7 +1,6 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
@@ -15,7 +14,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
 
@@ -54,7 +52,8 @@ import jd.plugins.components.YoutubeSubtitleInfo;
 import jd.plugins.components.YoutubeVariant;
 import jd.plugins.components.YoutubeVariantInterface;
 import jd.plugins.components.youtube.AudioCodec;
-import jd.plugins.components.youtube.MediaQualityInterface;
+import jd.plugins.components.youtube.MediaTagsVarious;
+import jd.plugins.components.youtube.VideoContainer;
 import jd.plugins.hoster.YoutubeDashV2.SubtitleVariant;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.utils.locale.JDL;
@@ -82,28 +81,13 @@ import org.jdownloader.statistics.StatsManager;
 
 public class YoutubeHelper implements YoutubeHelperInterface {
     static {
-
-        HashMap<String, Double> ratings = PluginJsonConfig.get(YoutubeConfig.class).getRatingMap();
-        if (ratings != null) {
-            for (Entry<String, Double> es : ratings.entrySet()) {
-                try {
-                    int i = es.getKey().indexOf(".");
-                    if (i > 0) {
-                        String enu = es.getKey().substring(0, i);
-                        String fieldName = es.getKey().substring(i + 1);
-
-                        Class<?> cls = Class.forName(AudioCodec.class.getPackage().getName() + "." + enu);
-                        Field field = cls.getField(fieldName.toUpperCase(Locale.ENGLISH));
-                        ((MediaQualityInterface) field.get(null)).setRating(es.getValue());
-                        LogController.GL.info("Set Youtube Rating " + es.getKey() + " = " + es.getValue());
-                        // field.set(null, es.getValue());
-                    }
-                } catch (Throwable e) {
-                    LogController.GL.log(e);
-                }
-            }
-        }
-
+        YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
+        MediaTagsVarious.VIDEO_FPS_60.setRating(cfg.getRating60Fps() / 100d);
+        VideoContainer.MP4.setRating(cfg.getRatingContainerMP4() / 10d);
+        VideoContainer.WEBM.setRating(cfg.getRatingContainerWEBM() / 10d);
+        AudioCodec.AAC.setRating(cfg.getRatingContainerAAC() / 10000d);
+        AudioCodec.AAC_M4A.setRating(cfg.getRatingContainerM4A() / 10000d);
+        AudioCodec.MP3.setRating(cfg.getRatingContainerMP3() / 10000d);
     }
     public static final String    PAID_VIDEO        = "Paid Video:";
 

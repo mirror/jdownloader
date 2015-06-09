@@ -4,7 +4,8 @@ public enum AudioCodec implements MediaQualityInterface {
     AAC(4, 10000),
     MP3(2, 10000),
     OPUS(1, 10000),
-    VORBIS(3, 10000);
+    VORBIS(3, 10000),
+    AAC_M4A(5, 10000);
 
     private double rating = -1;
 
