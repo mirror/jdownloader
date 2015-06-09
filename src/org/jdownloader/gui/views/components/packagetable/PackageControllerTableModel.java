@@ -314,11 +314,14 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         default:
             final SelectionInfo<PackageType, ChildrenType> selectionInfo = getTable().getSelectionInfo(true, true);
             int count = 0;
-            for (PackageView<PackageType, ChildrenType> packageView : selectionInfo.getPackageViews()) {
-                if (packageView.isPackageSelected()) {
-                    count++;
-                    if (count > 1) {
-                        break;
+            final PackageView<PackageType, ChildrenType> view = selectionInfo.getPackageView((PackageType) fp2);
+            if (view != null && view.isPackageSelected()) {
+                for (PackageView<PackageType, ChildrenType> packageView : selectionInfo.getPackageViews()) {
+                    if (packageView.isPackageSelected()) {
+                        count++;
+                        if (count > 1) {
+                            break;
+                        }
                     }
                 }
             }
