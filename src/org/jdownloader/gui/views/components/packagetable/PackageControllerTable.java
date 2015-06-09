@@ -170,14 +170,30 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
     protected volatile WeakReference<AbstractNode> contextMenuTrigger = new WeakReference<AbstractNode>(null);
 
+    protected boolean isExpandToggleEvent(final MouseEvent e) {
+        final ExtColumn<AbstractNode> column = this.getExtColumnAtPoint(e.getPoint());
+        if (column == getExpandCollapseColumn()) {
+            final Rectangle bounds = column.getBounds();
+            if (e.getPoint().x - bounds.x < 30) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected void processMouseEvent(final MouseEvent e) {
-        if (e.getID() == MouseEvent.MOUSE_PRESSED) {
+        final boolean isPressed = e.getID() == MouseEvent.MOUSE_PRESSED;
+        if (isPressed) {
             final int row = this.rowAtPoint(e.getPoint());
             final AbstractNode node = this.getModel().getObjectbyRow(row);
             final WeakReference<AbstractNode> lContextMenuTrigger = contextMenuTrigger;
             if (lContextMenuTrigger == null || lContextMenuTrigger.get() != node) {
                 contextMenuTrigger = new WeakReference<AbstractNode>(node);
             }
+        }
+        if ((isPressed || e.getID() == MouseEvent.MOUSE_RELEASED) && isExpandToggleEvent(e)) {
+            /* avoid selection for expand/collapse packages */
+            return;
         }
         super.processMouseEvent(e);
     }
@@ -756,22 +772,15 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
     @Override
     protected boolean onSingleClick(MouseEvent e, final AbstractNode obj) {
-        if (obj instanceof AbstractPackageNode) {
-            final ExtColumn<AbstractNode> column = this.getExtColumnAtPoint(e.getPoint());
-
-            if (column == getExpandCollapseColumn()) {
-                Rectangle bounds = column.getBounds();
-                if (e.getPoint().x - bounds.x < 30) {
-                    if (e.isControlDown() && !e.isShiftDown()) {
-                        tableModel.toggleFilePackageExpand((AbstractPackageNode<?, ?>) obj, TOGGLEMODE.BOTTOM);
-                    } else if (e.isControlDown() && e.isShiftDown()) {
-                        tableModel.toggleFilePackageExpand((AbstractPackageNode<?, ?>) obj, TOGGLEMODE.TOP);
-                    } else {
-                        tableModel.toggleFilePackageExpand((AbstractPackageNode<?, ?>) obj, TOGGLEMODE.CURRENT);
-                    }
-                    return true;
-                }
+        if (obj instanceof AbstractPackageNode && isExpandToggleEvent(e)) {
+            if (e.isControlDown() && !e.isShiftDown()) {
+                tableModel.toggleFilePackageExpand((AbstractPackageNode<?, ?>) obj, TOGGLEMODE.BOTTOM);
+            } else if (e.isControlDown() && e.isShiftDown()) {
+                tableModel.toggleFilePackageExpand((AbstractPackageNode<?, ?>) obj, TOGGLEMODE.TOP);
+            } else {
+                tableModel.toggleFilePackageExpand((AbstractPackageNode<?, ?>) obj, TOGGLEMODE.CURRENT);
             }
+            return true;
         }
         return super.onSingleClick(e, obj);
     }

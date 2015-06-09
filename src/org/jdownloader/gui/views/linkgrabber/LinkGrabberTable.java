@@ -184,7 +184,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
         // a left-click with mouse on empty space under the rows selects last row to improve user experience
         // like dragging the mouse to select rows
         if (e.getID() == MouseEvent.MOUSE_PRESSED) {
-            if (SwingUtilities.isLeftMouseButton(e)) {
+            if (SwingUtilities.isLeftMouseButton(e) && !isExpandToggleEvent(e)) {
                 if (rowAtPoint(e.getPoint()) < 0) {
                     final int rowCount = this.getRowCount();
                     if (rowCount > 0) {
