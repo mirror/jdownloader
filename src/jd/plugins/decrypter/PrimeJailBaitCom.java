@@ -20,35 +20,83 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primejailbait.com" }, urls = { "http://(www\\.)?primejailbait\\.com/id/\\d+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primejailbait.com" }, urls = { "https?://(www\\.)?primejailbait\\.com/(id/\\d+|profile/[A-Za-z0-9\\-_]+/fav/\\d+)/$" }, flags = { 0 })
 public class PrimeJailBaitCom extends PluginForDecrypt {
 
     public PrimeJailBaitCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private final String TYPE_SINGLE       = "^https?://(www\\.)?primejailbait\\.com/id/\\d+/$";
+    private final String TYPE_PROFILE_FAVS = "^https?://(www\\.)?primejailbait\\.com/profile/[A-Za-z0-9\\-_]+/fav/\\d+/$";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("http://", "https://");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("images/404\\.png\"") || br.getURL().equals("http://primejailbait.com/404/")) {
-            logger.info("Link offline: " + parameter);
+        if (br.containsHTML("images/404\\.png\"") || br.getURL().equals("http://primejailbait.com/404/") || br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        String finallink = br.getRegex("<div id=\"bigwall\" class=\"right\">[\t\n\r ]+<img border=0 src=\\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (finallink == null) finallink = br.getRegex("\\'(http://pics\\.primejailbait\\.com/pics/original/[a-z0-9]+\\.jpg)\\'").getMatch(0);
-        if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
+        if (parameter.matches(TYPE_PROFILE_FAVS)) {
+            final Regex urlinfo = new Regex(parameter, "primejailbait.com/profile/([^/]+)/fav/([^/]+)/$");
+            final String username = urlinfo.getMatch(0);
+            final String lid = urlinfo.getMatch(1);
 
-        decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+            String next = null;
+            final int pics_per_page = 30;
+            int currentPage = 1;
+            String[] thumbinfo = null;
+            do {
+                logger.info("Decrypting page: " + currentPage);
+                if (this.isAbort()) {
+                    logger.info("User aborted decryption process");
+                    break;
+                }
+                if (currentPage > 1) {
+                    br.getPage("/profile_inf.php?page=" + currentPage + "&user=" + username + "&list=" + lid);
+                }
+                thumbinfo = br.getRegex("<div class=\\'thumb\\' id=\\'\\d+\\'>(.*?)<span>By:").getColumn(0);
+                if (thumbinfo == null || thumbinfo.length == 0) {
+                    return null;
+                }
+                for (final String thumb : thumbinfo) {
+                    String thumb_url = new Regex(thumb, "(https?://[a-z0-9\\-\\.]+/pics/bigthumbs/[^<>\"]*?)\\'").getMatch(0);
+                    if (thumb_url == null && decryptedLinks.size() > 1) {
+                        logger.info("Probably reached end of the page");
+                        break;
+                    }
+                    if (thumb_url == null) {
+                        return null;
+                    }
+                    /* Build directlinks */
+                    thumb_url = thumb_url.replace("/bigthumbs/", "/original/");
+                    final DownloadLink dl = createDownloadlink("directhttp://" + thumb_url);
+                    dl.setAvailable(true);
+                    decryptedLinks.add(dl);
+                    distribute(dl);
+                }
+                currentPage++;
+            } while (thumbinfo.length >= pics_per_page);
+        } else {
+            String finallink = br.getRegex("<div id=\"bigwall\" class=\"right\">[\t\n\r ]+<img border=0 src=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("\\'(https?://pics\\.primejailbait\\.com/pics/original/[^<>\"\\']*?)\\'").getMatch(0);
+            }
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+
+            decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+        }
 
         return decryptedLinks;
     }

@@ -111,7 +111,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String                         fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.8.5
+    // XfileSharingProBasic Version 2.6.8.6
     // Tags: Script, template
     // mods:
     // limit-info:
@@ -133,9 +133,10 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
         if (link.getDownloadURL().matches(TYPE_EMBED)) {
+            final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
             /* Make sure user gets the kind of content urls that he added to JD. */
             try {
-                link.setContentUrl(link.getDownloadURL() + "/embed-" + fuid + ".html");
+                link.setContentUrl(url_embed);
             } catch (final Throwable e) {
                 /* Not available in 0.9.581 Stable */
             }

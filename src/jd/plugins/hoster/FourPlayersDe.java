@@ -47,15 +47,20 @@ public class FourPlayersDe extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("download_start/Downloads/Download/\\.html\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("download_start/Downloads/Download/\\.html\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("<label>Dateiname:</label>[\t\n\r ]+<div class=\"infoval filename\">([^<>\"]*?)</div>").getMatch(0);
         final String filesize = br.getRegex("<label>Dateigröße:</label>[\t\n\r ]+<div class=\"infoval\">([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);

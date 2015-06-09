@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,18 +28,22 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8muses.com" }, urls = { "http://(www\\.)?8muses\\.com/index/category/[a-z0-9\\-_]+" }, flags = { 0 })
-public class EightMusesComDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "audioinbox.com" }, urls = { "http://(www\\.)?audioinbox\\.com/c/[A-Za-z0-9]+" }, flags = { 0 })
+public class AudioinboxCom extends PluginForDecrypt {
 
-    public EightMusesComDecrypter(PluginWrapper wrapper) {
+    public AudioinboxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private final String TYPE_NORMAL = "http://(www\\.)?audioinbox\\.com/c/[A-Za-z0-9]+";
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        this.br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().matches(TYPE_NORMAL)) {
             try {
                 decryptedLinks.add(this.createOfflinelink(parameter));
             } catch (final Throwable e) {
@@ -46,26 +51,29 @@ public class EightMusesComDecrypter extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        String fpName = parameter.substring(parameter.lastIndexOf("/") + 1);
-        final String[] categories = br.getRegex("(/index/category/[a-z0-9\\-_]+)\" data\\-original\\-title").getColumn(0);
-        final String[] links = br.getRegex("(/picture/[^<>\"]*?)\"").getColumn(0);
-        if ((links == null || links.length == 0) && (categories == null || categories.length == 0)) {
+        final String json = br.getRegex("jp_container_1\" \\}, (\\[.*?\\])").getMatch(0);
+        String fpName = null;
+        if (json == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        if (links != null && links.length > 0) {
+        final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        for (final Object ressource : ressourcelist) {
+            final LinkedHashMap<String, Object> singlemap = (LinkedHashMap<String, Object>) ressource;
+            final String title = (String) singlemap.get("title");
+            final String fid = (String) singlemap.get("song_id");
+            final String url = (String) singlemap.get("link");
+            final DownloadLink dl = createDownloadlink(url);
+            dl.setLinkID(fid);
+            dl.setName(title);
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
+        }
+
+        if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            for (final String singleLink : links) {
-                final DownloadLink dl = createDownloadlink("http://www.8muses.com" + singleLink);
-                dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
-            }
-        }
-        if (categories != null && categories.length > 0) {
-            for (final String singleLink : categories) {
-                decryptedLinks.add(createDownloadlink("http://www.8muses.com" + singleLink));
-            }
+            fp.addLinks(decryptedLinks);
         }
 
         return decryptedLinks;

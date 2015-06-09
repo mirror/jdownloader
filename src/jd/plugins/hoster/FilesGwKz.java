@@ -34,14 +34,16 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.gw.kz" }, urls = { "http://[\\w\\.]*?files\\.(gw|gameworld)\\.kz/[a-z0-9]+\\.html" }, flags = { 0 })
 public class FilesGwKz extends PluginForHost {
 
-    private static final String PWPROTECTED = ">input password:</span>";
+    private static final String HTML_PWPROTECTED = ">input password:</span>";
 
-    private static final String INDEXPAGE   = "http://files.gw.kz/index.php";
+    private static final String INDEXPAGE        = "http://files.gw.kz/index.php";
+    private static final String HTML_MAINTENANCE = "is currently unavailable\\.<";
 
     public FilesGwKz(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("gameworld.", "gw."));
     }
@@ -60,8 +62,11 @@ public class FilesGwKz extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         String passCode = null;
         requestFileInformation(downloadLink);
+        if (br.containsHTML(HTML_MAINTENANCE)) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "This service is temporarily unavailable", 3 * 60 * 60 * 1000l);
+        }
         String fid = br.getRegex("\\&fid=(\\d+)\\&").getMatch(0);
-        if (br.containsHTML(PWPROTECTED)) {
+        if (br.containsHTML(HTML_PWPROTECTED)) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
             } else {
@@ -69,7 +74,7 @@ public class FilesGwKz extends PluginForHost {
                 passCode = downloadLink.getStringProperty("pass", null);
             }
             br.postPage(INDEXPAGE, "check=passtoget&fid=" + fid + "&passtoget=" + passCode);
-            if (br.containsHTML(PWPROTECTED)) {
+            if (br.containsHTML(HTML_PWPROTECTED)) {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         } else {
@@ -104,14 +109,17 @@ public class FilesGwKz extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setCookie("http://files.gw.kz", "gw_lang", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">Запрашиваемый вами файл не найден")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(HTML_MAINTENANCE)) {
+            return AvailableStatus.TRUE;
         }
         String filename = br.getRegex("class=\"span-d_name bold px14 p_l_3px\" title=\"(.*?)\"").getMatch(0);
         String filesize = br.getRegex("<b>Size: </b>(.*?)</span>").getMatch(0);
@@ -124,7 +132,7 @@ public class FilesGwKz extends PluginForHost {
         if (md5 != null) {
             link.setMD5Hash(md5.trim());
         }
-        if (br.containsHTML(PWPROTECTED)) {
+        if (br.containsHTML(HTML_PWPROTECTED)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesgwkz.passwordprotectedlink", "This link is password protected"));
         }
         return AvailableStatus.TRUE;

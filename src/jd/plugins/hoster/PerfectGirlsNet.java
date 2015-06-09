@@ -47,6 +47,7 @@ public class PerfectGirlsNet extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("perfectgirlsdecrypted.net/", "perfectgirls.net/"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         if (downloadLink.getBooleanProperty("offline", false)) {
@@ -55,7 +56,7 @@ public class PerfectGirlsNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("No htmlCode read")) {
+        if (br.containsHTML("No htmlCode read") || br.containsHTML("src=\"http://(www\\.)?dachix\\.com/flashplayer/flvplayer\\.swf\"|\"http://(www\\.)?deviantclip\\.com/flashplayer/flvplayer\\.swf\"|thumbs/misc/not_available\\.gif")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?) ::: PERFECT GIRLS</title>").getMatch(0);

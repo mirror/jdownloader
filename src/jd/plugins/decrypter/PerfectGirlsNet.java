@@ -245,7 +245,7 @@ public class PerfectGirlsNet extends PluginForDecrypt {
             return decryptedLinks;
         }
         final DownloadLink main = createDownloadlink(parameter.replace("perfectgirls.net/", "perfectgirlsdecrypted.net/"));
-        if (br.containsHTML("src=\"http://(www\\.)?dachix\\.com/flashplayer/flvplayer\\.swf\"|\"http://(www\\.)?deviantclip\\.com/flashplayer/flvplayer\\.swf\"")) {
+        if (br.containsHTML("src=\"http://(www\\.)?dachix\\.com/flashplayer/flvplayer\\.swf\"|\"http://(www\\.)?deviantclip\\.com/flashplayer/flvplayer\\.swf\"|thumbs/misc/not_available\\.gif")) {
             main.setAvailable(false);
             main.setProperty("offline", true);
         } else {
