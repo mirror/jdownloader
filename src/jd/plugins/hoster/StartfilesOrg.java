@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
@@ -24,33 +23,30 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploads.xxx" }, urls = { "http://(www\\.)?uploads\\.xxx/video/[A-Za-z0-9\\-_]+\\-[A-Z0-9]+/" }, flags = { 0 })
-public class UploadsXxx extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "startfiles.org" }, urls = { "http://(www\\.)?startfiles\\.org/download/\\?a=\\d+" }, flags = { 0 })
+public class StartfilesOrg extends PluginForHost {
 
-    @SuppressWarnings("deprecation")
-    public UploadsXxx(PluginWrapper wrapper) {
+    public StartfilesOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://uploads.xxx/rules/";
+        return "";
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
+    private static final boolean FREE_RESUME       = false;
+    private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 1;
 
     // private static final boolean ACCOUNT_FREE_RESUME = true;
@@ -67,21 +63,16 @@ public class UploadsXxx extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        this.br.setCookie(this.getHost(), "xxx_lang", "en");
-        br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 - File not found|>Sorry, but the specified file may have been deleted")) {
+        br.getPage(link.getDownloadURL() + "&lang=en");
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("META HTTP\\-EQUIV=\\'Refresh\\'|http-equiv=\"REFRESH\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String format = br.getRegex(">Format: <b>([^<>\"]*?)</b>").getMatch(0);
-        String filename = br.getRegex("class=\"title\">[\t\n\r ]+<h\\d+>([^<>\"]*?)</h\\d+>").getMatch(0);
-        String filesize = br.getRegex(">Size: <b>([^<>\"]+)<").getMatch(0);
+        String filename = br.getRegex("size=\"3\">([^<>\"]*?)</font></b>").getMatch(0);
+        String filesize = br.getRegex("color=\"#C0C0C0\" size=\"2\">([^<>\"]*?)</font></b>").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (format == null) {
-            format = "MP4";
-        }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "." + format);
+        link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -92,45 +83,40 @@ public class UploadsXxx extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    @SuppressWarnings({ "deprecation" })
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            final String fid = new Regex(downloadLink.getDownloadURL(), "\\-([A-Z0-9]+)/").getMatch(0);
-            br.getPage("/play/" + fid + "/");
-            final String streamlink = br.getRegex("file: \\'(http://[^<>\"\\']*?)\\'").getMatch(0);
-            /* video/xxx.mp4 = conversion in progress, video/lock.mp4 = IP_blocked */
-            if (streamlink == null || streamlink.contains("video/xxx.mp4") || streamlink.contains("video/lock.mp4")) {
-                // if (br.containsHTML("/img/streaming\\.jpg")) {
-                // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Converting video in progress ...");
-                // }
-                this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("/ajax.php?a=getDownloadForFree", "id=" + fid + "&_go=");
-                if (br.containsHTML("\"message\":\"error\"")) {
+            this.br.postPage(this.br.getURL(), "form_1=");
+            this.br.postPage(this.br.getURL(), "form_3=");
+            /* Waittime is skippable! */
+            // final String wait_str = br.getRegex("id=\"timer_inp\">(\\d+)<").getMatch(0);
+            // int wait = 60;
+            // if (wait_str != null) {
+            // wait = Integer.parseInt(wait_str);
+            // }
+            dllink = br.getRegex("silka=\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("(https?://(www\\.)?startfiles\\.org/download/zagruska\\.php\\?url=http[^<>\"\\']*?)").getMatch(0);
+            }
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(dllink);
+            dllink = br.getRegex("HTTP-EQUIV='Refresh' CONTENT='\\d+; URL=(http[^<>\"]*?)\\'>").getMatch(0);
+            if (dllink == null) {
+                if (this.br.toString().length() < 60) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
                 }
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.setId("6LeVtQcTAAAAAMTtLxcMjlQZan7EXS69aPVS35YT");
-                rc.load();
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                br.postPage("/ajax.php?a=getDownloadLink", "captcha1=" + Encoding.urlEncode(rc.getChallenge()) + "&captcha2=" + Encoding.urlEncode(c) + "&id=" + fid + "&_go=");
-                if (br.containsHTML("\"message\":\"error\"")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                dllink = getJson("location");
-                if (dllink == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            } else {
-                /* Prefer streams as we can avoid the captcha though the quality does not match the originally uploaded content. */
-                dllink = streamlink;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            // this.sleep(wait * 1001l, downloadLink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (this.br.getURL().contains(".php")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
@@ -163,16 +149,6 @@ public class UploadsXxx extends PluginForHost {
             }
         }
         return dllink;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     private boolean isJDStable() {

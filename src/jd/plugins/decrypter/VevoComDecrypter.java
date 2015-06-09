@@ -36,7 +36,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vevo.com" }, urls = { "http://www\\.vevo\\.com/watch/([A-Za-z0-9\\-_]+/[^/]+/[A-Z0-9]+|[A-Z0-9]+)|http://vevo\\.ly/[A-Za-z0-9]+|http://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+" }, flags = { 32 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vevo.com" }, urls = { "https?://www\\.vevo\\.com/watch/([A-Za-z0-9\\-_]+/[^/]+/[A-Z0-9]+|[A-Z0-9]+)|http://vevo\\.ly/[A-Za-z0-9]+|http://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+" }, flags = { 32 })
 public class VevoComDecrypter extends PluginForDecrypt {
 
     public VevoComDecrypter(PluginWrapper wrapper) {
@@ -68,10 +68,10 @@ public class VevoComDecrypter extends PluginForDecrypt {
     final String[]                              formats          = { ALLOW_HTTP_56, ALLOW_HTTP_500, ALLOW_HTTP_2000, ALLOW_RTMP_500, ALLOW_RTMP_800, ALLOW_RTMP_1200, ALLOW_RTMP_1600, ALLOW_HLS_64, ALLOW_HLS_200, ALLOW_HLS_400, ALLOW_HLS_500, ALLOW_HLS_800, ALLOW_HLS_1200, ALLOW_HLS_2400, ALLOW_HLS_3200, ALLOW_HLS_4200, ALLOW_HLS_5200 };
 
     /* Linktypes */
-    private static final String                 type_short       = "http://vevo\\.ly/[A-Za-z0-9]+";
-    private static final String                 type_watch       = "http://(www\\.)?vevo\\.com/watch/[A-Za-z0-9\\-_]+/[^/]+/[A-Z0-9]+";
-    private static final String                 type_watch_short = "http://(www\\.)?vevo\\.com/watch/[A-Za-z0-9]+";
-    private static final String                 type_embedded    = "http://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+";
+    private static final String                 type_short       = "https?://vevo\\.ly/[A-Za-z0-9]+";
+    private static final String                 type_watch       = "https?://(www\\.)?vevo\\.com/watch/[A-Za-z0-9\\-_]+/[^/]+/[A-Z0-9]+";
+    private static final String                 type_watch_short = "https?://(www\\.)?vevo\\.com/watch/[A-Za-z0-9]+";
+    private static final String                 type_embedded    = "https?://videoplayer\\.vevo\\.com/embed/embedded\\?videoId=[A-Za-z0-9]+";
     private static final String                 player           = "http://cache.vevo.com/a/swf/versions/3/player.swf";
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
@@ -88,7 +88,7 @@ public class VevoComDecrypter extends PluginForDecrypt {
         boolean rtmpAvailable = false;
         JDUtilities.getPluginForHost("vevo.com");
 
-        String parameter = param.toString();
+        String parameter = param.toString().replace("https://", "http://");
         if (parameter.matches(type_embedded)) {
             parameter = "http://www.vevo.com/watch/" + parameter.substring(parameter.lastIndexOf("=") + 1);
         }
@@ -146,7 +146,15 @@ public class VevoComDecrypter extends PluginForDecrypt {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                videoinfo = (LinkedHashMap<String, Object>) videos.get(videos.size() - 1);
+                /* Make sure that we find the correct source (index []) here! */
+                for (final Object videoobject : videos) {
+                    final LinkedHashMap<String, Object> check = (LinkedHashMap<String, Object>) videoobject;
+                    final String key = (String) check.get("key");
+                    if (key != null && !key.contains("related-videos")) {
+                        videoinfo = check;
+                        break;
+                    }
+                }
                 videoinfo = (LinkedHashMap<String, Object>) videoinfo.get("data");
             }
             if (videoinfo == null) {
