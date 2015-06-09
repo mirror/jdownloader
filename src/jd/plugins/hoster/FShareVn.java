@@ -18,7 +18,10 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,6 +31,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -81,6 +85,7 @@ public class FShareVn extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        br = new Browser();
         this.setBrowserExclusive();
         correctDownloadLink(link);
         prepBrowser();
@@ -132,20 +137,14 @@ public class FShareVn extends PluginForHost {
             filename = br.getRegex("<p><b>Tên file:</b> (.*?)</p>").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("<p><b>Tên tập tin:</b> (.*?)</p>").getMatch(0);
+            filename = br.getRegex("<i class=\"fa fa-file-o\"></i>\\s*(.*?)\\s*</div>").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("fa-file-o\"></i>(.*?)\\s+</div>").getMatch(0); // 20150609
+            filename = br.getRegex("<title>Fshare - (.*?)</title>").getMatch(0);
         }
-        if (filename == null) {
-            filename = br.getRegex("<title>Fshare \\- (.*?)</title>").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        }
-        String filesize = br.getRegex("<p><b>Dung lượng: </b>(.*?)</p>").getMatch(0);
+        String filesize = br.getRegex("<i class=\"fa fa-hdd-o\"></i>\\s*(.*?)\\s*</div>").getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex("fa-hdd-o\"></i> ([\\d\\.]+ [K|M|G]B)").getMatch(0);
+            filesize = br.getRegex(">\\s*([\\d\\.]+ [K|M|G]B)\\s*<").getMatch(0);
         }
         if (filename == null) {
             logger.info("filename = " + filename + ", filesize = " + filesize);
@@ -170,6 +169,7 @@ public class FShareVn extends PluginForHost {
                 dllink = null;
             }
         }
+        simulateBrowser();
         if (dllink == null) {
             if (br.containsHTML(IPBLOCKED)) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
@@ -177,9 +177,10 @@ public class FShareVn extends PluginForHost {
             // we want fs_csrf token
             final String csrf = br.getRegex("fs_csrf\\s*:\\s*'([a-f0-9]{40})'").getMatch(0);
             Browser ajax = br.cloneBrowser();
-            ajax.getHeaders().put("Accept", "*/*");
+            ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
-            ajax.postPage("/download/index", "speed=slow&fs_csrf=" + csrf);
+            ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            ajax.postPage("/download/get", "fs_csrf=" + csrf + "&DownloadForm%5Bpwd%5D=&ajax=download-form&undefined=");
             dllink = getJson(ajax, "url");
             if (dllink != null && br.containsHTML(IPBLOCKED) || ajax.containsHTML(IPBLOCKED)) {
                 final String nextDl = br.getRegex("LÆ°á»£t táº£i xuá»‘ng káº¿ tiáº¿p lÃ : ([^<>]+)<").getMatch(0);
@@ -199,9 +200,9 @@ public class FShareVn extends PluginForHost {
                 }
             }
             if (dllink == null) {
-                dllink = br.getRegex("window\\.location=\\'(.*?)\\'").getMatch(0);
+                dllink = br.getRegex("window\\.location='(.*?)'").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("value=\"Download\" name=\"btn_download\" value=\"Download\"  onclick=\"window\\.location=\\'(http://.*?)\\'\"").getMatch(0);
+                    dllink = br.getRegex("value=\"Download\" name=\"btn_download\" value=\"Download\"  onclick=\"window\\.location='(http://.*?)'\"").getMatch(0);
                     if (dllink == null) {
                         dllink = br.getRegex("<form action=\"(http://download[^\\.]+\\.fshare\\.vn/download/[^<>]+/.*?)\"").getMatch(0);
                     }
@@ -209,12 +210,16 @@ public class FShareVn extends PluginForHost {
             }
             logger.info("downloadURL = " + dllink);
             // Waittime
-            String wait = br.getRegex("var count = \"(\\d+)\";").getMatch(0);
+            String wait = getJson(ajax, "wait_time");
             if (wait == null) {
-                wait = br.getRegex("var count = (\\d+);").getMatch(0);
-            }
-            if (wait == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.getRegex("var count = \"(\\d+)\";").getMatch(0);
+                if (wait == null) {
+                    wait = br.getRegex("var count = (\\d+);").getMatch(0);
+                    if (wait == null) {
+                        wait = "35";
+                        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
             }
             // No downloadlink shown, host is buggy
             if (dllink == null && "0".equals(wait)) {
@@ -239,6 +244,7 @@ public class FShareVn extends PluginForHost {
     private void prepBrowser() {
         // Sometime the page is extremely slow!
         br.setReadTimeout(120 * 1000);
+        br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
@@ -490,7 +496,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -500,7 +506,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -510,7 +516,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -520,7 +526,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJsonArray(final String source, final String key) {
@@ -530,7 +536,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
@@ -540,13 +546,73 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return String[] value from provided JSon Array
-     * 
+     *
      * @author raztoki
      * @param source
      * @return
      */
     private String[] getJsonResultsFromArray(final String source) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
+    }
+
+    LinkedHashSet<String> dupe = new LinkedHashSet<String>();
+
+    /**
+     * @author raztoki
+     */
+    private void simulateBrowser() throws InterruptedException {
+        ArrayList<String> links = new ArrayList<String>();
+        String[] l1 = br.getRegex("\\s+(?:src|href)=(\"|')(.*?)\\1").getColumn(1);
+        if (l1 != null) {
+            links.addAll(Arrays.asList(l1));
+        }
+        l1 = br.getRegex("\\s+(?:src|href)=(?!\"|')([^\\s]+)").getColumn(0);
+        if (l1 != null) {
+            links.addAll(Arrays.asList(l1));
+        }
+        for (final String link : links) {
+            // lets only add links related to this hoster.
+            final String correctedLink = Request.getLocation(link, br.getRequest());
+            if (!"fshare.vn".equalsIgnoreCase(Browser.getHost(correctedLink))) {
+                continue;
+            }
+            if (!correctedLink.contains(".png") && !correctedLink.contains(".js") && !correctedLink.contains(".css")) {
+                continue;
+            }
+            if (dupe.add(correctedLink)) {
+                final Thread simulate = new Thread("SimulateBrowser") {
+
+                    public void run() {
+                        final Browser rb = br.cloneBrowser();
+                        rb.getHeaders().put("Cache-Control", null);
+                        // open get connection for images, need to confirm
+                        if (correctedLink.matches(".+\\.png.*")) {
+                            rb.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
+                        }
+                        if (correctedLink.matches(".+\\.js.*")) {
+                            rb.getHeaders().put("Accept", "*/*");
+                        } else if (correctedLink.matches(".+\\.css.*")) {
+                            rb.getHeaders().put("Accept", "text/css,*/*;q=0.1");
+                        }
+                        URLConnectionAdapter con = null;
+                        try {
+                            con = rb.openGetConnection(correctedLink);
+                        } catch (final Exception e) {
+                        } finally {
+                            try {
+                                con.disconnect();
+                            } catch (final Exception e) {
+                            }
+                        }
+                    }
+
+                };
+                simulate.start();
+                Thread.sleep(100);
+            }
+        }
+        Thread.sleep(2000);
+
     }
 
 }
