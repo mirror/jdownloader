@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.controlling.captcha.SkipException;
@@ -29,6 +30,7 @@ import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 
 public class ChallengeResponseController {
@@ -91,14 +93,13 @@ public class ChallengeResponseController {
     }
 
     private final HashMap<String, SolverService> solverMap   = new HashMap<String, SolverService>();
-    private final List<SolverService>            serviceList = new ArrayList<SolverService>();
+    private final List<SolverService>            serviceList = new CopyOnWriteArrayList<SolverService>();
 
-    private boolean addSolver(ChallengeSolver<?> solver) {
+    private synchronized boolean addSolver(ChallengeSolver<?> solver) {
         if (solverMap.put(solver.getService().getID(), solver.getService()) == null) {
             serviceList.add(solver.getService());
         }
         return solverList.add(solver);
-
     }
 
     public <E> void fireNewAnswerEvent(SolverJob<E> job, AbstractResponse<E> abstractResponse) {
@@ -138,9 +139,9 @@ public class ChallengeResponseController {
 
     }
 
-    private List<ChallengeSolver<?>>    solverList = new ArrayList<ChallengeSolver<?>>();
-    private List<SolverJob<?>>          activeJobs = new ArrayList<SolverJob<?>>();
-    private HashMap<Long, SolverJob<?>> idToJobMap = new HashMap<Long, SolverJob<?>>();
+    private final List<ChallengeSolver<?>>               solverList = new CopyOnWriteArrayList<ChallengeSolver<?>>();
+    private final List<SolverJob<?>>                     activeJobs = new ArrayList<SolverJob<?>>();
+    private final HashMap<UniqueAlltimeID, SolverJob<?>> idToJobMap = new HashMap<UniqueAlltimeID, SolverJob<?>>();
 
     /**
      * When one job gets a skiprequest, we have to check all pending jobs if this skiprequest affects them as well. if so, we have to skip
@@ -159,22 +160,22 @@ public class ChallengeResponseController {
                     job.setSkipRequest(skipRequest);
                 }
             }
-
         }
     }
 
     public <T> SolverJob<T> handle(final Challenge<T> c) throws InterruptedException, SkipException {
-        ArrayList<ChallengeSolver<T>> solver = null;
         LogSource logger = LogController.getInstance().getPreviousThreadLogSource();
         if (logger == null) {
             logger = this.logger;
         }
         logger.info("Log to " + logger.getName());
         logger.info("Handle Challenge: " + c);
-        solver = createList(c);
+        final ArrayList<ChallengeSolver<T>> solver = createList(c);
         logger.info("Solver: " + solver);
-
-        @SuppressWarnings({ "rawtypes", "unchecked" })
+        if (solver.size() == 0) {
+            logger.info("No solver available!");
+            throw new SkipException(SkipRequest.BLOCK_HOSTER);
+        }
         final SolverJob<T> job = new SolverJob<T>(this, c, solver);
         job.setLogger(logger);
         final Plugin plugin = Challenge.getPlugin(c);
@@ -185,9 +186,10 @@ public class ChallengeResponseController {
                 ((PluginForDecrypt) plugin).setLastSolverJob(job);
             }
         }
+        final UniqueAlltimeID jobID = c.getId();
         synchronized (activeJobs) {
             activeJobs.add(job);
-            idToJobMap.put(c.getId().getID(), job);
+            idToJobMap.put(jobID, job);
         }
         try {
             for (final ChallengeSolver<T> cs : solver) {
@@ -218,7 +220,7 @@ public class ChallengeResponseController {
             try {
                 synchronized (activeJobs) {
                     activeJobs.remove(job);
-                    idToJobMap.remove(job.getChallenge().getId().getID());
+                    idToJobMap.remove(jobID);
                 }
             } finally {
                 fireJobDone(job);
@@ -229,7 +231,7 @@ public class ChallengeResponseController {
     @SuppressWarnings("unchecked")
     private <T> ArrayList<ChallengeSolver<T>> createList(Challenge<T> c) {
         final ArrayList<ChallengeSolver<T>> ret = new ArrayList<ChallengeSolver<T>>();
-        for (ChallengeSolver<?> s : solverList) {
+        for (final ChallengeSolver<?> s : solverList) {
             try {
                 if (s.isEnabled() && s.canHandle(c)) {
                     ret.add((ChallengeSolver<T>) s);
@@ -238,7 +240,6 @@ public class ChallengeResponseController {
                 logger.log(e);
             }
         }
-
         return ret;
     }
 
@@ -247,23 +248,21 @@ public class ChallengeResponseController {
     }
 
     public List<SolverService> listServices() {
-        return serviceList;
+        return new ArrayList<SolverService>(serviceList);
     }
 
     public SolverService getServiceByID(String key) {
-
-        for (SolverService service : ChallengeResponseController.getInstance().listServices()) {
+        for (final SolverService service : serviceList) {
             if (service.getID().equals(key)) {
                 return service;
-
             }
         }
         return null;
     }
 
     public void resetTiming() {
-        HashSet<Object> dupe = new HashSet<Object>();
-        for (ChallengeSolver<?> s : solverList) {
+        final HashSet<Object> dupe = new HashSet<Object>();
+        for (final ChallengeSolver<?> s : solverList) {
             if (dupe.add(s.getService())) {
                 s.getService().getConfig().setWaitForMap(null);
             }
