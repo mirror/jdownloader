@@ -351,15 +351,17 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
                     @Override
                     protected void modifyPackageData(PackageType pkg, List<ChildrenType> unfilteredChildren) {
-                        if (unfilteredChildren.size() > 0) {
-                            if (doToggle) {
+                        if (doToggle) {
+                            if (unfilteredChildren.size() > 0) {
                                 pkg.setExpanded(currentExpandedState);
-                                if (pkg == fp2) {
-                                    doToggle = false;
-                                }
-                            } else {
-                                if (pkg == fp2) {
-                                    doToggle = true;
+                            }
+                            if (pkg == fp2) {
+                                doToggle = false;
+                            }
+                        } else {
+                            if (pkg == fp2) {
+                                doToggle = true;
+                                if (unfilteredChildren.size() > 0) {
                                     pkg.setExpanded(currentExpandedState);
                                 }
                             }
