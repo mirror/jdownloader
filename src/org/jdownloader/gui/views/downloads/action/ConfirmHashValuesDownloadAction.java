@@ -130,7 +130,7 @@ public class ConfirmHashValuesDownloadAction extends CustomizableTableContextApp
                             cl.getDownloadLink().setSha1Hash(sha1);
                         }
                         if (sha256 != null) {
-                            cl.getDownloadLink().setSha1Hash(sha256);
+                            cl.getDownloadLink().setSha256Hash(sha256);
                         }
                     }
                 }
