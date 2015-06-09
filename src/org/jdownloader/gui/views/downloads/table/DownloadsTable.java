@@ -90,7 +90,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         this.setDragEnabled(true);
         this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
         logger = LogController.getInstance().getLogger(DownloadsTable.class.getName());
-        onSelectionChanged();
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 
         // loaderPanel.setSize(400, 400);

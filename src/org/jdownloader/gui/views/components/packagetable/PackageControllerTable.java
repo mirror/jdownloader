@@ -20,6 +20,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableModel;
 
 import jd.controlling.packagecontroller.AbstractNode;
@@ -132,7 +134,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         }
     }
 
-    public PackageControllerTable(PackageControllerTableModel<ParentType, ChildrenType> pctm) {
+    public PackageControllerTable(final PackageControllerTableModel<ParentType, ChildrenType> pctm) {
         super(pctm);
         tableModel = pctm;
 
@@ -151,19 +153,29 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 updateMoveActions();
             }
         };
+        this.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+
+            public void valueChanged(final ListSelectionEvent e) {
+                if (e == null || e.getValueIsAdjusting() || tableModel.isTableSelectionClearing()) {
+                    return;
+                }
+                selectionVersion.incrementAndGet();
+            }
+        });
     }
 
     public SelectionInfo<ParentType, ChildrenType> getSelectionInfo() {
         return getSelectionInfo(true, true);
     }
 
-    protected WeakReference<AbstractNode> contextMenuTrigger = new WeakReference<AbstractNode>(null);
+    protected volatile WeakReference<AbstractNode> contextMenuTrigger = new WeakReference<AbstractNode>(null);
 
     protected void processMouseEvent(final MouseEvent e) {
         if (e.getID() == MouseEvent.MOUSE_PRESSED) {
             final int row = this.rowAtPoint(e.getPoint());
             final AbstractNode node = this.getModel().getObjectbyRow(row);
-            if (contextMenuTrigger == null || contextMenuTrigger.get() != node) {
+            final WeakReference<AbstractNode> lContextMenuTrigger = contextMenuTrigger;
+            if (lContextMenuTrigger == null || lContextMenuTrigger.get() != node) {
                 contextMenuTrigger = new WeakReference<AbstractNode>(node);
             }
         }
@@ -171,18 +183,19 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     protected AbstractNode getContextMenuTrigger() {
-        if (contextMenuTrigger != null) {
-            return contextMenuTrigger.get();
+        final WeakReference<AbstractNode> lContextMenuTrigger = contextMenuTrigger;
+        if (lContextMenuTrigger != null) {
+            return lContextMenuTrigger.get();
         }
         return null;
     }
 
     /** access within EDT only **/
-    protected SelectionInfoCache selectionOnly_TableData      = null;
+    protected volatile SelectionInfoCache selectionOnly_TableData      = null;
     /** access within EDT only **/
-    protected SelectionInfoCache selectionOnly_ControllerData = null;
+    protected volatile SelectionInfoCache selectionOnly_ControllerData = null;
     /** access within EDT only **/
-    protected SelectionInfoCache all_TableData                = null;
+    protected volatile SelectionInfoCache all_TableData                = null;
 
     public SelectionInfo<ParentType, ChildrenType> getSelectionInfo(final boolean selectionOnly, final boolean useTableModelData) {
         if (selectionOnly) {
@@ -194,14 +207,22 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                     if (useTableModelData) {
                         SelectionInfoCache lselectionOnly_TableData = selectionOnly_TableData;
                         final long dataVersion = tableModel.getTableDataVersion();
+                        final AbstractNode contextMenuTrigger = getContextMenuTrigger();
                         if (lselectionOnly_TableData != null && lselectionOnly_TableData.getSelectionVersion() == currentSelectionVersion && lselectionOnly_TableData.getDataVersion() == dataVersion) {
-                            return lselectionOnly_TableData.getSelectionInfo();
+                            final SelectionInfo<ParentType, ChildrenType> ret = lselectionOnly_TableData.getSelectionInfo();
+                            if (ret instanceof PackageControllerTableModelSelectionOnlySelectionInfo) {
+                                ((PackageControllerTableModelSelectionOnlySelectionInfo<?, ?>) ret).setRawContext(contextMenuTrigger);
+                                return ret;
+                            }
+                            if (ret.getRawContext() == contextMenuTrigger) {
+                                return ret;
+                            }
                         }
                         final SelectionInfo<ParentType, ChildrenType> selectionInfo;
                         if (getSelectionModel().isSelectionEmpty()) {
                             selectionInfo = new EmptySelectionInfo<ParentType, ChildrenType>();
                         } else {
-                            selectionInfo = new PackageControllerTableModelSelectionOnlySelectionInfo<ParentType, ChildrenType>(getContextMenuTrigger(), getModel());
+                            selectionInfo = new PackageControllerTableModelSelectionOnlySelectionInfo<ParentType, ChildrenType>(contextMenuTrigger, getModel());
                         }
                         lselectionOnly_TableData = new SelectionInfoCache(currentSelectionVersion, dataVersion, selectionInfo);
                         selectionOnly_TableData = lselectionOnly_TableData;
@@ -280,7 +301,6 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
 
     @Override
     protected void onSelectionChanged() {
-        selectionVersion.incrementAndGet();
         super.onSelectionChanged();
         if (tableModel.hasSelectedObjects() == false || !updateMoveButtonEnabledStatus()) {
             // disable move buttons

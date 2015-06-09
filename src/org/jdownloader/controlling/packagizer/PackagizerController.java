@@ -349,7 +349,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     }
                 }
                 if (StringUtils.isEmpty(packagename)) {
-                    return input;
+                    return "";
                 }
                 if (StringUtils.isNotEmpty(modifiers)) {
                     Pattern patt = lgr.getPackageNameRule().getPattern();

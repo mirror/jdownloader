@@ -303,6 +303,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
             }
         }
 
+        ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_packagename(), "<jd:" + PackagizerController.ORGPACKAGENAME + ">"));
         if (getPackagenameFilter().isEnabled()) {
             for (int i = 0; i < getPackagenameFilter().calcPlaceholderCount(); i++) {
                 ret.add(new VariableAction(txtPackagename2, _GUI._.PackagizerFilterRuleDialog_createVariablesMenu_package((i + 1)), "<jd:" + PackagizerController.ORGPACKAGENAME + ":" + (i + 1) + ">"));
