@@ -30,19 +30,18 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.net" }, urls = { "https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/(shared|s)/(?!static)[a-z0-9]+(/\\d+/\\d+)?" }, flags = { 0 })
-public class BxNt extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "box.net" }, urls = { "https?://(www|[a-z0-9\\-_]*)(?:\\.?app)?\\.box\\.(net|com)/(shared|s)/(?!static)[a-z0-9]+(/\\d+/\\d+)?" }, flags = { 0 })
+public class BxNt extends antiDDoSForDecrypt {
     private static final Pattern FEED_FILEINFO_PATTERN        = Pattern.compile("<item>(.*?)<\\/item>", Pattern.DOTALL);
     private static final Pattern FEED_FILETITLE_PATTERN       = Pattern.compile("<title>(.*?)<\\/title>", Pattern.DOTALL);
     private static final Pattern FEED_DL_LINK_PATTERN         = Pattern.compile("<media:content url=\\\"(.*?)\\\"\\s*/>", Pattern.DOTALL);
     private static final Pattern SINGLE_DOWNLOAD_LINK_PATTERN = Pattern.compile("(https?://(www|[a-z0-9\\-_]+)\\.box\\.com/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=.+?\\&amp;shared_name=\\w+)");
     private static final String  ERROR                        = "(<h2>The webpage you have requested was not found\\.</h2>|<h1>404 File Not Found</h1>|Oops &mdash; this shared file or folder link has been removed\\.|RSS channel not found)";
 
-    private static final String  TYPE_APP                     = "https://app\\.box\\.com/(s|shared)/[a-z0-9]+(/1/\\d+)?";
+    private static final String  TYPE_APP                     = "https?://(?:\\w+\\.)?app\\.box\\.com/(s|shared)/[a-z0-9]+(/1/\\d+)?";
 
     public BxNt(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,40 +56,35 @@ public class BxNt extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(cryptedlink);
         if (br.getURL().equals("https://www.box.com/freeshare")) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + cryptedlink);
-            dl.setAvailable(false);
-            dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(createOfflinelink(cryptedlink));
             return decryptedLinks;
         }
         if (br.containsHTML("<title>Box \\| 404 Page Not Found</title>") || br.containsHTML("error_message_not_found") || br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + cryptedlink);
-            dl.setAvailable(false);
-            dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(createOfflinelink(cryptedlink));
             return decryptedLinks;
         }
         String fpName = null;
         if (br.getURL().matches(TYPE_APP)) {
+            final int currentPage = Integer.parseInt(getJson("current_page"));
+            final int pageCount = Integer.parseInt(getJson("page_count"));
+            String parent = null;
+
             fpName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
             final String main_folderid = new Regex(cryptedlink, "box\\.com/(s|shared)/([a-z0-9]+)").getMatch(1);
-            final String json_Text = br.getRegex("\"db\":(\\{.*?\\})\\}\\}").getMatch(0);
+            String json_Text = br.getRegex("\"db\":(\\{.*?\\})\\}\\}").getMatch(0);
             if (json_Text == null) {
                 /*
                  * Check if folder is empty - folders that contain only subfolders but no files are also "empty" so better check this in
                  * here!
                  */
                 if (br.containsHTML("class=\"empty_folder\"")) {
-                    final DownloadLink dl = createDownloadlink("directhttp://" + cryptedlink);
-                    dl.setAvailable(false);
-                    dl.setProperty("offline", true);
-                    decryptedLinks.add(dl);
+                    decryptedLinks.add(createOfflinelink(cryptedlink));
                     return decryptedLinks;
                 }
                 /* Maybe single file */
-                String filename = br.getRegex("data\\-hover=\"tooltip\" aria\\-label=\"([^<>\"]*?)\"").getMatch(0);
+                String filename = br.getRegex("data-hover=\"tooltip\" aria-label=\"([^<>\"]*?)\"").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("var name = \\'([^<>\"]*?)\\';").getMatch(0);
+                    filename = br.getRegex("var name = '([^<>\"]*?)';").getMatch(0);
                 }
                 final String filesize = br.getRegex("class=\"file_size\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
                 String fid = br.getRegex("itemTypedID: \"f_(\\d+)\"").getMatch(0);
@@ -121,41 +115,68 @@ public class BxNt extends PluginForDecrypt {
                 // logger.warning("Decrypt failed for link: " + cryptedlink);
                 // return null;
             }
-            final String[] filelinkinfo = json_Text.split("\"unidb_formats\":");
-            for (final String singleflinkinfo : filelinkinfo) {
-                final String type = new Regex(singleflinkinfo, "\"type\":\"([^<>\"]*?)\"").getMatch(0);
-                /* Check for invalid entry */
-                if (type == null) {
-                    continue;
+            for (int i = currentPage; i - 1 != pageCount; i++) {
+                final ArrayList<String> filelinkinfo = splitAtRepeat(json_Text);
+                if (filelinkinfo.isEmpty()) {
+                    // this can happen when empty folder we need to seek info from javascript based html instead of pure json.
+
+                    json_Text = br.getRegex("(\"shared_folder_info\".*?),\"db\"").getMatch(0);
+                    // fix packagename
+                    final String parentName = getJson(json_Text, "name");
+                    if (fpName == null || parentName != null && !fpName.equals(parentName)) {
+                        fpName = parentName;
+                    }
+                    decryptedLinks.add(createOfflinelink(cryptedlink));
+                    break;
                 }
-                final String id = new Regex(singleflinkinfo, "\"typed_id\":\"(f|d)_(\\d+)\"").getMatch(1);
-                if (type.equals("folder")) {
-                    final DownloadLink fina = createDownloadlink("https://app.box.com/s/" + main_folderid + "/1/" + id);
-                    decryptedLinks.add(fina);
-                } else {
-                    final String filename = new Regex(singleflinkinfo, "\"name\":\"([^<>\"]*?)\"").getMatch(0);
-                    final String filesize = new Regex(singleflinkinfo, "\"raw_size\":(\\d+)").getMatch(0);
-                    if (id != null && filename != null && filesize != null) {
-                        final String finallink = "https://app.box.com/index.php?rm=box_download_shared_file" + "&file_id=f_" + id + "&shared_name=" + main_folderid;
-                        final DownloadLink fina = createDownloadlink(finallink);
-                        fina.setName(filename);
-                        fina.setDownloadSize(Long.parseLong(filesize));
-                        fina.setAvailable(true);
-                        try {/* JD2 only */
-                            fina.setContentUrl(finallink);
-                        } catch (Throwable e) {/* Stable */
-                            fina.setBrowserUrl(finallink);
-                        }
+                for (final String singleflinkinfo : filelinkinfo) {
+                    // each json object has parent and parent name info. We can use this to set correct packagename!
+                    if (parent == null) {
+                        parent = getJson(singleflinkinfo, "parent");
+                    }
+                    final String parentName = getJson(singleflinkinfo, "parent_name");
+                    if (fpName == null || parentName != null && !fpName.equals(parentName)) {
+                        fpName = parentName;
+                    }
+                    final String type = getJson(singleflinkinfo, "type");
+                    /* Check for invalid entry */
+                    if (type == null) {
+                        continue;
+                    }
+                    final String id = new Regex(singleflinkinfo, "\"typed_id\":\"(f|d)_(\\d+)\"").getMatch(1);
+                    if (type.equals("folder")) {
+                        final DownloadLink fina = createDownloadlink("https://app.box.com/s/" + main_folderid + "/1/" + id);
                         decryptedLinks.add(fina);
+                    } else {
+                        final String filename = getJson(singleflinkinfo, "name");
+                        final String filesize = getJson(singleflinkinfo, "raw_size");
+                        if (id != null && filename != null && filesize != null) {
+                            final String finallink = "https://app.box.com/index.php?rm=box_download_shared_file" + "&file_id=f_" + id + "&shared_name=" + main_folderid;
+                            final DownloadLink fina = createDownloadlink(finallink);
+                            fina.setName(filename);
+                            fina.setDownloadSize(Long.parseLong(filesize));
+                            fina.setAvailable(true);
+                            try {/* JD2 only */
+                                fina.setContentUrl(finallink);
+                            } catch (Throwable e) {/* Stable */
+                                fina.setBrowserUrl(finallink);
+                            }
+                            decryptedLinks.add(fina);
+                        }
+                    }
+                }
+                if (i != pageCount) {
+                    br.getPage(br.getURL() + "/" + (i + 1) + "/" + parent);
+                    json_Text = br.getRegex("\"db\":(\\{.*?\\})\\}\\}").getMatch(0);
+                    if (json_Text == null) {
+                        break;
                     }
                 }
             }
+
             if (decryptedLinks.size() == 0) {
                 if (br.containsHTML("class=\"empty_folder\"")) {
-                    final DownloadLink dl = createDownloadlink("directhttp://" + cryptedlink);
-                    dl.setAvailable(false);
-                    dl.setProperty("offline", true);
-                    decryptedLinks.add(dl);
+                    decryptedLinks.add(createOfflinelink(cryptedlink));
                     return decryptedLinks;
                 }
                 logger.warning("Decrypt failed for link: " + cryptedlink);
@@ -206,8 +227,8 @@ public class BxNt extends PluginForDecrypt {
                     logger.info("Decrypting page " + i + " of " + pages);
                     br.getPage(basicLink + "/" + i + "/" + pathValue);
                     br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-                    final String[] links = br.getRegex("\"nnttttdata\\-href=\"(/s/[a-z0-9]+/\\d+/\\d+/\\d+/\\d+)\"").getColumn(0);
-                    final String[] filenames = br.getRegex("data\\-downloadurl=\"[a-z0-9/]+:([^<>\"]*?):https://www\\.box").getColumn(0);
+                    final String[] links = br.getRegex("\"nnttttdata-href=\"(/s/[a-z0-9]+/\\d+/\\d+/\\d+/\\d+)\"").getColumn(0);
+                    final String[] filenames = br.getRegex("data-downloadurl=\"[a-z0-9/]+:([^<>\"]*?):https://www\\.box").getColumn(0);
                     final String[] filesizes = br.getRegex("class=\"item_size\">([^<>\"]*?)</li>").getColumn(0);
                     final String[] folderLinks = br.getRegex("\"unidb\":\"folder_(\\d+)\"").getColumn(0);
                     // Hmm maybe a single link
@@ -279,6 +300,28 @@ public class BxNt extends PluginForDecrypt {
         }
         dl.setProperty("sharedname", fid);
         return dl;
+    }
+
+    /**
+     * cant always make regex that works for getColumn or getRow. this following method works around this!
+     *
+     * @author raztoki
+     * @param input
+     * @return
+     */
+    private ArrayList<String> splitAtRepeat(final String input) {
+        String i = input;
+        ArrayList<String> filelinkinfo = new ArrayList<String>();
+        while (true) {
+            final String result = new Regex(i, "(\"(?:file|folder)_\\d+.*?\\}),\"(?:file|folder)_\\d+").getMatch(0);
+            if (result == null) {
+                break;
+            }
+            filelinkinfo.add(result);
+            i = i.replace(result, "");
+        }
+
+        return filelinkinfo;
     }
 
     /**
