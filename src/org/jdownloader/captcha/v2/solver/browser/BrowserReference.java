@@ -4,6 +4,7 @@ import java.awt.Rectangle;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.appwork.exceptions.WTFException;
@@ -28,17 +29,15 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 
 public abstract class BrowserReference implements HttpRequestHandler {
 
-    private HttpHandlerInfo          handlerInfo;
-    private AbstractBrowserChallenge challenge;
-    private UniqueAlltimeID          id;
-    private int                      port;
+    private final AtomicReference<HttpHandlerInfo> handlerInfo = new AtomicReference<HttpHandlerInfo>(null);
+    private final AbstractBrowserChallenge         challenge;
+    private final UniqueAlltimeID                  id          = new UniqueAlltimeID();
 
-    private Process                  process;
-    private double                   scale;
-    private BrowserWindow            browserWindow;
-    private BrowserViewport          viewport;
-    private HashMap<String, URL>     resourceIds;
-    private HashMap<String, String>  types;
+    private final AtomicReference<Process>         process     = new AtomicReference<Process>(null);
+    private BrowserWindow                          browserWindow;
+    private BrowserViewport                        viewport;
+    private final HashMap<String, URL>             resourceIds;
+    private final HashMap<String, String>          types;
     {
         resourceIds = new HashMap<String, URL>();
         resourceIds.put("style.css", BrowserReference.class.getResource("html/style.css"));
@@ -72,21 +71,21 @@ public abstract class BrowserReference implements HttpRequestHandler {
 
     public BrowserReference(AbstractBrowserChallenge challenge) {
         this.challenge = challenge;
-        id = new UniqueAlltimeID();
-        // this should get setter in advanced.
-        this.port = BrowserSolverService.getInstance().getConfig().getLocalHttpPort();
-
     }
 
     public void open() throws IOException {
-        handlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, this);
-        openURL("http://127.0.0.1:" + port + "/" + challenge.getHttpPath() + "/?id=" + id.getID());
+        HttpHandlerInfo lHandlerInfo = null;
+        try {
+            final int port = BrowserSolverService.getInstance().getConfig().getLocalHttpPort();
+            lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(port, true, this);
+        } catch (final IOException e) {
+            lHandlerInfo = DeprecatedAPIHttpServerController.getInstance().registerRequestHandler(0, true, this);
+        }
+        openURL("http://127.0.0.1:" + lHandlerInfo.getPort() + "/" + challenge.getHttpPath() + "/?id=" + id.getID());
     }
 
     private void openURL(String url) {
-
         String[] browserCmd = BrowserSolverService.getInstance().getConfig().getBrowserCommandline();
-
         if (browserCmd == null || browserCmd.length == 0) {
             // if (CrossSystem.isWindows()) {
             //
@@ -126,8 +125,7 @@ public abstract class BrowserReference implements HttpRequestHandler {
             ProcessBuilder pb = ProcessBuilderFactory.create(cmds);
             pb.redirectErrorStream(true);
             try {
-                process = pb.start();
-
+                process.set(pb.start());
                 // String str = IO.readInputStreamToString(process.getInputStream());
                 // System.out.println(str);
             } catch (IOException e) {
@@ -137,31 +135,31 @@ public abstract class BrowserReference implements HttpRequestHandler {
 
     }
 
-    //
-    // private Dimension getPreferredBrowserSize() {
-    // return new Dimension(300, 600);
-    // }
-    //
-    // private Point getPreferredBrowserPosition() {
-    // return new Point(0, 0);
-    // }
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            dispose();
+        } finally {
+            super.finalize();
+        }
+    }
 
     public void dispose() {
-
-        if (handlerInfo != null) {
-            DeprecatedAPIHttpServerController.getInstance().unregisterRequestHandler(handlerInfo);
-        }
-
-        if (process != null) {
-
-            process.destroy();
-            process = null;
+        final HttpHandlerInfo lHandlerInfo = handlerInfo.getAndSet(null);
+        try {
+            if (lHandlerInfo != null) {
+                DeprecatedAPIHttpServerController.getInstance().unregisterRequestHandler(lHandlerInfo);
+            }
+        } finally {
+            final Process lProcess = process.getAndSet(null);
+            if (lProcess != null) {
+                lProcess.destroy();
+            }
         }
     }
 
     @Override
     public boolean onGetRequest(GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
-
         try {
             if ("/resource".equals(request.getRequestedPath())) {
                 String resourceID = request.getRequestedURLParameters().get(0).value;
@@ -177,40 +175,32 @@ public abstract class BrowserReference implements HttpRequestHandler {
             if (request.getRequestedPath() != null && !request.getRequestedPath().matches("^/" + Pattern.quote(challenge.getHttpPath()) + "/.*$")) {
                 return false;
             }
-
             // custom
             boolean custom = challenge.onRawGetRequest(this, request, response);
             if (custom) {
                 return true;
             }
-
             String pDo = request.getParameterbyKey("do");
             String id = request.getParameterbyKey("id");
-            if (!StringUtils.equals(id, this.id.getID() + "")) {
+            if (!StringUtils.equals(id, Long.toString(this.id.getID()))) {
                 return false;
             }
             response.setResponseCode(ResponseCode.SUCCESS_OK);
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
-
             if ("loaded".equals(pDo)) {
-
                 HTTPHeader ua = request.getRequestHeaders().get("User-Agent");
-
                 browserWindow = new BrowserWindow(ua == null ? null : ua.getValue(), (int) Double.parseDouble(request.getParameterbyKey("x")), (int) Double.parseDouble(request.getParameterbyKey("y")), (int) Double.parseDouble(request.getParameterbyKey("w")), (int) Double.parseDouble(request.getParameterbyKey("h")), (int) Double.parseDouble(request.getParameterbyKey("vw")), (int) Double.parseDouble(request.getParameterbyKey("vh")));
                 if (BrowserSolverService.getInstance().getConfig().isAutoClickEnabled()) {
                     Rectangle elementBounds = null;
                     try {
                         elementBounds = new Rectangle((int) Double.parseDouble(request.getParameterbyKey("eleft")), (int) Double.parseDouble(request.getParameterbyKey("etop")), (int) Double.parseDouble(request.getParameterbyKey("ew")), (int) Double.parseDouble(request.getParameterbyKey("eh")));
                     } catch (Throwable e) {
-
                     }
                     this.viewport = challenge.getBrowserViewport(browserWindow, elementBounds);
                     if (viewport != null) {
                         viewport.onLoaded();
                     }
-
                     response.getOutputStream(true).write("Thanks".getBytes("UTF-8"));
-
                 }
                 return true;
             } else if ("canClose".equals(pDo)) {
@@ -219,7 +209,6 @@ public abstract class BrowserReference implements HttpRequestHandler {
                 response.getOutputStream(true).write(challenge.getHTML().getBytes("UTF-8"));
             } else {
                 return challenge.onGetRequest(this, request, response);
-
             }
             return true;
         } catch (Throwable e) {
@@ -234,12 +223,10 @@ public abstract class BrowserReference implements HttpRequestHandler {
         try {
             response.setResponseCode(ResponseCode.SERVERERROR_INTERNAL);
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "text/html; charset=utf-8"));
-
             response.getOutputStream(true).write(Exceptions.getStackTrace(e).getBytes("UTF-8"));
         } catch (Throwable e1) {
             throw new WTFException(e1);
         }
-
     }
 
     @Override

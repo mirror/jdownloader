@@ -467,8 +467,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         }
     }
 
-    private final HashMap<PluginForHost, PluginView<ChildrenType>> pluginViews          = new HashMap<PluginForHost, SelectionInfo.PluginView<ChildrenType>>();
-    protected final AtomicBoolean                                  pluginViewsInitiated = new AtomicBoolean(false);
+    protected final HashMap<PluginForHost, PluginView<ChildrenType>> pluginViews          = new HashMap<PluginForHost, SelectionInfo.PluginView<ChildrenType>>();
+    protected final AtomicBoolean                                    pluginViewsInitiated = new AtomicBoolean(false);
 
     protected PluginView<ChildrenType> internalPluginView(ChildrenType node, PluginView<ChildrenType> lastPluginView) {
         final PluginForHost plugin = node instanceof CrawledLink ? ((CrawledLink) node).gethPlugin() : ((DownloadLink) node).getDefaultPlugin();
@@ -495,8 +495,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
         return pluginViews.values();
     }
 
-    private final List<PackageView<PackageType, ChildrenType>>                 packageViewList = new ArrayList<PackageView<PackageType, ChildrenType>>();
-    private final HashMap<PackageType, PackageView<PackageType, ChildrenType>> packageViews    = new HashMap<PackageType, PackageView<PackageType, ChildrenType>>();
+    protected final List<PackageView<PackageType, ChildrenType>>                 packageViewList = new ArrayList<PackageView<PackageType, ChildrenType>>();
+    protected final HashMap<PackageType, PackageView<PackageType, ChildrenType>> packageViews    = new HashMap<PackageType, PackageView<PackageType, ChildrenType>>();
 
     /**
      * @param pkg

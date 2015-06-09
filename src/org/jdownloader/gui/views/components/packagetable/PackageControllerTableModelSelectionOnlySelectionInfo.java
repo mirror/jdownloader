@@ -43,6 +43,26 @@ public class PackageControllerTableModelSelectionOnlySelectionInfo<PackageType e
         aggregate();
     }
 
+    protected PackageControllerTableModelSelectionOnlySelectionInfo(final AbstractNode contextObject, PackageControllerTableModelSelectionOnlySelectionInfo<PackageType, ChildrenType> selectionInfo) {
+        super();
+        this.rawContext = contextObject;
+        this.tableModel = selectionInfo.tableModel;
+        this.tableModelData = selectionInfo.tableModelData;
+        this.selectionModel = selectionInfo.selectionModel;
+        this.rawSelection.addAll(selectionInfo.rawSelection);
+        this.children.addAll(selectionInfo.children);
+        if (selectionInfo.unselectedChildrenInitialized.get()) {
+            this.unselectedChildrenInitialized.set(true);
+            this.unselectedChildren.addAll(selectionInfo.getUnselectedChildren());
+        }
+        this.packageViewList.addAll(selectionInfo.packageViewList);
+        this.packageViews.putAll(selectionInfo.packageViews);
+        if (selectionInfo.pluginViewsInitiated.get()) {
+            this.pluginViewsInitiated.set(true);
+            this.pluginViews.putAll(selectionInfo.pluginViews);
+        }
+    }
+
     @Override
     public AbstractNode getRawContext() {
         return rawContext;

@@ -209,12 +209,13 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                         final long dataVersion = tableModel.getTableDataVersion();
                         final AbstractNode contextMenuTrigger = getContextMenuTrigger();
                         if (lselectionOnly_TableData != null && lselectionOnly_TableData.getSelectionVersion() == currentSelectionVersion && lselectionOnly_TableData.getDataVersion() == dataVersion) {
-                            final SelectionInfo<ParentType, ChildrenType> ret = lselectionOnly_TableData.getSelectionInfo();
-                            if (ret instanceof PackageControllerTableModelSelectionOnlySelectionInfo) {
-                                ((PackageControllerTableModelSelectionOnlySelectionInfo<?, ?>) ret).setRawContext(contextMenuTrigger);
+                            SelectionInfo<ParentType, ChildrenType> ret = lselectionOnly_TableData.getSelectionInfo();
+                            if (ret.getRawContext() == contextMenuTrigger) {
                                 return ret;
                             }
-                            if (ret.getRawContext() == contextMenuTrigger) {
+                            if (ret instanceof PackageControllerTableModelSelectionOnlySelectionInfo) {
+                                ret = new PackageControllerTableModelSelectionOnlySelectionInfo(contextMenuTrigger, (PackageControllerTableModelSelectionOnlySelectionInfo<?, ?>) ret);
+                                selectionOnly_TableData = new SelectionInfoCache(currentSelectionVersion, dataVersion, ret);
                                 return ret;
                             }
                         }
