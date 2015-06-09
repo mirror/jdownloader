@@ -79,8 +79,9 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
 
                 @Override
                 public boolean isFiltered(FilePackage e) {
+                    final String name = e.getName();
                     for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(e.getName()).find()) {
+                        if (filterPattern.matcher(name).find()) {
                             return false;
                         }
                     }
@@ -107,8 +108,9 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
 
                 @Override
                 public boolean isFiltered(DownloadLink v) {
+                    final String name = v.getView().getDisplayName();
                     for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(v.getView().getDisplayName()).find()) {
+                        if (filterPattern.matcher(name).find()) {
                             return false;
                         }
                     }
@@ -140,35 +142,51 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
 
                 @Override
                 public boolean isFiltered(DownloadLink v) {
+                    String comment = v.getComment();
+                    if (comment == null) {
+                        comment = "";
+                    }
                     for (Pattern filterPattern : pattern) {
-                        if (v.getComment() != null && filterPattern.matcher(v.getComment()).find()) {
+                        if (filterPattern.matcher(comment).find()) {
                             return false;
                         }
                     }
-
-                    for (Pattern filterPattern : pattern) {
-                        if (v.getParentNode().getComment() != null && filterPattern.matcher(v.getParentNode().getComment()).find()) {
-                            return false;
+                    final FilePackage p = v.getParentNode();
+                    if (p != null) {
+                        comment = p.getComment();
+                        if (comment == null) {
+                            comment = "";
+                        }
+                        for (Pattern filterPattern : pattern) {
+                            if (filterPattern.matcher(comment).find()) {
+                                return false;
+                            }
                         }
                     }
-
                     return true;
                 }
 
                 @Override
                 public boolean isFiltered(FilePackage fp) {
+                    String comment = fp.getComment();
+                    if (comment == null) {
+                        comment = "";
+                    }
                     for (Pattern filterPattern : pattern) {
-                        if (fp.getComment() != null && filterPattern.matcher(fp.getComment()).find()) {
+                        if (filterPattern.matcher(comment).find()) {
                             return false;
                         }
                     }
 
-                    boolean readL = fp.getModifyLock().readLock();
-
+                    final boolean readL = fp.getModifyLock().readLock();
                     try {
                         for (DownloadLink dl : fp.getChildren()) {
+                            comment = dl.getComment();
+                            if (comment == null) {
+                                comment = "";
+                            }
                             for (Pattern filterPattern : pattern) {
-                                if (dl.getComment() != null && filterPattern.matcher(dl.getComment()).find()) {
+                                if (filterPattern.matcher(comment).find()) {
                                     return false;
                                 }
                             }
@@ -176,7 +194,6 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                     } finally {
                         fp.getModifyLock().readUnlock(readL);
                     }
-
                     return true;
                 }
 
@@ -202,7 +219,7 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
 
                 @Override
                 public synchronized boolean isFiltered(DownloadLink v) {
-                    String host = v.getDomainInfo().getTld();
+                    final String host = v.getDomainInfo().getTld();
                     Boolean ret = fastCheck.get(host);
                     if (ret != null) {
                         return ret.booleanValue();

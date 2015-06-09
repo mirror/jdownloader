@@ -91,8 +91,9 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
 
                 @Override
                 public boolean isFiltered(CrawledPackage e) {
+                    final String name = e.getName();
                     for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(e.getName()).find()) {
+                        if (filterPattern.matcher(name).find()) {
                             return false;
                         }
                     }
@@ -119,8 +120,9 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
 
                 @Override
                 public boolean isFiltered(CrawledLink v) {
+                    final String name = v.getName();
                     for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(v.getName()).find()) {
+                        if (filterPattern.matcher(name).find()) {
                             return false;
                         }
                     }
@@ -153,35 +155,51 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
 
                 @Override
                 public boolean isFiltered(CrawledLink v) {
+                    String comment = v.getDownloadLink().getComment();
+                    if (comment == null) {
+                        comment = "";
+                    }
                     for (Pattern filterPattern : pattern) {
-                        if (v.getDownloadLink().getComment() != null && filterPattern.matcher(v.getDownloadLink().getComment()).find()) {
+                        if (filterPattern.matcher(comment).find()) {
                             return false;
                         }
                     }
 
-                    for (Pattern filterPattern : pattern) {
-                        if (v.getParentNode().getComment() != null && filterPattern.matcher(v.getParentNode().getComment()).find()) {
-                            return false;
+                    final CrawledPackage p = v.getParentNode();
+                    if (p != null) {
+                        comment = p.getComment();
+                        if (comment == null) {
+                            comment = "";
+                        }
+                        for (Pattern filterPattern : pattern) {
+                            if (filterPattern.matcher(comment).find()) {
+                                return false;
+                            }
                         }
                     }
-
                     return true;
                 }
 
                 @Override
                 public boolean isFiltered(CrawledPackage fp) {
+                    String comment = fp.getComment();
+                    if (comment == null) {
+                        comment = "";
+                    }
                     for (Pattern filterPattern : pattern) {
-                        if (fp.getComment() != null && filterPattern.matcher(fp.getComment()).find()) {
+                        if (filterPattern.matcher(comment).find()) {
                             return false;
                         }
                     }
-
-                    boolean readL = fp.getModifyLock().readLock();
-
+                    final boolean readL = fp.getModifyLock().readLock();
                     try {
                         for (CrawledLink dl : fp.getChildren()) {
+                            comment = dl.getDownloadLink().getComment();
+                            if (comment == null) {
+                                comment = "";
+                            }
                             for (Pattern filterPattern : pattern) {
-                                if (dl.getDownloadLink().getComment() != null && filterPattern.matcher(dl.getDownloadLink().getComment()).find()) {
+                                if (filterPattern.matcher(comment).find()) {
                                     return false;
                                 }
                             }
@@ -189,7 +207,6 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
                     } finally {
                         fp.getModifyLock().readUnlock(readL);
                     }
-
                     return true;
                 }
 
@@ -214,7 +231,7 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
 
                 @Override
                 public synchronized boolean isFiltered(CrawledLink v) {
-                    String host = v.getDomainInfo().getTld();
+                    final String host = v.getDomainInfo().getTld();
                     Boolean ret = fastCheck.get(host);
                     if (ret != null) {
                         return ret.booleanValue();
@@ -242,5 +259,4 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
         }
         return null;
     }
-
 }
