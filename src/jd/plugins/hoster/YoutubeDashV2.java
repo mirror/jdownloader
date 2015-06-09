@@ -78,6 +78,7 @@ import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.swing.action.BasicAction;
 import org.appwork.swing.components.JScrollMenu;
 import org.appwork.txtresource.TranslationFactory;
@@ -458,9 +459,52 @@ public class YoutubeDashV2 extends PluginForHost {
         boolean isSubtitleCopyforEachVideoVariant();
 
         @AboutConfig
-        HashMap<String, Double> getRatingMap();
+        @DefaultIntValue(5)
+        @RequiresRestart("A JDownloader Restart is Required")
+        @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
+        int getRating60Fps();
 
-        void setRatingMap(HashMap<String, Double> map);
+        void setRating60Fps(int rating);
+
+        @AboutConfig
+        @DefaultIntValue(60)
+        @RequiresRestart("A JDownloader Restart is Required")
+        @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
+        int getRatingContainerMP4();
+
+        void setRatingContainerMP4(int rating);
+
+        @AboutConfig
+        @DefaultIntValue(50)
+        @RequiresRestart("A JDownloader Restart is Required")
+        @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
+        int getRatingContainerWEBM();
+
+        void setRatingContainerWEBM(int rating);
+
+        @AboutConfig
+        @DefaultIntValue(5)
+        @RequiresRestart("A JDownloader Restart is Required")
+        @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
+        int getRatingContainerM4A();
+
+        void setRatingContainerM4A(int rating);
+
+        @AboutConfig
+        @DefaultIntValue(4)
+        @RequiresRestart("A JDownloader Restart is Required")
+        @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
+        int getRatingContainerAAC();
+
+        void setRatingContainerAAC(int rating);
+
+        @AboutConfig
+        @DefaultIntValue(2)
+        @RequiresRestart("A JDownloader Restart is Required")
+        @DescriptionForConfigEntry("Increase or decrease this value to modify the 'best video/audio/image available' - sorting")
+        int getRatingContainerMP3();
+
+        void setRatingContainerMP3(int rating);
     }
 
     @Override
