@@ -61,7 +61,7 @@ public class ProPornCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://proporn.com/", "lang", "en");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("class=\"nothing\"")) {
+        if (br.containsHTML("class=\"nothing\" || <title>Page not found</title>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?)\\- Free Porn Video").getMatch(0);
