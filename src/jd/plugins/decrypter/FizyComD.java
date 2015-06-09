@@ -41,7 +41,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fizy.com" }, urls = { "http://(((?!www).*)\\.)?fizy\\.com/?(#?(s|p|u)/(s/)?\\w+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fizy.com" }, urls = { "http://(((?!www).*)\\.)?fizy\\.com/?(#?(s|p|u)/(s/)?\\w+)?" }, flags = { 0 })
 public class FizyComD extends PluginForDecrypt {
 
     private String  CLIPDATA;
@@ -113,12 +113,14 @@ public class FizyComD extends PluginForDecrypt {
         return indices;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.getCryptedUrl();
         if (new Regex(parameter, Pattern.compile("http://fizy\\.com/?", Pattern.CASE_INSENSITIVE)).matches()) {
             logger.info("Mainpage added -> Invalid link");
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
 
@@ -139,6 +141,13 @@ public class FizyComD extends PluginForDecrypt {
             } catch (Throwable e) {
                 logger.severe("Server error! Message: " + e);
                 return null;
+            }
+            if (this.br.getRedirectLocation() != null) {
+                br.getPage(this.br.getRedirectLocation());
+            }
+            if (br.containsHTML("class=\"p-landing-1\"")) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
             }
 
             /*

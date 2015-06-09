@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freefuckvidz.com" }, urls = { "http://(www\\.)?freefuckvidz\\.com/free\\-porn/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freefuckvidz.com" }, urls = { "http://(www\\.)?freefuckvidz\\.com/free\\-porn/\\d+" }, flags = { 0 })
 public class FreeFuckVidzCom extends PluginForHost {
 
     public FreeFuckVidzCom(PluginWrapper wrapper) {
@@ -43,12 +43,14 @@ public class FreeFuckVidzCom extends PluginForHost {
         return "http://www.freefuckvidz.com/dmca.html";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        this.br.setAllowedResponseCodes(410);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<div class=\"content player clearfix\"><h1>([^<>\"]*?)</h1>").getMatch(0);

@@ -57,6 +57,9 @@ public class CloudyVideosCom extends PluginForHost {
     private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
     private static final String  DOMAINS                      = "(cloudyvideos\\.com)";
+    /* Linktypes */
+    private static final String  TYPE_NORMAL                  = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
+    private static final String  TYPE_EMBED                   = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
     private static final String  MAINTENANCE                  = ">\\s*This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -64,6 +67,7 @@ public class CloudyVideosCom extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = false;
+    private static final boolean SUPPORTSHTTPS_FORCED         = false;
     // Connection stuff
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = -2;
@@ -90,14 +94,28 @@ public class CloudyVideosCom extends PluginForHost {
     // captchatype: null
     // other:
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        // link cleanup, but respect users protocol choosing.
-        if (!SUPPORTSHTTPS) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
+        final String fuid = getFUIDFromURL(link);
+        final String protocol;
+        /* link cleanup, prefer https if possible */
+        if (SUPPORTSHTTPS || SUPPORTSHTTPS_FORCED) {
+            protocol = "https://";
+        } else {
+            protocol = "http://";
         }
-        final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
-        link.setUrlDownload(COOKIE_HOST + "/" + fid);
+        final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
+        if (link.getDownloadURL().matches(TYPE_EMBED)) {
+            final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
+            /* Make sure user gets the kind of content urls that he added to JD. */
+            try {
+                link.setContentUrl(url_embed);
+            } catch (final Throwable e) {
+                /* Not available in 0.9.581 Stable */
+            }
+        }
+        link.setUrlDownload(corrected_downloadurl);
     }
 
     @Override
@@ -683,7 +701,12 @@ public class CloudyVideosCom extends PluginForHost {
     }
 
     private void setFUID(final DownloadLink dl) {
-        fuid = new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        fuid = getFUIDFromURL(dl);
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getFUIDFromURL(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
     }
 
     private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {

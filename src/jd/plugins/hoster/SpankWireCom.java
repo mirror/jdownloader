@@ -66,7 +66,7 @@ public class SpankWireCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Link offline
-        if (br.containsHTML(">This (article|video) has been (deleted|disabled)") || br.containsHTML("id=\"disclaimer_arrow\"") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML(">This (article|video) has been (deleted|disabled)") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fileID = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
@@ -146,7 +146,7 @@ public class SpankWireCom extends PluginForHost {
         final String[] qualities = { "720", "480", "240", "180" };
         String dllink = null;
         for (final String quality : qualities) {
-            dllink = br.getRegex("playerData.cdnPath" + quality + "\\s*?= (\"|\')(http[^<>\"]*?)(\"|\')").getMatch(1);
+            dllink = br.getRegex("cdnPath" + quality + "\\s*?:\\s*?(\"|\')(http[^<>\"]*?)(\"|\')").getMatch(1);
             if (dllink != null) {
                 break;
             }
