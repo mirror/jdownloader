@@ -47,7 +47,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net", "video.yandex.ru" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "video.yandex.ru" }, urls = { "http://yandexdecrypted\\.net/\\d+", "http://video\\.yandex\\.ru/(iframe/[A-Za-z0-9]+/[A-Za-z0-9]+\\.\\d+|users/[A-Za-z0-9]+/view/\\d+)" }, flags = { 2, 0 })
 public class DiskYandexNet extends PluginForHost {
 
     public DiskYandexNet(PluginWrapper wrapper) {
@@ -71,7 +71,7 @@ public class DiskYandexNet extends PluginForHost {
 
     /* Some constants which they used in browser */
     private final String          CLIENT_ID                          = "883aacd8d0b882b2e379506a55fb6b0f";
-    private final String          VERSION                            = "2.1.18";
+    private final String          VERSION                            = "2.10.1";
     private static final String   STANDARD_FREE_SPEED                = "64 kbit/s";
 
     /* Different languages == different 'downloads' directory names */
@@ -102,7 +102,9 @@ public class DiskYandexNet extends PluginForHost {
     /* Make sure we always use our main domain */
     private String getMainLink(final DownloadLink dl) {
         String mainlink = dl.getStringProperty("mainlink", null);
-        mainlink = "https://disk.yandex.com/" + new Regex(mainlink, "yandex\\.[a-z]+/(.+)").getMatch(0);
+        if (!mainlink.contains("yadi")) {
+            mainlink = "https://disk.yandex.com/" + new Regex(mainlink, "yandex\\.[a-z]+/(.+)").getMatch(0);
+        }
         return mainlink;
     }
 
@@ -110,6 +112,7 @@ public class DiskYandexNet extends PluginForHost {
         currAcc = acc;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         setBrowserExclusive();
@@ -173,6 +176,7 @@ public class DiskYandexNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -182,6 +186,7 @@ public class DiskYandexNet extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
+    @SuppressWarnings("deprecation")
     private void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks) throws Exception, PluginException {
         if (downloadableViaAccountOnly(downloadLink)) {
             /*
@@ -238,7 +243,7 @@ public class DiskYandexNet extends PluginForHost {
             }
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("https://disk.yandex.com/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=%2Fpublic%2F" + hash + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + sk);
+            br.postPage("/models/?_m=do-get-resource-url", "_model.0=do-get-resource-url&id.0=" + Encoding.urlEncode(hash) + "&idClient=" + CLIENT_ID + "&version=" + VERSION + "&sk=" + sk);
             /** TODO: Find out why we have the wrong SK here and remove this workaround! */
             if (br.containsHTML("\"id\":\"WRONG_SK\"")) {
                 sk = br.getRegex("\"sk\":\"([^<>\"]*?)\"").getMatch(0);
@@ -290,10 +295,10 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private String getHash(final DownloadLink dl) {
-        String hash = dl.getStringProperty("hash_encoded", null);
-        /* TODO: Remove this compatibility early in 2015 */
+        String hash = dl.getStringProperty("plain_id", null);
+        /* TODO: Remove this compatibility mid 2015 */
         if (hash == null) {
-            hash = dl.getStringProperty("hash_plain", null);
+            hash = dl.getStringProperty("hash_encoded", null);
             hash = fixHash(hash);
         }
         return hash;

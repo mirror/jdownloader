@@ -42,9 +42,14 @@ public class BaixarPremiumNet extends PluginForHost {
     private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
     private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static final String                            MAINPAGE           = "http://baixarpremium.net";
-    private static final String[][]                        HOSTS              = { { "uploaded", "uploaded.to" }, { "bitshare", "bitshare.com" }, { "jumbofiles", "jumbofiles.org" }, { "4shared", "4shared.com" }, { "turbobit", "turbobit.net" }, { "2shared", "2shared.com" }, { "ifilez", "depfile.com" }, { "freakshare", "freakshare.com" }, { "rapidgator", "rapidgator.net" }, { "uploading", "uploading.com" }, { "netload", "netload.in" }, { "ryushare", "ryushare.com" }, { "easyshare", "crocko.com" }, { "mediafire", "mediafire.com" }, { "filefactory", "filefactory.com" }, { "filepost", "filepost.com" }, { "videobb", "videobb.com" }, { "megashares", "megashares.com" }, { "filevelocity", "filevelocity.com" }, { "sendspace", "sendspace.com" }, { "cloudnator", "cloudnator.com" }, { "uptobox", "uptobox.com" }, { "filereactor", "filereactor.com" }, { "putlocker", "putlocker.com" },
-            { "ifile", "filecloud.io" }, { "share-online", "share-online.biz" }, { "glumbouploads", "glumbouploads.com" } };
 
+    private static final String                            NICE_HOST          = "baixarpremium.net";
+    private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
+
+    private Account                                        currAcc            = null;
+    private DownloadLink                                   currDownloadLink   = null;
+
+    @SuppressWarnings("deprecation")
     public BaixarPremiumNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://baixarpremium.net/");
@@ -60,8 +65,14 @@ public class BaixarPremiumNet extends PluginForHost {
         return maxPrem.get();
     }
 
+    private void setConstants(final Account acc, final DownloadLink dl) {
+        this.currAcc = acc;
+        this.currDownloadLink = dl;
+    }
+
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        setConstants(account, null);
         final AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
@@ -77,14 +88,23 @@ public class BaixarPremiumNet extends PluginForHost {
         }
         ac.setUnlimitedTraffic();
         // now let's get a list of all supported hosts:
+        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
         final ArrayList<String> supportedHosts = new ArrayList<String>();
 
-        br.getPage(MAINPAGE);
-        for (final String[] filehost : HOSTS) {
-            final String crippledHost = filehost[0];
-            final String realHost = filehost[1];
-            if (br.containsHTML(crippledHost + "\\-logo")) {
-                supportedHosts.add(realHost);
+        br.getPage("/contas-ativas/");
+        final String hoststext = br.getRegex("premium aos servidores <span style=\"[^\"]+\">(.*?)<").getMatch(0);
+        final String[] crippledHosts = hoststext.split(", ");
+        for (String crippledhost : crippledHosts) {
+            crippledhost = crippledhost.trim();
+            crippledhost = crippledhost.toLowerCase();
+            if (crippledhost.equals("shareonline")) {
+                supportedHosts.add("share-online.biz");
+            } else {
+                /* Go insane */
+                for (final String possibledomain : possible_domains) {
+                    final String full_possible_host = crippledhost + "." + possibledomain;
+                    supportedHosts.add(full_possible_host);
+                }
             }
         }
         ac.setMultiHostSupport(this, supportedHosts);
@@ -104,6 +124,8 @@ public class BaixarPremiumNet extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
+
+        setConstants(account, link);
 
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
@@ -144,7 +166,7 @@ public class BaixarPremiumNet extends PluginForHost {
                 }
             }
             logger.info("Unhandled download error on baixarpremium.net: " + br.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            handleErrorRetries("unknowndlerror", 50, 2 * 60 * 1000l);
         }
         /* Now we know that it is a premium account. */
         account.getAccountInfo().setStatus("Premium account");
@@ -204,7 +226,7 @@ public class BaixarPremiumNet extends PluginForHost {
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
@@ -212,18 +234,31 @@ public class BaixarPremiumNet extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             br.setCookie(MAINPAGE, key, value);
                         }
-                        return true;
+                        /* Avoid login captchas whenever possible! */
+                        br.getPage("http://baixarpremium.net/contas-ativas/");
+                        if (br.getURL().contains("contas-ativas")) {
+                            return true;
+                        }
+                        br.clearCookies(MAINPAGE);
+                        /* Force full login! */
                     }
                 }
                 br.setFollowRedirects(false);
+                br.getPage("http://baixarpremium.net/logar/");
+                String postData = "method=pag&login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass());
+                if (br.containsHTML("/captcha\\.php")) {
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "baixarpremium.net", "http://baixarpremium.net", true);
+                    final String code = getCaptchaCode("http://baixarpremium.net/acoes/captcha.php", dummyLink);
+                    postData += "&confirmacao=" + Encoding.urlEncode(code);
+                }
                 br.getHeaders().put("Accept", "*/*");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("http://baixarpremium.net/acoes/deslogado/logar.php", "login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("http://baixarpremium.net/acoes/deslogado/logar.php", postData);
                 if (br.getCookie(MAINPAGE, "utmhb") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 // Save cookies
@@ -243,20 +278,44 @@ public class BaixarPremiumNet extends PluginForHost {
         }
     }
 
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
-        if (downloadLink == null) {
+    private void tempUnavailableHoster(final long timeout) throws PluginException {
+        if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
             if (unavailableMap == null) {
                 unavailableMap = new HashMap<String, Long>();
-                hostUnavailableMap.put(account, unavailableMap);
+                hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
-            /* wait to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            /* wait 30 mins to retry this host */
+            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
+    }
+
+    /**
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
+     * from the host list.
+     *
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
+        int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
+        this.currDownloadLink.getLinkStatus().setRetryCount(0);
+        if (timesFailed <= maxRetries) {
+            logger.info(NICE_HOST + ": " + error + " -> Retrying");
+            timesFailed++;
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        } else {
+            this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
+            logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
+            tempUnavailableHoster(disableTime);
+        }
     }
 
     @Override

@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realtgfporn.com" }, urls = { "http://(www\\.)?realgfporn\\.com/\\d+/.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "realtgfporn.com" }, urls = { "http://(www\\.)?realgfporn\\.com/videos/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
 public class RealTgfPornComDecrypt extends PluginForDecrypt {
 
     public RealTgfPornComDecrypt(PluginWrapper wrapper) {
@@ -38,7 +38,7 @@ public class RealTgfPornComDecrypt extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String tempID = br.getRedirectLocation();
-        if (tempID != null && tempID.equals("http://www.realgfporn.com/") || br.containsHTML(">404 \\- Page not found")) {
+        if (tempID != null && tempID.equals("http://www.realgfporn.com/") || br.containsHTML(">404 \\- Page not found") || br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink dl = createDownloadlink(parameter.replace("realgfporn.com/", "realgfporndecrypted.com/"));
             dl.setAvailable(false);
             dl.setProperty("offline", true);
@@ -51,7 +51,9 @@ public class RealTgfPornComDecrypt extends PluginForDecrypt {
         }
         // Same regexes as used in hosterplugin
         String filename = br.getRegex("<h3 class=\"video_title\">(.*?)</h3>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?) \\- Real GF Porn</title>").getMatch(0);
+        }
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

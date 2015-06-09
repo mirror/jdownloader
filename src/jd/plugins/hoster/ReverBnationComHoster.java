@@ -221,7 +221,7 @@ public class ReverBnationComHoster extends PluginForHost {
 
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
 
-        if (!formattedFilename.contains("songid") && !formattedFilename.contains("*artistid*") && !formattedFilename.contains("*username*") && !formattedFilename.contains("*title*") && !formattedFilename.contains("*artist*") && !formattedFilename.contains("*ext*")) {
+        if (!formattedFilename.contains("*songid*") && !formattedFilename.contains("*artistid*") && !formattedFilename.contains("*username*") && !formattedFilename.contains("*title*") && !formattedFilename.contains("*artist*") && !formattedFilename.contains("*ext*")) {
             formattedFilename = defaultCustomFilename;
         }
 
@@ -255,18 +255,18 @@ public class ReverBnationComHoster extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content: reverbnation.com/username\r\n*title* = Title of the song\r\n*artist* = Artist of the song\r\n*songid* = Internal ReverbNation id of the song e.g. '12345678'\r\n*artistid* = Internal ReverbNation id of the artist e.g. '12345678'\r\n*ext* = Extension of the file, usually '.mp3'");
-                                                      put("LABEL_FILENAME", "Define custom filename:");
-        }
-                                              };
+        {
+            put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content: reverbnation.com/username\r\n*title* = Title of the song\r\n*artist* = Artist of the song\r\n*songid* = Internal ReverbNation id of the song e.g. '12345678'\r\n*artistid* = Internal ReverbNation id of the artist e.g. '12345678'\r\n*ext* = Extension of the file, usually '.mp3'");
+            put("LABEL_FILENAME", "Define custom filename:");
+                                                  }
+    };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-                                                  {
-                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat: reverbnation.com/username\r\n*title* = Titel des Songs\r\n*artist* = Name des Urhebers\r\n*songid* = Interne ReverbNation id des Songs z.B. '12345678'\r\n*artistid* = Interne ReverbNation id des Urhebers z.B. '12345678'\r\n*ext* = Dateiendung, meistens '.mp3'");
-                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
-                                                  }
-                                              };
+        {
+            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat: reverbnation.com/username\r\n*title* = Titel des Songs\r\n*artist* = Name des Urhebers\r\n*songid* = Interne ReverbNation id des Songs z.B. '12345678'\r\n*artistid* = Interne ReverbNation id des Urhebers z.B. '12345678'\r\n*ext* = Dateiendung, meistens '.mp3'");
+            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
