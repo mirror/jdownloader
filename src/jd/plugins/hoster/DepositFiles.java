@@ -462,7 +462,7 @@ public class DepositFiles extends PluginForHost {
                      */
                     long timeBefore = System.currentTimeMillis();
                     // recaptcha v2.
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdyfgcTAAAAAArE1fk9cGyExtKfT4a12dWcViye").getToken();
 
                     int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
                     int waitThis = 62;
