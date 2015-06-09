@@ -46,7 +46,7 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         // Offline link
-        if (br.containsHTML("This video does not exist\\!<")) {
+        if (br.containsHTML("This video does not exist\\!< || >\\s+Video Not Found\\s+<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -88,8 +88,12 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
                 return null;
             }
             tempID = br.getRegex("var playlist = \\[ \\{ url: escape\\(\\'(http://[^<>\"]*?)\\'\\) \\} \\]").getMatch(0);
-            if (tempID == null) tempID = br.getRegex("(\\'|\")(http://(hosted\\.yourvoyeurvideos\\.com/videos/\\d+\\.flv|[a-z0-9]+\\.yourvoyeurvideos\\.com/mp4/\\d+\\.mp4))(\\'|\")").getMatch(1);
-            if (tempID == null) tempID = br.getRegex("file=(http[^&\"]+)").getMatch(0);
+            if (tempID == null) {
+                tempID = br.getRegex("(\\'|\")(http://(hosted\\.yourvoyeurvideos\\.com/videos/\\d+\\.flv|[a-z0-9]+\\.yourvoyeurvideos\\.com/mp4/\\d+\\.mp4))(\\'|\")").getMatch(1);
+            }
+            if (tempID == null) {
+                tempID = br.getRegex("file=(http[^&\"]+)").getMatch(0);
+            }
             if (tempID == null || filename == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

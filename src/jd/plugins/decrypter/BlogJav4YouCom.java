@@ -39,6 +39,11 @@ public class BlogJav4YouCom extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        // Offline link
+        if (br.containsHTML("<h2 class=\"center\">Not Found</h2>")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String fpName = br.getRegex("<title>([^<>\"]*?) \\| JAV4You \\- Huge Japanese AV Place</title>").getMatch(0);
         final String[] links = br.getRegex("<br><a href=\"(http[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
@@ -46,7 +51,9 @@ public class BlogJav4YouCom extends PluginForDecrypt {
             return null;
         }
         for (final String singleLink : links) {
-            if (singleLink.matches("http://(www\\.)?blog\\.jav4you\\.com/\\d{4}/\\d{2}/[a-z0-9\\-]+/")) continue;
+            if (singleLink.matches("http://(www\\.)?blog\\.jav4you\\.com/\\d{4}/\\d{2}/[a-z0-9\\-]+/")) {
+                continue;
+            }
             if (singleLink.matches("http://(www\\.)?l\\.jav4you\\.com/[A-Za-z0-9]+")) {
                 br.getPage(singleLink);
                 final String finallink = br.getRedirectLocation();
