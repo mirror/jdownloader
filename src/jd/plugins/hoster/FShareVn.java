@@ -135,11 +135,17 @@ public class FShareVn extends PluginForHost {
             filename = br.getRegex("<p><b>Tên tập tin:</b> (.*?)</p>").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("<title>(.*?) \\- Fshare \\- Dịch vụ chia sẻ, lưu trữ dữ liệu miễn phí tốt nhất </title>").getMatch(0);
+            filename = br.getRegex("fa-file-o\"></i>(.*?)\\s+</div>").getMatch(0); // 20150609
+        }
+        if (filename == null) {
+            filename = br.getRegex("<title>Fshare \\- (.*?)</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
         String filesize = br.getRegex("<p><b>Dung lượng: </b>(.*?)</p>").getMatch(0);
         if (filesize == null) {
-            filesize = br.getRegex("10px\">([\\d\\.]+ [K|M|G]B)<").getMatch(0);
+            filesize = br.getRegex("fa-hdd-o\"></i> ([\\d\\.]+ [K|M|G]B)").getMatch(0);
         }
         if (filename == null) {
             logger.info("filename = " + filename + ", filesize = " + filesize);
@@ -484,7 +490,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -494,7 +500,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -504,7 +510,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -514,7 +520,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJsonArray(final String source, final String key) {
@@ -524,7 +530,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJsonArray(final String key) {
@@ -534,7 +540,7 @@ public class FShareVn extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return String[] value from provided JSon Array
-     *
+     * 
      * @author raztoki
      * @param source
      * @return
