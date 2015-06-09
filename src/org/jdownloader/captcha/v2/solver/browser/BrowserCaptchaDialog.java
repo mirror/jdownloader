@@ -31,6 +31,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -159,26 +160,26 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
         return hideAllCaptchas;
     }
 
-    private DomainInfo            hosterInfo;
-    protected AbstractConfigPanel iconPanel;
+    private DomainInfo                                hosterInfo;
+    protected AbstractConfigPanel                     iconPanel;
 
-    protected Point               offset;
+    protected Point                                   offset;
 
-    private Plugin                plugin;
+    private Plugin                                    plugin;
 
-    protected boolean             stopDownloads = false;
+    protected boolean                                 stopDownloads    = false;
 
-    private DialogType            type;
+    private DialogType                                type;
 
-    protected boolean             refresh;
+    protected boolean                                 refresh;
 
-    protected boolean             stopCrawling;
+    protected boolean                                 stopCrawling;
 
-    protected boolean             stopShowingCrawlerCaptchas;
+    protected boolean                                 stopShowingCrawlerCaptchas;
 
-    protected BrowserReference    browserReference;
+    protected final AtomicReference<BrowserReference> browserReference = new AtomicReference<BrowserReference>(null);
 
-    private String                responseCode;
+    private volatile String                           responseCode;
 
     private void createPopup() {
         final JPopupMenu popup = new JPopupMenu();
@@ -330,9 +331,9 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             }
             super.dispose();
         } finally {
-
-            if (browserReference != null) {
-                browserReference.dispose();
+            final BrowserReference lBrowserReference = browserReference.getAndSet(null);
+            if (lBrowserReference != null) {
+                lBrowserReference.dispose();
             }
         }
     }
@@ -863,10 +864,11 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
     }
 
     protected void openBrowser() {
-        if (browserReference != null) {
-            browserReference.dispose();
+        BrowserReference lBrowserReference = browserReference.getAndSet(null);
+        if (lBrowserReference != null) {
+            lBrowserReference.dispose();
         }
-        browserReference = new BrowserReference(challenge) {
+        lBrowserReference = new BrowserReference(challenge) {
 
             @Override
             public void onResponse(String parameter) {
@@ -883,10 +885,11 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
             }
         };
         try {
-            browserReference.open();
+            lBrowserReference.open();
+            browserReference.set(lBrowserReference);
         } catch (Throwable e1) {
             UIOManager.I().showException(e1.getMessage(), e1);
-            browserReference = null;
+            lBrowserReference.dispose();
         }
     }
 
