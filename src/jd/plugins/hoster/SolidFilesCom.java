@@ -47,8 +47,13 @@ public class SolidFilesCom extends PluginForHost {
         return "http://www.solidfiles.com/terms/";
     }
 
-    public static final String  DECRYPTFOLDERS = "DECRYPTFOLDERS";
-    private static final String NOCHUNKS       = "NOCHUNKS";
+    public static final String   DECRYPTFOLDERS    = "DECRYPTFOLDERS";
+    private static final String  NOCHUNKS          = "NOCHUNKS";
+
+    /* Connection stuff */
+    private static final boolean FREE_RESUME       = true;
+    private static final int     FREE_MAXCHUNKS    = 0;
+    private static final int     FREE_MAXDOWNLOADS = -1;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -97,12 +102,12 @@ public class SolidFilesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        int maxChunks = 0;
+        int maxChunks = FREE_MAXCHUNKS;
         if (downloadLink.getBooleanProperty(NOCHUNKS, false)) {
             maxChunks = 1;
         }
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxChunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 - use less connections and try again", 10 * 60 * 1000l);
@@ -145,7 +150,7 @@ public class SolidFilesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override
