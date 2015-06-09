@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -30,11 +31,12 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?((((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\-]+|#[A-Za-z0-9%\\/+=\\-]+))|(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+|yadi\\.sk/mail/\\?hash=[A-Za-z0-9%/\\+=]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?((((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\-]+|#[A-Za-z0-9%\\/+=\\-]+))|(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+|yadi\\.sk/mail/\\?hash=[A-Za-z0-9%/\\+=]+)" }, flags = { 0 })
 public class DiskYandexNetFolder extends PluginForDecrypt {
 
     public DiskYandexNetFolder(PluginWrapper wrapper) {
@@ -50,6 +52,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
 
     private static final String OFFLINE_TEXT      = "<title>The file you are looking for could not be found\\.|class=\"nb\\-panel__warning\"|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>|_file\\-blocked\"|/_not\\-found.css\"";
 
+    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -74,15 +77,6 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             String newUrl = Encoding.htmlDecode(br.getURL()).replace("&locale=ru", "");
             if (newUrl.matches(primaryURLs)) {
                 parameter = new Regex(newUrl, primaryURLs).getMatch(-1);
-            } else {
-                /* URL has not changed - try to manually change it to our basic url format */
-                mainhashID = br.getRegex("\"hash\":\"([^<>\"]*?)\"").getMatch(0);
-                if (mainhashID == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                mainhashID = fixHash(mainhashID);
-                parameter = "https://disk.yandex.com/public/?hash=" + mainhashID;
             }
         }
         if (parameter.matches(primaryURLs)) {
@@ -95,7 +89,10 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             mainhashID = fixHash(mainhashID);
             parameter = protocol + "://disk.yandex.com/public/?hash=" + mainhashID;
             br.getPage(parameter);
+        } else {
+
         }
+        mainhashID = getJson("hash");
 
         main.setProperty("mainlink", parameter);
         main.setProperty("LINKDUPEID", "copydiskyandexcom" + mainhashID);
@@ -121,61 +118,60 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         // /* First try to get files of current folder */
         // final String hashID_special_encoded = hashID.replace("%2F", "/").replace("%28", "(").replace("%29", ")");
         // String linktext = br.getRegex("\"idEncoded\":\"/public/" + hashID_special_encoded + "parents\":\\[(.*?)\\]").getMatch(0);
-        String linktext = br.getRegex("\"resources\":\\[(.*?)\\]\\}\\}").getMatch(0);
-        if (linktext != null) {
-            linktext = Encoding.htmlDecode(linktext);
-        }
-        String[] data = null;
-        if (linktext != null) {
-            data = linktext.split("\\},\\{");
+        final String json = br.getRegex("type=\"application/json\">(\\[\\{\"model\":\"environment.*?\\])</script>").getMatch(0);
+        ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        final String walk_string = "{" + (ressourcelist.size() - 1) + "}/data";
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(ressourcelist, walk_string);
+        final Object resources = entries.get("resources");
+        if (resources != null) {
+            ressourcelist = (ArrayList) resources;
+        } else {
+            ressourcelist.clear();
+            ressourcelist.add(entries);
         }
 
         main.setProperty("hash_encoded", mainhashID);
-        // stored hash should not be urldecoded as this is what we need in host plugin
-        main.setProperty("hash_plain", mainhashID);
         mainhashID = Encoding.htmlDecode(mainhashID);
 
-        if (data != null && data.length != 0) {
-            for (final String singleData : data) {
-                final String type = getJson("type", singleData);
-                String hash = getJson("idEncoded", singleData);
-                String name = getJson("name", singleData);
-                if (singleData.length() > 30 && hash != null) {
-                    hash = unescape(hash);
-                    hash = hash.replace("/public/", "");
-                    if ("dir".equals(type)) {
-                        hash = fixHash(hash);
-                        final String folderlink = "https://disk.yandex.com/public/?hash=" + hash;
-                        decryptedLinks.add(createDownloadlink(folderlink));
-                    } else {
-                        if (name == null) {
-                            logger.warning("Decrypter broken for link: " + parameter);
-                            return null;
-                        }
-                        name = Encoding.htmlDecode(name.trim());
-                        name = unescape(name);
-                        final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
-                        dl.setFinalFileName(name);
-                        final String filesize = new Regex(singleData, "\"size\":(\\d+)").getMatch(0);
-                        if (filesize != null) {
-                            dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                            dl.setProperty("plain_size", filesize);
-                        }
-                        try {
-                            dl.setContentUrl(parameter);
-                        } catch (final Throwable e) {
-                            /* Not available in old 0.9.581 Stable */
-                            dl.setBrowserUrl(parameter);
-                        }
-                        dl.setProperty("plain_filename", name);
-                        dl.setProperty("hash_plain", hash);
-                        dl.setProperty("hash_encoded", fixHashFileFolder(hash));
-                        dl.setProperty("mainlink", parameter);
-                        dl.setProperty("LINKDUPEID", "copydiskyandexcom" + hash);
-                        dl.setAvailable(true);
-                        decryptedLinks.add(dl);
-                    }
+        for (final Object list_object : ressourcelist) {
+            entries = (LinkedHashMap<String, Object>) list_object;
+
+            final LinkedHashMap<String, Object> meta = (LinkedHashMap<String, Object>) entries.get("meta");
+
+            final long filesize = DummyScriptEnginePlugin.toLong(meta.get("size"), -1);
+            final String type = (String) entries.get("type");
+            final String id = (String) entries.get("id");
+            final String short_url = (String) meta.get("short_url");
+            String hash = (String) entries.get("hash");
+            String name = (String) entries.get("name");
+            hash = hash.replace("/public/", "");
+            if ("dir".equals(type)) {
+                hash = fixHash(hash);
+                final String folderlink = "https://disk.yandex.com/public/?hash=" + hash;
+                decryptedLinks.add(createDownloadlink(folderlink));
+            } else {
+                if (name == null || short_url == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
                 }
+                final DownloadLink dl = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
+                dl.setFinalFileName(name);
+                dl.setDownloadSize(filesize);
+                dl.setProperty("plain_size", filesize);
+                try {
+                    dl.setContentUrl(parameter);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                    dl.setBrowserUrl(parameter);
+                }
+                dl.setProperty("plain_filename", name);
+                dl.setProperty("hash_encoded", fixHashFileFolder(hash));
+                dl.setProperty("plain_id", id);
+                dl.setProperty("mainlink", short_url);
+                dl.setContentUrl(short_url);
+                dl.setLinkID(hash);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
             }
         }
         /* Only add main .zip link if the user added the ROOT link, otherwise we get the ROOT as .zip with a wrong filename */
@@ -267,12 +263,24 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         return jd.plugins.hoster.Youtube.unescape(s);
     }
 
-    private String getJson(final String parameter, final String source) {
-        String result = new Regex(source, "\"" + parameter + "\":([0-9\\.]+)").getMatch(0);
-        if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
-        }
-        return result;
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
 }

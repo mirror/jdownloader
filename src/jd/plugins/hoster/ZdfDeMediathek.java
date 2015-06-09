@@ -26,7 +26,6 @@ import java.util.Scanner;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -62,8 +61,13 @@ public class ZdfDeMediathek extends PluginForHost {
         return "http://zdf.de";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String filename = link.getStringProperty("directName", null);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (link.getStringProperty("directURL", null) == null) {
             if (link.getBooleanProperty("offline", false)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -78,14 +82,8 @@ public class ZdfDeMediathek extends PluginForHost {
             if (br.containsHTML("Der Beitrag konnte nicht gefunden werden")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String filename = br.getRegex("<h1 class=\"beitragHeadline\">([^<>\"]*?)</h1>").getMatch(0);
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()).replace("\"", "'").replace(":", " - ").replace("?", "") + ".mp4");
-        } else {
-            link.setFinalFileName(link.getStringProperty("directName", null));
         }
+        link.setFinalFileName(link.getStringProperty("directName", null));
         return AvailableStatus.TRUE;
     }
 

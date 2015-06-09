@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pbs.org" }, urls = { "https?://(www\\.)?video\\.pbs\\.org/video/\\d+" }, flags = { 3 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pbs.org" }, urls = { "https?://(www\\.)?(video\\.pbs\\.org/video/\\d+|pbs\\.org/.+)" }, flags = { 3 })
 public class PbsOrg extends PluginForHost {
 
     @SuppressWarnings("deprecation")
@@ -45,14 +45,27 @@ public class PbsOrg extends PluginForHost {
         return "http://www.pbs.org/about/policies/terms-of-use/";
     }
 
-    private LinkedHashMap<String, Object> entries = null;
+    private static final String           TYPE_VIDEO = "https?://(www\\.)?video\\.pbs\\.org/video/\\d+";
+    private static final String           TYPE_OTHER = "https?://(www\\.)?pbs\\.org/.+";
+
+    private LinkedHashMap<String, Object> entries    = null;
 
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String vid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String vid;
+        if (link.getDownloadURL().matches(TYPE_VIDEO)) {
+            vid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        } else {
+            br.getPage(link.getDownloadURL());
+            vid = br.getRegex("mediaid:\\s*?\\'(\\d+)\\'").getMatch(0);
+            /* Whatever the user added - it doesn't seem to be a video --> Offline */
+            if (vid == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
         link.setLinkID(vid);
         /* These Headers are not necessarily needed! */
         br.getHeaders().put("Accept", "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01");

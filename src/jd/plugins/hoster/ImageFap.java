@@ -16,9 +16,14 @@
 
 package jd.plugins.hoster;
 
+import java.text.ParseException;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,13 +35,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" }, flags = { 2 })
 public class ImageFap extends PluginForHost {
 
     public ImageFap(final PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
         // this.setStartIntervall(500l);
     }
+
+    private static final String CUSTOM_FILENAME = "CUSTOM_FILENAME";
 
     public void correctDownloadLink(DownloadLink link) {
         final String addedLink = link.getDownloadURL();
@@ -175,6 +183,7 @@ public class ImageFap extends PluginForHost {
         Browser.setRequestIntervalLimitGlobal(getHost(), 20);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException {
         try {
@@ -198,45 +207,41 @@ public class ImageFap extends PluginForHost {
                 if (br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                String picture_name = br.getRegex("<title>(.*?) in gallery").getMatch(0);
-                if (picture_name == null) {
-                    picture_name = "";
-                } else {
-                    picture_name = " - " + picture_name;
-                }
+                final String picture_name = br.getRegex("<title>(.*?) in gallery").getMatch(0);
                 String galleryName = getGalleryName(downloadLink);
-                String authorsName = downloadLink.getStringProperty("authorsname");
-                if (authorsName == null) {
-                    authorsName = br.getRegex("<b><font size=\"4\" color=\"#CC0000\">(.*?)\\'s gallery</font></b>").getMatch(0);
-                    if (authorsName == null) {
-                        authorsName = br.getRegex("<td class=\"mnu0\"><a href=\"/profile\\.php\\?user=(.*?)\"").getMatch(0);
-                        if (authorsName == null) {
-                            authorsName = br.getRegex("jQuery\\.BlockWidget\\(\\d+,\"(.*?)\",\"left\"\\);").getMatch(0);
-                            if (authorsName == null) {
-                                authorsName = br.getRegex("Uploaded by ([^<>\"]+)</font>").getMatch(0);
+                String username = downloadLink.getStringProperty("directusername");
+                if (username == null) {
+                    username = br.getRegex("<b><font size=\"4\" color=\"#CC0000\">(.*?)\\'s gallery</font></b>").getMatch(0);
+                    if (username == null) {
+                        username = br.getRegex("<td class=\"mnu0\"><a href=\"/profile\\.php\\?user=(.*?)\"").getMatch(0);
+                        if (username == null) {
+                            username = br.getRegex("jQuery\\.BlockWidget\\(\\d+,\"(.*?)\",\"left\"\\);").getMatch(0);
+                            if (username == null) {
+                                username = br.getRegex("Uploaded by ([^<>\"]+)</font>").getMatch(0);
                             }
                         }
                     }
                 }
-                final String orderid = downloadLink.getStringProperty("orderid");
-                if (authorsName == null) {
-                    authorsName = "Unknown author";
-                }
-                if (galleryName == null) {
+                if (galleryName == null || picture_name == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                galleryName = galleryName.trim();
-                authorsName = authorsName.trim();
-                if (orderid != null) {
-                    downloadLink.setFinalFileName(authorsName + " - " + galleryName + " - " + orderid + picture_name);
-                } else {
-                    downloadLink.setFinalFileName(authorsName + " - " + galleryName + picture_name);
+
+                galleryName = Encoding.htmlDecode(galleryName).trim();
+                if (username != null) {
+                    username = username.trim();
                 }
+
+                downloadLink.setProperty("galleryname", galleryName);
+                downloadLink.setProperty("directusername", username);
+                downloadLink.setProperty("original_filename", picture_name);
+
+                downloadLink.setFinalFileName(getFormattedFilename(downloadLink));
+
                 /* only set filepackage if not set yet */
                 try {
                     if (FilePackage.isDefaultFilePackage(downloadLink.getFilePackage())) {
                         final FilePackage fp = FilePackage.getInstance();
-                        fp.setName(authorsName + " - " + galleryName);
+                        fp.setName(username + " - " + galleryName);
                         fp.add(downloadLink);
                     }
                 } catch (final Throwable e) {
@@ -246,7 +251,7 @@ public class ImageFap extends PluginForHost {
                     try {
                         if (downloadLink.getFilePackage() == FilePackage.getDefaultFilePackage()) {
                             final FilePackage fp = FilePackage.getInstance();
-                            fp.setName(authorsName + " - " + galleryName);
+                            fp.setName(username + " - " + galleryName);
                             fp.add(downloadLink);
                         }
                     } catch (final Throwable e2) {
@@ -258,6 +263,95 @@ public class ImageFap extends PluginForHost {
             logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    }
+
+    /** Returns either the original server filename or one that is very similar to the original */
+    @SuppressWarnings("deprecation")
+    public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+        final SubConfiguration cfg = SubConfiguration.getConfig("imagefap.com");
+        final String username = downloadLink.getStringProperty("directusername", "-");
+        final String original_filename = downloadLink.getStringProperty("original_filename", null);
+        final String galleryname = downloadLink.getStringProperty("galleryname", null);
+        final String orderid = downloadLink.getStringProperty("orderid", "-");
+
+        /* Date: Maybe add this in the future, if requested by a user. */
+        // final long date = getLongProperty(downloadLink, "originaldate", 0l);
+        // String formattedDate = null;
+        // /* Get correctly formatted date */
+        // String dateFormat = "yyyy-MM-dd";
+        // SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy");
+        // Date theDate = new Date(date);
+        // try {
+        // formatter = new SimpleDateFormat(dateFormat);
+        // formattedDate = formatter.format(theDate);
+        // } catch (Exception e) {
+        // /* prevent user error killing plugin */
+        // formattedDate = "";
+        // }
+        // /* Get correctly formatted time */
+        // dateFormat = "HHmm";
+        // String time = "0000";
+        // try {
+        // formatter = new SimpleDateFormat(dateFormat);
+        // time = formatter.format(theDate);
+        // } catch (Exception e) {
+        // /* prevent user error killing plugin */
+        // time = "0000";
+        // }
+
+        String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
+
+        if (!formattedFilename.contains("*username*") && !formattedFilename.contains("*title*") && !formattedFilename.contains("*galleryname*")) {
+            formattedFilename = defaultCustomFilename;
+        }
+
+        formattedFilename = formattedFilename.replace("*orderid*", orderid);
+        formattedFilename = formattedFilename.replace("*username*", username);
+        formattedFilename = formattedFilename.replace("*galleryname*", galleryname);
+        formattedFilename = formattedFilename.replace("*title*", original_filename);
+        return formattedFilename;
+    }
+
+    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
+        {
+            put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Original title of the picture including file extension\r\n*galleryname* = Name of the gallery in which the picture is listed\r\n*orderid* = Position of the picture in a gallery e.g. '0001'");
+            put("LABEL_FILENAME", "Define custom filename for pictures:");
+        }
+    };
+
+    private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
+        {
+            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der den Inhalt veröffentlicht hat \r\n*title* = Originaler Dateiname mitsamt Dateiendung\r\n*galleryname* = Name der Gallerie, in der sich das Bild befand\r\n*orderid* = Position des Bildes in einer Gallerie z.B. '0001'");
+            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens für Bilder an:");
+        }
+    };
+
+    /**
+     * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
+     * English.
+     *
+     * @param key
+     * @return
+     */
+    private String getPhrase(String key) {
+        if ("de".equals(System.getProperty("user.language")) && phrasesDE.containsKey(key)) {
+            return phrasesDE.get(key);
+        } else if (phrasesEN.containsKey(key)) {
+            return phrasesEN.get(key);
+        }
+        return "Translation not found!";
+    }
+
+    @Override
+    public String getDescription() {
+        return "JDownloader's imagefap.com plugin helps downloading videos and images from ImageFap. JDownloader provides settings for custom filenames.";
+    }
+
+    private static final String defaultCustomFilename = "*username* - *galleryname* - *orderid**title*";
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_FILENAME, getPhrase("LABEL_FILENAME")).setDefaultValue(defaultCustomFilename));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_TAGS")));
     }
 
     @Override

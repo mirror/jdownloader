@@ -30,6 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+)" }, flags = { 0 })
 public class MgfpCm extends PluginForDecrypt {
@@ -41,9 +42,12 @@ public class MgfpCm extends PluginForDecrypt {
     private static final String type_invalid = "https?://(www\\.)?imagefap\\.com/gallery/search=.+";
     private String              gid          = null;
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> allPages = new ArrayList<String>();
+        /* Load sister-hostplugin */
+        JDUtilities.getPluginForHost("imagefap.com");
         allPages.add("0");
         br.setFollowRedirects(false);
         String parameter = param.toString();
@@ -166,6 +170,7 @@ public class MgfpCm extends PluginForDecrypt {
                 for (final String elements[] : info) {
                     final String orderID = df.format(counter);
                     final String fid = elements[0];
+                    final String original_filename = Encoding.htmlDecode(elements[1].trim());
                     final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + fid);
                     try {/* JD2 only */
                         link.setContentUrl("http://www.imagefap.com/photo/" + fid + "/");
@@ -174,8 +179,9 @@ public class MgfpCm extends PluginForDecrypt {
                     }
                     link.setProperty("orderid", orderID);
                     link.setProperty("galleryname", galleryName);
-                    link.setProperty("authorsname", authorsName);
-                    link.setName(authorsName + " - " + galleryName + " - " + df.format(counter) + Encoding.htmlDecode(elements[1].trim()));
+                    link.setProperty("directusername", authorsName);
+                    link.setProperty("original_filename", original_filename);
+                    link.setName(jd.plugins.hoster.ImageFap.getFormattedFilename(link));
                     link.setAvailable(true);
                     decryptedLinks.add(link);
                     counter++;

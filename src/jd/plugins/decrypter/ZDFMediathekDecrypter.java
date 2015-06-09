@@ -113,6 +113,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         final boolean grabSubtitles = cfg.getBooleanProperty(Q_SUBTITLES, false);
         String id = null;
         String title = null;
+        String subtitleURL = null;
         String subtitleInfo = null;
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
@@ -143,6 +144,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 title = getTitle(br);
                 String extension = ".mp4";
                 subtitleInfo = br.getRegex("<caption>(.*?)</caption>").getMatch(0);
+                if (subtitleInfo != null) {
+                    subtitleURL = new Regex(subtitleInfo, "<url>(http://utstreaming\\.zdf\\.de/tt/\\d{4}/[A-Za-z0-9_\\-]+\\.xml)</url>").getMatch(0);
+                }
                 if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
                     extension = ".mp3";
                 }
@@ -275,15 +279,14 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             logger.severe(e.getMessage());
         }
         for (final DownloadLink dl : ret) {
-            if (grabSubtitles && subtitleInfo != null) {
+            if (grabSubtitles && subtitleURL != null) {
                 final String dlfmt = dl.getStringProperty("directfmt", null);
-                String subtitleUrl = new Regex(subtitleInfo, "<url>(http://utstreaming\\.zdf\\.de/tt/\\d{4}/[A-Za-z0-9_\\-]+\\.xml)</url>").getMatch(0);
                 final String startTime = new Regex(subtitleInfo, "<offset>(\\-)?(\\d+)</offset>").getMatch(1);
                 final String name = title + "@" + dlfmt + ".xml";
                 final DownloadLink subtitle = createDownloadlink("decrypted://zdf.de/subtitles/" + System.currentTimeMillis() + new Random().nextInt(1000000));
                 subtitle.setAvailable(true);
                 subtitle.setFinalFileName(name);
-                subtitle.setProperty("directURL", subtitleUrl);
+                subtitle.setProperty("directURL", subtitleURL);
                 subtitle.setProperty("directName", name);
                 subtitle.setProperty("streamingType", "subtitle");
                 subtitle.setProperty("starttime", startTime);

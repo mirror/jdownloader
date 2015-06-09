@@ -59,7 +59,7 @@ public class FourSexFourCom extends PluginForDecrypt {
         if (fpName == null) {
             fpName = new Regex(PARAMETER, "4sex4\\.com/tube/gallery\\-([a-z0-9\\-_]+)\\.html").getMatch(0);
         }
-        final String[] piclinks = br.getRegex("\\'(tube/galleries/[^<>\"]*?)\\'").getColumn(0);
+        final String[] piclinks = br.getRegex("(tube/galleries/[^<>\"\\']*?)\\'").getColumn(0);
         if (piclinks == null || piclinks.length == 0) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
             throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
