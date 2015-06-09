@@ -302,8 +302,10 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
                 @Override
                 protected void modifyPackageData(PackageType pkg, List<ChildrenType> unfilteredChildren) {
-                    if (fp2 == pkg) {
-                        pkg.setExpanded(currentExpandedState);
+                    if (unfilteredChildren.size() > 0) {
+                        if (fp2 == pkg) {
+                            pkg.setExpanded(currentExpandedState);
+                        }
                     }
                 }
 
@@ -325,7 +327,9 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
                     @Override
                     protected void modifyPackageData(PackageType pkg, List<ChildrenType> unfilteredChildren) {
-                        pkg.setExpanded(currentExpandedState);
+                        if (unfilteredChildren.size() > 0) {
+                            pkg.setExpanded(currentExpandedState);
+                        }
                     }
 
                 });
@@ -347,15 +351,17 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
                     @Override
                     protected void modifyPackageData(PackageType pkg, List<ChildrenType> unfilteredChildren) {
-                        if (doToggle) {
-                            pkg.setExpanded(currentExpandedState);
-                            if (pkg == fp2) {
-                                doToggle = false;
-                            }
-                        } else {
-                            if (pkg == fp2) {
-                                doToggle = true;
+                        if (unfilteredChildren.size() > 0) {
+                            if (doToggle) {
                                 pkg.setExpanded(currentExpandedState);
+                                if (pkg == fp2) {
+                                    doToggle = false;
+                                }
+                            } else {
+                                if (pkg == fp2) {
+                                    doToggle = true;
+                                    pkg.setExpanded(currentExpandedState);
+                                }
                             }
                         }
                     }
