@@ -302,8 +302,8 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
 
                 @Override
                 protected void modifyPackageData(PackageType pkg, List<ChildrenType> unfilteredChildren) {
-                    if (unfilteredChildren.size() > 0) {
-                        if (fp2 == pkg) {
+                    if (fp2 == pkg) {
+                        if (unfilteredChildren.size() > 0) {
                             pkg.setExpanded(currentExpandedState);
                         }
                     }
@@ -312,64 +312,41 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             });
             break;
         default:
-            final SelectionInfo<PackageType, ChildrenType> selectionInfo = getTable().getSelectionInfo(true, true);
-            int count = 0;
-            for (PackageView<PackageType, ChildrenType> packageView : selectionInfo.getPackageViews()) {
-                if (packageView.isPackageSelected()) {
-                    count++;
-                    if (count > 1) {
+            tableModifiers.add(new TableDataModification() {
+                boolean doToggle = false;
+
+                {
+                    switch (mode) {
+                    case TOP:
+                        doToggle = true;
+                        break;
+                    case BOTTOM:
+                        doToggle = false;
                         break;
                     }
-                }
-            }
-            if (count > 1) {
-                tableModifiers.add(new TableDataModification() {
 
-                    @Override
-                    protected void modifyPackageData(PackageType pkg, List<ChildrenType> unfilteredChildren) {
+                }
+
+                @Override
+                protected void modifyPackageData(PackageType pkg, List<ChildrenType> unfilteredChildren) {
+                    if (doToggle) {
                         if (unfilteredChildren.size() > 0) {
                             pkg.setExpanded(currentExpandedState);
                         }
-                    }
-
-                });
-            } else {
-                tableModifiers.add(new TableDataModification() {
-                    boolean doToggle = false;
-
-                    {
-                        switch (mode) {
-                        case TOP:
-                            doToggle = true;
-                            break;
-                        case BOTTOM:
+                        if (pkg == fp2) {
                             doToggle = false;
-                            break;
                         }
-
-                    }
-
-                    @Override
-                    protected void modifyPackageData(PackageType pkg, List<ChildrenType> unfilteredChildren) {
-                        if (doToggle) {
+                    } else {
+                        if (pkg == fp2) {
+                            doToggle = true;
                             if (unfilteredChildren.size() > 0) {
                                 pkg.setExpanded(currentExpandedState);
                             }
-                            if (pkg == fp2) {
-                                doToggle = false;
-                            }
-                        } else {
-                            if (pkg == fp2) {
-                                doToggle = true;
-                                if (unfilteredChildren.size() > 0) {
-                                    pkg.setExpanded(currentExpandedState);
-                                }
-                            }
                         }
                     }
+                }
 
-                });
-            }
+            });
             break;
         }
         recreateModel(false);
