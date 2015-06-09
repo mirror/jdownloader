@@ -237,6 +237,8 @@ public class PutStreamCom extends PluginForHost {
                 }
             }
         }
+        /* Try via normal br html */
+        fileInfo[0] = new Regex(this.br.toString(), "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {
