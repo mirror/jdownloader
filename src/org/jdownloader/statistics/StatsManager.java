@@ -129,7 +129,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static StatsManager I() {
@@ -207,127 +207,124 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     public void onAccountControllerEvent(AccountControllerEvent event) {
                         try {
                             if (event.getType() == AccountControllerEvent.Types.ADDED) {
-                                Account account = event.getAccount();
+                                final Account account = event.getAccount();
                                 if (account != null && account.isValid()) {
-                                    String domain = account.getHoster();
-                                    File file = Application.getResource("cfg/clicked/" + domain + ".json");
-                                    if (!file.exists()) {
-                                        return;
-                                    }
-
-                                    file.getParentFile().mkdirs();
-                                    ArrayList<ClickedAffLinkStorable> list = null;
-
+                                    final String domain = account.getHoster();
+                                    final File file = Application.getResource("cfg/clicked/" + domain + ".json");
                                     if (file.exists()) {
+                                        ArrayList<ClickedAffLinkStorable> list = null;
                                         try {
                                             list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
                                             });
                                         } catch (Throwable e) {
                                             logger.log(e);
+                                        } finally {
+                                            file.delete();
                                         }
-
-                                    }
-                                    if (list == null || list.size() == 0) {
-                                        return;
-                                    }
-                                    String type = "Unknown";
-                                    long estimatedBuytime = System.currentTimeMillis();
-                                    if ("uploaded.to".equals(account.getHoster())) {
-                                        AccountInfo info = account.getAccountInfo();
+                                        if (list == null || list.size() == 0) {
+                                            return;
+                                        }
+                                        final AccountInfo info = account.getAccountInfo();
+                                        String type = "Unknown";
+                                        long estimatedBuytime = System.currentTimeMillis();
+                                        final long validUntilTimeStamp;
+                                        final long expireInMs;
                                         if (info != null) {
-                                            long vi = info.getValidUntil();
-
-                                            if (vi > estimatedBuytime) {
-                                                long validfor = vi - System.currentTimeMillis();
-                                                if (validfor < RANGE_48HOUR_B && validfor > RANGE_48HOUR_A) {
-                                                    // 48hours
-                                                    type = "48hours";
-                                                    estimatedBuytime = Math.min(estimatedBuytime, vi - 48 * 60 * 60 * 1000l);
-                                                } else if (validfor < RANGE_1MONTH_B && validfor > RANGE_1MONTH_A) {
-                                                    // 1month
-                                                    type = "1month";
-                                                    estimatedBuytime = Math.min(estimatedBuytime, vi - (1 * 31) * 24 * 60 * 60 * 1000l);
-                                                } else if (validfor < RANGE_3MONTH_B && validfor > RANGE_3MONTH_A) {
-                                                    // 3month
-                                                    type = "3months";
-                                                    estimatedBuytime = Math.min(estimatedBuytime, vi - (3 * 30) * 24 * 60 * 60 * 1000l);
-                                                } else if (validfor < RANGE_6MONTH_B && validfor > RANGE_6MONTH_A) {
-                                                    // 6month
-                                                    type = "6months";
-                                                    estimatedBuytime = Math.min(estimatedBuytime, vi - (6 * 31) * 24 * 60 * 60 * 1000l);
-                                                } else if (validfor < RANGE_1YEAR_B && validfor > RANGE_1YEAR_A) {
-                                                    // 1year
-                                                    type = "1year";
-                                                    estimatedBuytime = Math.min(estimatedBuytime, vi - (365) * 24 * 60 * 60 * 1000l);
-                                                } else if (validfor < RANGE_2YEAR_B && validfor > RANGE_2YEAR_A) {
-                                                    // 1year
-                                                    type = "2years";
-                                                    estimatedBuytime = Math.min(estimatedBuytime, vi - (2 * 365) * 24 * 60 * 60 * 1000l);
+                                            validUntilTimeStamp = info.getValidUntil();
+                                            expireInMs = validUntilTimeStamp - System.currentTimeMillis();
+                                            if ("uploaded.to".equals(account.getHoster())) {
+                                                if (validUntilTimeStamp > estimatedBuytime) {
+                                                    if (expireInMs > 0) {
+                                                        if (expireInMs < RANGE_48HOUR_B && expireInMs > RANGE_48HOUR_A) {
+                                                            // 48hours
+                                                            type = "48hours";
+                                                            estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - (48 * 60 * 60 * 1000l));
+                                                        } else if (expireInMs < RANGE_1MONTH_B && expireInMs > RANGE_1MONTH_A) {
+                                                            // 1month
+                                                            type = "1month";
+                                                            estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((1 * 31) * 24 * 60 * 60 * 1000l));
+                                                        } else if (expireInMs < RANGE_3MONTH_B && expireInMs > RANGE_3MONTH_A) {
+                                                            // 3month
+                                                            type = "3months";
+                                                            estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((3 * 30) * 24 * 60 * 60 * 1000l));
+                                                        } else if (expireInMs < RANGE_6MONTH_B && expireInMs > RANGE_6MONTH_A) {
+                                                            // 6month
+                                                            type = "6months";
+                                                            estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((6 * 31) * 24 * 60 * 60 * 1000l));
+                                                        } else if (expireInMs < RANGE_1YEAR_B && expireInMs > RANGE_1YEAR_A) {
+                                                            // 1year
+                                                            type = "1year";
+                                                            estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((365) * 24 * 60 * 60 * 1000l));
+                                                        } else if (expireInMs < RANGE_2YEAR_B && expireInMs > RANGE_2YEAR_A) {
+                                                            // 2year
+                                                            type = "2years";
+                                                            estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((2 * 365) * 24 * 60 * 60 * 1000l));
+                                                        }
+                                                    }
+                                                }
+                                            } else if ("rapidgator.net".equals(account.getHoster())) {
+                                                if (validUntilTimeStamp > estimatedBuytime) {
+                                                    if (expireInMs > 0) {
+                                                        if (expireInMs < RANGE_1MONTH_B && expireInMs > RANGE_1MONTH_A) {
+                                                            // 1month
+                                                            type = "1month";
+                                                            estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((1 * 31) * 24 * 60 * 60 * 1000l));
+                                                        } else if (expireInMs < RANGE_3MONTH_B && expireInMs > RANGE_3MONTH_A) {
+                                                            // 3month
+                                                            type = "3months";
+                                                            estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((3 * 30) * 24 * 60 * 60 * 1000l));
+                                                        }
+                                                    }
                                                 }
                                             }
+                                            final String id;
+                                            final HashMap<String, String> infos;
+                                            if (validUntilTimeStamp > 0) {
+                                                if (expireInMs > 0) {
+                                                    infos = new HashMap<String, String>();
+                                                    infos.put("ms", Long.toString(expireInMs));
+                                                    id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/until";
+                                                } else {
+                                                    infos = null;
+                                                    id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/expired";
+                                                }
+                                            } else {
+                                                infos = null;
+                                                id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/unlimited";
+                                            }
+                                            StatsManager.I().track(id, infos);
+                                        } else {
+                                            validUntilTimeStamp = -1;
+                                            expireInMs = -1;
                                         }
-
-                                    } else if ("rapidgator.net".equals(account.getHoster())) {
-                                        AccountInfo info = account.getAccountInfo();
-                                        if (info != null) {
-                                            long vi = info.getValidUntil();
-                                            StatsManager.I().track("premium/valid/" + account.getHoster() + "/" + (vi / (1000l * 60 * 60)));
-                                            if (vi > estimatedBuytime) {
-                                                long validfor = vi - System.currentTimeMillis();
-                                                if (validfor < RANGE_1MONTH_B && validfor > RANGE_1MONTH_A) {
-                                                    // 1month
-                                                    type = "1month";
-                                                    estimatedBuytime = Math.min(estimatedBuytime, vi - (1 * 31) * 24 * 60 * 60 * 1000l);
-                                                } else if (validfor < RANGE_3MONTH_B && validfor > RANGE_3MONTH_A) {
-                                                    // 3month
-                                                    type = "3months";
-                                                    estimatedBuytime = Math.min(estimatedBuytime, vi - (3 * 30) * 24 * 60 * 60 * 1000l);
+                                        final ClickedAffLinkStorable st = list.get(list.size() - 1);
+                                        if (st != null) {
+                                            final long timeDiff = estimatedBuytime - st.getTime();
+                                            final HashMap<String, String> infos = new HashMap<String, String>();
+                                            infos.put("ms", Long.toString(timeDiff));
+                                            if (info != null) {
+                                                if (validUntilTimeStamp > 0) {
+                                                    if (expireInMs > 0) {
+                                                        infos.put("until", Long.toString(expireInMs));
+                                                    } else {
+                                                        infos.put("until", "0");
+                                                    }
+                                                } else {
+                                                    infos.put("until", "-1");
                                                 }
                                             }
-                                        }
-
-                                    }
-                                    AccountInfo info = account.getAccountInfo();
-                                    if (info != null) {
-                                        long vi = info.getValidUntil();
-                                        StatsManager.I().track("premium/valid/" + account.getHoster() + "/" + (vi / (1000l * 60 * 60)));
-                                    }
-                                    ClickedAffLinkStorable st = list.get(list.size() - 1);
-                                    if (st != null) {
-                                        long timedif = Math.abs(estimatedBuytime - st.getTime());
-                                        StatsManager.I().track("premium/addedAfter/" + account.getHoster() + "/min" + (estimatedBuytime - st.getTime()) / (1000l * 60));
-                                        StatsManager.I().track("premium/addedAfter/" + account.getHoster() + "/hour" + (estimatedBuytime - st.getTime()) / (1000l * 60 * 60));
-                                        StatsManager.I().track("premium/addedAfter/" + account.getHoster() + "/day" + (estimatedBuytime - st.getTime()) / (1000l * 60 * 60 * 24));
-                                        if (timedif < 1 * 60 * 60 * 1000l) {
-
-                                            StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/" + st.getSource() + "/1hour");
-                                            file.delete();
-                                        } else if (timedif < 1 * 24 * 60 * 60 * 1000l) {
-                                            StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/" + st.getSource() + "/1day");
-                                            file.delete();
-                                        } else if (timedif < 3 * 24 * 60 * 60 * 1000l) {
-
-                                            StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/" + st.getSource() + "/3days");
-                                            file.delete();
-                                        } else if (timedif < 7 * 24 * 60 * 60 * 1000l) {
-                                            StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/" + st.getSource() + "/7days");
-                                            file.delete();
+                                            StatsManager.I().track("premium/addedAfter/" + account.getHoster() + "/" + account.getType() + "/" + type, infos);
                                         }
                                     }
-
                                 }
                             }
                         } catch (Throwable e) {
                             logger.log(e);
                         }
                     }
-
                 });
-
             }
-
         });
-
     }
 
     public void trackR() {
@@ -336,31 +333,24 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         if (reducer > 1) {
             path2 += "_in" + reducer;
             synchronized (reducerRandomMap) {
-
                 Integer randomValue = reducerRandomMap.get(path2);
                 if (randomValue != null) {
-
                     if (randomValue.intValue() != 0) {
                         return;
                     }
                 }
-
             }
-
         }
         final String path = path2;
         new Thread("Pinger") {
             private int i;
-
             {
                 setDaemon(true);
             }
 
             public void run() {
-
                 if (reducer > 1) {
                     synchronized (reducerRandomMap) {
-
                         Integer randomValue = reducerRandomMap.get(path);
                         if (randomValue == null) {
                             Random random = new Random(System.currentTimeMillis());
@@ -371,16 +361,12 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             } catch (Throwable e) {
                                 logger.log(e);
                             }
-
                         }
                         if (randomValue.intValue() != 0) {
                             return;
                         }
-
                     }
-
                 }
-
                 while (true) {
                     this.i = (int) System.currentTimeMillis();
                     log(new AbstractTrackEntry() {
@@ -626,7 +612,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * this setter does not set the config flag. Can be used to disable the logger for THIS session.
-     * 
+     *
      * @param b
      */
     public void setEnabled(boolean b) {
@@ -1565,41 +1551,31 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     }
 
-    /**
-     * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
-     * 
-     * @param reducer
-     * @param path
-     */
-    public void track(final int reducer, String path2) {
+    public void track(final int reducer, final String id, final Map<String, String> infos) {
+        final String path;
         if (reducer > 1) {
-            path2 += "_in" + reducer;
+            path = id + "_in" + reducer;
             synchronized (reducerRandomMap) {
-
-                Integer randomValue = reducerRandomMap.get(path2);
+                final Integer randomValue = reducerRandomMap.get(id);
                 if (randomValue != null) {
-
                     if (randomValue.intValue() != 0) {
                         return;
                     }
                 }
-
             }
-
+        } else {
+            path = id;
         }
-        final String path = path2;
         log(new AbstractTrackEntry() {
 
             @Override
             public void send(Browser br) {
                 try {
-
                     if (reducer > 1) {
                         synchronized (reducerRandomMap) {
-
                             Integer randomValue = reducerRandomMap.get(path);
                             if (randomValue == null) {
-                                Random random = new Random(System.currentTimeMillis());
+                                final Random random = new Random(System.currentTimeMillis());
                                 randomValue = random.nextInt(reducer);
                                 reducerRandomMap.put(path, randomValue.intValue());
                                 try {
@@ -1607,40 +1583,57 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                 } catch (Throwable e) {
                                     logger.log(e);
                                 }
-
                             }
                             if (randomValue.intValue() != 0) {
                                 return;
                             }
-
                         }
-
                     }
-
                     final HashMap<String, String> cvar = new HashMap<String, String>();
                     try {
                         cvar.put("_id", System.getProperty(new String(new byte[] { (byte) 117, (byte) 105, (byte) 100 }, new String(new byte[] { 85, 84, 70, 45, 56 }, "UTF-8"))));
-                    } catch (UnsupportedEncodingException e1) {
+                    } catch (Throwable e1) {
                         e1.printStackTrace();
                     }
-
                     cvar.put("source", "jd2");
                     cvar.put("os", CrossSystem.getOS().name());
-
-                    URLConnectionAdapter con = new Browser().openGetConnection("http://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar)));
-                    con.disconnect();
+                    if (infos != null) {
+                        cvar.putAll(infos);
+                    }
+                    final Browser browser = new Browser();
+                    try {
+                        final URLConnectionAdapter con = browser.openGetConnection("http://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar)));
+                        con.disconnect();
+                    } finally {
+                        try {
+                            browser.getHttpConnection().disconnect();
+                        } catch (final Throwable e) {
+                        }
+                    }
                 } catch (Throwable e) {
                     e.printStackTrace();
                 }
 
             }
         });
+    }
 
+    /**
+     * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
+     *
+     * @param reducer
+     * @param path
+     */
+    public void track(final int reducer, String path2) {
+        track(reducer, path2, null);
     }
 
     public void track(final String path) {
-        track(1, path);
+        track(1, path, null);
+    }
 
+    public void track(final String path, final Map<String, String> infos) {
+        track(1, path, infos);
     }
 
     public void logDownloadException(DownloadLink link, PluginForHost plugin, Throwable e) {
@@ -1726,52 +1719,48 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         }
     }
 
-    public void openAfflink(String url, String source, boolean direct) {
-
-        StatsManager.I().track("buypremium/" + source + "/" + url);
-        String domain = url;
+    public void openAfflink(final String url, final String source, final boolean direct) {
         try {
-            domain = new URL(url).getHost();
-        } catch (Throwable e) {
-
-        }
-        // do mappings here.
-        if (domain.contains("uploaded.net") || domain.contains("RedirectInterface/ul") || domain.contains("ul.to") || domain.contains("ul.net") || domain.contains("uploaded.net")) {
-            domain = "uploaded.to";
-        }
-
-        File file = Application.getResource("cfg/clicked/" + domain + ".json");
-        file.getParentFile().mkdirs();
-        ArrayList<ClickedAffLinkStorable> list = null;
-
-        if (file.exists()) {
+            StatsManager.I().track("buypremium/" + source + "/" + url);
+            String domain = url;
             try {
-                list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
-                });
-                // TODO CLeanup
+                domain = new URL(url).getHost();
+            } catch (Throwable e) {
+            }
+            // do mappings here.
+            if (domain.contains("uploaded.to") || domain.contains("RedirectInterface/ul") || domain.contains("ul.to") || domain.contains("ul.net") || domain.contains("uploaded.net")) {
+                domain = "uploaded.to";
+            }
+            final File file = Application.getResource("cfg/clicked/" + domain + ".json");
+            file.getParentFile().mkdirs();
+            ArrayList<ClickedAffLinkStorable> list = null;
+            if (file.exists()) {
+                try {
+                    list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
+                    });
+                    // TODO CLeanup
+                } catch (Throwable e) {
+                    logger.log(e);
+                }
+            }
+            if (list == null) {
+                list = new ArrayList<ClickedAffLinkStorable>();
+            }
+            // there is no reason to keep older clicks right now.
+            list.clear();
+            list.add(new ClickedAffLinkStorable(url, source));
+            try {
+                IO.secureWrite(file, JSonStorage.serializeToJson(list).getBytes("UTF-8"));
             } catch (Throwable e) {
                 logger.log(e);
+                file.delete();
             }
-
+        } finally {
+            if (direct) {
+                CrossSystem.openURLOrShowMessage(url);
+            } else {
+                CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(url, source));
+            }
         }
-        if (list == null) {
-            list = new ArrayList<ClickedAffLinkStorable>();
-        }
-        // there is no reason to keep older clicks right now.
-        list.clear();
-        list.add(new ClickedAffLinkStorable(url, source));
-        try {
-            IO.secureWrite(file, JSonStorage.serializeToJson(list).getBytes("UTF-8"));
-        } catch (Throwable e) {
-            logger.log(e);
-        }
-        if (direct) {
-            CrossSystem.openURLOrShowMessage(url);
-
-        } else {
-            CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(url, source));
-
-        }
-
     }
 }
