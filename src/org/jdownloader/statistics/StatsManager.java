@@ -117,7 +117,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private static final long         RANGE_1MONTH_B     = 32 * 24 * 60 * 60 * 1000l;
 
-    private static final long         RANGE_3MONTH_A     = ((3 * 31) - 2) * 24 * 60 * 60 * 1000l;
+    private static final long         RANGE_3MONTH_A     = ((3 * 30) - 2) * 24 * 60 * 60 * 1000l;
 
     private static final long         RANGE_3MONTH_B     = ((3 * 31) + 1) * 24 * 60 * 60 * 1000l;
 
@@ -267,19 +267,38 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                             }
                                         }
 
+                                    } else if ("rapidgator.net".equals(account.getHoster())) {
+                                        AccountInfo info = account.getAccountInfo();
+                                        if (info != null) {
+                                            long vi = info.getValidUntil();
+
+                                            if (vi > estimatedBuytime) {
+                                                long validfor = vi - System.currentTimeMillis();
+                                                if (validfor < RANGE_1MONTH_B && validfor > RANGE_1MONTH_A) {
+                                                    // 1month
+                                                    type = "1month";
+                                                    estimatedBuytime = Math.min(estimatedBuytime, vi - (1 * 31) * 24 * 60 * 60 * 1000l);
+                                                } else if (validfor < RANGE_3MONTH_B && validfor > RANGE_3MONTH_A) {
+                                                    // 3month
+                                                    type = "3months";
+                                                    estimatedBuytime = Math.min(estimatedBuytime, vi - (3 * 30) * 24 * 60 * 60 * 1000l);
+                                                }
+                                            }
+                                        }
+
                                     }
                                     ClickedAffLinkStorable st = list.get(list.size() - 1);
                                     if (st != null) {
                                         long timedif = Math.abs(estimatedBuytime - st.getTime());
 
                                         if (timedif < 1 * 60 * 60 * 1000l) {
-                                            StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/1hour");
+                                            StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/" + st.getSource() + "/1hour");
                                         } else if (timedif < 1 * 24 * 60 * 60 * 1000l) {
-                                            StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/1day");
+                                            StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/" + st.getSource() + "/1day");
                                         } else if (timedif < 3 * 24 * 60 * 60 * 1000l) {
-                                            StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/3days");
+                                            StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/" + st.getSource() + "/3days");
                                         } else if (timedif < 7 * 24 * 60 * 60 * 1000l) {
-                                            StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/7days");
+                                            StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/" + st.getSource() + "/7days");
                                         }
                                     }
 
