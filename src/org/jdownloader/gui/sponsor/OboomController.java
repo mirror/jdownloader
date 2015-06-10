@@ -126,7 +126,7 @@ public class OboomController implements AccountControllerListener, Sponsor {
 
             @Override
             public void run() {
-                AccountController.getInstance().getBroadcaster().addListener(OboomController.this, true);
+                AccountController.getInstance().getEventSender().addListener(OboomController.this, true);
                 onAccountControllerEvent(null);
             }
         });
@@ -523,8 +523,9 @@ public class OboomController implements AccountControllerListener, Sponsor {
 
         try {
             Dialog.getInstance().showDialog(d);
-            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/OK");
-            CrossSystem.openURL(AccountController.createFullBuyPremiumUrl(url, "controller/notify"));
+
+            StatsManager.I().openAfflink(url, "PremiumExpireWarning/" + account.getHoster() + "/OK", false);
+
         } catch (DialogNoAnswerException e) {
             e.printStackTrace();
             StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/CANCELED");

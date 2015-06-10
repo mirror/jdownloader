@@ -526,7 +526,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
             LinkCollector.getInstance().getEventsender().addListener(this, true);
             DownloadWatchDog.getInstance().getStateMachine().addListener(this);
             DownloadWatchDog.getInstance().getEventSender().addListener(this);
-            AccountController.getInstance().getBroadcaster().addListener(this);
+            AccountController.getInstance().getEventSender().addListener(this);
             CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().addListener(downloadSpeedLimitEventListener, false);
             CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().addListener(downloadSpeedLimitEnabledEventListener, false);
             CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getEventSender().addListener(maxSimultaneDownloadsEventListenr, false);
@@ -547,7 +547,7 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
             LinkCollector.getInstance().getEventsender().removeListener(this);
             DownloadWatchDog.getInstance().getStateMachine().removeListener(this);
             DownloadWatchDog.getInstance().getEventSender().removeListener(this);
-            AccountController.getInstance().getBroadcaster().removeListener(this);
+            AccountController.getInstance().getEventSender().removeListener(this);
             CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getEventSender().removeListener(downloadSpeedLimitEventListener);
             CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.getEventSender().removeListener(downloadSpeedLimitEnabledEventListener);
             CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getEventSender().removeListener(maxSimultaneDownloadsEventListenr);

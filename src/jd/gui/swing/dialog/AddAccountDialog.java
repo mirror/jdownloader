@@ -45,7 +45,6 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
-import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -292,8 +291,8 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                 if (plugin == null || StringUtils.isEmpty(url = plugin.getBuyPremiumUrl())) {
                     return;
                 }
-                StatsManager.I().track("buypremium/accountmanager/add/table/" + url);
-                CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(url, "accountmanager/table"));
+                StatsManager.I().openAfflink(url, "accountmanager/table", false);
+
             }
         });
         link.setFocusable(false);

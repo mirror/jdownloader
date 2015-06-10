@@ -98,7 +98,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             }
 
         };
-        AccountController.getInstance().getBroadcaster().addListener(this, true);
+        AccountController.getInstance().getEventSender().addListener(this, true);
         AccountChecker.getInstance().getEventSender().addListener(AccountListTableModel.this, true);
         if (AccountChecker.getInstance().isRunning()) {
             onCheckStarted();

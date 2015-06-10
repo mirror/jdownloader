@@ -3181,7 +3181,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                     }, true);
 
-                    AccountController.getInstance().getBroadcaster().addListener(accListener = new AccountControllerListener() {
+                    AccountController.getInstance().getEventSender().addListener(accListener = new AccountControllerListener() {
 
                         @Override
                         public void onAccountControllerEvent(final AccountControllerEvent event) {
@@ -3437,7 +3437,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                     });
                     DownloadController.getInstance().removeListener(listener);
-                    AccountController.getInstance().getBroadcaster().removeListener(accListener);
+                    AccountController.getInstance().getEventSender().removeListener(accListener);
                     HosterRuleController.getInstance().getEventSender().removeListener(hrcListener);
                     ProxyController.getInstance().getEventSender().removeListener(proxyListener);
                     logger.info("DownloadWatchDog: stopping");

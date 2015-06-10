@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -1897,7 +1896,11 @@ public abstract class PluginForHost extends Plugin {
             StatsManager.I().track("freedialog/" + domain + "/show");
             UIOManager.I().show(AskToUsePremiumDialogInterface.class, d).throwCloseExceptions();
             StatsManager.I().track("freedialog/" + domain + "/ok");
-            CrossSystem.openURL(new URL(d.getPremiumUrl()));
+            String url = this.getBuyPremiumUrl();
+            if (StringUtils.isEmpty(url)) {
+                url = "http://" + domain;
+            }
+            StatsManager.I().openAfflink(url, "freedialog", false);
 
         } catch (Throwable e) {
             LogSource.exception(logger, e);
