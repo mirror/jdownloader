@@ -24,6 +24,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primejailbait.com" }, urls = { "https?://(www\\.)?primejailbait\\.com/(id/\\d+|profile/[A-Za-z0-9\\-_]+/fav/\\d+)/$" }, flags = { 0 })
@@ -63,11 +64,12 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
                 if (currentPage > 1) {
                     br.getPage("/profile_inf.php?page=" + currentPage + "&user=" + username + "&list=" + lid);
                 }
-                thumbinfo = br.getRegex("<div class=\\'thumb\\' id=\\'\\d+\\'>(.*?)<span>By:").getColumn(0);
+                thumbinfo = br.getRegex("<div class=\\'thumb\\' (id=\\'\\d+\\'>.*?)<span>By:").getColumn(0);
                 if (thumbinfo == null || thumbinfo.length == 0) {
                     return null;
                 }
                 for (final String thumb : thumbinfo) {
+                    final String ID = new Regex(thumb, "/id/(\\d+)").getMatch(0);
                     String thumb_url = new Regex(thumb, "(https?://[a-z0-9\\-\\.]+/pics/bigthumbs/[^<>\"]*?)\\'").getMatch(0);
                     if (thumb_url == null && decryptedLinks.size() > 1) {
                         logger.info("Probably reached end of the page");
@@ -80,12 +82,17 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
                     thumb_url = thumb_url.replace("/bigthumbs/", "/original/");
                     final DownloadLink dl = createDownloadlink("directhttp://" + thumb_url);
                     dl.setAvailable(true);
+                    if (ID != null) {
+                        dl.setContentUrl("https://www.primejailbait.com/id/" + ID);
+                        dl.setFinalFileName(ID + "_" + extractFileNameFromURL(thumb_url));
+                    }
                     decryptedLinks.add(dl);
                     distribute(dl);
                 }
                 currentPage++;
             } while (thumbinfo.length >= pics_per_page);
         } else {
+            final String ID = new Regex(parameter, "/id/(\\d+)").getMatch(0);
             String finallink = br.getRegex("<div id=\"bigwall\" class=\"right\">[\t\n\r ]+<img border=0 src=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("\\'(https?://pics\\.primejailbait\\.com/pics/original/[^<>\"\\']*?)\\'").getMatch(0);
@@ -95,7 +102,13 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
                 return null;
             }
 
-            decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
+            DownloadLink link = createDownloadlink("directhttp://" + finallink);
+            link.setAvailableStatus(AvailableStatus.TRUE);
+            if (ID != null) {
+                link.setContentUrl("https://www.primejailbait.com/id/" + ID);
+                link.setFinalFileName(ID + "_" + extractFileNameFromURL(finallink));
+            }
+            decryptedLinks.add(link);
         }
 
         return decryptedLinks;
