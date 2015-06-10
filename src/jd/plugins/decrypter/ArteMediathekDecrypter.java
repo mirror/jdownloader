@@ -37,7 +37,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+/[a-z0-9\\-_]+", "http://concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+", "http://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json)[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?" }, flags = { 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-(?:D|F))?/[a-z0-9\\-_]+", "http://concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+", "http://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json)[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?" }, flags = { 0, 0, 0, 0, 0 })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
 
     private static final String     EXCEPTION_LINKOFFLINE      = "EXCEPTION_LINKOFFLINE";
@@ -45,7 +45,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     private static final String     TYPE_CONCERT               = "http://(www\\.)?concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+";
     private static final String     TYPE_CREATIVE              = "http://(www\\.)?creative\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
     private static final String     TYPE_FUTURE                = "http://(www\\.)?future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
-    private static final String     TYPE_GUIDE                 = "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+/[a-z0-9\\-_]+";
+    private static final String     TYPE_GUIDE                 = "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-(?:D|F))?/[a-z0-9\\-_]+";
     private static final String     TYPE_CINEMA                = "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?";
 
     private static final String     API_TYPE_GUIDE             = "^http://(www\\.)?arte\\.tv/papi/tvguide/videos/stream/player/(?:F|D)/.+\\.json$";
@@ -164,7 +164,9 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
                 this.example_arte_vp_url = getArteVPUrl(video_section);
                 if (this.example_arte_vp_url == null) {
-                    return null;
+                    /* We cannot be entirely sure but no videourl == we have no video == offline link */
+                    decryptedLinks.add(createofflineDownloadLink(parameter));
+                    return decryptedLinks;
                 }
                 fid = new Regex(example_arte_vp_url, "/stream/player/[A-Za-z]{1,5}/([^<>\"/]*?)/").getMatch(0);
                 if (fid == null) {
@@ -206,7 +208,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 }
                 example_arte_vp_url = getArteVPUrl();
                 if (example_arte_vp_url == null) {
-                    return null;
+                    decryptedLinks.add(createofflineDownloadLink(parameter));
+                    return decryptedLinks;
                 }
                 if (example_arte_vp_url.matches(API_TYPE_GUIDE)) {
                     /* Same API-urls as for "normal" arte.tv urls. Most likely used for complete movies. */

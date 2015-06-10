@@ -169,12 +169,15 @@ public class KumpulbagiCom extends PluginForDecrypt {
                 if (linkinfo == null || linkinfo.length == 0) {
                     linkinfo = br.getRegex("(<li data-file-id=.*?)</li>").getColumn(0);
                 }
+                if (linkinfo == null || linkinfo.length == 0) {
+                    linkinfo = br.getRegex("(<div class=\"list_row\".*?class=\"desc\")").getColumn(0);
+                }
                 if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 for (final String lnkinfo : linkinfo) {
-                    String content_url = new Regex(lnkinfo, "class=\"name\"><a href=\"(/[^<>\"]*?)\"").getMatch(0);
+                    String content_url = new Regex(lnkinfo, "class=\"name\">[\t\n\r ]*?<a href=\"(/[^<>\"]*?)\"").getMatch(0);
                     if (content_url != null) {
                         content_url = "http://" + this.getHost() + content_url;
                     } else {
@@ -188,6 +191,12 @@ public class KumpulbagiCom extends PluginForDecrypt {
                     }
                     if (filesize == null) {
                         filesize = new Regex(lnkinfo, "class=\"file_size\">([^<>\"]*?)<").getMatch(0);
+                    }
+                    if (filesize == null) {
+                        filesize = new Regex(lnkinfo, "class=\"size\">[\t\n\r ]+<p>([^<>\"]*?)</p>").getMatch(0);
+                    }
+                    if (filesize == null) {
+                        filesize = new Regex(lnkinfo, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                     }
                     if (fid == null || filesize == null) {
                         logger.warning("Decrypter broken for link: " + parameter);

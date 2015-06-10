@@ -133,6 +133,10 @@ public class PutStreamCom extends PluginForHost {
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired|name=\"fname\" value=\"\"|<meta http-equiv=\"refresh\" content=\"0; url=https?://[^/]+/\")").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* Empty page/offline */
+        if (!this.br.containsHTML("value=\"download1\"")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
             if (fileInfo[0] != null) {

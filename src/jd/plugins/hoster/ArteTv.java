@@ -139,8 +139,12 @@ public class ArteTv extends PluginForHost {
             br2.setFollowRedirects(true);
             try {
                 con = br2.openHeadConnection(dllink);
+                final long contentLength = con.getLongContentLength();
                 if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    if (contentLength > 1000) {
+                        /* Only show filesize if we're sure that it definitly is a file. */
+                        downloadLink.setDownloadSize(contentLength);
+                    }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -216,6 +220,11 @@ public class ArteTv extends PluginForHost {
         } else if (quality_intern.contains("_http_")) {
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

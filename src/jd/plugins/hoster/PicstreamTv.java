@@ -67,8 +67,18 @@ public class PicstreamTv extends PluginForHost {
         if (!br.containsHTML("class=\"first share-file-table-header\"") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String ext = null;
         String filename = br.getRegex("<h1>Watch ([^<>\"]*?)</h1>").getMatch(0);
+        if (filename == null) {
+            /* Maybe we have a picture and not an mp3 file */
+            filename = br.getRegex("<title>([^<>\"]*?)\\- Pic Stream</title>").getMatch(0);
+        }
         DLLINK = br.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
+        if (DLLINK == null) {
+            /* Maybe we have a picture and not an mp3 file */
+            ext = ".jpg";
+            DLLINK = br.getRegex("\"(https?://[a-z0-9\\.]+/plugins/imageviewer/[^<>\"]*?)\"").getMatch(0);
+        }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -76,7 +86,9 @@ public class PicstreamTv extends PluginForHost {
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (ext == null) {
+            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        }
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;

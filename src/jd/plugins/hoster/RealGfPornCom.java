@@ -48,6 +48,7 @@ public class RealGfPornCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("realgfporndecrypted.com/", "realgfporn.com/"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -56,7 +57,7 @@ public class RealGfPornCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.realgfporn.com/") || br.containsHTML("<title>Free Amateur and Homemade Porn Videos  \\– Real Girlfriend Porn</title>") || br.containsHTML("Internet Explorer Custom 404")) {
+        if (br.getURL().equals("http://www.realgfporn.com/") || br.containsHTML("<title>Free Amateur and Homemade Porn Videos  \\– Real Girlfriend Porn</title>") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"deleted\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h3 class=\"video_title\">(.*?)</h3>").getMatch(0);

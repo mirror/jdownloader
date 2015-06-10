@@ -63,6 +63,7 @@ public class TusFilesNet extends PluginForDecrypt {
         } else {
             if (br.containsHTML(">No such folder<")) {
                 logger.info("Link offline: " + parameter);
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             final String folderid = new Regex(parameter, "([a-z0-9]{12})/$").getMatch(0);
@@ -95,8 +96,9 @@ public class TusFilesNet extends PluginForDecrypt {
                 final String[] folders = br.getRegex("\"(https?://(www\\.)?tusfiles\\.net/go/[a-z0-9]{12}/)\"").getColumn(0);
                 final String[] links = br.getRegex("\"(https?://(www\\.)?tusfiles\\.net/[a-z0-9]{12})\"").getColumn(0);
                 if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    /* The RegExes above are very open so if we find no links, the folder must be empty/offline */
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
                 }
                 if (links != null && links.length != 0) {
                     for (final String singleLink : links) {

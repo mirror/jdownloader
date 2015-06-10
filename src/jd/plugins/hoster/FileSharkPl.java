@@ -192,6 +192,16 @@ public class FileSharkPl extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        if (br.containsHTML(">If you want to download this file, buy")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        }
         String downloadURL = downloadLink.getDownloadURL();
         String fileId = new Regex(downloadURL, "http://(www\\.)?fileshark.pl/pobierz/" + "(\\d+/[0-9a-zA-Z]+/?)").getMatch(1);
 
