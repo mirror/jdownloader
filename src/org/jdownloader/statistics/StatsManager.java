@@ -271,7 +271,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                         AccountInfo info = account.getAccountInfo();
                                         if (info != null) {
                                             long vi = info.getValidUntil();
-
+                                            StatsManager.I().track("premium/valid/" + account.getHoster() + "/" + (vi / (1000l * 60 * 60)));
                                             if (vi > estimatedBuytime) {
                                                 long validfor = vi - System.currentTimeMillis();
                                                 if (validfor < RANGE_1MONTH_B && validfor > RANGE_1MONTH_A) {
@@ -287,18 +287,31 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                         }
 
                                     }
+                                    AccountInfo info = account.getAccountInfo();
+                                    if (info != null) {
+                                        long vi = info.getValidUntil();
+                                        StatsManager.I().track("premium/valid/" + account.getHoster() + "/" + (vi / (1000l * 60 * 60)));
+                                    }
                                     ClickedAffLinkStorable st = list.get(list.size() - 1);
                                     if (st != null) {
                                         long timedif = Math.abs(estimatedBuytime - st.getTime());
-
+                                        StatsManager.I().track("premium/addedAfter/" + account.getHoster() + "/min" + (estimatedBuytime - st.getTime()) / (1000l * 60));
+                                        StatsManager.I().track("premium/addedAfter/" + account.getHoster() + "/hour" + (estimatedBuytime - st.getTime()) / (1000l * 60 * 60));
+                                        StatsManager.I().track("premium/addedAfter/" + account.getHoster() + "/day" + (estimatedBuytime - st.getTime()) / (1000l * 60 * 60 * 24));
                                         if (timedif < 1 * 60 * 60 * 1000l) {
+
                                             StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/" + st.getSource() + "/1hour");
+                                            file.delete();
                                         } else if (timedif < 1 * 24 * 60 * 60 * 1000l) {
                                             StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/" + st.getSource() + "/1day");
+                                            file.delete();
                                         } else if (timedif < 3 * 24 * 60 * 60 * 1000l) {
+
                                             StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/" + st.getSource() + "/3days");
+                                            file.delete();
                                         } else if (timedif < 7 * 24 * 60 * 60 * 1000l) {
                                             StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/" + st.getSource() + "/7days");
+                                            file.delete();
                                         }
                                     }
 
