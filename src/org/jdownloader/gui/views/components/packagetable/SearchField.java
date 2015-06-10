@@ -169,6 +169,27 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
 
     }
 
+    protected final boolean isFullMatchPattern(Pattern pattern) {
+        final String stringPattern = pattern.pattern();
+        return stringPattern.charAt(0) == '^' && stringPattern.charAt(stringPattern.length() - 1) == '$';
+    }
+
+    protected final boolean isMatching(List<Pattern> pattern, String string) {
+        if (string != null) {
+            for (final Pattern filterPattern : pattern) {
+                // if (isFullMatchPattern(filterPattern)) {
+                // if (filterPattern.matcher(string).matches()) {
+                // return true;
+                // }
+                // } else
+                if (filterPattern.matcher(string).find()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private void updateFilter() {
         final String filterRegex = this.getText();
         final boolean enabled = filterRegex != null && filterRegex.length() > 0;
@@ -186,7 +207,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
                 }
                 newFilter = getFilter(list, getSelectedCategory());
             } catch (final Throwable e) {
-                Log.exception(e);
+                e.printStackTrace();
             }
         }
         final PackageControllerTableModelFilter<PackageType, ChildType> oldFilter = appliedFilter.getAndSet(newFilter);

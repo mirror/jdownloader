@@ -29,7 +29,7 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
 
     public DownloadsTableSearchField(PackageControllerTable<FilePackage, DownloadLink> table2Filter, LinktablesSearchCategory defCategory) {
         super(table2Filter, defCategory);
-        setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE, LinktablesSearchCategory.COMMENT, LinktablesSearchCategory.STATUS });
+        setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE, LinktablesSearchCategory.COMMENT, LinktablesSearchCategory.COMMENT_PACKAGE, LinktablesSearchCategory.STATUS });
         setSelectedCategory(JsonConfig.create(GraphicalUserInterfaceSettings.class).getSelectedDownloadSearchCategory());
 
         addKeyListener(new KeyListener() {
@@ -80,10 +80,8 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                 @Override
                 public boolean isFiltered(FilePackage e) {
                     final String name = e.getName();
-                    for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(name).find()) {
-                            return false;
-                        }
+                    if (isMatching(pattern, name)) {
+                        return false;
                     }
                     return true;
                 }
@@ -109,10 +107,8 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                 @Override
                 public boolean isFiltered(DownloadLink v) {
                     final String name = v.getView().getDisplayName();
-                    for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(name).find()) {
-                            return false;
-                        }
+                    if (isMatching(pattern, name)) {
+                        return false;
                     }
                     return true;
                 }
@@ -132,7 +128,7 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
 
                 @Override
                 public boolean isFilteringPackageNodes() {
-                    return true;
+                    return false;
                 }
 
                 @Override
@@ -146,24 +142,38 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                     if (comment == null) {
                         comment = "";
                     }
-                    for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(comment).find()) {
-                            return false;
-                        }
-                    }
-                    final FilePackage p = v.getParentNode();
-                    if (p != null) {
-                        comment = p.getComment();
-                        if (comment == null) {
-                            comment = "";
-                        }
-                        for (Pattern filterPattern : pattern) {
-                            if (filterPattern.matcher(comment).find()) {
-                                return false;
-                            }
-                        }
+                    if (isMatching(pattern, comment)) {
+                        return false;
                     }
                     return true;
+                }
+
+                @Override
+                public boolean isFiltered(FilePackage fp) {
+                    return false;
+                }
+
+                @Override
+                public int getComplexity() {
+                    return 1;
+                }
+            };
+        case COMMENT_PACKAGE:
+            return new PackageControllerTableModelFilter<FilePackage, DownloadLink>() {
+
+                @Override
+                public boolean isFilteringPackageNodes() {
+                    return true;
+                }
+
+                @Override
+                public boolean isFilteringChildrenNodes() {
+                    return false;
+                }
+
+                @Override
+                public boolean isFiltered(DownloadLink v) {
+                    return false;
                 }
 
                 @Override
@@ -172,27 +182,8 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                     if (comment == null) {
                         comment = "";
                     }
-                    for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(comment).find()) {
-                            return false;
-                        }
-                    }
-
-                    final boolean readL = fp.getModifyLock().readLock();
-                    try {
-                        for (DownloadLink dl : fp.getChildren()) {
-                            comment = dl.getComment();
-                            if (comment == null) {
-                                comment = "";
-                            }
-                            for (Pattern filterPattern : pattern) {
-                                if (filterPattern.matcher(comment).find()) {
-                                    return false;
-                                }
-                            }
-                        }
-                    } finally {
-                        fp.getModifyLock().readUnlock(readL);
+                    if (isMatching(pattern, comment)) {
+                        return false;
                     }
                     return true;
                 }
@@ -224,11 +215,9 @@ public final class DownloadsTableSearchField extends SearchField<LinktablesSearc
                     if (ret != null) {
                         return ret.booleanValue();
                     }
-                    for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(host).find()) {
-                            fastCheck.put(host, Boolean.FALSE);
-                            return false;
-                        }
+                    if (isMatching(pattern, host)) {
+                        fastCheck.put(host, Boolean.FALSE);
+                        return false;
                     }
                     fastCheck.put(host, Boolean.TRUE);
                     return true;
