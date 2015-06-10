@@ -54,7 +54,7 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
             public void keyPressed(KeyEvent e) {
             }
         });
-        setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE, LinktablesSearchCategory.COMMENT });
+        setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE, LinktablesSearchCategory.COMMENT, LinktablesSearchCategory.COMMENT_PACKAGE });
         setSelectedCategory(JsonConfig.create(GraphicalUserInterfaceSettings.class).getSelectedLinkgrabberSearchCategory());
 
     }
@@ -92,10 +92,8 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
                 @Override
                 public boolean isFiltered(CrawledPackage e) {
                     final String name = e.getName();
-                    for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(name).find()) {
-                            return false;
-                        }
+                    if (isMatching(pattern, name)) {
+                        return false;
                     }
                     return true;
                 }
@@ -121,10 +119,8 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
                 @Override
                 public boolean isFiltered(CrawledLink v) {
                     final String name = v.getName();
-                    for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(name).find()) {
-                            return false;
-                        }
+                    if (isMatching(pattern, name)) {
+                        return false;
                     }
                     return true;
                 }
@@ -145,7 +141,7 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
 
                 @Override
                 public boolean isFilteringPackageNodes() {
-                    return true;
+                    return false;
                 }
 
                 @Override
@@ -159,25 +155,38 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
                     if (comment == null) {
                         comment = "";
                     }
-                    for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(comment).find()) {
-                            return false;
-                        }
-                    }
-
-                    final CrawledPackage p = v.getParentNode();
-                    if (p != null) {
-                        comment = p.getComment();
-                        if (comment == null) {
-                            comment = "";
-                        }
-                        for (Pattern filterPattern : pattern) {
-                            if (filterPattern.matcher(comment).find()) {
-                                return false;
-                            }
-                        }
+                    if (isMatching(pattern, comment)) {
+                        return false;
                     }
                     return true;
+                }
+
+                @Override
+                public boolean isFiltered(CrawledPackage fp) {
+                    return false;
+                }
+
+                @Override
+                public int getComplexity() {
+                    return 1;
+                }
+            };
+        case COMMENT_PACKAGE:
+            return new PackageControllerTableModelFilter<CrawledPackage, CrawledLink>() {
+
+                @Override
+                public boolean isFilteringPackageNodes() {
+                    return true;
+                }
+
+                @Override
+                public boolean isFilteringChildrenNodes() {
+                    return false;
+                }
+
+                @Override
+                public boolean isFiltered(CrawledLink v) {
+                    return false;
                 }
 
                 @Override
@@ -186,26 +195,8 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
                     if (comment == null) {
                         comment = "";
                     }
-                    for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(comment).find()) {
-                            return false;
-                        }
-                    }
-                    final boolean readL = fp.getModifyLock().readLock();
-                    try {
-                        for (CrawledLink dl : fp.getChildren()) {
-                            comment = dl.getDownloadLink().getComment();
-                            if (comment == null) {
-                                comment = "";
-                            }
-                            for (Pattern filterPattern : pattern) {
-                                if (filterPattern.matcher(comment).find()) {
-                                    return false;
-                                }
-                            }
-                        }
-                    } finally {
-                        fp.getModifyLock().readUnlock(readL);
+                    if (isMatching(pattern, comment)) {
+                        return false;
                     }
                     return true;
                 }
@@ -236,11 +227,9 @@ public final class LinkgrabberSearchField extends SearchField<LinktablesSearchCa
                     if (ret != null) {
                         return ret.booleanValue();
                     }
-                    for (Pattern filterPattern : pattern) {
-                        if (filterPattern.matcher(host).find()) {
-                            fastCheck.put(host, Boolean.FALSE);
-                            return false;
-                        }
+                    if (isMatching(pattern, host)) {
+                        fastCheck.put(host, Boolean.FALSE);
+                        return false;
                     }
                     fastCheck.put(host, Boolean.TRUE);
                     return true;

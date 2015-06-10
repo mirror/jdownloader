@@ -1577,6 +1577,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Comment" })
     String searchcategory_comment();
 
+    @Default(lngs = { "en" }, values = { "Comment(Package)" })
+    String searchcategory_comment_package();
+
     @Default(lngs = { "en" }, values = { "Package Name" })
     String searchcategory_package();
 
