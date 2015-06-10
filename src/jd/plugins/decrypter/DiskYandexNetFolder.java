@@ -138,19 +138,31 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
 
             final LinkedHashMap<String, Object> meta = (LinkedHashMap<String, Object>) entries.get("meta");
 
+            final boolean hasPreview = ((Boolean) entries.get("hasPreview")).booleanValue();
             final long filesize = DummyScriptEnginePlugin.toLong(meta.get("size"), -1);
             final String type = (String) entries.get("type");
             final String id = (String) entries.get("id");
-            final String short_url = (String) meta.get("short_url");
+            String short_url = (String) meta.get("short_url");
             String hash = (String) entries.get("hash");
             String name = (String) entries.get("name");
             hash = hash.replace("/public/", "");
             if ("dir".equals(type)) {
                 hash = fixHash(hash);
-                final String folderlink = "https://disk.yandex.com/public/?hash=" + hash;
+                final String folderlink = "https://disk.yandex.com/public/?hash=" + Encoding.urlEncode(hash);
                 decryptedLinks.add(createDownloadlink(folderlink));
             } else {
-                if (name == null || short_url == null) {
+                if (short_url == null && hasPreview) {
+                    /* Probably a document so we need to build the view-url */
+                    short_url = "https://docviewer.yandex.com/?url=ya-disk-public%3A%2F%2F" + Encoding.urlEncode(hash);
+                }
+                /*
+                 * Sometimes there are no single links available so we have to cling onto our main urls. With the hash we have, we can
+                 * download the single files later.
+                 */
+                if (short_url == null) {
+                    short_url = parameter;
+                }
+                if (name == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }

@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -64,6 +66,9 @@ public class ImgUrCom extends PluginForHost {
     private static final String SETTING_WEBM                   = "SETTING_WEBM";
     private static final String SETTING_CLIENTID               = "SETTING_CLIENTID";
     private static final String SETTING_USE_API                = "SETTING_USE_API";
+    private static final String SETTING_GRAB_SOURCE_URL_VIDEO  = "SETTING_GRAB_SOURCE_URL_VIDEO";
+    private static final String SETTING_CUSTOM_FILENAME        = "SETTING_CUSTOM_FILENAME";
+    private static final String SETTING_CUSTOM_PACKAGENAME     = "SETTING_CUSTOM_PACKAGENAME";
 
     /* Constants */
     public static final long    view_filesizelimit             = 20447232l;
@@ -376,13 +381,159 @@ public class ImgUrCom extends PluginForHost {
         return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
+    /** Returns either the original server filename or one that is very similar to the original */
+    @SuppressWarnings("deprecation")
+    public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+        final SubConfiguration cfg = SubConfiguration.getConfig("imgur.com");
+        final String ext = "." + getFiletypeForUser(downloadLink);
+        final String username = downloadLink.getStringProperty("directusername", "-");
+        final String title = downloadLink.getStringProperty("directtitle", "-");
+        final String imgid = downloadLink.getStringProperty("imgUID", null);
+
+        /* Date: Maybe add this in the future, if requested by a user. */
+        // final long date = getLongProperty(downloadLink, "originaldate", 0l);
+        // String formattedDate = null;
+        // /* Get correctly formatted date */
+        // String dateFormat = "yyyy-MM-dd";
+        // SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy");
+        // Date theDate = new Date(date);
+        // try {
+        // formatter = new SimpleDateFormat(dateFormat);
+        // formattedDate = formatter.format(theDate);
+        // } catch (Exception e) {
+        // /* prevent user error killing plugin */
+        // formattedDate = "";
+        // }
+        // /* Get correctly formatted time */
+        // dateFormat = "HHmm";
+        // String time = "0000";
+        // try {
+        // formatter = new SimpleDateFormat(dateFormat);
+        // time = formatter.format(theDate);
+        // } catch (Exception e) {
+        // /* prevent user error killing plugin */
+        // time = "0000";
+        // }
+
+        String formattedFilename = cfg.getStringProperty(SETTING_CUSTOM_FILENAME, defaultCustomFilename);
+
+        if (!formattedFilename.contains("*imgid*") && !formattedFilename.contains("*ext*")) {
+            formattedFilename = defaultCustomFilename;
+        }
+
+        formattedFilename = formattedFilename.replace("*imgid*", imgid);
+        formattedFilename = formattedFilename.replace("*ext*", ext);
+        if (username != null) {
+            formattedFilename = formattedFilename.replace("*username*", username);
+        }
+        if (title != null) {
+            formattedFilename = formattedFilename.replace("*title*", title);
+        }
+        return formattedFilename;
+    }
+
+    /** Returns either the original server filename or one that is very similar to the original */
+    @SuppressWarnings("deprecation")
+    public static String getFormattedPackagename(final String... params) throws ParseException {
+        final SubConfiguration cfg = SubConfiguration.getConfig("imgur.com");
+        String username = params[0];
+        String title = params[1];
+        final String galleryid = params[2];
+
+        if (username == null) {
+            username = "-";
+        }
+        if (title == null) {
+            title = "-";
+        }
+
+        /* Date: Maybe add this in the future, if requested by a user. */
+        // final long date = getLongProperty(downloadLink, "originaldate", 0l);
+        // String formattedDate = null;
+        // /* Get correctly formatted date */
+        // String dateFormat = "yyyy-MM-dd";
+        // SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy");
+        // Date theDate = new Date(date);
+        // try {
+        // formatter = new SimpleDateFormat(dateFormat);
+        // formattedDate = formatter.format(theDate);
+        // } catch (Exception e) {
+        // /* prevent user error killing plugin */
+        // formattedDate = "";
+        // }
+        // /* Get correctly formatted time */
+        // dateFormat = "HHmm";
+        // String time = "0000";
+        // try {
+        // formatter = new SimpleDateFormat(dateFormat);
+        // time = formatter.format(theDate);
+        // } catch (Exception e) {
+        // /* prevent user error killing plugin */
+        // time = "0000";
+        // }
+
+        String formattedFilename = cfg.getStringProperty(SETTING_CUSTOM_PACKAGENAME, defaultCustomPackagename);
+
+        if (!formattedFilename.contains("*galleryid*")) {
+            formattedFilename = defaultCustomPackagename;
+        }
+
+        formattedFilename = formattedFilename.replace("*galleryid*", galleryid);
+        if (username != null) {
+            formattedFilename = formattedFilename.replace("*username*", username);
+        }
+        if (title != null) {
+            formattedFilename = formattedFilename.replace("*title*", title);
+        }
+        return formattedFilename;
+    }
+
+    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
+                                                  {
+                                                      put("SETTING_GRAB_SOURCE_URL_VIDEO", "For video (.gif) urls: Grab source url (e.g. youtube url)?");
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the picture\r\n*imgid* = Internal imgur id of the picture e.g. 'BzdfkGj'\r\n*ext* = Extension of the file");
+                                                      put("LABEL_FILENAME", "Define custom filename:");
+                                                      put("SETTING_TAGS_PACKAGENAME", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the gallery\r\n*galleryid* = Internal imgur id of the gallery e.g. 'AxG3w'");
+                                                      put("LABEL_PACKAGENAME", "Define custom packagename for galleries:");
+                                                  }
+                                              };
+
+    private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
+                                                  {
+                                                      put("SETTING_GRAB_SOURCE_URL_VIDEO", "Für video (.gif) urls: Quell-urls (z.B. youtube urls) auch hinzufügen?");
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel des Bildes\r\n*imgid* = Interne imgur id des Bildes z.B. 'DcTnzPt'\r\n*ext* = Dateiendung");
+                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
+                                                      put("SETTING_TAGS_PACKAGENAME", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel der Gallerie\r\n*galleryid* = Interne imgur id der Gallerie z.B. 'AxG3w'");
+                                                      put("LABEL_PACKAGENAME", "Gib das Muster des benutzerdefinierten Paketnamens für Gallerien an:");
+                                                  }
+                                              };
+
+    /**
+     * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
+     * English.
+     *
+     * @param key
+     * @return
+     */
+    private String getPhrase(String key) {
+        if ("de".equals(System.getProperty("user.language")) && phrasesDE.containsKey(key)) {
+            return phrasesDE.get(key);
+        } else if (phrasesEN.containsKey(key)) {
+            return phrasesEN.get(key);
+        }
+        return "Translation not found!";
+    }
+
     @Override
     public String getDescription() {
         return "This Plugin can download galleries/albums/images from imgur.com.";
     }
 
-    private static final String defaultClientID = "JDDEFAULT";
-    public static final boolean defaultWEBM     = false;
+    private static final String defaultClientID          = "JDDEFAULT";
+    public static final boolean defaultWEBM              = false;
+    public static final boolean defaultSOURCEVIDEO       = false;
+    private static final String defaultCustomFilename    = "*username* - *title*_*imgid**ext*";
+    private static final String defaultCustomPackagename = "*username* - *title* - *galleryid*";
 
     private void setConfigElements() {
         // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_WEBM,
@@ -390,6 +541,11 @@ public class ImgUrCom extends PluginForHost {
         final ConfigEntry cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_USE_API, JDL.L("plugins.hoster.ImgUrCom.useAPI", "Use API (recommended!)")).setDefaultValue(true);
         getConfig().addEntry(cfg);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CLIENTID, JDL.L("plugins.hoster.ImgUrCom.oauthClientID", "Enter your own imgur Oauth Client-ID:")).setDefaultValue(defaultClientID).setEnabledCondidtion(cfg, true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_GRAB_SOURCE_URL_VIDEO, getPhrase("SETTING_GRAB_SOURCE_URL_VIDEO")).setDefaultValue(defaultSOURCEVIDEO));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CUSTOM_FILENAME, getPhrase("LABEL_FILENAME")).setDefaultValue(defaultCustomFilename));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_TAGS")));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CUSTOM_PACKAGENAME, getPhrase("LABEL_PACKAGENAME")).setDefaultValue(defaultCustomPackagename));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_TAGS_PACKAGENAME")));
     }
 
     @Override

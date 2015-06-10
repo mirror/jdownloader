@@ -32,7 +32,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "http://(www\\.)?solidfiles\\.com/folder/[a-z0-9]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "https?://(?:www\\.)?solidfiles\\.com/folder/[a-z0-9]+/" }, flags = { 0 })
 public class SolidFilesComFolder extends PluginForDecrypt {
 
     public SolidFilesComFolder(PluginWrapper wrapper) {
@@ -41,7 +41,7 @@ public class SolidFilesComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("http://", "https://");
         br.getPage(parameter);
         if (br.containsHTML(">Not found<|>We couldn\\'t find the file you requested")) {
             logger.info("Link offline: " + parameter);
@@ -53,17 +53,27 @@ public class SolidFilesComFolder extends PluginForDecrypt {
         }
         final PluginForHost solidfiles_host = JDUtilities.getPluginForHost("solidfiles.com");
         final boolean decryptFolders = solidfiles_host.getPluginConfig().getBooleanProperty(jd.plugins.hoster.SolidFilesCom.DECRYPTFOLDERS, false);
-        final String[][] fileStuff = br.getRegex("<a href=\"(/d/[a-z0-9]+/[^<>\"]*?)\">([^<>]*?)</a>[\t\n\r ]+</h1>[\t\n\r ]+<p class=\"stats\">[\t\n\r ]+[^<>,]+,([^<>,]*?),[\t\n\r ]+\\d+? downloads?").getMatches();
+        final String[] finfo = br.getRegex("rel=\"file\">(.*?)</article>").getColumn(0);
         final String[] folders = br.getRegex("<a href=\"(/folder/[a-z0-9]+/?)\"").getColumn(0);
-        if ((folders == null || folders.length == 0) && (fileStuff == null || fileStuff.length == 0)) {
+        if ((folders == null || folders.length == 0) && (finfo == null || finfo.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        if (fileStuff != null && fileStuff.length != 0) {
-            for (final String[] fInfo : fileStuff) {
-                final DownloadLink dl = createDownloadlink("http://www.solidfiles.com" + fInfo[0]);
-                dl.setName(fInfo[1]);
-                dl.setDownloadSize(SizeFormatter.getSize(fInfo[2]));
+        if (finfo != null && finfo.length != 0) {
+            for (final String finfos : finfo) {
+                final Regex urlfilename = new Regex(finfos, "<a href=\"(/d/[^<>\"]*?)\">([^<>\"]*?)</a>");
+                String url = urlfilename.getMatch(0);
+                String filename = urlfilename.getMatch(1);
+                final String filesize = new Regex(finfos, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                if (url == null || filename == null || filesize == null) {
+                    return null;
+                }
+                url = "http://www.solidfiles.com" + url;
+                filename = Encoding.htmlDecode(filename);
+
+                final DownloadLink dl = createDownloadlink(url);
+                dl.setName(filename);
+                dl.setDownloadSize(SizeFormatter.getSize(filesize));
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
