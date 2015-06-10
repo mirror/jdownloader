@@ -65,8 +65,10 @@ public class BxNt extends antiDDoSForDecrypt {
         }
         String fpName = null;
         if (br.getURL().matches(TYPE_APP)) {
-            final int currentPage = Integer.parseInt(getJson("current_page"));
-            final int pageCount = Integer.parseInt(getJson("page_count"));
+            final String cp = getJson("current_page");
+            final String pc = getJson("page_count");
+            final int currentPage = cp != null ? Integer.parseInt(cp) : 1;
+            final int pageCount = pc != null ? Integer.parseInt(pc) : 1;
             String parent = null;
 
             fpName = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
