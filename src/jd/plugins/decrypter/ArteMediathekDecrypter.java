@@ -309,7 +309,12 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                         return decryptedLinks;
                     }
                 }
-                final Collection<Object> vsr_quals = ((LinkedHashMap<String, Object>) videoJsonPlayer.get("VSR")).values();
+                final Object vsro = videoJsonPlayer.get("VSR");
+                if (!(vsro instanceof LinkedHashMap)) {
+                    /* No source available --> Video cannot be played --> Browser would says "Error code 2" then */
+                    throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                }
+                final Collection<Object> vsr_quals = ((LinkedHashMap<String, Object>) vsro).values();
                 /* One packagename for every language */
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(title);
@@ -514,7 +519,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             lint = 4;
         } else if (versionCode.equals("VAAUD")) {
             lint = 5;
-        } else if (versionShortLibelle.equals("OmU") || versionShortLibelle.equals("VO") || versionShortLibelle.equals("VE") || versionCode.equals("VE") || versionShortLibelle.equals("VE[ANG]") || versionCode.equals("VE[ANG]")) {
+        } else if (versionShortLibelle.equals("OmU") || versionShortLibelle.equals("VO") || versionCode.equals("VO") || versionShortLibelle.equals("VE") || versionCode.equals("VE") || versionShortLibelle.equals("VE[ANG]") || versionCode.equals("VE[ANG]")) {
             /* VE Actually means English but there is no specified selection for this. */
             /* Without language --> So it simply is our current language */
             lint = languageVersion;

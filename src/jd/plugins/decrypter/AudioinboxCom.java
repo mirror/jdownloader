@@ -51,7 +51,7 @@ public class AudioinboxCom extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        final String json = br.getRegex("jp_container_1\" \\}, (\\[.*?\\])").getMatch(0);
+        final String json = br.getRegex("jp_container_1\" \\}, (\\[.*?\\]), \\{ play:").getMatch(0);
         String fpName = null;
         if (json == null) {
             logger.warning("Decrypter broken for link: " + parameter);
