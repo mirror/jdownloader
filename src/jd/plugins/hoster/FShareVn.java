@@ -35,6 +35,7 @@ import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -176,7 +177,7 @@ public class FShareVn extends PluginForHost {
             }
             // we want fs_csrf token
             final String csrf = br.getRegex("fs_csrf\\s*:\\s*'([a-f0-9]{40})'").getMatch(0);
-            Browser ajax = br.cloneBrowser();
+            final Browser ajax = br.cloneBrowser();
             ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
             ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
@@ -277,8 +278,6 @@ public class FShareVn extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        // drop to frame
-        br = new Browser();
         // this should set English here...
         requestFileInformation(link);
         if (account.getBooleanProperty("free", false)) {
@@ -308,19 +307,23 @@ public class FShareVn extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Account is being used in another device");
                 }
                 dllink = br.getRedirectLocation();
+            }
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://[a-z0-9]+\\.fshare\\.vn/vip/[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("\"(http://[a-z0-9]+\\.fshare\\.vn/vip/[^<>\"]*?)\"").getMatch(0);
-                    if (dllink == null && br.containsHTML("<div id=\"dvdownload\">Download fast</div>")) {
+                    final Form dlfast = br.getFormBySubmitvalue("/download/get");
+                    if (dlfast != null) {
                         // button base download here,
-                        Browser ajax = br.cloneBrowser();
-                        ajax.getHeaders().put("Accept", "*/*");
+                        final Browser ajax = br.cloneBrowser();
+                        ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                         ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
-                        ajax.getPage("/download/index");
+                        ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                        ajax.submitForm(dlfast);
                         dllink = ajax.toString();
                     }
-                    if (dllink == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
+                }
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
             if (dllink.contains("logout")) {
