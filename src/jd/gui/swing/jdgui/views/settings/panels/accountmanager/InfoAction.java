@@ -9,9 +9,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.infogenerator.PluginInfoGenerator;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.statistics.StatsManager;
 
 public class InfoAction extends TableBarAction {
     private static final long serialVersionUID = 8927011292367107922L;
@@ -24,13 +24,16 @@ public class InfoAction extends TableBarAction {
 
     public void actionPerformed(ActionEvent e) {
         Account lAcc = getAccount();
-        if (lAcc == null) { return; }
+        if (lAcc == null) {
+            return;
+        }
         PluginForHost plugin = JDUtilities.getNewPluginForHostInstance(lAcc.getHoster());
         PluginInfoGenerator pig = ((PluginInfoGenerator) plugin.getInfoGenerator(lAcc));
         if (pig != null) {
             pig.show();
         } else {
-            CrossSystem.openURLOrShowMessage(plugin.getBuyPremiumUrl());
+            StatsManager.I().openAfflink(plugin.getBuyPremiumUrl(), "InfoAction", false);
+
         }
     }
 

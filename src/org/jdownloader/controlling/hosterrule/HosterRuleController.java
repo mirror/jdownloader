@@ -107,7 +107,7 @@ public class HosterRuleController implements AccountControllerListener {
                     protected Void run() throws RuntimeException {
                         try {
                             load();
-                            AccountController.getInstance().getBroadcaster().addListener(HosterRuleController.this);
+                            AccountController.getInstance().getEventSender().addListener(HosterRuleController.this);
                         } finally {
                             initDone.set(true);
                         }

@@ -160,7 +160,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
                     @Override
                     public void run() {
                         redrawTimer.run();
-                        AccountController.getInstance().getBroadcaster().addListener(new AccountControllerListener() {
+                        AccountController.getInstance().getEventSender().addListener(new AccountControllerListener() {
 
                             public void onAccountControllerEvent(AccountControllerEvent event) {
                                 if (org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled()) {

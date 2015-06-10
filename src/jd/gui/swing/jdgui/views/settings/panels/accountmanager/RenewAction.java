@@ -8,9 +8,9 @@ import jd.plugins.Account;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.statistics.StatsManager;
 
 public class RenewAction extends TableBarAction {
     private static final long serialVersionUID = 8346982706972553448L;
@@ -22,9 +22,14 @@ public class RenewAction extends TableBarAction {
 
     public void actionPerformed(ActionEvent e) {
         Account lAcc = getAccount();
-        if (lAcc == null) { return; }
+        if (lAcc == null) {
+            return;
+        }
         PluginForHost plugin = JDUtilities.getPluginForHost(lAcc.getHoster());
-        if (plugin != null) CrossSystem.openURLOrShowMessage(plugin.getBuyPremiumUrl());
+        if (plugin != null) {
+            StatsManager.I().openAfflink(plugin.getBuyPremiumUrl(), "RenewAction", false);
+
+        }
     }
 
 }

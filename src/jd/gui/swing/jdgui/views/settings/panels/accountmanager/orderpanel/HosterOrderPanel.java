@@ -53,7 +53,7 @@ public class HosterOrderPanel extends SwitchPanel implements ActionListener, Acc
 
         HosterRuleController.getInstance().getEventSender().addListener(this, true);
 
-        AccountController.getInstance().getBroadcaster().addListener(this, true);
+        AccountController.getInstance().getEventSender().addListener(this, true);
         AccountChecker.getInstance().getEventSender().addListener(this, true);
 
         tb = new MigPanel("ins 0", "[][][][][grow,fill]", "");

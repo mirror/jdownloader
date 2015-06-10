@@ -47,7 +47,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.crypto.Crypto;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -95,7 +94,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
 
     /**
      * get the only existing instance of OboomController. This is a singleton
-     *
+     * 
      * @return
      */
     public static UploadedController getInstance() {
@@ -154,7 +153,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
 
             @Override
             public void run() {
-                AccountController.getInstance().getBroadcaster().addListener(UploadedController.this, true);
+                AccountController.getInstance().getEventSender().addListener(UploadedController.this, true);
                 onAccountControllerEvent(null);
 
             }
@@ -443,13 +442,13 @@ public class UploadedController implements AccountControllerListener, Sponsor {
                     boolean[] ag = aggregateAccounts();
                     boolean hasUploaded = ag[0];
                     boolean hasOther = ag[1];
-
-                    CrossSystem.openURL(HTTP_BASE + "/RedirectInterface/ul?jd2&" + URLEncode.encodeRFC2396(sig) + "&" + URLEncode.encodeRFC2396(uid) + "&" + URLEncode.encodeRFC2396(pid) + "&" + hasUploaded + "&" + hasOther);
+                    StatsManager.I().openAfflink(HTTP_BASE + "/RedirectInterface/ul?jd2&" + URLEncode.encodeRFC2396(sig) + "&" + URLEncode.encodeRFC2396(uid) + "&" + URLEncode.encodeRFC2396(pid) + "&" + hasUploaded + "&" + hasOther, "UploadedController", true);
 
                     UploadedController.track("TabbedClick");
 
                 } catch (Throwable e) {
-                    CrossSystem.openURL("http://ul.to/ref/12859436");
+                    StatsManager.I().openAfflink("http://ul.to/ref/12859436", "UploadedController/fallback", true);
+
                     UploadedController.track("TabbedClick_Fallback_" + e.getMessage());
                 }
             }
@@ -567,11 +566,14 @@ public class UploadedController implements AccountControllerListener, Sponsor {
 
         try {
             Dialog.getInstance().showDialog(d);
-            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/OK");
+
             if ("uploaded.to".equals(plugin.getHost())) {
-                CrossSystem.openURL("http://ul.to/ref/12859436");
+
+                StatsManager.I().openAfflink("http://ul.to/ref/12859436", "PremiumExpireWarning/" + account.getHoster() + "/OK", false);
+
             } else {
-                CrossSystem.openURL(AccountController.createFullBuyPremiumUrl(url, "controller/notify"));
+                StatsManager.I().openAfflink(url, "PremiumExpireWarning/" + account.getHoster() + "/OK", false);
+
             }
         } catch (DialogNoAnswerException e) {
             e.printStackTrace();

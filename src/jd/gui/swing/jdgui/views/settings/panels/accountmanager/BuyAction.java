@@ -13,7 +13,6 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 
-import jd.controlling.AccountController;
 import jd.controlling.TaskQueue;
 import jd.plugins.PluginForHost;
 
@@ -23,7 +22,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
-import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -203,8 +201,7 @@ public class BuyAction extends AbstractAction {
                             if (StringUtils.isEmpty(url)) {
                                 url = buyIt.getPremiumUrl();
                             }
-                            StatsManager.I().track("buypremium/" + "accountmanager/buy/" + (table == null ? "/context" : "/table") + url);
-                            CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(url, "accountmanager" + (table == null ? "/context" : "/table")));
+                            StatsManager.I().openAfflink(url, "buypremium/" + "accountmanager/buy/" + (table == null ? "/context" : "/table"), false);
                             try {
                                 BuyAndAddPremiumAccount dia;
                                 UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, dia = new BuyAndAddPremiumAccount(DomainInfo.getInstance(buyIt.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));

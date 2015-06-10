@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,6 +24,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import jd.SecondLevelLaunch;
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
 import jd.controlling.downloadcontroller.AccountCache;
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.downloadcontroller.DownloadController;
@@ -40,6 +45,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -92,6 +98,29 @@ import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class StatsManager implements GenericConfigEventListener<Object>, DownloadWatchdogListener, Runnable {
+    private static final long         RANGE_48HOUR_B     = 50 * 60 * 60 * 1000l;
+    private static final long         RANGE_48HOUR_A     = 46 * 60 * 60 * 1000l;
+
+    private static final long         RANGE_2YEAR_A      = ((2 * 365) - 2) * 24 * 60 * 60 * 1000l;
+
+    private static final long         RANGE_2YEAR_B      = ((2 * 365) + 1) * 24 * 60 * 60 * 1000l;
+
+    private static final long         RANGE_1YEAR_A      = ((365) - 2) * 24 * 60 * 60 * 1000l;
+
+    private static final long         RANGE_1YEAR_B      = ((365) + 1) * 24 * 60 * 60 * 1000l;
+
+    private static final long         RANGE_6MONTH_A     = ((6 * 30) - 2) * 24 * 60 * 60 * 1000l;
+
+    private static final long         RANGE_6MONTH_B     = ((6 * 31) + 1) * 24 * 60 * 60 * 1000l;
+
+    private static final long         RANGE_1MONTH_A     = 29 * 24 * 60 * 60 * 1000l;
+
+    private static final long         RANGE_1MONTH_B     = 32 * 24 * 60 * 60 * 1000l;
+
+    private static final long         RANGE_3MONTH_A     = ((3 * 31) - 2) * 24 * 60 * 60 * 1000l;
+
+    private static final long         RANGE_3MONTH_B     = ((3 * 31) + 1) * 24 * 60 * 60 * 1000l;
+
     private static final StatsManager INSTANCE           = new StatsManager();
 
     private static final boolean      DISABLED           = false;
@@ -168,7 +197,104 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
         trackR();
 
-        // collectMostImportantAdvancedOptions();
+        SecondLevelLaunch.INIT_COMPLETE.executeWhenReached(new Runnable() {
+
+            @Override
+            public void run() {
+                AccountController.getInstance().getEventSender().addListener(new AccountControllerListener() {
+
+                    @Override
+                    public void onAccountControllerEvent(AccountControllerEvent event) {
+                        try {
+                            if (event.getType() == AccountControllerEvent.Types.ADDED) {
+                                Account account = event.getAccount();
+                                if (account != null && account.isValid()) {
+                                    String domain = account.getHoster();
+                                    File file = Application.getResource("cfg/clicked/" + domain + ".json");
+                                    if (!file.exists()) {
+                                        return;
+                                    }
+
+                                    file.getParentFile().mkdirs();
+                                    ArrayList<ClickedAffLinkStorable> list = null;
+
+                                    if (file.exists()) {
+                                        try {
+                                            list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
+                                            });
+                                        } catch (Throwable e) {
+                                            logger.log(e);
+                                        }
+
+                                    }
+                                    if (list == null || list.size() == 0) {
+                                        return;
+                                    }
+                                    String type = "Unknown";
+                                    long estimatedBuytime = System.currentTimeMillis();
+                                    if ("uploaded.to".equals(account.getHoster())) {
+                                        AccountInfo info = account.getAccountInfo();
+                                        if (info != null) {
+                                            long vi = info.getValidUntil();
+
+                                            if (vi > estimatedBuytime) {
+                                                long validfor = vi - System.currentTimeMillis();
+                                                if (validfor < RANGE_48HOUR_B && validfor > RANGE_48HOUR_A) {
+                                                    // 48hours
+                                                    type = "48hours";
+                                                    estimatedBuytime = Math.min(estimatedBuytime, vi - 48 * 60 * 60 * 1000l);
+                                                } else if (validfor < RANGE_1MONTH_B && validfor > RANGE_1MONTH_A) {
+                                                    // 1month
+                                                    type = "1month";
+                                                    estimatedBuytime = Math.min(estimatedBuytime, vi - (1 * 31) * 24 * 60 * 60 * 1000l);
+                                                } else if (validfor < RANGE_3MONTH_B && validfor > RANGE_3MONTH_A) {
+                                                    // 3month
+                                                    type = "3months";
+                                                    estimatedBuytime = Math.min(estimatedBuytime, vi - (3 * 30) * 24 * 60 * 60 * 1000l);
+                                                } else if (validfor < RANGE_6MONTH_B && validfor > RANGE_6MONTH_A) {
+                                                    // 6month
+                                                    type = "6months";
+                                                    estimatedBuytime = Math.min(estimatedBuytime, vi - (6 * 31) * 24 * 60 * 60 * 1000l);
+                                                } else if (validfor < RANGE_1YEAR_B && validfor > RANGE_1YEAR_A) {
+                                                    // 1year
+                                                    type = "1year";
+                                                    estimatedBuytime = Math.min(estimatedBuytime, vi - (365) * 24 * 60 * 60 * 1000l);
+                                                } else if (validfor < RANGE_2YEAR_B && validfor > RANGE_2YEAR_A) {
+                                                    // 1year
+                                                    type = "2years";
+                                                    estimatedBuytime = Math.min(estimatedBuytime, vi - (2 * 365) * 24 * 60 * 60 * 1000l);
+                                                }
+                                            }
+                                        }
+
+                                    }
+                                    ClickedAffLinkStorable st = list.get(list.size() - 1);
+                                    if (st != null) {
+                                        long timedif = Math.abs(estimatedBuytime - st.getTime());
+
+                                        if (timedif < 1 * 60 * 60 * 1000l) {
+                                            StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/1hour");
+                                        } else if (timedif < 1 * 24 * 60 * 60 * 1000l) {
+                                            StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/1day");
+                                        } else if (timedif < 3 * 24 * 60 * 60 * 1000l) {
+                                            StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/3days");
+                                        } else if (timedif < 7 * 24 * 60 * 60 * 1000l) {
+                                            StatsManager.I().track("account/bought/" + domain + "/" + account.getType() + "/" + type + "/7days");
+                                        }
+                                    }
+
+                                }
+                            }
+                        } catch (Throwable e) {
+                            logger.log(e);
+                        }
+                    }
+
+                });
+
+            }
+
+        });
 
     }
 
@@ -1566,5 +1692,54 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         } catch (Throwable e1) {
             logger.log(e1);
         }
+    }
+
+    public void openAfflink(String url, String source, boolean direct) {
+
+        StatsManager.I().track("buypremium/" + source + "/" + url);
+        String domain = url;
+        try {
+            domain = new URL(url).getHost();
+        } catch (Throwable e) {
+
+        }
+        // do mappings here.
+        if (domain.contains("uploaded.net") || domain.contains("RedirectInterface/ul") || domain.contains("ul.to") || domain.contains("ul.net") || domain.contains("uploaded.net")) {
+            domain = "uploaded.to";
+        }
+
+        File file = Application.getResource("cfg/clicked/" + domain + ".json");
+        file.getParentFile().mkdirs();
+        ArrayList<ClickedAffLinkStorable> list = null;
+
+        if (file.exists()) {
+            try {
+                list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
+                });
+                // TODO CLeanup
+            } catch (Throwable e) {
+                logger.log(e);
+            }
+
+        }
+        if (list == null) {
+            list = new ArrayList<ClickedAffLinkStorable>();
+        }
+        // there is no reason to keep older clicks right now.
+        list.clear();
+        list.add(new ClickedAffLinkStorable(url, source));
+        try {
+            IO.secureWrite(file, JSonStorage.serializeToJson(list).getBytes("UTF-8"));
+        } catch (Throwable e) {
+            logger.log(e);
+        }
+        if (direct) {
+            CrossSystem.openURLOrShowMessage(url);
+
+        } else {
+            CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(url, source));
+
+        }
+
     }
 }

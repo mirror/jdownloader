@@ -2,10 +2,7 @@ package org.jdownloader.premium;
 
 import java.awt.event.ActionEvent;
 
-import jd.controlling.AccountController;
-
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
@@ -38,8 +35,7 @@ public class OpenURLAction extends AppAction {
         if (StringUtils.isEmpty(url)) {
             url = info.getTld();
         }
-        StatsManager.I().track("buypremium/" + "accountmanager/buy/" + id + "/" + url);
+        StatsManager.I().openAfflink(url, id, false);
 
-        CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(url, id));
     }
 }

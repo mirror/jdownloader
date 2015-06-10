@@ -4,4 +4,8 @@ import org.jdownloader.controlling.contextmenu.ClassCurrentlyNotAvailableExcepti
 
 public class ExtensionNotLoadedException extends ClassCurrentlyNotAvailableException {
 
+    public ExtensionNotLoadedException(String className) {
+        super("Cannot load class. Extension not loaded: " + className);
+    }
+
 }

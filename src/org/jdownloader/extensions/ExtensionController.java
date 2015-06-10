@@ -62,7 +62,7 @@ public class ExtensionController implements MenuExtenderHandler {
 
     /**
      * get the only existing instance of ExtensionController. This is a singleton
-     *
+     * 
      * @return
      */
     public static ExtensionController getInstance() {
@@ -532,7 +532,7 @@ public class ExtensionController implements MenuExtenderHandler {
 
     /**
      * Returns a list of all currently running extensions
-     *
+     * 
      * @return
      */
     public java.util.List<AbstractExtension<?, ?>> getEnabledExtensions() {
@@ -576,7 +576,7 @@ public class ExtensionController implements MenuExtenderHandler {
         if (list == null || list.size() == 0) {
 
             //
-            throw new ExtensionNotLoadedException();
+            throw new ExtensionNotLoadedException(className);
 
         }
         ClassNotFoundException exc = null;
@@ -598,7 +598,7 @@ public class ExtensionController implements MenuExtenderHandler {
             if (className.startsWith(le.getClass().getPackage().getName())) {
                 //
 
-                throw new ExtensionNotLoadedException();
+                throw new ExtensionNotLoadedException(le.getClassname() + " - " + className);
             }
         }
         throw new ClassNotFoundException(className);

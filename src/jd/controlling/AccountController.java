@@ -87,7 +87,7 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     };
 
-    public Eventsender<AccountControllerListener, AccountControllerEvent> getBroadcaster() {
+    public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
     }
 
@@ -443,7 +443,7 @@ public class AccountController implements AccountControllerListener, AccountProp
             PluginClassLoader.setThreadPluginClassLoaderChild(null, null);
             account.setNotifyHandler(null);
             account.setChecking(false);
-            getBroadcaster().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, account));
+            getEventSender().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, account));
             final AccountError errorNow = account.getError();
             if (errorBefore != errorNow) {
                 AccountProperty latestChangeEvent = null;
@@ -451,7 +451,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                     latestChangeEvent = propertyChanges.get(AccountProperty.Property.ERROR);
                 }
                 if (latestChangeEvent != null) {
-                    getBroadcaster().fireEvent(new AccountPropertyChangedEvent(latestChangeEvent.getAccount(), latestChangeEvent));
+                    getEventSender().fireEvent(new AccountPropertyChangedEvent(latestChangeEvent.getAccount(), latestChangeEvent));
                 }
             }
         }
@@ -467,7 +467,7 @@ public class AccountController implements AccountControllerListener, AccountProp
             if (account.getPlugin() != null && account.isMulti() && accountInfo != null) {
                 try {
                     accountInfo.setMultiHostSupport(account.getPlugin(), accountInfo.getMultiHostSupport(), pluginFinder);
-                    getBroadcaster().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, account));
+                    getEventSender().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, account));
                 } catch (final Throwable e) {
                     LogController.CL().log(e);
                 }
@@ -816,7 +816,7 @@ public class AccountController implements AccountControllerListener, AccountProp
         if (propertyChange.getAccount().isChecking()) {
             return false;
         }
-        getBroadcaster().fireEvent(new AccountPropertyChangedEvent(propertyChange.getAccount(), propertyChange));
+        getEventSender().fireEvent(new AccountPropertyChangedEvent(propertyChange.getAccount(), propertyChange));
         return true;
     }
 

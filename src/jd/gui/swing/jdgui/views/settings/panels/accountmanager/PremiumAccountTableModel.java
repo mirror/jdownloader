@@ -105,7 +105,7 @@ public class PremiumAccountTableModel extends ExtTableModel<AccountEntry> implem
 
             @Override
             public void run() {
-                AccountController.getInstance().getBroadcaster().addListener(new AccountControllerListener() {
+                AccountController.getInstance().getEventSender().addListener(new AccountControllerListener() {
 
                     public void onAccountControllerEvent(AccountControllerEvent event) {
                         if (accountListPanel.isShown()) {
