@@ -40,7 +40,7 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
 
     /**
      * get the only existing instance of JACSolver. This is a singleton
-     * 
+     *
      * @return
      */
     public static JACSolver getInstance() {
@@ -81,7 +81,7 @@ public class JACSolver extends ChallengeSolver<String> implements ChallengeRespo
     }
 
     public boolean canHandle(Challenge<?> c) {
-        return c.isAccountLogin() == false;
+        return c.isAccountLogin() == false && super.canHandle(c);
     }
 
     @Override

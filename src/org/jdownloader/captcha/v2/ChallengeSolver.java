@@ -16,6 +16,7 @@ import java.util.regex.Pattern;
 import jd.controlling.captcha.SkipException;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
@@ -26,7 +27,7 @@ public abstract class ChallengeSolver<T> {
     private SolverService        service;
 
     /**
-     * 
+     *
      * @param i
      *            size of the threadpool. if i<=0 there will be no threadpool. each challenge will get a new thread in this case
      */
@@ -180,13 +181,15 @@ public abstract class ChallengeSolver<T> {
     }
 
     public boolean canHandle(Challenge<?> c) {
+        if (c instanceof AbstractBrowserChallenge) {
+            return false;
+        }
         if (!getResultType().isAssignableFrom(c.getResultType())) {
             return false;
         }
         if (!validateBlackWhite(c)) {
             return false;
         }
-
         return true;
     }
 
