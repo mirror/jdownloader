@@ -561,7 +561,6 @@ public class FilesloopCom extends PluginForHost {
                 statusMessage = "Unknown error";
                 logger.info(NICE_HOST + ": Unknown API error");
                 handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 20, 5 * 60 * 1000l);
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
@@ -578,7 +577,7 @@ public class FilesloopCom extends PluginForHost {
         } else if (maxchunks > 1) {
             maxchunks = -maxchunks;
         }
-        /* Else maxchunks = 1 */
+        /* Else maxchunks == 1 */
         return maxchunks;
     }
 

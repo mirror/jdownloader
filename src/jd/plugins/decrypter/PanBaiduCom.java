@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?(pan|yun)\\.baidu\\.com/((share|wap)/(link|init)(\\?(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(\\&fid=\\d+)?(.*?&dir=.+|#dir/path=%2F.+)?)|s/\\w+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?(?:pan|yun)\\.baidu\\.com/(share|wap)/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(\\&fid=\\d+)?(.*?\\&dir.+)?|http://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+" }, flags = { 0 })
 public class PanBaiduCom extends PluginForDecrypt {
 
     public PanBaiduCom(PluginWrapper wrapper) {
@@ -42,9 +42,9 @@ public class PanBaiduCom extends PluginForDecrypt {
     }
 
     private static boolean      pluginloaded                          = false;
-    private static final String TYPE_FOLDER_SUBFOLDER                 = "http://(www\\.)?pan\\.baidu\\.com/share/link\\?(shareid|uk)=\\d+\\&(uk|shareid)=\\d+(?:.*?&dir=.+|#dir/path=%2F.+)";
-    private static final String TYPE_FOLDER_GENERAL                   = "http://(www\\.)?pan\\.baidu\\.com/share/(link|init)(\\?(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(.*?&dir=.+|#dir/path=%2F.+))";
-    private static final String TYPE_FOLDER_NORMAL                    = "http://(www\\.)?pan\\.baidu\\.com/share/link\\?(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
+    private static final String TYPE_FOLDER_SUBFOLDER                 = "http://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(uk|shareid)=\\d+(?:.*?&dir=.+|#dir/path=%2F.+)";
+    private static final String TYPE_FOLDER_GENERAL                   = "http://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+((shareid|uk)=\\d+\\&(shareid|uk)=\\d+(.*?&dir=.+|#dir/path=%2F.+))";
+    private static final String TYPE_FOLDER_NORMAL                    = "http://(www\\.)?pan\\.baidu\\.com/share/[a-z\\?\\&]+(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
     private static final String TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED = "http://(www\\.)?pan\\.baidu\\.com/share/init\\?(shareid|uk)=\\d+\\&(uk|shareid)=\\d+";
     private static final String TYPE_FOLDER_SHORT                     = "http://(www\\.)?pan\\.baidu\\.com/s/[A-Za-z0-9]+";
     private static final String APPID                                 = "250528";
@@ -57,6 +57,11 @@ public class PanBaiduCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replaceAll("(pan|yun)\\.baidu\\.com/", "pan.baidu.com/").replace("/wap/", "/share/");
+        if (!parameter.matches(TYPE_FOLDER_NORMAL_PASSWORD_PROTECTED) && !parameter.matches(TYPE_FOLDER_SHORT)) {
+            /* Correct invalid "view" linktypes - we need one general linkformat! */
+            final String replace_part = new Regex(parameter, "(baidu\\.com/share/[a-z]+)").getMatch(0);
+            parameter = parameter.replaceAll(replace_part, "baidu.com/share/link");
+        }
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getURL().contains("/error") || br.containsHTML("id=\"share_nofound_des\"")) {

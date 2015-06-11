@@ -39,6 +39,9 @@ public class GldSlTo extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String HTML_CAPTCHA       = "Klicke in den gestrichelten Kreis, der sich somit von den anderen unterscheidet";
+    private static final String HTML_LIMIT_REACHED = "class=\"captchaWait\"";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -85,7 +88,7 @@ public class GldSlTo extends PluginForDecrypt {
             /* IMPORTANT */
             br.setCookie("goldesel.to", "__utmt", "1");
             br.postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID));
-            if (br.containsHTML("Klicke in den gestrichelten Kreis, der sich somit von den anderen unterscheidet")) {
+            if (br.containsHTML(HTML_CAPTCHA)) {
                 for (int i = 1; i <= 3; i++) {
                     try {
                         if (this.isAbort()) {
@@ -114,18 +117,21 @@ public class GldSlTo extends PluginForDecrypt {
                         return decryptedLinks;
                     }
                     br.postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID) + "&xC=" + p.x + "&yC=" + p.y);
-                    if (br.containsHTML("class=\"captchaWait\"")) {
+                    if (br.containsHTML(HTML_LIMIT_REACHED)) {
                         logger.info("We have to wait because the user entered too many wrong captchas...");
                         int wait = 60;
                         String waittime = br.getRegex("<strong>(\\d+) Sekunden</strong> warten\\.").getMatch(0);
                         if (waittime != null) {
                             wait = Integer.parseInt(waittime);
+                        } else {
+                            logger.info("Did not find any short waittime --> Probably hourly limit is reached --> Stopping decryption");
+                            break;
                         }
                         this.sleep(wait * 1001, param);
                         br.postPage("http://goldesel.to/res/links", "data=" + Encoding.urlEncode(decryptID));
                         continue;
                     }
-                    if (br.containsHTML("Klicke in den gestrichelten Kreis, der sich somit von den anderen unterscheidet")) {
+                    if (br.containsHTML(HTML_CAPTCHA)) {
                         captchafailed = true;
                         continue;
                     }
@@ -136,6 +142,10 @@ public class GldSlTo extends PluginForDecrypt {
                     logger.info("Captcha failed for decryptID: " + decryptID);
                     continue;
                 }
+            }
+            if (br.containsHTML(HTML_LIMIT_REACHED)) {
+                logger.info("Probably hourly limit is reached --> Stopping decryption");
+                return decryptedLinks;
             }
             final String[] finallinks = br.getRegex("url=\"(http[^<>\"]*?)\"").getColumn(0);
             for (final String finallink : finallinks) {
