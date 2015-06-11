@@ -448,50 +448,11 @@ public class ChoMikujPl extends PluginForDecrypt {
 
         // Herausfinden wie viele Seiten der Link hat
         int pageCount = 1;
-        if (false) {
-            if (param.toString().matches(PAGEDECRYPTLINK)) {
-                pageCount = Integer.parseInt(new Regex(parameter, ",(\\d+)$").getMatch(0));
-            } else {
-                // pageCount = getPageCount(parameter);
-            }
-            if (pageCount == -1) {
-                logger.warning("Error, couldn't successfully find the number of pages for link: " + parameter);
-                return null;
-            } else if (pageCount == 0) {
-                pageCount = 1;
-            }
-        }
 
         // More than one page? Every page goes back into the decrypter as a
         // single link!
         if (pageCount > 1 && !param.toString().matches(PAGEDECRYPTLINK)) {
-            if (false) {
-                logger.info("Found " + pageCount + " pages. Adding those for the decryption now.");
-
-                if (decryptFolders) {
-                    logger.info("Getting directories from the first page");
-                    final Browser tempBr = br.cloneBrowser();
-                    prepareBrowser(parameter, tempBr);
-
-                    final String folderTable = tempBr.getRegex("<div id=\"foldersList\">[\t\n\r ]+<table>(.*?)</table>[\t\n\r ]+</div>").getMatch(0);
-                    if (folderTable != null) {
-                        allFolders = new Regex(folderTable, "<a href=\"(/[^<>\"]*?)\" rel=\"\\d+\" title=\"([^<>\"]*?)\"").getMatches();
-                    }
-                }
-
-                for (int i = 1; i <= pageCount; i++) {
-                    final DownloadLink dl = createDownloadlink("http://chomikujpagedecrypt.pl/result/" + Encoding.Base64Encode(parameter + "," + i));
-                    dl.setProperty("reallink", parameter);
-                    fp.add(dl);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        /* does not exist in 09581 */
-                    }
-                    decryptedLinks.add(dl);
-                }
-            }
-
+            // Moved up
         } else {
             /* Decrypt all pages, start with 1 (not 0 as it was before) */
             pageCount = 1;
@@ -640,24 +601,6 @@ public class ChoMikujPl extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
-    }
-
-    public int getPageCount(final String theParameter) throws NumberFormatException, DecrypterException, IOException {
-        final Browser br2 = br.cloneBrowser();
-        prepareBrowser(theParameter, br2);
-        br2.setFollowRedirects(false);
-        br2.getPage(theParameter + ",20000");
-        final String result = br2.getRedirectLocation();
-        if (result == null) {
-            logger.info("Couldn't find any pages, returning 1");
-            return 1;
-        }
-        final String pageCount = new Regex(result, ",(\\d+)$").getMatch(0);
-        // Only 1 page
-        if (pageCount == null) {
-            return 1;
-        }
-        return Integer.parseInt(pageCount);
     }
 
     private void accessPage(String postData, Browser pageBR, int pageNum) throws IOException {
