@@ -1721,8 +1721,11 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     public void openAfflink(final String url, final String source, final boolean direct) {
         try {
-            if (url.startsWith("http:/update3.jdownloader.org/jdserv/RedirectInterface/ul")) {
-                StatsManager.I().track("buypremium/" + source + "/http:/update3.jdownloader.org/jdserv/RedirectInterface/ul...");
+            if (url.startsWith("https://www.oboom.com/ref/C0ACB0?ref_token=")) {
+                StatsManager.I().track("buypremium/" + source + "/https://www.oboom.com/ref/C0ACB0?ref_token=...");
+
+            } else if (url.startsWith("http://update3.jdownloader.org/jdserv/RedirectInterface/ul")) {
+                StatsManager.I().track("buypremium/" + source + "/http://update3.jdownloader.org/jdserv/RedirectInterface/ul...");
             } else {
                 StatsManager.I().track("buypremium/" + source + "/" + url);
             }
