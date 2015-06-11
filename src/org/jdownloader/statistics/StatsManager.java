@@ -204,14 +204,25 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 AccountController.getInstance().getEventSender().addListener(new AccountControllerListener() {
 
                     @Override
-                    public void onAccountControllerEvent(AccountControllerEvent event) {
+                    public synchronized void onAccountControllerEvent(AccountControllerEvent event) {
                         try {
-                            if (event.getType() == AccountControllerEvent.Types.ADDED) {
+
+                            if (event.getType() == AccountControllerEvent.Types.ADDED || (event.getType() == AccountControllerEvent.Types.ACCOUNT_CHECKED && event.getAccount().getBooleanProperty("fireStatsCall"))) {
                                 final Account account = event.getAccount();
+                                account.removeProperty("fireStatsCall");
+                                if (account.getLongProperty("added", 0) <= 0) {
+                                    account.setProperty("added", System.currentTimeMillis());
+                                }
                                 if (account != null && account.isValid()) {
+                                    long lastValid = account.getLastValidTimestamp();
+                                    if (lastValid <= 0 && event.getType() == AccountControllerEvent.Types.ADDED) {
+                                        // the account may not be checked yet. send stats later
+                                        account.setProperty("fireStatsCall", true);
+                                        return;
+                                    }
                                     final AccountInfo info = account.getAccountInfo();
                                     String type = "Unknown";
-                                    long estimatedBuytime = System.currentTimeMillis();
+                                    long estimatedBuytime = account.getLongProperty("added", 0);
                                     final long validUntilTimeStamp;
                                     final long expireInMs;
                                     if (info != null) {
@@ -227,7 +238,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                                     } else if (expireInMs < RANGE_1MONTH_B && expireInMs > RANGE_1MONTH_A) {
                                                         // 1month
                                                         type = "1month";
-                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((1 * 31) * 24 * 60 * 60 * 1000l));
+                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((1 * 30) * 24 * 60 * 60 * 1000l));
                                                     } else if (expireInMs < RANGE_3MONTH_B && expireInMs > RANGE_3MONTH_A) {
                                                         // 3month
                                                         type = "3months";
@@ -235,7 +246,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                                     } else if (expireInMs < RANGE_6MONTH_B && expireInMs > RANGE_6MONTH_A) {
                                                         // 6month
                                                         type = "6months";
-                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((6 * 31) * 24 * 60 * 60 * 1000l));
+                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((6 * 30) * 24 * 60 * 60 * 1000l));
                                                     } else if (expireInMs < RANGE_1YEAR_B && expireInMs > RANGE_1YEAR_A) {
                                                         // 1year
                                                         type = "1year";
@@ -306,6 +317,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                             final HashMap<String, String> infos = new HashMap<String, String>();
                                             infos.put("clicksource", st.getSource() + "");
                                             infos.put("ms", Long.toString(timeDiff));
+                                            Map<String, Object> properties = account.getProperties();
                                             if (info != null) {
                                                 if (validUntilTimeStamp > 0) {
                                                     if (expireInMs > 0) {
