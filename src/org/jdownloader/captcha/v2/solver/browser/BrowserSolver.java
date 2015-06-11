@@ -19,8 +19,13 @@ public class BrowserSolver extends AbstractBrowserSolver {
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-
-        return c instanceof AbstractBrowserChallenge && super.canHandle(c);
+        if (c instanceof AbstractBrowserChallenge) {
+            if (!validateBlackWhite(c)) {
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 
 }

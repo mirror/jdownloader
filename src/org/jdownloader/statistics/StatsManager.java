@@ -129,7 +129,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static StatsManager I() {
@@ -209,6 +209,81 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             if (event.getType() == AccountControllerEvent.Types.ADDED) {
                                 final Account account = event.getAccount();
                                 if (account != null && account.isValid()) {
+                                    final AccountInfo info = account.getAccountInfo();
+                                    String type = "Unknown";
+                                    long estimatedBuytime = System.currentTimeMillis();
+                                    final long validUntilTimeStamp;
+                                    final long expireInMs;
+                                    if (info != null) {
+                                        validUntilTimeStamp = info.getValidUntil();
+                                        expireInMs = validUntilTimeStamp - System.currentTimeMillis();
+                                        if ("uploaded.to".equals(account.getHoster())) {
+                                            if (validUntilTimeStamp > estimatedBuytime) {
+                                                if (expireInMs > 0) {
+                                                    if (expireInMs < RANGE_48HOUR_B && expireInMs > RANGE_48HOUR_A) {
+                                                        // 48hours
+                                                        type = "48hours";
+                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - (48 * 60 * 60 * 1000l));
+                                                    } else if (expireInMs < RANGE_1MONTH_B && expireInMs > RANGE_1MONTH_A) {
+                                                        // 1month
+                                                        type = "1month";
+                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((1 * 31) * 24 * 60 * 60 * 1000l));
+                                                    } else if (expireInMs < RANGE_3MONTH_B && expireInMs > RANGE_3MONTH_A) {
+                                                        // 3month
+                                                        type = "3months";
+                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((3 * 30) * 24 * 60 * 60 * 1000l));
+                                                    } else if (expireInMs < RANGE_6MONTH_B && expireInMs > RANGE_6MONTH_A) {
+                                                        // 6month
+                                                        type = "6months";
+                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((6 * 31) * 24 * 60 * 60 * 1000l));
+                                                    } else if (expireInMs < RANGE_1YEAR_B && expireInMs > RANGE_1YEAR_A) {
+                                                        // 1year
+                                                        type = "1year";
+                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((365) * 24 * 60 * 60 * 1000l));
+                                                    } else if (expireInMs < RANGE_2YEAR_B && expireInMs > RANGE_2YEAR_A) {
+                                                        // 2year
+                                                        type = "2years";
+                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((2 * 365) * 24 * 60 * 60 * 1000l));
+                                                    }
+                                                }
+                                            }
+                                        } else if ("rapidgator.net".equals(account.getHoster())) {
+                                            if (validUntilTimeStamp > estimatedBuytime) {
+                                                if (expireInMs > 0) {
+                                                    if (expireInMs < RANGE_1MONTH_B && expireInMs > RANGE_1MONTH_A) {
+                                                        // 1month
+                                                        type = "1month";
+                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((1 * 31) * 24 * 60 * 60 * 1000l));
+                                                    } else if (expireInMs < RANGE_3MONTH_B && expireInMs > RANGE_3MONTH_A) {
+                                                        // 3month
+                                                        type = "3months";
+                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((3 * 30) * 24 * 60 * 60 * 1000l));
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        final String id;
+                                        final HashMap<String, String> infos;
+                                        if (validUntilTimeStamp > 0) {
+                                            if (expireInMs > 0) {
+                                                infos = new HashMap<String, String>();
+                                                infos.put("ms", Long.toString(expireInMs));
+                                                id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/until";
+                                            } else {
+                                                infos = null;
+                                                id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/expired";
+                                            }
+                                        } else {
+                                            infos = null;
+                                            id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/unlimited";
+                                        }
+                                        StatsManager.I().track(id, infos);
+                                    } else {
+                                        validUntilTimeStamp = -1;
+                                        expireInMs = -1;
+                                        final String id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/unknown";
+                                        StatsManager.I().track(id, null);
+                                    }
                                     final String domain = account.getHoster();
                                     final File file = Application.getResource("cfg/clicked/" + domain + ".json");
                                     if (file.exists()) {
@@ -223,79 +298,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                         }
                                         if (list == null || list.size() == 0) {
                                             return;
-                                        }
-                                        final AccountInfo info = account.getAccountInfo();
-                                        String type = "Unknown";
-                                        long estimatedBuytime = System.currentTimeMillis();
-                                        final long validUntilTimeStamp;
-                                        final long expireInMs;
-                                        if (info != null) {
-                                            validUntilTimeStamp = info.getValidUntil();
-                                            expireInMs = validUntilTimeStamp - System.currentTimeMillis();
-                                            if ("uploaded.to".equals(account.getHoster())) {
-                                                if (validUntilTimeStamp > estimatedBuytime) {
-                                                    if (expireInMs > 0) {
-                                                        if (expireInMs < RANGE_48HOUR_B && expireInMs > RANGE_48HOUR_A) {
-                                                            // 48hours
-                                                            type = "48hours";
-                                                            estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - (48 * 60 * 60 * 1000l));
-                                                        } else if (expireInMs < RANGE_1MONTH_B && expireInMs > RANGE_1MONTH_A) {
-                                                            // 1month
-                                                            type = "1month";
-                                                            estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((1 * 31) * 24 * 60 * 60 * 1000l));
-                                                        } else if (expireInMs < RANGE_3MONTH_B && expireInMs > RANGE_3MONTH_A) {
-                                                            // 3month
-                                                            type = "3months";
-                                                            estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((3 * 30) * 24 * 60 * 60 * 1000l));
-                                                        } else if (expireInMs < RANGE_6MONTH_B && expireInMs > RANGE_6MONTH_A) {
-                                                            // 6month
-                                                            type = "6months";
-                                                            estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((6 * 31) * 24 * 60 * 60 * 1000l));
-                                                        } else if (expireInMs < RANGE_1YEAR_B && expireInMs > RANGE_1YEAR_A) {
-                                                            // 1year
-                                                            type = "1year";
-                                                            estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((365) * 24 * 60 * 60 * 1000l));
-                                                        } else if (expireInMs < RANGE_2YEAR_B && expireInMs > RANGE_2YEAR_A) {
-                                                            // 2year
-                                                            type = "2years";
-                                                            estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((2 * 365) * 24 * 60 * 60 * 1000l));
-                                                        }
-                                                    }
-                                                }
-                                            } else if ("rapidgator.net".equals(account.getHoster())) {
-                                                if (validUntilTimeStamp > estimatedBuytime) {
-                                                    if (expireInMs > 0) {
-                                                        if (expireInMs < RANGE_1MONTH_B && expireInMs > RANGE_1MONTH_A) {
-                                                            // 1month
-                                                            type = "1month";
-                                                            estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((1 * 31) * 24 * 60 * 60 * 1000l));
-                                                        } else if (expireInMs < RANGE_3MONTH_B && expireInMs > RANGE_3MONTH_A) {
-                                                            // 3month
-                                                            type = "3months";
-                                                            estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((3 * 30) * 24 * 60 * 60 * 1000l));
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            final String id;
-                                            final HashMap<String, String> infos;
-                                            if (validUntilTimeStamp > 0) {
-                                                if (expireInMs > 0) {
-                                                    infos = new HashMap<String, String>();
-                                                    infos.put("ms", Long.toString(expireInMs));
-                                                    id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/until";
-                                                } else {
-                                                    infos = null;
-                                                    id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/expired";
-                                                }
-                                            } else {
-                                                infos = null;
-                                                id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/unlimited";
-                                            }
-                                            StatsManager.I().track(id, infos);
-                                        } else {
-                                            validUntilTimeStamp = -1;
-                                            expireInMs = -1;
                                         }
                                         final ClickedAffLinkStorable st = list.get(list.size() - 1);
                                         if (st != null) {
@@ -612,7 +614,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * this setter does not set the config flag. Can be used to disable the logger for THIS session.
-     * 
+     *
      * @param b
      */
     public void setEnabled(boolean b) {
@@ -1620,7 +1622,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
-     * 
+     *
      * @param reducer
      * @param path
      */
