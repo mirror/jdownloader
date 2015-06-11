@@ -129,7 +129,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
-     *
+     * 
      * @return
      */
     public static StatsManager I() {
@@ -612,7 +612,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * this setter does not set the config flag. Can be used to disable the logger for THIS session.
-     *
+     * 
      * @param b
      */
     public void setEnabled(boolean b) {
@@ -1620,7 +1620,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
-     *
+     * 
      * @param reducer
      * @param path
      */
@@ -1721,7 +1721,12 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     public void openAfflink(final String url, final String source, final boolean direct) {
         try {
-            StatsManager.I().track("buypremium/" + source + "/" + url);
+            if (url.startsWith("http:/update3.jdownloader.org/jdserv/RedirectInterface/ul")) {
+                StatsManager.I().track("buypremium/" + source + "/http:/update3.jdownloader.org/jdserv/RedirectInterface/ul...");
+            } else {
+                StatsManager.I().track("buypremium/" + source + "/" + url);
+            }
+
             String domain = url;
             try {
                 domain = new URL(url).getHost();
