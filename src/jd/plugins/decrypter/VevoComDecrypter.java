@@ -189,11 +189,10 @@ public class VevoComDecrypter extends PluginForDecrypt {
             if (statusCode.equals("304") || statusCode.equals("909")) {
                 decryptedLinks.add(offline);
                 return decryptedLinks;
-            } else if (statusCode.equals("501")) {
+            } else if ((statusCode.equals("501")) || (statusCode.equals("502"))) {
                 geoblock_2 = true;
             }
         }
-
         if (!geoblock_1 && !geoblock_2) {
             entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             final LinkedHashMap<String, Object> video = (LinkedHashMap<String, Object>) entries.get("video");
@@ -415,7 +414,7 @@ public class VevoComDecrypter extends PluginForDecrypt {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -425,7 +424,7 @@ public class VevoComDecrypter extends PluginForDecrypt {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
