@@ -209,7 +209,10 @@ public class RDMdthk extends PluginForDecrypt {
             if (streammap.get("_stream") instanceof ArrayList) {
                 final ArrayList<Object> streamArray = (ArrayList) streammap.get("_stream");
                 directlink = (String) streamArray.get(0);
-                /* Add the sub-type stream as current quality */
+                /* Add the sub-type stream as current quality (in case user wants that) */
+                if (!userWantsQuality(quality)) {
+                    continue;
+                }
                 addQuality(network, title, extension, false, (String) streamArray.get(1), quality, t, parameter);
                 /* Move current quality one up to correct this */
                 quality++;
@@ -246,29 +249,7 @@ public class RDMdthk extends PluginForDecrypt {
                 continue;
             }
 
-            switch (Integer.valueOf(quality)) {
-            case 0:
-                if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
-                    continue;
-                }
-                break;
-            case 1:
-                if ((cfg.getBooleanProperty(Q_MEDIUM, true) || BEST) == false) {
-                    continue;
-                }
-                break;
-            case 2:
-                if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
-                    continue;
-                }
-                break;
-            case 3:
-                if ((cfg.getBooleanProperty(Q_HD, true) || BEST) == false) {
-                    continue;
-                }
-                break;
-            default:
-                /* E.g. unsupported */
+            if (!userWantsQuality(Integer.valueOf(quality))) {
                 continue;
             }
 
@@ -276,6 +257,34 @@ public class RDMdthk extends PluginForDecrypt {
         }
         findBEST();
         return;
+    }
+
+    private boolean userWantsQuality(final int quality) {
+        switch (quality) {
+        case 0:
+            if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
+                return false;
+            }
+            return true;
+        case 1:
+            if ((cfg.getBooleanProperty(Q_MEDIUM, true) || BEST) == false) {
+                return false;
+            }
+            return true;
+        case 2:
+            if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
+                return false;
+            }
+            return true;
+        case 3:
+            if ((cfg.getBooleanProperty(Q_HD, true) || BEST) == false) {
+                return false;
+            }
+            return true;
+        default:
+            /* E.g. unsupported */
+            return false;
+        }
     }
 
     /* Make fmt String out of quality Integer */
@@ -318,7 +327,6 @@ public class RDMdthk extends PluginForDecrypt {
         final String[] mediaStreamArray = br.getRegex("(<asset type=\".*?</asset>)").getColumn(0);
 
         for (final String stream : mediaStreamArray) {
-            String fmt = null;
             final String assettype = new Regex(stream, "<asset type=\"([^<>\"]*?)\">").getMatch(0);
             final String server = null;
             final String network = "default";
@@ -354,31 +362,7 @@ public class RDMdthk extends PluginForDecrypt {
                 continue;
             }
 
-            fmt = "hd";
-
-            switch (Integer.valueOf(quality)) {
-            case 0:
-                if ((cfg.getBooleanProperty(Q_LOW, true) || BEST) == false) {
-                    continue;
-                }
-                break;
-            case 1:
-                if ((cfg.getBooleanProperty(Q_MEDIUM, true) || BEST) == false) {
-                    continue;
-                }
-                break;
-            case 2:
-                if ((cfg.getBooleanProperty(Q_HIGH, true) || BEST) == false) {
-                    continue;
-                }
-                break;
-            case 3:
-                if ((cfg.getBooleanProperty(Q_HD, true) || BEST) == false) {
-                    continue;
-                }
-                break;
-            default:
-                /* E.g. unsupported */
+            if (!userWantsQuality(Integer.valueOf(quality))) {
                 continue;
             }
 
