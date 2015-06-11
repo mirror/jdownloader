@@ -1929,6 +1929,7 @@ public abstract class K2SApi extends PluginForHost {
                     }
                 }
             }
+            result = validateResultForArrays(source, result);
             if (result != null) {
                 result = unescape(result);
             }
@@ -1954,6 +1955,7 @@ public abstract class K2SApi extends PluginForHost {
          * */
         public static String getJsonArray(final String source, final String key) {
             String result = new Regex(source, "\"" + Pattern.quote(key) + "\":(\\[.*?\\])(?:,|\\})").getMatch(0);
+            result = validateResultForArrays(source, result);
             if (result != null) {
                 result = unescape(result);
             }
@@ -1993,7 +1995,8 @@ public abstract class K2SApi extends PluginForHost {
             if (source == null) {
                 return null;
             }
-            final String result = new Regex(source, "\"" + Pattern.quote(key) + "\":\\{(.*?)\\}(?:,|\\})").getMatch(0);
+            String result = new Regex(source, "\"" + Pattern.quote(key) + "\":\\{(.*?)\\}(?:,|\\})").getMatch(0);
+            result = validateResultForArrays(source, result);
             return result;
         }
 
@@ -2020,6 +2023,57 @@ public abstract class K2SApi extends PluginForHost {
             final boolean useBracket = value instanceof String;
             result = result.concat("\"" + key + "\":" + (useBracket ? "\"" : "") + (useBracket ? escape(value.toString()) : value) + (useBracket ? "\"" : "") + "}");
             return result;
+        }
+
+        /**
+         * Applies correction when result contains incorrect array brackets endings. <br />
+         * Why is this needed? Using Regex to find values true ending is next to impossible. This will correct it!
+         *
+         * @author raztoki
+         * @param source
+         * @param result
+         * @return
+         */
+        public static String validateResultForArrays(final String source, final String result) {
+            if (result == null) {
+                return result;
+            }
+            String i = result;
+            // validate json; count opening { and }, [ and ], correct when misallignment
+            while (true) {
+                final String[] bracketA = new Regex(i, "(?!\\\\\\{)\\{").getColumn(-1);
+                final String[] bracketB = new Regex(i, "(?!\\\\\\})\\}").getColumn(-1);
+                if (bracketA != null && bracketB != null) {
+                    if (bracketA.length == bracketB.length) {
+                        break;
+                    }
+                    final String newi = new Regex(source, Pattern.quote(i) + "(?!\\\\\\})[^\\}]+\\}").getMatch(-1);
+                    if (newi == null) {
+                        return i;
+                    }
+                    i = newi;
+                    continue;
+                }
+                break;
+            }
+
+            while (true) {
+                final String[] bracketC = new Regex(i, "(?!\\\\\\[)\\[").getColumn(-1);
+                final String[] bracketD = new Regex(i, "(?!\\\\\\])\\]").getColumn(-1);
+                if (bracketC != null && bracketD != null) {
+                    if (bracketC.length == bracketD.length) {
+                        break;
+                    }
+                    final String newi = new Regex(source, Pattern.quote(i) + "(?!\\\\\\])[^\\]]+\\]").getMatch(-1);
+                    if (newi == null) {
+                        return i;
+                    }
+                    i = newi;
+                    continue;
+                }
+                break;
+            }
+            return i;
         }
 
     }
