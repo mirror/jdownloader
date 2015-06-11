@@ -61,7 +61,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
 //When adding new domains here also add them to the turbobit.net decrypter (TurboBitNetFolder)
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(wayupload\\.com|maxisoc\\.ru|turo\\-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|sharephile\\.com|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|speed-file\\.ru|turbobit\\.pl|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|file\\.krut-warez\\.ru|filebit\\.org|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|letitshare\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbo-bit\\.ru|turbobit\\.net|upload\\.mskvn\\.by|vipbit\\.ru|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.dwmedia\\.ru|upload\\.uz|xrfiles\\.ru|unextfiles\\.com|e-flash\\.com\\.ua|turbobax\\.net|zharabit\\.net|download\\.uzhgorod\\.name|trium-club\\.ru|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|turbobit\\.name|files\\.uz\\-translations\\.uz|turboblt\\.ru|fo\\.letitbook\\.ru|freefo\\.ru|bayrakweb\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|vipgfx\\.net|turbovit\\.com\\.ua|turboot\\.ru|filez\\.ninja|kilofile\\.com)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(wayupload\\.com|maxisoc\\.ru|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|sharephile\\.com|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|speed-file\\.ru|turbobit\\.pl|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|file\\.krut-warez\\.ru|filebit\\.org|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|letitshare\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbo-bit\\.ru|turbobit\\.net|upload\\.mskvn\\.by|vipbit\\.ru|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.dwmedia\\.ru|upload\\.uz|xrfiles\\.ru|unextfiles\\.com|e-flash\\.com\\.ua|turbobax\\.net|zharabit\\.net|download\\.uzhgorod\\.name|trium-club\\.ru|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|turbobit\\.name|files\\.uz-translations\\.uz|turboblt\\.ru|fo\\.letitbook\\.ru|freefo\\.ru|bayrakweb\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|vipgfx\\.net|turbovit\\.com\\.ua|turboot\\.ru|filez\\.ninja|kilofile\\.com)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
 
     private static final String RECAPTCHATEXT                         = "api\\.recaptcha\\.net";
@@ -70,7 +70,7 @@ public class TurboBitNet extends PluginForHost {
     private static Object       LOCK                                  = new Object();
     private static final String BLOCKED                               = "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!";
     private boolean             prefer_single_linkcheck_linkcheckpage = false;
-
+    private final String        premRedirectLinks                     = ".*//?download/redirect/[A-Za-z0-9]+/[a-z0-9]+";
     private static final String NICE_HOST                             = "turbobit.net";
     private static final String NICE_HOSTproperty                     = "turbobitnet";
 
@@ -89,7 +89,7 @@ public class TurboBitNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // We don't rename match format because these are generated links. Leave as is!
-        if (!link.getDownloadURL().matches("https?://[^/]+/?/download/redirect/.*")) {
+        if (!link.getDownloadURL().matches(premRedirectLinks)) {
             link.setUrlDownload(protocol + NICE_HOST + "/" + uid + ".html");
             // we wont use linkid for match format either.
             final String linkID = getHost() + "://" + uid;
@@ -269,7 +269,7 @@ public class TurboBitNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         // support for public premium links
-        if (downloadLink.getDownloadURL().matches("https?://[^/]+/download/redirect/.*")) {
+        if (downloadLink.getDownloadURL().matches(premRedirectLinks)) {
             handlePremiumLink(downloadLink);
             return;
         }
@@ -285,10 +285,10 @@ public class TurboBitNet extends PluginForHost {
         String dllink = downloadLink.getDownloadURL();
         sleep(2500, downloadLink);
         getPage(dllink);
-        if (br.containsHTML("(>Please wait, searching file|\\'File not found\\. Probably it was deleted)")) {
+        if (br.containsHTML("(>Please wait, searching file|'File not found\\. Probably it was deleted)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String fileSize = br.getRegex("class=\"file\\-size\">([^<>\"]*?)</span>").getMatch(0);
+        String fileSize = br.getRegex("class=\"file-size\">([^<>\"]*?)</span>").getMatch(0);
         if (fileSize != null) {
             fileSize = fileSize.replace("М", "M");
             fileSize = fileSize.replace("к", "k");
@@ -474,7 +474,7 @@ public class TurboBitNet extends PluginForHost {
                     }
                 }
                 if (downloadUrl == null) {
-                    downloadUrl = br.getRegex("(/download/redirect/[0-9A-F]{32}/" + dllink.replaceAll(MAINPAGE, "") + ")").getMatch(0);
+                    downloadUrl = br.getRegex("(/download/redirect/[0-9A-F]{32}/" + id + ")").getMatch(0);
                     if (downloadUrl == null) {
                         downloadUrl = br.getRegex("<a href=\'([^\']+)").getMatch(0);
                     }
@@ -509,7 +509,7 @@ public class TurboBitNet extends PluginForHost {
             SimpleDateFormat df = new SimpleDateFormat("EEE MMM dd HH:mm:ss zZ yyyy");
             Date date = new Date();
             br.setCookie(br.getHost(), "turbobit1", Encoding.urlEncode_light(df.format(date)).replace(":", "%3A"));
-            downloadUrl = br.getRegex("(\"|')(/download/redirect/.*?)\\1").getMatch(1);
+            downloadUrl = br.getRegex("(\"|')(/?/download/redirect/.*?)\\1").getMatch(1);
             if (downloadUrl == null) {
                 if (br.toString().matches("Error: \\d+")) {
                     // unknown error...
@@ -581,13 +581,12 @@ public class TurboBitNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage(dllink);
-        antiDDoS();
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         // support for public premium links
-        if (link.getDownloadURL().matches("https?://[^/]+/download/redirect/.*")) {
+        if (link.getDownloadURL().matches(premRedirectLinks)) {
             handlePremiumLink(link);
             return;
         }
@@ -718,7 +717,7 @@ public class TurboBitNet extends PluginForHost {
             dllink = br.getRedirectLocation();
         }
         if (dllink.matches(".+&md5=[a-f0-9]{32}.+")) {
-            String md5sum = new Regex(dllink, "md5=([a-z0-9]{32})").getMatch(0);
+            String md5sum = new Regex(dllink, "md5=([a-f0-9]{32})").getMatch(0);
             if (md5sum != null) {
                 link.setMD5Hash(md5sum);
             }
@@ -779,22 +778,7 @@ public class TurboBitNet extends PluginForHost {
 
     private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
-    /**
-     * Defines custom browser requirements. Integrates with antiDDoS method
-     *
-     * @author raztoki
-     *
-     * */
     private Browser prepBrowser(final Browser prepBr, String UA) {
-        synchronized (antiDDoSCookies) {
-            if (!antiDDoSCookies.isEmpty()) {
-                for (final Map.Entry<String, String> cookieEntry : antiDDoSCookies.entrySet()) {
-                    final String key = cookieEntry.getKey();
-                    final String value = cookieEntry.getValue();
-                    prepBr.setCookie(this.getHost(), key, value);
-                }
-            }
-        }
         br.setCookie(MAINPAGE, "JD", "1");
         if (UA == null) {
             /* we first have to load the plugin, before we can reference it */
@@ -810,164 +794,7 @@ public class TurboBitNet extends PluginForHost {
         prepBr.getHeaders().put("User-Agent", UA);
         prepBr.getHeaders().put("Referer", null);
         prepBr.setCustomCharset("UTF-8");
-
-        // required for antiDDoS support, without the need to repeat requests.
-        try {
-            /* not available in old stable */
-            prepBr.setAllowedResponseCodes(new int[] { 503 });
-        } catch (Throwable e) {
-        }
         return prepBr;
-    }
-
-    private static HashMap<String, String> antiDDoSCookies = new HashMap<String, String>();
-
-    /**
-     * Performs Cloudflare and Incapsula requirements.<br />
-     * Auto fill out the required fields and updates antiDDoSCookies session.<br />
-     * Always called after Browser Request!
-     *
-     * @version 0.02
-     * @author raztoki
-     **/
-    private void antiDDoS() throws Exception {
-        if (br == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final HashMap<String, String> cookies = new HashMap<String, String>();
-        if (br.getHttpConnection() != null) {
-            final String URL = br.getURL();
-            if (requestHeadersHasKeyNValueContains("server", "cloudflare-nginx")) {
-                Form cloudflare = br.getFormbyProperty("id", "ChallengeForm");
-                if (cloudflare == null) {
-                    cloudflare = br.getFormbyProperty("id", "challenge-form");
-                }
-                if (br.getHttpConnection().getResponseCode() == 403 && cloudflare != null) {
-                    // new method seems to be within 403
-                    if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                        // they seem to add multiple input fields which is most likely meant to be corrected by js ?
-                        // we will manually remove all those
-                        while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
-                            cloudflare.remove("recaptcha_response_field");
-                        }
-                        while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
-                            cloudflare.remove("recaptcha_challenge_field");
-                        }
-                        // this one is null, needs to be ""
-                        if (cloudflare.hasInputFieldByName("message")) {
-                            cloudflare.remove("message");
-                            cloudflare.put("messsage", "\"\"");
-                        }
-                        // recaptcha bullshit
-                        String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                        if (apiKey == null) {
-                            apiKey = br.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                            if (apiKey == null) {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                        }
-                        final DownloadLink dllink = new DownloadLink(null, "antiDDoS Provider 'Clouldflare' requires Captcha", MAINPAGE, MAINPAGE, true);
-                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                        rc.setId(apiKey);
-                        rc.load();
-                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final String response = getCaptchaCode(cf, dllink);
-                        cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
-                        cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
-                        br.submitForm(cloudflare);
-                        if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
-                            logger.warning("Possible plugin error within cloudflare handling");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                    }
-                } else if (br.getHttpConnection().getResponseCode() == 503 && cloudflare != null) {
-                    // 503 response code with javascript math section
-                    String host = new Regex(URL, "https?://([^/]+)(:\\d+)?/").getMatch(0);
-                    String math = br.getRegex("\\$\\('#jschl_answer'\\)\\.val\\(([^\\)]+)\\);").getMatch(0);
-                    if (math == null) {
-                        math = br.getRegex("a\\.value = ([\\d\\-\\.\\+\\*/]+);").getMatch(0);
-                    }
-                    if (math == null) {
-                        String variableName = br.getRegex("(\\w+)\\s*=\\s*\\$\\('#jschl_answer'\\);").getMatch(0);
-                        if (variableName != null) {
-                            variableName = variableName.trim();
-                        }
-                        math = br.getRegex(variableName + "\\.val\\(([^\\)]+)\\)").getMatch(0);
-                    }
-                    if (math == null) {
-                        logger.warning("Couldn't find 'math'");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    // use js for now, but change to Javaluator as the provided string doesn't get evaluated by JS according to Javaluator
-                    // author.
-                    ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-                    ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                    final long value = ((Number) engine.eval("(" + math + ") + " + host.length())).longValue();
-                    cloudflare.put("jschl_answer", value + "");
-                    Thread.sleep(5500);
-                    br.submitForm(cloudflare);
-                    if (br.getFormbyProperty("id", "ChallengeForm") != null || br.getFormbyProperty("id", "challenge-form") != null) {
-                        logger.warning("Possible plugin error within cloudflare handling");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                } else {
-                    // nothing wrong, or something wrong (unsupported format)....
-                    // commenting out return prevents caching of cookies per request
-                    // return;
-                }
-                // get cookies we want/need.
-                // refresh these with every getPage/postPage/submitForm?
-                final Cookies add = br.getCookies(this.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    if (new Regex(c.getKey(), "(cfduid|cf_clearance)").matches()) {
-                        cookies.put(c.getKey(), c.getValue());
-                    }
-                }
-            }
-            // save the session!
-            synchronized (antiDDoSCookies) {
-                antiDDoSCookies.clear();
-                antiDDoSCookies.putAll(cookies);
-            }
-        }
-    }
-
-    /**
-     *
-     * @author raztoki
-     * */
-    @SuppressWarnings("unused")
-    private boolean requestHeadersHasKeyNValueStartsWith(final String k, final String v) {
-        if (k == null || v == null || br == null || br.getHttpConnection() == null) {
-            return false;
-        }
-        if (br.getHttpConnection().getHeaderField(k) != null && br.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH).startsWith(v.toLowerCase(Locale.ENGLISH))) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     *
-     * @author raztoki
-     * */
-    private boolean requestHeadersHasKeyNValueContains(final String k, final String v) {
-        if (k == null || v == null) {
-            return false;
-        }
-        if (br.getHttpConnection().getHeaderField(k) != null && br.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH).contains(v.toLowerCase(Locale.ENGLISH))) {
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     /* TODO: Make an unique login function which works for turbobit.net AND hitfile.net (same system) */
@@ -1104,20 +931,23 @@ public class TurboBitNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
-
+            // premium links should not open here, we will just return true
+            if (downloadLink.getDownloadURL().matches(premRedirectLinks)) {
+                return AvailableStatus.TRUE;
+            }
             setBrowserExclusive();
             br.setFollowRedirects(true);
             prepBrowser(br, userAgent.get());
             br.setCookie(MAINPAGE + "/", "set_user_lang_change", "en");
             br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML("(<div class=\"code\\-404\">404</div>|Файл не найден\\. Возможно он был удален\\.<br|File( was)? not found\\.|It could possibly be deleted\\.)")) {
+            if (br.containsHTML("(<div class=\"code-404\">404</div>|Файл не найден\\. Возможно он был удален\\.<br|File( was)? not found\\.|It could possibly be deleted\\.)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String fileName = br.getRegex("<title>[ \t\r\n]+(Download|Datei downloaden) (.*?)\\. Free download without registration from TurboBit\\.net").getMatch(1);
             if (fileName == null) {
-                fileName = br.getRegex("<span class=\\'file\\-icon.*?\\'>(.*?)</span>").getMatch(0);
+                fileName = br.getRegex("<span class='file-icon.*?'>(.*?)</span>").getMatch(0);
             }
-            String fileSize = br.getRegex("class=\"file\\-size\">([^<>\"]*?)<").getMatch(0);
+            String fileSize = br.getRegex("class=\"file-size\">([^<>\"]*?)<").getMatch(0);
             if (fileName == null) {
                 if (br.containsHTML("Our service is currently unavailable in your country.")) {
                     downloadLink.getLinkStatus().setStatusText("Our service is currently unavailable in your country.");
