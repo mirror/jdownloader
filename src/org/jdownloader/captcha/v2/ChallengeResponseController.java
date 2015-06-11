@@ -244,7 +244,9 @@ public class ChallengeResponseController {
     }
 
     public SolverJob<?> getJobById(long id) {
-        return idToJobMap.get(id);
+        synchronized (idToJobMap) {
+            return idToJobMap.get(new UniqueAlltimeID(id));
+        }
     }
 
     public List<SolverService> listServices() {
