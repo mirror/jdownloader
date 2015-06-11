@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPOutputStream;
 
 import javax.swing.JComponent;
@@ -50,6 +49,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.Application;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64OutputStream;
@@ -73,7 +73,7 @@ public class PremiumizeMe extends PluginForHost {
     public PremiumizeMe(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        this.enablePremium("https://premiumize.me");
+        this.enablePremium(getProtocol() + "premiumize.me");
     }
 
     public void setConfigElements() {
@@ -82,7 +82,7 @@ public class PremiumizeMe extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://premiumize.me/?show=tos";
+        return getProtocol() + "premiumize.me/?show=tos";
     }
 
     public Browser newBrowser() {
@@ -91,6 +91,7 @@ public class PremiumizeMe extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie("https://premiumize.me", "lang", "english");
+        br.setCookie("http://premiumize.me", "lang", "english");
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
@@ -282,7 +283,7 @@ public class PremiumizeMe extends PluginForHost {
         br = newBrowser();
         showMessage(link, "Task 1: Generating Link");
         /* request Download */
-        br.getPage("https://api.premiumize.me/pm-api/v1.php?method=directdownloadlink&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()) + "&params[link]=" + Encoding.urlEncode(link.getDownloadURL()));
+        br.getPage(getProtocol() + "api.premiumize.me/pm-api/v1.php?method=directdownloadlink&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()) + "&params[link]=" + Encoding.urlEncode(link.getDownloadURL()));
         if (br.containsHTML(">403 Forbidden<")) {
             int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING, 0);
             if (timesFailed <= 2) {
@@ -295,7 +296,7 @@ public class PremiumizeMe extends PluginForHost {
             }
         }
         handleAPIErrors(br, account, link);
-        String dllink = br.getRegex("location\":\"(http[^\"]+)").getMatch(0);
+        String dllink = br.getRegex("location\":\"(https?[^\"]+)").getMatch(0);
         if (dllink == null) {
             logger.info(this.getHost() + ": Unknown error");
             sendErrorLog(link, account);
@@ -373,7 +374,7 @@ public class PremiumizeMe extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-        String hostsSup = br.getPage("https://api.premiumize.me/pm-api/v1.php?method=hosterlist&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()));
+        String hostsSup = br.getPage(getProtocol() + "api.premiumize.me/pm-api/v1.php?method=hosterlist&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()));
         handleAPIErrors(br, account, null);
         HashMap<String, Object> response = JSonStorage.restoreFromString(br.toString(), new HashMap<String, Object>().getClass());
         if (response == null || (response = (HashMap<String, Object>) response.get("result")) == null) {
@@ -387,6 +388,14 @@ public class PremiumizeMe extends PluginForHost {
         return ai;
     }
 
+    private static String getProtocol() {
+        if (Application.getJavaVersion() < Application.JAVA17) {
+            return "http://";
+        } else {
+            return "https://";
+        }
+    }
+
     private void login(Account account) throws Exception {
         br = newBrowser();
         final String username = Encoding.urlEncode(account.getUser());
@@ -397,7 +406,7 @@ public class PremiumizeMe extends PluginForHost {
         if (password == null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please use Customer ID and PIN for logging in (find in your account area on the website)", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        br.getPage("https://api.premiumize.me/pm-api/v1.php?method=accountstatus&params[login]=" + username.trim() + "&params[pass]=" + password);
+        br.getPage(getProtocol() + "api.premiumize.me/pm-api/v1.php?method=accountstatus&params[login]=" + username.trim() + "&params[pass]=" + password);
         handleAPIErrors(br, account, null);
         // if (br.containsHTML("type\":\"free\"")) { throw new
         // PluginException(LinkStatus.ERROR_PREMIUM,
@@ -425,8 +434,6 @@ public class PremiumizeMe extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
 
-    private final AtomicLong globalDB = new AtomicLong(0);
-
     private void handleAPIErrors(Browser br, Account account, DownloadLink downloadLink) throws PluginException {
         String statusCode = br.getRegex("\"status\":(\\d+)").getMatch(0);
         if (statusCode == null) {
@@ -444,13 +451,13 @@ public class PremiumizeMe extends PluginForHost {
                 }
                 tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000);
                 break;
-            /* DB cnnection problem */
-            // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
-            // /* Retried enough times --> Temporarily disable account! */
-            // globalDB.compareAndSet(5, 0);
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            // }
-            // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
+                /* DB cnnection problem */
+                // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
+                // /* Retried enough times --> Temporarily disable account! */
+                // globalDB.compareAndSet(5, 0);
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                // }
+                // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
             case 2:
                 /* E.g. Error: file_get_contents[...] */
                 logger.info("Errorcode 2: Strange error");
@@ -557,7 +564,7 @@ public class PremiumizeMe extends PluginForHost {
             logBytes.close();
             postString = postString + "&error=" + Encoding.urlEncode(bos.toString("UTF-8"));
             Browser br2 = br.cloneBrowser();
-            br2.postPage("https://api.premiumize.me/pm-api/jderror.php?method=log", postString);
+            br2.postPage(getProtocol() + "api.premiumize.me/pm-api/jderror.php?method=log", postString);
         } catch (final Throwable e) {
             LogSource.exception(logger, e);
         }
@@ -610,7 +617,7 @@ public class PremiumizeMe extends PluginForHost {
             public PremiumizeMePanel() {
                 super("ins 0, wrap 2", "[][grow,fill]", "");
                 add(new JLabel("Click here to find your ID/PIN"));
-                add(new JLink("https://www.premiumize.me/account"));
+                add(new JLink(getProtocol() + "www.premiumize.me/account"));
                 add(idLabel = new JLabel("ID: (must be 9 digis)"));
                 add(this.name = new ExtTextField() {
 
