@@ -129,7 +129,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
-     *
+     * 
      * @return
      */
     public static StatsManager I() {
@@ -267,6 +267,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                         if (validUntilTimeStamp > 0) {
                                             if (expireInMs > 0) {
                                                 infos = new HashMap<String, String>();
+
                                                 infos.put("ms", Long.toString(expireInMs));
                                                 id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/until";
                                             } else {
@@ -303,6 +304,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                         if (st != null) {
                                             final long timeDiff = estimatedBuytime - st.getTime();
                                             final HashMap<String, String> infos = new HashMap<String, String>();
+                                            infos.put("clicksource", st.getSource() + "");
                                             infos.put("ms", Long.toString(timeDiff));
                                             if (info != null) {
                                                 if (validUntilTimeStamp > 0) {
@@ -614,7 +616,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * this setter does not set the config flag. Can be used to disable the logger for THIS session.
-     *
+     * 
      * @param b
      */
     public void setEnabled(boolean b) {
@@ -1622,7 +1624,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
-     *
+     * 
      * @param reducer
      * @param path
      */
