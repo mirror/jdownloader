@@ -30,6 +30,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -152,11 +153,13 @@ public class BxNt extends antiDDoSForDecrypt {
                     } else {
                         final String filename = getJson(singleflinkinfo, "name");
                         final String filesize = getJson(singleflinkinfo, "raw_size");
+                        final String sha1 = getJson(singleflinkinfo, "sha1");
                         if (id != null && filename != null && filesize != null) {
                             final String finallink = "https://app.box.com/index.php?rm=box_download_shared_file" + "&file_id=f_" + id + "&shared_name=" + main_folderid;
                             final DownloadLink fina = createDownloadlink(finallink);
                             fina.setName(filename);
                             fina.setDownloadSize(Long.parseLong(filesize));
+                            fina.setSha1Hash(sha1);
                             fina.setAvailable(true);
                             try {/* JD2 only */
                                 fina.setContentUrl(finallink);
@@ -315,10 +318,11 @@ public class BxNt extends antiDDoSForDecrypt {
         String i = input;
         ArrayList<String> filelinkinfo = new ArrayList<String>();
         while (true) {
-            final String result = new Regex(i, "(\"(?:file|folder)_\\d+.*?\\}),\"(?:file|folder)_\\d+").getMatch(0);
+            String result = new Regex(i, "(\"(?:file|folder)_\\d+.*?\\}),(?:\"(?:file|folder)_\\d+|)").getMatch(0);
             if (result == null) {
                 break;
             }
+            result = JSonUtils.validateResultForArrays(input, result);
             filelinkinfo.add(result);
             i = i.replace(result, "");
         }

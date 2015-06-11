@@ -81,10 +81,10 @@ public class MedOneFire extends PluginForHost {
     // primary website url, take note of redirects
     private final String               COOKIE_HOST                  = "http://med1fire.net";
     // domain names used within download links.
-    private final String               DOMAINS                      = "(med1fire\\.(com|net))";
+    private final String               domains                      = "(?:med1fire\\.(?:com|net))";
     private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
-    private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
+    private final String               dllinkRegex                  = "https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|(?:[\\w\\-]+\\.)?" + domains + ")(?::\\d{1,5})?/(?:files(?:/(?:dl|download))?|d|cgi-bin/dl\\.cgi)/(?:\\d+/)?(?:[a-z0-9]+/){1,4}[^/<>\r\n\t]+";
     private final boolean              supportsHTTPS                = false;
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
@@ -287,7 +287,7 @@ public class MedOneFire extends PluginForHost {
     private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
         // standard traits from base page
         if (inValidate(fileInfo[0])) {
-            fileInfo[0] = cbr.getRegex("You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
+            fileInfo[0] = cbr.getRegex("You have requested.*?https?://(?:www\\.)?" + domains + "/" + fuid + "/(.*?)</font>").getMatch(0);
             if (inValidate(fileInfo[0])) {
                 fileInfo[0] = cbr.getRegex("fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (inValidate(fileInfo[0])) {
@@ -1429,7 +1429,7 @@ public class MedOneFire extends PluginForHost {
             }
             String code = null;
             for (final String link : sitelinks) {
-                if (link.matches("(https?.+" + DOMAINS + ")?/captchas/[a-z0-9]{18,}\\.jpg")) {
+                if (link.matches("(https?.+" + domains + ")?/captchas/[a-z0-9]{18,}\\.jpg")) {
                     final Browser testcap = br.cloneBrowser();
                     URLConnectionAdapter con = null;
                     try {
