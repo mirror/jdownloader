@@ -9,6 +9,8 @@ import java.util.Map.Entry;
 import javax.swing.JLabel;
 
 import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.reconnect.Reconnecter.ReconnectResult;
+import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnect;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
@@ -287,6 +289,50 @@ public enum EventTrigger implements LabelInterface {
         public HashMap<String, Object> getTestProperties() {
             HashMap<String, Object> props = new HashMap<String, Object>();
 
+            return props;
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
+    },
+
+    RECONNECT_BEFORE {
+        @Override
+        public String getLabel() {
+            return T._.RECONNECT_BEFORE();
+        }
+
+        public boolean isSynchronous() {
+            // scripts should be able to modify the link
+            return true;
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+            HashMap<String, Object> props = new HashMap<String, Object>();
+            props.put("method", LiveHeaderReconnect.class.getSimpleName());
+            return props;
+        }
+
+        public String getAPIDescription() {
+            return defaultAPIDescription(this);
+        }
+    },
+    RECONNECT_AFTER {
+        @Override
+        public String getLabel() {
+            return T._.RECONNECT_AFTER();
+        }
+
+        public boolean isSynchronous() {
+            // scripts should be able to modify the link
+            return true;
+        }
+
+        public HashMap<String, Object> getTestProperties() {
+            HashMap<String, Object> props = new HashMap<String, Object>();
+            props.put("result", ReconnectResult.SUCCESSFUL.name());
+            props.put("method", LiveHeaderReconnect.class.getSimpleName());
             return props;
         }
 
@@ -718,6 +764,12 @@ public enum EventTrigger implements LabelInterface {
     }
 
     protected static void collectClasses(Class<? extends Object> cl, ArraySet<Class<?>> clazzes) {
+        if (Clazz.isString(cl)) {
+            return;
+        }
+        if (Clazz.isPrimitive(cl)) {
+            return;
+        }
 
         for (Method m : cl.getDeclaredMethods()) {
             if (m.getReturnType() == Object.class || !Modifier.isPublic(m.getModifiers()) || Clazz.isPrimitive(m.getReturnType()) || Clazz.isPrimitiveWrapper(m.getReturnType()) || Clazz.isString(m.getReturnType())) {

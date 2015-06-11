@@ -534,7 +534,9 @@ public class ScriptEnvironment {
 
     @ScriptAPI(description = "Stop Downloads")
     public static void stopDownloads() {
+
         DownloadWatchDog.getInstance().stopDownloads();
+
     }
 
     @ScriptAPI(description = "Start Downloads")

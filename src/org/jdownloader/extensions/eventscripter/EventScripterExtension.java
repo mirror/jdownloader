@@ -34,6 +34,9 @@ import jd.controlling.linkcollector.LinkCollectorCrawler;
 import jd.controlling.linkcollector.LinkCollectorEvent;
 import jd.controlling.linkcollector.LinkCollectorListener;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.reconnect.Reconnecter;
+import jd.controlling.reconnect.ReconnecterEvent;
+import jd.controlling.reconnect.ReconnecterListener;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.plugins.AddonPanel;
@@ -90,7 +93,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.gui.views.linkgrabber.bottombar.MenuManagerLinkgrabberTabBottombar;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.MenuManagerLinkgrabberTableContext;
 
-public class EventScripterExtension extends AbstractExtension<EventScripterConfig, EventScripterTranslation> implements MenuExtenderHandler, DownloadWatchdogListener, GenericConfigEventListener<Object>, RemoteAPIInternalEventListener, FileCreationListener, LinkCollectorListener, PackagizerControllerListener, ExtractionListener {
+public class EventScripterExtension extends AbstractExtension<EventScripterConfig, EventScripterTranslation> implements MenuExtenderHandler, DownloadWatchdogListener, GenericConfigEventListener<Object>, RemoteAPIInternalEventListener, FileCreationListener, LinkCollectorListener, PackagizerControllerListener, ExtractionListener, ReconnecterListener {
 
     private EventScripterConfigPanel   configPanel = null;
     private volatile List<ScriptEntry> entries     = new ArrayList<ScriptEntry>();
@@ -117,6 +120,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     protected void stop() throws StopException {
+        Reconnecter.getInstance().getEventSender().removeListener(this);
         PackagizerController.getInstance().getEventSender().removeListener(this);
         DownloadWatchDog.getInstance().getEventSender().removeListener(this);
         RemoteAPIController.getInstance().getEventSender().removeListener(this);
@@ -146,6 +150,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     protected void start() throws StartException {
+        Reconnecter.getInstance().getEventSender().addListener(this);
         PackagizerController.getInstance().getEventSender().addListener(this);
         LinkCollector.getInstance().getEventsender().addListener(this);
         FileCreationManager.getInstance().getEventSender().addListener(this);
@@ -688,6 +693,40 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                 }
             }
         }
+    }
+
+    @Override
+    public void onAfterReconnect(ReconnecterEvent event) {
+        for (ScriptEntry script : entries) {
+            if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.RECONNECT_AFTER == script.getEventTrigger()) {
+                try {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    props.put("result", event.getResult() + "");
+                    props.put("method", event.getPlugin().getClass().getSimpleName());
+                    runScript(script, props);
+                } catch (Throwable e) {
+                    getLogger().log(e);
+                }
+            }
+        }
+
+    }
+
+    @Override
+    public void onBeforeReconnect(ReconnecterEvent event) {
+
+        for (ScriptEntry script : entries) {
+            if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.RECONNECT_BEFORE == script.getEventTrigger()) {
+                try {
+                    HashMap<String, Object> props = new HashMap<String, Object>();
+                    props.put("method", event.getPlugin().getClass().getSimpleName());
+                    runScript(script, props);
+                } catch (Throwable e) {
+                    getLogger().log(e);
+                }
+            }
+        }
+
     }
 
 }
