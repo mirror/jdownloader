@@ -189,4 +189,10 @@ public interface EventScripterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "You have to add a custom EventScripter Button to the Traymenu using the Menu Manager." })
     String TRAY_BUTTON_explain();
 
+    @Default(lngs = { "en" }, values = { "Before a Reconnect" })
+    String RECONNECT_BEFORE();
+
+    @Default(lngs = { "en" }, values = { "After a Reconnect" })
+    String RECONNECT_AFTER();
+
 }

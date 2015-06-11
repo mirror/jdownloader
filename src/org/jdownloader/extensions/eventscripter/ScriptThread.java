@@ -124,7 +124,7 @@ public class ScriptThread extends Thread {
             if (!dupes.add(c.getName())) {
                 continue;
             }
-            if (Clazz.isPrimitive(c)) {
+            if (c.isPrimitive()) {
                 continue;
             }
             preloadClasses += "load=" + c.getName() + ";\r\n";
@@ -143,7 +143,7 @@ public class ScriptThread extends Thread {
             if (!dupes.add(c.getName())) {
                 continue;
             }
-            if (Clazz.isPrimitive(c)) {
+            if (c.isPrimitive()) {
                 continue;
             }
             preloadClasses += "load=" + c.getName() + ";\r\n";

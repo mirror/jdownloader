@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginProgress;
 
@@ -34,7 +35,7 @@ public class DownloadLinkSandBox {
 
     /**
      * returns how long the downloadlink is in progress
-     *
+     * 
      * @return
      */
     public long getDownloadTime() {
@@ -45,6 +46,16 @@ public class DownloadLinkSandBox {
                 time = time + ((DownloadPluginProgress) progress).getDuration();
             }
             return time;
+        }
+        return -1;
+    }
+
+    public long getDownloadSessionDuration() {
+        if (downloadLink != null) {
+            SingleDownloadController controller = downloadLink.getDownloadLinkController();
+            if (controller != null) {
+                return System.currentTimeMillis() - controller.getStartTimestamp();
+            }
         }
         return -1;
     }
