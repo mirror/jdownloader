@@ -266,7 +266,7 @@ public class DlPrtcCom extends antiDDoSForDecrypt {
      */
     private void test(final Browser... brs) throws InterruptedException {
         // dupe.clear();
-        for (Browser br : brs) {
+        for (final Browser br : brs) {
             // this is for all images, matching pattern
             String[] test = br.getRegex("(/template/images/[^\"]+)").getColumn(0);
             if (test != null) {
