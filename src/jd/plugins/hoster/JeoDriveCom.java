@@ -82,16 +82,16 @@ public class JeoDriveCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>JeoDrive - Download (.*?)</title>").getMatch(0);
+        final String fnfs = "class=\"filename\">(.*?)<strong>\\((\\d+(?:[,\\.]\\d)?[ \\s]*[KMGTP]B)";
+        final String filename = br.getRegex(fnfs).getMatch(0);
+        final String filesize = br.getRegex(fnfs).getMatch(1);
         if (filename == null) {
-            filename = br.getRegex("class=\"infos-file\">(.*?)</span>").getMatch(0);
-        }
-        String filesize = br.getRegex("class=\"file-size\">(.*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        }
         return AvailableStatus.TRUE;
     }
 
