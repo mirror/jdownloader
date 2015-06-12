@@ -276,7 +276,7 @@ public class VivaTv extends PluginForHost {
         } else if (browser_url.matches(type_nick_de)) {
             String vid = new Regex(browser_url, "/videos/(\\d+)").getMatch(0);
             br.getPage(browser_url);
-            if (!br.containsHTML("swfobject\\.createCSS") || br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (vid == null) {
@@ -285,11 +285,7 @@ public class VivaTv extends PluginForHost {
             String show = br.getRegex("data\\-name=\\'([^<>\"]*?)\\'").getMatch(0);
             if (show == null) {
                 /* Assuming we're on a playlist */
-                show = br.getRegex("<h2 class=(?:\\'|\")row\\-title videos(?:\\'|\")>([^<>]*?) Videos[\t\n\r ]+</h2>").getMatch(0);
-            }
-            if (show == null) {
-                /* Assuming we're on a playlist */
-                show = br.getRegex("<h2 class=(?:\\'|\")row\\-title videos(?:\\'|\")>([^<>]*?) Videos[\t\n\r ]+</h2>").getMatch(0);
+                show = br.getRegex("<h2 class=(?:\\'|\")row\\-title videos(?:\\'|\")>[\t\n\r ]+([^<>]*?) Videos[\t\n\r ]+</h2>").getMatch(0);
             }
             if (show == null && vid != null) {
                 show = br.getRegex("data\\-item\\-id=\\'" + vid + "\\'>.*?class=\\'title\\'>([^<>]*?)</p>").getMatch(0);
