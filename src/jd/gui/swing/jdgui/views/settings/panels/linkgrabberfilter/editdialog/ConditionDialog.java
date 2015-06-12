@@ -228,6 +228,9 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         }
         cbType.setSelected(f.isEnabled());
         ArrayList<FileType> selection = new ArrayList<FileType>();
+        if (f.isHashEnabled()) {
+            selection.add(FileType.HASH);
+        }
         if (f.isAudioFilesEnabled()) {
             selection.add(FileType.AUDIO);
         }
@@ -260,7 +263,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
     public FiletypeFilter getFiletypeFilter() {
 
-        return new FiletypeFilter(TypeMatchType.values()[cobType.getSelectedIndex()], cbType.isSelected(), cbTypeSelection.isItemSelected(FileType.AUDIO), cbTypeSelection.isItemSelected(FileType.VIDEO), cbTypeSelection.isItemSelected(FileType.ARCHIVE), cbTypeSelection.isItemSelected(FileType.IMAGE), cbTypeSelection.isItemSelected(FileType.CUSTOM) ? txtCustumMime.getText() : null, cbRegFileType.isSelected());
+        return new FiletypeFilter(TypeMatchType.values()[cobType.getSelectedIndex()], cbType.isSelected(), cbTypeSelection.isItemSelected(FileType.HASH), cbTypeSelection.isItemSelected(FileType.AUDIO), cbTypeSelection.isItemSelected(FileType.VIDEO), cbTypeSelection.isItemSelected(FileType.ARCHIVE), cbTypeSelection.isItemSelected(FileType.IMAGE), cbTypeSelection.isItemSelected(FileType.CUSTOM) ? txtCustumMime.getText() : null, cbRegFileType.isSelected());
     }
 
     public OnlineStatusFilter getOnlineStatusFilter() {

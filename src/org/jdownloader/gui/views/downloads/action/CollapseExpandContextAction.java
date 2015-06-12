@@ -67,24 +67,20 @@ public class CollapseExpandContextAction extends CustomizableTableContextAppActi
     @Override
     public void actionPerformed(ActionEvent e) {
         if (getTable() != null) {
-            SelectionInfo<?, ?> selection = null;
-
+            final SelectionInfo<?, ?> selection;
             if (isSelectionOnly()) {
                 selection = getTable().getSelectionInfo(true, true);
             } else {
                 selection = getTable().getSelectionInfo(false, true);
             }
             boolean allexpaned = true;
-            ArrayList<AbstractPackageNode> list = new ArrayList<AbstractPackageNode>();
+            final ArrayList<AbstractPackageNode> list = new ArrayList<AbstractPackageNode>();
             for (PackageView<?, ?> p : selection.getPackageViews()) {
                 if (!p.isExpanded()) {
                     allexpaned = false;
-
                 }
                 list.add(p.getPackage());
-
             }
-
             getTable().getModel().setFilePackageExpand(!allexpaned, list.toArray(new AbstractPackageNode[] {}));
         }
     }

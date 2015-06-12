@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import org.appwork.storage.Storable;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.AudioExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.HashExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
 import org.jdownloader.gui.translate._GUI;
@@ -18,32 +19,26 @@ public class FiletypeFilter extends Filter implements Storable {
         StringBuilder sb = new StringBuilder();
 
         java.util.List<String> cond = new ArrayList<String>();
+        if (hashEnabled) {
+            cond.add(HashExtensions.MD5.getDesc());
+        }
         if (videoFilesEnabled) {
-
             cond.add(VideoExtensions.ASF.getDesc());
         }
         if (archivesEnabled) {
-
             cond.add(ArchiveExtensions.ACE.getDesc());
         }
         if (audioFilesEnabled) {
-
             cond.add(AudioExtensions.AA.getDesc());
         }
-
         if (imagesEnabled) {
-
             cond.add(ImageExtensions.BMP.getDesc());
         }
-
         if (customs != null) {
-
             cond.add(_GUI._.FiletypeFilter_toString_custom(customs));
-
         }
         switch (getMatchType()) {
         case IS:
-
             for (int i = 0; i < cond.size(); i++) {
                 if (i > 0) {
                     if (i < cond.size() - 1) {
@@ -95,7 +90,7 @@ public class FiletypeFilter extends Filter implements Storable {
      * @param customs
      * @param regex
      */
-    public FiletypeFilter(TypeMatchType typeMatchType, boolean enabled, boolean audioFilesEnabled, boolean videoFilesEnabled, boolean archivesEnabled, boolean imagesEnabled, String customs, boolean regex) {
+    public FiletypeFilter(TypeMatchType typeMatchType, boolean enabled, boolean hashEnabled, boolean audioFilesEnabled, boolean videoFilesEnabled, boolean archivesEnabled, boolean imagesEnabled, String customs, boolean regex) {
         super();
         this.enabled = enabled;
         this.audioFilesEnabled = audioFilesEnabled;
@@ -104,6 +99,7 @@ public class FiletypeFilter extends Filter implements Storable {
         this.imagesEnabled = imagesEnabled;
         this.customs = customs;
         this.useRegex = regex;
+        this.hashEnabled = hashEnabled;
         this.matchType = typeMatchType;
 
     }
@@ -163,6 +159,16 @@ public class FiletypeFilter extends Filter implements Storable {
 
     public void setCustoms(String customs) {
         this.customs = customs;
+    }
+
+    private boolean hashEnabled;
+
+    public boolean isHashEnabled() {
+        return hashEnabled;
+    }
+
+    public void setHashEnabled(boolean hashEnabled) {
+        this.hashEnabled = hashEnabled;
     }
 
     private boolean videoFilesEnabled;

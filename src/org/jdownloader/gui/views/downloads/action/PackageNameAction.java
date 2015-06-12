@@ -12,11 +12,11 @@ import org.jdownloader.gui.views.SelectionInfo.PackageView;
 
 public class PackageNameAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
-    private static final long serialVersionUID = -5155537516674035401L;
+    private static final long   serialVersionUID = -5155537516674035401L;
+    private final static String NAME             = _GUI._.gui_table_contextmenu_editpackagename();
 
     public PackageNameAction() {
-
-        setName(_GUI._.gui_table_contextmenu_editpackagename());
+        setName(NAME);
         setIconKey("edit");
     }
 

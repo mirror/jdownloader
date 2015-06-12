@@ -12,21 +12,20 @@ import org.jdownloader.logging.LogController;
 
 public class CreateDLCAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
-    private static final long serialVersionUID = 7244681674979415222L;
+    private static final long   serialVersionUID = 7244681674979415222L;
+
+    private final static String NAME             = _GUI._.gui_table_contextmenu_dlc();
 
     public CreateDLCAction() {
         super();
-
         setIconKey("dlc");
-        setName(_GUI._.gui_table_contextmenu_dlc());
+        setName(NAME);
     }
 
     public void actionPerformed(ActionEvent e) {
-
         DLCFactory plugin = new DLCFactory();
         plugin.setLogger(LogController.CL());
         plugin.createDLC(getSelection().getChildren());
-
     }
 
 }

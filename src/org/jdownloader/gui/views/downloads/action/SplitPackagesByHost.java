@@ -28,15 +28,17 @@ import org.jdownloader.translate._JDT;
 public class SplitPackagesByHost extends CustomizableTableContextAppAction<FilePackage, DownloadLink> implements ActionContext {
 
     /**
-     * 
+     *
      */
-    private static final long serialVersionUID = 2636706677433058054L;
+    private static final long   serialVersionUID = 2636706677433058054L;
 
-    private boolean           mergePackages    = false;
+    private boolean             mergePackages    = false;
+
+    private final static String NAME             = _GUI._.SplitPackagesByHost_SplitPackagesByHost_object_();
 
     public SplitPackagesByHost() {
         super();
-        setName(_GUI._.SplitPackagesByHost_SplitPackagesByHost_object_());
+        setName(NAME);
         setIconKey("split_packages");
     }
 

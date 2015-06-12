@@ -32,7 +32,7 @@ public class CompiledFiletypeFilter {
 
     public static ExtensionsFilterInterface getExtensionsFilterInterface(final String fileExtension) {
         if (fileExtension != null) {
-            for (final ExtensionsFilterInterface[] extensions : new ExtensionsFilterInterface[][] { AudioExtensions.values(), ArchiveExtensions.values(), ImageExtensions.values(), VideoExtensions.values() }) {
+            for (final ExtensionsFilterInterface[] extensions : new ExtensionsFilterInterface[][] { HashExtensions.values(), AudioExtensions.values(), ArchiveExtensions.values(), ImageExtensions.values(), VideoExtensions.values() }) {
                 for (final ExtensionsFilterInterface extension : extensions) {
                     if (extension.getPattern().matcher(fileExtension).matches()) {
                         return extension;
@@ -41,6 +41,50 @@ public class CompiledFiletypeFilter {
             }
         }
         return null;
+    }
+
+    public static enum HashExtensions implements ExtensionsFilterInterface {
+        SFV,
+        MD5,
+        SHA,
+        SHA256,
+        SHA512;
+
+        private final Pattern  pattern;
+        private static Pattern allPattern;
+
+        public Pattern getPattern() {
+            return pattern;
+        }
+
+        private HashExtensions() {
+            pattern = Pattern.compile(name(), Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+        }
+
+        private HashExtensions(String id) {
+            this.pattern = Pattern.compile(id, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+        }
+
+        public String getDesc() {
+            return _GUI._.FilterRuleDialog_createTypeFilter_mime_checksums();
+        }
+
+        public String getIconID() {
+            return "hashsum";
+        }
+
+        public Pattern compiledAllPattern() {
+            if (allPattern == null) {
+                allPattern = compileAllPattern(HashExtensions.values());
+            }
+            return allPattern;
+        }
+
+        @Override
+        public boolean isSameExtensionGroup(ExtensionsFilterInterface extension) {
+            return extension instanceof HashExtensions;
+        }
+
     }
 
     public static enum AudioExtensions implements ExtensionsFilterInterface {
@@ -70,7 +114,7 @@ public class CompiledFiletypeFilter {
         OMF,
         SND;
 
-        private Pattern        pattern;
+        private final Pattern  pattern;
         private static Pattern allPattern;
 
         public Pattern getPattern() {
@@ -131,7 +175,7 @@ public class CompiledFiletypeFilter {
         GP3,
         WEBM;
 
-        private Pattern        pattern;
+        private final Pattern  pattern;
         private static Pattern allPattern;
 
         private VideoExtensions() {
@@ -206,7 +250,7 @@ public class CompiledFiletypeFilter {
         LZH,
         LHA;
 
-        private Pattern        pattern;
+        private final Pattern  pattern;
         private static Pattern allPattern;
 
         public Pattern getPattern() {
@@ -253,7 +297,7 @@ public class CompiledFiletypeFilter {
         SVG,
         ICO;
 
-        private Pattern        pattern;
+        private final Pattern  pattern;
         private static Pattern allPattern;
 
         public Pattern getPattern() {
@@ -293,6 +337,12 @@ public class CompiledFiletypeFilter {
         java.util.List<Pattern> list = new ArrayList<Pattern>();
         if (filetypeFilter.isArchivesEnabled()) {
             for (ArchiveExtensions ae : ArchiveExtensions.values()) {
+                list.add(ae.getPattern());
+            }
+        }
+
+        if (filetypeFilter.isHashEnabled()) {
+            for (HashExtensions ae : HashExtensions.values()) {
                 list.add(ae.getPattern());
             }
         }

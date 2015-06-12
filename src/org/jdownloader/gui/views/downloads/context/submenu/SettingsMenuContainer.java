@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.downloads.context.submenu;
 
 import java.awt.Image;
 
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JMenu;
 
@@ -25,46 +26,52 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.images.NewTheme;
 
 public class SettingsMenuContainer extends MenuContainer {
-    public SettingsMenuContainer() {
-        setName(_GUI._.ContextMenuFactory_createPopup_properties_package());
-        setIconKey("settings");
+    private final static String NAME     = _GUI._.ContextMenuFactory_createPopup_properties_package();
 
+    private final static Image  SETTINGS = NewTheme.I().getImage("settings", 14);
+    private final static Icon   OPEN_PACKAGE;
+    private final static Icon   CLOSED_PACKAGE;
+    static {
+        final Image openPackage = NewTheme.I().getImage("tree_package_open", 32);
+        final Image closedPackage = NewTheme.I().getImage("tree_package_closed", 32);
+        OPEN_PACKAGE = new ImageIcon(ImageProvider.merge(openPackage, SETTINGS, -16, 0, 6, 6));
+        CLOSED_PACKAGE = new ImageIcon(ImageProvider.merge(closedPackage, SETTINGS, -16, 0, 6, 6));
+    }
+
+    public SettingsMenuContainer() {
+        setName(NAME);
+        setIconKey("settings");
     }
 
     @Override
     public JMenu createItem() {
-
-        ExtMenuImpl subMenu = new ExtMenuImpl(getName());
-        View view = MainTabbedPane.getInstance().getSelectedView();
-
+        final ExtMenuImpl subMenu = new ExtMenuImpl(getName());
+        final View view = MainTabbedPane.getInstance().getSelectedView();
         if (view instanceof DownloadsView) {
-            SelectionInfo<FilePackage, DownloadLink> selection = DownloadsTable.getInstance().getSelectionInfo();
+            final SelectionInfo<FilePackage, DownloadLink> selection = DownloadsTable.getInstance().getSelectionInfo();
             if (selection.isPackageContext()) {
-                Image back = (selection.getFirstPackage().isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) : NewTheme.I().getImage("tree_package_closed", 32));
-                subMenu.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)));
-
+                if (selection.getFirstPackage().isExpanded()) {
+                    subMenu.setIcon(OPEN_PACKAGE);
+                } else {
+                    subMenu.setIcon(CLOSED_PACKAGE);
+                }
             } else if (selection.isLinkContext()) {
-
-                Image back = IconIO.toBufferedImage(selection.getLink().getLinkInfo().getIcon());
-                subMenu.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)));
-
+                final Image back = IconIO.toBufferedImage(selection.getLink().getLinkInfo().getIcon());
+                subMenu.setIcon(new ImageIcon(ImageProvider.merge(back, SETTINGS, 0, 0, 6, 6)));
             }
         } else if (view instanceof LinkGrabberView) {
-
-            SelectionInfo<CrawledPackage, CrawledLink> selection = LinkGrabberTable.getInstance().getSelectionInfo();
+            final SelectionInfo<CrawledPackage, CrawledLink> selection = LinkGrabberTable.getInstance().getSelectionInfo();
             if (selection.isPackageContext()) {
-                Image back = (selection.getFirstPackage().isExpanded() ? NewTheme.I().getImage("tree_package_open", 32) : NewTheme.I().getImage("tree_package_closed", 32));
-                subMenu.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), -16, 0, 6, 6)));
-
+                if (selection.getFirstPackage().isExpanded()) {
+                    subMenu.setIcon(OPEN_PACKAGE);
+                } else {
+                    subMenu.setIcon(CLOSED_PACKAGE);
+                }
             } else if (selection.isLinkContext()) {
-
-                Image back = IconIO.toBufferedImage(selection.getLink().getDownloadLink().getLinkInfo().getIcon());
-                subMenu.setIcon(new ImageIcon(ImageProvider.merge(back, NewTheme.I().getImage("settings", 14), 0, 0, 6, 6)));
-
+                final Image back = IconIO.toBufferedImage(selection.getLink().getDownloadLink().getLinkInfo().getIcon());
+                subMenu.setIcon(new ImageIcon(ImageProvider.merge(back, SETTINGS, 0, 0, 6, 6)));
             }
         }
-
         return subMenu;
-
     }
 }
