@@ -20,9 +20,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -34,6 +37,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "debriditalia.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOMasdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class DebridItaliaCom extends antiDDoSForHost {
@@ -41,6 +45,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
     public DebridItaliaCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.debriditalia.com/premium.php");
+        setConfigElements();
     }
 
     @Override
@@ -50,23 +55,30 @@ public class DebridItaliaCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
-        return maxPrem.get();
+        /**
+         * Note: Rest of this class makes use of the field "maxPrem" (see comment of controlPrem()) which was formerly returned here. But it
+         * simply didn't work. It led to a strange behavior where only a single file was downloaded via DebridItalia premium, all other
+         * links got started as non-premium. Once it got analyzed what causes this behavior, either remove all the "maxPrem" code below
+         * (currently it works also without!) or reintroduce it here!
+         */
+        return super.getMaxSimultanDownload(link, account);
     }
 
-    private static final String                            NICE_HOST                                         = "debriditalia.com";
-    private static final String                            NICE_HOSTproperty                                 = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                            NICE_HOST                        = "debriditalia.com";
+    private static final String                            NICE_HOSTproperty                = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                            NOCHUNKS                         = "NOCHUNKS";
+    private static final String                            MAX_RETRIES_UNAVAILABLE_PROPERTY = "MAX_RETRIES_UNAVAILABLE";
+    private static final int                               DEFAULT_MAX_RETRIES_UNAVAILABLE  = 30;
+    private static final String                            MAX_RETRIES_DL_ERROR_PROPERTY    = "MAX_RETRIES_DL_ERROR";
+    private static final int                               DEFAULT_MAX_RETRIES_DL_ERROR     = 50;
 
-    private static final String                            NOCHUNKS                                          = "NOCHUNKS";
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger                           totalMaxSimultanFreeDownload                      = new AtomicInteger(20);
+    private static AtomicInteger                           totalMaxSimultanFreeDownload     = new AtomicInteger(20);
     // don't touch the following!
-    private static AtomicInteger                           maxPrem                                           = new AtomicInteger(1);
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                                = new HashMap<Account, HashMap<String, Long>>();
-    private Account                                        currAcc                                           = null;
-    private DownloadLink                                   currDownloadLink                                  = null;
-
-    private static final int                               MAXRETRIES_timesfaileddebriditalia_not_available  = 30;
-    private static final int                               MAXRETRIES_timesfaileddebriditalia_unknowndlerror = 50;
+    private static AtomicInteger                           maxPrem                          = new AtomicInteger(1);
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap               = new HashMap<Account, HashMap<String, Long>>();
+    private Account                                        currAcc                          = null;
+    private DownloadLink                                   currDownloadLink                 = null;
 
     private void setConstants(final Account acc, final DownloadLink dl) {
         this.currAcc = acc;
@@ -113,10 +125,17 @@ public class DebridItaliaCom extends antiDDoSForHost {
         // now let's get a list of all supported hosts:
         super.br.getPage("https://debriditalia.com/api.php?hosts");
         hosts = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
-        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+        final List<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+        addUnreportedHostsToList(supportedHosts);
         ac.setMultiHostSupport(this, supportedHosts);
         ac.setStatus("Premium account");
         return ac;
+    }
+
+    private void addUnreportedHostsToList(List<String> supportedHosts) {
+        // DebridItalia supports more hosts than returned by API call 'https://debriditalia.com/api.php?hosts'
+        // As long as they don't get reported correctly, add them here ...
+        supportedHosts.add("filesmonster.com");
     }
 
     private void accountInvalid() throws PluginException {
@@ -172,11 +191,14 @@ public class DebridItaliaCom extends antiDDoSForHost {
             /* Either server error or the host is broken (we have to find out by retrying) */
             if (br.containsHTML("ERROR: not_available")) {
                 int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_not_available", 0);
-                if (timesFailed <= MAXRETRIES_timesfaileddebriditalia_not_available) {
+                int maxRetriesIfUnavailable = getPluginConfig().getIntegerProperty(MAX_RETRIES_UNAVAILABLE_PROPERTY, DEFAULT_MAX_RETRIES_UNAVAILABLE);
+                if (timesFailed <= maxRetriesIfUnavailable) {
                     timesFailed++;
+                    logger.fine("Hoster unavailable! Retry attempt " + timesFailed + " of " + maxRetriesIfUnavailable);
                     link.setProperty("timesfaileddebriditalia_not_available", timesFailed);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
                 } else {
+                    logger.fine("Hoster unavailable! Max. retry attempts reached!");
                     link.setProperty("timesfaileddebriditalia_not_available", Property.NULL);
                     tempUnavailableHoster(15 * 60 * 1000l);
                 }
@@ -209,12 +231,13 @@ public class DebridItaliaCom extends antiDDoSForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink.trim()), true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            int maxRetriesOnDownloadError = getPluginConfig().getIntegerProperty(MAX_RETRIES_DL_ERROR_PROPERTY, DEFAULT_MAX_RETRIES_DL_ERROR);
             if (br.containsHTML("No htmlCode read")) {
                 logger.info("debriditalia.com: Unknown download error");
-                handleErrorRetries("unknowndlerror", MAXRETRIES_timesfaileddebriditalia_unknowndlerror, 5 * 60 * 1000l);
+                handleErrorRetries("unknowndlerror", maxRetriesOnDownloadError, 5 * 60 * 1000l);
             }
             logger.info("debriditalia.com: Unknown download error 2" + br.toString());
-            handleErrorRetries("unknowndlerror2", MAXRETRIES_timesfaileddebriditalia_unknowndlerror, 1 * 60 * 60 * 1000l);
+            handleErrorRetries("unknowndlerror2", maxRetriesOnDownloadError, 1 * 60 * 60 * 1000l);
         }
         // Directlinks can be used for up to 2 days
         link.setProperty("debriditaliadirectlink", dllink);
@@ -291,6 +314,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
         link.getLinkStatus().setStatusText(message);
     }
 
+    @SuppressWarnings("deprecation")
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (downloadLink.getDownloadURL().contains("clz.to/")) {
@@ -328,9 +352,11 @@ public class DebridItaliaCom extends antiDDoSForHost {
         if (timesFailed <= maxRetries) {
             logger.info(NICE_HOST + ": " + error + " -> Retrying");
             timesFailed++;
+            logger.fine("Unknown download error! Retry attempt " + timesFailed + " of " + maxRetries);
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         } else {
+            logger.fine("Unknown download error! Max. retry attempts reached!");
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
             tempUnavailableHoster(1 * 60 * 60 * 1000l);
@@ -362,6 +388,11 @@ public class DebridItaliaCom extends antiDDoSForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    protected void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), MAX_RETRIES_UNAVAILABLE_PROPERTY, JDL.L("plugins.hoster.debriditaliacom.maxRetriesUnavailable", "Maximum Retries If Unavailable")).setDefaultValue(DEFAULT_MAX_RETRIES_UNAVAILABLE));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), MAX_RETRIES_DL_ERROR_PROPERTY, JDL.L("plugins.hoster.debriditaliacom.maxRetriesDlError", "Maximum Retries On Download Error")).setDefaultValue(DEFAULT_MAX_RETRIES_DL_ERROR));
     }
 
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
