@@ -406,6 +406,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Audio files: mp3, wav, ogg, mid,..." })
     String audiofilter_description();
 
+    @Default(lngs = { "en" }, values = { "Hash files: md5, sha256, sfv,..." })
+    String hashfilter_description();
+
     @Default(lngs = { "en" }, values = { "Archive Files: rar, zip,..." })
     String archive_description();
 

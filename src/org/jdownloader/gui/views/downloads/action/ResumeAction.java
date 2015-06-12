@@ -11,16 +11,19 @@ import org.jdownloader.gui.translate._GUI;
 
 public class ResumeAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
-    private static final long serialVersionUID = 8087143123808363305L;
+    private static final long   serialVersionUID = 8087143123808363305L;
+
+    private final static String NAME             = _GUI._.gui_table_contextmenu_resume();
 
     public ResumeAction() {
-
         setIconKey("resume");
-        setName(_GUI._.gui_table_contextmenu_resume());
+        setName(NAME);
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (!isEnabled()) return;
+        if (!isEnabled()) {
+            return;
+        }
         DownloadWatchDog.getInstance().resume(getSelection().getChildren());
     }
 }

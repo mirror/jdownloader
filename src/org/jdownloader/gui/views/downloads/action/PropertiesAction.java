@@ -12,11 +12,12 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class PropertiesAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
+    private final static String NAME = _GUI._.PropertiesAction_PropertiesAction();
+
     public PropertiesAction() {
         super();
-        setName(_GUI._.PropertiesAction_PropertiesAction());
+        setName(NAME);
         setIconKey(IconKey.ICON_BOTTOMBAR);
-
     }
 
     public boolean isVisible() {

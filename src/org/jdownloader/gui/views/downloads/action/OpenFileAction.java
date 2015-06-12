@@ -3,66 +3,68 @@ package org.jdownloader.gui.views.downloads.action;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
-import javax.swing.ImageIcon;
-
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.SelectionInfo;
 
 public class OpenFileAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
-    private static final long serialVersionUID = 1901008532686173167L;
+    private static final long   serialVersionUID = 1901008532686173167L;
 
-    private File              file;
+    private File                file             = null;
+    private final static String NAME             = _GUI._.gui_table_contextmenu_openfile();
 
     public OpenFileAction() {
-
-        ImageIcon img;
-
+        super();
         setIconKey("file");
-        setName(_GUI._.gui_table_contextmenu_openfile());
-
+        setName(NAME);
     }
 
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
-        if (hasSelection()) {
-            if (getSelection().isLinkContext()) {
-                this.file = getSelection() == null ? null : new File(getSelection().getContextLink().getFileOutput());
-
+        final SelectionInfo<FilePackage, DownloadLink> selection = getSelection();
+        file = null;
+        if (hasSelection(selection)) {
+            if (selection.isLinkContext()) {
+                this.file = new File(selection.getContextLink().getFileOutput());
             } else {
-                this.file = getSelection() == null ? null : new File(getSelection().getFirstPackage().getView().getDownloadDirectory());
+                this.file = new File(selection.getFirstPackage().getView().getDownloadDirectory());
                 // Do not show for packages
                 setVisible(false);
             }
-
         }
     }
 
     public OpenFileAction(File file) {
         super();
         this.file = file;
+        setIconKey("file");
+        setName(NAME);
     }
 
     @Override
     public boolean isEnabled() {
-        return file != null && file.exists();
+        final File lFile = file;
+        return CrossSystem.isOpenFileSupported() && lFile != null && lFile.exists();
     }
 
     public void actionPerformed(ActionEvent e) {
-        while (!file.exists()) {
-            File p = file.getParentFile();
-            if (p == null || p.equals(file)) {
-                return;
+        if (isEnabled()) {
+            File lFile = file;
+            while (!lFile.exists()) {
+                File p = lFile.getParentFile();
+                if (p == null || p.equals(lFile)) {
+                    return;
+                }
+                lFile = p;
             }
-            file = p;
+            CrossSystem.openFile(lFile);
         }
-        CrossSystem.openFile(file);
-
     }
 
 }

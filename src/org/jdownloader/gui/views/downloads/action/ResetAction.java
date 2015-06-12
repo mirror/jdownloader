@@ -22,12 +22,13 @@ import org.jdownloader.gui.translate._GUI;
 
 public class ResetAction extends CustomizableTableContextAppAction<FilePackage, DownloadLink> {
 
-    private static final long serialVersionUID = -5583373118359478729L;
+    private static final long   serialVersionUID = -5583373118359478729L;
+
+    private final static String NAME             = _GUI._.gui_table_contextmenu_reset();
 
     public ResetAction() {
-
         setIconKey("undo");
-        setName(_GUI._.gui_table_contextmenu_reset());
+        setName(NAME);
     }
 
     public void actionPerformed(ActionEvent e) {

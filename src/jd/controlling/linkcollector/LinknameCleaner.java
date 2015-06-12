@@ -25,7 +25,7 @@ public class LinknameCleaner {
     static {
         try {
             /* this should be done on a better way with next major update */
-            pat11 = Pattern.compile("(.*)(\\.|_|-)[\\d]+(" + jd.plugins.hoster.DirectHTTP.ENDINGS + "$)", Pattern.CASE_INSENSITIVE);
+            pat11 = Pattern.compile("(.+)(" + jd.plugins.hoster.DirectHTTP.ENDINGS + "$)", Pattern.CASE_INSENSITIVE);
             ffsjPats = new Pattern[] { pat10, pat11 };
         } catch (final Throwable e) {
             /* not loaded yet */
@@ -105,7 +105,7 @@ public class LinknameCleaner {
             if (extensionStilExists && ffsjPats != null) {
                 /**
                  * FFSJ splitted files
-                 * 
+                 *
                  * */
                 before = name;
                 for (Pattern Pat : ffsjPats) {
@@ -134,13 +134,14 @@ public class LinknameCleaner {
         if (EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) || EXTENSION_SETTINGS.REMOVE_KNOWN.equals(extensionSettings)) {
             final int lastPoint = name.lastIndexOf(".");
             if (lastPoint > 0) {
-                int extLength = (name.length() - (lastPoint + 1));
-                if (extLength <= 4) {
-                    final String ext = name.substring(lastPoint + 1);
-                    if (EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) || CompiledFiletypeFilter.getExtensionsFilterInterface(ext) != null) {
-                        /* make sure to cut off only known extensions */
-                        name = name.substring(0, lastPoint);
-                    }
+                final int extLength = (name.length() - (lastPoint + 1));
+                final String ext = name.substring(lastPoint + 1);
+                if (CompiledFiletypeFilter.getExtensionsFilterInterface(ext) != null) {
+                    /* make sure to cut off only known extensions */
+                    name = name.substring(0, lastPoint);
+                } else if (extLength <= 4 && EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings)) {
+                    /* make sure to cut off only known extensions */
+                    name = name.substring(0, lastPoint);
                 }
             }
         }

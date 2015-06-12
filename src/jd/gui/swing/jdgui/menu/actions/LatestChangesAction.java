@@ -34,7 +34,7 @@ public class LatestChangesAction extends CustomizableAppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        CrossSystem.openURLOrShowMessage("http://jdownloader.org/changes/index");
+        CrossSystem.openURLOrShowMessage("https://svn.jdownloader.org/projects/jd/activity");
     }
 
 }

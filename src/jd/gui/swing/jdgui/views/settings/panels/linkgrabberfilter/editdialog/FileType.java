@@ -5,12 +5,14 @@ import javax.swing.Icon;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.AudioExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.HashExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ImageExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.VideoExtensions;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public enum FileType {
+    HASH(HashExtensions.MD5),
     AUDIO(AudioExtensions.AA),
     VIDEO(VideoExtensions.ASF),
     ARCHIVE(ArchiveExtensions.ACE),
