@@ -30,8 +30,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
@@ -42,23 +40,22 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dl-protect.com" }, urls = { "http://(www\\.)?dl\\-protect\\.com/(?!fr)(en/)?[A-Z0-9]+" }, flags = { 0 })
 @SuppressWarnings("deprecation")
-public class DlPrtcCom extends PluginForDecrypt {
+public class DlPrtcCom extends antiDDoSForDecrypt {
 
     public DlPrtcCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String                   CAPTCHATEXT    = ">\\s*Security\\s*Code";
-    private final String                   CAPTCHAFAILED  = ">\\s*The\\s*security\\s*code\\s*is\\s*incorrect";
-    private final String                   PASSWORDTEXT   = ">\\s*Password\\s*:";
-    private final String                   PASSWORDFAILED = ">\\s*The\\s*password\\s*is\\s*incorrect";
-    private final String                   SECONDARY      = "Please\\s*click\\s*on\\s*continue\\s*to\\s*see\\s*the\\s*links";
-    private final String                   JDDETECTED     = "JDownloader\\s*is\\s*prohibited.";
+    private final String                   captchaText    = ">\\s*Security\\s*Code";
+    private final String                   captchaFailed  = ">\\s*The\\s*security\\s*code\\s*is\\s*incorrect";
+    private final String                   passwordText   = ">\\s*Password\\s*:";
+    private final String                   passwordFailed = ">\\s*The\\s*password\\s*is\\s*incorrect";
+    private final String                   secondary      = "Please\\s*click\\s*on\\s*continue\\s*to\\s*see\\s*the\\s*links";
+    private final String                   jdDetected     = "JDownloader\\s*is\\s*prohibited.";
     private static AtomicReference<String> agent          = new AtomicReference<String>(null);
     private static AtomicReference<Object> cookieMonster  = new AtomicReference<Object>();
     private static AtomicInteger           maxConProIns   = new AtomicInteger(1);
@@ -70,7 +67,9 @@ public class DlPrtcCom extends PluginForDecrypt {
     private boolean                        debug          = false;
 
     @SuppressWarnings("unchecked")
-    private Browser prepBrowser(final Browser prepBr) {
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
         // loading previous cookie session results in less captchas
         synchronized (cookieMonster) {
             // link agent to cookieMonster via synchronized
@@ -94,7 +93,6 @@ public class DlPrtcCom extends PluginForDecrypt {
         if (!coLoaded) {
             prepBr.setCookie(this.getHost(), "l", "en");
         }
-        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         prepBr.getHeaders().put("Pragma", null);
         prepBr.getHeaders().put("Accept-Charset", null);
         prepBr.getHeaders().put("Cache-Control", null);
@@ -104,7 +102,7 @@ public class DlPrtcCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replaceAll("dl\\-protect\\.com/(en|fr)/", "dl-protect.com/").replaceFirst("//www\\.", "//");
+        String parameter = param.toString().replaceAll("dl-protect\\.com/(en|fr)/", "dl-protect.com/").replaceFirst("//www\\.", "//");
         if (parameter.endsWith("dl-protect.com/en")) {
             logger.info("Invalid link: " + parameter);
             return decryptedLinks;
@@ -113,13 +111,12 @@ public class DlPrtcCom extends PluginForDecrypt {
         synchronized (ctrlLock) {
             // has to be this side of lock otherwise loading of cookies before lock will always be blank or wrong.
             br = new Browser();
-            prepBrowser(br);
             // little wait between ties?
             if (lastUsed.get() == 0) {
                 // magic
-            } else if ((System.currentTimeMillis() - lastUsed.get()) <= 5000) {
+            } else if ((System.currentTimeMillis() - lastUsed.get()) <= 6000) {
                 // hoodo
-                Thread.sleep(3731 + new Random().nextInt(3000));
+                Thread.sleep(3731 + new Random().nextInt(4000));
             }
             getPage(parameter);
 
@@ -134,7 +131,7 @@ public class DlPrtcCom extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            if (cbr.containsHTML(PASSWORDTEXT) || cbr.containsHTML(CAPTCHATEXT)) {
+            if (cbr.containsHTML(passwordText) || cbr.containsHTML(captchaText)) {
                 int repeat = 2;
                 for (int i = 0; i != repeat; i++) {
                     Form importantForm = getForm();
@@ -142,12 +139,12 @@ public class DlPrtcCom extends PluginForDecrypt {
                         logger.warning("Decrypter broken 1 for link: " + parameter);
                         return null;
                     }
-                    if (cbr.containsHTML(PASSWORDTEXT)) {
+                    if (cbr.containsHTML(passwordText)) {
                         final String pwd = getUserInput(null, param);
                         // TODO: reask password vs going onto captcha, when null.. after second failure abort plugin...
                         importantForm.put("pwd", pwd);
                     }
-                    if (cbr.containsHTML(CAPTCHATEXT)) {
+                    if (cbr.containsHTML(captchaText)) {
                         // this is for all images, matching pattern
                         test(cbr);
                         // captcha stuff
@@ -176,8 +173,8 @@ public class DlPrtcCom extends PluginForDecrypt {
                         importantForm.put("submitform", "");
                     }
                     importantForm.put("i", ""/* Encoding.Base64Encode(String.valueOf(System.currentTimeMillis())) */);
-                    sendForm(importantForm);
-                    if ((getCaptchaLink(cbr.toString()) != null && cbr.containsHTML(CAPTCHAFAILED)) || (cbr.containsHTML(PASSWORDFAILED) || cbr.containsHTML(PASSWORDTEXT))) {
+                    submitForm(importantForm);
+                    if ((getCaptchaLink(cbr.toString()) != null && cbr.containsHTML(captchaFailed)) || (cbr.containsHTML(passwordFailed) || cbr.containsHTML(passwordText))) {
                         if (i + 1 == repeat) {
                             // dump session
                             nullSession(parameter);
@@ -194,7 +191,7 @@ public class DlPrtcCom extends PluginForDecrypt {
             // getPage(parameter);
             // }
 
-            if (cbr.containsHTML(SECONDARY)) {
+            if (cbr.containsHTML(secondary)) {
                 Browser br2 = br.cloneBrowser();
                 br2.getPage("/pub_footer.html");
                 test(cbr, br2);
@@ -209,9 +206,9 @@ public class DlPrtcCom extends PluginForDecrypt {
                     // this should be fine.
                     // continueForm.put("submitform", "Continue");
                 }
-                sendForm(continueForm);
+                submitForm(continueForm);
             }
-            if (JDHash.getMD5(JDDETECTED).equals(JDHash.getMD5(br.toString()))) {
+            if (JDHash.getMD5(jdDetected).equals(JDHash.getMD5(br.toString()))) {
                 nullSession(parameter);
                 throw new DecrypterException("D-TECTED!");
             }
@@ -238,13 +235,8 @@ public class DlPrtcCom extends PluginForDecrypt {
             }
 
             // saving session info can result in you not having to enter a captcha for each new link viewed!
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = br.getCookies(this.getHost());
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
             synchronized (cookieMonster) {
-                cookieMonster.set(cookies);
+                cookieMonster.set(fetchCookies(this.getHost()));
             }
 
             // rmCookie(parameter);
@@ -270,8 +262,10 @@ public class DlPrtcCom extends PluginForDecrypt {
      * don't think this is needed, but performs gets to given browser objects.
      *
      * @param brs
+     * @throws InterruptedException
      */
-    private void test(final Browser... brs) {
+    private void test(final Browser... brs) throws InterruptedException {
+        // dupe.clear();
         for (Browser br : brs) {
             // this is for all images, matching pattern
             String[] test = br.getRegex("(/template/images/[^\"]+)").getColumn(0);
@@ -280,19 +274,40 @@ public class DlPrtcCom extends PluginForDecrypt {
                     if (!dupe.add(t)) {
                         continue;
                     }
-                    final Browser brAds = br.cloneBrowser();
-                    try {
-                        brAds.openGetConnection(t);
-                    } catch (final Exception e) {
-                    } finally {
-                        try {
-                            brAds.disconnect();
-                        } catch (final Throwable tr) {
+
+                    final Thread simulate = new Thread("SimulateBrowser") {
+
+                        public void run() {
+                            final Browser rb = br.cloneBrowser();
+                            rb.getHeaders().put("Cache-Control", null);
+                            // open get connection for images, need to confirm
+                            if (t.matches(".+\\.(?:png|je?pg|gif).*")) {
+                                rb.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
+                            }
+                            if (t.matches(".+\\.js.*")) {
+                                rb.getHeaders().put("Accept", "*/*");
+                            } else if (t.matches(".+\\.css.*")) {
+                                rb.getHeaders().put("Accept", "text/css,*/*;q=0.1");
+                            }
+                            URLConnectionAdapter con = null;
+                            try {
+                                con = rb.openGetConnection(t);
+                            } catch (final Exception e) {
+                            } finally {
+                                try {
+                                    con.disconnect();
+                                } catch (final Exception e) {
+                                }
+                            }
                         }
-                    }
+
+                    };
+                    simulate.start();
+                    Thread.sleep(100);
                 }
             }
         }
+        Thread.sleep(2000);
     }
 
     private String getCaptchaLink(String source) throws Exception {
@@ -313,7 +328,7 @@ public class DlPrtcCom extends PluginForDecrypt {
     private Form getForm() {
         Form theForm = null;
         for (Form f : cbr.getForms()) {
-            if (f.containsHTML(CAPTCHATEXT)) {
+            if (f.containsHTML(captchaText)) {
                 theForm = f;
             }
         }
@@ -329,7 +344,7 @@ public class DlPrtcCom extends PluginForDecrypt {
     private Form getContinueForm() {
         Form theForm = null;
         for (Form f : cbr.getForms()) {
-            if (f.containsHTML(SECONDARY)) {
+            if (f.containsHTML(secondary)) {
                 theForm = f;
             }
         }
@@ -445,19 +460,21 @@ public class DlPrtcCom extends PluginForDecrypt {
         }
     }
 
-    private void getPage(final String page) throws Exception {
-        br.getPage(page);
+    @Override
+    protected void getPage(final String page) throws Exception {
+        super.getPage(page);
         correctBR();
     }
 
-    @SuppressWarnings("unused")
-    private void postPage(final String page, final String postData) throws Exception {
-        br.postPage(page, postData);
+    @Override
+    protected void postPage(final String page, final String postData) throws Exception {
+        super.postPage(page, postData);
         correctBR();
     }
 
-    private void sendForm(final Form form) throws Exception {
-        br.submitForm(form);
+    @Override
+    protected void submitForm(final Form form) throws Exception {
+        super.submitForm(form);
         correctBR();
     }
 
