@@ -126,7 +126,7 @@ public class FileSharkPl extends PluginForHost {
         if (br.containsHTML(POLAND_ONLY)) {
             link.getLinkStatus().setStatusText("This service is only available in Poland");
             return AvailableStatus.UNCHECKABLE;
-        } else if (br.getHttpConnection().getResponseCode() == 404) {
+        } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("warning\">Strona jest")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
