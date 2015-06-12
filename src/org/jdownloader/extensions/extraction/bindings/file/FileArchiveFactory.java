@@ -44,8 +44,9 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
             if (pattern != null && directory != null && directory.exists()) {
                 final String[] directoryFiles = directory.list();
                 if (directoryFiles != null) {
+                    final String absoluteDirectoryPath = directory.getAbsolutePath();
                     for (final String directoryFile : directoryFiles) {
-                        final String directoryFilePath = directoryFile;
+                        final String directoryFilePath = absoluteDirectoryPath + File.separator + directoryFile;
                         if (pattern.matcher(directoryFilePath).matches()) {
                             final File dFile = new File(directory, directoryFile);
                             if (dFile.isFile()) {
