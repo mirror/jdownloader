@@ -229,13 +229,10 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
     }
 
     public synchronized BasicCaptchaChallenge createBasicCaptchaChallenge() {
-
         if (basicChallenge != null) {
             return basicChallenge;
         }
-
         basicChallenge = new Recaptcha2FallbackChallenge(this);
-
         return basicChallenge;
     }
 }

@@ -145,14 +145,42 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
     }
 
+    private String getLongerString(String a, String b) {
+        if (a != null && b != null) {
+            if (a.length() > b.length()) {
+                return a;
+            }
+            return b;
+        } else if (a != null && b == null) {
+            return a;
+        } else if (b != null && a == null) {
+            return b;
+        }
+        return null;
+    }
+
     private void clickAndLoad2Add(LinkOriginDetails origin, String urls, RemoteAPIRequest request) throws IOException {
         final String finalPasswords = request.getParameterbyKey("passwords");
         String source = request.getParameterbyKey("source");
-        final String finalComment = request.getParameterbyKey("comment");
+        final String referer = request.getRequestHeaders().getValue(HTTPConstants.HEADER_REQUEST_REFERER);
+        String comment = request.getParameterbyKey("comment");
         LinkCollectingJob job = new LinkCollectingJob(origin, urls);
         final String finalDestination = request.getParameterbyKey("dir");
-        job.setCustomSourceUrl(source);
-        final String finalPackageName = request.getParameterbyKey("package");
+        String packageName = request.getParameterbyKey("package");
+        if (source != null && !(StringUtils.startsWithCaseInsensitive(source, "http://") && StringUtils.startsWithCaseInsensitive(source, "https://"))) {
+            if (packageName == null) {
+                packageName = source;
+            }
+            if (comment == null) {
+                comment = source;
+            }
+            source = null;
+        }
+        if (source != null) {
+            job.setCustomSourceUrl(getLongerString(source, referer));
+        }
+        final String finalPackageName = packageName;
+        final String finalComment = comment;
         final CrawledLinkModifier modifier = new CrawledLinkModifier() {
             private HashSet<String> pws = null;
             {
