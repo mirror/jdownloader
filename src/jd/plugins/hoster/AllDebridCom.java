@@ -264,6 +264,11 @@ public class AllDebridCom extends antiDDoSForHost {
         /* here we can get a 503 error page, which causes an exception */
         getPage("https://www.alldebrid.com/service.php?pseudo=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(host_downloadlink) + "&view=1");
         final String genlink = br.toString();
+        if (genlink != null && "banned".equalsIgnoreCase(genlink.trim())) {
+            // account is banned
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account is banned", PluginException.VALUE_ID_PREMIUM_DISABLE);
+
+        }
         if (genlink == null || !genlink.matches("https?://.+")) {
             logger.severe("Error: " + genlink);
             handleErrors();
