@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -55,13 +54,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
-        /**
-         * Note: Rest of this class makes use of the field "maxPrem" (see comment of controlPrem()) which was formerly returned here. But it
-         * simply didn't work. It led to a strange behavior where only a single file was downloaded via DebridItalia premium, all other
-         * links got started as non-premium. Once it got analyzed what causes this behavior, either remove all the "maxPrem" code below
-         * (currently it works also without!) or reintroduce it here!
-         */
-        return super.getMaxSimultanDownload(link, account);
+        return -1;
     }
 
     private static final String                            NICE_HOST                        = "debriditalia.com";
@@ -72,10 +65,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
     private static final String                            MAX_RETRIES_DL_ERROR_PROPERTY    = "MAX_RETRIES_DL_ERROR";
     private static final int                               DEFAULT_MAX_RETRIES_DL_ERROR     = 50;
 
-    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger                           totalMaxSimultanFreeDownload     = new AtomicInteger(20);
-    // don't touch the following!
-    private static AtomicInteger                           maxPrem                          = new AtomicInteger(1);
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap               = new HashMap<Account, HashMap<String, Long>>();
     private Account                                        currAcc                          = null;
     private DownloadLink                                   currDownloadLink                 = null;
@@ -126,16 +115,10 @@ public class DebridItaliaCom extends antiDDoSForHost {
         super.br.getPage("https://debriditalia.com/api.php?hosts");
         hosts = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
         final List<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-        addUnreportedHostsToList(supportedHosts);
+        supportedHosts.add("filesmonster.com");
         ac.setMultiHostSupport(this, supportedHosts);
         ac.setStatus("Premium account");
         return ac;
-    }
-
-    private void addUnreportedHostsToList(List<String> supportedHosts) {
-        // DebridItalia supports more hosts than returned by API call 'https://debriditalia.com/api.php?hosts'
-        // As long as they don't get reported correctly, add them here ...
-        supportedHosts.add("filesmonster.com");
     }
 
     private void accountInvalid() throws PluginException {
@@ -176,6 +159,14 @@ public class DebridItaliaCom extends antiDDoSForHost {
                     }
                 }
             }
+        }
+        // prevent ddos work around
+        if (link.getBooleanProperty("hasFailed", false)) {
+            final int hasFailedInt = link.getIntegerProperty("hasFailedWait", 60);
+            // nullify old storeables
+            link.setProperty("hasFailed", Property.NULL);
+            link.setProperty("hasFailedWait", Property.NULL);
+            sleep(hasFailedInt * 1001, link);
         }
 
         showMessage(link, "Generating link");
@@ -241,38 +232,31 @@ public class DebridItaliaCom extends antiDDoSForHost {
         }
         // Directlinks can be used for up to 2 days
         link.setProperty("debriditaliadirectlink", dllink);
-        try {
-            // add a download slot
-            controlPrem(+1);
-            // start the dl
 
-            try {
-                if (!this.dl.startDownload()) {
-                    try {
-                        if (dl.externalDownloadStop()) {
-                            return;
-                        }
-                    } catch (final Throwable e) {
+        try {
+            // start the dl
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) {
+                        return;
                     }
-                    /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
-                        link.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
+                } catch (final Throwable e) {
                 }
-            } catch (final PluginException e) {
-                // New V2 chunk errorhandling
                 /* unknown error, we disable multiple chunks */
-                if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
+                if (link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
                     link.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-
-                throw e;
             }
-        } finally {
-            // remove download slot
-            controlPrem(-1);
+        } catch (final PluginException e) {
+            // New V2 chunk errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(DebridItaliaCom.NOCHUNKS, false) == false) {
+                link.setProperty(DebridItaliaCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+
+            throw e;
         }
     }
 
@@ -354,6 +338,9 @@ public class DebridItaliaCom extends antiDDoSForHost {
             timesFailed++;
             logger.fine("Unknown download error! Retry attempt " + timesFailed + " of " + maxRetries);
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            // prevent ddos
+            this.currDownloadLink.setProperty("hasFailed", true);
+            this.currDownloadLink.setProperty("hasFailedWait", 60);
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         } else {
             logger.fine("Unknown download error! Max. retry attempts reached!");
@@ -361,25 +348,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
             logger.info(NICE_HOST + ": " + error + " -> Disabling current host");
             tempUnavailableHoster(1 * 60 * 60 * 1000l);
         }
-    }
-
-    /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
-     *
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
-     *
-     * @param controlFree
-     *            (+1|-1)
-     */
-    public synchronized void controlPrem(final int num) {
-        logger.info("maxFree was = " + maxPrem.get());
-        maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
-        logger.info("maxFree now = " + maxPrem.get());
     }
 
     @Override
