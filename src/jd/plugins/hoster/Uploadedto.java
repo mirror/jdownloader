@@ -67,7 +67,6 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
@@ -118,7 +117,12 @@ public class Uploadedto extends PluginForHost {
         if (avoidHTTPS) {
             return "http://";
         }
-        if (getPluginConfig().getBooleanProperty(SSL_CONNECTION, PREFERSSL) && Application.getJavaVersion() >= Application.JAVA17) {
+        if (getPluginConfig().getBooleanProperty(SSL_CONNECTION, PREFERSSL)) {
+            /**
+             * add this do disable https for old java 1.6 (dh > 1024)
+             *
+             * && Application.getJavaVersion() >= Application.JAVA17
+             **/
             return "https://";
         } else {
             return "http://";
