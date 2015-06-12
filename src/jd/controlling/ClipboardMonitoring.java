@@ -553,7 +553,7 @@ public class ClipboardMonitoring {
                 sb.append(listContent);
                 sb.append(">\r\n\r\n");
             }
-            if (StringUtils.isNotEmpty(stringContent)) {
+            if (StringUtils.isEmpty(listContent) && StringUtils.isNotEmpty(stringContent)) {
                 sb.append("<");
                 sb.append(stringContent);
                 sb.append(">\r\n\r\n");
@@ -563,7 +563,7 @@ public class ClipboardMonitoring {
                 sb.append(htmlContent);
                 sb.append(">");
             }
-            String content = sb.toString();
+            final String content = sb.toString();
             if (!StringUtils.isEmpty(content)) {
                 final LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(origin, null), content);
 
@@ -613,8 +613,28 @@ public class ClipboardMonitoring {
     @SuppressWarnings("unchecked")
     public static String getListTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException, URISyntaxException {
         final StringBuilder sb = new StringBuilder("");
+        if (URILISTFLAVOR != null && transferable.isDataFlavorSupported(URILISTFLAVOR)) {
+            /* url-lists are defined by rfc 2483 as crlf-delimited */
+            final Object ret = transferable.getTransferData(URILISTFLAVOR);
+            if (ret != null) {
+                final StringTokenizer izer = new StringTokenizer((String) ret, "\r\n");
+                while (izer.hasMoreTokens()) {
+                    if (sb.length() > 0) {
+                        sb.append("\r\n");
+                    }
+                    String next = izer.nextToken();
+                    if (StringUtils.isNotEmpty(next)) {
+                        next = next.replaceFirst("file:///", "file:/");
+                        sb.append(next);
+                    }
+                }
+            }
+            if (sb.length() > 0) {
+                return sb.toString();
+            }
+        }
         if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-            Object ret = transferable.getTransferData(DataFlavor.javaFileListFlavor);
+            final Object ret = transferable.getTransferData(DataFlavor.javaFileListFlavor);
             if (ret != null) {
                 final List<File> list = (List<File>) ret;
                 for (final File f : list) {
@@ -625,22 +645,6 @@ public class ClipboardMonitoring {
                         sb.append("\r\n");
                     }
                     sb.append(f.toURI().toString());
-                }
-            }
-        }
-        if (URILISTFLAVOR != null && transferable.isDataFlavorSupported(URILISTFLAVOR)) {
-            /* url-lists are defined by rfc 2483 as crlf-delimited */
-            Object ret = transferable.getTransferData(URILISTFLAVOR);
-            if (ret != null) {
-                final StringTokenizer izer = new StringTokenizer((String) ret, "\r\n");
-                while (izer.hasMoreTokens()) {
-                    if (sb.length() > 0) {
-                        sb.append("\r\n");
-                    }
-                    String next = izer.nextToken();
-                    if (StringUtils.isNotEmpty(next)) {
-                        sb.append(next);
-                    }
                 }
             }
         }

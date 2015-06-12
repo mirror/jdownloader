@@ -40,6 +40,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -724,7 +725,8 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         try {
             getPage(downloadLink.getDownloadURL().replace("https://", "http://"));
         } catch (final BrowserException e) {
-            if (br.getRequest().getHttpConnection().getResponseCode() == 502) {
+            final Request request = e.getRequest();
+            if (request != null && request.getHttpConnection() != null && request.getHttpConnection().getResponseCode() == 502) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.maintenance", "Server maintenance"), 30 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.unknownservererror", "Unknown server error"), 1 * 60 * 60 * 1000l);
