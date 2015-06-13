@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -52,11 +51,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
         return "https://www.debriditalia.com/premium.php";
     }
 
-    @Override
-    public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
-        return -1;
-    }
-
     private static final String                            NICE_HOST                        = "debriditalia.com";
     private static final String                            NICE_HOSTproperty                = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NOCHUNKS                         = "NOCHUNKS";
@@ -74,12 +68,15 @@ public class DebridItaliaCom extends antiDDoSForHost {
         this.currDownloadLink = dl;
     }
 
-    private void prepBR() {
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(60 * 1000);
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
+        prepBr.setConnectTimeout(60 * 1000);
+        prepBr.setReadTimeout(60 * 1000);
         /* 401 can happen when user enters invalid logindata */
-        br.setAllowedResponseCodes(401);
-        br.getHeaders().put("User-Agent", "JDownloader");
+        prepBr.addAllowedResponseCodes(401);
+        prepBr.getHeaders().put("User-Agent", "JDownloader");
+        return prepBr;
     }
 
     @SuppressWarnings("deprecation")
@@ -91,8 +88,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
             accountInvalid();
         }
         final AccountInfo ac = new AccountInfo();
-        prepBR();
-        String hosts[] = null;
         ac.setProperty("multiHostSupport", Property.NULL);
         ac.setUnlimitedTraffic();
         if (!loginAPI(account)) {
@@ -112,8 +107,8 @@ public class DebridItaliaCom extends antiDDoSForHost {
         ac.setValidUntil(Long.parseLong(expire) * 1000l);
 
         // now let's get a list of all supported hosts:
-        super.br.getPage("https://debriditalia.com/api.php?hosts");
-        hosts = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
+        getPage("https://debriditalia.com/api.php?hosts");
+        final String[] hosts = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
         final List<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         supportedHosts.add("filesmonster.com");
         ac.setMultiHostSupport(this, supportedHosts);
@@ -135,6 +130,11 @@ public class DebridItaliaCom extends antiDDoSForHost {
     }
 
     @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
+    }
+
+    @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
@@ -142,7 +142,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
     /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        prepBR();
         setConstants(account, link);
 
         synchronized (hostUnavailableMap) {
@@ -170,6 +169,9 @@ public class DebridItaliaCom extends antiDDoSForHost {
         }
 
         showMessage(link, "Generating link");
+
+        // since no requests are done with this.br we need to manually set so checkdirectlink is correct
+        prepBrowser(br, "https://debriditalia.com/");
         String dllink = checkDirectLink(link, "debriditaliadirectlink");
         if (dllink == null) {
             String host_downloadlink = link.getDownloadURL();
@@ -178,7 +180,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
                 host_downloadlink = host_downloadlink.replace("https://", "http://");
             }
             final String encodedLink = Encoding.urlEncode(host_downloadlink);
-            super.br.getPage("https://debriditalia.com/api.php?generate=on&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&link=" + encodedLink);
+            getPage("https://debriditalia.com/api.php?generate=on&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&link=" + encodedLink);
             /* Either server error or the host is broken (we have to find out by retrying) */
             if (br.containsHTML("ERROR: not_available")) {
                 int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_not_available", 0);
@@ -265,8 +267,8 @@ public class DebridItaliaCom extends antiDDoSForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
-    private boolean loginAPI(final Account acc) throws IOException {
-        super.br.getPage("https://debriditalia.com/api.php?check=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()));
+    private boolean loginAPI(final Account acc) throws Exception {
+        getPage("https://debriditalia.com/api.php?check=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()));
         if (!br.containsHTML("<status>valid</status>") || br.getHttpConnection().getResponseCode() == 401) {
             return false;
         }
