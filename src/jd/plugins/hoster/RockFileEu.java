@@ -255,12 +255,19 @@ public class RockFileEu extends PluginForHost {
                 }
             }
         }
-        if (fileInfo[1] == null) {
-            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-            if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+        // they show filesize in a javascript VAR
+        if (inValidate(fileInfo[1])) {
+            fileInfo[1] = new Regex(correctedBR, "var iniFileSize\\s*=\\s*(\\d+)\\s*").getMatch(0);
+            if (!inValidate(fileInfo[1])) {
+                fileInfo[1] += "Byte";
+            }
+            if (inValidate(fileInfo[1])) {
+                fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+                if (inValidate(fileInfo[1])) {
+                    fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                    if (inValidate(fileInfo[1])) {
+                        fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                    }
                 }
             }
         }
