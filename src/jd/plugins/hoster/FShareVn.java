@@ -281,18 +281,8 @@ public class FShareVn extends PluginForHost {
         // this should set English here...
         requestFileInformation(link);
         if (account.getBooleanProperty("free", false)) {
-            // we want to keep directlink for free download
             if (dllink == null) {
-                dllink = getDllink(); // Should get dllink before free account login
-                // English is also set here && cache login causes problems, premium pages sometimes not returned without fresh login.
                 login(account, true);
-                // br.getPage(link.getDownloadURL());
-                br.getPage(br.getRedirectLocation());
-                String wait = br.getRegex("var count = (\\d+?);").getMatch(0);
-                if (wait == null) {
-                    wait = "1"; // 1 second wait via web (couldn't get proper page after free account login)
-                }
-                sleep(Long.parseLong(wait) * 1001l, link);
             }
             doFree(link);
         } else {
@@ -311,16 +301,7 @@ public class FShareVn extends PluginForHost {
             if (dllink == null) {
                 dllink = br.getRegex("\"(http://[a-z0-9]+\\.fshare\\.vn/vip/[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
-                    final Form dlfast = br.getFormBySubmitvalue("/download/get");
-                    if (dlfast != null) {
-                        // button base download here,
-                        final Browser ajax = br.cloneBrowser();
-                        ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                        ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
-                        ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                        ajax.submitForm(dlfast);
-                        dllink = ajax.toString();
-                    }
+                    dllink = getDllink();
                 }
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -342,12 +323,17 @@ public class FShareVn extends PluginForHost {
     }
 
     public String getDllink() throws Exception {
-        Browser ajax = br.cloneBrowser();
-        ajax.getHeaders().put("Accept", "*/*");
-        ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
-        ajax.getPage("/download/index");
-        dllink = ajax.toString();
-        return dllink;
+        final Form dlfast = br.getFormbyAction("/download/get");
+        if (dlfast != null) {
+            // button base download here,
+            final Browser ajax = br.cloneBrowser();
+            ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
+            ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            ajax.submitForm(dlfast);
+            return ajax.toString();
+        }
+        return null;
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -434,25 +420,27 @@ public class FShareVn extends PluginForHost {
         String validUntil = br.getRegex(">Hạn dùng:<strong[^>]+>\\&nbsp;(\\d+\\-\\d+\\-\\d+)</strong>").getMatch(0);
         if (validUntil == null) {
             validUntil = br.getRegex(">Hạn dùng:<strong>\\&nbsp;([^<>\"]*?)</strong>").getMatch(0);
-        }
-        if (validUntil == null) {
-            validUntil = br.getRegex("<dt>Hạn dùng</dt>[\t\n\r ]+<dd><b>([^<>\"]*?)</b></dd>").getMatch(0);
-        }
-        if (validUntil == null) {
-            validUntil = br.getRegex("Hạn dùng: ([^<>\"]*?)</p></li>").getMatch(0);
-        }
-        if (validUntil == null) {
-            validUntil = br.getRegex("Expire: ([^<>\"]*?)</p></li>").getMatch(0);
+            if (validUntil == null) {
+                validUntil = br.getRegex("<dt>Hạn dùng</dt>[\t\n\r ]+<dd><b>([^<>\"]*?)</b></dd>").getMatch(0);
+                if (validUntil == null) {
+                    validUntil = br.getRegex("Hạn dùng: ([^<>\"]*?)</p></li>").getMatch(0);
+                    if (validUntil == null) {
+                        validUntil = br.getRegex("Expire: ([^<>\"]*?)</p></li>").getMatch(0);
+                    }
+                }
+            }
         }
         if (br.containsHTML("title=\"Platium\">VIP </span>")) {
             ai.setStatus("VIP Account");
             account.setProperty("free", false);
         } else if (validUntil != null) {
+            long validuntil = 0;
             if (validUntil.contains("-")) {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd-MM-yyyy", Locale.ENGLISH));
+                validuntil = TimeFormatter.getMilliSeconds(validUntil, "dd-MM-yyyy", Locale.ENGLISH);
             } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd/MM/yyyy", Locale.ENGLISH));
+                validuntil = TimeFormatter.getMilliSeconds(validUntil, "dd/MM/yyyy", Locale.ENGLISH);
             }
+            ai.setValidUntil(validuntil, br);
             maxPrem.set(-1);
             try {
                 account.setMaxSimultanDownloads(-1);

@@ -23,9 +23,11 @@ import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import jd.config.Property;
+import jd.http.Browser;
 import jd.nutils.NaturalOrderComparator;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -212,6 +214,33 @@ public class AccountInfo extends Property {
 
     public void setUsedSpace(final String string) {
         this.setUsedSpace(SizeFormatter.getSize(string, true, true));
+    }
+
+    /**
+     * This method assumes that httpd server time represents hoster timer, and will offset validuntil against users system time and httpd
+     * server time. <br />
+     * This should also allow when computer clocks are wrong. <br />
+     * *** WARNING *** This method wont work when httpd DATE response isn't of hoster time!
+     *
+     * @author raztoki
+     * @since JD2
+     * @param validuntil
+     * @param br
+     */
+    public void setValidUntil(final long validuntil, final Browser br) {
+        if (br == null) {
+            return;
+        }
+        // lets use server time to determine time out value; we then need to adjust timeformatter reference +- time against server time
+        final String date = br.getHttpConnection().getHeaderField("Date");
+        // formatting pattern == standard httpd output though one could change its display or not provide it in a non standard httpd.
+        final long servertime = TimeFormatter.getMilliSeconds(date, "EEE, dd MMM yyyy hh:mm:ss zzz", Locale.ENGLISH);
+        if (servertime > 0) {
+            setValidUntil(validuntil + (System.currentTimeMillis() - servertime));
+        } else {
+            // failover
+            setValidUntil(validuntil);
+        }
     }
 
     /**
