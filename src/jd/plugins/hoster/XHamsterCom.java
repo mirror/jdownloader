@@ -46,7 +46,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xhamster.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?(m\\.xhamster\\.com/preview/\\d+|xhamster\\.com/(xembed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html))" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?(m\\.xhamster\\.com/preview/\\d+|xhamster\\.com/(xembed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html))" }, flags = { 2 })
 public class XHamsterCom extends PluginForHost {
 
     public XHamsterCom(PluginWrapper wrapper) {
@@ -159,7 +159,7 @@ public class XHamsterCom extends PluginForHost {
         prepBr();
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
-            login(this.br, aa, false);
+            login(aa, false);
         }
         try {
             br.getPage(downloadLink.getDownloadURL());
@@ -316,7 +316,7 @@ public class XHamsterCom extends PluginForHost {
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
-    public void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             // used in finally to restore browser redirect status.
             final boolean frd = br.isFollowingRedirects();
@@ -406,16 +406,16 @@ public class XHamsterCom extends PluginForHost {
          * that present captcha to users all the time!
          */
         if (account.getStringProperty("lastlogin", null) != null && (System.currentTimeMillis() - 6 * 3480000l <= Long.parseLong(account.getStringProperty("lastlogin")))) {
-            login(this.br, account, false);
+            login(account, false);
             // because we have used cached login, we should verify that the cookie is still valid...
             br.getPage(MAINPAGE);
             if (br.getCookie(MAINPAGE, "PWD") == null) {
                 // we should assume cookie is invalid, and perform a full login!
                 br = new Browser();
-                login(this.br, account, true);
+                login(account, true);
             }
         } else {
-            login(this.br, account, true);
+            login(account, true);
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);
@@ -427,7 +427,7 @@ public class XHamsterCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(this.br, account, false);
+        login(account, false);
         doFree(link);
     }
 
