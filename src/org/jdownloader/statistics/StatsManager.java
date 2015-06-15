@@ -273,11 +273,11 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                         if (validUntilTimeStamp > 0) {
                                             if (expireInMs > 0) {
                                                 infos = new HashMap<String, String>();
-
                                                 infos.put("ms", Long.toString(expireInMs));
                                                 id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/until";
                                             } else {
-                                                infos = null;
+                                                infos = new HashMap<String, String>();
+                                                infos.put("ms", Long.toString(expireInMs));
                                                 id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/expired";
                                             }
                                         } else {
@@ -292,7 +292,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                         StatsManager.I().track(id, null);
                                     }
                                     final String domain = account.getHoster();
-                                    final File file = Application.getResource("cfg/clicked/" + domain + ".json");
+                                    final File file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(domain) + ".json");
                                     if (file.exists()) {
                                         ArrayList<ClickedAffLinkStorable> list = null;
                                         try {
@@ -312,13 +312,12 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                             final HashMap<String, String> infos = new HashMap<String, String>();
                                             infos.put("clicksource", st.getSource() + "");
                                             infos.put("ms", Long.toString(timeDiff));
-                                            Map<String, Object> properties = account.getProperties();
                                             if (info != null) {
                                                 if (validUntilTimeStamp > 0) {
                                                     if (expireInMs > 0) {
                                                         infos.put("until", Long.toString(expireInMs));
                                                     } else {
-                                                        infos.put("until", "0");
+                                                        infos.put("until", Long.toString(expireInMs));
                                                     }
                                                 } else {
                                                     infos.put("until", "-1");
@@ -1753,13 +1752,10 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 }
             }
             refURL = customRefURL;
-            if (StringUtils.isEmpty(refURL)) {
-                String buyPremium = null;
-                if (plugin != null) {
-                    buyPremium = plugin.getBuyPremiumUrl();
-                    if (StringUtils.isEmpty(buyPremium)) {
-                        buyPremium = "http://" + plugin.getHost();
-                    }
+            if (StringUtils.isEmpty(refURL) && plugin != null) {
+                String buyPremium = plugin.getBuyPremiumUrl();
+                if (StringUtils.isEmpty(buyPremium)) {
+                    buyPremium = "http://" + plugin.getHost();
                 }
                 refURL = AccountController.createFullBuyPremiumUrl(buyPremium, source);
             }
