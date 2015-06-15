@@ -219,6 +219,18 @@ public class AccountInfo extends Property {
     }
 
     /**
+     * Wrapper, will use standard httpd Date pattern.
+     *
+     * @author raztoki
+     * @param validuntil
+     * @param br
+     * @return
+     */
+    public final boolean setValidUntil(final long validuntil, final Browser br) {
+        return setValidUntil(validuntil, br, null);
+    }
+
+    /**
      * This method assumes that httpd server time represents hoster timer, and will offset validuntil against users system time and httpd
      * server time. <br />
      * This should also allow when computer clocks are wrong. <br />
@@ -229,11 +241,12 @@ public class AccountInfo extends Property {
      * @param validuntil
      * @param br
      */
-    public boolean setValidUntil(final long validuntil, final Browser br, final String formatter) {
+    public final boolean setValidUntil(final long validuntil, final Browser br, final String formatterPattern) {
         if (validuntil == -1) {
             setValidUntil(-1);
             return true;
         }
+        final String formatter = StringUtils.isEmpty(formatterPattern) ? "EEE, dd MMM yyyy hh:mm:ss zzz" : formatterPattern;
         long serverTime = -1;
         if (br != null && br.getHttpConnection() != null) {
             // lets use server time to determine time out value; we then need to adjust timeformatter reference +- time against server time

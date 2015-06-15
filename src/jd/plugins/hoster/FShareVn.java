@@ -47,6 +47,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
@@ -167,6 +168,7 @@ public class FShareVn extends PluginForHost {
                 dl.startDownload();
                 return;
             } else {
+                br.followConnection();
                 dllink = null;
             }
         }
@@ -182,6 +184,9 @@ public class FShareVn extends PluginForHost {
             ajax.getHeaders().put("x-requested-with", "XMLHttpRequest");
             ajax.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             ajax.postPage("/download/get", "fs_csrf=" + csrf + "&DownloadForm%5Bpwd%5D=&ajax=download-form&undefined=");
+            if (StringUtils.containsIgnoreCase(getJson(ajax, "msg"), "Server error") && StringUtils.containsIgnoreCase(getJson(ajax, "msg"), "please try again later")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            }
             dllink = getJson(ajax, "url");
             if (dllink != null && br.containsHTML(IPBLOCKED) || ajax.containsHTML(IPBLOCKED)) {
                 final String nextDl = br.getRegex("LÆ°á»£t táº£i xuá»‘ng káº¿ tiáº¿p lÃ : ([^<>]+)<").getMatch(0);
@@ -281,8 +286,11 @@ public class FShareVn extends PluginForHost {
         // this should set English here...
         requestFileInformation(link);
         if (account.getBooleanProperty("free", false)) {
+            // premium link wont need user to login!
             if (dllink == null) {
                 login(account, true);
+                br.getPage(link.getDownloadURL());
+                dllink = br.getRedirectLocation();
             }
             doFree(link);
         } else {
@@ -440,7 +448,7 @@ public class FShareVn extends PluginForHost {
             } else {
                 validuntil = TimeFormatter.getMilliSeconds(validUntil, "dd/MM/yyyy", Locale.ENGLISH);
             }
-            ai.setValidUntil(validuntil, br, "EEE, dd MMM yyyy hh:mm:ss zzz");
+            ai.setValidUntil(validuntil, br);
             maxPrem.set(-1);
             try {
                 account.setMaxSimultanDownloads(-1);
@@ -546,13 +554,15 @@ public class FShareVn extends PluginForHost {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
-    LinkedHashSet<String> dupe = new LinkedHashSet<String>();
+    private LinkedHashSet<String> dupe = new LinkedHashSet<String>();
 
     /**
      * @author raztoki
      */
     private void simulateBrowser() throws InterruptedException {
-        ArrayList<String> links = new ArrayList<String>();
+        final AtomicInteger requestQ = new AtomicInteger(0);
+        final AtomicInteger requestS = new AtomicInteger(0);
+        final ArrayList<String> links = new ArrayList<String>();
         String[] l1 = br.getRegex("\\s+(?:src|href)=(\"|')(.*?)\\1").getColumn(1);
         if (l1 != null) {
             links.addAll(Arrays.asList(l1));
@@ -587,6 +597,7 @@ public class FShareVn extends PluginForHost {
                         }
                         URLConnectionAdapter con = null;
                         try {
+                            requestQ.getAndIncrement();
                             con = rb.openGetConnection(correctedLink);
                         } catch (final Exception e) {
                         } finally {
@@ -594,6 +605,7 @@ public class FShareVn extends PluginForHost {
                                 con.disconnect();
                             } catch (final Exception e) {
                             }
+                            requestS.getAndIncrement();
                         }
                     }
 
@@ -602,7 +614,9 @@ public class FShareVn extends PluginForHost {
                 Thread.sleep(100);
             }
         }
-        Thread.sleep(2000);
+        while (requestQ.get() != requestS.get()) {
+            Thread.sleep(1000);
+        }
 
     }
 
