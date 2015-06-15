@@ -448,7 +448,7 @@ public class FShareVn extends PluginForHost {
             } else {
                 validuntil = TimeFormatter.getMilliSeconds(validUntil, "dd/MM/yyyy", Locale.ENGLISH);
             }
-            ai.setValidUntil(validuntil, br);
+            ai.setValidUntil(validuntil, br, "EEE, dd MMM yyyy HH:mm:ss z");
             maxPrem.set(-1);
             try {
                 account.setMaxSimultanDownloads(-1);
