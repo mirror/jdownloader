@@ -18,7 +18,6 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
@@ -40,7 +39,7 @@ import org.jdownloader.statistics.StatsManager;
 
 public class BuyAction extends AbstractAction {
     /**
-     * 
+     *
      */
     private static final long   serialVersionUID = 1L;
     private PremiumAccountTable table            = null;
@@ -130,7 +129,7 @@ public class BuyAction extends AbstractAction {
                                     combo = new SearchComboBox<LazyHostPlugin>(plugins) {
 
                                         /**
-                                         * 
+                                         *
                                          */
                                         private static final long serialVersionUID = -7421876925835937449L;
 
@@ -189,29 +188,29 @@ public class BuyAction extends AbstractAction {
                                 return;
                             }
                             final LazyHostPlugin buyIt = options[d.getReturnValue()];
-                            if (buyIt == null || StringUtils.isEmpty(buyIt.getPremiumUrl())) {
-                                return;
+                            if (buyIt != null) {
+                                PluginForHost plugin = null;
+                                try {
+                                    plugin = buyIt.getPrototype(null);
+                                } catch (final Throwable e) {
+                                }
+                                final String customURL;
+                                if (plugin == null) {
+                                    customURL = "http://" + buyIt.getHost();
+                                } else {
+                                    customURL = null;
+                                }
+                                StatsManager.I().openAfflink(plugin, customURL, "buypremium/accountmanager/buy" + (table == null ? "/context" : "/table"));
+                                try {
+                                    final BuyAndAddPremiumAccount dia;
+                                    UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, dia = new BuyAndAddPremiumAccount(DomainInfo.getInstance(buyIt.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));
+                                    dia.throwCloseExceptions();
+                                } catch (DialogClosedException e1) {
+                                    e1.printStackTrace();
+                                } catch (DialogCanceledException e1) {
+                                    e1.printStackTrace();
+                                }
                             }
-                            String url = null;
-                            try {
-                                PluginForHost plugin = buyIt.newInstance(null);
-                                url = plugin.getBuyPremiumUrl();
-                            } catch (final Throwable e) {
-                            }
-                            if (StringUtils.isEmpty(url)) {
-                                url = buyIt.getPremiumUrl();
-                            }
-                            StatsManager.I().openAfflink(url, "buypremium/" + "accountmanager/buy/" + (table == null ? "/context" : "/table"), false);
-                            try {
-                                BuyAndAddPremiumAccount dia;
-                                UIOManager.I().show(BuyAndAddPremiumDialogInterface.class, dia = new BuyAndAddPremiumAccount(DomainInfo.getInstance(buyIt.getHost()), "accountmanager" + (table == null ? "/context" : "/table")));
-                                dia.throwCloseExceptions();
-                            } catch (DialogClosedException e1) {
-                                e1.printStackTrace();
-                            } catch (DialogCanceledException e1) {
-                                e1.printStackTrace();
-                            }
-
                         } catch (DialogClosedException e1) {
                             e1.printStackTrace();
                         } catch (DialogCanceledException e1) {

@@ -2,7 +2,8 @@ package org.jdownloader.premium;
 
 import java.awt.event.ActionEvent;
 
-import org.appwork.utils.StringUtils;
+import jd.plugins.PluginForHost;
+
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
@@ -12,30 +13,35 @@ import org.jdownloader.statistics.StatsManager;
 public class OpenURLAction extends AppAction {
 
     /**
-	 * 
-	 */
-    private static final long serialVersionUID = -7939070621339510855L;
-    private DomainInfo        info;
-    private String            id;
+     *
+     */
+    private static final long   serialVersionUID = -7939070621339510855L;
+    private final DomainInfo    info;
+    private final String        id;
+
+    private final static String NAME             = _GUI._.OpenURLAction_OpenURLAction_();
 
     public OpenURLAction(DomainInfo info, String id) {
         super();
         this.id = id;
-        setName(_GUI._.OpenURLAction_OpenURLAction_());
         this.info = info;
+        setName(NAME);
     }
 
     public void actionPerformed(ActionEvent e) {
-        String url = null;
+        PluginForHost plugin = null;
         try {
-            url = info.findPlugin().getBuyPremiumUrl();
+            plugin = info.findPlugin();
         } catch (final Throwable e2) {
             LogController.CL().log(e2);
         }
-        if (StringUtils.isEmpty(url)) {
-            url = info.getTld();
+        final String customURL;
+        if (plugin == null) {
+            customURL = "http://" + info.getTld();
+        } else {
+            customURL = null;
         }
-        StatsManager.I().openAfflink(url, id, false);
+        StatsManager.I().openAfflink(plugin, customURL, id);
 
     }
 }

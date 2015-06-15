@@ -17,6 +17,7 @@
 package jd.plugins;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -26,6 +27,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.nutils.NaturalOrderComparator;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.logging.LogController;
@@ -227,19 +229,33 @@ public class AccountInfo extends Property {
      * @param validuntil
      * @param br
      */
-    public void setValidUntil(final long validuntil, final Browser br) {
-        if (br == null) {
-            return;
+    public boolean setValidUntil(final long validuntil, final Browser br, final String formatter) {
+        if (validuntil == -1) {
+            setValidUntil(-1);
+            return true;
         }
-        // lets use server time to determine time out value; we then need to adjust timeformatter reference +- time against server time
-        final String date = br.getHttpConnection().getHeaderField("Date");
-        // formatting pattern == standard httpd output though one could change its display or not provide it in a non standard httpd.
-        final long servertime = TimeFormatter.getMilliSeconds(date, "EEE, dd MMM yyyy hh:mm:ss zzz", Locale.ENGLISH);
-        if (servertime > 0) {
-            setValidUntil(validuntil + (System.currentTimeMillis() - servertime));
+        long serverTime = -1;
+        if (br != null && br.getHttpConnection() != null) {
+            // lets use server time to determine time out value; we then need to adjust timeformatter reference +- time against server time
+            final String dateString = br.getHttpConnection().getHeaderField("Date");
+            if (dateString != null) {
+                if (StringUtils.isNotEmpty(formatter)) {
+                    serverTime = TimeFormatter.getMilliSeconds(dateString, formatter, Locale.ENGLISH);
+                } else {
+                    final Date date = TimeFormatter.parseDateString(dateString);
+                    if (date != null) {
+                        serverTime = date.getTime();
+                    }
+                }
+            }
+        }
+        if (serverTime > 0) {
+            setValidUntil(validuntil + (System.currentTimeMillis() - serverTime));
+            return true;
         } else {
             // failover
             setValidUntil(validuntil);
+            return false;
         }
     }
 

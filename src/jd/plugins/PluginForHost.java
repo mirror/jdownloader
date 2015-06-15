@@ -140,7 +140,7 @@ import org.jdownloader.updatev2.UpdateController;
 
 /**
  * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien herunterladen koennen
- * 
+ *
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
@@ -575,7 +575,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList
      * zurueckgeliefert
-     * 
+     *
      * @param data
      *            Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
      * @return Ein ArrayList mit den gefundenen Downloadlinks
@@ -635,7 +635,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * Holt Informationen zu einem Link. z.B. dateigroeße, Dateiname, verfuegbarkeit etc.
-     * 
+     *
      * @param parameter
      * @return true/false je nach dem ob die Datei noch online ist (verfuegbar)
      * @throws IOException
@@ -652,7 +652,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * this method returns absolut numbers of max allowed downloads for given plugin/link/account combination
-     * 
+     *
      * @param link
      * @param account
      * @return
@@ -709,7 +709,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * By overriding this method, a plugin is able to return a HostPluginInfoGenerator. <br>
      * <b>Attention: Until next stable update, we have to return Object here.</b>
-     * 
+     *
      * @return
      */
     // @Override DO NEVER USE OVERRIDE ON THIS METHOD BEFORE NEXT STABLE UPDATE.
@@ -737,7 +737,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * return if we can download given downloadLink via given account with this pluginForHost
-     * 
+     *
      * @param downloadLink
      * @param account
      * @return
@@ -748,7 +748,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * return if the given downloadLink can be downloaded via given pluginForHost
-     * 
+     *
      * @param downloadLink
      * @param plugin
      * @return
@@ -756,7 +756,7 @@ public abstract class PluginForHost extends Plugin {
     public boolean allowHandle(DownloadLink downloadLink, PluginForHost plugin) {
         /**
          * example: only allow original host plugin
-         * 
+         *
          * return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
          */
         return true;
@@ -1061,7 +1061,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * JD2 only
-     * 
+     *
      * @return
      */
     public boolean isAbort() {
@@ -1107,7 +1107,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * Gibt die Url zurueck, unter welcher ein PremiumAccount gekauft werden kann
-     * 
+     *
      * @return
      */
     public String getBuyPremiumUrl() {
@@ -1304,12 +1304,12 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * 
+     *
      * can we expect a captcha if we try to load link with acc
-     * 
-     * 
+     *
+     *
      * use within plugin only
-     * 
+     *
      * @param link
      * @param acc
      * @return
@@ -1372,7 +1372,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * plugins may change the package identifier used for auto package matching. some hosters replace chars, shorten filenames...
-     * 
+     *
      * @param packageIdentifier
      * @return
      */
@@ -1383,7 +1383,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect
      * this based on other downloadlinks
-     * 
+     *
      * @param cache
      *            TODO
      * @param downloadable
@@ -1630,7 +1630,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * Some hoster manipulate the filename after upload. rapidshare for example, replaces special chars and spaces with _
-     * 
+     *
      * @return
      */
     public boolean isHosterManipulatesFilenames() {
@@ -1639,7 +1639,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * If a plugin want's to define it's one premium info dialog or premiuminfo panel. overwrite this methods
-     * 
+     *
      * @param dialog
      * @return
      */
@@ -1649,7 +1649,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * Can be overridden to support special accounts like login tokens instead of username/password
-     * 
+     *
      * @return
      */
     public AccountFactory getAccountFactory() {
@@ -1854,9 +1854,9 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * JD2 ONLY
-     * 
+     *
      * sort accounts for best order to download downloadLink
-     * 
+     *
      * @param accounts
      * @param downloadLink
      * @return
@@ -1867,9 +1867,9 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * JD2 ONLY
-     * 
+     *
      * sort downloadLinks for best order to download via account
-     * 
+     *
      * @param accounts
      * @param downloadLink
      * @return
@@ -1880,7 +1880,7 @@ public abstract class PluginForHost extends Plugin {
 
     /**
      * THIS IS JDOWNLOADER 2 ONLY!
-     * 
+     *
      * @param domain
      * @throws DialogCanceledException
      * @throws DialogClosedException
@@ -1896,12 +1896,7 @@ public abstract class PluginForHost extends Plugin {
             StatsManager.I().track("freedialog/" + domain + "/show");
             UIOManager.I().show(AskToUsePremiumDialogInterface.class, d).throwCloseExceptions();
             StatsManager.I().track("freedialog/" + domain + "/ok");
-            String url = this.getBuyPremiumUrl();
-            if (StringUtils.isEmpty(url)) {
-                url = "http://" + domain;
-            }
-            StatsManager.I().openAfflink(url, "freedialog", false);
-
+            StatsManager.I().openAfflink(this, null, "freedialog");
         } catch (Throwable e) {
             LogSource.exception(logger, e);
         }
@@ -1970,7 +1965,7 @@ public abstract class PluginForHost extends Plugin {
      * Do not call directly. This method is called from the DownloadWatchdog.rename method only. The DownloadWatchdog assures, that the
      * method is not called during a processing download, but afterwards. Avoid to override this method. if possible, try to override
      * #listFilePairsToMove instead
-     * 
+     *
      * @param link
      * @param string2
      * @param string
@@ -2222,7 +2217,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * plugins may set a mirrorid to help the mirror detector. You have to ensure, that two mirrors either get the same mirror id, or no
      * mirrorid(null)
-     * 
+     *
      * @return
      */
 

@@ -56,6 +56,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.statistics.StatsManager;
 
@@ -94,7 +95,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
 
     /**
      * get the only existing instance of OboomController. This is a singleton
-     * 
+     *
      * @return
      */
     public static UploadedController getInstance() {
@@ -431,6 +432,12 @@ public class UploadedController implements AccountControllerListener, Sponsor {
 
         new Thread("OSR") {
             public void run() {
+                PluginForHost plugin = null;
+                try {
+                    plugin = HostPluginController.getInstance().get("uploaded.to").getPrototype(null);
+                } catch (final Throwable e) {
+                    e.printStackTrace();
+                }
                 try {
                     String uid;
                     StringBuilder sb = createID();
@@ -442,13 +449,10 @@ public class UploadedController implements AccountControllerListener, Sponsor {
                     boolean[] ag = aggregateAccounts();
                     boolean hasUploaded = ag[0];
                     boolean hasOther = ag[1];
-                    StatsManager.I().openAfflink(HTTP_BASE + "/RedirectInterface/ul?jd2&" + URLEncode.encodeRFC2396(sig) + "&" + URLEncode.encodeRFC2396(uid) + "&" + URLEncode.encodeRFC2396(pid) + "&" + hasUploaded + "&" + hasOther, "UploadedController", true);
-
+                    StatsManager.I().openAfflink(plugin, HTTP_BASE + "/RedirectInterface/ul?jd2&" + URLEncode.encodeRFC2396(sig) + "&" + URLEncode.encodeRFC2396(uid) + "&" + URLEncode.encodeRFC2396(pid) + "&" + hasUploaded + "&" + hasOther, "UploadedController");
                     UploadedController.track("TabbedClick");
-
                 } catch (Throwable e) {
-                    StatsManager.I().openAfflink("http://ul.to/ref/12859436", "UploadedController/fallback", true);
-
+                    StatsManager.I().openAfflink(plugin, "http://ul.to/ref/12859436", "UploadedController/fallback");
                     UploadedController.track("TabbedClick_Fallback_" + e.getMessage());
                 }
             }
@@ -540,47 +544,43 @@ public class UploadedController implements AccountControllerListener, Sponsor {
     }
 
     private void notify(final Account account, String title, String msg) {
-        final PluginForHost plugin = account.getPlugin();
-        String url = null;
-        if (plugin == null || StringUtils.isEmpty(url = plugin.getBuyPremiumUrl())) {
-            return;
-        }
-        final Icon fav = DomainInfo.getInstance(account.getHoster()).getFavIcon();
-        final ExtMergedIcon hosterIcon = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_REFRESH, 32)).add(fav, 32 - fav.getIconWidth(), 32 - fav.getIconHeight());
-        final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, hosterIcon, _GUI._.lit_continue(), _GUI._.lit_close()) {
-            @Override
-            public ModalityType getModalityType() {
-                return ModalityType.MODELESS;
-            }
-
-            @Override
-            public String getDontShowAgainKey() {
-                return "expireRenewNotification_" + account.getHoster();
-            }
-
-            @Override
-            public long getCountdown() {
-                return 5 * 60 * 1000l;
-            }
-        };
-
-        try {
-            Dialog.getInstance().showDialog(d);
-
-            if ("uploaded.to".equals(plugin.getHost())) {
-
-                StatsManager.I().openAfflink("http://ul.to/ref/12859436", "PremiumExpireWarning/" + account.getHoster() + "/OK", false);
-
+        if (account != null) {
+            final PluginForHost plugin = account.getPlugin();
+            final String customURL;
+            if (plugin == null) {
+                customURL = "http://" + account.getHoster();
             } else {
-                StatsManager.I().openAfflink(url, "PremiumExpireWarning/" + account.getHoster() + "/OK", false);
-
+                customURL = null;
             }
-        } catch (DialogNoAnswerException e) {
-            e.printStackTrace();
-            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/CANCELED");
-        }
-        if (d.isDontShowAgainSelected()) {
-            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/DONT_SHOW_AGAIN");
+            final Icon fav = DomainInfo.getInstance(account.getHoster()).getFavIcon();
+            final ExtMergedIcon hosterIcon = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_REFRESH, 32)).add(fav, 32 - fav.getIconWidth(), 32 - fav.getIconHeight());
+            final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, hosterIcon, _GUI._.lit_continue(), _GUI._.lit_close()) {
+                @Override
+                public ModalityType getModalityType() {
+                    return ModalityType.MODELESS;
+                }
+
+                @Override
+                public String getDontShowAgainKey() {
+                    return "expireRenewNotification_" + account.getHoster();
+                }
+
+                @Override
+                public long getCountdown() {
+                    return 5 * 60 * 1000l;
+                }
+            };
+
+            try {
+                Dialog.getInstance().showDialog(d);
+                StatsManager.I().openAfflink(plugin, customURL, "PremiumExpireWarning/" + account.getHoster() + "/OK");
+            } catch (DialogNoAnswerException e) {
+                e.printStackTrace();
+                StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/CANCELED");
+            }
+            if (d.isDontShowAgainSelected()) {
+                StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/DONT_SHOW_AGAIN");
+            }
         }
     }
 

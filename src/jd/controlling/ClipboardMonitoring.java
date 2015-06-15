@@ -622,10 +622,9 @@ public class ClipboardMonitoring {
                     if (sb.length() > 0) {
                         sb.append("\r\n");
                     }
-                    String next = izer.nextToken();
+                    final String next = izer.nextToken();
                     if (StringUtils.isNotEmpty(next)) {
-                        next = next.replaceFirst("file:///", "file:/");
-                        sb.append(next);
+                        sb.append(next.replaceFirst("file:///", "file:/"));
                     }
                 }
             }
