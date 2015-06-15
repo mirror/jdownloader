@@ -670,9 +670,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
         final File[] logs = Application.getResource("logs").listFiles();
 
-        LogFolder latestLog = null;
-        LogFolder currentLog = null;
-
         if (logs != null) {
             for (final File f : logs) {
                 final String timestampString = new Regex(f.getName(), "(\\d+)_\\d\\d\\.\\d\\d").getMatch(0);
@@ -688,7 +685,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         SimpleDateFormat df = new SimpleDateFormat("dd.MM.yy HH.mm.ss", Locale.GERMANY);
                         // return .format(date);
                         lf.setNeedsFlush(true);
-                        currentLog = lf;
+
                         final File zip = Application.getTempResource("logs/logPackage_" + System.currentTimeMillis() + ".zip");
                         zip.delete();
                         zip.getParentFile().mkdirs();
