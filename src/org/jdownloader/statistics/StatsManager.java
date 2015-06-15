@@ -100,27 +100,21 @@ import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class StatsManager implements GenericConfigEventListener<Object>, DownloadWatchdogListener, Runnable {
     private static final long         RANGE_48HOUR_B     = 50 * 60 * 60 * 1000l;
-    private static final long         RANGE_48HOUR_A     = 46 * 60 * 60 * 1000l;
-
-    private static final long         RANGE_2YEAR_A      = ((2 * 365) - 2) * 24 * 60 * 60 * 1000l;
-
-    private static final long         RANGE_2YEAR_B      = ((2 * 365) + 1) * 24 * 60 * 60 * 1000l;
-
-    private static final long         RANGE_1YEAR_A      = ((365) - 2) * 24 * 60 * 60 * 1000l;
-
+    private static final long         RANGE_48HOUR_A     = 0;
     private static final long         RANGE_1YEAR_B      = ((365) + 1) * 24 * 60 * 60 * 1000l;
-
-    private static final long         RANGE_6MONTH_A     = ((6 * 30) - 2) * 24 * 60 * 60 * 1000l;
-
+    private static final long         RANGE_2YEAR_B      = ((2 * 365) + 1) * 24 * 60 * 60 * 1000l;
     private static final long         RANGE_6MONTH_B     = ((6 * 31) + 1) * 24 * 60 * 60 * 1000l;
-
-    private static final long         RANGE_1MONTH_A     = 29 * 24 * 60 * 60 * 1000l;
-
     private static final long         RANGE_1MONTH_B     = 32 * 24 * 60 * 60 * 1000l;
-
-    private static final long         RANGE_3MONTH_A     = ((3 * 30) - 2) * 24 * 60 * 60 * 1000l;
-
     private static final long         RANGE_3MONTH_B     = ((3 * 31) + 1) * 24 * 60 * 60 * 1000l;
+    private static final long         RANGE_2YEAR_A      = RANGE_1YEAR_B;
+
+    private static final long         RANGE_1YEAR_A      = RANGE_6MONTH_B;
+
+    private static final long         RANGE_6MONTH_A     = RANGE_3MONTH_B;
+
+    private static final long         RANGE_1MONTH_A     = RANGE_48HOUR_B;
+
+    private static final long         RANGE_3MONTH_A     = RANGE_1MONTH_B;
 
     private static final StatsManager INSTANCE           = new StatsManager();
 
@@ -232,27 +226,27 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                         if ("uploaded.to".equals(account.getHoster())) {
                                             if (validUntilTimeStamp > estimatedBuytime) {
                                                 if (expireInMs > 0) {
-                                                    if (expireInMs < RANGE_48HOUR_B && expireInMs > RANGE_48HOUR_A) {
+                                                    if (expireInMs <= RANGE_48HOUR_B && expireInMs > RANGE_48HOUR_A) {
                                                         // 48hours
                                                         type = "48hours";
                                                         estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - (48 * 60 * 60 * 1000l));
-                                                    } else if (expireInMs < RANGE_1MONTH_B && expireInMs > RANGE_1MONTH_A) {
+                                                    } else if (expireInMs <= RANGE_1MONTH_B && expireInMs > RANGE_1MONTH_A) {
                                                         // 1month
                                                         type = "1month";
                                                         estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((1 * 30) * 24 * 60 * 60 * 1000l));
-                                                    } else if (expireInMs < RANGE_3MONTH_B && expireInMs > RANGE_3MONTH_A) {
+                                                    } else if (expireInMs <= RANGE_3MONTH_B && expireInMs > RANGE_3MONTH_A) {
                                                         // 3month
                                                         type = "3months";
                                                         estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((3 * 30) * 24 * 60 * 60 * 1000l));
-                                                    } else if (expireInMs < RANGE_6MONTH_B && expireInMs > RANGE_6MONTH_A) {
+                                                    } else if (expireInMs <= RANGE_6MONTH_B && expireInMs > RANGE_6MONTH_A) {
                                                         // 6month
                                                         type = "6months";
                                                         estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((6 * 30) * 24 * 60 * 60 * 1000l));
-                                                    } else if (expireInMs < RANGE_1YEAR_B && expireInMs > RANGE_1YEAR_A) {
+                                                    } else if (expireInMs <= RANGE_1YEAR_B && expireInMs > RANGE_1YEAR_A) {
                                                         // 1year
                                                         type = "1year";
                                                         estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((365) * 24 * 60 * 60 * 1000l));
-                                                    } else if (expireInMs < RANGE_2YEAR_B && expireInMs > RANGE_2YEAR_A) {
+                                                    } else if (expireInMs <= RANGE_2YEAR_B && expireInMs > RANGE_2YEAR_A) {
                                                         // 2year
                                                         type = "2years";
                                                         estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((2 * 365) * 24 * 60 * 60 * 1000l));
