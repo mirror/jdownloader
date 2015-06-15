@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -1735,6 +1736,10 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         }
     }
 
+    public static void main(String[] args) throws MalformedURLException {
+        System.out.println(new URL("uploaded.to").getHost());
+    }
+
     public void openAfflink(final String url, final String source, final boolean direct) {
         try {
             if (url.startsWith("https://www.oboom.com/ref/C0ACB0?ref_token=")) {
@@ -1747,12 +1752,15 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             }
 
             String domain = url;
+            if (!StringUtils.startsWithCaseInsensitive(domain, "http")) {
+                domain = "http://" + domain;
+            }
             try {
                 domain = new URL(url).getHost();
             } catch (Throwable e) {
             }
             // do mappings here.
-            if (domain.contains("uploaded.to") || domain.contains("RedirectInterface/ul") || domain.contains("ul.to") || domain.contains("ul.net") || domain.contains("uploaded.net")) {
+            if (domain.equalsIgnoreCase("uploaded.to") || url.contains("RedirectInterface/ul") || domain.equalsIgnoreCase("ul.to") || domain.equalsIgnoreCase("ul.net") || domain.equalsIgnoreCase("uploaded.net")) {
                 domain = "uploaded.to";
             }
             final File file = Application.getResource("cfg/clicked/" + domain + ".json");
