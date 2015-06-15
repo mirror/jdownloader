@@ -1,9 +1,14 @@
 package org.jdownloader.startup.commands;
 
+import java.io.File;
+import java.util.Arrays;
+
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcollector.LinkOriginDetails;
+
+import org.appwork.utils.StringUtils;
 
 public class AddLinkCommand extends AbstractStartupCommand {
 
@@ -13,9 +18,30 @@ public class AddLinkCommand extends AbstractStartupCommand {
 
     @Override
     public void run(String command, String... parameters) {
-        for (String s : parameters) {
-            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.START_PARAMETER, null), s));
+        logger.info("AddLinkCommand: " + Arrays.toString(parameters));
+        for (final String parameter : parameters) {
+            add(LinkOrigin.START_PARAMETER, parameter);
         }
+    }
+
+    public static boolean add(final LinkOrigin linkOrigin, final String parameter) {
+        if (StringUtils.isNotEmpty(parameter)) {
+            try {
+                final LinkCollectingJob job;
+                if (StringUtils.startsWithCaseInsensitive(parameter, "http")) {
+                    job = new LinkCollectingJob(new LinkOriginDetails(linkOrigin, null), parameter);
+                } else if (StringUtils.startsWithCaseInsensitive(parameter, "file:/")) {
+                    job = new LinkCollectingJob(new LinkOriginDetails(linkOrigin, null), parameter);
+                } else {
+                    job = new LinkCollectingJob(new LinkOriginDetails(linkOrigin, null), new File(parameter).toURI().toString());
+                }
+                LinkCollector.getInstance().addCrawlerJob(job);
+                return true;
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
+        }
+        return false;
     }
 
     @Override

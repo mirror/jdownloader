@@ -74,7 +74,7 @@ public class OboomController implements AccountControllerListener, Sponsor {
 
     /**
      * get the only existing instance of OboomController. This is a singleton
-     * 
+     *
      * @return
      */
     public static OboomController getInstance() {
@@ -497,41 +497,43 @@ public class OboomController implements AccountControllerListener, Sponsor {
     }
 
     private void notify(final Account account, String title, String msg) {
-        final PluginForHost plugin = account.getPlugin();
-        String url = null;
-        if (plugin == null || StringUtils.isEmpty(url = plugin.getBuyPremiumUrl())) {
-            return;
-        }
-        final Icon fav = DomainInfo.getInstance(account.getHoster()).getFavIcon();
-        final ExtMergedIcon hosterIcon = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_REFRESH, 32)).add(fav, 32 - fav.getIconWidth(), 32 - fav.getIconHeight());
-        final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, hosterIcon, _GUI._.lit_continue(), _GUI._.lit_close()) {
-            @Override
-            public ModalityType getModalityType() {
-                return ModalityType.MODELESS;
+        if (account != null) {
+            final PluginForHost plugin = account.getPlugin();
+            final String customURL;
+            if (plugin == null) {
+                customURL = "http://" + account.getHoster();
+            } else {
+                customURL = null;
+            }
+            final Icon fav = DomainInfo.getInstance(account.getHoster()).getFavIcon();
+            final ExtMergedIcon hosterIcon = new ExtMergedIcon(new AbstractIcon(IconKey.ICON_REFRESH, 32)).add(fav, 32 - fav.getIconWidth(), 32 - fav.getIconHeight());
+            final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, hosterIcon, _GUI._.lit_continue(), _GUI._.lit_close()) {
+                @Override
+                public ModalityType getModalityType() {
+                    return ModalityType.MODELESS;
+                }
+
+                @Override
+                public String getDontShowAgainKey() {
+                    return "expireRenewNotification_" + account.getHoster();
+                }
+
+                @Override
+                public long getCountdown() {
+                    return 5 * 60 * 1000l;
+                }
+            };
+            try {
+                Dialog.getInstance().showDialog(d);
+                StatsManager.I().openAfflink(plugin, customURL, "PremiumExpireWarning/" + account.getHoster() + "/OK");
+            } catch (DialogNoAnswerException e) {
+                e.printStackTrace();
+                StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/CANCELED");
+            }
+            if (d.isDontShowAgainSelected()) {
+                StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/DONT_SHOW_AGAIN");
             }
 
-            @Override
-            public String getDontShowAgainKey() {
-                return "expireRenewNotification_" + account.getHoster();
-            }
-
-            @Override
-            public long getCountdown() {
-                return 5 * 60 * 1000l;
-            }
-        };
-
-        try {
-            Dialog.getInstance().showDialog(d);
-
-            StatsManager.I().openAfflink(url, "PremiumExpireWarning/" + account.getHoster() + "/OK", false);
-
-        } catch (DialogNoAnswerException e) {
-            e.printStackTrace();
-            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/CANCELED");
-        }
-        if (d.isDontShowAgainSelected()) {
-            StatsManager.I().track("PremiumExpireWarning/" + account.getHoster() + "/DONT_SHOW_AGAIN");
         }
     }
 

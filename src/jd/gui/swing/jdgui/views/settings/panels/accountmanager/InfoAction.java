@@ -23,17 +23,23 @@ public class InfoAction extends TableBarAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        Account lAcc = getAccount();
-        if (lAcc == null) {
-            return;
-        }
-        PluginForHost plugin = JDUtilities.getNewPluginForHostInstance(lAcc.getHoster());
-        PluginInfoGenerator pig = ((PluginInfoGenerator) plugin.getInfoGenerator(lAcc));
-        if (pig != null) {
-            pig.show();
-        } else {
-            StatsManager.I().openAfflink(plugin.getBuyPremiumUrl(), "InfoAction", false);
-
+        final Account lAcc = getAccount();
+        if (lAcc != null) {
+            final PluginForHost plugin = JDUtilities.getNewPluginForHostInstance(lAcc.getHoster());
+            if (plugin != null) {
+                final PluginInfoGenerator pig = ((PluginInfoGenerator) plugin.getInfoGenerator(lAcc));
+                if (pig != null) {
+                    pig.show();
+                    return;
+                }
+            }
+            final String customURL;
+            if (plugin == null) {
+                customURL = "http://" + lAcc.getHoster();
+            } else {
+                customURL = null;
+            }
+            StatsManager.I().openAfflink(plugin, customURL, "InfoAction");
         }
     }
 

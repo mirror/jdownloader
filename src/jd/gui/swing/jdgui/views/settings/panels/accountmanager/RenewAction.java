@@ -21,14 +21,16 @@ public class RenewAction extends TableBarAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        Account lAcc = getAccount();
-        if (lAcc == null) {
-            return;
-        }
-        PluginForHost plugin = JDUtilities.getPluginForHost(lAcc.getHoster());
-        if (plugin != null) {
-            StatsManager.I().openAfflink(plugin.getBuyPremiumUrl(), "RenewAction", false);
-
+        final Account lAcc = getAccount();
+        if (lAcc != null) {
+            final PluginForHost plugin = JDUtilities.getPluginForHost(lAcc.getHoster());
+            final String customURL;
+            if (plugin == null) {
+                customURL = "http://" + lAcc.getHoster();
+            } else {
+                customURL = null;
+            }
+            StatsManager.I().openAfflink(plugin, customURL, "RenewAction");
         }
     }
 

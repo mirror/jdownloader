@@ -164,10 +164,10 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         String source = request.getParameterbyKey("source");
         final String referer = request.getRequestHeaders().getValue(HTTPConstants.HEADER_REQUEST_REFERER);
         String comment = request.getParameterbyKey("comment");
-        LinkCollectingJob job = new LinkCollectingJob(origin, urls);
+        final LinkCollectingJob job = new LinkCollectingJob(origin, urls);
         final String finalDestination = request.getParameterbyKey("dir");
         String packageName = request.getParameterbyKey("package");
-        if (source != null && !(StringUtils.startsWithCaseInsensitive(source, "http://") && StringUtils.startsWithCaseInsensitive(source, "https://"))) {
+        if (source != null && !(StringUtils.startsWithCaseInsensitive(source, "http://") || StringUtils.startsWithCaseInsensitive(source, "https://"))) {
             if (packageName == null) {
                 packageName = source;
             }
@@ -178,6 +178,8 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         }
         if (source != null) {
             job.setCustomSourceUrl(getLongerString(source, referer));
+        } else {
+            job.setCustomSourceUrl(referer);
         }
         final String finalPackageName = packageName;
         final String finalComment = comment;

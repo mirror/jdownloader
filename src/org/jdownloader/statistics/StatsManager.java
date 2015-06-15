@@ -124,7 +124,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static StatsManager I() {
@@ -623,7 +623,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * this setter does not set the config flag. Can be used to disable the logger for THIS session.
-     * 
+     *
      * @param b
      */
     public void setEnabled(boolean b) {
@@ -1631,7 +1631,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
-     * 
+     *
      * @param reducer
      * @param path
      */
@@ -1734,30 +1734,44 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         System.out.println(new URL("uploaded.to").getHost());
     }
 
-    public void openAfflink(final String url, final String source, final boolean direct) {
+    public void openAfflink(final PluginForHost plugin, final String customRefURL, final String source) {
+        String refURL = null;
         try {
-            if (url.startsWith("https://www.oboom.com/ref/C0ACB0?ref_token=")) {
+            final String domain;
+            if (plugin != null) {
+                domain = plugin.getHost();
+            } else {
+                if (StringUtils.contains(customRefURL, "RedirectInterface/ul")) {
+                    domain = "uploaded.to";
+                } else {
+                    final String host = Browser.getHost(customRefURL, false);
+                    if (host != null && (host.equalsIgnoreCase("uploaded.to") || host.equalsIgnoreCase("ul.to") || host.equalsIgnoreCase("ul.net") || host.equalsIgnoreCase("uploaded.net"))) {
+                        domain = "uploaded.to";
+                    } else {
+                        domain = host;
+                    }
+                }
+            }
+            refURL = customRefURL;
+            if (StringUtils.isEmpty(refURL)) {
+                String buyPremium = null;
+                if (plugin != null) {
+                    buyPremium = plugin.getBuyPremiumUrl();
+                    if (StringUtils.isEmpty(buyPremium)) {
+                        buyPremium = "http://" + plugin.getHost();
+                    }
+                }
+                refURL = AccountController.createFullBuyPremiumUrl(buyPremium, source);
+            }
+            if (refURL.startsWith("https://www.oboom.com/ref/C0ACB0?ref_token=")) {
                 StatsManager.I().track("buypremium/" + source + "/https://www.oboom.com/ref/C0ACB0?ref_token=...");
-
-            } else if (url.startsWith("http://update3.jdownloader.org/jdserv/RedirectInterface/ul")) {
+            } else if (refURL.startsWith("http://update3.jdownloader.org/jdserv/RedirectInterface/ul")) {
                 StatsManager.I().track("buypremium/" + source + "/http://update3.jdownloader.org/jdserv/RedirectInterface/ul...");
             } else {
-                StatsManager.I().track("buypremium/" + source + "/" + url);
-            }
-
-            String domain = url;
-            if (!StringUtils.startsWithCaseInsensitive(domain, "http")) {
-                domain = "http://" + domain;
-            }
-            try {
-                domain = new URL(url).getHost();
-            } catch (Throwable e) {
+                StatsManager.I().track("buypremium/" + source + "/" + domain);
             }
             // do mappings here.
-            if (domain.equalsIgnoreCase("uploaded.to") || url.contains("RedirectInterface/ul") || domain.equalsIgnoreCase("ul.to") || domain.equalsIgnoreCase("ul.net") || domain.equalsIgnoreCase("uploaded.net")) {
-                domain = "uploaded.to";
-            }
-            final File file = Application.getResource("cfg/clicked/" + domain + ".json");
+            final File file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(domain) + ".json");
             file.getParentFile().mkdirs();
             ArrayList<ClickedAffLinkStorable> list = null;
             if (file.exists()) {
@@ -1774,7 +1788,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             }
             // there is no reason to keep older clicks right now.
             list.clear();
-            list.add(new ClickedAffLinkStorable(url, source));
+            list.add(new ClickedAffLinkStorable(refURL, source));
             try {
                 IO.secureWrite(file, JSonStorage.serializeToJson(list).getBytes("UTF-8"));
             } catch (Throwable e) {
@@ -1782,10 +1796,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 file.delete();
             }
         } finally {
-            if (direct) {
-                CrossSystem.openURLOrShowMessage(url);
-            } else {
-                CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(url, source));
+            if (refURL != null) {
+                CrossSystem.openURLOrShowMessage(refURL);
             }
         }
     }
