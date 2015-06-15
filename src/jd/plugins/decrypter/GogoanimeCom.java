@@ -27,16 +27,46 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2,
-
-names = { "gogoanime.com", "goodanime.net", "gooddrama.net", "playbb.me", "videowing.me", "easyvideo.me", "videozoo.me", "video66.org", "animewow.tv", "dramago.com", "playpanda.net", "byzoo.org", "vidzur.com" },
-
-urls = { "http://(www\\.)?gogoanime\\.com/(?!flowplayer)(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?goodanime\\.net/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?gooddrama\\.net/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?playbb\\.me/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?videowing\\.me/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)",
-        "http://(www\\.)?easyvideo\\.me/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?videozoo\\.me/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?video66\\.org/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?animewow\\.tv/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?dramago\\.com/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)",
-        "http://(www\\.)?playpanda\\.net/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?byzoo\\.org/(embed(\\.php)?\\?.*?vid(eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)", "http://(www\\.)?vidzur\\.com/(?!embed)(gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(/\\d+)?)" },
-
-        flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class GogoanimeCom extends antiDDoSForDecrypt {
+
+    /**
+     * Returns the annotations names array
+     *
+     * @return
+     */
+    public static String[] getAnnotationNames() {
+        return new String[] { "gogoanime.com", "goodanime.net", "goodanime.eu", "gooddrama.net", "playbb.me", "videowing.me", "easyvideo.me", "videozoo.me", "video66.org", "animewow.tv", "dramago.com", "playpanda.net", "byzoo.org", "vidzur.com", "animetoon.tv", "animetoon.eu", "dramagalaxy.com", "toonget.com", "goodmanga.net" };
+    }
+
+    /**
+     * returns the annotation pattern array
+     *
+     * @return
+     */
+    public static String[] getAnnotationUrls() {
+        String[] a = new String[getAnnotationNames().length];
+        int i = 0;
+        for (final String domain : getAnnotationNames()) {
+            a[i] = "http://(?:www\\.)?" + Pattern.quote(domain) + "/(?!flowplayer)(?:embed(\\.php)?\\?.*?vid(?:eo)?=.+|gogo/\\?.*?file=.+|(?:(?:[a-z\\-]+\\-drama|[a-z\\-]+\\-movie)/)?[a-z0-9\\-_]+(?:/\\d+)?)";
+            i++;
+        }
+        return a;
+    }
+
+    /**
+     * Returns the annotations flags array
+     *
+     * @return
+     */
+    public static int[] getAnnotationFlags() {
+        final int gl = getAnnotationNames().length;
+        int[] a = new int[gl];
+        for (int i = 0; i < gl; i++) {
+            a[i] = 0;
+        }
+        return a;
+    }
 
     // NOTE:
     // play44.net = gogoanime.com url (doesn't seem to have mirror in its own domain happening)
