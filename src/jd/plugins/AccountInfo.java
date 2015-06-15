@@ -227,7 +227,7 @@ public class AccountInfo extends Property {
      * @return
      */
     public final boolean setValidUntil(final long validuntil, final Browser br) {
-        return setValidUntil(validuntil, br, null);
+        return setValidUntil(validuntil, br, "EEE, dd MMM yyyy HH:mm:ss z");
     }
 
     /**
@@ -241,12 +241,11 @@ public class AccountInfo extends Property {
      * @param validuntil
      * @param br
      */
-    public final boolean setValidUntil(final long validuntil, final Browser br, final String formatterPattern) {
+    public final boolean setValidUntil(final long validuntil, final Browser br, final String formatter) {
         if (validuntil == -1) {
             setValidUntil(-1);
             return true;
         }
-        final String formatter = StringUtils.isEmpty(formatterPattern) ? "EEE, dd MMM yyyy hh:mm:ss zzz" : formatterPattern;
         long serverTime = -1;
         if (br != null && br.getHttpConnection() != null) {
             // lets use server time to determine time out value; we then need to adjust timeformatter reference +- time against server time
