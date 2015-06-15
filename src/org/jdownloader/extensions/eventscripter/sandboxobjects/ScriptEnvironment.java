@@ -114,7 +114,7 @@ public class ScriptEnvironment {
         return;
     }
 
-    private static void askForPermission(final String string) throws EnvironmentException {
+    static void askForPermission(final String string) throws EnvironmentException {
         final ScriptThread env = getScriptThread();
         final String md5 = Hash.getMD5(env.getScript().getScript());
         ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, T._.permission_title(), T._.permission_msg(env.getScript().getName(), env.getScript().getEventTrigger().getLabel(), string), new AbstractIcon(IconKey.ICON_SERVER, 32), T._.allow(), T._.deny()) {
@@ -444,6 +444,13 @@ public class ScriptEnvironment {
         }
     }
 
+    @ScriptAPI(description = "Get a FilePath Object", parameters = { "Path to a file or folder" })
+    public static FilePathSandbox getPath(String fileOrUrl) throws EnvironmentException {
+
+        return new FilePathSandbox(fileOrUrl);
+
+    }
+
     @ScriptAPI(description = "Loads a website (Method: GET) and returns the source code", parameters = { "URL" }, example = "var myhtmlSourceString=getPage(\"http://jdownloader.org\");")
     public static String getPage(String fileOrUrl) throws EnvironmentException {
 
@@ -455,6 +462,14 @@ public class ScriptEnvironment {
             throw new EnvironmentException(e);
         }
     }
+
+    //
+    // @ScriptAPI(description = "Get a Property. Set global to true if you want to access a global property", parameters = { "\"key\"",
+    // "global(boolean)" }, example = "var value=getProperty(\"myobject\", false);")
+    // public static Object getProperty(ConsString key, boolean global) throws EnvironmentException {
+    //
+    // return getProperty(key.toString(), global);
+    // }
 
     @ScriptAPI(description = "Get a Property. Set global to true if you want to access a global property", parameters = { "\"key\"", "global(boolean)" }, example = "var value=getProperty(\"myobject\", false);")
     public static Object getProperty(String key, boolean global) throws EnvironmentException {
@@ -605,15 +620,16 @@ public class ScriptEnvironment {
         return;
     }
 
-    @ScriptAPI(description = "Create a directory", parameters = { "path" }, example = "var myBooleanResult=mkdirs(JD_HOME+\"/mydirectory/\");")
-    public static boolean mkdirs(String filepath) throws EnvironmentException {
-        askForPermission("create a directory");
-        try {
-            return new File(filepath).mkdirs();
-        } catch (Throwable e) {
-            throw new EnvironmentException(e);
-        }
-    }
+    // @ScriptAPI(description = "Create a directory", parameters = { "path" }, example =
+    // "var myBooleanResult=mkdirs(JD_HOME+\"/mydirectory/\");")
+    // public static boolean mkdirs(String filepath) throws EnvironmentException {
+    // askForPermission("create a directory");
+    // try {
+    // return new File(filepath).mkdirs();
+    // } catch (Throwable e) {
+    // throw new EnvironmentException(e);
+    // }
+    // }
 
     @ScriptAPI(description = "Play a Wav Audio file", parameters = { "myFilePathOrUrl" }, example = "playWavAudio(JD_HOME+\"/themes/standard/org/jdownloader/sounds/captcha.wav\");")
     public static void playWavAudio(String fileOrUrl) throws EnvironmentException {
