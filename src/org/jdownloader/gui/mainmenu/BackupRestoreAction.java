@@ -23,6 +23,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.zip.ZipEntry;
 
 import javax.swing.filechooser.FileFilter;
 
@@ -213,17 +216,52 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
                             return "ShutdownHook: Restore Backup";
                         }
 
+                        private final AtomicBoolean running  = new AtomicBoolean(false);
+                        private final AtomicLong    progress = new AtomicLong(0);
+
+                        @Override
+                        protected void waitFor() {
+                            long last = progress.get();
+                            int noProgress = 30;
+                            while (running.get() && noProgress > 0) {
+                                if (progress.get() == last) {
+                                    noProgress--;
+                                } else {
+                                    last = progress.get();
+                                    noProgress = 30;
+                                }
+                                synchronized (running) {
+                                    if (running.get()) {
+                                        try {
+                                            running.wait(1000);
+                                        } catch (InterruptedException e) {
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         @Override
                         public void onShutdown(ShutdownRequest shutdownRequest) {
                             ZipIOReader zip = null;
                             try {
+                                running.set(true);
                                 if (getMaxAutoBackupFiles() > 0) {
-                                    BackupCreateAction.create(fauto);
+                                    BackupCreateAction.create(fauto, progress);
                                 }
                                 if (getMaxAutoBackupFiles() >= 0) {
                                     cleanupAutoBackups(getMaxAutoBackupFiles());
                                 }
-                                zip = new ZipIOReader(file);
+                                zip = new ZipIOReader(file) {
+                                    @Override
+                                    protected void notify(ZipEntry entry, long bytesWrite, long bytesProcessed) {
+                                        if (entry.isDirectory()) {
+                                            progress.incrementAndGet();
+                                        } else {
+                                            progress.addAndGet(bytesWrite);
+                                        }
+                                    }
+                                };
                                 File tmp = Application.getTempResource("restorebackup_" + System.currentTimeMillis());
                                 while (tmp.exists()) {
                                     tmp = Application.getTempResource("restorebackup_" + System.currentTimeMillis());
@@ -251,6 +289,10 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
                                 try {
                                     zip.close();
                                 } catch (Throwable e) {
+                                }
+                                synchronized (running) {
+                                    running.set(false);
+                                    running.notifyAll();
                                 }
                             }
                         }

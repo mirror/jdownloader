@@ -19,6 +19,9 @@ package org.jdownloader.gui.mainmenu;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.zip.ZipEntry;
 
 import javax.swing.filechooser.FileFilter;
 
@@ -95,6 +98,9 @@ public class BackupCreateAction extends CustomizableAppAction {
 
                     final File backupFile = file;
                     ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+                        private final AtomicBoolean running  = new AtomicBoolean(false);
+                        private final AtomicLong    progress = new AtomicLong(0);
                         {
                             setHookPriority(Integer.MIN_VALUE);
                         }
@@ -110,12 +116,40 @@ public class BackupCreateAction extends CustomizableAppAction {
                         }
 
                         @Override
+                        protected void waitFor() {
+                            long last = progress.get();
+                            int noProgress = 30;
+                            while (running.get() && noProgress > 0) {
+                                if (progress.get() == last) {
+                                    noProgress--;
+                                } else {
+                                    last = progress.get();
+                                    noProgress = 30;
+                                }
+                                synchronized (running) {
+                                    if (running.get()) {
+                                        try {
+                                            running.wait(1000);
+                                        } catch (InterruptedException e) {
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        @Override
                         public void onShutdown(ShutdownRequest shutdownRequest) {
                             try {
-                                create(backupFile);
+                                running.set(true);
+                                create(backupFile, progress);
                             } catch (Throwable e) {
                                 LogController.GL.log(e);
                                 Dialog.getInstance().showExceptionDialog(_GUI._.lit_error_occured(), e.getMessage(), e);
+                            } finally {
+                                synchronized (running) {
+                                    running.set(false);
+                                    running.notifyAll();
+                                }
                             }
                         }
                     });
@@ -129,14 +163,27 @@ public class BackupCreateAction extends CustomizableAppAction {
         }.start();
     }
 
-    public static void create(File auto) throws IOException {
+    public static void create(File auto, final AtomicLong createAlive) throws IOException {
         ZipIOWriter zipper = null;
         boolean bad = true;
         try {
             if (!auto.getParentFile().exists()) {
                 auto.getParentFile().mkdirs();
             }
-            zipper = new ZipIOWriter(auto);
+            if (createAlive != null) {
+                zipper = new ZipIOWriter(auto) {
+                    @Override
+                    protected void notify(ZipEntry entry, long bytesWrite, long bytesProcessed) {
+                        if (entry.isDirectory()) {
+                            createAlive.incrementAndGet();
+                        } else {
+                            createAlive.addAndGet(bytesWrite);
+                        }
+                    }
+                };
+            } else {
+                zipper = new ZipIOWriter(auto);
+            }
             zipper.addDirectory(Application.getResource("cfg"), false, null);
             bad = false;
         } finally {

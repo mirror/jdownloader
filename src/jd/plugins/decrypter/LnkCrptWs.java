@@ -1381,10 +1381,10 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                 private Point loc;
 
                 private Timer mArrayTimer = new Timer(1000, new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        marray(loc);
-                    }
-                });
+                                              public void actionPerformed(ActionEvent e) {
+                                                  marray(loc);
+                                              }
+                                          });
 
                 @Override
                 public void mouseDragged(final MouseEvent e) {
@@ -2113,139 +2113,149 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
         return decryptedLinks;
     }
 
+    private static Object LOCK = new Object();
+
     public boolean loadAndSolveCaptcha(final CryptedLink param, final ProgressController progress, final ArrayList<DownloadLink> decryptedLinks, final String parameter, final String containerId) throws IOException, InterruptedException, Exception, DecrypterException {
-        br.clearCookies(parameter);
-        getPage(parameter);
-        for (int i = 0; i < 5; i++) {
-            if (br.containsHTML("TextX")) {
-                // since we are currently not able to auto solve TextX Captcha, we try to get another one
-                Thread.sleep(500);
-                br.clearCookies(parameter);
-                getPage(parameter);
-                continue;
+        synchronized (LOCK) {
+            if (isAbort()) {
+                return false;
             }
-        }
-        System.out.println("TextX " + br.containsHTML("TextX"));
-        System.out.println("CaptX " + br.containsHTML("CaptX"));
-        System.out.println("KeyCAPTCHA " + br.containsHTML("KeyCAPTCHA"));
-        if (br.containsHTML("<title>Linkcrypt\\.ws // Error 404</title>")) {
-            final String msg = "This link might be offline!";
-            final String additional = br.getRegex("<h2>\r?\n?(.*?)<").getMatch(0);
-            if (additional != null && !(additional.matches("\\s+") || "".equals(additional))) {
-                logger.info(additional);
+            br.clearCookies(parameter);
+            getPage(parameter);
+            for (int i = 0; i < 5; i++) {
+                if (isAbort()) {
+                    return false;
+                }
+                if (br.containsHTML("TextX")) {
+                    // since we are currently not able to auto solve TextX Captcha, we try to get another one
+                    Thread.sleep(500);
+                    br.clearCookies(parameter);
+                    getPage(parameter);
+                    continue;
+                }
             }
-            try {
-                decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "([\\w]+)$").getMatch(0), msg));
-            } catch (final Throwable t) {
-                logger.info(msg + " :: " + parameter);
-            }
-            return false;
-        }
-
-        final String important[] = { "/js/jquery.js", "/dir/image/Warning.png" };
-        URLConnectionAdapter con = null;
-        for (final String template : important) {
-            final Browser br2 = br.cloneBrowser();
-            try {
-                con = br2.openGetConnection(template);
-            } catch (final Exception e) {
-                e.printStackTrace();
-            } finally {
+            System.out.println("TextX " + br.containsHTML("TextX"));
+            System.out.println("CaptX " + br.containsHTML("CaptX"));
+            System.out.println("KeyCAPTCHA " + br.containsHTML("KeyCAPTCHA"));
+            if (br.containsHTML("<title>Linkcrypt\\.ws // Error 404</title>")) {
+                final String msg = "This link might be offline!";
+                final String additional = br.getRegex("<h2>\r?\n?(.*?)<").getMatch(0);
+                if (additional != null && !(additional.matches("\\s+") || "".equals(additional))) {
+                    logger.info(additional);
+                }
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "([\\w]+)$").getMatch(0), msg));
+                } catch (final Throwable t) {
+                    logger.info(msg + " :: " + parameter);
+                }
+                return false;
+            }
+
+            final String important[] = { "/js/jquery.js", "/dir/image/Warning.png" };
+            URLConnectionAdapter con = null;
+            for (final String template : important) {
+                final Browser br2 = br.cloneBrowser();
+                try {
+                    con = br2.openGetConnection(template);
+                } catch (final Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
-        }
 
-        // Different captcha types
-        if (br.containsHTML("<!-- KeyCAPTCHA code")) {
-            boolean done = false;
-            KeyCaptcha kc;
+            // Different captcha types
+            if (br.containsHTML("<!-- KeyCAPTCHA code")) {
+                boolean done = false;
+                KeyCaptcha kc;
 
-            // START solve keycaptcha automatically
-            for (int i = 0; i < 3; i++) {
-                kc = new KeyCaptcha(br);
-                final String result = kc.autoSolve(parameter);
-                postPage(parameter, "capcode=" + Encoding.urlEncode(result));
-                if (!br.containsHTML("<!-- KeyCAPTCHA code")) {
-                    done = true;
-                    break;
-                }
-            }
-            if (!done) {
-                // manual failover
-                for (int i = 0; i <= 3; i++) {
+                // START solve keycaptcha automatically
+                for (int i = 0; i < 3; i++) {
                     kc = new KeyCaptcha(br);
-                    final String result = kc.showDialog(parameter);
-                    if (result == null) {
-                        continue;
-                    }
-                    if ("CANCEL".equals(result)) {
-                        throw new DecrypterException(DecrypterException.CAPTCHA);
-                    }
+                    final String result = kc.autoSolve(parameter);
                     postPage(parameter, "capcode=" + Encoding.urlEncode(result));
                     if (!br.containsHTML("<!-- KeyCAPTCHA code")) {
+                        done = true;
                         break;
                     }
                 }
-                if (br.containsHTML("<!-- KeyCAPTCHA code")) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                if (!done) {
+                    // manual failover
+                    for (int i = 0; i <= 3; i++) {
+                        kc = new KeyCaptcha(br);
+                        final String result = kc.showDialog(parameter);
+                        if (result == null) {
+                            continue;
+                        }
+                        if ("CANCEL".equals(result)) {
+                            throw new DecrypterException(DecrypterException.CAPTCHA);
+                        }
+                        postPage(parameter, "capcode=" + Encoding.urlEncode(result));
+                        if (!br.containsHTML("<!-- KeyCAPTCHA code")) {
+                            break;
+                        }
+                    }
+                    if (br.containsHTML("<!-- KeyCAPTCHA code")) {
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    }
                 }
             }
-        }
-        if (br.containsHTML("CaptX|TextX")) {
-            boolean valid = true;
-            final int max_attempts = 4;
-            for (int attempts = 0; attempts < max_attempts; attempts++) {
-                if (valid && attempts > 0) {
-                    break;
-                }
-                final Form[] captchas = br.getForms();
-                String url = null;
-                for (final Form captcha : captchas) {
-                    if (captcha != null && br.containsHTML("CaptX|TextX")) {
-                        url = captcha.getRegex("src=\"(.*?secid.*?)\"").getMatch(0);
-                        if (url != null) {
-                            valid = false;
-                            final String capDescription = captcha.getRegex("<b>(.*?)</b>").getMatch(0);
-                            final File file = this.getLocalCaptchaFile();
-                            br.cloneBrowser().getDownload(file, url);
-                            // remove black bars
-                            Point p = null;
-                            final byte[] bytes = IO.readBytes(file);
-                            if (br.containsHTML("CaptX") && attempts < 2) {
-                                // try autosolve
-                                p = CaptXSolver.solveCaptXCaptcha(bytes);
-                            }
-                            if (p == null) {
+            if (br.containsHTML("CaptX|TextX")) {
+                boolean valid = true;
+                final int max_attempts = 4;
+                for (int attempts = 0; attempts < max_attempts; attempts++) {
+                    if (valid && attempts > 0) {
+                        break;
+                    }
+                    final Form[] captchas = br.getForms();
+                    String url = null;
+                    for (final Form captcha : captchas) {
+                        if (captcha != null && br.containsHTML("CaptX|TextX")) {
+                            url = captcha.getRegex("src=\"(.*?secid.*?)\"").getMatch(0);
+                            if (url != null) {
+                                valid = false;
+                                final String capDescription = captcha.getRegex("<b>(.*?)</b>").getMatch(0);
+                                final File file = this.getLocalCaptchaFile();
+                                br.cloneBrowser().getDownload(file, url);
+                                // remove black bars
+                                Point p = null;
+                                final byte[] bytes = IO.readBytes(file);
+                                if (br.containsHTML("CaptX") && attempts < 2) {
+                                    // try autosolve
+                                    p = CaptXSolver.solveCaptXCaptcha(bytes);
+                                }
+                                if (p == null) {
 
-                                // solve by user
-                                BufferedImage image = toBufferedImage(new ByteArrayInputStream(bytes));
-                                ImageIO.write(image, "png", file);
-                                p = UserIO.getInstance().requestClickPositionDialog(file, "LinkCrypt.ws | " + String.valueOf(max_attempts - attempts), capDescription);
-                            }
-                            if (p == null) {
-                                throw new DecrypterException(DecrypterException.CAPTCHA);
-                            }
-                            captcha.put("x", p.x + "");
-                            captcha.put("y", p.y + "");
-                            submitForm(captcha);
-                            if (!br.containsHTML("(Our system could not identify you as human beings\\!|Your choice was wrong\\! Please wait some seconds and try it again\\.)")) {
-                                valid = true;
-                                break;
-                            } else {
-                                getPage("/dir/" + containerId);
+                                    // solve by user
+                                    BufferedImage image = toBufferedImage(new ByteArrayInputStream(bytes));
+                                    ImageIO.write(image, "png", file);
+                                    p = UserIO.getInstance().requestClickPositionDialog(file, "LinkCrypt.ws | " + String.valueOf(max_attempts - attempts), capDescription);
+                                }
+                                if (p == null) {
+                                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                                }
+                                captcha.put("x", p.x + "");
+                                captcha.put("y", p.y + "");
+                                submitForm(captcha);
+                                if (!br.containsHTML("(Our system could not identify you as human beings\\!|Your choice was wrong\\! Please wait some seconds and try it again\\.)")) {
+                                    valid = true;
+                                    break;
+                                } else {
+                                    getPage("/dir/" + containerId);
+                                }
                             }
                         }
                     }
                 }
+                if (!valid) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
             }
-            if (!valid) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
-            }
+            return true;
         }
-        return true;
     }
 
     @Override
@@ -2925,23 +2935,23 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
          */
         Comparator<Integer> isElementColor = new Comparator<Integer>() {
 
-            public int compare(Integer o1, Integer o2) {
-                int c = o1;
-                int c2 = o2;
-                if (isBackground(o1) || isBackground(o2)) {
-                    return 0;
-                }
-                if (c == 0x000000 || c2 == 0x000000) {
-                    return c == c2 ? 1 : 0;
-                }
-                int[] hsvC = Colors.rgb2hsv(c);
-                int[] hsvC2 = Colors.rgb2hsv(c2);
-                // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
-                        // Is it a typo? Was a different comparison meant in the second place?
-                                return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
-            }
+                                               public int compare(Integer o1, Integer o2) {
+                                                   int c = o1;
+                                                   int c2 = o2;
+                                                   if (isBackground(o1) || isBackground(o2)) {
+                                                       return 0;
+                                                   }
+                                                   if (c == 0x000000 || c2 == 0x000000) {
+                                                       return c == c2 ? 1 : 0;
+                                                   }
+                                                   int[] hsvC = Colors.rgb2hsv(c);
+                                                   int[] hsvC2 = Colors.rgb2hsv(c2);
+                                                   // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
+                                                   // Is it a typo? Was a different comparison meant in the second place?
+                                                   return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
+                                               }
 
-        };
+                                           };
 
         private boolean equalElements(int c, int c2) {
             return isElementColor.compare(c, c2) == 1;
