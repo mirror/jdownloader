@@ -7,7 +7,19 @@ public class UniqueAlltimeID {
     private long                    id;
 
     public UniqueAlltimeID() {
-        id = ID.incrementAndGet();
+        long id = -1;
+        while (true) {
+            final long lastID = ID.get();
+            id = System.currentTimeMillis();
+            if (id < lastID) {
+                id = lastID + 1;
+            }
+            if (ID.compareAndSet(lastID, id)) {
+                this.id = id;
+                break;
+            }
+        }
+
     }
 
     public UniqueAlltimeID(long id2) {
@@ -21,10 +33,16 @@ public class UniqueAlltimeID {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null) return false;
-        if (this == o) return true;
+        if (o == null) {
+            return false;
+        }
+        if (this == o) {
+            return true;
+        }
         if (o instanceof UniqueAlltimeID) {
-            if (((UniqueAlltimeID) o).id == id) return true;
+            if (((UniqueAlltimeID) o).id == id) {
+                return true;
+            }
         }
         return false;
     }
@@ -40,7 +58,7 @@ public class UniqueAlltimeID {
 
     /**
      * WARNING: by manually changing the ID you can break unique state of this Instance!
-     * 
+     *
      * @param ID
      */
     public void setID(long ID) {

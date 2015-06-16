@@ -113,117 +113,50 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
     }
 
     public boolean canHandle() {
-        boolean myEn = MyJDownloaderController.getInstance().isRemoteCaptchaServiceEnabled();
-        if (validateLogins() && myEn && isEnabled()) {
-
-            // Plugin plg = getPluginFromThread();
-            // if (plg != null) {
-            // final String id = plg.getHost();
-            // int counter = 0;
-            // synchronized (lastChallenge) {
-            //
-            // final ArrayList<Request> remove = new ArrayList<Request>();
-            // for (int i = lastChallenge.size() - 1; i >= 0; i--) {
-            // final Request r = lastChallenge.get(i);
-            // if (System.currentTimeMillis() > r.timestamp + 30 * 60 * 1000l) {
-            // remove.add(r);
-            // continue;
-            // }
-            // if (r.id.equals(id)) {
-            // counter++;
-            // }
-            // }
-            // lastChallenge.removeAll(remove);
-            // }
-            // // max 2 captchas per plugin and 30 minutes.
-            // // if (counter >= 10) {
-            // // return false;
-            // // }
-            //
-            // }
-            return true;
-        }
-        return false;
+        final boolean myEn = MyJDownloaderController.getInstance().isRemoteCaptchaServiceEnabled();
+        return myEn && isEnabled() && validateLogins();
     }
 
     @Override
     public boolean canHandle(Challenge<?> c) {
         try {
-            boolean myEn = MyJDownloaderController.getInstance().isRemoteCaptchaServiceEnabled();
-            boolean validLogins = validateLogins();
-            logger.info("Can Handle? " + c + " -myjd:" + myEn + " valid:" + validLogins);
-            if (validLogins && c instanceof BasicCaptchaChallenge && myEn && super.canHandle(c)) {
-
-                if (c instanceof RecaptchaV1CaptchaChallenge) {
-                    logger.info("is RC1");
-                    if (!Application.isHeadless()) {
-                        FileInputStream is = null;
-                        try {
-                            is = new FileInputStream(((RecaptchaV1CaptchaChallenge) c).getImageFile());
-                            int type = ImageIO.read(is).getType();
-                            logger.info("Image Type: " + type);
-                            if (type == 5) {
-                                logger.info("Can handle FALSE");
-                                // type 5= colored images. the digit captchas. MyJD cannot solve this type
-                                return false;
-                                // if (BrowserSolverService.getInstance().getConfig().isBrowserLoopEnabled()) {
-                                // // used browserloop
-                                // // our myjd autosolver currently cannot solve these "easier" types
-                                // logger.info("Do not send Captcha to MyJD CES Solver: BrowserLoop enabled");
-                                // return false;
-                                // }
-                                //
-                                // Browser br = new Browser();
-                                // BrowserSolverService.fillCookies(br);
-                                //
-                                // if (br.getCookie("google.com", "SID") != null && br.getCookie("google.com", "HSID") != null) {
-                                // logger.info("Do not send Captcha to MyJD CES Solver: H?SID Cookies found");
-                                // // used account workaround
-                                // return false;
-                                // }
-                            }
-                        } catch (IOException e) {
-                            logger.log(e);
-                            ;
-                            logger.info("Can handle FALSE");
-                            return false;
-                        } finally {
-                            if (is != null) {
+            final boolean myEn = MyJDownloaderController.getInstance().isRemoteCaptchaServiceEnabled();
+            logger.info("Is Enabled:" + c);
+            if (myEn) {
+                if (c instanceof BasicCaptchaChallenge && super.canHandle(c)) {
+                    final boolean validLogins = validateLogins();
+                    logger.info("Is Valid:" + validLogins);
+                    if (validLogins) {
+                        if (c instanceof RecaptchaV1CaptchaChallenge) {
+                            logger.info("is RC1");
+                            if (!Application.isHeadless()) {
+                                FileInputStream is = null;
                                 try {
-                                    is.close();
+                                    is = new FileInputStream(((RecaptchaV1CaptchaChallenge) c).getImageFile());
+                                    int type = ImageIO.read(is).getType();
+                                    logger.info("Image Type: " + type);
+                                    if (type == 5) {
+                                        logger.info("Can handle FALSE");
+                                        // type 5= colored images. the digit captchas. MyJD cannot solve this type
+                                        return false;
+                                    }
                                 } catch (IOException e) {
+                                    logger.log(e);
+                                    logger.info("Can handle FALSE");
+                                    return false;
+                                } finally {
+                                    if (is != null) {
+                                        try {
+                                            is.close();
+                                        } catch (IOException e) {
+                                        }
+                                    }
                                 }
                             }
                         }
+                        return true;
                     }
-
                 }
-                // Plugin plg = ((BasicCaptchaChallenge) c).getPlugin();
-                // if (plg != null) {
-                // final String id = plg.getHost();
-                // int counter = 0;
-                // synchronized (lastChallenge) {
-                //
-                // final ArrayList<Request> remove = new ArrayList<Request>();
-                // for (int i = lastChallenge.size() - 1; i >= 0; i--) {
-                // final Request r = lastChallenge.get(i);
-                // if (System.currentTimeMillis() > r.timestamp + 30 * 60 * 1000l) {
-                // remove.add(r);
-                // continue;
-                // }
-                // if (r.id.equals(id)) {
-                // counter++;
-                // }
-                // }
-                // lastChallenge.removeAll(remove);
-                // }
-                // // max 2 captchas per plugin and 30 minutes.
-                // if (counter >= 10) {
-                // return false;
-                // }
-                //
-                // }
-                return true;
             }
             return false;
         } catch (Throwable e) {
