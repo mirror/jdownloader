@@ -49,7 +49,7 @@ public class CurLv extends PluginForDecrypt {
             return null;
         }
         br.getPage("http://cur.lv/redirect_curlv.php?code=" + lid + "&ticket=" + ticket + "&r=");
-        final String continuelink = br.getRegex("\"(ntop\\.php[^<>\"]*?)\"").getMatch(0);
+        final String continuelink = br.getRegex("(ntop\\.php[^<>\"\\']*?)\"").getMatch(0);
         if (continuelink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

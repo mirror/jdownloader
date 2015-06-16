@@ -40,7 +40,9 @@ public class VoaYeursCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String filename = br.getRegex("<title>([^<>\"]*?)\\- Porno HD \\- VOAYEURS\\.COM</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+        }
         String externID = br.getRedirectLocation();
         if (externID != null && externID.length() < 40 || br.containsHTML(">El video ha sido eliminado<")) {
             logger.info("Link offline: " + parameter);
@@ -58,7 +60,9 @@ public class VoaYeursCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
-        if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        }
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
             decryptedLinks.add(dl);
@@ -71,8 +75,12 @@ public class VoaYeursCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
-        if (externID == null) externID = br.getRegex("static\\.xvideos\\.com/swf/.*?flashvars=\"id_video=(\\d+)\"").getMatch(0);
-        if (externID == null) externID = br.getRegex("xvideos\\.com/swf/flv_player_site_v\\d+\\.swf\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"flashvars\" value=\"id_video=(\\d+)\"").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("static\\.xvideos\\.com/swf/.*?flashvars=\"id_video=(\\d+)\"").getMatch(0);
+        }
+        if (externID == null) {
+            externID = br.getRegex("xvideos\\.com/swf/flv_player_site_v\\d+\\.swf\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"flashvars\" value=\"id_video=(\\d+)\"").getMatch(0);
+        }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
             return decryptedLinks;
@@ -133,7 +141,9 @@ public class VoaYeursCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("embed\\.pornrabbit\\.com/player\\.swf\\?movie_id=(\\d+)\"").getMatch(0);
-        if (externID == null) externID = br.getRegex("pornrabbit\\.com/embed/(\\d+)").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("pornrabbit\\.com/embed/(\\d+)").getMatch(0);
+        }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://pornrabbit.com/video/" + externID + "/"));
             return decryptedLinks;
@@ -144,7 +154,9 @@ public class VoaYeursCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
-        if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        }
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
             decryptedLinks.add(dl);
@@ -194,6 +206,11 @@ public class VoaYeursCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("\"(http://(www\\.)?embed\\.porntube\\.com/\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(https?://(?:www\\.)?spankbang\\.com/[A-Za-z0-9]+/embed/)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
@@ -283,7 +300,9 @@ public class VoaYeursCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("freeporn\\.com/swf/player/AppLauncher_secure\\.swf(\"|\\')>.*?<param name=(\"|\\')flashvars(\"|\\') value=(\"|\\')file=([^<>\"]*?)\\&").getMatch(4);
-        if (externID == null) externID = br.getRegex("\"(http://(www\\.)?freeporn\\.com/embed/\\d+/?)\"").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("\"(http://(www\\.)?freeporn\\.com/embed/\\d+/?)\"").getMatch(0);
+        }
         if (externID != null) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
@@ -316,7 +335,9 @@ public class VoaYeursCom extends PluginForDecrypt {
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallinkyouporn));
             String type = br.getRegex("<meta rel=\"type\">(.*?)</meta>").getMatch(0);
-            if (type == null) type = "flv";
+            if (type == null) {
+                type = "flv";
+            }
             dl.setFinalFileName(filename + "." + type);
             decryptedLinks.add(dl);
             return decryptedLinks;

@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlgalleries.net" }, urls = { "http://(www\\.)?[a-z0-9_]+\\.urlgalleries\\.net/blog_gallery\\.php\\?id=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "urlgalleries.net" }, urls = { "http://(www\\.)?[a-z0-9_]+\\.urlgalleries\\.net/blog_gallery\\.php\\?id=\\d+" }, flags = { 0 })
 public class RlGalleriesNt extends PluginForDecrypt {
 
     private static String agent = null;
@@ -54,8 +54,9 @@ public class RlGalleriesNt extends PluginForDecrypt {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getPage(parameter);
-        if (br.containsHTML("<title> \\- urlgalleries\\.net</title>")) {
+        if (br.containsHTML("<title> \\- urlgalleries\\.net</title>|>ERROR - NO IMAGES AVAILABLE")) {
             logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String host = new Regex(parameter, "(https?://[^/]+\\.urlgalleries\\.net)").getMatch(0);
@@ -97,7 +98,9 @@ public class RlGalleriesNt extends PluginForDecrypt {
             final DownloadLink lol = createDownloadlink(finallink);
             // Give temp name so we have no same filenames
             lol.setName(Integer.toString(new Random().nextInt(1000000000)));
-            if (fp.getName() != null) fp.add(lol);
+            if (fp.getName() != null) {
+                fp.add(lol);
+            }
             decryptedLinks.add(lol);
             try {
                 distribute(lol);

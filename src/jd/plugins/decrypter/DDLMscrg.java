@@ -53,14 +53,22 @@ public class DDLMscrg extends PluginForDecrypt {
                     Thread.sleep(3000 + add);
                 } catch (InterruptedException e) {
                 }
-                if (!br.containsHTML(CAPTCHATEXT)) return null;
+                if (br.containsHTML("class=\"fehler\"")) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
+                if (!br.containsHTML(CAPTCHATEXT)) {
+                    return null;
+                }
                 String captchaUrl = "http://ddl-music.org/captcha.php?id=" + new Regex(parameter, "ddl-music\\.org/download/links/([a-z0-9]+)/").getMatch(0) + "&rand=" + new Random().nextInt(1000);
                 String code = getCaptchaCode(captchaUrl, param);
                 br.postPage(parameter, "sent=1&captcha=" + code);
                 if (!br.containsHTML(">Sicherheitscode nicht korrekt\\!<") && !br.containsHTML("captcha.php?id=")) {
                     break;
                 } else {
-                    if (i >= 8) throw new DecrypterException(DecrypterException.CAPTCHA);
+                    if (i >= 8) {
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    }
                 }
                 add += 500;
             }
@@ -69,8 +77,9 @@ public class DDLMscrg extends PluginForDecrypt {
                 logger.warning("Could not find the links...");
                 return null;
             }
-            for (String aLink : allLinks)
+            for (String aLink : allLinks) {
                 decryptedLinks.add(createDownloadlink(aLink));
+            }
         } else if (parameter.matches(DECRYPTER_DDLMSC_MAIN)) {
             logger.info("The user added a DECRYPTER_DDLMSC_MAIN link...");
             br.getPage(parameter);
@@ -94,7 +103,9 @@ public class DDLMscrg extends PluginForDecrypt {
             }
             for (String singleLink : allLinks) {
                 DownloadLink dLink = createDownloadlink("http://ddl-music.org/" + singleLink);
-                if (pwList != null) dLink.setSourcePluginPasswordList(pwList);
+                if (pwList != null) {
+                    dLink.setSourcePluginPasswordList(pwList);
+                }
                 decryptedLinks.add(dLink);
             }
             if (fpName != null) {
