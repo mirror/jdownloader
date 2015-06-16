@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 
 import javax.swing.Icon;
 
@@ -46,6 +47,7 @@ import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.PublicSuffixList;
 import org.appwork.utils.net.httpserver.requests.HttpRequestInterface;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -168,13 +170,15 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         final String finalDestination = request.getParameterbyKey("dir");
         String packageName = request.getParameterbyKey("package");
         if (source != null && !(StringUtils.startsWithCaseInsensitive(source, "http://") || StringUtils.startsWithCaseInsensitive(source, "https://"))) {
-            if (packageName == null) {
-                packageName = source;
+            final PublicSuffixList psl = PublicSuffixList.getInstance();
+            if (psl == null || psl.getDomain(source.toLowerCase(Locale.ENGLISH)) == null) {
+                if (packageName == null) {
+                    packageName = source;
+                } else if (comment == null) {
+                    comment = source;
+                }
+                source = null;
             }
-            if (comment == null) {
-                comment = source;
-            }
-            source = null;
         }
         if (source != null) {
             job.setCustomSourceUrl(getLongerString(source, referer));
