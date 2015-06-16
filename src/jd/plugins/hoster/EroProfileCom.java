@@ -36,7 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eroprofile.com" }, urls = { "http://(www\\.)?eroprofile\\.com/m/(videos|photos)/view/[A-Za-z0-9\\-_]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eroprofile.com" }, urls = { "http://(www\\.)?eroprofile\\.com/m/(videos|photos)/view/[A-Za-z0-9\\-_]+" }, flags = { 2 })
 public class EroProfileCom extends PluginForHost {
 
     public EroProfileCom(PluginWrapper wrapper) {
@@ -57,6 +57,7 @@ public class EroProfileCom extends PluginForHost {
     public static final String  NOACCESS    = "(>You do not have the required privileges to view this page|>No access<)";
     private static final String PREMIUMONLY = "The video could not be processed";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         br.setFollowRedirects(true);
@@ -68,7 +69,9 @@ public class EroProfileCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         if (downloadLink.getDownloadURL().matches(VIDEOLINK)) {
-            if (br.containsHTML("(>Video not found|>The video could not be found|<title>EroProfile</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("(>Video not found|>The video could not be found|<title>EroProfile</title>)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String filename = getFilename();
             if (br.containsHTML(PREMIUMONLY)) {
                 downloadLink.setName(filename + ".m4v");
@@ -76,19 +79,32 @@ public class EroProfileCom extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             DLLINK = br.getRegex("file:\\'(http://[^<>\"]*?)\\'").getMatch(0);
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             DLLINK = Encoding.htmlDecode(DLLINK);
             String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-            if (ext == null || ext.length() > 5) ext = ".m4v";
+            if (ext == null || ext.length() > 5) {
+                ext = ".m4v";
+            }
             downloadLink.setFinalFileName(filename + ext);
         } else {
-            if (br.containsHTML("(>Photo not found|>The photo could not be found|<title>EroProfile</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("(>Photo not found|>The photo could not be found|<title>EroProfile</title>)")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String filename = getFilename();
             DLLINK = br.getRegex("<div class=\"viewPhotoContainer\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (!DLLINK.startsWith("http")) DLLINK = "http://www.eroprofile.com" + DLLINK;
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (!DLLINK.startsWith("http")) {
+                DLLINK = "http://www.eroprofile.com" + DLLINK;
+            }
+            DLLINK = Encoding.htmlDecode(DLLINK);
             String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-            if (ext == null || ext.length() > 5) ext = ".jpg";
+            if (ext == null || ext.length() > 5) {
+                ext = ".jpg";
+            }
             downloadLink.setFinalFileName(filename + ext);
         }
         Browser br2 = br.cloneBrowser();
@@ -96,11 +112,12 @@ public class EroProfileCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            con = br2.openHeadConnection(DLLINK);
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -117,14 +134,18 @@ public class EroProfileCom extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to registered members");
         } else if (br.containsHTML(PREMIUMONLY)) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to premium members");
         }
@@ -149,7 +170,9 @@ public class EroProfileCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -166,7 +189,9 @@ public class EroProfileCom extends PluginForHost {
                 br.setFollowRedirects(false);
                 br.getHeaders().put("X_REQUESTED_WITH", "XMLHttpRequest");
                 br.postPage("http://www.eroprofile.com/process.php?0." + System.currentTimeMillis(), "a=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "memberID") == null || !br.toString().trim().equals("OK")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "memberID") == null || !br.toString().trim().equals("OK")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(MAINPAGE);
@@ -214,8 +239,12 @@ public class EroProfileCom extends PluginForHost {
 
     private String getFilename() throws PluginException {
         String filename = br.getRegex("<tr><th>Title:</th><td>([^<>\"]*?)</td></tr>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>EroProfile \\- ([^<>\"]*?)</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            filename = br.getRegex("<title>EroProfile \\- ([^<>\"]*?)</title>").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         return Encoding.htmlDecode(filename.trim());
     }
 

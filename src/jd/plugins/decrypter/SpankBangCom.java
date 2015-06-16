@@ -33,7 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/([a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/video/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/([a-z0-9]+/video/\\?quality=[\\w\\d]+|[a-z0-9]+/(?:video|embed)/)" }, flags = { 0 })
 public class SpankBangCom extends PluginForDecrypt {
 
     public SpankBangCom(PluginWrapper wrapper) {
@@ -66,7 +66,7 @@ public class SpankBangCom extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final boolean fastcheck = cfg.getBooleanProperty(FASTLINKCHECK, false);
-        PARAMETER = param.toString().replaceAll("http://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/", "http://spankbang.com/");
+        PARAMETER = param.toString().replaceAll("http://(www\\.)?([a-z]{2}\\.)?spankbang\\.com/", "http://spankbang.com/").replace("/embed/", "/video/");
         br.setFollowRedirects(true);
         br.setCookie("http://spankbang.com/", "country", "GB");
         br.getHeaders().put("Accept-Language", "en");

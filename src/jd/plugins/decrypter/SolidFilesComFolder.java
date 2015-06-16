@@ -45,6 +45,7 @@ public class SolidFilesComFolder extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML(">Not found<|>We couldn\\'t find the file you requested")) {
             logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String fpName = br.getRegex("<title>([^<>\"]*?)\\- Solidfiles</title>").getMatch(0);
@@ -56,6 +57,11 @@ public class SolidFilesComFolder extends PluginForDecrypt {
         final String[] finfo = br.getRegex("rel=\"file\">(.*?)</article>").getColumn(0);
         final String[] folders = br.getRegex("<a href=\"(/folder/[a-z0-9]+/?)\"").getColumn(0);
         if ((folders == null || folders.length == 0) && (finfo == null || finfo.length == 0)) {
+            if (br.containsHTML("id=\"file\\-list\"")) {
+                logger.info("Empty folder: " + parameter);
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
@@ -64,7 +70,7 @@ public class SolidFilesComFolder extends PluginForDecrypt {
                 final Regex urlfilename = new Regex(finfos, "<a href=\"(/d/[^<>\"]*?)\">([^<>\"]*?)</a>");
                 String url = urlfilename.getMatch(0);
                 String filename = urlfilename.getMatch(1);
-                final String filesize = new Regex(finfos, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                final String filesize = new Regex(finfos, "(\\d+(?:\\.\\d+)? ?(bytes|KB|MB|GB))").getMatch(0);
                 if (url == null || filename == null || filesize == null) {
                     return null;
                 }

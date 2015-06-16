@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wastedamateurs.com" }, urls = { "http://(www\\.)?wastedamateurs\\.com/\\d+/.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wastedamateurs.com" }, urls = { "http://(www\\.)?wastedamateurs\\.com/(\\d+/.*?\\.html|link/\\d+/)" }, flags = { 0 })
 public class WastedAmateursCom extends PluginForDecrypt {
 
     public WastedAmateursCom(PluginWrapper wrapper) {
@@ -38,10 +38,13 @@ public class WastedAmateursCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String externID = br.getRedirectLocation();
-        if (externID != null) {
+        if (externID != null && !externID.contains("wastedamatuers.com/")) {
             final DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
+        } else if (externID != null) {
+            /* Follow redirect */
+            br.getPage(externID);
         }
         String filename = br.getRegex(":: Viewing Media \\- (.*?)</title>").getMatch(0);
         if (filename == null) {
@@ -101,7 +104,9 @@ public class WastedAmateursCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
-        if (externID == null) externID = br.getRegex("\\'(http://(www\\.)?amateurdumper\\.com/videos/.*?)\\'").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("\\'(http://(www\\.)?amateurdumper\\.com/videos/.*?)\\'").getMatch(0);
+        }
         if (externID != null) {
             DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(filename + ".flv");

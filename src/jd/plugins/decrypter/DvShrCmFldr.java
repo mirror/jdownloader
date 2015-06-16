@@ -32,26 +32,29 @@ public class DvShrCmFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML("class=\"download_error_title\"")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         // Liste der Ergebnisse wird gemacht (Regex kann man hier eigentlich
         // genauer machen, ging aber nich anderes bei divshare!)
-        String[] links = br.getRegex("\"(/(download|image|folder).*?)\"").getColumn(0);
-        if (links.length == 0) return null;
-        for (String dl : links)
+        final String[] links = br.getRegex("\"(/(download|image|folder).*?)\"").getColumn(0);
+        if (links.length == 0) {
+            return null;
+        }
+        for (final String dl : links) {
             // fügt jedem Ergebnis der Liste ein "http://www.divshare.com"
             // hinzu, damit die Links auch angenommen werden
             decryptedLinks.add(createDownloadlink("http://www.divshare.com" + dl));
+        }
 
         return decryptedLinks;
     }
 
-    // @Override
-
-    /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
