@@ -19,6 +19,11 @@ public class FilePathSandbox {
         return file.isFile();
     }
 
+    public boolean isDirectory() throws EnvironmentException {
+        org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("check if a filepath is a directory");
+        return file.isDirectory();
+    }
+
     public boolean exists() throws EnvironmentException {
         org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("check if a filepath exists");
         return file.exists();
@@ -58,6 +63,11 @@ public class FilePathSandbox {
         File dest = new File(folder);
         dest = new File(dest, file.getName());
         return file.renameTo(dest);
+    }
+
+    @Override
+    public String toString() {
+        return "Filepath Instance: " + getPath();
     }
 
     public boolean delete() throws EnvironmentException {

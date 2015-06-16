@@ -420,6 +420,7 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
                 script.setEventTrigger(eventTrigger);
                 script.setScript(scriptSource);
                 script.setName(name);
+                script.setEnabled(true);
                 runScript(script, eventTrigger.getTestProperties());
             }
         }.start();

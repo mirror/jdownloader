@@ -1532,7 +1532,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
             return _GUI._.YoutubeVariant_filenametag_MP4_DASH_720_AAC48();
         }
     },
-    MP4_DASH_ORIGINAL_AAC128("MP4_2160p", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_ORIGINAL_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
+    MP4_DASH_ORIGINAL_AAC128("MP4_2160p4k8k", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_ORIGINAL_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
         @Override
         public String _getName() {
             return _GUI._.YoutubeVariant_name_generic_video("Original (2160p)", "Mp4");
@@ -1544,7 +1544,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         }
     },
 
-    MP4_DASH_ORIGINAL_AAC256("MP4_2160p", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_ORIGINAL_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null) {
+    MP4_DASH_ORIGINAL_AAC256("MP4_2160p4k8k", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_ORIGINAL_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null) {
         @Override
         public String _getName() {
             return _GUI._.YoutubeVariant_name_generic_video("Original (2160p)", "Mp4");
@@ -1555,7 +1555,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
             return _GUI._.YoutubeVariant_nametag_generic_video("Original 2160p");
         }
     },
-    MP4_DASH_ORIGINAL_AAC48("MP4_2160p", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_ORIGINAL_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null) {
+    MP4_DASH_ORIGINAL_AAC48("MP4_2160p4k8k", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_ORIGINAL_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null) {
         @Override
         public String _getName() {
             return _GUI._.YoutubeVariant_name_generic_video("Original (2160p)", "Mp4");
@@ -2066,6 +2066,74 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         public String getQualityExtension() {
             return _GUI._.YoutubeVariant_filenametag_WEBM_720();
         }
+    },
+
+    DASH_H264_2160P_30FPS_AAC_128KBIT("2160P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_2160_H264, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI._.YoutubeVariant_name_generic_video("2160p", "Mp4");
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI._.YoutubeVariant_nametag_generic_video("2160p");
+        }
+    },
+    DASH_H264_2160P_30FPS_AAC_256KBIT("2160P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_2160_H264, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI._.YoutubeVariant_name_generic_video("2160p", "Mp4");
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI._.YoutubeVariant_nametag_generic_video("2160p");
+        }
+    },
+    DASH_H264_2160P_30FPS_AAC_48KBIT("2160P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_2160_H264, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI._.YoutubeVariant_name_generic_video("2160p", "Mp4");
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI._.YoutubeVariant_nametag_generic_video("2160p");
+        }
+    },
+    DASH_H264_4320P_24FPS_AAC_128KBIT("4320P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_ORIGINAL_H264_4320P_24FPS, YoutubeITAG.DASH_AUDIO_128K_AAC, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI._.YoutubeVariant_name_generic_video("4320p", "Mp4");
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI._.YoutubeVariant_nametag_generic_video("4320p");
+        }
+    },
+    DASH_H264_4320P_24FPS_AAC_256KBIT("4320P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_ORIGINAL_H264_4320P_24FPS, YoutubeITAG.DASH_AUDIO_256K_AAC, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI._.YoutubeVariant_name_generic_video("4320p", "Mp4");
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI._.YoutubeVariant_nametag_generic_video("4320p");
+        }
+    },
+    DASH_H264_4320P_24FPS_AAC_48KBIT("4320P_Mp4", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "mp4", YoutubeITAG.DASH_VIDEO_ORIGINAL_H264_4320P_24FPS, YoutubeITAG.DASH_AUDIO_48K_AAC, null, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI._.YoutubeVariant_name_generic_video("4320p", "Mp4");
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI._.YoutubeVariant_nametag_generic_video("4320p");
+        }
+
     };
 
     private YoutubeConverter                           converter;
