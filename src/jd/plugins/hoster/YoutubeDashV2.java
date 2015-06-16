@@ -743,8 +743,8 @@ public class YoutubeDashV2 extends PluginForHost {
             if (link.getBooleanProperty("DASH", false)) {
                 String video = link.getStringProperty("DASH_VIDEO");
                 String audio = link.getStringProperty("DASH_AUDIO");
-                YoutubeITAG videoTag = StringUtils.isEmpty(video) ? null : YoutubeITAG.get(Integer.parseInt(video));
-                YoutubeITAG audioTag = StringUtils.isEmpty(audio) ? null : YoutubeITAG.get(Integer.parseInt(audio));
+                YoutubeITAG videoTag = StringUtils.isEmpty(video) ? null : YoutubeITAG.get(Integer.parseInt(video), -1, -1, -1, "", 0);
+                YoutubeITAG audioTag = StringUtils.isEmpty(audio) ? null : YoutubeITAG.get(Integer.parseInt(audio), -1, -1, -1, "", 0);
                 YoutubeVariant variant = null;
                 for (YoutubeVariant v : YoutubeVariant.values()) {
                     if (v.getiTagAudio() == audioTag && v.getiTagVideo() == videoTag) {
@@ -785,7 +785,7 @@ public class YoutubeDashV2 extends PluginForHost {
                         variant = new SubtitleVariant(params.get("lang"));
                     } else {
                         String itag = params.get("itag");
-                        YoutubeITAG videoTag = YoutubeITAG.get(Integer.parseInt(itag));
+                        YoutubeITAG videoTag = YoutubeITAG.get(Integer.parseInt(itag), -1, -1, -1, "", 0);
 
                         for (YoutubeVariant v : YoutubeVariant.values()) {
                             if (v.getiTagAudio() == null && v.getiTagVideo() == videoTag) {

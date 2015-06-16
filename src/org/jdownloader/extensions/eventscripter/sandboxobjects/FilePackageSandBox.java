@@ -141,6 +141,11 @@ public class FilePackageSandBox {
         return filePackage.getDownloadDirectory();
     }
 
+    @Override
+    public String toString() {
+        return "FilePackage Instance: " + getName();
+    }
+
     public String getName() {
         if (filePackage == null) {
             return "Example FilePackage Name";

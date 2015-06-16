@@ -113,8 +113,10 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
     }
 
     public boolean canHandle() {
+
         final boolean myEn = MyJDownloaderController.getInstance().isRemoteCaptchaServiceEnabled();
         return myEn && isEnabled() && validateLogins();
+
     }
 
     @Override

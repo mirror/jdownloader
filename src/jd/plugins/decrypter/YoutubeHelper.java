@@ -51,9 +51,13 @@ import jd.plugins.components.YoutubeStreamData;
 import jd.plugins.components.YoutubeSubtitleInfo;
 import jd.plugins.components.YoutubeVariant;
 import jd.plugins.components.YoutubeVariantInterface;
+import jd.plugins.components.youtube.AudioBitrate;
 import jd.plugins.components.youtube.AudioCodec;
+import jd.plugins.components.youtube.MediaQualityInterface;
 import jd.plugins.components.youtube.MediaTagsVarious;
+import jd.plugins.components.youtube.VideoCodec;
 import jd.plugins.components.youtube.VideoContainer;
+import jd.plugins.components.youtube.VideoResolution;
 import jd.plugins.hoster.YoutubeDashV2.SubtitleVariant;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
 import jd.utils.locale.JDL;
@@ -1194,9 +1198,24 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
                         url = url + "&signature=" + signature;
                     }
+                    String size = query.get("size");
+                    int width = -1;
+                    int height = -1;
 
-                    final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), vid.date);
-
+                    if (StringUtils.isNotEmpty(size)) {
+                        String[] splitted = size.split("\\s*x\\s*");
+                        if (splitted != null && splitted.length == 2) {
+                            width = Integer.parseInt(splitted[0]);
+                            height = Integer.parseInt(splitted[1]);
+                        }
+                    }
+                    String fps = query.get("fps");
+                    String type = query.get("type");
+                    if (StringUtils.isNotEmpty(type)) {
+                        type = Encoding.urlDecode(type, false);
+                    }
+                    final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, vid.date);
+                    validateItag(size, height, type, itag);
                     logger.info(Encoding.urlDecode(JSonStorage.toString(query), false));
                     if (url != null && itag != null) {
 
@@ -1772,8 +1791,24 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         if (StringUtils.isNotEmpty(bitrateString)) {
             bitrate = Integer.parseInt(bitrateString);
         }
-        final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), vid.date);
+        String size = query.get("size");
+        int width = -1;
+        int height = -1;
 
+        if (StringUtils.isNotEmpty(size)) {
+            String[] splitted = size.split("\\s*x\\s*");
+            if (splitted != null && splitted.length == 2) {
+                width = Integer.parseInt(splitted[0]);
+                height = Integer.parseInt(splitted[1]);
+            }
+        }
+        String fps = query.get("fps");
+        String type = query.get("type");
+        if (StringUtils.isNotEmpty(type)) {
+            type = Encoding.urlDecode(type, false);
+        }
+        final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, vid.date);
+        validateItag(size, height, type, itag);
         final String quality = Encoding.urlDecode(query.get("quality"), false);
         logger.info(Encoding.urlDecode(JSonStorage.toString(query), false));
         if (url != null && itag != null) {
@@ -1796,6 +1831,90 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             }
         }
         return null;
+    }
+
+    protected void validateItag(String size, int height, String type, final YoutubeITAG itag) {
+        if (itag != null && !Application.isJared(null)) {
+            // validate
+            // if (height > 0) {
+            MediaQualityInterface[] tags = itag.getQualityTags();
+            type = type.replace("3gp", "3gp threegp");
+            for (MediaQualityInterface tag : tags) {
+                if (tag instanceof VideoResolution) {
+                    if (height > 0 && tag.getRating() != height) {
+                        itagWarning(itag, "Resolution", size);
+
+                    }
+                } else if (tag instanceof VideoContainer) {
+                    if (!StringUtils.containsIgnoreCase(type, ((VideoContainer) tag).name())) {
+                        itagWarning(itag, "Container", type);
+
+                    }
+
+                } else if (tag instanceof VideoCodec) {
+                    switch ((VideoCodec) tag) {
+                    case H263:
+                        if (!StringUtils.containsIgnoreCase(type, "x-flv")) {
+                            itagWarning(itag, "Codec", type);
+                        }
+                        break;
+
+                    case H264:
+                        if (!StringUtils.containsIgnoreCase(type, "mp4v") && !StringUtils.containsIgnoreCase(type, "avc")) {
+                            itagWarning(itag, "Codec", type);
+
+                        }
+                        break;
+
+                    case VP8:
+                    case VP9:
+                        if (!StringUtils.containsIgnoreCase(type, ((VideoCodec) tag).name())) {
+                            itagWarning(itag, "Codec", type);
+                        }
+                        break;
+
+                    case VP9_BETTER_PROFILE_1:
+                    case VP9_BETTER_PROFILE_2:
+                        System.out.println(1);
+
+                    }
+                } else if (tag instanceof AudioCodec) {
+                    switch ((AudioCodec) tag) {
+                    case AAC:
+                    case AAC_M4A:
+
+                        if (!StringUtils.containsIgnoreCase(type, "mp4a") && !StringUtils.containsIgnoreCase(type, "avc")) {
+                            itagWarning(itag, "Codec", type);
+
+                        }
+                        break;
+
+                    case MP3:
+                        if (!StringUtils.containsIgnoreCase(type, "x-flv")) {
+                            itagWarning(itag, "Codec", type);
+                        }
+                        break;
+                    case OPUS:
+                    case VORBIS:
+                        if (!StringUtils.containsIgnoreCase(type, ((AudioCodec) tag).name())) {
+                            itagWarning(itag, "Codec", type);
+                        }
+                        break;
+                    }
+
+                } else if (tag instanceof AudioBitrate) {
+                    System.out.println(1);
+                } else if (tag instanceof MediaTagsVarious) {
+                    System.out.println(1);
+                }
+
+            }
+            // }
+        }
+    }
+
+    private void itagWarning(YoutubeITAG itag, String string, Object size) {
+        this.logger.warning("Youtube WARNING! Bad Itag choosen: " + itag + " does not support " + string + " of " + size);
     }
 
     private void onITag(YoutubeStreamData vsd, Browser br, LinkedHashMap<String, String> query, String url) {

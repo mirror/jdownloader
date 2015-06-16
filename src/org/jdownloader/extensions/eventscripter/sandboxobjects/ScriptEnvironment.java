@@ -591,7 +591,12 @@ public class ScriptEnvironment {
             if (Clazz.isPrimitiveWrapper(objects[0].getClass()) || Clazz.isString(objects[0].getClass())) {
                 LOGGER.info(objects[0] + "");
                 return;
-            } else {
+
+            } else if (objects.length > 0) {
+                if (objects[0] != null && objects[0].getClass().getPackage().getName().equals(DownloadLinkSandBox.class.getPackage().getName())) {
+                    LOGGER.info(objects[0].toString());
+                    return;
+                }
                 try {
                     try {
                         LOGGER.info(new JacksonMapper().objectToString(objects[0]));

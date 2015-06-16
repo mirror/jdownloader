@@ -27,8 +27,10 @@ public enum YoutubeITAG {
     // http://www.youtube.com/watch?v=gBabKoHSErI
     DASH_VIDEO_1440P_H264(264, "H264", "1440p", null, null, VideoResolution.P_1440, VideoContainer.MP4, VideoCodec.H264),
     DASH_VIDEO_144P_H264(160, "H264", "144p", null, null, VideoResolution.P_144, VideoContainer.MP4, VideoCodec.H264),
-    // this is not 60fps!
-    DASH_VIDEO_2160_H264_FPS_60(266, "H264", "2160p", null, null, VideoResolution.P_2160, VideoContainer.MP4, VideoCodec.H264, MediaTagsVarious.VIDEO_FPS_60),
+
+    DASH_VIDEO_2160_H264_FPS_60(266, "H264", "2160p 60fps", null, null, VideoResolution.P_2160, VideoContainer.MP4, VideoCodec.H264, MediaTagsVarious.VIDEO_FPS_60),
+    DASH_VIDEO_2160_H264(266, "H264", "2160p", null, null, VideoResolution.P_2160, VideoContainer.MP4, VideoCodec.H264),
+
     DASH_VIDEO_240P_H264(133, "H264", "240p", null, null, VideoResolution.P_240, VideoContainer.MP4, VideoCodec.H264),
 
     DASH_VIDEO_360P_H264(134, "H264", "360p", null, null, VideoResolution.P_360, VideoContainer.MP4, VideoCodec.H264),
@@ -41,6 +43,9 @@ public enum YoutubeITAG {
     DASH_VIDEO_ITAG315_VP9_2160P_60FPS(315, "vp9", "2160p 60fps", null, null, VideoResolution.P_2160, VideoContainer.WEBM, VideoCodec.VP9, MediaTagsVarious.VIDEO_FPS_60),
     // has usually a lower quality than DASH_VIDEO_2160_H264_FPS_60
     DASH_VIDEO_ORIGINAL_H264(138, "H264", "Original (2160p)", null, null, VideoResolution.P_2160_ESTIMATED, VideoContainer.MP4, VideoCodec.H264),
+    // https://www.youtube.com/watch?v=sLprVF6d7Ug
+    DASH_VIDEO_ORIGINAL_H264_4320P_24FPS(138, "H264", "4320p 24fps", null, null, VideoResolution.P_4320, VideoContainer.MP4, VideoCodec.H264),
+
     // https://www.youtube.com/watch?v=ZSn3Tvc7jQU
     // DASH_WEBM_VIDEO_1080P_VP9_60FPS(299, "vp9", "1080p", null, null, VideoResolution.VIDEO_RESOLUTION_1080P,
     // VideoCodec.VIDEO_CODEC_VP9),
@@ -186,6 +191,16 @@ public enum YoutubeITAG {
 
         }
 
+        public static YoutubeITAGVersion getByDate(long uploadDate) {
+
+            for (YoutubeITAGVersion v : YoutubeITAGVersion.values()) {
+                if (v.matches(uploadDate)) {
+                    return v;
+                }
+            }
+            return YoutubeITAGVersion.V4;
+        }
+
     }
 
     // // mp3 64 bit is lower than aac48bit
@@ -203,28 +218,29 @@ public enum YoutubeITAG {
     //
     // public static final MediaQualityTags VORBIS_96 = MediaQualityTags.VORBIS_96;
 
-    public static YoutubeITAG get(int itag) {
-        for (final YoutubeITAG tag : YoutubeITAG.values()) {
-            if (tag.getITAG() == itag) {
+    public static YoutubeITAG get(int itag, int width, int height, int fps, String type, long uploadDate) {
+        YoutubeITAGVersion version = null;
 
-                return tag;
-
-            }
-        }
-        return null;
-    }
-
-    public static YoutubeITAG get(final int itag, long uploadDate) {
-        YoutubeITAGVersion version = YoutubeITAGVersion.V4;
-        ;
-        for (YoutubeITAGVersion v : YoutubeITAGVersion.values()) {
-            if (v.matches(uploadDate)) {
-                version = v;
-                break;
-            }
-        }
         switch (itag) {
+        case 138:
+            switch (height) {
+            case 4320:
+                return DASH_VIDEO_ORIGINAL_H264_4320P_24FPS;
+            default:
+                return DASH_VIDEO_ORIGINAL_H264;
+            }
+
+        case 266:
+            switch (fps) {
+            case 24:
+                return DASH_VIDEO_2160_H264;
+            default:
+                return DASH_VIDEO_2160_H264_FPS_60;
+            }
         case 18:
+            if (version == null) {
+                version = YoutubeITAGVersion.getByDate(uploadDate);
+            }
             switch (version) {
             case V1:
                 return MP4_VIDEO_360P_H264_AUDIO_AAC_V1;
@@ -232,6 +248,9 @@ public enum YoutubeITAG {
                 return MP4_VIDEO_360P_H264_AUDIO_AAC;
             }
         case 22:
+            if (version == null) {
+                version = YoutubeITAGVersion.getByDate(uploadDate);
+            }
             switch (version) {
             case V1:
             case V2:
@@ -242,6 +261,9 @@ public enum YoutubeITAG {
                 return MP4_VIDEO_720P_H264_AUDIO_AAC;
             }
         case 82:
+            if (version == null) {
+                version = YoutubeITAGVersion.getByDate(uploadDate);
+            }
             switch (version) {
             case V1:
                 return MP4_VIDEO_360P_H264_AUDIO_AAC_3D_V1;
@@ -249,6 +271,9 @@ public enum YoutubeITAG {
                 return MP4_VIDEO_360P_H264_AUDIO_AAC_3D;
             }
         case 84:
+            if (version == null) {
+                version = YoutubeITAGVersion.getByDate(uploadDate);
+            }
             switch (version) {
             case V1:
             case V2:
@@ -260,7 +285,18 @@ public enum YoutubeITAG {
             }
         }
 
-        return get(itag);
+        for (final YoutubeITAG tag : YoutubeITAG.values()) {
+            if (tag.getITAG() == itag) {
+
+                return tag;
+
+            }
+        }
+        return null;
+    }
+
+    private static YoutubeITAGVersion getVersionByDate(long uploadDate) {
+        return null;
     }
 
     private String                  codecAudio;
@@ -316,6 +352,10 @@ public enum YoutubeITAG {
 
     }
 
+    public MediaQualityInterface[] getQualityTags() {
+        return qualityTags;
+    }
+
     private YoutubeITAG(final int itag, String codecTagVideo, String qualityTagVideo, String codecTagAudio, String qualityTagAudio) {
 
         this.itag = itag;
@@ -342,10 +382,6 @@ public enum YoutubeITAG {
 
     public String getCodecVideo() {
         return codecVideo;
-    }
-
-    public int getItag() {
-        return itag;
     }
 
     public int getITAG() {

@@ -216,6 +216,9 @@ public class ItagHelper {
             if ("Vorbis".equalsIgnoreCase(audioCodec)) {
                 return false;
             }
+            if ("aac".equalsIgnoreCase(audioCodec)) {
+                return true;
+            }
         }
         return false;
     }
