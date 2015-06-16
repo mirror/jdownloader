@@ -20,6 +20,7 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.DownloadPluginProgress;
+import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.TimeOutCondition;
 
 @ScriptAPI(description = "The context download list link")
@@ -212,12 +213,35 @@ public class DownloadLinkSandBox {
         return storable.isSkipped();
     }
 
+    public void setSkipped(boolean b) {
+        if (downloadLink == null) {
+            return;
+        }
+        List<DownloadLink> unSkip = new ArrayList<DownloadLink>();
+
+        // keep skipreason if a reason is set
+        if (b) {
+            if (!downloadLink.isSkipped()) {
+                downloadLink.setSkipReason(SkipReason.MANUAL);
+            }
+        } else {
+            unSkip.add(downloadLink);
+            DownloadWatchDog.getInstance().unSkip(unSkip);
+        }
+
+    }
+
     public boolean isRunning() {
         return storable.isRunning();
     }
 
     public boolean isEnabled() {
         return storable.isEnabled();
+    }
+
+    @Override
+    public String toString() {
+        return "DownloadLink Instance: " + getName();
     }
 
     public boolean isFinished() {
