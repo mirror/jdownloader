@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -25,6 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
+
+import javax.imageio.ImageIO;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -55,6 +58,8 @@ import jd.utils.locale.JDL;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
+import org.jdownloader.statistics.StatsManager;
 
 /**
  * TODO: Remove after next big update of core to use the public static methods!
@@ -74,9 +79,12 @@ public class DirectHTTP extends PluginForHost {
         private Form             form;
         private int              tries        = 0;
         private boolean          clearReferer = true;
+        private String           sourceHost;
 
         public Recaptcha(final Browser br) {
             this.br = br;
+            sourceHost = br.getHost();
+            track("captcha/rc/challenge/");
         }
 
         public File downloadCaptcha(final File captchaFile) throws IOException, PluginException {
@@ -89,7 +97,26 @@ public class DirectHTTP extends PluginForHost {
             this.rcBr.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
+                track("captcha/rc/download");
                 Browser.download(captchaFile, con = this.rcBr.openGetConnection(this.captchaAddress));
+
+                FileInputStream is = null;
+                try {
+                    is = new FileInputStream(captchaFile);
+                    int type = ImageIO.read(is).getType();
+                    track("captcha/rc/imagetype/" + type);
+
+                } catch (IOException e) {
+                    track("captcha/rc/imagetype/" + e.getMessage());
+                } finally {
+                    if (is != null) {
+                        try {
+                            is.close();
+                        } catch (IOException e) {
+                        }
+                    }
+                }
+
             } catch (final IOException e) {
                 captchaFile.delete();
                 throw e;
@@ -204,6 +231,20 @@ public class DirectHTTP extends PluginForHost {
                 }
                 try {
                     org.jdownloader.captcha.v2.solver.service.BrowserSolverService.fillCookies(rcBr);
+                    if (rcBr.getCookie("http://google.com", "SID") != null) {
+
+                        if (StringUtils.isNotEmpty(org.jdownloader.captcha.v2.solver.service.BrowserSolverService.getInstance().getConfig().getGoogleComCookieValueSID()) && StringUtils.isNotEmpty(org.jdownloader.captcha.v2.solver.service.BrowserSolverService.getInstance().getConfig().getGoogleComCookieValueHSID())) {
+                            track("captcha/rc/sid/");
+                        } else {
+
+                            track("captcha/rc/acc/");
+                        }
+
+                    } else {
+                        if (CaptchaMyJDSolver.getInstance().canHandle()) {
+                            track("captcha/rc/myjd/");
+                        }
+                    }
 
                 } catch (Throwable e) {
                     e.printStackTrace();
@@ -215,9 +256,11 @@ public class DirectHTTP extends PluginForHost {
 
         public void load() throws IOException, PluginException {
             prepRcBr();
+
             try {
                 challenge = org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1Handler.load(rcBr, id);
                 if (challenge != null) {
+                    track("captcha/rc/browserloop");
                     server = "http://www.google.com/recaptcha/api/";
                     this.captchaAddress = this.server + "image?c=" + this.challenge;
                 }
@@ -239,6 +282,10 @@ public class DirectHTTP extends PluginForHost {
                 }
                 this.captchaAddress = this.server + "image?c=" + this.challenge;
             }
+        }
+
+        private void track(String string) {
+            StatsManager.I().track(1000, string + (string.endsWith("/") ? "" : "/") + sourceHost);
         }
 
         public void parse() throws IOException, PluginException {
@@ -1037,7 +1084,7 @@ public class DirectHTTP extends PluginForHost {
 
     /**
      * update this map to your needs
-     *
+     * 
      * @param mimeType
      * @return
      */
