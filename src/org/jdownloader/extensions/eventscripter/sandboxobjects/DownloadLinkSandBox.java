@@ -41,7 +41,7 @@ public class DownloadLinkSandBox {
 
     /**
      * returns how long the downloadlink is in progress
-     * 
+     *
      * @return
      */
     public long getDownloadTime() {
@@ -75,7 +75,6 @@ public class DownloadLinkSandBox {
             return;
         }
         if (value != null) {
-
             if (!Clazz.isPrimitive(value.getClass()) && !(value instanceof Storable)) {
                 throw new WTFException("Type " + value.getClass().getSimpleName() + " is not supported");
             }
@@ -85,7 +84,7 @@ public class DownloadLinkSandBox {
 
     public long getDownloadSessionDuration() {
         if (downloadLink != null) {
-            SingleDownloadController controller = downloadLink.getDownloadLinkController();
+            final SingleDownloadController controller = downloadLink.getDownloadLinkController();
             if (controller != null) {
                 return System.currentTimeMillis() - controller.getStartTimestamp();
             }
@@ -97,7 +96,7 @@ public class DownloadLinkSandBox {
         if (downloadLink == null) {
             return;
         }
-        ArrayList<DownloadLink> l = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> l = new ArrayList<DownloadLink>();
         l.add(downloadLink);
         DownloadWatchDog.getInstance().reset(l);
     }
@@ -106,14 +105,12 @@ public class DownloadLinkSandBox {
         if (downloadLink == null) {
             return -1l;
         }
-
-        PluginProgress progress = null;
-        if ((progress = downloadLink.getPluginProgress()) != null) {
-            long eta = progress.getETA();
-            System.out.println(eta * 1000);
+        final PluginProgress progress = downloadLink.getPluginProgress();
+        if (progress != null) {
+            final long eta = progress.getETA();
             return eta * 1000l;
         }
-        ConditionalSkipReason conditionalSkipReason = downloadLink.getConditionalSkipReason();
+        final ConditionalSkipReason conditionalSkipReason = downloadLink.getConditionalSkipReason();
         if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
             if (conditionalSkipReason instanceof TimeOutCondition) {
                 long time = ((TimeOutCondition) conditionalSkipReason).getTimeOutLeft();
@@ -127,14 +124,13 @@ public class DownloadLinkSandBox {
         if (downloadLink == null || ArchiveValidator.EXTENSION == null) {
             return null;
         }
-        Archive archive = ArchiveValidator.EXTENSION.getArchiveByFactory(new DownloadLinkArchiveFactory(downloadLink));
+        final Archive archive = ArchiveValidator.EXTENSION.getArchiveByFactory(new DownloadLinkArchiveFactory(downloadLink));
         if (archive != null) {
             return new ArchiveSandbox(archive);
         }
-        ArrayList<Object> list = new ArrayList<Object>();
+        final ArrayList<Object> list = new ArrayList<Object>();
         list.add(downloadLink);
-        List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(list);
-
+        final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(list);
         return (archives == null || archives.size() == 0) ? null : new ArchiveSandbox(archives.get(0));
     }
 
@@ -217,18 +213,16 @@ public class DownloadLinkSandBox {
         if (downloadLink == null) {
             return;
         }
-        List<DownloadLink> unSkip = new ArrayList<DownloadLink>();
-
-        // keep skipreason if a reason is set
         if (b) {
             if (!downloadLink.isSkipped()) {
+                // keep skipreason if a reason is set
                 downloadLink.setSkipReason(SkipReason.MANUAL);
             }
         } else {
+            final List<DownloadLink> unSkip = new ArrayList<DownloadLink>();
             unSkip.add(downloadLink);
             DownloadWatchDog.getInstance().unSkip(unSkip);
         }
-
     }
 
     public boolean isRunning() {
