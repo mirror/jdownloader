@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -32,45 +33,34 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protect.ddl-island.ru" }, urls = { "http://(www\\.)?protect\\.ddl\\-island\\.ru/(?:other\\?id=)?[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect.ddl-island.ru", "protect.emule-island.ru" }, urls = { "http://(?:www\\.)?protect\\.ddl\\-island\\.ru/(?:other\\?id=)?([A-Za-z0-9]+)", "http://(?:www\\.)?protect\\.emule-island\\.ru/(?:other\\?id=)?([A-Za-z0-9]+)" }, flags = { 0, 0 })
 public class ProtectDdlIslandRu extends PluginForDecrypt {
 
     public ProtectDdlIslandRu(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String INVALIDLINKS = "http://(www\\.)?protect\\.ddl\\-island\\.ru/(img|other)";
+    private final String invalidLinks = "http://(www\\.)?" + Pattern.quote(getHost()) + "/(img|other)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         /* other?id= = force text captcha */
         final String parameter = param.toString().replace("other?id=", "");
-        if (parameter.matches(INVALIDLINKS)) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+        final String fuid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        if (parameter.matches(invalidLinks)) {
+            decryptedLinks.add(createOfflinelink(parameter, fuid, null));
             return decryptedLinks;
         }
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getContentType().matches("(application/javascript|text/css)")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter, fuid, null));
             return decryptedLinks;
         }
         final String captchapass = Encoding.urlEncode(generatePass());
-        br.postPage("http://protect.ddl-island.ru/php/Qaptcha.jquery.php", "action=qaptcha&qaptcha_key=" + captchapass);
+        br.postPage("/php/Qaptcha.jquery.php", "action=qaptcha&qaptcha_key=" + captchapass);
         br.postPage(parameter, captchapass + "=&submit=Submit+form");
         if (br.containsHTML("<b>Nom :</b></td><td></td></tr>")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter, fuid, null));
             return decryptedLinks;
         }
         if (!br.containsHTML("img\\.php\\?get_captcha=true")) {
@@ -80,8 +70,8 @@ public class ProtectDdlIslandRu extends PluginForDecrypt {
         boolean success = false;
         for (int i = 1; i <= 3; i++) {
             final File captchaFile = this.getLocalCaptchaFile();
-            Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://protect.ddl-island.ru/img.php?get_captcha=true"));
-            final Point p = UserIO.getInstance().requestClickPositionDialog(captchaFile, "protect.ddl-island.ru | " + String.valueOf(i + 1) + "/3", null);
+            Browser.download(captchaFile, br.cloneBrowser().openGetConnection("/img.php?get_captcha=true"));
+            final Point p = UserIO.getInstance().requestClickPositionDialog(captchaFile, getHost() + " | " + String.valueOf(i + 1) + "/3", null);
             if (p == null) {
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
