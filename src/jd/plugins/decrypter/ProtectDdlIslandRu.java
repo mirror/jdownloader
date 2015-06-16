@@ -87,8 +87,8 @@ public class ProtectDdlIslandRu extends PluginForDecrypt {
         }
         final String finallink = br.getRegex(">Lien :</b></td><td><a href=\"(http[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            logger.warning("We can't find finallinks, either empty container or broken plugin. Please confirm in your Web Browser: " + parameter);
+            return decryptedLinks;
         }
         decryptedLinks.add(createDownloadlink(finallink));
 
