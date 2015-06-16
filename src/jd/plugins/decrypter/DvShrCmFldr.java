@@ -32,10 +32,22 @@ public class DvShrCmFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String TYPE_SINGLE_DOWNLOAD = "https?://(www\\.)?divshare\\.com/(?:download|image|direct)/\\d+\\-[a-z0-9]+";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        this.br.setFollowRedirects(false);
         br.getPage(parameter);
+        final String redirect = this.br.getRedirectLocation();
+        if (redirect != null && redirect.matches(TYPE_SINGLE_DOWNLOAD)) {
+            logger.info("Folder redirected to single downloadlink");
+            decryptedLinks.add(this.createDownloadlink(redirect));
+            return decryptedLinks;
+        } else if (redirect != null) {
+            this.br.setFollowRedirects(true);
+            this.br.getPage(redirect);
+        }
         if (br.containsHTML("class=\"download_error_title\"")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;

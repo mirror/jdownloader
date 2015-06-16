@@ -55,12 +55,16 @@ public class PbsOrg extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String vid;
+        String vid;
         if (link.getDownloadURL().matches(TYPE_VIDEO)) {
             vid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         } else {
             br.getPage(link.getDownloadURL());
             vid = br.getRegex("mediaid:\\s*?\\'(\\d+)\\'").getMatch(0);
+            if (vid == null) {
+                /* Seems to happen when they embed their own videos: http://www.pbs.org/wgbh/nova/tech/rise-of-the-hackers.html */
+                vid = br.getRegex("class=\"watch\\-full\\-now\" onclick=\"startVideo\\(\\'(\\d+)'").getMatch(0);
+            }
             /* Whatever the user added - it doesn't seem to be a video --> Offline */
             if (vid == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -101,6 +105,9 @@ public class PbsOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage(dllink);
+        if (this.br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This video is unavailable in your region");
+        }
         final String[] qualities = br.getRegex("([^/\n]*?\\-hls\\-\\d+k\\.m3u8)").getColumn(0);
         if (qualities == null || qualities.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
