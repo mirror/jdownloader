@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 
@@ -144,27 +145,51 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         dupeController = new DupeManager();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
+            private final AtomicBoolean running = new AtomicBoolean(false);
+
+            @Override
+            protected void waitFor() {
+                while (running.get()) {
+                    synchronized (running) {
+                        if (running.get()) {
+                            try {
+                                running.wait(1000);
+                            } catch (InterruptedException e) {
+                            }
+                        }
+                    }
+                }
+            }
+
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
-                boolean idle = DownloadWatchDog.getInstance().isIdle();
-                saveDownloadLinks();
-                if (!idle) {
-                    int retry = 10;
-                    while (retry > 0) {
-                        if (DownloadWatchDog.getInstance().isIdle()) {
-                            /*
-                             * we wait till the DownloadWatchDog is finished or max 10 secs
-                             */
-                            break;
-                        }
-                        try {
-                            Thread.sleep(1000);
-                        } catch (final InterruptedException e) {
-                            break;
-                        }
-                        retry--;
-                    }
+                running.set(true);
+                try {
+                    final boolean idle = DownloadWatchDog.getInstance().isIdle();
                     saveDownloadLinks();
+                    if (!idle) {
+                        int retry = 10;
+                        while (retry > 0) {
+                            if (DownloadWatchDog.getInstance().isIdle()) {
+                                /*
+                                 * we wait till the DownloadWatchDog is finished or max 10 secs
+                                 */
+                                break;
+                            }
+                            try {
+                                Thread.sleep(1000);
+                            } catch (final InterruptedException e) {
+                                break;
+                            }
+                            retry--;
+                        }
+                        saveDownloadLinks();
+                    }
+                } finally {
+                    synchronized (running) {
+                        running.set(false);
+                        running.notifyAll();
+                    }
                 }
             }
 

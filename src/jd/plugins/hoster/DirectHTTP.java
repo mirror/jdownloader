@@ -54,6 +54,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 
 /**
  * TODO: Remove after next big update of core to use the public static methods!
@@ -549,7 +550,7 @@ public class DirectHTTP extends PluginForHost {
     @Override
     public String getCustomFavIconURL(final DownloadLink link) {
         if (link != null) {
-            final String domain = Browser.getHost(link.getDownloadURL(), true);
+            final String domain = Browser.getHost(getDownloadURL(link), true);
             if (domain != null) {
                 return domain;
             }
@@ -581,7 +582,9 @@ public class DirectHTTP extends PluginForHost {
         /*
          * replace with br.setCurrentURL(null); in future (after 0.9)
          */
+        final Cookies cookies = br.getCookies(getDownloadURL(downloadLink));
         this.br = new Browser();/* needed to clean referer */
+        br.setCookies(getDownloadURL(downloadLink), cookies);
         if (!raz) {
             this.br.getHeaders().put("Accept-Encoding", "identity");
         }
@@ -612,9 +615,9 @@ public class DirectHTTP extends PluginForHost {
             downloadLink.setProperty("ServerComaptibleForByteRangeRequest", Property.NULL);
         }
         if (downloadLink.getStringProperty("post", null) != null) {
-            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), downloadLink.getStringProperty("post", null), resume, chunks);
+            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getDownloadURL(downloadLink), downloadLink.getStringProperty("post", null), resume, chunks);
         } else {
-            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), resume, chunks);
+            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getDownloadURL(downloadLink), resume, chunks);
         }
         if (this.dl.getConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
@@ -655,6 +658,25 @@ public class DirectHTTP extends PluginForHost {
         }
     }
 
+    private String customDownloadURL = null;
+
+    private void setDownloadURL(String newURL) {
+        this.customDownloadURL = newURL;
+    }
+
+    private boolean hasCustomDownloadURL() {
+        return customDownloadURL != null;
+    }
+
+    private String getDownloadURL(DownloadLink downloadLink) {
+        final String ret = customDownloadURL;
+        if (ret != null) {
+            return ret;
+        } else {
+            return downloadLink.getDownloadURL();
+        }
+    }
+
     private URLConnectionAdapter prepareConnection(final Browser br, final DownloadLink downloadLink) throws IOException {
         URLConnectionAdapter urlConnection = null;
         this.setCustomHeaders(br, downloadLink);
@@ -665,23 +687,23 @@ public class DirectHTTP extends PluginForHost {
                 br.getHeaders().put("Range", "bytes=" + 0 + "-");
             }
             if (downloadLink.getStringProperty("post", null) != null) {
-                urlConnection = br.openPostConnection(downloadLink.getDownloadURL(), downloadLink.getStringProperty("post", null));
+                urlConnection = br.openPostConnection(getDownloadURL(downloadLink), downloadLink.getStringProperty("post", null));
             } else {
                 try {
                     if (!preferHeadRequest || "GET".equals(downloadLink.getStringProperty("requestType", null))) {
-                        urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                        urlConnection = br.openGetConnection(getDownloadURL(downloadLink));
                     } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
-                        urlConnection = br.openHeadConnection(downloadLink.getDownloadURL());
+                        urlConnection = br.openHeadConnection(getDownloadURL(downloadLink));
                         if (urlConnection.getResponseCode() == 404 && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"), "must-revalidate") && urlConnection.getHeaderField("Via") != null) {
                             urlConnection.disconnect();
-                            urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                            urlConnection = br.openGetConnection(getDownloadURL(downloadLink));
                         } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
                             // no head support?
                             urlConnection.disconnect();
-                            urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                            urlConnection = br.openGetConnection(getDownloadURL(downloadLink));
                         }
                     } else {
-                        urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                        urlConnection = br.openGetConnection(getDownloadURL(downloadLink));
                     }
                 } catch (final IOException e) {
                     if (urlConnection != null) {
@@ -689,7 +711,7 @@ public class DirectHTTP extends PluginForHost {
                     }
                     if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
                         /* some servers do not allow head requests */
-                        urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                        urlConnection = br.openGetConnection(getDownloadURL(downloadLink));
                         downloadLink.setProperty("requestType", "GET");
                     } else {
                         throw e;
@@ -727,7 +749,7 @@ public class DirectHTTP extends PluginForHost {
         if (!raz) {
             this.br.getHeaders().put("Accept-Encoding", "identity");
         }
-        final String authinURL = new Regex(downloadLink.getDownloadURL(), "https?://(.+)@.*?($|/)").getMatch(0);
+        final String authinURL = new Regex(getDownloadURL(downloadLink), "https?://(.+)@.*?($|/)").getMatch(0);
         String authSaved = null;
         String authProperty = null;
         final ArrayList<String> pwTries = new ArrayList<String>();
@@ -748,13 +770,13 @@ public class DirectHTTP extends PluginForHost {
         try {
             // jd2 only
 
-            for (org.jdownloader.auth.Login l : org.jdownloader.auth.AuthenticationController.getInstance().getSortedLoginsList(downloadLink.getDownloadURL())) {
+            for (org.jdownloader.auth.Login l : org.jdownloader.auth.AuthenticationController.getInstance().getSortedLoginsList(getDownloadURL(downloadLink))) {
                 pwTries.add(l.toBasicAuth());
             }
         } catch (Throwable e) {
 
             // /jd1
-            if ((authSaved = HTACCESSController.getInstance().get(downloadLink.getDownloadURL())) != null) {
+            if ((authSaved = HTACCESSController.getInstance().get(getDownloadURL(downloadLink))) != null) {
                 /* use auth from saved ones */
                 pwTries.add("Basic " + Encoding.Base64Encode(authSaved));
             }
@@ -781,9 +803,9 @@ public class DirectHTTP extends PluginForHost {
                     /* check if we need the URLPARAMS to download the file */
                     urlConnection.setAllowedResponseCodes(new int[] { urlConnection.getResponseCode() });
                     br.followConnection();
-                    final String newURL = downloadLink.getDownloadURL() + urlParams;
+                    final String newURL = getDownloadURL(downloadLink) + urlParams;
                     downloadLink.setProperty(DirectHTTP.POSSIBLE_URLPARAM, Property.NULL);
-                    downloadLink.setUrlDownload(newURL);
+                    setDownloadURL(newURL);
                     urlConnection = this.prepareConnection(this.br, downloadLink);
                 }
                 if (urlConnection.getResponseCode() == 401) {
@@ -811,7 +833,7 @@ public class DirectHTTP extends PluginForHost {
                 if (urlConnection.getResponseCode() == 401) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, JDL.L("plugins.hoster.httplinks.errors.basicauthneeded", "BasicAuth needed"));
                 }
-                HTACCESSController.getInstance().addValidatedAuthentication(downloadLink.getDownloadURL(), basicauthInfo[1], basicauthInfo[2]);
+                HTACCESSController.getInstance().addValidatedAuthentication(getDownloadURL(downloadLink), basicauthInfo[1], basicauthInfo[2]);
                 validateLogins(downloadLink, basicauthInfo[1], basicauthInfo[2]);
 
             }
@@ -827,13 +849,11 @@ public class DirectHTTP extends PluginForHost {
             if (this.contentType != null && this.contentType.startsWith("application/pls") && downloadLink.getName().endsWith("mp3")) {
                 this.br.followConnection();
                 final String mp3URL = this.br.getRegex("(https?://.*?\\.mp3)").getMatch(0);
-                if (downloadLink.getBooleanProperty("htmlRedirect", false)) {
+                if (hasCustomDownloadURL()) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 if (mp3URL != null) {
-                    downloadLink.setUrlDownload(mp3URL);
-                    /* we set property here to avoid loops */
-                    downloadLink.setProperty("htmlRedirect", true);
+                    setDownloadURL(mp3URL);
                     return this.requestFileInformation(downloadLink);
                 }
             }
@@ -862,6 +882,14 @@ public class DirectHTTP extends PluginForHost {
                     return this.requestFileInformation(downloadLink);
                 } else {
                     this.br.followConnection();
+                    if (StringUtils.endsWithCaseInsensitive(br.getURL(), "mp4")) {
+                        final String videoURL = br.getRegex("source type=\"video/mp4\"\\s*src=\"(https?://.*)\"").getMatch(0);
+                        if (videoURL != null && !hasCustomDownloadURL()) {
+                            setDownloadURL(videoURL);
+                            return AvailableStatus.TRUE;
+                            // return this.requestFileInformation(downloadLink);
+                        }
+                    }
 
                     /* search urls */
                     /*
@@ -871,13 +899,11 @@ public class DirectHTTP extends PluginForHost {
                     /*
                      * if we already tried htmlRedirect or not exactly one link found, throw File not available
                      */
-                    if (follow.size() != 1 || downloadLink.getBooleanProperty("htmlRedirect", false)) {
+                    if (follow.size() != 1 || hasCustomDownloadURL()) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     /* found one valid url */
-                    downloadLink.setUrlDownload(follow.get(0).trim());
-                    /* we set property here to avoid loops */
-                    downloadLink.setProperty("htmlRedirect", true);
+                    setDownloadURL(follow.get(0).trim());
                     return this.requestFileInformation(downloadLink);
                 }
             } else {
@@ -896,7 +922,7 @@ public class DirectHTTP extends PluginForHost {
                     fileName = downloadLink.getName() + "." + ext;
                 }
                 if (fileName == null) {
-                    fileName = Plugin.getFileNameFromHeader(urlConnection);
+                    fileName = HTTPConnectionUtils.getFileNameFromDispositionHeader(urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION));
                     if (fileName != null && downloadLink.getBooleanProperty("urlDecodeFinalFileName", false)) {
                         fileName = Encoding.urlDecode(fileName, false);
                     }
@@ -979,7 +1005,7 @@ public class DirectHTTP extends PluginForHost {
     private void validateLogins(DownloadLink downloadLink, String basicAuth) {
         try {
 
-            org.jdownloader.auth.AuthenticationController.getInstance().validate(new org.jdownloader.auth.BasicAuth(basicAuth), downloadLink.getDownloadURL());
+            org.jdownloader.auth.AuthenticationController.getInstance().validate(new org.jdownloader.auth.BasicAuth(basicAuth), getDownloadURL(downloadLink));
         } catch (org.jdownloader.auth.InvalidBasicAuthFormatException e) {
 
         } catch (Throwable e) {
@@ -990,7 +1016,7 @@ public class DirectHTTP extends PluginForHost {
     private void validateLogins(DownloadLink downloadLink, String username, String password) {
         try {
 
-            org.jdownloader.auth.AuthenticationController.getInstance().validate(new org.jdownloader.auth.BasicAuth(username, password), downloadLink.getDownloadURL());
+            org.jdownloader.auth.AuthenticationController.getInstance().validate(new org.jdownloader.auth.BasicAuth(username, password), getDownloadURL(downloadLink));
             // } catch (org.jdownloader.auth.InvalidBasicAuthFormatException e) {
 
         } catch (Throwable e) {
@@ -1001,7 +1027,7 @@ public class DirectHTTP extends PluginForHost {
     private void invalidateLogins(String basicAuth, DownloadLink downloadLink) {
         try {
 
-            org.jdownloader.auth.AuthenticationController.getInstance().invalidate(new org.jdownloader.auth.BasicAuth(basicAuth), downloadLink.getDownloadURL());
+            org.jdownloader.auth.AuthenticationController.getInstance().invalidate(new org.jdownloader.auth.BasicAuth(basicAuth), getDownloadURL(downloadLink));
         } catch (org.jdownloader.auth.InvalidBasicAuthFormatException e) {
 
         } catch (Throwable e) {
@@ -1087,7 +1113,7 @@ public class DirectHTTP extends PluginForHost {
             br.getHeaders().put("Referer", downloadLink.getStringProperty("referer", null));
         }
         if (downloadLink.getStringProperty("cookies", null) != null) {
-            br.getCookies(downloadLink.getDownloadURL()).add(Cookies.parseCookies(downloadLink.getStringProperty("cookies", null), Browser.getHost(downloadLink.getDownloadURL()), null));
+            br.getCookies(getDownloadURL(downloadLink)).add(Cookies.parseCookies(downloadLink.getStringProperty("cookies", null), Browser.getHost(getDownloadURL(downloadLink)), null));
         }
         if (downloadLink.getStringProperty("Referer", null) != null) {
             // used in MANY plugins!
@@ -1103,7 +1129,7 @@ public class DirectHTTP extends PluginForHost {
     private void downloadWorkaround(final Browser br, final DownloadLink downloadLink) throws IOException {
         // we shouldn't potentially over right setCustomHeaders..
         if (br.getHeaders().get("Referer") == null) {
-            final String link = downloadLink.getDownloadURL();
+            final String link = getDownloadURL(downloadLink);
             if (link.contains("fileplanet.com")) {
                 /*
                  * it seems fileplanet firewall checks referer and ip must have called the page lately
@@ -1130,7 +1156,7 @@ public class DirectHTTP extends PluginForHost {
     public void setDownloadLink(final DownloadLink link) {
         try {
             super.setDownloadLink(link);
-            this.customFavIconHost = Browser.getHost(new URL(link.getDownloadURL()));
+            this.customFavIconHost = Browser.getHost(getDownloadURL(link), false);
         } catch (final Throwable e) {
         }
     }
