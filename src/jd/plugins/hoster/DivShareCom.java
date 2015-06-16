@@ -33,9 +33,10 @@ import jd.plugins.PluginUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divshare.com" }, urls = { "https?://(www\\.)?divshare\\.com/(download|image|direct)/\\d+\\-[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divshare.com" }, urls = { "https?://(www\\.)?divshare\\.com/(?:download|image|direct)/\\d+\\-[a-z0-9]+" }, flags = { 0 })
 public class DivShareCom extends PluginForHost {
 
+    @SuppressWarnings("deprecation")
     public DivShareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -49,10 +50,12 @@ public class DivShareCom extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();

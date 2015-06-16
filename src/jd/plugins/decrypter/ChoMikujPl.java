@@ -119,7 +119,7 @@ public class ChoMikujPl extends PluginForDecrypt {
 
         /* checking if the single link is folder with EXTENSTION in the name */
         boolean folderCheck = false;
-        /** Handle single links */
+        /* Handle single links */
 
         if (linkending != null) {
             String tempExt = null;
@@ -191,6 +191,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                     dl.setName(filename);
                     try {
                         dl.setContentUrl(parameter);
+                        dl.setProperty("mainlink", parameter);
                         dl.setLinkID(fileid);
                         distribute(dl);
                     } catch (final Throwable e) {

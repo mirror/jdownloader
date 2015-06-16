@@ -81,6 +81,7 @@ public class ChoMikujPl extends PluginForHost {
         setConfigElements();
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("chomikujdecrypted.pl/", "chomikuj.pl/"));
     }
@@ -89,9 +90,26 @@ public class ChoMikujPl extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         prepBR(this.br);
+        final String mainlink = link.getStringProperty("mainlink", null);
         // Offline from decrypter
         if (link.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (mainlink != null) {
+            /* Try to find better filename - usually only needed for single links. */
+            br.getPage(mainlink);
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                /* Additional offline check */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (filename != null) {
+                logger.info("Found html filename for single link");
+                filename = Encoding.htmlDecode(filename).trim();
+                link.setFinalFileName(filename);
+            } else {
+                logger.info("Failed to find html filename for single link");
+            }
         }
         if (!getDllink(link, br.cloneBrowser(), false)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));

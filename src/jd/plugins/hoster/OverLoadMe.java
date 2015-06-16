@@ -253,9 +253,9 @@ public class OverLoadMe extends PluginForHost {
         if (premium != null && !premium.matches("Premium")) {
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nJDownloader unterstützt nur premium Accounts dieses Anbieters.\r\nDieser Account scheint ein kostenloser Account zu sein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp (free)!\r\nJDownloader unterstützt nur premium Accounts dieses Anbieters.\r\nDieser Account scheint ein kostenloser Account zu sein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nJDownloader only supports premium account for this service.\r\nThis account appears to be a free account.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type(free)!\r\nJDownloader only supports premium account for this service.\r\nThis account appears to be a free account.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
         final String expire = getJson("expirationunix");
@@ -412,11 +412,11 @@ public class OverLoadMe extends PluginForHost {
             case 2:
                 /* Invalid link -> Disable current host */
                 statusMessage = "\r\nCurrent host is not supported";
-                tempUnavailableHoster(3 * 60 * 60 * 1000l);
+                tempUnavailableHoster(10 * 60 * 1000l);
             case 3:
                 /* No traffic left for current host */
                 statusMessage = "No traffic left for current host";
-                tempUnavailableHoster(60 * 60 * 1000l);
+                tempUnavailableHoster(10 * 60 * 1000l);
             case 4:
                 /* Database connect error */
                 statusMessage = "Could not connect to database";
@@ -440,7 +440,7 @@ public class OverLoadMe extends PluginForHost {
             case 9:
                 /* No account found -> Disable host for 30 minutes */
                 statusMessage = "No account found";
-                tempUnavailableHoster(30 * 60 * 1000l);
+                tempUnavailableHoster(5 * 60 * 1000l);
             case 10:
                 /* Host offline or invalid url -> Disable for 5 minutes */
                 statusMessage = "Host offline";
@@ -465,12 +465,12 @@ public class OverLoadMe extends PluginForHost {
             case 15:
                 /* No traffic left or server is full -> Disable for 1 hour */
                 statusMessage = "No traffic left or server is full";
-                tempUnavailableHoster(60 * 60 * 1000l);
+                tempUnavailableHoster(5 * 60 * 1000l);
             case 666:
                 /* Unknown error */
                 statusMessage = "Unknown error";
                 logger.info(NICE_HOST + ": Unknown API error");
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknownapierror", 5, 30 * 60 * 1000l);
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknownapierror", 5, 3 * 60 * 1000l);
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + STATUSCODE + " statusMessage: " + statusMessage);
