@@ -99,7 +99,7 @@ public class BackupCreateAction extends CustomizableAppAction {
                     final File backupFile = file;
                     ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
-                        private final AtomicBoolean running  = new AtomicBoolean(false);
+                        private final AtomicBoolean running  = new AtomicBoolean(true);
                         private final AtomicLong    progress = new AtomicLong(0);
                         {
                             setHookPriority(Integer.MIN_VALUE);

@@ -20,7 +20,6 @@ import java.util.Map.Entry;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -341,41 +340,22 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         ShutdownController.getInstance().addShutdownVetoListener(this);
 
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
-            private final AtomicBoolean running = new AtomicBoolean(false);
-
             @Override
-            protected void waitFor() {
-                while (running.get()) {
-                    synchronized (running) {
-                        if (running.get()) {
-                            try {
-                                running.wait(1000);
-                            } catch (InterruptedException e) {
-                            }
-                        }
-                    }
-                }
+            public long getMaxDuration() {
+                return 0;
             }
 
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
-                running.set(true);
-                try {
-                    LinkCollector.this.abort();
-                    QUEUE.addWait(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
+                LinkCollector.this.abort();
+                QUEUE.addWait(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
 
-                        @Override
-                        protected Void run() throws RuntimeException {
-                            saveLinkCollectorLinks();
-                            return null;
-                        }
-                    });
-                } finally {
-                    synchronized (running) {
-                        running.set(false);
-                        running.notifyAll();
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        saveLinkCollectorLinks();
+                        return null;
                     }
-                }
+                });
             }
 
             @Override

@@ -237,6 +237,11 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                 }
 
                 @Override
+                public long getMaxDuration() {
+                    return 0;
+                }
+
+                @Override
                 public String toString() {
                     return "save packagizer...";
                 }

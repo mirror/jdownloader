@@ -134,6 +134,11 @@ public class LinkFilterController implements LinkCrawlerFilter {
                 }
 
                 @Override
+                public long getMaxDuration() {
+                    return 0;
+                }
+
+                @Override
                 public String toString() {
                     return "save filters...";
                 }

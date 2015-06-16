@@ -45,7 +45,7 @@ public class HosterRuleController implements AccountControllerListener {
 
     /**
      * get the only existing instance of HosterRuleController. This is a singleton
-     * 
+     *
      * @return
      */
     public static HosterRuleController getInstance() {
@@ -91,6 +91,10 @@ public class HosterRuleController implements AccountControllerListener {
             }
         };
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+            @Override
+            public long getMaxDuration() {
+                return 0;
+            }
 
             @Override
             public void onShutdown(ShutdownRequest shutdownRequest) {

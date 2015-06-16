@@ -25,7 +25,7 @@ public class AuthenticationController {
 
     /**
      * get the only existing instance of AuthenticationController. This is a singleton
-     * 
+     *
      * @return
      */
     public static AuthenticationController getInstance() {
@@ -53,6 +53,11 @@ public class AuthenticationController {
             @Override
             public void onShutdown(final ShutdownRequest shutdownRequest) {
                 config.setList(AuthenticationController.this.list);
+            }
+
+            @Override
+            public long getMaxDuration() {
+                return 0;
             }
 
             @Override
