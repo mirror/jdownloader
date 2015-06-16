@@ -78,6 +78,11 @@ public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
             // fail over
             final String[] links = br.getRegex("(?:https?://(?:up\\.)?4share\\.vn)?/(?:d/[a-f0-9]{16}|f/[a-f0-9]{16}/[^<>\"]{1,})").getColumn(-1);
             if (links == null || links.length == 0) {
+                if (br.containsHTML("get_link_file_list_in_folder")) {
+                    logger.info("Seems like we have an empty folder: " + parameter);
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }

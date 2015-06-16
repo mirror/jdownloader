@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tenlua.vn" }, urls = { "http://(www\\.)?tenlua\\.vn/[^<>\"]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tenlua.vn" }, urls = { "https?://(www\\.)?tenlua\\.vn/[^<>\"]+" }, flags = { 0 })
 public class TenluaVnFolder extends PluginForDecrypt {
 
     public TenluaVnFolder(PluginWrapper wrapper) {
@@ -44,7 +44,7 @@ public class TenluaVnFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replace("http://", "https://");
         br.getPage(parameter);
         final String fid = new Regex(parameter, "(#|/)download/?([a-z0-9]+)").getMatch(1);
         if (fid == null) {

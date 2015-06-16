@@ -118,6 +118,17 @@ public class MinhatecaComBr extends PluginForHost {
                 dllink = br.getRegex("\"redirectUrl\":\"(http[^<>\"]*?)\"").getMatch(0);
             }
             if (dllink == null) {
+                if (br.containsHTML("payment_window")) {
+                    /* User needs to use an account & buy traffic to download this file */
+                    try {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                    } catch (final Throwable e) {
+                        if (e instanceof PluginException) {
+                            throw (PluginException) e;
+                        }
+                    }
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = unescape(dllink);

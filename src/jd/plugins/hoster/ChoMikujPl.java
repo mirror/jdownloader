@@ -70,6 +70,7 @@ public class ChoMikujPl extends PluginForHost {
     private int                 free_maxdls                 = -1;
 
     private int                 account_maxchunks           = 0;
+    /* TODO: Verify if premium users really can resume */
     private boolean             account_resume              = true;
     private int                 account_maxdls              = -1;
 
@@ -159,7 +160,7 @@ public class ChoMikujPl extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-        ai.setStatus("Premium User");
+        ai.setStatus("Premium account");
         try {
         } catch (final Throwable e) {
             account.setType(AccountType.PREMIUM);
@@ -288,7 +289,7 @@ public class ChoMikujPl extends PluginForHost {
             br.postPage(savedLink, savedPost);
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        if (this.getPluginConfig().getBooleanProperty(AVOIDPREMIUMMP3TRAFFICUSAGE, false)) {
+        if (this.getPluginConfig().getBooleanProperty(AVOIDPREMIUMMP3TRAFFICUSAGE, false) && theLink.getName().toLowerCase().endsWith(".mp3")) {
             /* User wants to force stream download for .mp3 files --> Does not use up any premium traffic. */
             DLLINK = getDllinkMP3(theLink);
         } else {

@@ -128,6 +128,7 @@ public class SpankWireCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -146,7 +147,7 @@ public class SpankWireCom extends PluginForHost {
         final String[] qualities = { "720", "480", "240", "180" };
         String dllink = null;
         for (final String quality : qualities) {
-            dllink = br.getRegex("cdnPath" + quality + "\\s*?:\\s*?(\"|\')(http[^<>\"]*?)(\"|\')").getMatch(1);
+            dllink = br.getRegex("cdnPath" + quality + "[^<>\"]*?(\"|\')(http[^<>\"\\']*?\\.mp4[^<>\"\\']*?)(\"|\')").getMatch(1);
             if (dllink != null) {
                 break;
             }
