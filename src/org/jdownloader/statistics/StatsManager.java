@@ -124,7 +124,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
-     *
+     * 
      * @return
      */
     public static StatsManager I() {
@@ -217,7 +217,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                     }
                                     final AccountInfo info = account.getAccountInfo();
                                     String type = "Unknown";
-                                    long estimatedBuytime = account.getLongProperty("added", 0);
+                                    long estimatedBuytime = account.getLongProperty("added", System.currentTimeMillis());
                                     final long validUntilTimeStamp;
                                     final long expireInMs;
                                     if (info != null) {
@@ -308,10 +308,13 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                         }
                                         final ClickedAffLinkStorable st = list.get(list.size() - 1);
                                         if (st != null) {
+
                                             final long timeDiff = estimatedBuytime - st.getTime();
                                             final HashMap<String, String> infos = new HashMap<String, String>();
                                             infos.put("clicksource", st.getSource() + "");
                                             infos.put("ms", Long.toString(timeDiff));
+                                            infos.put("ts", Long.toString(account.getId().getID()));
+
                                             if (info != null) {
                                                 if (validUntilTimeStamp > 0) {
                                                     if (expireInMs > 0) {
@@ -622,7 +625,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * this setter does not set the config flag. Can be used to disable the logger for THIS session.
-     *
+     * 
      * @param b
      */
     public void setEnabled(boolean b) {
@@ -1627,7 +1630,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
-     *
+     * 
      * @param reducer
      * @param path
      */
@@ -1780,7 +1783,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 list = new ArrayList<ClickedAffLinkStorable>();
             }
             // there is no reason to keep older clicks right now.
-            list.clear();
+
             list.add(new ClickedAffLinkStorable(refURL, source));
             try {
                 IO.secureWrite(file, JSonStorage.serializeToJson(list).getBytes("UTF-8"));
