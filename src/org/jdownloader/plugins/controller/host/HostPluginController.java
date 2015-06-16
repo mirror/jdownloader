@@ -80,6 +80,10 @@ public class HostPluginController extends PluginController<PluginForHost> {
         } catch (Throwable e) {
         }
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+            @Override
+            public long getMaxDuration() {
+                return 0;
+            }
 
             @Override
             public void onShutdown(ShutdownRequest shutdownRequest) {

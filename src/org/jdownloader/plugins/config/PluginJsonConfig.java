@@ -29,12 +29,12 @@ public class PluginJsonConfig {
     private static final HashMap<String, JsonKeyValueStorage>                                      STORAGE_CACHE = new HashMap<String, JsonKeyValueStorage>();
     protected static final DelayedRunnable                                                         SAVEDELAYER   = new DelayedRunnable(5000, 30000) {
 
-                                                                                                                     @Override
-                                                                                                                     public void delayedrun() {
-                                                                                                                         saveAll();
-                                                                                                                         cleanup();
-                                                                                                                     }
-                                                                                                                 };
+        @Override
+        public void delayedrun() {
+            saveAll();
+            cleanup();
+        }
+    };
     private final static boolean                                                                   DEBUG         = false;
 
     static {
@@ -43,6 +43,11 @@ public class PluginJsonConfig {
             pluginsFolder.mkdirs();
         }
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+            @Override
+            public long getMaxDuration() {
+                return 0;
+            }
 
             @Override
             public int getHookPriority() {

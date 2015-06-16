@@ -68,7 +68,7 @@ public class SubConfiguration extends Property implements Serializable {
 
             @Override
             public long getMaxDuration() {
-                return 90000l;
+                return 0;
             }
 
             @Override

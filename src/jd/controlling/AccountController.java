@@ -106,6 +106,11 @@ public class AccountController implements AccountControllerListener, AccountProp
             }
 
             @Override
+            public long getMaxDuration() {
+                return 0;
+            }
+
+            @Override
             public String toString() {
                 return "ShutdownEvent: Save AccountController";
             }

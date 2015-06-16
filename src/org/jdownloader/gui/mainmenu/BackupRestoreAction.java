@@ -216,7 +216,7 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
                             return "ShutdownHook: Restore Backup";
                         }
 
-                        private final AtomicBoolean running  = new AtomicBoolean(false);
+                        private final AtomicBoolean running  = new AtomicBoolean(true);
                         private final AtomicLong    progress = new AtomicLong(0);
 
                         @Override
