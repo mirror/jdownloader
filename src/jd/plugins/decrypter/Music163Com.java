@@ -84,6 +84,9 @@ public class Music163Com extends PluginForDecrypt {
             String name_album = null;
             String fpName = null;
             String coverurl = null;
+            String name_creator = null;
+            String name_playlist = null;
+
             if (parameter.matches(TYPE_PLAYLIST)) {
                 /* Playlist */
                 br.getPage("http://music.163.com/api/playlist/detail?id=" + lid);
@@ -97,8 +100,8 @@ public class Music163Com extends PluginForDecrypt {
                 resourcelist = (ArrayList) entries.get("tracks");
 
                 coverurl = (String) entries.get("coverImgUrl");
-                final String name_playlist = (String) entries.get("name");
-                final String name_creator = (String) artistinfo.get("signature");
+                name_playlist = (String) entries.get("name");
+                name_creator = (String) artistinfo.get("signature");
                 fpName = name_creator + " - " + name_playlist;
             } else {
                 /* Album */
@@ -134,7 +137,7 @@ public class Music163Com extends PluginForDecrypt {
                 final LinkedHashMap<String, Object> song_info = (LinkedHashMap<String, Object>) songo;
                 final ArrayList<Object> artists = (ArrayList) song_info.get("artists");
                 final LinkedHashMap<String, Object> artist_info = (LinkedHashMap<String, Object>) artists.get(0);
-                final String songname = (String) song_info.get("name");
+                final String content_title = (String) song_info.get("name");
                 final String fid = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(song_info.get("id"), -1));
                 final String tracknumber = df.format(counter);
                 final String artist = (String) artist_info.get("name");
@@ -149,24 +152,24 @@ public class Music163Com extends PluginForDecrypt {
                     }
                 }
 
-                if (ext == null || songname == null || fid.equals("-1") || filesize == -1) {
+                if (ext == null || content_title == null || fid.equals("-1") || filesize == -1) {
                     return null;
                 }
                 final DownloadLink dl = createDownloadlink("http://music.163.com/song?id=" + fid);
-                String filename;
-                if (name_album != null) {
-                    filename = tracknumber + "." + artist + " - " + name_album + " - " + songname + "." + ext;
-                } else {
-                    filename = tracknumber + "." + artist + " - " + songname + "." + ext;
-                }
-                if (formattedDate != null) {
-                    dl.setProperty("publishedTimestamp", publishedTimestamp);
-                    filename = formattedDate + "_" + filename;
-                }
                 dl.setLinkID(fid);
-                dl.setFinalFileName(filename);
-                dl.setProperty("directfilename", filename);
                 dl.setProperty("trachnumber", tracknumber);
+                dl.setProperty("directtitle", content_title);
+                dl.setProperty("directartist", artist);
+                dl.setProperty("contentid", fid);
+                dl.setProperty("type", ext);
+                if (name_album != null) {
+                    dl.setProperty("directalbum", name_album);
+                }
+                if (publishedTimestamp > 0) {
+                    dl.setProperty("originaldate", publishedTimestamp);
+                }
+                final String name_song = jd.plugins.hoster.Music163Com.getFormattedFilename(dl);
+                dl.setName(name_song);
                 dl.setAvailable(true);
                 dl.setDownloadSize(filesize);
                 decryptedLinks.add(dl);
@@ -174,23 +177,29 @@ public class Music163Com extends PluginForDecrypt {
             }
             if (cfg.getBooleanProperty(GRAB_COVER, false) && coverurl != null) {
                 final DownloadLink dlcover = createDownloadlink("decrypted://music.163.comcover" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                String filenamecover = fpName;
-                if (formattedDate != null) {
-                    filenamecover = formattedDate + "_" + filenamecover;
-                }
                 String ext = coverurl.substring(coverurl.lastIndexOf("."));
                 if (ext.length() > 5) {
                     ext = ".jpg";
                 }
-                filenamecover += ext;
                 if (fastcheck) {
                     dlcover.setAvailable(true);
                 }
-                dlcover.setFinalFileName(filenamecover);
                 dlcover.setContentUrl(parameter);
-                dlcover.setProperty("directfilename", filenamecover);
                 dlcover.setProperty("mainlink", parameter);
                 dlcover.setProperty("directlink", coverurl);
+                dlcover.setProperty("contentid", lid);
+                if (name_creator != null) {
+                    dlcover.setProperty("directartist", name_creator);
+                }
+                dlcover.setProperty("type", ext);
+                if (name_album != null) {
+                    dlcover.setProperty("directalbum", name_album);
+                }
+                if (publishedTimestamp > 0) {
+                    dlcover.setProperty("originaldate", publishedTimestamp);
+                }
+                final String name_cover = jd.plugins.hoster.Music163Com.getFormattedFilename(dlcover);
+                dlcover.setName(name_cover);
                 decryptedLinks.add(dlcover);
             }
             if (br.getHttpConnection().getResponseCode() == 404) {

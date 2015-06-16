@@ -37,8 +37,9 @@ public class CurLv extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("BANNED")) {
+        if (br.toString().length() < 30) {
             logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String lid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
@@ -49,6 +50,11 @@ public class CurLv extends PluginForDecrypt {
             return null;
         }
         br.getPage("http://cur.lv/redirect_curlv.php?code=" + lid + "&ticket=" + ticket + "&r=");
+        if (br.toString().length() < 30) {
+            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         final String continuelink = br.getRegex("(ntop\\.php[^<>\"\\']*?)\"").getMatch(0);
         if (continuelink == null) {
             logger.warning("Decrypter broken for link: " + parameter);

@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploads.xxx" }, urls = { "http://(www\\.)?uploads\\.xxx/video/[A-Za-z0-9\\-_]+\\-[A-Z0-9]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streambit.tv", "uploads.xxx" }, urls = { "https?://(www\\.)?(?:uploads\\.xxx|streambit\\.tv)/video/[A-Za-z0-9\\-_]+/", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 0, 0 })
 public class UploadsXxx extends PluginForHost {
 
     @SuppressWarnings("deprecation")
@@ -45,7 +45,22 @@ public class UploadsXxx extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://uploads.xxx/rules/";
+        return "http://streambit.tv/rules/";
+    }
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("uploads.xxx/", "streambit.tv/"));
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("uploads.xxx".equals(getHost())) {
+            if (host == null || "uploads.xxx".equals(host)) {
+                return "streambit.tv";
+            }
+        }
+        return super.rewriteHost(host);
     }
 
     /* Connection stuff */
@@ -73,7 +88,7 @@ public class UploadsXxx extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String format = br.getRegex(">Format: <b>([^<>\"]*?)</b>").getMatch(0);
-        String filename = br.getRegex("class=\"title\">[\t\n\r ]+<h\\d+>([^<>\"]*?)</h\\d+>").getMatch(0);
+        String filename = br.getRegex("class=\"title\">[\t\n\r ]+<h\\d+ title=\"([^<>\"]*?)\"").getMatch(0);
         String filesize = br.getRegex(">Size: <b>([^<>\"]+)<").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -96,7 +111,7 @@ public class UploadsXxx extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            final String fid = new Regex(downloadLink.getDownloadURL(), "\\-([A-Z0-9]+)/").getMatch(0);
+            final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Z0-9\\-_]+)/$").getMatch(0);
             br.getPage("/play/" + fid + "/");
             final String streamlink = br.getRegex("file: \\'(http://[^<>\"\\']*?)\\'").getMatch(0);
             /* video/xxx.mp4 = conversion in progress, video/lock.mp4 = IP_blocked */
@@ -104,6 +119,8 @@ public class UploadsXxx extends PluginForHost {
                 // if (br.containsHTML("/img/streaming\\.jpg")) {
                 // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Converting video in progress ...");
                 // }
+                this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
                 this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.postPage("/ajax.php?a=getDownloadForFree", "id=" + fid + "&_go=");
                 if (br.containsHTML("\"message\":\"error\"")) {
@@ -111,7 +128,7 @@ public class UploadsXxx extends PluginForHost {
                 }
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.setId("6LeVtQcTAAAAAMTtLxcMjlQZan7EXS69aPVS35YT");
+                rc.setId("6LeoCwgTAAAAAAPLPxb3DTQw3HbM0c5MsgsdO6Uu");
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode("recaptcha", cf, downloadLink);
@@ -122,6 +139,10 @@ public class UploadsXxx extends PluginForHost {
                 dllink = getJson("location");
                 if (dllink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (dllink.contains("http://.streambit.tv/")) {
+                    /* We get crippled downloadlinks if the user enters "" as captcha response */
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
             } else {
                 /* Prefer streams as we can avoid the captcha though the quality does not match the originally uploaded content. */

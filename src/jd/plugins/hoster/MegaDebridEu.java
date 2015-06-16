@@ -165,9 +165,7 @@ public class MegaDebridEu extends PluginForHost {
             logger.warning("Unknown error, disabling current host for 10 minutes!");
             tempUnavailableHoster(account, link, 10 * 60 * 1000l);
         } else if (br.containsHTML("Erreur : Lien incorrect")) {
-            // link is in the wrong format, needs to be corrected as above.
-            logger.warning("Hi please inform JDownloader Development Team about this issue! Link correction needs to take place.");
-            tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
+            tempUnavailableHoster(account, link, 10 * 60 * 1000l);
         } else if (br.containsHTML("Unable to load file")) {
             logger.info("'Unable to load file'");
             int timesFailed = link.getIntegerProperty("timesfailedmegadebrideu_unabletoload", 0);
@@ -177,8 +175,7 @@ public class MegaDebridEu extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             } else {
                 link.setProperty("timesfailedmegadebrideu_unabletoload", Property.NULL);
-                logger.info("Disabling current host for one hour...");
-                tempUnavailableHoster(account, link, 1 * 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 5 * 60 * 1000l);
             }
         } else if (br.containsHTML("\"debridLink\":\"cantDebridLink\"")) {
             // no idea what this means
@@ -189,8 +186,7 @@ public class MegaDebridEu extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             } else {
                 link.setProperty("timesfailedmegadebrideu_cantDebridLink", Property.NULL);
-                logger.info("Disabling current host for one hour...");
-                tempUnavailableHoster(account, link, 1 * 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 5 * 60 * 1000l);
             }
         }
         String dllink = br.getRegex("\"debridLink\":\"(.*?)\"\\}").getMatch(0);
@@ -210,7 +206,7 @@ public class MegaDebridEu extends PluginForHost {
             br.followConnection();
             if (br.containsHTML(">400 Bad Request<")) {
                 logger.info("Temporarily removing hoster from hostlist because of server error 400");
-                tempUnavailableHoster(account, link, 3 * 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 10 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

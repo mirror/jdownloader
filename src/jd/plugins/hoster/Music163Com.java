@@ -19,14 +19,18 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -36,7 +40,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -55,27 +58,29 @@ public class Music163Com extends PluginForHost {
     }
 
     /** Settings stuff */
-    private static final String           FAST_LINKCHECK    = "FAST_LINKCHECK";
-    private static final String           GRAB_COVER        = "GRAB_COVER";
+    private static final String           FAST_LINKCHECK          = "FAST_LINKCHECK";
+    private static final String           GRAB_COVER              = "GRAB_COVER";
+    private static final String           SETTING_CUSTOM_FILENAME = "SETTING_CUSTOM_FILENAME";
+    private static final String           SETTING_CUSTOM_DATE     = "SETTING_CUSTOM_DATE";
 
-    private static final String           TYPE_MUSIC        = "http://(www\\.)?music\\.163\\.com/(?:#/)?song\\?id=\\d+";
-    private static final String           TYPE_VIDEO        = "http://(www\\.)?music\\.163\\.com/(?:#/)?mv\\?id=\\d+";
-    private static final String           TYPE_COVER        = "decrypted://music\\.163\\.comcover\\d+";
+    private static final String           TYPE_MUSIC              = "http://(www\\.)?music\\.163\\.com/(?:#/)?song\\?id=\\d+";
+    private static final String           TYPE_VIDEO              = "http://(www\\.)?music\\.163\\.com/(?:#/)?mv\\?id=\\d+";
+    private static final String           TYPE_COVER              = "decrypted://music\\.163\\.comcover\\d+";
 
-    private static final String           dlurl_format      = "http://m1.music.126.net/%s/%s.mp3";
+    private static final String           dlurl_format            = "http://m1.music.126.net/%s/%s.mp3";
 
     /* Qualities from highest to lowest in KB/s: 320, 160, 96 hMusic is officially only available for logged-in users! */
-    public static final String[]          audio_qualities   = { "hMusic", "mMusic", "lMusic", "bMusic" };
-    public static final String[]          video_qualities   = { "1080", "720", "360", "240" };
-    public static final String            dateformat_en     = "yyyy-MM-dd";
+    public static final String[]          audio_qualities         = { "hMusic", "mMusic", "lMusic", "bMusic" };
+    public static final String[]          video_qualities         = { "1080", "720", "360", "240" };
+    public static final String            dateformat_en           = "yyyy-MM-dd";
 
     /* Connection stuff */
-    private static final boolean          FREE_RESUME       = true;
-    private static final int              FREE_MAXCHUNKS    = 0;
-    private static final int              FREE_MAXDOWNLOADS = 20;
+    private static final boolean          FREE_RESUME             = true;
+    private static final int              FREE_MAXCHUNKS          = 0;
+    private static final int              FREE_MAXDOWNLOADS       = 20;
 
-    private String                        DLLINK            = null;
-    private LinkedHashMap<String, Object> entries           = null;
+    private String                        DLLINK                  = null;
+    private LinkedHashMap<String, Object> entries                 = null;
 
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
@@ -87,23 +92,27 @@ public class Music163Com extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        /* Tracknumber can only be given by decrypter */
-        final String tracknumber = link.getStringProperty("trachnumber", null);
-        /* Decrypters can also set final filenames */
-        String filename = link.getStringProperty("directfilename", null);
+        String content_title = null;
+        String filename = null;
         /*
          * First try to get publishedTimestamp from decrypter as an artist can have multiple albums with different timestamps but if the
          * user added an album we know which timestamp is definitly the correct one!
          */
         long publishedTimestamp = link.getLongProperty("publishedTimestamp", 0);
-        String formattedDate = null;
+        String contentid = link.getStringProperty("contentid", null);
         String artist = null;
-        long filesize = 0;
         String ext = null;
+        String name_album = null;
         DLLINK = null;
-        this.setBrowserExclusive();
         entries = null;
+
+        long filesize = 0;
+        this.setBrowserExclusive();
         prepareAPI(this.br);
+
+        if (contentid == null) {
+            contentid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        }
 
         if (link.getDownloadURL().matches(TYPE_COVER)) {
             DLLINK = link.getStringProperty("directlink", null);
@@ -118,15 +127,12 @@ public class Music163Com extends PluginForHost {
             }
             entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             entries = (LinkedHashMap<String, Object>) entries.get("data");
-            filename = (String) entries.get("artistName");
+            artist = (String) entries.get("artistName");
+            content_title = (String) entries.get("name");
 
             final String publishDate = (String) entries.get("publishTime");
             if (publishDate != null) {
                 publishedTimestamp = TimeFormatter.getMilliSeconds(publishDate, "yyyy-MM-dd", Locale.ENGLISH);
-                if (publishedTimestamp > 0) {
-                    final SimpleDateFormat formatter = new SimpleDateFormat(jd.plugins.hoster.Music163Com.dateformat_en);
-                    formattedDate = formatter.format(publishedTimestamp);
-                }
             }
             entries = (LinkedHashMap<String, Object>) entries.get("brs");
             for (final String quality : video_qualities) {
@@ -135,19 +141,12 @@ public class Music163Com extends PluginForHost {
                     break;
                 }
             }
-            if (filename == null || DLLINK == null) {
+            if (artist == null || content_title == null || DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             filesize = getFilesizeFromHeader(DLLINK);
 
             ext = "mp4";
-            filename += "." + ext;
-            if (formattedDate != null) {
-                filename = formattedDate + "_" + filename;
-            }
-            if (tracknumber != null) {
-                filename = tracknumber + "." + filename;
-            }
         } else {
             link.setLinkID(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
             /* Make sure that offline links also have nice filenames. */
@@ -172,31 +171,34 @@ public class Music163Com extends PluginForHost {
                     break;
                 }
             }
-            /* Only set filename if user added links without decrypter. */
-            if (filename == null) {
-                artist = (String) artist_info.get("name");
-                final String name_album = (String) album_info.get("name");
-                final String songname = (String) entries.get("name");
-                if (publishedTimestamp < 1) {
-                    publishedTimestamp = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(album_info.get("publishTime"), 0);
-                }
-                if (publishedTimestamp > 0) {
-                    final SimpleDateFormat formatter = new SimpleDateFormat(jd.plugins.hoster.Music163Com.dateformat_en);
-                    formattedDate = formatter.format(publishedTimestamp);
-                }
-                if (artist == null || name_album == null || songname == null || ext == null || filesize == -1) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                filename = artist + " - " + name_album + " - " + songname;
-                filename += "." + ext;
-                if (formattedDate != null) {
-                    filename = formattedDate + "_" + filename;
-                }
-                if (tracknumber != null) {
-                    filename = tracknumber + "." + filename;
-                }
+            artist = (String) artist_info.get("name");
+            name_album = (String) album_info.get("name");
+            content_title = (String) entries.get("name");
+            if (publishedTimestamp < 1) {
+                publishedTimestamp = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(album_info.get("publishTime"), 0);
+            }
+            if (artist == null || name_album == null || content_title == null || ext == null || filesize == -1) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        /* Set data - make sure not to overwrite decrypter-data! */
+        link.setProperty("contentid", contentid);
+        if (link != null) {
+            link.setProperty("directtitle", content_title);
+        }
+        if (artist != null) {
+            link.setProperty("directartist", artist);
+        }
+        if (ext != null) {
+            link.setProperty("type", ext);
+        }
+        if (name_album != null) {
+            link.setProperty("directalbum", name_album);
+        }
+        if (publishedTimestamp > 0) {
+            link.setProperty("originaldate", publishedTimestamp);
+        }
+        filename = getFormattedFilename(link);
         link.setFinalFileName(filename);
         link.setDownloadSize(filesize);
         return AvailableStatus.TRUE;
@@ -332,9 +334,107 @@ public class Music163Com extends PluginForHost {
         return "JDownloader's music.163.com plugin helps downloading audio files from music.163.com.";
     }
 
+    /** Returns either the original server filename or one that is very similar to the original */
+    @SuppressWarnings("deprecation")
+    public static String getFormattedFilename(final DownloadLink downloadLink) throws ParseException {
+        final SubConfiguration cfg = SubConfiguration.getConfig("music.163.com");
+        final String ext = downloadLink.getStringProperty("type", null);
+        final String artist = downloadLink.getStringProperty("directartist", "-");
+        final String album = downloadLink.getStringProperty("directalbum", "-");
+        final String title = downloadLink.getStringProperty("directtitle", "-");
+        final String contentid = downloadLink.getStringProperty("contentid", null);
+        final String tracknumber = downloadLink.getStringProperty("trachnumber", "-");
+
+        /* Date: Maybe add this in the future, if requested by a user. */
+        final long date = downloadLink.getLongProperty("originaldate", -1);
+
+        String formattedDate = null;
+        if (date == -1) {
+            /* No date given */
+            formattedDate = "-";
+        } else {
+            /* Get correctly formatted date */
+            String dateFormat = cfg.getStringProperty(SETTING_CUSTOM_DATE, defaultCustomDate);
+            SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy");
+            Date theDate = new Date(date);
+            try {
+                formatter = new SimpleDateFormat(dateFormat);
+                formattedDate = formatter.format(theDate);
+            } catch (Exception e) {
+                /* prevent user error killing plugin */
+                formattedDate = "-";
+            }
+        }
+
+        String formattedFilename = cfg.getStringProperty(SETTING_CUSTOM_FILENAME, defaultCustomFilename);
+
+        if (!formattedFilename.contains("*title*") && !formattedFilename.contains("*contentid*") && !formattedFilename.contains("*ext*")) {
+            formattedFilename = defaultCustomFilename;
+        }
+
+        formattedFilename = formattedFilename.replace("*contentid*", contentid);
+        formattedFilename = formattedFilename.replace("*tracknumber*", tracknumber);
+        formattedFilename = formattedFilename.replace("*date*", formattedDate);
+        formattedFilename = formattedFilename.replace("*ext*", "." + ext);
+        if (artist != null) {
+            formattedFilename = formattedFilename.replace("*artist*", artist);
+        }
+        if (album != null) {
+            formattedFilename = formattedFilename.replace("*album*", album);
+        }
+        if (title != null) {
+            formattedFilename = formattedFilename.replace("*title*", title);
+        }
+        return formattedFilename;
+    }
+
+    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
+                                                  {
+                                                      put("FAST_LINKCHECK", "Enable fast linkcheck for cover-urls?\r\nNOTE: If enabled, before mentioned linktypes will appear faster but filesize won't be shown before downloadstart.");
+                                                      put("GRAB_COVER", "For albums & playlists: Grab cover?");
+                                                      put("CUSTOM_DATE", "Enter your custom date:");
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*date* = Release date of the content (appears in the user defined format above)\r\n*artist* = Name of the artist\r\n*album* = Name of the album (not always available)\r\n*title* = Title of the content\r\n*tracknumber* = Position of a track (not always available)\r\n*contentid* = Internal imgur id of the content e.g. '01485'\r\n*ext* = Extension of the file");
+                                                      put("LABEL_FILENAME", "Define custom filename:");
+                                                  }
+                                              };
+
+    private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
+                                                  {
+                                                      put("FAST_LINKCHECK", "Aktiviere schnellen Linkcheck für cover-urls?\r\nWICHTIG: Falls aktiviert werden genannte Linktypen schneller im Linkgrabber erscheinen aber dafür ist deren Dateigröße erst beim Downloadstart sichtbar.");
+                                                      put("GRAB_COVER", "Für Albem und Playlists: Cover auch herunterladen?");
+                                                      put("CUSTOM_DATE", "Definiere dein gewünschtes Datumsformat:");
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*date* = Erscheinungsdatum (erscheint im oben definierten Format)\r\n*artist* = Name des Authors\r\n*album* = Name des Albums (nicht immer verfügbar)\r\n*title* = Titel des Inhaltes\r\n*tracknumber* = Position eines Songs (nicht immer verfügbar)\r\n*contentid* = Interne id des Inhaltes z.B. '01485'\r\n*ext* = Dateiendung");
+                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
+                                                  }
+                                              };
+
+    /**
+     * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
+     * English.
+     *
+     * @param key
+     * @return
+     */
+    private String getPhrase(String key) {
+        if ("de".equals(System.getProperty("user.language")) && phrasesDE.containsKey(key)) {
+            return phrasesDE.get(key);
+        } else if (phrasesEN.containsKey(key)) {
+            return phrasesEN.get(key);
+        }
+        return "Translation not found!";
+    }
+
+    private static final String defaultCustomFilename = "*date*_*artist* - *album* - *title**ext*";
+    private static final String defaultCustomDate     = "yyyy-MM-dd";
+
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.Music163Com.FastLinkcheck", "Enable fast linkcheck for cover-urls?\r\nNOTE: If enabled, before mentioned linktypes will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB_COVER, JDL.L("plugins.hoster.Music163Com.AlbumsGrabCover", "For albums & playlists: Grab cover?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, getPhrase("FAST_LINKCHECK")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB_COVER, getPhrase("GRAB_COVER")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CUSTOM_DATE, getPhrase("CUSTOM_DATE")).setDefaultValue(defaultCustomDate));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CUSTOM_FILENAME, getPhrase("LABEL_FILENAME")).setDefaultValue(defaultCustomFilename));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPhrase("SETTING_TAGS")));
     }
 
     @Override
