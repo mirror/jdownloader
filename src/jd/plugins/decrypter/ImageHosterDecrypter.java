@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -32,14 +33,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2,
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
 
 names = { "picsee.net", "pichost.me", "imagecurl.com", "otofotki.pl", "bigimage.cz", "twitpic.com", "imgserve.net", "imgpizza.com", "pic4you.ru", "tuspics.net", "imgjug.com", "pic4free.org", "cocoimage.com", "imagetwist.com", "postimage.org", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "sharenxs.com", "9gag.com" },
 
 urls = { "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(www\\.)?pichost\\.me/\\d+", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "http://img\\d+\\.otofotki\\.pl/[A-Za-z0-9\\-_]+\\.jpg\\.html", "http://bigimage\\.cz/image/\\d+\\.html", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(www\\.)?imgserve\\.net/img\\-[a-z0-9]+\\.html", "http://(www\\.)?imgpizza\\.com/viewer\\.php\\?file=[^<>\"/]+", "http://(www\\.)?pic4you\\.ru/\\d+/\\d+/", "http://(www\\.)?tuspics\\.net/[a-z0-9]{12}", "http://(www\\.)?imgjug\\.com/(i/[A-Za-z0-9]+|\\?v=[A-Za-z0-9]+\\.jpg)", "http://(www\\.)?pic4free\\.org/\\?v=[^<>\"/]+", "http://(www\\.)?img\\d+\\.cocoimage\\.com/img\\.php\\?id=\\d+", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?postim(age|g)\\.org/image/[a-z0-9]+",
         "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?(img\\d+|serve)\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+", "http://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://(www\\.)?(media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+|gs\\d+\\.photobucket\\.com/groups/[A-Za-z0-9]+/[A-Za-z0-9]+/\\?action=view\\&current=[^<>\"/]+|s\\d+\\.photobucket\\.com/user/[A-Za-z0-9\\-_]+/media/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\.jpg\\.html)", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+", "https?://(www\\.)?9gag\\.com/gag/\\d+" },
 
-flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+        flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class ImageHosterDecrypter extends PluginForDecrypt {
 
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
@@ -153,11 +154,15 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                 finallink = br.getRegex("\"(http://img[0-9]+\\.pixhost\\.org/images/[0-9]+/.*?)\"").getMatch(0);
             }
         } else if (parameter.contains("sharenxs.com/")) {
-            br.getPage(parameter);
-            finallink = br.getRegex("<a  href=\"#\" onclick=\\'imgsize\\(\\)\\' ><img[\t\n\r ]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            br.getPage(parameter + "&offset=original");
+            finallink = br.getRegex("<img[^>]+class=\"view_photo\" src=\"(.*?)\"").getMatch(0);
             if (finallink == null) {
-                finallink = br.getRegex("\"(http://cache\\.sharenxs\\.com/images/[^<>\"]*?)\"").getMatch(0);
+                finallink = br.getRegex("<a\\s+href=\"#\" onclick='imgsize\\(\\)' ><img[\t\n\r ]+src=\"(http://[^<>\"]*?)\"").getMatch(0);
+                if (finallink == null) {
+                    finallink = br.getRegex("\"(http://cache\\.sharenxs\\.com/images/[^<>\"]*?)\"").getMatch(0);
+                }
             }
+            finallink = Request.getLocation(finallink, br.getRequest());
         } else if (parameter.contains("imagehyper.com/img")) {
             br.setFollowRedirects(true);
             br.getPage(parameter);
