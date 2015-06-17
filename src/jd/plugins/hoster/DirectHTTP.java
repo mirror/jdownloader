@@ -80,6 +80,7 @@ public class DirectHTTP extends PluginForHost {
         private int              tries        = 0;
         private boolean          clearReferer = true;
         private String           sourceHost;
+        private String           helperID;
 
         public Recaptcha(final Browser br) {
             this.br = br;
@@ -97,17 +98,18 @@ public class DirectHTTP extends PluginForHost {
             this.rcBr.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                track("captcha/rc/download");
+
+                track("captcha/rc/download/" + helperID);
                 Browser.download(captchaFile, con = this.rcBr.openGetConnection(this.captchaAddress));
 
                 FileInputStream is = null;
                 try {
                     is = new FileInputStream(captchaFile);
                     int type = ImageIO.read(is).getType();
-                    track("captcha/rc/imagetype/" + type);
+                    track("captcha/rc/imagetype/" + type + "/" + helperID);
 
                 } catch (IOException e) {
-                    track("captcha/rc/imagetype/" + e.getMessage());
+                    track("captcha/rc/imagetype/" + e.getMessage() + "/" + helperID);
                 } finally {
                     if (is != null) {
                         try {
@@ -234,15 +236,17 @@ public class DirectHTTP extends PluginForHost {
                     if (rcBr.getCookie("http://google.com", "SID") != null) {
 
                         if (StringUtils.isNotEmpty(org.jdownloader.captcha.v2.solver.service.BrowserSolverService.getInstance().getConfig().getGoogleComCookieValueSID()) && StringUtils.isNotEmpty(org.jdownloader.captcha.v2.solver.service.BrowserSolverService.getInstance().getConfig().getGoogleComCookieValueHSID())) {
-                            track("captcha/rc/sid/");
-                        } else {
+                            helperID = "SID";
 
-                            track("captcha/rc/acc/");
+                        } else {
+                            helperID = "ACC";
+
                         }
 
                     } else {
                         if (CaptchaMyJDSolver.getInstance().canHandle()) {
-                            track("captcha/rc/myjd/");
+                            helperID = "MYJD";
+
                         }
                     }
 
@@ -260,7 +264,8 @@ public class DirectHTTP extends PluginForHost {
             try {
                 challenge = org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1Handler.load(rcBr, id);
                 if (challenge != null) {
-                    track("captcha/rc/browserloop");
+                    helperID = "BrowserLoop";
+
                     server = "http://www.google.com/recaptcha/api/";
                     this.captchaAddress = this.server + "image?c=" + this.challenge;
                 }
@@ -285,7 +290,9 @@ public class DirectHTTP extends PluginForHost {
         }
 
         private void track(String string) {
-            StatsManager.I().track(1000, string + (string.endsWith("/") ? "" : "/") + sourceHost);
+            HashMap<String, String> info = new HashMap<String, String>();
+            info.put("host", sourceHost);
+            StatsManager.I().track(100, "rc_track", string, info);
         }
 
         public void parse() throws IOException, PluginException {

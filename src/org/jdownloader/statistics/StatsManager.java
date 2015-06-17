@@ -5,7 +5,6 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -145,10 +144,10 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     private HashMap<String, Integer>       reducerRandomMap;
 
-    private void log(StatsLogInterface dl) {
+    private boolean log(StatsLogInterface dl) {
         if (isEnabled()) {
             if (Math.random() > 0.25d && !(dl instanceof AbstractTrackEntry)) {
-                return;
+                return false;
             }
             synchronized (list) {
                 if (list.size() > 20) {
@@ -157,7 +156,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                 list.add(dl);
                 list.notifyAll();
             }
+            return true;
         }
+        return false;
 
     }
 
@@ -341,75 +342,29 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     }
 
     public void trackR() {
-        final int reducer = 1000;
-        String path2 = "ping";
-        if (reducer > 1) {
-            path2 += "_in" + reducer;
-            synchronized (reducerRandomMap) {
-                Integer randomValue = reducerRandomMap.get(path2);
-                if (randomValue != null) {
-                    if (randomValue.intValue() != 0) {
-                        return;
-                    }
-                }
-            }
+        final long started = (int) System.currentTimeMillis();
+        final HashMap<String, String> cvar = new HashMap<String, String>();
+
+        cvar.put("d", "0");
+        if (!track(1000, null, "ping", cvar)) {
+            return;
         }
-        final String path = path2;
         new Thread("Pinger") {
-            private int i;
+
             {
                 setDaemon(true);
             }
 
             public void run() {
-                if (reducer > 1) {
-                    synchronized (reducerRandomMap) {
-                        Integer randomValue = reducerRandomMap.get(path);
-                        if (randomValue == null) {
-                            Random random = new Random(System.currentTimeMillis());
-                            randomValue = random.nextInt(reducer);
-                            reducerRandomMap.put(path, randomValue.intValue());
-                            try {
-                                IO.secureWrite(reducerFile, JSonStorage.serializeToJson(reducerRandomMap).getBytes("UTF-8"));
-                            } catch (Throwable e) {
-                                logger.log(e);
-                            }
-                        }
-                        if (randomValue.intValue() != 0) {
-                            return;
-                        }
-                    }
-                }
+
                 while (true) {
-                    this.i = (int) System.currentTimeMillis();
-                    log(new AbstractTrackEntry() {
-
-                        @Override
-                        public void send(Browser br) {
-                            try {
-
-                                final HashMap<String, String> cvar = new HashMap<String, String>();
-                                try {
-                                    cvar.put("_id", System.getProperty(new String(new byte[] { (byte) 117, (byte) 105, (byte) 100 }, new String(new byte[] { 85, 84, 70, 45, 56 }, "UTF-8"))));
-                                } catch (UnsupportedEncodingException e1) {
-                                    e1.printStackTrace();
-                                }
-                                cvar.put("d", (System.currentTimeMillis() - i) + "");
-                                cvar.put("source", "jd2");
-                                cvar.put("os", CrossSystem.getOS().name());
-
-                                URLConnectionAdapter con = new Browser().openGetConnection("http://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar)));
-                                con.disconnect();
-                            } catch (Throwable e) {
-                                e.printStackTrace();
-                            }
-
-                        }
-                    });
-                    i++;
                     try {
                         Thread.sleep(10 * 60 * 1000l);
                     } catch (InterruptedException e) {
+                        return;
+                    }
+                    cvar.put("d", (System.currentTimeMillis() - started) + "");
+                    if (!track(1000, null, "ping", cvar)) {
                         return;
                     }
 
@@ -1561,33 +1516,42 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     }
 
-    public void track(final int reducer, final String id, final Map<String, String> infos) {
-        final String path;
+    public boolean track(final int reducer, String reducerID, final String id, final Map<String, String> infos) {
+        final String reducerKey;
+
         if (reducer > 1) {
-            path = id + "_in" + reducer;
+            if (StringUtils.isEmpty(reducerID)) {
+                reducerKey = id + "_in" + reducer;
+            } else {
+                reducerKey = reducerID + "_in" + reducer;
+            }
+
             synchronized (reducerRandomMap) {
-                final Integer randomValue = reducerRandomMap.get(id);
+                final Integer randomValue = reducerRandomMap.get(reducerKey);
                 if (randomValue != null) {
                     if (randomValue.intValue() != 0) {
-                        return;
+                        return false;
                     }
                 }
             }
         } else {
-            path = id;
+            reducerKey = null;
         }
-        log(new AbstractTrackEntry() {
+
+        return log(new AbstractTrackEntry() {
 
             @Override
             public void send(Browser br) {
                 try {
+                    String path = id;
                     if (reducer > 1) {
+                        path = id + "_in" + reducer;
                         synchronized (reducerRandomMap) {
-                            Integer randomValue = reducerRandomMap.get(path);
+                            Integer randomValue = reducerRandomMap.get(reducerKey);
                             if (randomValue == null) {
                                 final Random random = new Random(System.currentTimeMillis());
                                 randomValue = random.nextInt(reducer);
-                                reducerRandomMap.put(path, randomValue.intValue());
+                                reducerRandomMap.put(reducerKey, randomValue.intValue());
                                 try {
                                     IO.secureWrite(reducerFile, JSonStorage.serializeToJson(reducerRandomMap).getBytes("UTF-8"));
                                 } catch (Throwable e) {
@@ -1626,6 +1590,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
             }
         });
+
     }
 
     /**
@@ -1635,15 +1600,15 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
      * @param path
      */
     public void track(final int reducer, String path2) {
-        track(reducer, path2, null);
+        track(reducer, null, path2, null);
     }
 
     public void track(final String path) {
-        track(1, path, null);
+        track(1, null, path, null);
     }
 
     public void track(final String path, final Map<String, String> infos) {
-        track(1, path, infos);
+        track(1, null, path, infos);
     }
 
     public void logDownloadException(DownloadLink link, PluginForHost plugin, Throwable e) {
