@@ -83,6 +83,9 @@ public class TnaFlixCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage(Encoding.htmlDecode("http://" + configLink));
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Config file is not correct'", 30 * 60 * 1000l);
+        }
         String dllink = null;
         final String[] qualities = { "720p", "480p", "360p", "240p", "144p" };
         for (final String quality : qualities) {

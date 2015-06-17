@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?((((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\-]+|#[A-Za-z0-9%\\/+=\\-]+))|(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+|yadi\\.sk/mail/\\?hash=[A-Za-z0-9%/\\+=]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?((((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\-]+|#[A-Za-z0-9%\\/+=\\-]+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+|yadi\\.sk/mail/\\?hash=[A-Za-z0-9%/\\+=]+)" }, flags = { 0 })
 public class DiskYandexNetFolder extends PluginForDecrypt {
 
     public DiskYandexNetFolder(PluginWrapper wrapper) {
@@ -44,7 +44,8 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     }
 
     private final String        primaryURLs       = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\-]+|#[A-Za-z0-9%\\/+=\\-]+)";
-    private final String        shortURLs         = "https?://(www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
+    private final String        shortURLs_d       = "https?://(www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
+    private final String        shortURLs_i       = "https?://(www\\.)?(yadi\\.sk|yadisk\\.cc)/i/[A-Za-z0-9\\-_]+";
 
     private final String        type_yadi_sk_mail = "https?://(www\\.)?yadi\\.sk/mail/\\?hash=[A-Za-z0-9%/\\+=]+";
 
@@ -65,7 +66,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         }
         final DownloadLink main = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
         String mainhashID = null;
-        if (parameter.matches(shortURLs)) {
+        if (parameter.matches(shortURLs_d) || parameter.matches(shortURLs_i)) {
             br.getPage(parameter);
             if (br.containsHTML(OFFLINE_TEXT)) {
                 main.setAvailable(false);

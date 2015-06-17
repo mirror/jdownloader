@@ -17,18 +17,17 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -43,8 +42,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.accounts.AccountFactory;
+import org.jdownloader.plugins.accounts.EditAccountPanel;
+import org.jdownloader.plugins.accounts.Notifier;
 
 @HostPlugin(revision = "$Revision: 29998 $", interfaceVersion = 3, names = { "ezfile.ch" }, urls = { "https?://(www\\.)?ezfile\\.ch/[a-z0-9]+" }, flags = { 2 })
 public class EzFileCh extends PluginForHost {
@@ -52,7 +56,6 @@ public class EzFileCh extends PluginForHost {
     private final String         useragent                    = "JDownloader";
     /* must be static so all plugins share same lock */
     private static Object        LOCK                         = new Object();
-    private final int            MAXPREMIUMCHUNKS             = -2;
 
     /* TODO: Check/update these limits */
     /* Connection stuff */
@@ -64,7 +67,7 @@ public class EzFileCh extends PluginForHost {
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 3;
 
     private static final String  NOCHUNKS                     = "NOCHUNKS";
     private static final String  NORESUME                     = "NORESUME";
@@ -73,17 +76,26 @@ public class EzFileCh extends PluginForHost {
     private static AtomicBoolean UNDERMAINTENANCE             = new AtomicBoolean(false);
     private static final String  UNDERMAINTENANCEUSERTEXT     = "The site is under maintenance!";
 
-    /* Completely useless API: https://ezfile.ch/?m=apidoc */
-    private static final String  NICE_HOST                    = "ezfile.ch";
+    private static final String  API_ERROR_NO_PERMISSION      = "No permission granted for this apikey to perform this api call";
+
+    /* API doc: https://ezfile.ch/?m=apidoc */
+    // private static final String NICE_HOST = "ezfile.ch";
     private static final boolean useFilecheckAPI              = true;
 
     private String               dllink                       = null;
     private boolean              isPrivateFile                = false;
 
+    @SuppressWarnings("deprecation")
     public EzFileCh(final PluginWrapper wrapper) {
         super(wrapper);
+        this.setAccountwithoutUsername(true);
         this.enablePremium(MAINPAGE + "/user-register.html");
         this.setStartIntervall(5 * 1000l);
+    }
+
+    @Override
+    public AccountFactory getAccountFactory() {
+        return new EzFileChAccountFactory();
     }
 
     /**
@@ -194,6 +206,7 @@ public class EzFileCh extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink, boolean viaAccount) throws Exception, PluginException {
+        br.setFollowRedirects(true);
         final String fid = getFid(downloadLink);
         if (dllink == null) {
             dllink = checkDirectLink(downloadLink, "free_directlink");
@@ -290,69 +303,26 @@ public class EzFileCh extends PluginForHost {
         doFree(downloadLink, false);
     }
 
-    @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    private void login(final Account account) throws Exception {
         synchronized (LOCK) {
-            try {
-                // Load cookies
-                br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
-                        }
-                        return;
-                    }
-                }
-                String csrftoken = null;
-                br.setFollowRedirects(true);
-                prepBrowser(br);
-                br.postPage("https://ezfile.ch/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                br.getPage("https://ezfile.ch/?m=user&a=enter");
-                br.getPage("https://login.persona.org/communication_iframe");
-                br.getPage("https://login.persona.org/wsapi/session_context");
-                csrftoken = getJson("csrf_token");
-                br.getPage("https://login.persona.org/sign_in");
-                br.getPage("https://login.persona.org/wsapi/session_context");
-                br.getPage("https://login.persona.org/wsapi/address_info?email=psp%40jdownloader.org&issuer=default");
-                // br.getPage("https://login.persona.org/wsapi/list_emails");
-                br.postPageRaw("https://login.persona.org/wsapi/authenticate_user", "");
-                br.postPageRaw("https://login.persona.org/wsapi/prolong_session", "{\"csrf\":\"" + csrftoken + "\"}");
-                /* Example postdata: http://jdownloader.net:8081/pastebin/133630 */
-                br.postPageRaw("https://login.persona.org/wsapi/cert_key", "");
-                /* Example assertion value: http://jdownloader.net:8081/pastebin/133631 */
-                br.postPage("https://ezfile.ch/?m=user&a=persona", "assertion=");
-                br.getPage(MAINPAGE + "/user-login.html");
-                // We don't know if a captcha is needed so first we try without,
-                // if we get an errormessage we know a captcha is needed
-                boolean accountValid = false;
-                if (!accountValid) {
+            br.setCookiesExclusive(true);
+            br.setFollowRedirects(true);
+            prepBrowser(br);
+            br.getPage("https://ezfile.ch/?m=api&a=fetch_account_info&akey=" + Encoding.urlEncode(account.getPass()));
+            final String message = getJson("message");
+            if (message != null) {
+                if (message.equals(API_ERROR_NO_PERMISSION)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDeinem APIKey fehlt die Berechtigung 'Allow Account info fetch'.\r\nHier kannst du diese aktivieren: ezfile.ch/?m=apidoc", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour APIKey is missing the permission 'Allow Account info fetch'.\r\nYou can activate it here: ezfile.ch/?m=apidoc", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-            } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                throw e;
             }
         }
     }
@@ -360,39 +330,18 @@ public class EzFileCh extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (true) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount Servics not supported for this hoster at this time.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        if (!account.getUser().matches(".+@.+\\..+")) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
         final AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
-            login(account, true);
+            login(account);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
         }
-        br.getPage("/?m=user&a=account");
         long traffic_left_long = 0;
-        final String traffic_left = br.getRegex("Traffic Allowance: <a href=\"[^\"]+\" style=\"[^\"]+\">([^<>\"]*?)</a>").getMatch(0);
-        if (traffic_left == null) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
+        final String traffic_left = getJson("bandwidth");
         traffic_left_long = SizeFormatter.getSize(traffic_left);
-        // Only free acc support till now
         if (traffic_left_long == 0) {
             ai.setStatus("Registered (free) account");
             account.setProperty("free", true);
@@ -404,12 +353,11 @@ public class EzFileCh extends PluginForHost {
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
-            /* No premium traffic means unlimited fre traffic */
+            /* No premium traffic means unlimited free traffic */
             ai.setUnlimitedTraffic();
         } else {
             ai.setStatus("Premium account");
             account.setProperty("free", false);
-            ai.setValidUntil(Long.parseLong(getJson("premium_until", br)) * 1000);
             try {
                 account.setType(AccountType.PREMIUM);
                 maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
@@ -419,40 +367,30 @@ public class EzFileCh extends PluginForHost {
             }
             ai.setTrafficLeft(traffic_left_long);
         }
-        ai.setUnlimitedTraffic();
         return ai;
     }
 
+    /* TODO: Check this case: A premium user wants to download a private file that was NOT uploaded by him! */
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         if (UNDERMAINTENANCE.get()) {
             throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
         }
-        login(account, false);
         if (!account.getBooleanProperty("free", false)) {
-            /* TODO */
-            if (true) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            this.br.getPage("https://ezfile.ch/?m=api&a=download&akey=" + Encoding.urlEncode(account.getPass()) + "&fkey=" + link.getLinkID());
+            final String message = getJson("message");
+            if (API_ERROR_NO_PERMISSION.equals(message)) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "\r\nDeinem APIKey fehlt die Berechtigung 'Allow Downloading'.\r\nAktiviere diese hier und versuche es erneut: ezfile.ch/?m=apidoc");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "\r\nYour APIKey is missing the permission 'Allow Downloading'.\r\nActivate it here and try again: ezfile.ch/?m=apidoc");
+                }
             }
-            final String apikey = null;
-            final String fid = getFid(link);
-            if (apikey == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            try {
-                br.postPage((br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_download_url.api", "akey=" + apikey + "&ukey=" + fid);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-            }
-            if (br.containsHTML("\"message\":\"no such file\"")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            String finallink = getJson("download_url", br);
+            final String finallink = getJson("download_ticket_url");
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            finallink = finallink.replace("\\", "");
 
             int maxchunks = ACCOUNT_PREMIUM_MAXCHUNKS;
             if (link.getBooleanProperty(NOCHUNKS, false)) {
@@ -481,7 +419,6 @@ public class EzFileCh extends PluginForHost {
                 }
             }
         } else {
-            br.setFollowRedirects(true);
             doFree(link, true);
         }
     }
@@ -553,23 +490,6 @@ public class EzFileCh extends PluginForHost {
         return new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
     }
 
-    private void xmlrequest(final Browser br, final String url, final String postData) throws IOException {
-        br.getHeaders().put("User-Agent", useragent);
-        br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        br.postPage(url, postData);
-        br.getHeaders().remove("X-Requested-With");
-    }
-
-    public static String getJson(final String parameter, final Browser br) {
-        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) {
-            result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
-        }
-        return result;
-    }
-
     @Override
     public void reset() {
     }
@@ -589,5 +509,84 @@ public class EzFileCh extends PluginForHost {
             return true;
         }
         return false;
+    }
+
+    public static class EzFileChAccountFactory extends AccountFactory {
+
+        public static class EzFileChPanel extends MigPanel implements EditAccountPanel {
+            /**
+             *
+             */
+            private static final long serialVersionUID = 1L;
+
+            private final String      APIKEYHELP       = "Enter your APIKey";
+
+            private String getPassword() {
+                if (this.pass == null) {
+                    return null;
+                }
+                if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+                    return null;
+                }
+                return new String(this.pass.getPassword());
+            }
+
+            ExtPasswordField          pass;
+
+            private volatile Notifier notifier = null;
+            private static String     EMPTYPW  = "                 ";
+
+            public EzFileChPanel() {
+                super("ins 0, wrap 2", "[][grow,fill]", "");
+                add(new JLabel("Click here to find/create your APIKey:"));
+                add(new JLink("https://ezfile.ch/?m=apidoc"));
+
+                add(new JLabel("APIKey:"));
+                add(this.pass = new ExtPasswordField() {
+
+                    @Override
+                    public void onChanged() {
+                        if (notifier != null) {
+                            notifier.onNotify();
+                        }
+                    }
+
+                }, "");
+                pass.setHelpText(APIKEYHELP);
+            }
+
+            @Override
+            public JComponent getComponent() {
+                return this;
+            }
+
+            @Override
+            public void setAccount(Account defaultAccount) {
+                if (defaultAccount != null) {
+                    pass.setText(defaultAccount.getPass());
+                }
+            }
+
+            @Override
+            public boolean validateInputs() {
+                return getPassword() != null;
+            }
+
+            @Override
+            public void setNotifyCallBack(Notifier notifier) {
+                this.notifier = notifier;
+            }
+
+            @Override
+            public Account getAccount() {
+                return new Account(null, getPassword());
+            }
+        }
+
+        @Override
+        public EditAccountPanel getPanel() {
+            return new EzFileChPanel();
+        }
+
     }
 }

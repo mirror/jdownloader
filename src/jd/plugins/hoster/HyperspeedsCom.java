@@ -131,7 +131,7 @@ public class HyperspeedsCom extends PluginForHost {
             }
         }
         /* Make sure that our account type allows downloading a link with this filesize. */
-        if (fsize > max_file_size) {
+        if (max_file_size > -1 && fsize > max_file_size) {
             return false;
         }
         return true;
