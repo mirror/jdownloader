@@ -165,20 +165,17 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         final String finalPasswords = request.getParameterbyKey("passwords");
         String source = request.getParameterbyKey("source");
         final String referer = request.getRequestHeaders().getValue(HTTPConstants.HEADER_REQUEST_REFERER);
-        String comment = request.getParameterbyKey("comment");
+        String linkComment = request.getParameterbyKey("comment");
         final LinkCollectingJob job = new LinkCollectingJob(origin, urls);
         final String finalDestination = request.getParameterbyKey("dir");
         String packageName = request.getParameterbyKey("package");
+        String packageComment = null;
         if (source != null && !(StringUtils.startsWithCaseInsensitive(source, "http://") || StringUtils.startsWithCaseInsensitive(source, "https://"))) {
             final PublicSuffixList psl = PublicSuffixList.getInstance();
             if (psl == null || psl.getDomain(source.toLowerCase(Locale.ENGLISH)) == null) {
-                if (packageName == null) {
-                    packageName = source;
-                } else if (comment == null) {
-                    comment = source;
-                }
-                source = null;
+                packageComment = source;
             }
+            source = null;
         }
         if (source != null) {
             job.setCustomSourceUrl(getLongerString(source, referer));
@@ -186,7 +183,13 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             job.setCustomSourceUrl(referer);
         }
         final String finalPackageName = packageName;
-        final String finalComment = comment;
+        final String finalComment = linkComment;
+        final String finalPackageComment;
+        if (linkComment != null) {
+            finalPackageComment = linkComment;
+        } else {
+            finalPackageComment = packageComment;
+        }
         final CrawledLinkModifier modifier = new CrawledLinkModifier() {
             private HashSet<String> pws = null;
             {
@@ -218,7 +221,17 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                     packageInfo.setUniqueId(null);
                     link.setDesiredPackageInfo(packageInfo);
                 }
-                DownloadLink dlLink = link.getDownloadLink();
+                if (StringUtils.isNotEmpty(finalPackageComment)) {
+                    PackageInfo packageInfo = link.getDesiredPackageInfo();
+                    if (packageInfo == null) {
+                        packageInfo = new PackageInfo();
+                    }
+                    packageInfo.setComment(finalPackageComment);
+                    packageInfo.setIgnoreVarious(true);
+                    packageInfo.setUniqueId(null);
+                    link.setDesiredPackageInfo(packageInfo);
+                }
+                final DownloadLink dlLink = link.getDownloadLink();
                 if (dlLink != null) {
                     if (StringUtils.isNotEmpty(finalComment)) {
                         dlLink.setComment(finalComment);
