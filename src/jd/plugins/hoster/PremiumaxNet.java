@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -172,6 +174,9 @@ public class PremiumaxNet extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_RETRY, "Too many connections active, try again in some seconds...");
                     } else if (br.containsHTML("> Our server can't connect to")) {
                         handleErrorRetries("cantconnect", 20, 5 * 60 * 1000l);
+                    } else if (br.toString().equalsIgnoreCase("Traffic limit exceeded")) {
+                        // traffic limit per host, resets every 24 hours... http://www.premiumax.net/hosts.html
+                        tempUnavailableHoster(determineTrafficResetTime());
                     } else if (br.toString().equalsIgnoreCase("nginx error")) {
                         dumpAccountSessionInfo();
                         throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -228,6 +233,37 @@ public class PremiumaxNet extends antiDDoSForHost {
             }
             throw e;
         }
+    }
+
+    /**
+     * determines how much time left in current day, based on server DATE header (Assume DATE header is this is server time).
+     *
+     * @author raztoki
+     * @return
+     */
+    private final long determineTrafficResetTime() {
+        final String dateString = br.getHttpConnection().getHeaderField("Date");
+        if (dateString != null) {
+            long serverTime = -1;
+            serverTime = TimeFormatter.getMilliSeconds(dateString, "EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
+            if (serverTime <= 0) {
+                final Date date = TimeFormatter.parseDateString(dateString);
+                if (date != null) {
+                    serverTime = date.getTime();
+                }
+            }
+            if (serverTime > 0) {
+                // we now need to determine when the next day starts.
+                final Calendar c = new Calendar.Builder().setInstant(serverTime).build();
+                c.add(Calendar.DAY_OF_MONTH, 1);
+                // add one minute offset?
+                c.set(Calendar.MINUTE, 1);
+                final long t = c.getTimeInMillis() - serverTime;
+                return t;
+            }
+        }
+        // 1 hour
+        return 60 * 60 * 1000l;
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
