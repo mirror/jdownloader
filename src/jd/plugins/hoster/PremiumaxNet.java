@@ -254,7 +254,9 @@ public class PremiumaxNet extends antiDDoSForHost {
             }
             if (serverTime > 0) {
                 // we now need to determine when the next day starts.
-                final Calendar c = new Calendar.Builder().setInstant(serverTime).build();
+
+                final Calendar c = Calendar.getInstance();
+                c.setTime(new Date(serverTime));
                 c.add(Calendar.DAY_OF_MONTH, 1);
                 // add one minute offset?
                 c.set(Calendar.MINUTE, 1);
