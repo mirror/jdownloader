@@ -44,9 +44,9 @@ import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.ScriptableObject;
 
 /**
- * 
+ *
  * @author raztoki
- * 
+ *
  */
 @SuppressWarnings({ "deprecation", "unused" })
 public abstract class antiDDoSForHost extends PluginForHost {
@@ -71,7 +71,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
         // define custom browser headers and language settings.
         // required for native cloudflare support, without the need to repeat requests.
         try {
-            prepBr.addAllowedResponseCodes(new int[] { 429, 503, 520, 522 });
+            prepBr.addAllowedResponseCodes(new int[] { 429, 503, 520, 521, 522 });
         } catch (final Throwable t) {
         }
         synchronized (antiDDoSCookies) {
@@ -106,7 +106,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     /**
      * Gets page <br />
      * - natively supports silly cloudflare anti DDoS crapola
-     * 
+     *
      * @author raztoki
      */
     protected void getPage(final Browser ibr, final String page) throws Exception {
@@ -132,9 +132,9 @@ public abstract class antiDDoSForHost extends PluginForHost {
 
     /**
      * Wrapper into getPage(importBrowser, page), where browser = br;
-     * 
+     *
      * @author raztoki
-     * 
+     *
      * */
     protected void getPage(final String page) throws Exception {
         getPage(br, page);
@@ -169,9 +169,9 @@ public abstract class antiDDoSForHost extends PluginForHost {
 
     /**
      * Wrapper into postPage(importBrowser, page, postData), where browser == this.br;
-     * 
+     *
      * @author raztoki
-     * 
+     *
      * */
     protected void postPage(final String page, final String postData) throws Exception {
         postPage(br, page, postData);
@@ -206,9 +206,9 @@ public abstract class antiDDoSForHost extends PluginForHost {
 
     /**
      * Wrapper into postPage(importBrowser, page, param), where browser == this.br;
-     * 
+     *
      * @author raztoki
-     * 
+     *
      * */
     protected void postPage(final String page, final LinkedHashMap<String, String> param) throws Exception {
         postPage(br, page, param);
@@ -270,9 +270,9 @@ public abstract class antiDDoSForHost extends PluginForHost {
 
     /**
      * Wrapper into sendForm(importBrowser, form), where browser == this.br;
-     * 
+     *
      * @author raztoki
-     * 
+     *
      * */
     protected void submitForm(final Form form) throws Exception {
         submitForm(br, form);
@@ -295,9 +295,9 @@ public abstract class antiDDoSForHost extends PluginForHost {
 
     /**
      * Wrapper into sendRequest(importBrowser, form), where browser == this.br;
-     * 
+     *
      * @author raztoki
-     * 
+     *
      * */
     protected void sendRequest(final Request request) throws Exception {
         sendRequest(br, request);
@@ -368,7 +368,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
      * Performs Cloudflare and Incapsula requirements.<br />
      * Auto fill out the required fields and updates antiDDoSCookies session.<br />
      * Always called after Browser Request!
-     * 
+     *
      * @version 0.03
      * @author raztoki
      **/
@@ -456,7 +456,6 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Webserver is Down: " + ibr.getHost(), 5 * 60 * 1000l);
                 } else if (responseCode == 520 || responseCode == 522) {
                     // HTTP/1.1 520 Origin Error
-
                     // HTTP/1.1 522 Origin Connection Time-out
                     // cache system with possible origin dependency... we will wait and retry
                     if (responseCode52x == 4) {
@@ -535,13 +534,13 @@ public abstract class antiDDoSForHost extends PluginForHost {
             }
             // save the session!
             synchronized (antiDDoSCookies) {
-                antiDDoSCookies.put(this.getHost(), cookies);
+                antiDDoSCookies.put(ibr.getHost(), cookies);
             }
         }
     }
 
     /**
-     * 
+     *
      * @author raztoki
      * */
     @SuppressWarnings("unused")
@@ -556,7 +555,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     }
 
     /**
-     * 
+     *
      * @author raztoki
      * */
     private boolean requestHeadersHasKeyNValueContains(final Browser ibr, final String k, final String v) {
@@ -585,7 +584,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
 
     /**
      * Wrapper to return all browser cookies except cloudflare session cookies.
-     * 
+     *
      * @param host
      * @return
      */
@@ -595,7 +594,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
 
     /**
      * Generic method return all browser cookies except cloudflare session cookies.
-     * 
+     *
      * @param br
      * @param host
      * @return
@@ -690,7 +689,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -707,7 +706,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     protected final String getJson(final String source, final String key) {
@@ -717,7 +716,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     protected final String getJson(final String key) {
@@ -727,7 +726,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     protected final String getJson(final Browser ibr, final String key) {
@@ -737,7 +736,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided String source.
-     * 
+     *
      * @author raztoki
      * */
     protected final String getJsonArray(final String source, final String key) {
@@ -747,7 +746,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response provided Browser.
-     * 
+     *
      * @author raztoki
      * */
     protected final String getJsonArray(final Browser ibr, final String key) {
@@ -757,7 +756,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     protected final String getJsonArray(final String key) {
@@ -767,7 +766,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return String[] value from provided JSon Array
-     * 
+     *
      * @author raztoki
      * @param source
      * @return
@@ -779,7 +778,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to gather nested \"key\":{.*?} from default Browser
-     * 
+     *
      * @author raztoki
      * @param key
      * @return
@@ -791,7 +790,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to gather nested \"key\":{.*?} from imported Browser
-     * 
+     *
      * @author raztoki
      * @param key
      * @return
@@ -803,7 +802,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to gather nested \"key\":{.*?} from source
-     * 
+     *
      * @author raztoki
      * @param key
      * @return
@@ -815,7 +814,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     /**
      * Wrapper<br/>
      * Creates and or Ammends Strings ready for JSon requests, with the correct JSon formatting and escaping.
-     * 
+     *
      * @author raztoki
      * @param source
      * @param key
@@ -829,8 +828,8 @@ public abstract class antiDDoSForHost extends PluginForHost {
     /**
      * supports cloudflare email protection crap. because email could be multiple times on a page and to reduce false positives input the
      * specified component to decode.
-     * 
-     * 
+     *
+     *
      * @author raztoki
      * @return
      */
