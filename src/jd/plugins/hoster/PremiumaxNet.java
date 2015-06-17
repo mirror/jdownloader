@@ -147,36 +147,41 @@ public class PremiumaxNet extends antiDDoSForHost {
                 }
             }
         }
+        String dllink = null;
 
-        login(account, true);
-        String dllink = checkDirectLink(link, "premiumaxnetdirectlink");
-        if (dllink == null) {
-            br.getHeaders().put("Accept", "*/*");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            postPage("/direct_link.html?rand=0." + System.currentTimeMillis(), "captcka=&key=indexKEY&urllist=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = br.getRegex("\"(https?://(www\\.)?premiumax\\.net/dl/[a-z0-9]+/?)\"").getMatch(0);
+        synchronized (LOCK) {
+            login(account, true);
+            dllink = checkDirectLink(link, "premiumaxnetdirectlink");
             if (dllink == null) {
-                if (br.containsHTML("temporary problem")) {
-                    logger.info("Current hoster is temporarily not available via premiumax.net -> Disabling it");
-                    tempUnavailableHoster(60 * 60 * 1000l);
-                } else if (br.containsHTML("You do not have the rights to download from")) {
-                    logger.info("Current hoster is not available via this premiumax.net account -> Disabling it");
-                    tempUnavailableHoster(60 * 60 * 1000l);
-                } else if (br.containsHTML("We do not support your link")) {
-                    logger.info("Current hoster is not supported by premiumax.net -> Disabling it");
-                    tempUnavailableHoster(3 * 60 * 60 * 1000l);
-                } else if (br.containsHTML("You only can download")) {
-                    /* We're too fast - usually this should not happen */
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Too many connections active, try again in some seconds...");
-                } else if (br.containsHTML("> Our server can't connect to")) {
-                    handleErrorRetries("cantconnect", 20, 5 * 60 * 1000l);
-                } else {
-                    // final failover! dllink == null
-                    handleErrorRetries("dllinknullerror", 50, 5 * 60 * 1000l);
+                br.getHeaders().put("Accept", "*/*");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                postPage("/direct_link.html?rand=0." + System.currentTimeMillis(), "captcka=&key=indexKEY&urllist=" + Encoding.urlEncode(link.getDownloadURL()));
+                dllink = br.getRegex("\"(https?://(www\\.)?premiumax\\.net/dl/[a-z0-9]+/?)\"").getMatch(0);
+                if (dllink == null) {
+                    if (br.containsHTML("temporary problem")) {
+                        logger.info("Current hoster is temporarily not available via premiumax.net -> Disabling it");
+                        tempUnavailableHoster(60 * 60 * 1000l);
+                    } else if (br.containsHTML("You do not have the rights to download from")) {
+                        logger.info("Current hoster is not available via this premiumax.net account -> Disabling it");
+                        tempUnavailableHoster(60 * 60 * 1000l);
+                    } else if (br.containsHTML("We do not support your link")) {
+                        logger.info("Current hoster is not supported by premiumax.net -> Disabling it");
+                        tempUnavailableHoster(3 * 60 * 60 * 1000l);
+                    } else if (br.containsHTML("You only can download")) {
+                        /* We're too fast - usually this should not happen */
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Too many connections active, try again in some seconds...");
+                    } else if (br.containsHTML("> Our server can't connect to")) {
+                        handleErrorRetries("cantconnect", 20, 5 * 60 * 1000l);
+                    } else if (br.toString().equalsIgnoreCase("nginx error")) {
+                        dumpAccountSessionInfo();
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    } else {
+                        // final failover! dllink == null
+                        handleErrorRetries("dllinknullerror", 50, 5 * 60 * 1000l);
+                    }
                 }
             }
         }
-
         int maxChunks = 0;
         if (link.getBooleanProperty(PremiumaxNet.NOCHUNKS, false)) {
             maxChunks = 1;
@@ -260,7 +265,6 @@ public class PremiumaxNet extends antiDDoSForHost {
      */
     private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
         int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        this.currDownloadLink.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
             logger.info(NICE_HOST + ": " + error + " -> Retrying");
             timesFailed++;
@@ -369,15 +373,22 @@ public class PremiumaxNet extends antiDDoSForHost {
                 account.setProperty("ua", br.getHeaders().get("User-Agent"));
                 return true;
             } catch (final PluginException e) {
-                account.setProperty("name", Property.NULL);
-                account.setProperty("password", Property.NULL);
-                account.setProperty("cookies", Property.NULL);
-                account.setProperty("ua", Property.NULL);
+                dumpAccountSessionInfo();
                 throw e;
             } finally {
                 br.setFollowRedirects(ifrd);
             }
         }
+    }
+
+    private void dumpAccountSessionInfo() throws PluginException {
+        if (currAcc == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        currAcc.setProperty("name", Property.NULL);
+        currAcc.setProperty("password", Property.NULL);
+        currAcc.setProperty("cookies", Property.NULL);
+        currAcc.setProperty("ua", Property.NULL);
     }
 
     private void tempUnavailableHoster(final long timeout) throws PluginException {
