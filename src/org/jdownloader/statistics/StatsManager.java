@@ -102,16 +102,15 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     private static final String       ACCOUNT_ADDED_TIME           = "at";
     private static final String       ACCOUNTINSTANCE_CREATED_TIME = "it";
     private static final String       REGISTERED_TIME              = "rt";
+    private static final String       EXPIRE_TIME                  = "et";
 
     private static final StatsManager INSTANCE                     = new StatsManager();
-
-    private static final boolean      DISABLED                     = false;
 
     public static final int           STACKTRACE_VERSION           = 1;
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static StatsManager I() {
@@ -189,10 +188,11 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
                     @Override
                     public synchronized void onAccountControllerEvent(AccountControllerEvent event) {
+                        String accountHoster = null;
                         try {
-
                             if (event.getType() == AccountControllerEvent.Types.ADDED || (event.getType() == AccountControllerEvent.Types.ACCOUNT_CHECKED && event.getAccount().getBooleanProperty("fireStatsCall"))) {
                                 final Account account = event.getAccount();
+                                accountHoster = account.getHoster();
                                 account.removeProperty("fireStatsCall");
                                 if (account.getLongProperty("added", 0) <= 0) {
                                     account.setProperty("added", System.currentTimeMillis());
@@ -204,85 +204,54 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                         account.setProperty("fireStatsCall", true);
                                         return;
                                     }
-                                    final AccountInfo info = account.getAccountInfo();
-
-                                    long addedTime = account.getLongProperty("added", System.currentTimeMillis());
-                                    final long validUntilTimeStamp;
-                                    final long expireInMs;
-                                    if (info != null) {
-                                        validUntilTimeStamp = info.getValidUntil();
-                                        expireInMs = validUntilTimeStamp - System.currentTimeMillis();
-
-                                        final String id;
-                                        final HashMap<String, String> infos;
+                                    final AccountInfo accountInfo = account.getAccountInfo();
+                                    final HashMap<String, String> infos = new HashMap<String, String>();
+                                    infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
+                                    infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
+                                    infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty("added", System.currentTimeMillis())));
+                                    final String id;
+                                    if (accountInfo != null) {
+                                        final long validUntilTimeStamp = accountInfo.getValidUntil();
+                                        final long expireInMs = validUntilTimeStamp - System.currentTimeMillis();
                                         if (validUntilTimeStamp > 0) {
+                                            infos.put(EXPIRE_TIME, Long.toString(expireInMs));
                                             if (expireInMs > 0) {
-                                                infos = new HashMap<String, String>();
-                                                infos.put(EXPIRE_TIME(), Long.toString(expireInMs));
-                                                infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
-                                                infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
-
                                                 id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/until";
                                             } else {
-                                                infos = new HashMap<String, String>();
-                                                infos.put("ms", Long.toString(expireInMs));
                                                 id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/expired";
                                             }
                                         } else {
-                                            infos = null;
+                                            infos.put(EXPIRE_TIME, Long.toString(-1));
                                             id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/unlimited";
                                         }
-                                        StatsManager.I().track(id, infos);
                                     } else {
-                                        validUntilTimeStamp = -1;
-                                        expireInMs = -1;
-                                        final String id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/unknown";
-                                        StatsManager.I().track(id, null);
+                                        id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/unknown";
                                     }
+                                    StatsManager.I().track(id, infos);
                                     final String domain = account.getHoster();
                                     final File file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(domain) + ".json");
                                     if (file.exists()) {
-                                        ArrayList<ClickedAffLinkStorable> list = null;
                                         try {
-                                            list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
+                                            final ArrayList<ClickedAffLinkStorable> list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
                                             });
+                                            if (list != null && list.size() > 0) {
+                                                infos.put(CLICK_SOURCE, JSonStorage.serializeToJson(list));
+                                                StatsManager.I().track("premium/addedAfter/" + account.getHoster() + "/" + account.getType(), infos);
+                                            } else {
+                                                StatsManager.I().track("premium/affTrackError/" + account.getHoster() + "/empty");
+                                            }
                                         } catch (Throwable e) {
+                                            StatsManager.I().track("premium/affTrackError/" + account.getHoster() + "/" + e.getMessage());
                                             logger.log(e);
                                             file.delete();
                                         }
-                                        if (list == null || list.size() == 0) {
-                                            return;
-                                        }
-
-                                        final HashMap<String, String> infos = new HashMap<String, String>();
-                                        infos.put(CLICK_SOURCE, JSonStorage.serializeToJson(list));
-                                        infos.put(ACCOUNT_ADDED_TIME, addedTime + "");
-                                        infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
-                                        infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
-
-                                        if (info != null) {
-                                            if (validUntilTimeStamp > 0) {
-                                                if (expireInMs > 0) {
-                                                    infos.put(EXPIRE_TIME(), Long.toString(expireInMs));
-                                                } else {
-                                                    infos.put(EXPIRE_TIME(), Long.toString(expireInMs));
-                                                }
-                                            } else {
-                                                infos.put(EXPIRE_TIME(), "-1");
-                                            }
-                                        }
-                                        StatsManager.I().track("premium/addedAfter/" + account.getHoster() + "/" + account.getType(), infos);
                                     }
-
                                 }
                             }
                         } catch (Throwable e) {
+                            StatsManager.I().track("premium/affTrackError/" + accountHoster + "/" + e.getMessage());
                             logger.log(e);
                         }
-                    }
-
-                    protected String EXPIRE_TIME() {
-                        return "et";
                     }
                 });
             }
@@ -528,7 +497,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * this setter does not set the config flag. Can be used to disable the logger for THIS session.
-     * 
+     *
      * @param b
      */
     public void setEnabled(boolean b) {
@@ -1543,7 +1512,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
-     * 
+     *
      * @param reducer
      * @param path
      */
@@ -1646,63 +1615,64 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         System.out.println(new URL("uploaded.to").getHost());
     }
 
-    public synchronized void openAfflink(final PluginForHost plugin, final String customRefURL, final String source) {
+    public void openAfflink(final PluginForHost plugin, final String customRefURL, final String source) {
         String refURL = null;
         try {
-            final String domain;
-            if (plugin != null) {
-                domain = plugin.getHost();
-            } else {
-                if (StringUtils.contains(customRefURL, "RedirectInterface/ul")) {
-                    domain = "uploaded.to";
+            synchronized (this) {
+                final String domain;
+                if (plugin != null) {
+                    domain = plugin.getHost();
                 } else {
-                    final String host = Browser.getHost(customRefURL, false);
-                    if (host != null && (host.equalsIgnoreCase("uploaded.to") || host.equalsIgnoreCase("ul.to") || host.equalsIgnoreCase("ul.net") || host.equalsIgnoreCase("uploaded.net"))) {
+                    if (StringUtils.contains(customRefURL, "RedirectInterface/ul")) {
                         domain = "uploaded.to";
                     } else {
-                        domain = host;
+                        final String host = Browser.getHost(customRefURL, false);
+                        if (host != null && (host.equalsIgnoreCase("uploaded.to") || host.equalsIgnoreCase("ul.to") || host.equalsIgnoreCase("ul.net") || host.equalsIgnoreCase("uploaded.net"))) {
+                            domain = "uploaded.to";
+                        } else {
+                            domain = host;
+                        }
                     }
                 }
-            }
-            refURL = customRefURL;
-            if (StringUtils.isEmpty(refURL) && plugin != null) {
-                String buyPremium = plugin.getBuyPremiumUrl();
-                if (StringUtils.isEmpty(buyPremium)) {
-                    buyPremium = "http://" + plugin.getHost();
+                refURL = customRefURL;
+                if (StringUtils.isEmpty(refURL) && plugin != null) {
+                    String buyPremium = plugin.getBuyPremiumUrl();
+                    if (StringUtils.isEmpty(buyPremium)) {
+                        buyPremium = "http://" + plugin.getHost();
+                    }
+                    refURL = AccountController.createFullBuyPremiumUrl(buyPremium, source);
                 }
-                refURL = AccountController.createFullBuyPremiumUrl(buyPremium, source);
-            }
-            if (refURL.startsWith("https://www.oboom.com/ref/C0ACB0?ref_token=")) {
-                StatsManager.I().track("buypremium/" + source + "/https://www.oboom.com/ref/C0ACB0?ref_token=...");
-            } else if (refURL.startsWith("http://update3.jdownloader.org/jdserv/RedirectInterface/ul")) {
-                StatsManager.I().track("buypremium/" + source + "/http://update3.jdownloader.org/jdserv/RedirectInterface/ul...");
-            } else {
-                StatsManager.I().track("buypremium/" + source + "/" + domain);
-            }
-            // do mappings here.
-            final File file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(domain) + ".json");
-            file.getParentFile().mkdirs();
-            ArrayList<ClickedAffLinkStorable> list = null;
-            if (file.exists()) {
+                if (refURL.startsWith("https://www.oboom.com/ref/C0ACB0?ref_token=")) {
+                    StatsManager.I().track("buypremium/" + source + "/https://www.oboom.com/ref/C0ACB0?ref_token=...");
+                } else if (refURL.startsWith("http://update3.jdownloader.org/jdserv/RedirectInterface/ul")) {
+                    StatsManager.I().track("buypremium/" + source + "/http://update3.jdownloader.org/jdserv/RedirectInterface/ul...");
+                } else {
+                    StatsManager.I().track("buypremium/" + source + "/" + domain);
+                }
+                // do mappings here.
+                final File file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(domain) + ".json");
+                file.getParentFile().mkdirs();
+                ArrayList<ClickedAffLinkStorable> list = null;
+                if (file.exists()) {
+                    try {
+                        list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
+                        });
+                        // TODO CLeanup
+                    } catch (Throwable e) {
+                        logger.log(e);
+                    }
+                }
+                if (list == null) {
+                    list = new ArrayList<ClickedAffLinkStorable>();
+                }
+                // there is no reason to keep older clicks right now.
+                list.add(new ClickedAffLinkStorable(refURL, source));
                 try {
-                    list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
-                    });
-                    // TODO CLeanup
+                    IO.secureWrite(file, JSonStorage.serializeToJson(list).getBytes("UTF-8"));
                 } catch (Throwable e) {
                     logger.log(e);
+                    file.delete();
                 }
-            }
-            if (list == null) {
-                list = new ArrayList<ClickedAffLinkStorable>();
-            }
-            // there is no reason to keep older clicks right now.
-
-            list.add(new ClickedAffLinkStorable(refURL, source));
-            try {
-                IO.secureWrite(file, JSonStorage.serializeToJson(list).getBytes("UTF-8"));
-            } catch (Throwable e) {
-                logger.log(e);
-                file.delete();
             }
         } finally {
             if (refURL != null) {

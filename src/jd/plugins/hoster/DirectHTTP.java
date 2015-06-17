@@ -1120,6 +1120,9 @@ public class DirectHTTP extends PluginForHost {
 
     @Override
     public void reset() {
+        contentType = null;
+        customDownloadURL = null;
+        customFavIconHost = null;
     }
 
     @Override
