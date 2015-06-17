@@ -454,7 +454,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     // HTTP/1.1 521 Origin Down
                     // <title>api.share-online.biz | 521: Web server is down</title>
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Webserver is Down: " + ibr.getHost(), 5 * 60 * 1000l);
-                } else if (responseCode == 520 || responseCode == 521 || responseCode == 522) {
+                } else if (responseCode == 520 || responseCode == 522) {
                     // HTTP/1.1 520 Origin Error
 
                     // HTTP/1.1 522 Origin Connection Time-out
