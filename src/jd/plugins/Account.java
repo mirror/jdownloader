@@ -496,7 +496,20 @@ public class Account extends Property {
             }
         }
         return super.setProperty(key, value);
+    }
 
+    private final static String REGTS = "regts";
+
+    public long getRegisterTimeStamp() {
+        return getLongProperty(REGTS, -1);
+    }
+
+    public void setRegisterTimeStamp(long ts) {
+        if (ts < 0) {
+            removeProperty(REGTS);
+        } else {
+            setProperty(REGTS, ts);
+        }
     }
 
     public AccountType getType() {

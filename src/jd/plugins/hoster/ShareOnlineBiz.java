@@ -1007,6 +1007,10 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 /* check dl cookie, must be available for premium accounts */
                 final String dl = infos.get("dl");
                 final String a = infos.get("a");
+                final String register_date = infos.get("register_date");
+                if (register_date != null && register_date.matches("^\\d+$")) {
+                    account.setRegisterTimeStamp(Long.parseLong(register_date) * 1000l);
+                }
                 if (dl == null && a == null) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -1016,6 +1020,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 }
                 if ("Sammler".equals(infos.get("group"))) {
                     account.setProperty("free", true);
+                    account.setType(AccountType.FREE);
                     try {
                         /* Login via site is needed for free account download. */
                         this.loginSite(account, forceLogin);
@@ -1031,6 +1036,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                     // PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     account.setProperty("free", false);
+                    account.setType(AccountType.PREMIUM);
                     boolean valid = dl != null && !"not_available".equalsIgnoreCase(dl);
                     if (valid == false) {
                         valid = a != null && !"not_available".equalsIgnoreCase(a);
@@ -1046,7 +1052,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                      * check expire date, expire >0 (normal handling) expire<0 (never expire)
                      */
                     final Long validUntil = Long.parseLong(infos.get("expire_date"));
-                    if (validUntil > 0 && System.currentTimeMillis() / 1000 > validUntil) {
+                    if (validUntil > 0 && (System.currentTimeMillis() / 1000) > validUntil) {
                         account.getAccountInfo().setExpired(true);
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account expired! || Account abgelaufen!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
