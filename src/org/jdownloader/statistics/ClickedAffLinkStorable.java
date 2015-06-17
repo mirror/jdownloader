@@ -8,11 +8,9 @@ public class ClickedAffLinkStorable implements Storable {
     private long   time;
 
     private ClickedAffLinkStorable(/* Storable */) {
-
     }
 
     public ClickedAffLinkStorable(String url, String source) {
-
         this.source = source;
         this.time = System.currentTimeMillis();
     }
