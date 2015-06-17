@@ -41,6 +41,7 @@ import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -249,6 +250,18 @@ public class ShareOnlineBiz extends antiDDoSForHost {
     }
 
     private void errorHandling(Browser br, DownloadLink downloadLink, Account acc, HashMap<String, String> usedPremiumInfos) throws PluginException {
+        Request request = br.getRequest();
+        URLConnectionAdapter connection = request == null ? null : request.getHttpConnection();
+        if (connection != null && connection.getResponseCode() == 500) {
+            // HTTP/1.1 500 Internal Server Error
+            // Date: Wed, 17 Jun 2015 01:20:04 GMT
+            // Content-Type: text/html; charset=utf-8
+            // Transfer-Encoding: chunked
+            // Connection: keep-alive....
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server Error. Try again later...", 10 * 60 * 1000l);
+
+        }
+
         /* file is offline */
         if (br.containsHTML("The requested file is not available")) {
             logger.info("The following link was marked as online by the API but is offline: " + downloadLink.getDownloadURL());
