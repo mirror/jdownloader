@@ -85,7 +85,9 @@ public class MyMailRu extends PluginForHost {
             // return AvailableStatus.TRUE;
             // }
             br.setFollowRedirects(false);
-            br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            /* Without these Headers, API will return response code 400 */
+            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final String videoID = new Regex(link.getDownloadURL(), "(\\d+)\\.html$").getMatch(0);
             final String videourlpart = new Regex(br.getURL(), "my\\.mail\\.ru/([^<>\"]*?)/video/").getMatch(0);
             if (videourlpart == null) {
