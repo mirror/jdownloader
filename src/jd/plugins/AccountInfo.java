@@ -16,6 +16,7 @@
 
 package jd.plugins;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashSet;
@@ -307,8 +308,9 @@ public class AccountInfo extends Property {
         setMultiHostSupport(multiHostPlugin, multiHostSupport, new PluginFinder());
     }
 
-    public void setMultiHostSupport(final PluginForHost multiHostPlugin, final List<String> multiHostSupport, final PluginFinder pluginFinder) {
-        if (multiHostSupport != null && multiHostSupport.size() > 0) {
+    public void setMultiHostSupport(final PluginForHost multiHostPlugin, final List<String> multiHostSupportList, final PluginFinder pluginFinder) {
+        if (multiHostSupportList != null && multiHostSupportList.size() > 0) {
+            final ArrayList<String> multiHostSupport = new ArrayList<String>(multiHostSupportList);
             Collections.sort(multiHostSupport, new NaturalOrderComparator());
             final LinkedHashSet<String> supportedHostsSet = new LinkedHashSet<String>();
             for (String host : multiHostSupport) {

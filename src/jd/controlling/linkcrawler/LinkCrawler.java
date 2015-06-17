@@ -1703,23 +1703,23 @@ public class LinkCrawler {
         if (link.getDownloadLink() != null) {
             final FilePackage fp = link.getDownloadLink().getFilePackage();
             if (!FilePackage.isDefaultFilePackage(fp)) {
-                FilePackage dp = link.getDownloadLink().getFilePackage();
+                fp.remove(link.getDownloadLink());
                 PackageInfo fpi = null;
-                if (dp.getDownloadDirectory() != null && !dp.getDownloadDirectory().equals(defaultDownloadFolder)) {
+                if (fp.getDownloadDirectory() != null && !fp.getDownloadDirectory().equals(defaultDownloadFolder)) {
                     // do not set downloadfolder if it is the defaultfolder
                     if (link.getDesiredPackageInfo() == null) {
                         fpi = new PackageInfo();
                     } else {
                         fpi = link.getDesiredPackageInfo();
                     }
-                    fpi.setDestinationFolder(dp.getDownloadDirectory());
+                    fpi.setDestinationFolder(fp.getDownloadDirectory());
                 }
 
                 final String name;
-                if (Boolean.FALSE.equals(dp.getBooleanProperty(PACKAGE_CLEANUP_NAME, true))) {
-                    name = dp.getName();
+                if (Boolean.FALSE.equals(fp.getBooleanProperty(PACKAGE_CLEANUP_NAME, true))) {
+                    name = fp.getName();
                 } else {
-                    name = LinknameCleaner.cleanFileName(dp.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true);
+                    name = LinknameCleaner.cleanFileName(fp.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true);
                 }
                 if (StringUtils.isNotEmpty(name)) {
                     if (fpi == null) {
@@ -1732,8 +1732,8 @@ public class LinkCrawler {
                     fpi.setName(name);
                 }
 
-                if (dp.hasProperty(PACKAGE_ALLOW_MERGE)) {
-                    if (Boolean.FALSE.equals(dp.getBooleanProperty(PACKAGE_ALLOW_MERGE, false))) {
+                if (fp.hasProperty(PACKAGE_ALLOW_MERGE)) {
+                    if (Boolean.FALSE.equals(fp.getBooleanProperty(PACKAGE_ALLOW_MERGE, false))) {
                         if (fpi == null) {
                             if (link.getDesiredPackageInfo() == null) {
                                 fpi = new PackageInfo();
@@ -1741,7 +1741,7 @@ public class LinkCrawler {
                                 fpi = link.getDesiredPackageInfo();
                             }
                         }
-                        fpi.setUniqueId(dp.getUniqueID());
+                        fpi.setUniqueId(fp.getUniqueID());
                     } else {
                         if (fpi == null) {
                             fpi = link.getDesiredPackageInfo();
@@ -1751,7 +1751,7 @@ public class LinkCrawler {
                         }
                     }
                 }
-                if (dp.hasProperty(PACKAGE_IGNORE_VARIOUS)) {
+                if (fp.hasProperty(PACKAGE_IGNORE_VARIOUS)) {
                     if (fpi == null) {
                         if (link.getDesiredPackageInfo() == null) {
                             fpi = new PackageInfo();
@@ -1759,7 +1759,7 @@ public class LinkCrawler {
                             fpi = link.getDesiredPackageInfo();
                         }
                     }
-                    if (Boolean.TRUE.equals(dp.getBooleanProperty(PACKAGE_IGNORE_VARIOUS, false))) {
+                    if (Boolean.TRUE.equals(fp.getBooleanProperty(PACKAGE_IGNORE_VARIOUS, false))) {
                         fpi.setIgnoreVarious(true);
                     } else {
                         fpi.setIgnoreVarious(false);

@@ -56,6 +56,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
@@ -977,6 +978,12 @@ public class DirectHTTP extends PluginForHost {
                 }
                 if (fileName == null) {
                     fileName = HTTPConnectionUtils.getFileNameFromDispositionHeader(urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION));
+                    if (fileName == null) {
+                        fileName = Plugin.extractFileNameFromURL(urlConnection.getRequest().getUrl());
+                        if (StringUtils.equalsIgnoreCase("php", Files.getExtension(fileName))) {
+                            fileName = null;
+                        }
+                    }
                     if (fileName != null && downloadLink.getBooleanProperty("urlDecodeFinalFileName", false)) {
                         fileName = Encoding.urlDecode(fileName, false);
                     }
@@ -1091,7 +1098,7 @@ public class DirectHTTP extends PluginForHost {
 
     /**
      * update this map to your needs
-     * 
+     *
      * @param mimeType
      * @return
      */
