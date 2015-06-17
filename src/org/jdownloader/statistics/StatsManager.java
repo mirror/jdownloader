@@ -345,7 +345,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         final long started = (int) System.currentTimeMillis();
         final HashMap<String, String> cvar = new HashMap<String, String>();
 
-        cvar.put("d", "0");
+        cvar.put("rt", "0");
         if (!track(1000, null, "ping", cvar)) {
             return;
         }
@@ -363,7 +363,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     } catch (InterruptedException e) {
                         return;
                     }
-                    cvar.put("d", (System.currentTimeMillis() - started) + "");
+                    cvar.put("rt", (System.currentTimeMillis() - started) + "");
                     if (!track(1000, null, "ping", cvar)) {
                         return;
                     }
