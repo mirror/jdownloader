@@ -98,28 +98,16 @@ import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class StatsManager implements GenericConfigEventListener<Object>, DownloadWatchdogListener, Runnable {
-    private static final long         RANGE_48HOUR_B     = 50 * 60 * 60 * 1000l;
-    private static final long         RANGE_48HOUR_A     = 0;
-    private static final long         RANGE_1YEAR_B      = ((365) + 1) * 24 * 60 * 60 * 1000l;
-    private static final long         RANGE_2YEAR_B      = ((2 * 365) + 1) * 24 * 60 * 60 * 1000l;
-    private static final long         RANGE_6MONTH_B     = ((6 * 31) + 1) * 24 * 60 * 60 * 1000l;
-    private static final long         RANGE_1MONTH_B     = 32 * 24 * 60 * 60 * 1000l;
-    private static final long         RANGE_3MONTH_B     = ((3 * 31) + 1) * 24 * 60 * 60 * 1000l;
-    private static final long         RANGE_2YEAR_A      = RANGE_1YEAR_B;
+    private static final String       CLICK_SOURCE                 = "cs";
+    private static final String       ACCOUNT_ADDED_TIME           = "at";
+    private static final String       ACCOUNTINSTANCE_CREATED_TIME = "it";
+    private static final String       REGISTERED_TIME              = "rt";
 
-    private static final long         RANGE_1YEAR_A      = RANGE_6MONTH_B;
+    private static final StatsManager INSTANCE                     = new StatsManager();
 
-    private static final long         RANGE_6MONTH_A     = RANGE_3MONTH_B;
+    private static final boolean      DISABLED                     = false;
 
-    private static final long         RANGE_1MONTH_A     = RANGE_48HOUR_B;
-
-    private static final long         RANGE_3MONTH_A     = RANGE_1MONTH_B;
-
-    private static final StatsManager INSTANCE           = new StatsManager();
-
-    private static final boolean      DISABLED           = false;
-
-    public static final int           STACKTRACE_VERSION = 1;
+    public static final int           STACKTRACE_VERSION           = 1;
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
@@ -217,64 +205,23 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                         return;
                                     }
                                     final AccountInfo info = account.getAccountInfo();
-                                    String type = "Unknown";
-                                    long estimatedBuytime = account.getLongProperty("added", System.currentTimeMillis());
+
+                                    long addedTime = account.getLongProperty("added", System.currentTimeMillis());
                                     final long validUntilTimeStamp;
                                     final long expireInMs;
                                     if (info != null) {
                                         validUntilTimeStamp = info.getValidUntil();
                                         expireInMs = validUntilTimeStamp - System.currentTimeMillis();
-                                        if ("uploaded.to".equals(account.getHoster())) {
-                                            if (validUntilTimeStamp > estimatedBuytime) {
-                                                if (expireInMs > 0) {
-                                                    if (expireInMs <= RANGE_48HOUR_B && expireInMs > RANGE_48HOUR_A) {
-                                                        // 48hours
-                                                        type = "48hours";
-                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - (48 * 60 * 60 * 1000l));
-                                                    } else if (expireInMs <= RANGE_1MONTH_B && expireInMs > RANGE_1MONTH_A) {
-                                                        // 1month
-                                                        type = "1month";
-                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((1 * 30) * 24 * 60 * 60 * 1000l));
-                                                    } else if (expireInMs <= RANGE_3MONTH_B && expireInMs > RANGE_3MONTH_A) {
-                                                        // 3month
-                                                        type = "3months";
-                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((3 * 30) * 24 * 60 * 60 * 1000l));
-                                                    } else if (expireInMs <= RANGE_6MONTH_B && expireInMs > RANGE_6MONTH_A) {
-                                                        // 6month
-                                                        type = "6months";
-                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((6 * 30) * 24 * 60 * 60 * 1000l));
-                                                    } else if (expireInMs <= RANGE_1YEAR_B && expireInMs > RANGE_1YEAR_A) {
-                                                        // 1year
-                                                        type = "1year";
-                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((365) * 24 * 60 * 60 * 1000l));
-                                                    } else if (expireInMs <= RANGE_2YEAR_B && expireInMs > RANGE_2YEAR_A) {
-                                                        // 2year
-                                                        type = "2years";
-                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((2 * 365) * 24 * 60 * 60 * 1000l));
-                                                    }
-                                                }
-                                            }
-                                        } else if ("rapidgator.net".equals(account.getHoster())) {
-                                            if (validUntilTimeStamp > estimatedBuytime) {
-                                                if (expireInMs > 0) {
-                                                    if (expireInMs < RANGE_1MONTH_B && expireInMs > RANGE_1MONTH_A) {
-                                                        // 1month
-                                                        type = "1month";
-                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((1 * 31) * 24 * 60 * 60 * 1000l));
-                                                    } else if (expireInMs < RANGE_3MONTH_B && expireInMs > RANGE_3MONTH_A) {
-                                                        // 3month
-                                                        type = "3months";
-                                                        estimatedBuytime = Math.min(estimatedBuytime, validUntilTimeStamp - ((3 * 30) * 24 * 60 * 60 * 1000l));
-                                                    }
-                                                }
-                                            }
-                                        }
+
                                         final String id;
                                         final HashMap<String, String> infos;
                                         if (validUntilTimeStamp > 0) {
                                             if (expireInMs > 0) {
                                                 infos = new HashMap<String, String>();
-                                                infos.put("ms", Long.toString(expireInMs));
+                                                infos.put(EXPIRE_TIME(), Long.toString(expireInMs));
+                                                infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
+                                                infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
+
                                                 id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/until";
                                             } else {
                                                 infos = new HashMap<String, String>();
@@ -301,40 +248,41 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                             });
                                         } catch (Throwable e) {
                                             logger.log(e);
-                                        } finally {
                                             file.delete();
                                         }
                                         if (list == null || list.size() == 0) {
                                             return;
                                         }
-                                        final ClickedAffLinkStorable st = list.get(list.size() - 1);
-                                        if (st != null) {
 
-                                            final long timeDiff = estimatedBuytime - st.getTime();
-                                            final HashMap<String, String> infos = new HashMap<String, String>();
-                                            infos.put("clicksource", st.getSource() + "");
-                                            infos.put("ms", Long.toString(timeDiff));
-                                            infos.put("ts", Long.toString(account.getId().getID()));
+                                        final HashMap<String, String> infos = new HashMap<String, String>();
+                                        infos.put(CLICK_SOURCE, JSonStorage.serializeToJson(list));
+                                        infos.put(ACCOUNT_ADDED_TIME, addedTime + "");
+                                        infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
+                                        infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
 
-                                            if (info != null) {
-                                                if (validUntilTimeStamp > 0) {
-                                                    if (expireInMs > 0) {
-                                                        infos.put("until", Long.toString(expireInMs));
-                                                    } else {
-                                                        infos.put("until", Long.toString(expireInMs));
-                                                    }
+                                        if (info != null) {
+                                            if (validUntilTimeStamp > 0) {
+                                                if (expireInMs > 0) {
+                                                    infos.put(EXPIRE_TIME(), Long.toString(expireInMs));
                                                 } else {
-                                                    infos.put("until", "-1");
+                                                    infos.put(EXPIRE_TIME(), Long.toString(expireInMs));
                                                 }
+                                            } else {
+                                                infos.put(EXPIRE_TIME(), "-1");
                                             }
-                                            StatsManager.I().track("premium/addedAfter/" + account.getHoster() + "/" + account.getType() + "/" + type, infos);
                                         }
+                                        StatsManager.I().track("premium/addedAfter/" + account.getHoster() + "/" + account.getType(), infos);
                                     }
+
                                 }
                             }
                         } catch (Throwable e) {
                             logger.log(e);
                         }
+                    }
+
+                    protected String EXPIRE_TIME() {
+                        return "et";
                     }
                 });
             }
@@ -345,7 +293,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         final long started = (int) System.currentTimeMillis();
         final HashMap<String, String> cvar = new HashMap<String, String>();
 
-        cvar.put("rt", "0");
+        cvar.put(REGISTERED_TIME, "0");
         if (!track(1000, null, "ping", cvar)) {
             return;
         }
@@ -363,7 +311,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     } catch (InterruptedException e) {
                         return;
                     }
-                    cvar.put("rt", (System.currentTimeMillis() - started) + "");
+                    cvar.put(REGISTERED_TIME, (System.currentTimeMillis() - started) + "");
                     if (!track(1000, null, "ping", cvar)) {
                         return;
                     }
@@ -1698,7 +1646,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         System.out.println(new URL("uploaded.to").getHost());
     }
 
-    public void openAfflink(final PluginForHost plugin, final String customRefURL, final String source) {
+    public synchronized void openAfflink(final PluginForHost plugin, final String customRefURL, final String source) {
         String refURL = null;
         try {
             final String domain;

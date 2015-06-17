@@ -3,7 +3,7 @@ package org.jdownloader.statistics;
 import org.appwork.storage.Storable;
 
 public class ClickedAffLinkStorable implements Storable {
-    private String url;
+
     private String source;
     private long   time;
 
@@ -12,17 +12,9 @@ public class ClickedAffLinkStorable implements Storable {
     }
 
     public ClickedAffLinkStorable(String url, String source) {
-        this.url = url;
+
         this.source = source;
         this.time = System.currentTimeMillis();
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
     }
 
     public String getSource() {
