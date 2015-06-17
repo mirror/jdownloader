@@ -121,7 +121,7 @@ public class Uploadedto extends PluginForHost {
         if (getPluginConfig().getBooleanProperty(SSL_CONNECTION, PREFERSSL)) {
             /**
              * add this do disable https for old java 1.6 (dh > 1024)
-             *
+             * 
              * && Application.getJavaVersion() >= Application.JAVA17
              **/
             return "https://";
@@ -838,9 +838,11 @@ public class Uploadedto extends PluginForHost {
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.setId(rcID);
             rc.load();
-            for (int i = 0; i <= 5; i++) {
+            for (int i = 0; i <= 15; i++) {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+
+                String c = getCaptchaCode("recaptcha", cf, downloadLink);
+
                 if (c == null || c.length() == 0) {
                     rc.reload();
                     continue;
@@ -1877,7 +1879,7 @@ public class Uploadedto extends PluginForHost {
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
      * English.
-     *
+     * 
      * @param key
      * @return
      */
