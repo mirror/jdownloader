@@ -772,18 +772,40 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.setId("6LdatrsSAAAAAHZrB70txiV5p-8Iv8BtVxlTtjKX");
             rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode("recaptcha", cf, downloadLink);
-            if (wait != null) {
-                long gotWait = Integer.parseInt(wait) * 500l;
-                long waited = System.currentTimeMillis() - startWait;
-                gotWait -= waited;
-                if (gotWait > 0) {
-                    this.sleep(gotWait, downloadLink);
+            long last = -1;
+            int imax = 15;
+            long sessionTimeout = startWait + 300 * 1000l;
+            while (imax-- > 0 && System.currentTimeMillis() < sessionTimeout) {
+                getLogger().info("Captcha Try " + (20 - imax));
+                if (System.currentTimeMillis() - last < 2000) {
+                    // antiddos
+                    sleep(2000 - (System.currentTimeMillis() - last), downloadLink);
+                }
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode("recaptcha", cf, downloadLink);
+
+                if (StringUtils.isEmpty(c)) {
+                    rc.reload();
+                    continue;
+                }
+                if (wait != null) {
+                    long gotWait = Integer.parseInt(wait) * 500l;
+                    long waited = System.currentTimeMillis() - startWait;
+                    gotWait -= waited;
+                    if (gotWait > 0) {
+                        this.sleep(gotWait, downloadLink);
+                    }
+                }
+
+                postPage("/dl/" + ID + "/free/captcha/" + System.currentTimeMillis(), "dl_free=1&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
+                url = br.getRegex("([a-zA-Z0-9/=]+)").getMatch(0);
+                if ("0".equals(url)) {
+                    rc.reload();
+                    continue;
+                } else {
+                    break;
                 }
             }
-            postPage("/dl/" + ID + "/free/captcha/" + System.currentTimeMillis(), "dl_free=1&recaptcha_response_field=" + Encoding.urlEncode(c) + "&recaptcha_challenge_field=" + rc.getChallenge());
-            url = br.getRegex("([a-zA-Z0-9/=]+)").getMatch(0);
             if ("0".equals(url)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
@@ -1113,7 +1135,10 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         br.setFollowRedirects(true);
         br.setKeepResponseContentBytes(true);
         try {
-            if (br.postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1&snr=1", "links=" + id).matches("\\s*")) {
+            postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1&snr=1", "links=" + id);
+
+            final byte[] responseBytes = br.getRequest().getResponseBytes();
+            if (br.getRequest().getHtmlCode().matches("\\s*")) {
                 // web method failover.
                 br = new Browser();
                 String startURL = downloadLink.getDownloadURL();
@@ -1139,7 +1164,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 downloadLink.setMD5Hash(strings[1]);
                 return AvailableStatus.TRUE;
             }
-            final byte[] responseBytes = br.getRequest().getResponseBytes();
+
             final String infosUTF8[] = new Regex(new String(responseBytes, "UTF-8"), Pattern.compile("(.*?);([^;]+);(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32});(\\d+)")).getRow(0);
             final String infosISO88591[] = new Regex(new String(responseBytes, "ISO-8859-1"), Pattern.compile("(.*?);([^;]+);(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32});(\\d+)")).getRow(0);
             if (infosUTF8 == null || !infosUTF8[1].equalsIgnoreCase("OK")) {
