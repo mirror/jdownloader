@@ -75,7 +75,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         // define custom browser headers and language settings.
         // required for native cloudflare support, without the need to repeat requests.
         try {
-            prepBr.addAllowedResponseCodes(new int[] { 429, 503, 520, 522 });
+            prepBr.addAllowedResponseCodes(new int[] { 429, 503, 520, 521, 522 });
         } catch (final Throwable t) {
         }
         synchronized (antiDDoSCookies) {
@@ -453,6 +453,10 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
                         ibr.getPage(ibr.getRedirectLocation());
                     }
+                } else if (responseCode == 521) {
+                    // HTTP/1.1 521 Origin Down
+                    // <title>api.share-online.biz | 521: Web server is down</title>
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Webserver is Down: " + ibr.getHost(), 5 * 60 * 1000l);
                 } else if (responseCode == 520 || responseCode == 522) {
                     // HTTP/1.1 520 Origin Error
                     // HTTP/1.1 522 Origin Connection Time-out
