@@ -1065,34 +1065,22 @@ public class DirectHTTP extends PluginForHost {
 
     private void validateLogins(DownloadLink downloadLink, String basicAuth) {
         try {
-
             org.jdownloader.auth.AuthenticationController.getInstance().validate(new org.jdownloader.auth.BasicAuth(basicAuth), getDownloadURL(downloadLink));
-        } catch (org.jdownloader.auth.InvalidBasicAuthFormatException e) {
-
         } catch (Throwable e) {
-            // jd1
         }
     }
 
     private void validateLogins(DownloadLink downloadLink, String username, String password) {
         try {
-
             org.jdownloader.auth.AuthenticationController.getInstance().validate(new org.jdownloader.auth.BasicAuth(username, password), getDownloadURL(downloadLink));
-            // } catch (org.jdownloader.auth.InvalidBasicAuthFormatException e) {
-
         } catch (Throwable e) {
-            // jd1
         }
     }
 
     private void invalidateLogins(String basicAuth, DownloadLink downloadLink) {
         try {
-
             org.jdownloader.auth.AuthenticationController.getInstance().invalidate(new org.jdownloader.auth.BasicAuth(basicAuth), getDownloadURL(downloadLink));
-        } catch (org.jdownloader.auth.InvalidBasicAuthFormatException e) {
-
         } catch (Throwable e) {
-            // jd1
         }
     }
 
