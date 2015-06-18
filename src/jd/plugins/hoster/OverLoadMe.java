@@ -290,7 +290,7 @@ public class OverLoadMe extends PluginForHost {
             simultandls = 20;
         }
         account.setMaxSimultanDownloads(simultandls);
-        accessAPISafe(DOMAIN + "hoster.php?auth=" + Encoding.Base64Decode(APIKEY));
+        accessAPISafe(DOMAIN + "hoster.php?method=json&user=" + Encoding.urlEncode(account.getUser()) + "&auth=" + Encoding.urlEncode(account.getPass()));
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] hostDomains = br.getRegex("\"([^<>\"]*?)\"").getColumn(0);
         for (final String domain : hostDomains) {
