@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tnaflix.com" }, urls = { "https?://(www\\.)?tnaflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tnaflix.com" }, urls = { "https?://(?:www\\.)?tnaflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)|https?://(?:www\\.)?tnaflix\\.com/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+" }, flags = { 2 })
 public class TnaFlixCom extends PluginForHost {
 
     public TnaFlixCom(PluginWrapper wrapper) {
@@ -42,6 +42,9 @@ public class TnaFlixCom extends PluginForHost {
 
     private static final String  ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
     private static final boolean default_allow_multihoster_usage = false;
+
+    private static final String  TYPE_NORMAL                     = "https?://(?:www\\.)?tnaflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)";
+    private static final String  TYPE_embedding_player           = "https?://(?:www\\.)?tnaflix\\.com/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+";
 
     private void setConfigElements() {
         String user_text;
@@ -121,12 +124,27 @@ public class TnaFlixCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://tnaflix.com/", "content_filter2", "type%3Dstraight%26filter%3Dcams");
         br.setCookie("http://tnaflix.com/", "content_filter3", "type%3Dstraight%2Ctranny%2Cgay%26filter%3Dcams");
+        if (downloadLink.getDownloadURL().matches(TYPE_embedding_player)) {
+            /* Convert embed urls --> Original urls */
+            br.getPage(downloadLink.getDownloadURL().replace("http://", "https://"));
+            String videoID = br.getRegex("start_thumb>https?://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg<").getMatch(0);
+            if (videoID == null) {
+                videoID = br.getRegex("<start_thumb><\\!\\[CDATA\\[https?://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg\\]\\]></start_thumb>").getMatch(0);
+            }
+            if (videoID == null) {
+                /* Either plugin broken or link offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String newlink = "http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + videoID;
+            downloadLink.setUrlDownload(newlink);
+        }
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("class=\"errorPage page404\"|> This video is set to private")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

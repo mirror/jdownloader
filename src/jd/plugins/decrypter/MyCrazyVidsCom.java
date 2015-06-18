@@ -103,6 +103,19 @@ public class MyCrazyVidsCom extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
+            /* tnaflix.com handling #1 */
+            externID = br.getRegex("player\\.tnaflix\\.com/video/(\\d+)\"").getMatch(0);
+            if (externID != null) {
+                final DownloadLink dl = createDownloadlink("http://www.tnaflix.com/teen-porn/" + System.currentTimeMillis() + "/video" + externID);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+            /* tnaflix.com handling #2 */
+            externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf\".*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("https://www.tnaflix.com/embedding_player/" + externID));
+                return decryptedLinks;
+            }
             // filename needed for all IDs below
             String filename = br.getRegex("<h1 class=\"name\">([^<>]*?)</h1>").getMatch(0);
             if (filename == null) {
@@ -117,17 +130,6 @@ public class MyCrazyVidsCom extends PluginForDecrypt {
                 dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
                 decryptedLinks.add(dl);
                 return decryptedLinks;
-            }
-            // 2nd handling for tnaflix
-            externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf.*?config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)").getMatch(0);
-            if (externID != null) {
-                br.setFollowRedirects(true);
-                br.getPage("https://www.tnaflix.com/embedding_player/" + externID);
-                externID = br.getRegex("fullscreen><\\!\\[CDATA\\[(https?://(www\\.)?tnaflix\\.com/view_video[^<>\"]*?)\\]\\]></fullscreen>").getMatch(0);
-                if (externID != null) {
-                    decryptedLinks.add(createDownloadlink(externID));
-                    return decryptedLinks;
-                }
             }
             externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
             if (externID == null) {

@@ -46,6 +46,10 @@ public class WastedAmateursCom extends PluginForDecrypt {
             /* Follow redirect */
             br.getPage(externID);
         }
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         String filename = br.getRegex(":: Viewing Media \\- (.*?)</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<meta name=\"title\" content=\"([^\"]+)").getMatch(0);

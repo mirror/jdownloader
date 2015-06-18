@@ -46,6 +46,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksnappy.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class LinkSnappyCom extends PluginForHost {
@@ -64,7 +65,7 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     private static Object       LOCK                   = new Object();
-    private static final String USE_API                = "USE_API_3";
+    private static final String USE_API                = "USE_API";
     private static final String CLEAR_DOWNLOAD_HISTORY = "CLEAR_DOWNLOAD_HISTORY";
 
     private static final String COOKIE_HOST            = "http://linksnappy.com";
@@ -74,14 +75,15 @@ public class LinkSnappyCom extends PluginForHost {
 
     private DownloadLink        currentLink            = null;
     private Account             currentAcc             = null;
-    private static final String NOCHUNKS               = "NOCHUNKS";
     private boolean             resumes                = true;
     private int                 chunks                 = 0;
 
     private String              dllink                 = null;
 
-    /* 75 GB */
+    /* 75 GB, Last checked: 18.06.2015 */
     private static final long   dfault_traffic_max     = 80530636800L;
+    /* Last checked: 18.06.2015 */
+    private static final String reCaptchaV2_sitekey    = "6LfhJgQTAAAAAIM7Pz3XxW1QMWssU51lcN-kUDRA";
 
     /*
      * TODO: Implement correct connection limits - admin said, max 36 connectins per file (no total limit), waiting for more input and/or
@@ -134,7 +136,7 @@ public class LinkSnappyCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree accounts are not supported!\r\nIf your account is Premium contact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
             ac.setValidUntil(Long.parseLong(expire) * 1000);
-            accountType = "Premium Account";
+            accountType = "Premium account";
         }
         /* = all are premium anyways */
         currentAcc.setType(AccountType.PREMIUM);
@@ -239,11 +241,11 @@ public class LinkSnappyCom extends PluginForHost {
         final String lang = System.getProperty("user.language");
         try {
             if (!site_login(currentAcc, true)) {
-                ac.setStatus("Account is invalid. Wrong username or password?!");
+                ac.setStatus("Account is invalid. Wrong username/password or login captcha?!");
                 if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
         } catch (final PluginException e) {
@@ -257,7 +259,7 @@ public class LinkSnappyCom extends PluginForHost {
             throw e;
         }
         /* Via site, only lifetime is supported at the moment */
-        String accountType = "Lifetime Premium Account";
+        String accountType = "Lifetime Premium account";
         ac.setStatus(accountType);
 
         /* Find traffic left */
@@ -555,10 +557,17 @@ public class LinkSnappyCom extends PluginForHost {
         return true;
     }
 
+    /** TODO: Fix captcha handling for API login */
     private boolean api_login(final Account account) throws Exception {
-        /** Load cookies */
-        br.setCookiesExclusive(true);
-        getPage(HTTP_S + "gen.linksnappy.com/lseAPI.php?act=USERDETAILS&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getMD5(account.getPass()));
+        this.br.setCookiesExclusive(true);
+        getPage(HTTP_S + "gen.linksnappy.com/lseAPI.php?act=USERDETAILS");
+        String postdata = "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getMD5(account.getPass());
+        if (this.br.containsHTML("\"error\":\"CAPTCHA\"")) {
+            final DownloadLink dummy = new DownloadLink(this, "Account", "linksnappy.com", "http://linksnappy.com", true);
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaV2_sitekey, dummy).getToken();
+            postdata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
+        }
+        getPage(HTTP_S + "gen.linksnappy.com/lseAPI.php?act=USERDETAILS" + postdata);
         if (br.containsHTML("\"status\":\"ERROR\"")) {
             return false;
         }
@@ -570,13 +579,13 @@ public class LinkSnappyCom extends PluginForHost {
         synchronized (LOCK) {
             /** Load cookies */
             br.setCookiesExclusive(true);
-            br.setCookie(COOKIE_HOST, "lang", "en");
+            prepBrowser(this.br);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
             if (acmatch) {
                 acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
             }
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (account.isValid()) {
                     for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
@@ -584,11 +593,27 @@ public class LinkSnappyCom extends PluginForHost {
                         final String value = cookieEntry.getValue();
                         this.br.setCookie(COOKIE_HOST, key, value);
                     }
-                    return true;
+                    if (!force) {
+                        return true;
+                    }
+                    this.br.getPage("https://linksnappy.com/myaccount?lang=en");
+                    if (br.containsHTML("id=\"signedin\"")) {
+                        return true;
+                    }
+                    logger.info("Failed to re-use saved cookies - performing full login (captcha might be needed)");
+                    /* Remove old cookies & Headers */
+                    this.br = new Browser();
                 }
             }
             br.setFollowRedirects(true);
-            postPageSecure(HTTP_S + "linksnappy.com/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            String postdata = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+            br.getPage(HTTP_S + "linksnappy.com/");
+            if (br.containsHTML("grecaptcha\\.render")) {
+                final DownloadLink dummy = new DownloadLink(this, "Account", "linksnappy.com", "http://linksnappy.com", true);
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaV2_sitekey, dummy).getToken();
+                postdata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
+            }
+            postPageSecure("/login", postdata);
             if (br.getCookie(COOKIE_HOST, "lseSavePass") == null || !br.toString().equals("TRUE")) {
                 return false;
             }
@@ -728,6 +753,7 @@ public class LinkSnappyCom extends PluginForHost {
         prepBr.setReadTimeout(60 * 1000);
         prepBr.setAllowedResponseCodes(999);
         prepBr.getHeaders().put("User-Agent", "JDownloader");
+        prepBr.setCookie(COOKIE_HOST, "lang", "en");
         return prepBr;
     }
 

@@ -128,9 +128,17 @@ public class FapduCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://pornrabbit.com/video/" + externID + "/"));
             return decryptedLinks;
         }
+        /* tnaflix.com handling #1 */
         externID = br.getRegex("player\\.tnaflix\\.com/video/(\\d+)\"").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
+            final DownloadLink dl = createDownloadlink("http://www.tnaflix.com/teen-porn/" + System.currentTimeMillis() + "/video" + externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        /* tnaflix.com handling #2 */
+        externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf\".*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("https://www.tnaflix.com/embedding_player/" + externID));
             return decryptedLinks;
         }
         externID = br.getRegex("metacafe\\.com/fplayer/(\\d+)/").getMatch(0);
@@ -194,16 +202,6 @@ public class FapduCom extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink("http://pornative.com/" + externID + ".html");
             decryptedLinks.add(dl);
             return decryptedLinks;
-        }
-        // 2nd handling for tnaflix
-        externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf\".*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
-        if (externID != null) {
-            br.getPage("http://www.tnaflix.com/embedding_player/" + externID);
-            externID = br.getRegex("start_thumb>http://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg<").getMatch(0);
-            if (externID != null) {
-                decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
-                return decryptedLinks;
-            }
         }
         externID = br.getRegex("\"(http://sextube\\.com/media/\\d+/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {

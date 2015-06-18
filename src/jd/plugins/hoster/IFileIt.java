@@ -50,11 +50,12 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecloud.io", "ifile.it" }, urls = { "https?://(www\\.)?decryptedfilecloud\\.io/[a-z0-9]+", "fhrfzjnerhfDELETEMEdhzrnfdgvfcas4378zhb" }, flags = { 2, 0 })
 public class IFileIt extends antiDDoSForHost {
 
+    /* Shutdown of filecloud.io is planned for end of 2015 */
     private final String         useragent                = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0";
     /* must be static so all plugins share same lock */
     private static Object        LOCK                     = new Object();
     private final int            MAXFREECHUNKS            = 1;
-    private final int            MAXPREMIUMCHUNKS         = -2;
+    private final int            MAXPREMIUMCHUNKS         = 1;
     private static final String  ONLY4REGISTERED          = "\"message\":\"signup\"";
     private static final String  ONLY4REGISTEREDUSERTEXT  = JDL.LF("plugins.hoster.ifileit.only4registered", "Wait or register to download the files");
     private static final String  NOCHUNKS                 = "NOCHUNKS";
@@ -452,6 +453,7 @@ public class IFileIt extends antiDDoSForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -475,7 +477,7 @@ public class IFileIt extends antiDDoSForHost {
             ai.setStatus("Premium Account");
             ai.setValidUntil(Long.parseLong(getJson("premium_until")) * 1000);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(5);
+            account.setMaxSimultanDownloads(10);
             account.setConcurrentUsePossible(true);
         }
         ai.setUnlimitedTraffic();

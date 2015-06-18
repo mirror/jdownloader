@@ -115,9 +115,17 @@ public class PerfectGirlsNet extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://pornrabbit.com/" + externID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
         }
+        /* tnaflix.com handling #1 */
         externID = br.getRegex("player\\.tnaflix\\.com/video/(\\d+)\"").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
+            final DownloadLink dl = createDownloadlink("http://www.tnaflix.com/teen-porn/" + System.currentTimeMillis() + "/video" + externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        /* tnaflix.com handling #2 */
+        externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf\".*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("https://www.tnaflix.com/embedding_player/" + externID));
             return decryptedLinks;
         }
         externID = br.getRegex("metacafe\\.com/fplayer/(\\d+)/").getMatch(0);

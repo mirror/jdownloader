@@ -69,6 +69,8 @@ public class KeezMoviesCom extends PluginForHost {
         // crypto!
         setBrowserExclusive();
         br.setFollowRedirects(false);
+        /* Offline links should also get nice filenames. */
+        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([\\w\\-]+)$").getMatch(0));
         String filename = null;
         // embed corrections
         if (downloadLink.getDownloadURL().contains(".com/embed_player.php")) {

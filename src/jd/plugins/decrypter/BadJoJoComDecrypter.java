@@ -144,6 +144,27 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("(\"|\\')(http://(www\\.)?tube8\\.com/embed/[^<>\"/]*?/[^<>\"/]*?/\\d+/?)(\"|\\')").getMatch(1);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID.replace("tube8.com/embed/", "tube8.com/")));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(https?://(?:www\\.)?desihoes\\.com/embed/\\d+/?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("(http://(www\\.)?mofosex\\.com/(embed_player\\.php\\?id=|embed\\?videoid=)\\d+)").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink(externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(https?://(?:www\\.)?sexbot\\.com/embed/\\d+/?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         // filename needed for stuff below
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
