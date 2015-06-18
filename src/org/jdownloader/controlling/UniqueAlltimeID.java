@@ -12,7 +12,11 @@ public class UniqueAlltimeID {
             final long lastID = ID.get();
             id = System.currentTimeMillis();
             if (id < lastID) {
+                /* WTF?! timestamp is smaller as previous timestamp */
                 id = lastID + 1;
+            } else if (id == lastID) {
+                /* same timestamp, increase by 1 */
+                id = id + 1;
             }
             if (ID.compareAndSet(lastID, id)) {
                 this.id = id;
