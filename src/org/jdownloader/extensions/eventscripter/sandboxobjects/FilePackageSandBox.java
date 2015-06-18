@@ -111,6 +111,18 @@ public class FilePackageSandBox {
         return filePackage.getComment();
     }
 
+    public void setComment(String comment) {
+        if (filePackage != null) {
+            filePackage.setComment(comment);
+        }
+    }
+
+    public void setName(String name) {
+        if (filePackage != null) {
+            filePackage.setName(name);
+        }
+    }
+
     public boolean isFinished() {
         if (filePackage == null) {
             return false;
