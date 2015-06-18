@@ -145,6 +145,7 @@ public class RDMdthk extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
+        String show = br.getRegex("name=\"dcterms\\.isPartOf\" content=\"([^<>\"]*?)\"").getMatch(0);
         title = br.getRegex("<meta name=\"dcterms\\.title\" content=\"([^\"]+)\"").getMatch(0);
         final String realBaseUrl = new Regex(br.getBaseURL(), "(^.*\\.de)").getMatch(0);
         String broadcastID;
@@ -171,6 +172,11 @@ public class RDMdthk extends PluginForDecrypt {
         }
         title = Encoding.htmlDecode(title).trim();
         title = encodeUnicode(title);
+        if (show != null) {
+            show = Encoding.htmlDecode(show).trim();
+            show = encodeUnicode(show);
+            title = show + " - " + title;
+        }
         final Browser br = new Browser();
         setBrowserExclusive();
         br.setFollowRedirects(true);
