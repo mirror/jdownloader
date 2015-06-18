@@ -50,14 +50,11 @@ import org.jdownloader.plugins.accounts.AccountFactory;
 import org.jdownloader.plugins.accounts.EditAccountPanel;
 import org.jdownloader.plugins.accounts.Notifier;
 
-@HostPlugin(revision = "$Revision: 29998 $", interfaceVersion = 3, names = { "ezfile.ch" }, urls = { "https?://(www\\.)?ezfile\\.ch/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 29998 $", interfaceVersion = 3, names = { "ezfile.ch" }, urls = { "https?://(www\\.)?ezfile\\.ch/[a-z0-9]{7,9}" }, flags = { 2 })
 public class EzFileCh extends PluginForHost {
 
     private final String         useragent                    = "JDownloader";
-    /* must be static so all plugins share same lock */
-    private static Object        LOCK                         = new Object();
 
-    /* TODO: Check/update these limits */
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = 1;
@@ -67,7 +64,7 @@ public class EzFileCh extends PluginForHost {
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 3;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
 
     private static final String  NOCHUNKS                     = "NOCHUNKS";
     private static final String  NORESUME                     = "NORESUME";
@@ -90,7 +87,6 @@ public class EzFileCh extends PluginForHost {
         super(wrapper);
         this.setAccountwithoutUsername(true);
         this.enablePremium(MAINPAGE + "/user-register.html");
-        this.setStartIntervall(5 * 1000l);
     }
 
     @Override
@@ -304,25 +300,23 @@ public class EzFileCh extends PluginForHost {
     }
 
     private void login(final Account account) throws Exception {
-        synchronized (LOCK) {
-            br.setCookiesExclusive(true);
-            br.setFollowRedirects(true);
-            prepBrowser(br);
-            br.getPage("https://ezfile.ch/?m=api&a=fetch_account_info&akey=" + Encoding.urlEncode(account.getPass()));
-            final String message = getJson("message");
-            if (message != null) {
-                if (message.equals(API_ERROR_NO_PERMISSION)) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDeinem APIKey fehlt die Berechtigung 'Allow Account info fetch'.\r\nHier kannst du diese aktivieren: ezfile.ch/?m=apidoc", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour APIKey is missing the permission 'Allow Account info fetch'.\r\nYou can activate it here: ezfile.ch/?m=apidoc", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
+        br.setCookiesExclusive(true);
+        br.setFollowRedirects(true);
+        prepBrowser(br);
+        accessAPI("https://ezfile.ch/?m=api&a=fetch_account_info&akey=" + Encoding.urlEncode(account.getPass()));
+        final String message = getJson("message");
+        if (message != null) {
+            if (message.equals(API_ERROR_NO_PERMISSION)) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDeinem APIKey fehlt die Berechtigung 'Allow Account info fetch'.\r\nHier kannst du diese aktivieren: ezfile.ch/?m=apidoc", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour APIKey is missing the permission 'Allow Account info fetch'.\r\nYou can activate it here: ezfile.ch/?m=apidoc", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+            }
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
     }
@@ -378,7 +372,7 @@ public class EzFileCh extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
         }
         if (!account.getBooleanProperty("free", false)) {
-            this.br.getPage("https://ezfile.ch/?m=api&a=download&akey=" + Encoding.urlEncode(account.getPass()) + "&fkey=" + link.getLinkID());
+            accessAPI("https://ezfile.ch/?m=api&a=download&akey=" + Encoding.urlEncode(account.getPass()) + "&fkey=" + link.getLinkID());
             final String message = getJson("message");
             if (API_ERROR_NO_PERMISSION.equals(message)) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -389,6 +383,7 @@ public class EzFileCh extends PluginForHost {
             }
             final String finallink = getJson("download_ticket_url");
             if (finallink == null) {
+                /* This should never happen. */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
@@ -420,6 +415,46 @@ public class EzFileCh extends PluginForHost {
             }
         } else {
             doFree(link, true);
+        }
+    }
+
+    private void accessAPI(final String url) throws IOException, PluginException {
+        br.getPage(url);
+        handleErrorsAPI();
+    }
+
+    private void handleErrorsAPI() throws PluginException {
+        final String message = getJson("message");
+        if (message != null) {
+            if ("Not enough direct download bandwidth in your account to download this file".equals(message)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount is out of traffic.\r\nAccount hat nicht genug Traffic.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else if (message.equals("no akey parameter provided") || message.equals("unable to fetch apikey") || message.equals("Account disabled") || message.equals("no such user")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            } else if (message.equals("no such file")) {
+                /* Should usually be covered by code executed before this */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (message.equals("private file")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This is a private file which can only be downloaded by its owner");
+            } else if (message.equals("The server this file is located on is under maintenance, try again later.")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'The server this file is located on is under maintenance, try again later.'", 30 * 60 * 1000l);
+            } else if (message.equals("Unable to retrieve server details, try again later.")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unable to retrieve server details, try again later.'", 10 * 60 * 1000l);
+            } else if (message.equals("Unable to issue download ticket.")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unable to issue download ticket.'", 5 * 60 * 1000l);
+            } else if (message.equals(API_ERROR_NO_PERMISSION)) {
+                /* Don't do anything here - this is covered by additional errorhandling! */
+                logger.info("Needed API permissions not given");
+            } else {
+                /*
+                 * Other possible messages which should never happen: 'no fkey parameter provided', 'invalid fkey parameter size (should be
+                 * at least 7 to 9 characters)',
+                 */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
     }
 
@@ -519,7 +554,7 @@ public class EzFileCh extends PluginForHost {
              */
             private static final long serialVersionUID = 1L;
 
-            private final String      APIKEYHELP       = "Enter your APIKey";
+            private final String      APIKEYHELP       = "Enter your APIKey / APIKey eingeben";
 
             private String getPassword() {
                 if (this.pass == null) {
@@ -538,8 +573,8 @@ public class EzFileCh extends PluginForHost {
 
             public EzFileChPanel() {
                 super("ins 0, wrap 2", "[][grow,fill]", "");
-                add(new JLabel("Click here to find/create your APIKey:"));
-                add(new JLink("https://ezfile.ch/?m=apidoc"));
+                add(new JLabel("Instructions / Anleitung:"));
+                add(new JLink("https://ezfile.ch/?m=help&a=jdownloader"));
 
                 add(new JLabel("APIKey:"));
                 add(this.pass = new ExtPasswordField() {
