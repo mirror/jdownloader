@@ -38,14 +38,20 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRecaptchaV2<PluginForHost> {
 
-    public CaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br, String siteKey) {
+    /* Most likely used for login captchas. */
+    public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br, final String siteKey, final DownloadLink link) {
         super(plugin, br, siteKey);
-
+        this.downloadlink = link;
     }
 
-    public CaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br) {
-        this(plugin, br, null);
+    public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br, final String siteKey) {
+        super(plugin, br, siteKey);
+        this.downloadlink = plugin.getDownloadLink();
+    }
 
+    public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br) {
+        this(plugin, br, null);
+        this.downloadlink = plugin.getDownloadLink();
     }
 
     public String getToken() throws PluginException, InterruptedException {
@@ -54,7 +60,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
             logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
         }
         final PluginForHost plugin = this.plugin;
-        final DownloadLink link = plugin.getDownloadLink();
+        final DownloadLink link = this.downloadlink;
         String apiKey = siteKey;
         if (apiKey == null) {
             apiKey = getRecaptchaV2ApiKey();

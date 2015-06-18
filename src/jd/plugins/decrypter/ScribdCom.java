@@ -38,16 +38,11 @@ public class ScribdCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String type_invalid     = "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/(search|get\\-app|password|login|publishers|options|contact|mobile|kindlefire)*?";
     private static final String type_collections = "https?://(www\\.)?((de|ru|es)\\.)?scribd\\.com/collections/\\d+/[A-Za-z0-9\\-_%]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("http://", "https://");
-        if (parameter.matches(type_invalid)) {
-            decryptedLinks.add(getOfflineLink(parameter));
-            return decryptedLinks;
-        }
         br.setFollowRedirects(true);
         String fpname;
         final FilePackage fp = FilePackage.getInstance();
@@ -114,11 +109,9 @@ public class ScribdCom extends PluginForDecrypt {
                 return null;
             }
         } else {
-            fpname = "scribd.com uploads of user " + Encoding.htmlDecode(new Regex(parameter, "([A-Za-z0-9\\-_%]+)$").getMatch(0));
+            final String url_username = new Regex(parameter, "([A-Za-z0-9\\-_%]+)$").getMatch(0);
+            fpname = "scribd.com uploads of user " + Encoding.htmlDecode(url_username);
             fp.setName(fpname);
-            if (!parameter.endsWith("/documents")) {
-                parameter += "/documents";
-            }
             try {
                 br.getPage(parameter);
             } catch (final BrowserException e) {
@@ -133,7 +126,10 @@ public class ScribdCom extends PluginForDecrypt {
 
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             int documentsNum;
-            final String doccount = br.getRegex("class=\"document_count\">\\((\\d+)\\)</span>").getMatch(0);
+            String doccount = br.getRegex("class=\"document_count\">\\((\\d+)\\)</span>").getMatch(0);
+            if (doccount == null) {
+                doccount = br.getRegex(">(\\d+)</div><div class=\"stat_name\"><span class=\"underline_on_hover\">published</span>").getMatch(0);
+            }
             if (doccount != null) {
                 documentsNum = Integer.parseInt(doccount);
                 if (documentsNum == 0) {
@@ -154,7 +150,11 @@ public class ScribdCom extends PluginForDecrypt {
                 } catch (final Throwable e) {
                     // Not available in old 0.9.581 Stable
                 }
-                br.getPage("https://www.scribd.com/profiles/documents/get_documents?page=" + page + "&sort_by=hotness_pmp_first&id=" + id);
+                br.getPage("https://de.scribd.com/" + url_username + "/content.json?content_key=documents&page=" + page);
+                if (!this.br.getHttpConnection().getContentType().contains("json")) {
+                    decryptedLinks.add(getOfflineLink(parameter));
+                    return decryptedLinks;
+                }
                 br.getRequest().setHtmlCode(unescape(br.toString()));
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 if (br.containsHTML("\"objects\":null")) {
@@ -184,7 +184,7 @@ public class ScribdCom extends PluginForDecrypt {
                 logger.info("Decrypted page: " + page);
                 logger.info("Decrypted " + decryptedLinksNum + " / " + documentsNum);
                 page++;
-            } while (decryptedLinksNum < documentsNum);
+            } while (decryptedLinksNum < documentsNum && this.br.containsHTML("\"has_more\":true"));
         }
         if (decryptedLinks.size() == 0) {
             decryptedLinks.add(getOfflineLink(parameter));
