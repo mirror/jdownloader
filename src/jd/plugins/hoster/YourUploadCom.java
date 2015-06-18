@@ -70,7 +70,7 @@ public class YourUploadCom extends antiDDoSForHost {
         correctDownloadLink(link);
         getPage(link.getDownloadURL());
         if (link.getDownloadURL().matches(regexEmbed)) {
-            if (br.containsHTML("<h1>Error</h1>") || br.containsHTML("Embed\\+entry\\+doesnt\\+exist") || br.containsHTML("No htmlCode read") || br.containsHTML("Could not redirect legacy")) {
+            if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<h1>Error</h1>") || br.containsHTML("Embed\\+entry\\+doesnt\\+exist") || br.containsHTML("No htmlCode read") || br.containsHTML("Could not redirect legacy")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
