@@ -42,7 +42,9 @@ public class MangaPandaCom extends PluginForDecrypt {
         final String parameter = param.toString();
         br.getPage(parameter);
         // website issue not JD.
-        if (br.getRequest().getContentLength() == 0) return decryptedLinks;
+        if (br.getRequest().getContentLength() == 0) {
+            return decryptedLinks;
+        }
 
         if (br.containsHTML("is not released yet")) {
             logger.info("No downloadable content available for link: " + parameter);
@@ -62,12 +64,13 @@ public class MangaPandaCom extends PluginForDecrypt {
         final DecimalFormat df = new DecimalFormat("0000");
         for (int i = 1; i <= Integer.parseInt(maxPage); i++) {
             if (i > 1) {
-                if (parameter.matches("http://(www\\.)?.*?/\\d+\\-\\d+\\-1/[a-z0-9\\-]+/chapter\\-\\d+\\.html"))
+                if (parameter.matches("http://(www\\.)?.*?/\\d+\\-\\d+\\-1/[a-z0-9\\-]+/chapter\\-\\d+\\.html")) {
                     br.getPage(part1 + i + part2);
-                else
+                } else {
                     br.getPage(parameter + "/" + i);
+                }
             }
-            final String finallink = br.getRegex("\"(http://i\\d+\\." + this.getHost() + "/[a-z0-9\\-]+/\\d+/[^<>\"]*?)\"").getMatch(0);
+            final String finallink = br.getRegex("\"(http://i\\d+\\.(p\\.)?(mangapanda\\.com|mangacdn\\.com)/[a-z0-9\\-]+/\\d+/[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
