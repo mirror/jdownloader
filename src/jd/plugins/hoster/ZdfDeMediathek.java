@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zdf.de" }, urls = { "decrypted://(www\\.)?zdf\\.de/(ZDFmediathek/[^<>\"]*?beitrag/video/\\d+\\&quality=\\w+|subtitles/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "phoenix.de" }, urls = { "decrypted://(www\\.)?zdf\\.de/ZDFmediathek/[^<>\"]*?beitrag/video/\\d+\\&quality=\\w+", "decrypted://(www\\.)?phoenix\\.de/content/\\d+\\&quality=\\w+" }, flags = { 2, 2 })
 public class ZdfDeMediathek extends PluginForHost {
 
     private static final String Q_SUBTITLES = "Q_SUBTITLES";
@@ -51,6 +51,7 @@ public class ZdfDeMediathek extends PluginForHost {
         setConfigElements();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("decrypted://", "http://"));
@@ -69,7 +70,7 @@ public class ZdfDeMediathek extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (link.getStringProperty("directURL", null) == null) {
-            if (link.getBooleanProperty("offline", false)) {
+            if (link.getBooleanProperty("offline", false) || link.getContentUrl().contains("phoenix.de/")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* fetch fresh directURL */
