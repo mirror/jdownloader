@@ -404,7 +404,7 @@ public class VKontakteRuHoster extends PluginForHost {
         } catch (final PluginException e) {
             this.logger.info("Login failed!");
             account.setValid(false);
-            return ai;
+            throw e;
         }
         ai.setUnlimitedTraffic();
         ai.setStatus("Registered (free) User");
@@ -647,6 +647,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 br.clearCookies("http://vk.com/login.php");
                 br.setFollowRedirects(true);
                 br.getPage("http://vk.com/login.php");
+                final String damnlg_h = br.getRegex("name=\"lg_h\" value=\"([^<>\"]*?)\"").getMatch(0);
                 String damnIPH = br.getRegex("name=\"ip_h\" value=\"(.*?)\"").getMatch(0);
                 if (damnIPH == null) {
                     damnIPH = br.getRegex("\\{loginscheme: \\'https\\', ip_h: \\'(.*?)\\'\\}").getMatch(0);
@@ -654,16 +655,29 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (damnIPH == null) {
                     damnIPH = br.getRegex("loginscheme: \\'https\\'.*?ip_h: \\'(.*?)\\'").getMatch(0);
                 }
-                if (damnIPH == null) {
-                    this.logger.info("damnIPH String is null, marking account as invalid...");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (damnIPH == null || damnlg_h == null) {
+                    this.logger.info("one or more login values are missing --> Login broken");
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
-                br.postPage("https://login.vk.com/", "act=login&success_url=&fail_url=&try_to_login=1&to=&vk=1&al_test=3&from_host=vk.com&from_protocol=http&ip_h=" + damnIPH + "&email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&expire=");
-                if (br.getCookie(VKontakteRuHoster.DOMAIN, "remixsid") == null) {
-                    this.logger.info("remixsid cookie is null, marking account as invalid...");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("http://vk.com/login.php", "op=a_login_attempt&login=" + Encoding.urlEncode(account.getUser()));
+                br.postPage("https://login.vk.com/", "act=login&to=&ip_h=" + damnIPH + "&lg_h=" + damnlg_h + "&email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&expire=");
+                /* Do NOT check based on cookies as they sometimes change them! */
+                if (!br.containsHTML("id=\"logout_link\"")) {
+                    this.logger.info("login failed --> Account invalid ?!");
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
-                /* Finish login */
+                /* Finish login if needed */
                 final Form lol = br.getFormbyProperty("name", "login");
                 if (lol != null) {
                     lol.put("email", Encoding.urlEncode(account.getUser()));

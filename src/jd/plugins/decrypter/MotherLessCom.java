@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/(?!privacy|popular|register|premium|members|galleries|contact)(g(i|v)?/[\\w\\-_]+/[A-Z0-9]{7}|[A-Z0-9]{6,9}(/[A-Z0-9]{7})?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/(?!privacy|popular|register|premium|members|galleries|contact)(g(i|v)?/[\\w\\-_]+/[A-Z0-9]{7}|[A-Z0-9]{6,9}(/[A-Z0-9]{7})?)" }, flags = { 0 })
 public class MotherLessCom extends PluginForDecrypt {
 
     private String fpName = null;
@@ -52,6 +52,7 @@ public class MotherLessCom extends PluginForDecrypt {
     // - Server also punishes user who downloads with too many connections. This is a linkchecking issue also, as grabs info from headers.
     // - To reduce server loads associated with linkchecking, I've set 'setAvailable(true) for greater than 5 pages.
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -65,7 +66,7 @@ public class MotherLessCom extends PluginForDecrypt {
         // alters 'domain/(g/name/)uid' by removing all but uid
         String parameter = param.toString().replaceAll("motherless\\.com/g/[\\w\\-]+/", "motherless.com/");
         br.getPage(parameter);
-        if (br.containsHTML(jd.plugins.hoster.MotherLessCom.contentRegistered)) {
+        if (br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentRegistered)) {
             final DownloadLink dl = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
             dl.setProperty("dltype", "registered");
             decryptedLinks.add(dl);
@@ -73,20 +74,22 @@ public class MotherLessCom extends PluginForDecrypt {
         } else if (br.containsHTML("class=\"red-pill-button rounded-corners-r5\">Reply</a>")) {
             logger.info("This is a forum link without any downloadable content: " + parameter);
             return decryptedLinks;
-        } else if (br.containsHTML(jd.plugins.hoster.MotherLessCom.contentFriendsOnly)) {
+        } else if (br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentFriendsOnly)) {
             logger.warning("Unsupported format for " + parameter);
             return decryptedLinks;
         }
         // Common bug: It can happen that the texts that we use to differ between the kinds of links change so the decrypter breaks down,
         // always check that first!
-        else if (br.containsHTML("The member uploaded this image for subscribers only") || (br.containsHTML(jd.plugins.hoster.MotherLessCom.contentSubscriberOnly) && br.containsHTML(jd.plugins.hoster.MotherLessCom.contentSubscriberImage))) {
+        else if (br.containsHTML("The member uploaded this image for subscribers only") || (br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentSubscriberOnly) && br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentSubscriberImage))) {
             final DownloadLink dl = createDownloadlink(parameter.replace("motherless", "premiummotherlesspictures"));
+            dl.setContentUrl(parameter);
             dl.setProperty("dltype", "image");
             dl.setProperty("onlyregistered", "true");
             decryptedLinks.add(dl);
             return decryptedLinks;
-        } else if (br.containsHTML("The member uploaded this video for subscribers only") || (br.containsHTML(jd.plugins.hoster.MotherLessCom.contentSubscriberOnly) && br.containsHTML(jd.plugins.hoster.MotherLessCom.contentSubscriberVideo))) {
+        } else if (br.containsHTML("The member uploaded this video for subscribers only") || (br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentSubscriberOnly) && br.containsHTML(jd.plugins.hoster.MotherLessCom.html_contentSubscriberVideo))) {
             final DownloadLink dl = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
+            dl.setContentUrl(parameter);
             dl.setProperty("dltype", "video");
             dl.setProperty("onlyregistered", "true");
             decryptedLinks.add(dl);
@@ -94,6 +97,7 @@ public class MotherLessCom extends PluginForDecrypt {
         } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(jd.plugins.hoster.MotherLessCom.OFFLINE) || br.containsHTML("<img src=\"/images/icons.*/exclamation\\.png\" style=\"margin-top: -5px;\" />[\t\n\r ]+404")) {
             // this can have text which could be contained in previous if statements... has to be last!
             final DownloadLink dl = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
+            dl.setContentUrl(parameter);
             dl.setProperty("dltype", "offline");
             decryptedLinks.add(dl);
             return decryptedLinks;
@@ -102,7 +106,7 @@ public class MotherLessCom extends PluginForDecrypt {
         if (SubGal != null && SubGal.length != 0) {
             for (String subuid : SubGal) {
                 br.getPage("http://motherless.com" + subuid);
-                Gallery(decryptedLinks, parameter, progress);
+                gallery(decryptedLinks, parameter, progress);
             }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
@@ -111,24 +115,21 @@ public class MotherLessCom extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        if (br.containsHTML("(jwplayer\\(|jwplayer_playing|jwplayer_position|" + jd.plugins.hoster.MotherLessCom.notOnlineYet + ")")) {
-            DownloadLink dlink = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
-            if (br.containsHTML(jd.plugins.hoster.MotherLessCom.notOnlineYet)) {
+        if (br.containsHTML("(jwplayer\\(|jwplayer_playing|jwplayer_position|" + jd.plugins.hoster.MotherLessCom.html_notOnlineYet + ")")) {
+            final DownloadLink dlink = createDownloadlink(parameter.replace("motherless.com/", "motherlessvideos.com/"));
+            dlink.setContentUrl(parameter);
+            if (br.containsHTML(jd.plugins.hoster.MotherLessCom.html_notOnlineYet)) {
                 jd.plugins.hoster.MotherLessCom.notOnlineYet(dlink, false);
                 dlink.setAvailable(false);
             }
             dlink.setProperty("dltype", "video");
-            try {/* JD2 only */
-                dlink.setContentUrl(parameter);
-            } catch (Throwable e) {/* Stable */
-                dlink.setBrowserUrl(parameter);
-            }
             dlink.setName(new Regex(parameter, "motherless\\.com/(.+)").getMatch(0));
             decryptedLinks.add(dlink);
         } else if (!br.containsHTML("<strong>Uploaded</strong>")) {
-            Gallery(decryptedLinks, parameter, progress);
+            gallery(decryptedLinks, parameter, progress);
         } else {
-            DownloadLink fina = createDownloadlink(parameter.replace("motherless.com/", "motherlesspictures.com/"));
+            final DownloadLink fina = createDownloadlink(parameter.replace("motherless.com/", "motherlesspictures.com/"));
+            fina.setContentUrl(parameter);
             fina.setProperty("dltype", "image");
             decryptedLinks.add(fina);
         }
@@ -153,7 +154,7 @@ public class MotherLessCom extends PluginForDecrypt {
     }
 
     @SuppressWarnings("deprecation")
-    private void Gallery(ArrayList<DownloadLink> ret, String parameter, ProgressController progress) throws IOException {
+    private void gallery(ArrayList<DownloadLink> ret, String parameter, ProgressController progress) throws IOException {
         if (fpName == null) {
             fpName = br.getRegex("<title>MOTHERLESS\\.COM - Go Ahead She Isn't Looking! :  (.*?)</title>").getMatch(0);
             if (fpName == null) {
@@ -183,7 +184,8 @@ public class MotherLessCom extends PluginForDecrypt {
                 logger.info("Decrypting page " + i + " which contains " + picturelinks.length + " links.");
                 for (String singlelink : picturelinks) {
                     singlelink = formLink(singlelink);
-                    DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlesspictures.com/"));
+                    final DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlesspictures.com/"));
+                    dl.setContentUrl(singlelink);
                     dl.setProperty("dltype", "image");
                     // fast add.
                     dl.setAvailable(true);
@@ -198,7 +200,8 @@ public class MotherLessCom extends PluginForDecrypt {
                         singlelink = "http://motherless.com/" + linkID;
                     }
                     singlelink = formLink(singlelink);
-                    DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlessvideos.com/"));
+                    final DownloadLink dl = createDownloadlink(singlelink.replace("motherless.com/", "motherlessvideos.com/"));
+                    dl.setContentUrl(singlelink);
                     dl.setProperty("dltype", "video");
                     // fast add.
                     dl.setAvailable(true);
