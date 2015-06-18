@@ -42,7 +42,6 @@ public class OverLoadMe extends PluginForHost {
 
     private static final String                            DOMAIN             = "https://api.over-load.me/";
     private static final String                            NICE_HOST          = "over-load.me";
-    private static final String                            APIKEY             = "MDAwMS05YWRhMzI5Y2Y1ODk0ZjM2MGQxM2FjM2I5MTU4OGExYjUzMGE3NmVlNDg4MTQtNTMwYTc2ZWUtNGMwMS0zYWIwMTJlYw==";
     private int                                            STATUSCODE         = 0;
     private static final String                            NICE_HOSTproperty  = NICE_HOST.replaceAll("(\\.|\\-)", "");
 

@@ -43,7 +43,7 @@ public class SolidFilesComFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://");
         br.getPage(parameter);
-        if (br.containsHTML(">Not found<|>We couldn\\'t find the file you requested")) {
+        if (br.containsHTML(">Not found<|>We couldn\\'t find the file you requested") || this.br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;

@@ -190,9 +190,17 @@ public class SexCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://pornrabbit.com/video/" + externID + "/"));
             return;
         }
+        /* tnaflix.com handling #1 */
         externID = br.getRegex("player\\.tnaflix\\.com/video/(\\d+)\"").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
+            final DownloadLink dl = createDownloadlink("http://www.tnaflix.com/teen-porn/" + System.currentTimeMillis() + "/video" + externID);
+            decryptedLinks.add(dl);
+            return;
+        }
+        /* tnaflix.com handling #2 */
+        externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf\".*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("https://www.tnaflix.com/embedding_player/" + externID));
             return;
         }
         externID = br.getRegex("metacafe\\.com/fplayer/(\\d+)/").getMatch(0);
@@ -461,16 +469,6 @@ public class SexCom extends PluginForDecrypt {
                 return;
             }
 
-        }
-        // 2nd handling for tnaflix
-        externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf.*?config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)").getMatch(0);
-        if (externID != null) {
-            br.getPage("http://www.tnaflix.com/embedding_player/" + externID);
-            externID = br.getRegex("start_thumb>http://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg<").getMatch(0);
-            if (externID != null) {
-                decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
-                return;
-            }
         }
         // youporn.com handling 2
         externID = br.getRegex("flashvars=\"file=(http%3A%2F%2Fdownload\\.youporn\\.com[^<>\"]*?)\\&").getMatch(0);
