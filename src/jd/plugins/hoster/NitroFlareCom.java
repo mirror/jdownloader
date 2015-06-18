@@ -708,4 +708,12 @@ public class NitroFlareCom extends antiDDoSForHost {
     public boolean hasAutoCaptcha() {
         return false;
     }
+
+    @Override
+    protected void runPostRequestTask(final Browser ibr) throws PluginException {
+        if (ibr.containsHTML(">OUR WEBSITE IS UNDER CONSTRUCTION</strong>")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Website Under Construction!", 15 * 60 * 1000l);
+        }
+    }
+
 }
