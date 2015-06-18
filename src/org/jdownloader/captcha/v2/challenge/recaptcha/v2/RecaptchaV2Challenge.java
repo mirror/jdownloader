@@ -220,6 +220,21 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         }
     }
 
+    /**
+     * Used to validate result against expected pattern. <br />
+     * This is different to AbstractBrowserChallenge.isSolved, as we don't want to throw the same error exception.
+     *
+     * @param result
+     * @return
+     * @author raztoki
+     */
+    protected final boolean isCaptchaResponseValid() {
+        if (isSolved() && getResult().getValue().matches("[\\w-]{30,}")) {
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public boolean validateResponse(AbstractResponse<String> response) {
         if (response.getSolver() instanceof DialogBasicCaptchaSolver) {
@@ -235,4 +250,5 @@ public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
         basicChallenge = new Recaptcha2FallbackChallenge(this);
         return basicChallenge;
     }
+
 }

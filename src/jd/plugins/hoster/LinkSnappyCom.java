@@ -564,7 +564,10 @@ public class LinkSnappyCom extends PluginForHost {
         String postdata = "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + JDHash.getMD5(account.getPass());
         if (this.br.containsHTML("\"error\":\"CAPTCHA\"")) {
             final DownloadLink dummy = new DownloadLink(this, "Account", "linksnappy.com", "http://linksnappy.com", true);
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaV2_sitekey, dummy).getToken();
+            if (this.getDownloadLink() == null) {
+                this.setDownloadLink(dummy);
+            }
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaV2_sitekey).getToken();
             postdata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
         }
         getPage(HTTP_S + "gen.linksnappy.com/lseAPI.php?act=USERDETAILS" + postdata);
@@ -610,7 +613,10 @@ public class LinkSnappyCom extends PluginForHost {
             br.getPage(HTTP_S + "linksnappy.com/");
             if (br.containsHTML("grecaptcha\\.render")) {
                 final DownloadLink dummy = new DownloadLink(this, "Account", "linksnappy.com", "http://linksnappy.com", true);
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaV2_sitekey, dummy).getToken();
+                if (this.getDownloadLink() == null) {
+                    this.setDownloadLink(dummy);
+                }
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaV2_sitekey).getToken();
                 postdata += "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response);
             }
             postPageSecure("/login", postdata);
