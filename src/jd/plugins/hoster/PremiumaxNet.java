@@ -45,15 +45,62 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PremiumaxNet extends antiDDoSForHost {
 
-    private static HashMap<Account, HashMap<String, Long>>   hostUnavailableMap       = new HashMap<Account, HashMap<String, Long>>();
-    private static HashMap<Account, HashMap<String, String>> hostUnavailableMapReason = new HashMap<Account, HashMap<String, String>>();
-    private static final String                              NOCHUNKS                 = "NOCHUNKS";
-    private static final String                              MAINPAGE                 = "http://premiumax.net";
-    private static final String                              NICE_HOST                = "premiumax.net";
-    private static final String                              NICE_HOSTproperty        = "premiumaxnet";
+    /**
+     * test class, move to dedicated multihoster (helper) class and import.
+     *
+     * @author raztoki
+     *
+     */
+    public static final class UnavailableHost {
 
-    private Account                                          currAcc                  = null;
-    private DownloadLink                                     currDownloadLink         = null;
+        private String errorReason;
+        private Long   errorTimeout;
+
+        public UnavailableHost(final Long errorTimeout, final String errorReason) {
+            this.errorTimeout = errorTimeout;
+            this.errorReason = errorReason;
+        }
+
+        /**
+         * @return the errorReason
+         */
+        public final String getErrorReason() {
+            return errorReason;
+        }
+
+        /**
+         * @param errorReason
+         *            the errorReason to set
+         */
+        public final void setErrorReason(String errorReason) {
+            this.errorReason = errorReason;
+        }
+
+        /**
+         * @return the errorTimeout
+         */
+        public final Long getErrorTimeout() {
+            return errorTimeout;
+        }
+
+        /**
+         * @param errorTimeout
+         *            the errorTimeout to set
+         */
+        public final void setErrorTimeout(Long errorTimeout) {
+            this.errorTimeout = errorTimeout;
+        }
+
+    }
+
+    private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new HashMap<Account, HashMap<String, UnavailableHost>>();
+    private static final String                                       NOCHUNKS           = "NOCHUNKS";
+    private static final String                                       MAINPAGE           = "http://premiumax.net";
+    private static final String                                       NICE_HOST          = "premiumax.net";
+    private static final String                                       NICE_HOSTproperty  = "premiumaxnet";
+
+    private Account                                                   currAcc            = null;
+    private DownloadLink                                              currDownloadLink   = null;
 
     public PremiumaxNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -136,22 +183,17 @@ public class PremiumaxNet extends antiDDoSForHost {
         setConstants(account, link);
 
         synchronized (hostUnavailableMap) {
-            synchronized (hostUnavailableMapReason) {
-                final HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-                final HashMap<String, String> reasonMap = hostUnavailableMapReason.get(account);
-                if (unavailableMap != null) {
-                    Long lastUnavailable = unavailableMap.get(link.getHost());
-                    if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                        final String errorReason = reasonMap != null ? reasonMap.get(link.getHost()) : null;
-                        final long wait = lastUnavailable - System.currentTimeMillis();
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
-                    } else if (lastUnavailable != null) {
-                        unavailableMap.remove(link.getHost());
-                        reasonMap.remove(link.getHost());
-                        if (unavailableMap.size() == 0) {
-                            hostUnavailableMap.remove(account);
-                            hostUnavailableMapReason.remove(account);
-                        }
+            final HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null && unavailableMap.containsKey(link.getHost())) {
+                final Long lastUnavailable = unavailableMap.get(link.getHost()).getErrorTimeout();
+                final String errorReason = unavailableMap.get(link.getHost()).getErrorReason();
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(account);
                     }
                 }
             }
@@ -440,25 +482,16 @@ public class PremiumaxNet extends antiDDoSForHost {
         if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
+
+        final UnavailableHost nue = new UnavailableHost(System.currentTimeMillis() + timeout, reason);
+
         synchronized (hostUnavailableMap) {
-            synchronized (hostUnavailableMapReason) {
-                // time
-                HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
-                if (unavailableMap == null) {
-                    unavailableMap = new HashMap<String, Long>();
-                    hostUnavailableMap.put(this.currAcc, unavailableMap);
-                }
-                /* wait to retry this host */
-                unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
-                // reason
-                HashMap<String, String> reasonMap = hostUnavailableMapReason.get(this.currAcc);
-                if (reasonMap == null) {
-                    reasonMap = new HashMap<String, String>();
-                    hostUnavailableMapReason.put(this.currAcc, reasonMap);
-                }
-                /* wait to retry this host */
-                reasonMap.put(this.currDownloadLink.getHost(), reason);
+            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(this.currAcc);
+            if (unavailableMap == null) {
+                unavailableMap = new HashMap<String, UnavailableHost>();
+                hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
+            unavailableMap.put(this.currDownloadLink.getHost(), nue);
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
