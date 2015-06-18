@@ -197,9 +197,11 @@ public class AllDebridCom extends antiDDoSForHost {
         }
         if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(">An error occured while processing your request<")) {
+            if (br.containsHTML("You are not premium so you can't download this file")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Premium required to download this file.");
+            } else if (br.containsHTML(">An error occured while processing your request<")) {
                 logger.info("Retrying: Failed to generate alldebrid.com link because API connection failed for host link: " + link.getDownloadURL());
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                handleErrorRetries("Unknown error", 3, 30 * 60 * 1000l);
             }
             if (!isDirectLink(link)) {
                 /* unknown error */
@@ -401,7 +403,6 @@ public class AllDebridCom extends antiDDoSForHost {
      */
     private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
         int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        this.currDownloadLink.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
             logger.info(NICE_HOST + ": " + error + " -> Retrying");
             timesFailed++;
