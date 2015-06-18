@@ -125,13 +125,14 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         try {
             con = ibr.openGetConnection(page);
             readConnection(con, ibr);
-            antiDDoS(ibr);
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+        antiDDoS(ibr);
+        runPostRequestTask(ibr);
     }
 
     /**
@@ -161,7 +162,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         try {
             con = ibr.openPostConnection(page, postData);
             readConnection(con, ibr);
-            antiDDoS(ibr);
         } finally {
             try {
                 con.disconnect();
@@ -169,6 +169,8 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             }
             ibr.getHeaders().put("Content-Type", null);
         }
+        antiDDoS(ibr);
+        runPostRequestTask(ibr);
     }
 
     /**
@@ -198,7 +200,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         try {
             con = ibr.openPostConnection(page, param);
             readConnection(con, ibr);
-            antiDDoS(ibr);
         } finally {
             try {
                 con.disconnect();
@@ -206,6 +207,8 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             }
             ibr.getHeaders().put("Content-Type", null);
         }
+        antiDDoS(ibr);
+        runPostRequestTask(ibr);
     }
 
     /**
@@ -262,7 +265,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         try {
             con = ibr.openFormConnection(form);
             readConnection(con, ibr);
-            antiDDoS(ibr);
         } finally {
             try {
                 con.disconnect();
@@ -270,6 +272,8 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             }
             ibr.getHeaders().put("Content-Type", null);
         }
+        antiDDoS(ibr);
+        runPostRequestTask(ibr);
     }
 
     /**
@@ -287,7 +291,6 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         try {
             con = ibr.openRequestConnection(request);
             readConnection(con, ibr);
-            antiDDoS(ibr);
         } finally {
             try {
                 con.disconnect();
@@ -295,6 +298,8 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             }
             ibr.getHeaders().put("Content-Type", null);
         }
+        antiDDoS(ibr);
+        runPostRequestTask(ibr);
     }
 
     /**
@@ -305,6 +310,14 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * */
     protected void sendRequest(final Request request) throws Exception {
         sendRequest(br, request);
+    }
+
+    /**
+     * Override when you want to run a post request task. This is run after getPage/postPage/submitForm/sendRequest
+     *
+     * @param ibr
+     */
+    protected void runPostRequestTask(final Browser ibr) throws Exception {
     }
 
     /**
@@ -328,11 +341,16 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             // stable fail over
             is = con.getErrorStream();
         }
-        final String t = readInputStream(is, ibr.getRequest().getCustomCharset());
+        String encoding;
+        final String t = readInputStream(is, encoding = ibr.getRequest().getCustomCharset());
         if (t != null) {
             logger.fine("\r\n" + t);
             ibr.getRequest().setHtmlCode(t);
+            if (ibr.getRequest().isKeepByteArray() || ibr.isKeepResponseContentBytes()) {
+                ibr.getRequest().setKeepByteArray(true);
+                ibr.getRequest().setResponseBytes(t.getBytes(encoding == null ? "UTF-8" : encoding));
         }
+    }
     }
 
     /**
