@@ -592,4 +592,12 @@ public interface GeneralSettings extends ConfigInterface {
     int getMaxDownloadLinkHistoryEntries();
 
     void setMaxDownloadLinkHistoryEntries(int size);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @RequiresRestart("A JDownloader Restart is Required")
+    @DescriptionForConfigEntry("The Autosolver is still very buggy. Use at your own risk!")
+    boolean isMyJDownloaderCaptchaSolverEnabled();
+
+    void setMyJDownloaderCaptchaSolverEnabled(boolean b);
 }
