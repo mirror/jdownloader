@@ -162,6 +162,10 @@ public class ScribdCom extends PluginForDecrypt {
                 }
                 final String[][] uplInfo = br.getRegex("href=\"(https?://([a-z]{2}|www)\\.scribd\\.com/doc/[^<>\"]*?)\">([^<>]*?)</a>").getMatches();
                 if (uplInfo == null || uplInfo.length == 0) {
+                    if (decryptedLinks.size() == 0 && br.containsHTML("\"has_more\":false")) {
+                        decryptedLinks.add(getOfflineLink(parameter));
+                        return decryptedLinks;
+                    }
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }

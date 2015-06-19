@@ -141,10 +141,15 @@ public class KeezMoviesCom extends PluginForHost {
                     DLLINK = AESCounterModeDecrypt(decrypted, key, 256);
                 }
                 if (DLLINK != null && (DLLINK.startsWith("Error:") || !DLLINK.startsWith("http"))) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, DLLINK);
+                    DLLINK = null;
                 }
             } else {
                 DLLINK = getValue("video_url");
+            }
+
+            /* All failed? Try to get html5 videourl. */
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("src=\"(http[^<>\"]*?\\.mp4[^<>\"]*?)\"").getMatch(0);
             }
 
             if (filename == null || DLLINK == null) {

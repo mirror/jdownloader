@@ -89,6 +89,9 @@ public class XxxBunkerCom extends PluginForDecrypt {
         if (filename == null) {
             filename = br.getRegex("class=vpVideoTitle><h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
         }
+        if (filename == null) {
+            filename = new Regex(parameter, "xxxbunker.com/(.+)").getMatch(0);
+        }
         // filename needed for all IDs below here
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -98,6 +101,7 @@ public class XxxBunkerCom extends PluginForDecrypt {
 
         String externID = null;
         String externID2 = null;
+        String externID3 = null;
         String embedcode = br.getRegex(">localembedcode=\\'([^<>\"]*?)\\'").getMatch(0);
         if (embedcode != null) {
             embedcode = Encoding.htmlDecode(externID);
@@ -113,6 +117,17 @@ public class XxxBunkerCom extends PluginForDecrypt {
             externID = new Regex(remoteembedcode, "\"(http://(www\\.)?hardsextube\\.com/[^<>\"]*?)\"").getMatch(0);
             if (externID != null) {
                 decryptedLinks.add(createDownloadlink(externID));
+                return decryptedLinks;
+            }
+        }
+        externID3 = br.getRegex("lvid=(\\d+)").getMatch(0);
+        if (externID3 != null) {
+            br.getPage("http://xxxbunker.com/videoPlayer.php?videoid=" + externID3 + "&autoplay=true&ageconfirm=true&title=true&html5=false&hasflash=true&r=" + System.currentTimeMillis());
+            externID = br.getRegex("\\&amp;file=(http[^<>\"]*?\\.(?:flv|mp4))").getMatch(0);
+            if (externID != null) {
+                final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(externID));
+                dl.setFinalFileName(filename + externID.substring(externID.lastIndexOf(".")));
+                decryptedLinks.add(dl);
                 return decryptedLinks;
             }
         }
@@ -133,7 +148,7 @@ public class XxxBunkerCom extends PluginForDecrypt {
                 }
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(externID));
-            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+            dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

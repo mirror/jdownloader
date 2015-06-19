@@ -71,7 +71,7 @@ public class HqTubeXxxCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         /* tnaflix.com handling #2 */
-        externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf\".*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
+        externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf\".*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("https://www.tnaflix.com/embedding_player/" + externID));
             return decryptedLinks;
