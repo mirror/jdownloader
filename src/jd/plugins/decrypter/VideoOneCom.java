@@ -77,7 +77,7 @@ public class VideoOneCom extends PluginForDecrypt {
             }
             final String embedID = new Regex(continueURL, "\\.html\\?(.+)$").getMatch(0);
             if (externID != null && embedID == null) {
-                logger.info("Link offline: " + parameter);
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             if (externID == null) {
@@ -101,6 +101,10 @@ public class VideoOneCom extends PluginForDecrypt {
                 br.getPage(externID);
                 externID = br.getRegex("<url>([^<>\"]*?)</url>").getMatch(0);
                 if (externID == null) {
+                    if (br.containsHTML("<url>\\]>")) {
+                        decryptedLinks.add(this.createOfflinelink(parameter));
+                        return decryptedLinks;
+                    }
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
@@ -253,6 +257,11 @@ public class VideoOneCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("\"(http://(www\\.)?playvid\\.com/embed/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("src=\"(ftp://[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;

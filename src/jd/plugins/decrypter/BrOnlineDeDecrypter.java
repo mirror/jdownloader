@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "br.de" }, urls = { "http://(www\\.)?br\\.de/mediathek/video/(sendungen/[A-Za-z0-9\\-_]+/)?[A-Za-z0-9\\-_]+\\.html" }, flags = { 32 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br.de" }, urls = { "http://(www\\.)?br\\.de/mediathek/video/(sendungen/[A-Za-z0-9\\-_]+/)?[A-Za-z0-9\\-_]+\\.html" }, flags = { 32 })
 public class BrOnlineDeDecrypter extends PluginForDecrypt {
 
     private static final String Q_0          = "Q_0";
@@ -82,18 +82,25 @@ public class BrOnlineDeDecrypter extends PluginForDecrypt {
         final boolean grab_subtitle = cfg.getBooleanProperty(Q_SUBTITLES, false);
 
         String player_link = br.getRegex("\\{dataURL:\\'(/mediathek/video/[^<>\"]*?)\\'\\}").getMatch(0);
+        String date = br.getRegex(">(\\d{2}\\.\\d{2}\\.\\d{4}), \\d{2}:\\d{2} Uhr,?</time>").getMatch(0);
         if (player_link == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         br.getPage("http://www.br.de" + player_link);
-        final String date = getXML("broadcastDate");
-        final String show = getXML("broadcast");
+        if (date == null) {
+            date = getXML("broadcastDate");
+        }
+        String show = getXML("broadcast");
         String plain_name = this.getXML("shareTitle");
         final String[] qualities = br.getRegex("<asset type=(.*?)</asset>").getColumn(0);
-        if (qualities == null || qualities.length == 0 || plain_name == null || date == null || show == null) {
+        if (qualities == null || qualities.length == 0 || plain_name == null || date == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
+        }
+        if (show == null) {
+            /* Show is not always given */
+            show = "-";
         }
         plain_name = encodeUnicode(Encoding.htmlDecode(plain_name).trim()).replace("\n", "");
 
@@ -119,6 +126,7 @@ public class BrOnlineDeDecrypter extends PluginForDecrypt {
             dl_video.setProperty("direct_link", final_url);
             dl_video.setProperty("plain_filename", final_video_name);
             dl_video.setProperty("plain_resolution", resolution);
+            dl_video.setContentUrl(parameter);
             dl_video.setFinalFileName(final_video_name);
             dl_video.setDownloadSize(Long.parseLong(fsize));
             dl_video.setAvailable(true);
@@ -185,6 +193,7 @@ public class BrOnlineDeDecrypter extends PluginForDecrypt {
                     dl_subtitle.setProperty("direct_link", subtitle_url);
                     dl_subtitle.setProperty("plain_filename", subtitle_filename);
                     dl_subtitle.setProperty("streamingType", "subtitle");
+                    dl_subtitle.setContentUrl(parameter);
                     dl_subtitle.setAvailable(true);
                     dl_subtitle.setFinalFileName(subtitle_filename);
                     decryptedLinks.add(dl_subtitle);
