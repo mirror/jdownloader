@@ -715,8 +715,12 @@ public class DirectHTTP extends PluginForHost {
 
     private String customDownloadURL = null;
 
-    private void setDownloadURL(String newURL) {
-        this.customDownloadURL = newURL;
+    private void setDownloadURL(String newURL, DownloadLink link) {
+        if (link != null) {
+            link.setUrlDownload(newURL);
+        } else {
+            this.customDownloadURL = newURL;
+        }
     }
 
     private boolean hasCustomDownloadURL() {
@@ -860,7 +864,7 @@ public class DirectHTTP extends PluginForHost {
                     br.followConnection();
                     final String newURL = getDownloadURL(downloadLink) + urlParams;
                     downloadLink.setProperty(DirectHTTP.POSSIBLE_URLPARAM, Property.NULL);
-                    setDownloadURL(newURL);
+                    setDownloadURL(newURL, downloadLink);
                     urlConnection = this.prepareConnection(this.br, downloadLink);
                 }
                 if (urlConnection.getResponseCode() == 401) {
@@ -908,7 +912,7 @@ public class DirectHTTP extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 if (mp3URL != null) {
-                    setDownloadURL(mp3URL);
+                    setDownloadURL(mp3URL, null);
                     return this.requestFileInformation(downloadLink);
                 }
             }
@@ -940,7 +944,7 @@ public class DirectHTTP extends PluginForHost {
                     if (StringUtils.endsWithCaseInsensitive(br.getURL(), "mp4")) {
                         final String videoURL = br.getRegex("source type=\"video/mp4\"\\s*src=\"(https?://.*)\"").getMatch(0);
                         if (videoURL != null && !hasCustomDownloadURL()) {
-                            setDownloadURL(videoURL);
+                            setDownloadURL(videoURL, null);
                             return AvailableStatus.TRUE;
                             // return this.requestFileInformation(downloadLink);
                         }
@@ -958,7 +962,7 @@ public class DirectHTTP extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     /* found one valid url */
-                    setDownloadURL(follow.get(0).trim());
+                    setDownloadURL(follow.get(0).trim(), downloadLink);
                     return this.requestFileInformation(downloadLink);
                 }
             } else {
