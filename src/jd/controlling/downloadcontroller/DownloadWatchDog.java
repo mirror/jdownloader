@@ -3101,34 +3101,34 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                         final DelayedRunnable delayer = new DelayedRunnable(1000, 5000) {
 
-                            @Override
-                            public void delayedrun() {
-                                enqueueJob(new DownloadWatchDogJob() {
+                                                          @Override
+                                                          public void delayedrun() {
+                                                              enqueueJob(new DownloadWatchDogJob() {
 
-                                    @Override
-                                    public void interrupt() {
-                                    }
+                                                                  @Override
+                                                                  public void interrupt() {
+                                                                  }
 
-                                    @Override
-                                    public void execute(DownloadSession currentSession) {
-                                        /* reset CONNECTION_UNAVAILABLE */
-                                        final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                                                                  @Override
+                                                                  public void execute(DownloadSession currentSession) {
+                                                                      /* reset CONNECTION_UNAVAILABLE */
+                                                                      final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
-                                            @Override
-                                            public int returnMaxResults() {
-                                                return 0;
-                                            }
+                                                                          @Override
+                                                                          public int returnMaxResults() {
+                                                                              return 0;
+                                                                          }
 
-                                            @Override
-                                            public boolean acceptNode(DownloadLink node) {
-                                                return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
-                                            }
-                                        });
-                                        unSkip(unSkip);
-                                    }
-                                });
-                            }
-                        };
+                                                                          @Override
+                                                                          public boolean acceptNode(DownloadLink node) {
+                                                                              return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
+                                                                          }
+                                                                      });
+                                                                      unSkip(unSkip);
+                                                                  }
+                                                              });
+                                                          }
+                                                      };
 
                         @Override
                         public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
@@ -3382,7 +3382,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.DATA_UPDATE));
                         }
                         try {
-                            System.out.println("loop");
                             validateProxyInfoHistory();
                             processJobs();
                             final ArrayList<DownloadLink> downloadLinksWithConditionalSkipReasons = new ArrayList<DownloadLink>();
