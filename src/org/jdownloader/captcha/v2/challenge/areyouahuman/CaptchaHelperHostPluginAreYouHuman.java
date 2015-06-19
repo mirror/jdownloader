@@ -110,7 +110,7 @@ public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAre
             c.setTimeout(getPlugin().getCaptchaTimeout());
             if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                 /**
-                 * account login -> do not use anticaptcha services
+                 * account login -> do not use antiCaptcha services
                  */
                 c.setAccountLogin(true);
             } else {
