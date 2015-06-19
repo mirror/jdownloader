@@ -102,7 +102,7 @@ public class SpankWireCom extends PluginForHost {
         }
         downloadLink.setName(filename.trim());
         // File not found can have good name
-        if (br.containsHTML("playerData.videoUnavailable   = \'True\';")) {
+        if (br.containsHTML("playerData\\.isVideoUnavailable\\s*=\\s*true;")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         DLLINK = finddllink();
