@@ -73,7 +73,6 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
                         boolean readL2 = pkg.getModifyLock().readLock();
                         try {
                             for (ChildType child : pkg.getChildren()) {
-
                                 if (linklookUp.remove(child.getUniqueID().getID())) {
                                     ret.add((T) child);
                                     if ((packageLookup == null || packageLookup.size() == 0) && (linklookUp == null || linklookUp.size() == 0)) {
@@ -97,7 +96,7 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
         if (linkIds == null || linkIds.length == 0) {
             return null;
         }
-        HashSet<Long> linkLookup = new HashSet<Long>();
+        final HashSet<Long> linkLookup = new HashSet<Long>();
         for (long l : linkIds) {
             linkLookup.add(l);
         }
@@ -105,17 +104,17 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
     }
 
     public void setEnabled(boolean enabled, final long[] linkIds, final long[] packageIds) {
-        List<ChildType> sdl = getSelectionInfo(linkIds, packageIds).getChildren();
+        final List<ChildType> sdl = getSelectionInfo(linkIds, packageIds).getChildren();
         for (ChildType dl : sdl) {
             dl.setEnabled(enabled);
         }
     }
 
     public void movePackages(long[] packageIds, long afterDestPackageId) {
-        List<PackageType> selectedPackages = getPackages(packageIds);
+        final List<PackageType> selectedPackages = getPackages(packageIds);
         PackageType afterDestPackage = null;
         if (afterDestPackageId > 0) {
-            List<PackageType> packages = getPackages(afterDestPackageId);
+            final List<PackageType> packages = getPackages(afterDestPackageId);
             if (packages.size() > 0) {
                 afterDestPackage = packages.get(0);
             }
@@ -124,14 +123,13 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
     }
 
     public void moveChildren(long[] linkIds, long afterLinkID, long destPackageID) {
-        List<ChildType> selectedLinks = getChildren(linkIds);
-        ChildType afterLink = null;
-
-        List<PackageType> packages = getPackages(destPackageID);
+        final List<PackageType> packages = getPackages(destPackageID);
         if (packages.size() > 0) {
-            PackageType destpackage = packages.get(0);
+            final List<ChildType> selectedLinks = getChildren(linkIds);
+            ChildType afterLink = null;
+            final PackageType destpackage = packages.get(0);
             if (afterLinkID > 0) {
-                List<ChildType> children = getChildren(afterLinkID);
+                final List<ChildType> children = getChildren(afterLinkID);
                 if (children.size() > 0) {
                     afterLink = children.get(0);
                 }
@@ -149,41 +147,42 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
     }
 
     public void remove(final long[] linkIds, final long[] packageIds) {
-        List<ChildType> children = getChildren(linkIds);
-        List<PackageType> packages = getPackages(packageIds);
+        final List<ChildType> children = getChildren(linkIds);
+        final List<PackageType> packages = getPackages(packageIds);
         packageController.removeChildren(children);
-
-        for (PackageType pkg : packages) {
+        for (final PackageType pkg : packages) {
             packageController.removePackage(pkg);
         }
     }
 
     public void startOnlineStatusCheck(long[] linkIds, long[] packageIds) {
-        SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(linkIds, packageIds);
-
-        final List<?> children = selection.getChildren();
+        final SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(linkIds, packageIds);
+        final List<ChildType> children = selection.getChildren();
         final List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(children.size());
-        for (Object l : children) {
-            if (l instanceof DownloadLink || l instanceof CrawledLink) {
+        for (final ChildType l : children) {
+            if (l instanceof CheckableLink) {
                 checkableLinks.add(((CheckableLink) l));
             }
         }
-        final LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
-        linkChecker.check(checkableLinks);
+        if (checkableLinks.size() > 0) {
+            final LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+            linkChecker.check(checkableLinks);
+        }
     }
 
     public HashMap<Long, String> getDownloadUrls(final long[] linkIds, final long[] packageIds) {
-        SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(linkIds, packageIds);
-
-        List<?> children = selection.getChildren();
-        HashMap<Long, String> result = new HashMap<>();
-        for (Object l : children) {
+        final SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(linkIds, packageIds);
+        final List<ChildType> children = selection.getChildren();
+        final HashMap<Long, String> result = new HashMap<Long, String>();
+        for (final ChildType l : children) {
             if (l instanceof DownloadLink) {
-                DownloadLink link = (DownloadLink) l;
+                final DownloadLink link = (DownloadLink) l;
                 result.put(link.getUniqueID().getID(), link.getPluginPatternMatcher());
+            } else if (l instanceof CrawledLink) {
+                final CrawledLink link = (CrawledLink) l;
+                result.put(link.getUniqueID().getID(), link.getURL());
             }
         }
         return result;
     }
-
 }
