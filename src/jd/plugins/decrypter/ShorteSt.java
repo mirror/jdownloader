@@ -27,6 +27,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shorte.st" }, urls = { "http://(www\\.)?sh\\.st/[^<>\r\n\t]+" }, flags = { 0 })
@@ -72,14 +73,12 @@ public class ShorteSt extends PluginForDecrypt {
         br2.getHeaders().put("Accept", "application/json, text/javascript");
         br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br2.postPage(cb, "sessionId=" + sid + "&browserToken=" + new Regex(String.valueOf(new Random().nextLong()), "(\\d{10})$").getMatch(0));
+        br2.postPage(cb, "adSessionId=" + sid + "&callback=reqwest_" + new Regex(String.valueOf(new Random().nextLong()), "(\\d{10})$").getMatch(0));
         String finallink = getJs(br2, "destinationUrl");
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        // json escaping
-        finallink = finallink.replaceAll("\\\\/", "/");
         // unicode
         finallink = unescape(finallink);
         decryptedLinks.add(createDownloadlink(finallink));
@@ -87,15 +86,15 @@ public class ShorteSt extends PluginForDecrypt {
     }
 
     private String getJs(Browser ibr, String s) {
-        // js
+        // js string
         String test = ibr.getRegex(s + ":\\s*(\"|')(.*?)\\1").getMatch(1);
-        // json(finallink)
-        if (test == null) {
-            test = ibr.getRegex("\"" + s + "\":\"(.*?)\"").getMatch(0);
-        }
         // int/long/boolean
         if (test == null) {
             test = ibr.getRegex(s + ":\\s*(\\d+|true|false)").getMatch(0);
+        }
+        // json(finallink)
+        if (test == null) {
+            test = JSonUtils.getJson(ibr, s);
         }
         return test;
     }
