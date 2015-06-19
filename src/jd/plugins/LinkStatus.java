@@ -131,14 +131,14 @@ public class LinkStatus implements Serializable {
 
     /**
      * Setzt den Linkstatus. Es dürfen nur LInkStatus.*STATUS ids verwendet werden
-     * 
+     *
      * @param status
      */
     public void setStatus(final int status) {
         this.status = status;
         DownloadLink dl = downloadLink;
         if (dl != null && dl.hasNotificationListener()) {
-            dl.notifyChanges(jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(dl, DownloadLinkProperty.Property.LINKSTATUS, null));
+            dl.notifyChanges(jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(dl, DownloadLinkProperty.Property.LINKSTATUS, toString(status)));
 
         }
     }
@@ -151,10 +151,8 @@ public class LinkStatus implements Serializable {
 
         DownloadLink dl = downloadLink;
         if (dl != null && dl.hasNotificationListener()) {
-            dl.notifyChanges(jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(dl, DownloadLinkProperty.Property.LINKSTATUS, null));
-
+            dl.notifyChanges(jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(dl, DownloadLinkProperty.Property.LINKSTATUS, statusText));
         }
-
     }
 
     public static String toString(int status) {

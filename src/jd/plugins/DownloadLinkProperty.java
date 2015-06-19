@@ -15,6 +15,7 @@ public class DownloadLinkProperty {
         EXTRACTION_STATUS,
         LINKSTATUS,
         ARCHIVE_ID,
+        DOWNLOAD_CONTROLLER,
 
         CHUNKS,
         SPEED_LIMIT,

@@ -1,6 +1,7 @@
 package org.jdownloader.api.linkcollector.v2;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.appwork.remoteapi.RemoteAPIInterface;
@@ -46,4 +47,9 @@ public interface LinkCollectorAPIV2 extends RemoteAPIInterface {
     void setVariant(long linkid, String variantID) throws BadParameterException;
 
     void addVariantCopy(long linkid, long destinationAfterLinkID, long destinationPackageID, String variantID) throws BadParameterException;
+
+    void startOnlineStatusCheck(long[] linkIds, long[] packageIds) throws BadParameterException;
+
+    HashMap<Long, String> getDownloadUrls(long[] linkIds, long[] packageIds) throws BadParameterException;
+
 }

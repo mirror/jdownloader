@@ -126,12 +126,12 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             }
             if (entry.getChallenge() instanceof ImageCaptchaChallenge) {
                 CaptchaJob job = new CaptchaJob();
+                Challenge<?> challenge = entry.getChallenge();
                 Class<?> cls = entry.getChallenge().getClass();
                 while (cls != null && StringUtils.isEmpty(job.getType())) {
                     job.setType(cls.getSimpleName());
                     cls = cls.getSuperclass();
                 }
-
                 job.setID(entry.getChallenge().getId().getID());
                 job.setHoster(((ImageCaptchaChallenge) entry.getChallenge()).getPlugin().getHost());
                 job.setCaptchaCategory(entry.getChallenge().getTypeID());

@@ -46,10 +46,10 @@ import org.jdownloader.api.downloads.v2.DownloadLinkAPIStorableV2;
 import org.jdownloader.api.downloads.v2.FilePackageAPIStorableV2;
 import org.jdownloader.api.downloads.v2.LinkQueryStorable;
 import org.jdownloader.api.downloads.v2.PackageQueryStorable;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.download.DownloadControllerListener;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsEventsInterface;
-import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 
 public class DownloadControllerEventPublisher implements EventPublisher, DownloadControllerListener, LocalEventsAPIListener, DownloadControllerEventPublisherInterface, DownloadWatchdogListener {
@@ -246,6 +246,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
     public void onDownloadControllerUpdatedData(DownloadLink dl, DownloadLinkProperty property) {
 
         if (property != null) {
+            FilePackage parent = dl.getParentNode();
             HashMap<String, Object> dls = null;
             // [DATA_UPDATE.extractionStatus, DATA_UPDATE.finished, DATA_UPDATE.priority, DATA_UPDATE.speed, DATA_UPDATE.url,
             // DATA_UPDATE.enabled, DATA_UPDATE.skipped, DATA_UPDATE.running, DATA_UPDATE.bytesLoaded, DATA_UPDATE.eta,
@@ -260,15 +261,18 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                 break;
 
             case AVAILABILITY:
+                dls = new HashMap<String, Object>();
+                dls.put("uuid", dl.getUniqueID().getID());
+                dls.put("availability", property.getValue());
+                fire(BASIC_EVENT.LINK_UPDATE.name() + ".availability", dls, BASIC_EVENT.LINK_UPDATE.name() + ".availability." + dl.getUniqueID().getID());
                 break;
             case CHUNKS:
                 break;
             case COMMENT:
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("comment", dl.getComment());
+                dls.put("comment", property.getValue());
                 fire(BASIC_EVENT.LINK_UPDATE.name() + ".comment", dls, BASIC_EVENT.LINK_UPDATE.name() + ".comment." + dl.getUniqueID().getID());
-
                 break;
             case URL_CONTAINER:
             case URL_ORIGIN:
@@ -281,35 +285,41 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
                 break;
             case CONDITIONAL_SKIPPED:
-                ConditionalSkipReason conditionalSkipReason = dl.getConditionalSkipReason();
-
                 pushStatus(dl);
-
                 break;
-
             case DOWNLOAD_PASSWORD:
                 break;
-
             case DOWNLOADSIZE:
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("bytesTotal", dl.getView().getBytesTotalEstimated());
+                dls.put("bytesTotal", property.getValue());
                 fire(BASIC_EVENT.LINK_UPDATE.name() + ".bytesTotal", dls, BASIC_EVENT.LINK_UPDATE.name() + ".bytesTotal." + dl.getUniqueID().getID());
-
                 break;
             case DOWNLOADSIZE_VERIFIED:
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("bytesTotal", dl.getView().getBytesTotalEstimated());
+                dls.put("bytesTotal", property.getValue());
                 fire(BASIC_EVENT.LINK_UPDATE.name() + ".bytesTotal", dls, BASIC_EVENT.LINK_UPDATE.name() + ".bytesTotal." + dl.getUniqueID().getID());
-
+                break;
+            case DOWNLOAD_CONTROLLER:
+                dls = new HashMap<String, Object>();
+                dls.put("uuid", dl.getUniqueID().getID());
+                dls.put("running", property.getValue() != null);
+                fire(BASIC_EVENT.LINK_UPDATE.name() + ".running", dls, BASIC_EVENT.LINK_UPDATE.name() + ".running." + dl.getUniqueID().getID());
+                dls = new HashMap<String, Object>();
+                dls.put("uuid", parent.getUniqueID().getID());
+                dls.put("running", property.getValue() != null || DownloadWatchDog.getInstance().hasRunningDownloads(parent));
+                fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".running", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".running." + parent.getUniqueID().getID());
                 break;
             case ENABLED:
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
                 dls.put("enabled", dl.isEnabled());
                 fire(BASIC_EVENT.LINK_UPDATE.name() + ".enabled", dls, BASIC_EVENT.LINK_UPDATE.name() + ".enabled." + dl.getUniqueID().getID());
-
+                dls = new HashMap<String, Object>();
+                dls.put("uuid", parent.getUniqueID().getID());
+                dls.put("enabled", parent.isEnabled());
+                fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".enabled", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".enabled." + parent.getUniqueID().getID());
                 break;
             case EXTRACTION_STATUS:
                 dls = new HashMap<String, Object>();
@@ -332,6 +342,11 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
                 break;
             case LINKSTATUS:
+                dls = new HashMap<String, Object>();
+                dls.put("uuid", dl.getUniqueID().getID());
+                dls.put("status", property.getValue());
+                fire(BASIC_EVENT.LINK_UPDATE.name() + ".status", dls, BASIC_EVENT.LINK_UPDATE.name() + ".status." + dl.getUniqueID().getID());
+
                 break;
             case MD5:
                 break;
@@ -363,6 +378,10 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
                 break;
             case RESET:
+                dls = new HashMap<String, Object>();
+                dls.put("uuid", dl.getUniqueID().getID());
+                dls.put("reset", "true");
+                fire(BASIC_EVENT.LINK_UPDATE.name() + ".reset", dls, BASIC_EVENT.LINK_UPDATE.name() + ".reset." + dl.getUniqueID().getID());
                 break;
             case RESUMABLE:
                 break;
@@ -371,15 +390,14 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
             case SHA256:
                 break;
             case SKIPPED:
-                // SkipReason skipReason = dl.getSkipReason();
-
                 pushStatus(dl);
-
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("skipped", dl.isSkipped());
+                dls.put("skipped", property.getValue() != null);
+                if (property.getValue() != null) {
+                    dls.put("skipreason", property.getValue().toString());
+                }
                 fire(BASIC_EVENT.LINK_UPDATE.name() + ".skipped", dls, BASIC_EVENT.LINK_UPDATE.name() + ".skipped." + dl.getUniqueID().getID());
-
                 break;
             case SPEED_LIMIT:
                 break;
@@ -455,6 +473,14 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
         }
     }
 
+    private void fire(BASIC_EVENT eventType, final String eventID, Object dls, UniqueAlltimeID uniqueAlltimeID) {
+        if (uniqueAlltimeID != null) {
+            fire(eventType.name() + "." + eventID, dls, eventType + "." + eventID + uniqueAlltimeID.getID());
+        } else {
+            fire(eventType.name() + "." + eventID, dls, null);
+        }
+    }
+
     @Override
     public void onDownloadControllerUpdatedData(FilePackage pkg, FilePackageProperty property) {
 
@@ -470,7 +496,7 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", pkg.getUniqueID().getID());
                 dls.put("comment", pkg.getComment());
-                fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".comment", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".comment." + pkg.getUniqueID().getID());
+                fire(BASIC_EVENT.PACKAGE_UPDATE, FilePackageProperty.Property.COMMENT.toString(), dls, pkg.getUniqueID());
                 break;
             case FOLDER:
                 break;

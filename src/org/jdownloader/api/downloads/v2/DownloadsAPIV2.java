@@ -1,5 +1,6 @@
 package org.jdownloader.api.downloads.v2;
 
+import java.util.HashMap;
 import java.util.List;
 
 import org.appwork.remoteapi.RemoteAPIInterface;
@@ -22,27 +23,27 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
 
     /**
      * Query Packages currently in downloads
-     * 
+     *
      * Example: http://localhost:3128/downloads/queryPackages?{"saveTo":true,"childCount":true,"hosts":true,"startAt":0,"maxResults":10}
      * Optionally you can query only certian packages:
      * http://localhost:3128/downloads/queryPackages?{"packageUUIDs":[1358496436106,1358496436107]}
-     * 
+     *
      * Default fields returned: name, uuid
-     * 
+     *
      * @param queryParams
      *            Hashmap with the following allowed values:
-     * 
+     *
      *            Optional selectors: startAt, Integer, index of first element to be returned maxResults, Integer, total number of elements
      *            to be returned
-     * 
+     *
      *            Optional fields (Boolean): saveTo size childCount hosts done comment enabled
-     * 
+     *
      * @return
      */
 
     List<FilePackageAPIStorableV2> queryPackages(PackageQueryStorable queryParams) throws BadParameterException;
 
-    void removeLinks(final long[] linkIds, final long[] packageIds);
+    void removeLinks(final long[] linkIds, final long[] packageIds) throws BadParameterException;
 
     void renamePackage(Long packageId, String newName);
 
@@ -53,7 +54,7 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
     /**
      * Returns the new Counter if the counter does not equal oldCounterValue If the value changed, we should update the structure. Use this
      * method to check whether a structure update is required or not
-     * 
+     *
      * @param oldCounterValue
      * @return
      */
@@ -65,22 +66,22 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
 
     /**
      * Query Packages links in downloads
-     * 
+     *
      * Example:
      * http://localhost:3128/downloads/queryLinks?{"packageUUIDs":[1358496436106,1358496436107],"enabled":true,"size":true,"host":true
      * ,"startAt":0,"maxResults":10}
-     * 
+     *
      * Default fields returned: name, uuid, packageUUID
-     * 
+     *
      * @param queryParams
      *            Hashmap with the following allowed values:
-     * 
+     *
      *            Optional selectors: packageUUIDs, long[], links contained in the packages with given uuids are returned, if empty all
      *            links are returned startAt, Integer, index of first element to be returned maxResults, Integer, total number of elements
      *            to be returned
-     * 
+     *
      *            Optional fields (Boolean): host size done enabled
-     * 
+     *
      * @return
      */
     List<DownloadLinkAPIStorableV2> queryLinks(LinkQueryStorable queryParams) throws BadParameterException;
@@ -92,5 +93,13 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
     void setDownloadDirectory(String directory, long[] packageIds);
 
     DownloadLinkAPIStorableV2 getStopMarkedLink();
+
+    void startOnlineStatusCheck(long[] linkIds, long[] packageIds) throws BadParameterException;
+
+    HashMap<Long, String> getDownloadUrls(long[] linkIds, long[] packageIds);
+
+    void movetoNewPackage(long[] linkIds, long[] pkgIds, String newPkgName, String downloadPath) throws BadParameterException;
+
+    void splitPackageByHoster(long[] linkIds, long[] pkgIds);
 
 }
