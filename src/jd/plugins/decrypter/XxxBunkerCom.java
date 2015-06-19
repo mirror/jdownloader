@@ -29,6 +29,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.StringUtils;
+
 //EmbedDecrypter 0.1
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxbunker.com" }, urls = { "http://(www\\.)?xxxbunker\\.com/[a-z0-9_\\-]+" }, flags = { 0 })
 public class XxxBunkerCom extends PluginForDecrypt {
@@ -142,7 +144,9 @@ public class XxxBunkerCom extends PluginForDecrypt {
         }
         if (externID != null) {
             externID = Encoding.deepHtmlDecode(externID);
-            externID = Encoding.Base64Decode(externID);
+            if (!StringUtils.startsWithCaseInsensitive(externID, "http")) {
+                externID = Encoding.Base64Decode(externID);
+            }
             externID2 = new Regex(externID, "(\\d+)\\.x\\.xvideos\\.com/").getMatch(0);
             if (externID2 != null) {
                 decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID2));
