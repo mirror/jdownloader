@@ -40,7 +40,6 @@ import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashInfo.TYPE;
 import jd.plugins.download.HashResult;
-import jd.plugins.download.raf.OldRAFDownload;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/(?:(?:(?:iframe|cdn|view)\\.php)?\\?ref=|validatehash\\.php\\?hashkey=)[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoMegaTv extends antiDDoSForHost {
@@ -222,29 +221,27 @@ public class VideoMegaTv extends antiDDoSForHost {
             final Downloadable downloadable = dl.getDownloadable();
             final File file = new File(downloadable.getFileOutput());
             if (file.exists()) {
-                synchronized (OldRAFDownload.HASHCHECKLOCK) {
-                    final HashInfo hashInfo = new HashInfo("808bb651cc72adc7f91fb443bf11d3fa", TYPE.MD5);
-                    final HashResult result = downloadable.getHashResult(hashInfo, file);
-                    if (result.match()) {
-                        // set as offline
-                        downloadLink.setProperty("offlineByHash", true);
-                        // delete method
-                        downloadLink.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
+                final HashInfo hashInfo = new HashInfo("808bb651cc72adc7f91fb443bf11d3fa", TYPE.MD5);
+                final HashResult result = downloadable.getHashResult(hashInfo, file);
+                if (result.match()) {
+                    // set as offline
+                    downloadLink.setProperty("offlineByHash", true);
+                    // delete method
+                    downloadLink.getDownloadLinkController().getJobsAfterDetach().add(new DownloadWatchDogJob() {
 
-                            @Override
-                            public void interrupt() {
-                            }
+                        @Override
+                        public void interrupt() {
+                        }
 
-                            @Override
-                            public void execute(DownloadSession currentSession) {
-                                final ArrayList<DownloadLink> delete = new ArrayList<DownloadLink>();
-                                delete.add(downloadLink);
-                                DownloadWatchDog.getInstance().delete(delete, null);
-                            }
-                        });
-                        // not set as offline! have to throw exception!!
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
+                        @Override
+                        public void execute(DownloadSession currentSession) {
+                            final ArrayList<DownloadLink> delete = new ArrayList<DownloadLink>();
+                            delete.add(downloadLink);
+                            DownloadWatchDog.getInstance().delete(delete, null);
+                        }
+                    });
+                    // not set as offline! have to throw exception!!
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
         }

@@ -44,6 +44,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
@@ -59,6 +60,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.DownloadPluginProgress;
+import org.jdownloader.plugins.HashCheckPluginProgress;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.settings.GeneralSettings;
@@ -67,7 +69,6 @@ import org.jdownloader.updatev2.InternetConnectionSettings;
 
 public class OldRAFDownload extends DownloadInterface {
 
-    public static final Object                  HASHCHECKLOCK            = new Object();
     private RandomAccessFile                    outputPartFileRaf;
     private File                                outputCompleteFile;
     private File                                outputFinalCompleteFile;
@@ -773,6 +774,56 @@ public class OldRAFDownload extends DownloadInterface {
         this.requestTimeout = requestTimeout;
     }
 
+    public static final ArrayList<AtomicBoolean> HASHCHECK_QEUEU = new ArrayList<AtomicBoolean>();
+
+    protected HashResult getHashResult(File file) throws InterruptedException {
+        if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled() && downloadable.isHashCheckEnabled()) {
+            AtomicBoolean hashCheckLock = new AtomicBoolean(false);
+            synchronized (HASHCHECK_QEUEU) {
+                HASHCHECK_QEUEU.add(hashCheckLock);
+                hashCheckLock.set(HASHCHECK_QEUEU.indexOf(hashCheckLock) != 0);
+            }
+            try {
+                if (hashCheckLock.get()) {
+                    synchronized (hashCheckLock) {
+                        if (hashCheckLock.get()) {
+                            final PluginProgress hashProgress = new HashCheckPluginProgress(null, Color.YELLOW.darker().darker(), null);
+                            try {
+                                downloadable.addPluginProgress(hashProgress);
+                                hashCheckLock.wait();
+                            } finally {
+                                downloadable.removePluginProgress(hashProgress);
+                            }
+                        }
+                    }
+                }
+                HashInfo hashInfo = downloadable.getHashInfo();
+                HashResult hashResult = downloadable.getHashResult(hashInfo, file);
+                if (hashResult != null) {
+                    logger.info(hashResult.toString());
+                }
+                return hashResult;
+            } finally {
+                synchronized (HASHCHECK_QEUEU) {
+                    boolean callNext = HASHCHECK_QEUEU.indexOf(hashCheckLock) == 0;
+                    HASHCHECK_QEUEU.remove(hashCheckLock);
+                    if (HASHCHECK_QEUEU.size() > 0 && callNext) {
+                        hashCheckLock = HASHCHECK_QEUEU.get(0);
+                    } else {
+                        hashCheckLock = null;
+                    }
+                }
+                if (hashCheckLock != null) {
+                    synchronized (hashCheckLock) {
+                        hashCheckLock.set(false);
+                        hashCheckLock.notifyAll();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     protected HashResult onChunksReady() throws Exception {
         logger.info("Close connections if they are not closed yet");
         HashResult result = null;
@@ -786,18 +837,15 @@ public class OldRAFDownload extends DownloadInterface {
         if (!handleErrors()) {
             return result;
         }
-        /* lets check the hash/crc/sfv */
-        if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled() && downloadable.isHashCheckEnabled()) {
-            synchronized (HASHCHECKLOCK) {
-                /*
-                 * we only want one hashcheck running at the same time. many finished downloads can cause heavy diskusage here
-                 */
-                HashInfo hashInfo = downloadable.getHashInfo();
-                result = downloadable.getHashResult(hashInfo, outputPartFile);
-                downloadable.setHashResult(result);
+        final HashResult hashResult = getHashResult(outputPartFile);
+        downloadable.setHashResult(hashResult);
+        if (hashResult == null || hashResult.match()) {
+            downloadable.setVerifiedFileSize(outputPartFile.length());
+        } else {
+            if (hashResult.getHashInfo().isTrustworthy()) {
+                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.system_download_doCRC2_failed(hashResult.getHashInfo().getType()));
             }
         }
-        downloadable.setVerifiedFileSize(outputPartFile.length());
         boolean renameOkay = downloadable.rename(outputPartFile, outputCompleteFile);
         if (renameOkay) {
 

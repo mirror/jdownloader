@@ -10,7 +10,6 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashResult;
-import jd.plugins.download.raf.OldRAFDownload;
 
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
@@ -34,12 +33,10 @@ public class RunCheckSumAction extends CustomizableTableContextAppAction<FilePac
                     protected Void run() throws RuntimeException {
                         final File file = new File(downloadable.getFileOutput());
                         if (file.exists()) {
-                            synchronized (OldRAFDownload.HASHCHECKLOCK) {
-                                final HashInfo hashInfo = downloadable.getHashInfo();
-                                final HashResult result = downloadable.getHashResult(hashInfo, file);
-                                if (result != null) {
-                                    downloadLink.setFinalLinkState(result.getFinalLinkState());
-                                }
+                            final HashInfo hashInfo = downloadable.getHashInfo();
+                            final HashResult result = downloadable.getHashResult(hashInfo, file);
+                            if (result != null) {
+                                downloadLink.setFinalLinkState(result.getFinalLinkState());
                             }
                         }
                         return null;

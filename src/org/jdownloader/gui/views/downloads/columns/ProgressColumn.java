@@ -37,7 +37,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
     private int               big;
@@ -94,13 +94,13 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
 
         return new PanelToolTip(panel) {
             /**
-             * 
+             *
              */
             private static final long serialVersionUID = 1036923322222455495L;
             private Timer             timer;
 
             /**
-             * 
+             *
              */
             public void onShow() {
                 this.timer = new Timer(1000, new ActionListener() {
@@ -115,7 +115,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
             }
 
             /**
-             * 
+             *
              */
             public void onHide() {
                 timer.stop();
@@ -221,7 +221,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return 100;
             } else {
                 if (view.getUnknownFileSizes() > 0) {
-                    return view.getChildren();
+                    return view.size();
                 }
                 return Math.max(0, view.getSize());
             }
