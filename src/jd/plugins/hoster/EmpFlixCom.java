@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,10 +30,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "empflix.com" }, urls = { "http://(www\\.)?empflix\\.com/(view\\.php\\?id=\\d+|videos/.*?\\-\\d+\\.html)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "empflix.com" }, urls = { "http://(www\\.)?empflix\\.com/(view\\.php\\?id=\\d+|videos/.*?\\-\\d+\\.html)|https?://(?:www\\.)?empflix\\.com/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+|https?://player\\.empflix\\.com/video/\\d+" }, flags = { 0 })
 public class EmpFlixCom extends PluginForHost {
 
-    private String DLLINK = null;
+    private String              DLLINK                = null;
+
+    private static final String TYPE_NORMAL           = "https?://(?:www\\.)?empflix\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)";
+    private static final String TYPE_embed            = "https?://player\\.empflix\\.com/video/\\d+";
+    private static final String TYPE_embedding_player = "https?://(?:www\\.)?empflix\\.com/embedding_player/embedding_feed\\.php\\?viewkey=[a-z0-9]+";
 
     public EmpFlixCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,15 +53,13 @@ public class EmpFlixCom extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        final String addedlink = link.getDownloadURL();
+        if (addedlink.matches(TYPE_embed)) {
+            final String fid = new Regex(addedlink, "(\\d+)$").getMatch(0);
+            link.setUrlDownload("http://www.empflix.com/videos/xyz-" + fid + ".html");
         }
-        dl.startDownload();
     }
 
     @SuppressWarnings("deprecation")
@@ -64,6 +67,20 @@ public class EmpFlixCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        if (downloadLink.getDownloadURL().matches(TYPE_embedding_player)) {
+            /* Convert embed urls --> Original urls */
+            br.getPage(downloadLink.getDownloadURL().replace("http://", "https://"));
+            String videoID = br.getRegex("start_thumb>https?://static\\.empflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg<").getMatch(0);
+            if (videoID == null) {
+                videoID = br.getRegex("<start_thumb><\\!\\[CDATA\\[https?://static\\.empflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg\\]\\]></start_thumb>").getMatch(0);
+            }
+            if (videoID == null) {
+                /* Either plugin broken or link offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String newlink = "http://www.empflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + videoID;
+            downloadLink.setUrlDownload(newlink);
+        }
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(Error: Sorry, the movie you requested was not found|Check this hot video instead:</div>)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -118,6 +135,17 @@ public class EmpFlixCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

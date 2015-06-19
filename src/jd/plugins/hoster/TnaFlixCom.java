@@ -75,6 +75,54 @@ public class TnaFlixCom extends PluginForHost {
         return 18;
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCookie("http://tnaflix.com/", "content_filter2", "type%3Dstraight%26filter%3Dcams");
+        br.setCookie("http://tnaflix.com/", "content_filter3", "type%3Dstraight%2Ctranny%2Cgay%26filter%3Dcams");
+        if (downloadLink.getDownloadURL().matches(TYPE_embedding_player)) {
+            /* Convert embed urls --> Original urls */
+            br.getPage(downloadLink.getDownloadURL().replace("http://", "https://"));
+            String videoID = br.getRegex("start_thumb>https?://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg<").getMatch(0);
+            if (videoID == null) {
+                videoID = br.getRegex("<start_thumb><\\!\\[CDATA\\[https?://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg\\]\\]></start_thumb>").getMatch(0);
+            }
+            if (videoID == null) {
+                /* Either plugin broken or link offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String newlink = "http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + videoID;
+            downloadLink.setUrlDownload(newlink);
+        }
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("class=\"errorPage page404\"|> This video is set to private")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String redirect = br.getRedirectLocation();
+        if (redirect != null) {
+            if (redirect.contains("errormsg=true")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (redirect.contains("video")) {
+                downloadLink.setUrlDownload(br.getRedirectLocation());
+            }
+            br.getPage(redirect);
+        }
+        String filename = br.getRegex("<title>([^<>]*?) \\- TNAFlix Porn Videos</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = Encoding.htmlDecode(filename).trim();
+        filename = encodeUnicode(filename);
+        downloadLink.setFinalFileName(filename + ".mp4");
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -122,54 +170,6 @@ public class TnaFlixCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCookie("http://tnaflix.com/", "content_filter2", "type%3Dstraight%26filter%3Dcams");
-        br.setCookie("http://tnaflix.com/", "content_filter3", "type%3Dstraight%2Ctranny%2Cgay%26filter%3Dcams");
-        if (downloadLink.getDownloadURL().matches(TYPE_embedding_player)) {
-            /* Convert embed urls --> Original urls */
-            br.getPage(downloadLink.getDownloadURL().replace("http://", "https://"));
-            String videoID = br.getRegex("start_thumb>https?://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg<").getMatch(0);
-            if (videoID == null) {
-                videoID = br.getRegex("<start_thumb><\\!\\[CDATA\\[https?://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg\\]\\]></start_thumb>").getMatch(0);
-            }
-            if (videoID == null) {
-                /* Either plugin broken or link offline */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final String newlink = "http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + videoID;
-            downloadLink.setUrlDownload(newlink);
-        }
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("class=\"errorPage page404\"|> This video is set to private")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String redirect = br.getRedirectLocation();
-        if (redirect != null) {
-            if (redirect.contains("errormsg=true")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (redirect.contains("video")) {
-                downloadLink.setUrlDownload(br.getRedirectLocation());
-            }
-            br.getPage(redirect);
-        }
-        String filename = br.getRegex("<title>([^<>]*?) \\- TNAFlix Porn Videos</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = Encoding.htmlDecode(filename).trim();
-        filename = encodeUnicode(filename);
-        downloadLink.setFinalFileName(filename + ".mp4");
-        return AvailableStatus.TRUE;
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
