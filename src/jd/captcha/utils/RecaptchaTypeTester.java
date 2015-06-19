@@ -46,8 +46,8 @@ public class RecaptchaTypeTester {
 
     private static final boolean DEBUG_IMAGE = false;
 
-    private static double        TRESHOLD    = 0.4;
-    private static int           RADIUS      = 20;
+    private static double        TRESHOLD    = 0.6;
+    private static int           RADIUS      = 16;
 
     public static void main(String[] args) throws IOException {
 
@@ -63,8 +63,8 @@ public class RecaptchaTypeTester {
             }
         }
 
-        RADIUS = 18;
-        TRESHOLD = 0.675;
+        RADIUS = 16;
+        TRESHOLD = 0.6;
         int bad = 0;
         int good = 0;
 
@@ -80,6 +80,7 @@ public class RecaptchaTypeTester {
                 } else {
                     // System.out.println("BAD");
                     bad++;
+
                 }
                 boolean hasName = false;
                 for (RecaptchaType t : RecaptchaType.values()) {
@@ -103,23 +104,80 @@ public class RecaptchaTypeTester {
         }
     }
 
-    public static void main2(String[] args) throws IOException, DialogClosedException, DialogCanceledException {
+    public static void main22(String[] args) {
+        File folder = new File("G:\\recaptchas");
+
+        RADIUS = 16;
+        TRESHOLD = 0.6d;
+        int bad = 0;
+        int good = 0;
+
+        for (File file : folder.listFiles()) {
+            RecaptchaType type = null;
+            for (RecaptchaType tt : RecaptchaType.values()) {
+                if (file.getName().startsWith(tt.name())) {
+                    type = tt;
+                    break;
+
+                }
+            }
+            if (type == null) {
+                continue;
+            }
+            if (file.isFile() && file.getName().endsWith(".jpg") && file.getName().contains("TWO_")) {
+                RecaptchaType detectedType = getType(file);
+                // System.out.println(type);
+                if (detectedType == type) {
+                    // System.out.println("OK");
+                    good++;
+                } else {
+                    // System.out.println("BAD");
+                    bad++;
+                    System.out.println(file);
+                }
+                // File copyTp = new File(file.getParentFile(), type + "/" + type + "_" + file.getName());
+                // copyTp.getParentFile().mkdirs();
+                // IO.copyFile(file, copyTp);
+                // Dialog.getInstance().showConfirmDialog(0, file + "", "Test " + type, new ImageIcon(ImageIO.read(file)), null,
+                // null);
+
+            }
+
+        }
+
+        double quality = (double) good / (good + bad);
+        System.out.println("Run t \t" + TRESHOLD + " r \t" + RADIUS + "  \t" + quality + " \t Bad: " + bad);
+
+    }
+
+    public static void main321(String[] args) throws IOException, DialogClosedException, DialogCanceledException {
         File folder = new File("G:\\recaptchas");
 
         double bestq = 0;
-        for (int r = 15; r < 21; r += 1) {
+        for (int r = 15; r < 18; r += 1) {
 
-            for (int t = 500; t < 1000; t += 25) {
+            for (int t = 600; t < 1000; t += 25) {
                 RADIUS = r;
                 TRESHOLD = (double) t / 1000;
                 int bad = 0;
                 int good = 0;
 
                 for (File file : folder.listFiles()) {
+                    RecaptchaType type = null;
+                    for (RecaptchaType tt : RecaptchaType.values()) {
+                        if (file.getName().startsWith(tt.name())) {
+                            type = tt;
+                            break;
+
+                        }
+                    }
+                    if (type == null) {
+                        continue;
+                    }
                     if (file.isFile() && file.getName().endsWith(".jpg") && file.getName().contains("TWO_")) {
-                        RecaptchaType type = getType(file);
+                        RecaptchaType detectedType = getType(file);
                         // System.out.println(type);
-                        if (file.getName().startsWith(type.name())) {
+                        if (detectedType == type) {
                             // System.out.println("OK");
                             good++;
                         } else {
@@ -140,7 +198,7 @@ public class RecaptchaTypeTester {
                 System.out.println("Run t \t" + TRESHOLD + " r \t" + RADIUS + "  \t" + quality);
                 if (quality > bestq) {
                     bestq = quality;
-                    System.out.println("New Best QUality at Tresh \t" + TRESHOLD + " radius \t" + RADIUS + "  \t" + quality);
+                    System.out.println("New Best QUality Bad: " + bad);
                 }
 
             }
