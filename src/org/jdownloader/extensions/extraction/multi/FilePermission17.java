@@ -11,7 +11,7 @@ public class FilePermission17 {
 
     public static void setFilePermission(final File file, final FilePermissionSet filePermissionSet) throws IOException {
         if (file != null && file.exists() && filePermissionSet != null) {
-            if (CrossSystem.isLinux() || CrossSystem.isMac()) {
+            if (CrossSystem.isUnix() || CrossSystem.isMac()) {
                 final Set<java.nio.file.attribute.PosixFilePermission> permissions = new HashSet<java.nio.file.attribute.PosixFilePermission>();
                 // add owners permission
                 if (filePermissionSet.isUserRead()) {

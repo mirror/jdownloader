@@ -45,7 +45,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     private static final long            serialVersionUID = -204494527404304349L;
     private GeneralSettingsConfigPanel   cfg;
 
-    private ReconnectConfigPanel            rcs;
+    private ReconnectConfigPanel         rcs;
     private ProxyConfig                  pc;
     private AccountManagerSettings       ams;
     private BasicAuthentication          ba;
@@ -441,7 +441,8 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
                                         if (CrossSystem.isWindows() && !plg.isWindowsRunnable()) {
                                             continue;
                                         }
-                                        if (CrossSystem.isLinux() && !plg.isLinuxRunnable()) {
+                                        if (CrossSystem.isUnix() && !plg.isLinuxRunnable()) {
+                                            /* TODO: add own isBSD runnable or better provide the CrossSytem enum */
                                             continue;
                                         }
                                         if (CrossSystem.isMac() && !plg.isMacRunnable()) {

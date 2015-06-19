@@ -490,7 +490,7 @@ public class ClipboardMonitoring {
         if (StringUtils.isEmpty(charSet)) {
             charSet = "UTF-8";
         }
-        if (CrossSystem.isLinux()) {
+        if (CrossSystem.isUnix()) {
             /*
              * workaround for firefox bug https://bugzilla .mozilla.org/show_bug .cgi?id=385421
              */

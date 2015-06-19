@@ -125,7 +125,7 @@ public class Multi extends IExtraction {
     }
 
     public void setPermissions(ISimpleInArchiveItem item, File extractTo) {
-        if ((CrossSystem.isLinux() || CrossSystem.isMac())) {
+        if ((CrossSystem.isUnix() || CrossSystem.isMac())) {
             if (getConfig().isRestoreFilePermissions() && item != null && extractTo != null && extractTo.exists()) {
                 try {
                     FilePermissionSet filePermissionSet = null;
@@ -188,7 +188,7 @@ public class Multi extends IExtraction {
         if (CrossSystem.isRaspberryPi()) {
             return true;
         }
-        if (CrossSystem.isLinux() && ARCHFamily.ARM.equals(CrossSystem.getARCHFamily())) {
+        if (CrossSystem.isUnix() && ARCHFamily.ARM.equals(CrossSystem.getARCHFamily())) {
             FileInputStream fis = null;
             try {
                 fis = new FileInputStream("/proc/cpuinfo");
@@ -275,6 +275,8 @@ public class Multi extends IExtraction {
             return initLibrary(customLibID);
         }
         switch (CrossSystem.OS.getFamily()) {
+        case BSD:
+            /* Unsure if this works at all */
         case LINUX:
             switch (CrossSystem.getARCHFamily()) {
             case ARM:

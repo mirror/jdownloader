@@ -326,7 +326,7 @@ public class SecondLevelLaunch {
             // Must be in Main
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JDownloader");
             SecondLevelLaunch.initMACProperties();
-        } else if (CrossSystem.isLinux()) {
+        } else if (CrossSystem.isUnix()) {
             // set WM Class explicitly
             try {
                 if (!org.appwork.utils.Application.isHeadless()) {
@@ -406,7 +406,7 @@ public class SecondLevelLaunch {
             IO.setErrorHandler(null);
             if (maxHeap > 0 && maxHeap <= 100 * 1024 * 1024) {
                 SecondLevelLaunch.LOG.warning("WARNING: MaxMemory detected! MaxMemory=" + maxHeap + " bytes");
-                if (CrossSystem.isWindows() || CrossSystem.isLinux()) {
+                if (CrossSystem.isWindows() || CrossSystem.isUnix()) {
                     java.lang.management.RuntimeMXBean runtimeMxBean = java.lang.management.ManagementFactory.getRuntimeMXBean();
                     List<String> arguments = runtimeMxBean.getInputArguments();
                     boolean xmxArgFound = false;
