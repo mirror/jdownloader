@@ -236,7 +236,7 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
                         break;
                     case SOLVED:
                         job.getLogger().info(this + "my.jdownloader.org Answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s: " + ret);
-                        job.setAnswer(new CaptchaMyJDCESResponse(challenge, this, solution.getResponse(), 100, solution));
+                        job.setAnswer(new CaptchaMyJDCESResponse(challenge, this, solution.getResponse(), 90, solution));
                         return;
                     }
                     checkInterruption();

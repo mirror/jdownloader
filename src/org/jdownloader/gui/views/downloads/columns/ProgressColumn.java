@@ -221,7 +221,9 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return 100;
             } else {
                 if (view.getUnknownFileSizes() > 0) {
+
                     return view.size();
+
                 }
                 return Math.max(0, view.getSize());
             }

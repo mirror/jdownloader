@@ -70,20 +70,4 @@ public abstract class AreYouAHumanChallenge extends AbstractBrowserChallenge {
             throw new WTFException(e);
         }
     }
-
-    /**
-     * Used to validate result against expected pattern. <br />
-     * This is different to AbstractBrowserChallenge.isSolved, as we don't want to throw the same error exception.
-     *
-     * @param result
-     * @return
-     * @author raztoki
-     */
-    protected final boolean isCaptchaResponseValid() {
-        if (isSolved() && getResult().getValue().matches("[\\w-]{30,}")) {
-            return true;
-        }
-        return false;
-    }
-
 }

@@ -27,9 +27,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 
-import javax.imageio.ImageIO;
-
 import jd.PluginWrapper;
+import jd.captcha.utils.RecaptchaTypeTester;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
@@ -106,8 +105,8 @@ public class DirectHTTP extends PluginForHost {
                 FileInputStream is = null;
                 try {
                     is = new FileInputStream(captchaFile);
-                    int type = ImageIO.read(is).getType();
-                    track("captcha/rc/imagetype/" + type + "/" + helperID);
+
+                    track("captcha/rc/imagetype/" + RecaptchaTypeTester.getType(captchaFile) + "/" + helperID);
 
                 } catch (IOException e) {
                     track("captcha/rc/imagetype/" + e.getMessage() + "/" + helperID);
@@ -1090,7 +1089,7 @@ public class DirectHTTP extends PluginForHost {
 
     /**
      * update this map to your needs
-     *
+     * 
      * @param mimeType
      * @return
      */

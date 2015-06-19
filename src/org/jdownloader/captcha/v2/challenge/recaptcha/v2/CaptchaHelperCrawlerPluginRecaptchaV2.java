@@ -82,7 +82,8 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
                 }
             }
         };
-        c.setTimeout(plugin.getCaptchaTimeout());
+        int ct = plugin.getCaptchaTimeout();
+        c.setTimeout(ct);
         plugin.invalidateLastChallengeResponse();
         final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
         if (blackListEntry != null) {
@@ -91,13 +92,6 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
         }
         try {
             ChallengeResponseController.getInstance().handle(c);
-            if (!c.isSolved()) {
-                throw new DecrypterException(DecrypterException.CAPTCHA);
-            }
-            if (!c.isCaptchaResponseValid()) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Captcha reponse value did not validate!");
-            }
-            return c.getResult().getValue();
         } catch (InterruptedException e) {
             LogSource.exception(logger, e);
             throw e;
@@ -114,7 +108,8 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
                 CaptchaBlackList.getInstance().add(new BlockCrawlerCaptchasByPackage(plugin.getCrawler(), plugin.getCurrentLink()));
                 break;
             case REFRESH:
-                break;
+                // refresh is not supported from the pluginsystem right now.
+                return "";
             case STOP_CURRENT_ACTION:
                 if (Thread.currentThread() instanceof LinkCrawlerThread) {
                     LinkCollector.getInstance().abort();
@@ -127,6 +122,10 @@ public class CaptchaHelperCrawlerPluginRecaptchaV2 extends AbstractCaptchaHelper
             }
             throw new CaptchaException(e.getSkipRequest());
         }
+        if (!c.isSolved()) {
+            throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
+        return c.getResult().getValue();
     }
 
 }

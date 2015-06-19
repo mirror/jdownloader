@@ -16,6 +16,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.captcha.v2.ChallengeSolverConfig;
 import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolverService;
+import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzSolverService;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
@@ -135,6 +136,7 @@ public class CaptchaAPIManualRemoteSolverService extends AbstractSolverService {
         ret.put(CBSolverService.ID, 120000);
         ret.put(DeathByCaptchaSolverService.ID, 60000);
         ret.put(ImageTyperzSolverService.ID, 60000);
+        ret.put(CheapCaptchaSolverService.ID, 60000);
 
         return ret;
     }
