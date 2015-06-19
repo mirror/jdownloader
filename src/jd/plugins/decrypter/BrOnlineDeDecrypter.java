@@ -87,9 +87,11 @@ public class BrOnlineDeDecrypter extends PluginForDecrypt {
             return null;
         }
         br.getPage("http://www.br.de" + player_link);
-        String plain_name = this.getXML("shareTitle", br.toString());
+        final String date = getXML("broadcastDate");
+        final String show = getXML("broadcast");
+        String plain_name = this.getXML("shareTitle");
         final String[] qualities = br.getRegex("<asset type=(.*?)</asset>").getColumn(0);
-        if (qualities == null || qualities.length == 0 || plain_name == null) {
+        if (qualities == null || qualities.length == 0 || plain_name == null || date == null || show == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
@@ -101,17 +103,17 @@ public class BrOnlineDeDecrypter extends PluginForDecrypt {
         }
 
         for (final String qinfo : qualities) {
-            final String final_url = this.getXML("downloadUrl", qinfo);
+            final String final_url = this.getXML(qinfo, "downloadUrl");
             /* Avoid HDS */
             if (final_url == null) {
                 continue;
             }
             final String q_string = new Regex(final_url, "_(0|A|B|C|D|E)\\.mp4").getMatch(0);
-            final String width = this.getXML("frameWidth", qinfo);
-            final String height = this.getXML("frameHeight", qinfo);
-            final String fsize = this.getXML("size", qinfo);
+            final String width = this.getXML(qinfo, "frameWidth");
+            final String height = this.getXML(qinfo, "frameHeight");
+            final String fsize = this.getXML(qinfo, "size");
             final String resolution = width + "x" + height;
-            final String final_video_name = plain_name + "_" + resolution + ".mp4";
+            final String final_video_name = date + "_br_" + show + " - " + plain_name + "_" + resolution + ".mp4";
             final DownloadLink dl_video = createDownloadlink("http://brdecrypted-online.de/?format=mp4&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
             dl_video.setProperty("mainlink", parameter);
             dl_video.setProperty("direct_link", final_url);
@@ -176,7 +178,7 @@ public class BrOnlineDeDecrypter extends PluginForDecrypt {
             if (keep != null) {
                 /* Add subtitle link for every quality so players will automatically find it */
                 if (grab_subtitle && subtitle_url != null) {
-                    final String subtitle_filename = plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
+                    final String subtitle_filename = date + "_br_" + show + " - " + plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
                     final String resolution = keep.getStringProperty("plain_resolution", null);
                     final DownloadLink dl_subtitle = createDownloadlink("http://brdecrypted-online.de/?format=xml&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
                     dl_subtitle.setProperty("mainlink", parameter);
@@ -191,7 +193,7 @@ public class BrOnlineDeDecrypter extends PluginForDecrypt {
             }
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(plain_name);
+        fp.setName(date + "_br_" + show + " - " + plain_name);
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
@@ -212,8 +214,16 @@ public class BrOnlineDeDecrypter extends PluginForDecrypt {
         return output;
     }
 
-    private String getXML(final String parameter, final String source) {
-        return new Regex(source, "<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>]*?)</" + parameter + ">").getMatch(1);
+    private String getXML(final String source, final String parameter) {
+        String result = new Regex(source, "<" + parameter + "><\\!\\[CDATA\\[([^<>\"]*?)\\]\\]></" + parameter + ">").getMatch(0);
+        if (result == null) {
+            result = new Regex(source, "<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>]*?)</" + parameter + ">").getMatch(1);
+        }
+        return result;
+    }
+
+    private String getXML(final String parameter) {
+        return getXML(this.br.toString(), parameter);
     }
 
     /* NO OVERRIDE!! */

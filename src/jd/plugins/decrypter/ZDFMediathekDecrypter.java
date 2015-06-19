@@ -35,23 +35,24 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdfmediathek.de", "phoenix.de" }, urls = { "http://(www\\.)?zdf\\.de/ZDFmediathek#?/[^<>\"]*?beitrag/video/\\d+(?:.+)?", "https?://(?:www\\.)?phoenix\\.de/content/\\d+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdfmediathek.de", "phoenix.de" }, urls = { "http://(www\\.)?zdf\\.de/ZDFmediathek#?/[^<>\"]*?beitrag/video/\\d+(?:.+)?", "https?://(?:www\\.)?phoenix\\.de/content/\\d+|http://(?:www\\.)?phoenix\\.de/podcast/runde/video/rss\\.xml" }, flags = { 0, 0 })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
-    private static final String   Q_SUBTITLES        = "Q_SUBTITLES";
-    private static final String   Q_BEST             = "Q_BEST";
-    private static final String   Q_LOW              = "Q_LOW";
-    private static final String   Q_HIGH             = "Q_HIGH";
-    private static final String   Q_VERYHIGH         = "Q_VERYHIGH";
-    private static final String   Q_HD               = "Q_HD";
-    private boolean               BEST               = false;
+    private static final String Q_SUBTITLES        = "Q_SUBTITLES";
+    private static final String Q_BEST             = "Q_BEST";
+    private static final String Q_LOW              = "Q_LOW";
+    private static final String Q_HIGH             = "Q_HIGH";
+    private static final String Q_VERYHIGH         = "Q_VERYHIGH";
+    private static final String Q_HD               = "Q_HD";
+    private boolean             BEST               = false;
 
-    final ArrayList<DownloadLink> decryptedLinks     = new ArrayList<DownloadLink>();
-    private String                PARAMETER          = null;
-    private String                PARAMETER_ORIGINAL = null;
+    ArrayList<DownloadLink>     decryptedLinks     = new ArrayList<DownloadLink>();
+    private String              PARAMETER          = null;
+    private String              PARAMETER_ORIGINAL = null;
 
-    private static final String   TYPE_PHOENIX       = "https?://(?:www\\.)?phoenix\\.de/content/\\d+";
-    private static final String   TYPE_ZDF           = "http://(www\\.)?zdf\\.de/ZDFmediathek#?/[^<>\"]*?beitrag/video/\\d+(?:.+)?";
+    private static final String TYPE_PHOENIX       = "https?://(?:www\\.)?phoenix\\.de/content/\\d+";
+    private static final String TYPE_PHOENIX_RSS   = "http://(?:www\\.)?phoenix\\.de/podcast/runde/video/rss\\.xml";
+    private static final String TYPE_ZDF           = "http://(www\\.)?zdf\\.de/ZDFmediathek#?/[^<>\"]*?beitrag/video/\\d+(?:.+)?";
 
     public ZDFMediathekDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -79,9 +80,12 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(PARAMETER_ORIGINAL));
             return decryptedLinks;
         }
-
-        BEST = cfg.getBooleanProperty(Q_BEST, false);
-        getDownloadLinks(cfg);
+        if (PARAMETER_ORIGINAL.matches(TYPE_PHOENIX_RSS)) {
+            decryptPhoenixRSS();
+        } else {
+            BEST = cfg.getBooleanProperty(Q_BEST, false);
+            getDownloadLinks(cfg);
+        }
 
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.warning("Decrypter out of date for link: " + PARAMETER);
@@ -90,25 +94,50 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private boolean isStableEnviroment() {
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
+    private void decryptPhoenixRSS() {
+        final String date_general = getXML("pubDate");
+        String title_general = getXML("title");
+        final String[] items = br.getRegex("<item>(.*?)</item>").getColumn(0);
+        if (items == null || items.length == 0 || title_general == null || date_general == null) {
+            this.decryptedLinks = null;
+            return;
         }
-        final int rev = Integer.parseInt(prev);
-        if (rev < 10000) {
-            return true;
+        final String fpname = encodeUnicode(date_general + "_" + title_general);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(fpname);
+        for (final String item : items) {
+            final String url = getXML(item, "guid");
+            final String title = getXML(item, "title");
+            final String description = getXML(item, "description");
+            final String date = getXML(item, "pubDate");
+            final String tvstation = getXML(item, "itunes:author");
+            final String filesize = new Regex(item, "length=\\'(\\d+)\\'").getMatch(0);
+            if (url == null || title == null || date == null || tvstation == null || filesize == null) {
+                this.decryptedLinks = null;
+                return;
+            }
+            final DownloadLink dl = this.createDownloadlink("directhttp://" + url);
+            String final_filename = date + "_" + tvstation + "_" + title + ".mp4";
+            final_filename = encodeUnicode(final_filename);
+            if (description != null) {
+                dl.setComment(description);
+            }
+            dl.setProperty("date", date);
+            dl.setFinalFileName(final_filename);
+            dl.setDownloadSize(Long.parseLong(filesize));
+            dl.setAvailable(true);
+            this.decryptedLinks.add(dl);
         }
-        return false;
+        fp.addLinks(decryptedLinks);
     }
 
     @SuppressWarnings("deprecation")
     private ArrayList<DownloadLink> getDownloadLinks(final SubConfiguration cfg) {
         final boolean grabSubtitles = cfg.getBooleanProperty(Q_SUBTITLES, false);
+        String date = null;
         String id = null;
         String title = null;
+        String show = null;
         String subtitleURL = null;
         String subtitleInfo = null;
         String decrypterurl = null;
@@ -147,7 +176,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
 
+            date = getXML("airtime");
             title = getTitle(br);
+            show = this.getXML("originChannelTitle");
             String extension = ".mp4";
             subtitleInfo = br.getRegex("<caption>(.*?)</caption>").getMatch(0);
             if (subtitleInfo != null) {
@@ -156,6 +187,10 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             if (br.getRegex("new MediaCollection\\(\"audio\",").matches()) {
                 extension = ".mp3";
             }
+            if (date == null || title == null || show == null) {
+                return null;
+            }
+
             final Browser br2 = br.cloneBrowser();
             final String[][] downloads = br2.getRegex("<formitaet basetype=\"([^\"]+)\" isDownload=\"[^\"]+\">(.*?)</formitaet>").getMatches();
             for (String streams[] : downloads) {
@@ -229,7 +264,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     }
 
                     final String fmtUPPR = fmt.toUpperCase(Locale.ENGLISH);
-                    final String name = title + "@" + fmtUPPR + extension;
+                    final String name = date + "_zdf_" + show + " - " + title + "@" + fmtUPPR + extension;
                     final DownloadLink link = createDownloadlink(String.format(decrypterurl, fmt));
                     link.setAvailable(true);
                     link.setFinalFileName(name);
@@ -240,6 +275,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         /* Stable */
                         link.setBrowserUrl(PARAMETER_ORIGINAL);
                     }
+                    link.setProperty("date", date);
                     link.setProperty("directURL", url);
                     link.setProperty("directName", name);
                     link.setProperty("directQuality", stream[0]);
@@ -287,10 +323,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             if (grabSubtitles && subtitleURL != null) {
                 final String dlfmt = dl.getStringProperty("directfmt", null);
                 final String startTime = new Regex(subtitleInfo, "<offset>(\\-)?(\\d+)</offset>").getMatch(1);
-                final String name = title + "@" + dlfmt + ".xml";
+                final String name = date + "_" + title + "@" + dlfmt + ".xml";
                 final DownloadLink subtitle = createDownloadlink(String.format(decrypterurl, dlfmt + "subtitle"));
                 subtitle.setAvailable(true);
                 subtitle.setFinalFileName(name);
+                subtitle.setProperty("date", date);
                 subtitle.setProperty("directURL", subtitleURL);
                 subtitle.setProperty("directName", name);
                 subtitle.setProperty("streamingType", "subtitle");
@@ -309,7 +346,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         }
         if (decryptedLinks.size() > 1) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(title);
+            fp.setName(date + "_zdf_" + show + " - " + title);
             fp.addLinks(decryptedLinks);
         }
         return ret;
@@ -348,6 +385,32 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    private String getXML(final String source, final String parameter) {
+        String result = new Regex(source, "<" + parameter + "><\\!\\[CDATA\\[([^<>\"]*?)\\]\\]></" + parameter + ">").getMatch(0);
+        if (result == null) {
+            result = new Regex(source, "<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>]*?)</" + parameter + ">").getMatch(1);
+        }
+        return result;
+    }
+
+    private String getXML(final String parameter) {
+        return getXML(this.br.toString(), parameter);
+    }
+
+    private boolean isStableEnviroment() {
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
+        } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        final int rev = Integer.parseInt(prev);
+        if (rev < 10000) {
+            return true;
+        }
+        return false;
     }
 
     /* NO OVERRIDE!! */
