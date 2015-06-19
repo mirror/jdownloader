@@ -127,7 +127,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             if (entry.getChallenge() instanceof ImageCaptchaChallenge) {
                 CaptchaJob job = new CaptchaJob();
                 Challenge<?> challenge = entry.getChallenge();
-                Class<?> cls = entry.getChallenge().getClass();
+                Class<?> cls = challenge.getClass();
                 while (cls != null && StringUtils.isEmpty(job.getType())) {
                     job.setType(cls.getSimpleName());
                     cls = cls.getSuperclass();
@@ -289,8 +289,8 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         }
 
         CaptchaJob ret = new CaptchaJob();
-
-        Class<?> cls = entry.getChallenge().getClass();
+        Challenge<?> challenge = entry.getChallenge();
+        Class<?> cls = challenge.getClass();
         while (cls != null && StringUtils.isEmpty(ret.getType())) {
             ret.setType(cls.getSimpleName());
             cls = cls.getSuperclass();

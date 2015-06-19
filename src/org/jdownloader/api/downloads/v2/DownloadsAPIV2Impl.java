@@ -682,7 +682,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     public HashMap<Long, String> getDownloadUrls(final long[] linkIds, final long[] packageIds) {
         final SelectionInfo<FilePackage, DownloadLink> selection = packageControllerUtils.getSelectionInfo(linkIds, packageIds);
         final List<DownloadLink> children = selection.getChildren();
-        final HashMap<Long, String> result = new HashMap<>();
+        final HashMap<Long, String> result = new HashMap<Long, String>();
         for (Object l : children) {
             if (l instanceof DownloadLink) {
                 final DownloadLink link = (DownloadLink) l;
