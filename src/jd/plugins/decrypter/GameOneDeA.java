@@ -47,7 +47,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "https?://((www|m)\\.)?gameone\\.de/(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\d\\w\\-]+/\\d+(/(sd|hd))?)|http://feedproxy.google.com/~r/mtvgameone/.*\\.mp3" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "https?://((www|m)\\.)?gameone\\.de/(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\d\\w\\-]+/\\d+(/(sd|hd))?)" }, flags = { 0 })
 public class GameOneDeA extends PluginForDecrypt {
 
     public class ReplacerInputStream extends InputStream {
