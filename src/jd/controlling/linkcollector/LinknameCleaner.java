@@ -4,6 +4,8 @@ import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 
 public class LinknameCleaner {
     public static final Pattern   pat0     = Pattern.compile("(.*)(\\.|_|-)pa?r?t?\\.?[0-9]+.(rar|rev|exe)($|\\.html?)", Pattern.CASE_INSENSITIVE);
@@ -136,7 +138,8 @@ public class LinknameCleaner {
             if (lastPoint > 0) {
                 final int extLength = (name.length() - (lastPoint + 1));
                 final String ext = name.substring(lastPoint + 1);
-                if (CompiledFiletypeFilter.getExtensionsFilterInterface(ext) != null) {
+                final ExtensionsFilterInterface knownExt = CompiledFiletypeFilter.getExtensionsFilterInterface(ext);
+                if (knownExt != null && !ArchiveExtensions.NUM.equals(knownExt)) {
                     /* make sure to cut off only known extensions */
                     name = name.substring(0, lastPoint);
                 } else if (extLength <= 4 && EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings)) {

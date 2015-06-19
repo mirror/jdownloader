@@ -92,7 +92,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
                     return o1.getTld().compareTo(o2.getTld());
                 }
             });
-
             domainInfos = lst.toArray(new DomainInfo[] {});
             if (items == null) {
                 this.items = 0;
@@ -114,7 +113,6 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         enabled = tmp.newEnabled;
         offline = tmp.newOffline;
         online = tmp.newOnline;
-
         updatesDone = tmp.lupdatesRequired;
     }
 

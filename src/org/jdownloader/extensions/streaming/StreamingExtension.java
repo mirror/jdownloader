@@ -142,7 +142,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
             if (new File("/Applications/VLC.app/Contents/MacOS/VLC").exists()) {
                 return "/Applications/VLC.app/Contents/MacOS/VLC";
             }
-        } else if (CrossSystem.isLinux()) {
+        } else if (CrossSystem.isUnix()) {
             return "vlc";
         }
         return null;

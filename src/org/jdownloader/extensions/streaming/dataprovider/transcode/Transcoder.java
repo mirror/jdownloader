@@ -71,8 +71,9 @@ public abstract class Transcoder {
         // "g:\\audio" + sessionID + ".mp3"
         try {
             /*
-             * [mpeg4 @ 0000000001e4d860] Invalid and inefficient vfw-avi packed B frames detected [NULL @ 0000000001e43d00] Unable to find a suitable output
-             * format for 'http://127.0.0.1:3128/ffmpeg/1346828391987' http://127.0.0.1:3128/ffmpeg/1346828391987: Invalid argument
+             * [mpeg4 @ 0000000001e4d860] Invalid and inefficient vfw-avi packed B frames detected [NULL @ 0000000001e43d00] Unable to find
+             * a suitable output format for 'http://127.0.0.1:3128/ffmpeg/1346828391987' http://127.0.0.1:3128/ffmpeg/1346828391987: Invalid
+             * argument
              */
 
             String[] results;
@@ -91,7 +92,9 @@ public abstract class Transcoder {
 
         } finally {
             DeprecatedAPIHttpServerController.getInstance().unregisterRequestHandler(streamHandler);
-            if (exception != null) throw exception;
+            if (exception != null) {
+                throw exception;
+            }
         }
     }
 
@@ -104,7 +107,9 @@ public abstract class Transcoder {
 
             @Override
             public boolean onPostRequest(PostRequest request, HttpResponse response) {
-                if (!request.getRequestedURL().equals("/ffmpeg/" + sessionID)) return false;
+                if (!request.getRequestedURL().equals("/ffmpeg/" + sessionID)) {
+                    return false;
+                }
                 logger.info("Incoming transcoded data\r\n" + request);
                 MeteredInputStream input;
                 try {
@@ -154,7 +159,9 @@ public abstract class Transcoder {
             @Override
             public boolean onGetRequest(GetRequest request, HttpResponse response) {
 
-                if (!request.getRequestedURL().equals("/ffmpeg/" + sessionID)) return false;
+                if (!request.getRequestedURL().equals("/ffmpeg/" + sessionID)) {
+                    return false;
+                }
 
                 try {
                     new StreamLinker(response).run(getStreamFactory(), new ByteRange(request));
@@ -215,7 +222,8 @@ public abstract class Transcoder {
                     ret.append(sep);
                 } else if (line.startsWith("\uFEFF")) {
                     /*
-                     * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058 http://bugs.sun.com/view_bug.do?bug_id=6378911
+                     * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058
+                     * http://bugs.sun.com/view_bug.do?bug_id=6378911
                      */
 
                     line = line.substring(1);
@@ -252,14 +260,19 @@ public abstract class Transcoder {
                 long size = formatSize(new Regex(line, "size=\\s*([^ ]+)").getMatch(0));
                 long br = formatBitrate(new Regex(line, "bitrate=\\s*([^ ]+)").getMatch(0));
 
-                if (size > transcodedSize) transcodedSize = size;
-                if (br > 0) systemBitrate = br;
+                if (size > transcodedSize) {
+                    transcodedSize = size;
+                }
+                if (br > 0) {
+                    systemBitrate = br;
+                }
 
                 if (ret.length() > 0) {
                     ret.append(sep);
                 } else if (line.startsWith("\uFEFF")) {
                     /*
-                     * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058 http://bugs.sun.com/view_bug.do?bug_id=6378911
+                     * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058
+                     * http://bugs.sun.com/view_bug.do?bug_id=6378911
                      */
 
                     line = line.substring(1);
@@ -282,12 +295,16 @@ public abstract class Transcoder {
     }
 
     private long formatSize(String match) {
-        if (match == null) return -1;
+        if (match == null) {
+            return -1;
+        }
         return SizeFormatter.getSize(match);
     }
 
     private long formatBitrate(String string) {
-        if (string == null) return -1;
+        if (string == null) {
+            return -1;
+        }
         String num = new Regex(string, "(\\d*\\.?\\d*)").getMatch(0);
         double d = Double.parseDouble(num);
         if (string.contains("kb")) {
@@ -380,16 +397,21 @@ public abstract class Transcoder {
     }
 
     private String getFFMpegPath() {
-
         if (CrossSystem.isWindows()) {
             File ffprobe = Application.getResource("tools\\Windows\\ffmpeg\\" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i386") + "\\bin\\ffmpeg.exe");
-            if (ffprobe.exists()) return ffprobe.getAbsolutePath();
+            if (ffprobe.exists()) {
+                return ffprobe.getAbsolutePath();
+            }
         } else if (CrossSystem.isLinux()) {
             File ffprobe = Application.getResource("tools\\linux\\ffmpeg\\" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i386") + "\\ffmpeg");
-            if (ffprobe.exists()) return ffprobe.getAbsolutePath();
+            if (ffprobe.exists()) {
+                return ffprobe.getAbsolutePath();
+            }
         } else if (CrossSystem.isMac()) {
             File ffprobe = Application.getResource("tools\\mac\\ffmpeg\\" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i386") + "\\ffmpeg");
-            if (ffprobe.exists()) return ffprobe.getAbsolutePath();
+            if (ffprobe.exists()) {
+                return ffprobe.getAbsolutePath();
+            }
         }
         return "ffmpeg";
     }

@@ -115,7 +115,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         }
         if (!SystemTray.isSupported()) {
             LogController.CL(TrayExtension.class).severe("Error initializing SystemTray: Tray isn't supported jet");
-            if (CrossSystem.isLinux()) {
+            if (CrossSystem.isUnix()) {
                 LogController.CL().severe("Make sure your Notification Area is enabled!");
             }
             throw new StartException("Tray isn't supported!");
@@ -274,7 +274,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             }
                             LogController.CL(TrayExtension.class).info("TrayIconSize:" + trayIconWidth + "x" + trayIconHeight + "->IconSize:" + img.getWidth() + "x" + img.getHeight());
                             // workaround for gnome 3 transparency bug
-                            if (getSettings().isGnomeTrayIconTransparentEnabled() && CrossSystem.isLinux()) {
+                            if (getSettings().isGnomeTrayIconTransparentEnabled() && (CrossSystem.isUnix())) {
                                 // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6453521
                                 DesktopSupportLinux desktop = new DesktopSupportLinux();
                                 if (desktop.isGnomeDesktop() || desktop.isXFCEDesktop()) {

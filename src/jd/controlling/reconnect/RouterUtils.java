@@ -343,7 +343,7 @@ public class RouterUtils {
      * @return
      */
     public static InetAddress getIPFromRouteCommand() {
-        if (CrossSystem.isLinux() || CrossSystem.isMac()) {
+        if (CrossSystem.isUnix() || CrossSystem.isMac()) {
             if (new File("/sbin/route").exists()) {
                 if (CrossSystem.isMac()) {
                     /* TODO: needs to get checked by a mac user */

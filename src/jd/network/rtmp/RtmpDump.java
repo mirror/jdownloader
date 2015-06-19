@@ -110,14 +110,14 @@ public class RtmpDump extends RTMPDownload {
     /**
      * Attempt to locate a rtmpdump executable. The *nix /usr bin folders is searched first, then local tools folder. If found, the path
      * will is saved to the variable RTMPDUMP.
-     * 
+     *
      * @return Whether or not rtmpdump executable was found
      */
     private synchronized boolean findRtmpDump() {
         if (RTMPDUMP != null) {
             return RTMPDUMP.length() > 0;
         }
-        if (CrossSystem.isLinux() || CrossSystem.isMac()) {
+        if (CrossSystem.isUnix() || CrossSystem.isMac()) {
             RTMPDUMP = "/usr/local/bin/rtmpdump";
             if (!new File(RTMPDUMP).exists()) {
                 RTMPDUMP = "/usr/bin/rtmpdump";
@@ -162,7 +162,7 @@ public class RtmpDump extends RTMPDownload {
 
     /**
      * Attempt to locate a rtmpdump executable and parse the version number from the 'rtmpdump -h' output.
-     * 
+     *
      * @return The version number of the RTMPDump executable
      */
     public synchronized String getRtmpDumpVersion() throws Exception {
