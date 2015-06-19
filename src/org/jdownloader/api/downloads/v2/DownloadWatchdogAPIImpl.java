@@ -1,11 +1,22 @@
 package org.jdownloader.api.downloads.v2;
 
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.api.utils.PackageControllerUtils;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadControllerInterface;
 
 public class DownloadWatchdogAPIImpl implements DownloadWatchdogAPI {
+
+    private final PackageControllerUtils<FilePackage, DownloadLink> packageControllerUtils;
+
+    public DownloadWatchdogAPIImpl() {
+        RemoteAPIController.validateInterfaces(DownloadWatchdogAPI.class, DownloadControllerInterface.class);
+        packageControllerUtils = new PackageControllerUtils<FilePackage, DownloadLink>(DownloadController.getInstance());
+    }
 
     public boolean start() {
         DownloadWatchDog.getInstance().startDownloads();
@@ -27,10 +38,6 @@ public class DownloadWatchdogAPIImpl implements DownloadWatchdogAPI {
         return DownloadWatchDog.getInstance().getStateMachine().getState().getLabel();
     }
 
-    public DownloadWatchdogAPIImpl() {
-        RemoteAPIController.validateInterfaces(DownloadWatchdogAPI.class, DownloadControllerInterface.class);
-    }
-
     @Override
     public int getSpeedInBps() {
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();
@@ -39,11 +46,8 @@ public class DownloadWatchdogAPIImpl implements DownloadWatchdogAPI {
 
     @Override
     public void forceDownload(final long[] linkIds, final long[] packageIds) {
-
         DownloadWatchDog dwd = DownloadWatchDog.getInstance();
-
-        dwd.forceDownload(org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl.getSelectionInfo(linkIds, packageIds).getChildren());
-
+        dwd.forceDownload(packageControllerUtils.getSelectionInfo(linkIds, packageIds).getChildren());
     }
 
 }

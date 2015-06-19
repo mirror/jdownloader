@@ -2,10 +2,21 @@ package jd.plugins;
 
 public class FilePackageProperty {
     public static enum Property {
-        NAME,
-        FOLDER,
-        PRIORITY,
-        COMMENT
+
+        NAME("name"),
+        FOLDER("folder"),
+        PRIORITY("priority"),
+        COMMENT("comment");
+
+        private final String apiProperty;
+
+        public String getApiProperty() {
+            return apiProperty;
+        }
+
+        private Property(final String apiProperty) {
+            this.apiProperty = apiProperty;
+        }
     }
 
     private final Object      value;

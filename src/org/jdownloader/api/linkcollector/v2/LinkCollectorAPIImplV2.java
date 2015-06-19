@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,7 +25,6 @@ import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackageView;
 import jd.controlling.linkcrawler.PackageInfo;
-import jd.controlling.packagecontroller.AbstractNode;
 import jd.plugins.DownloadLink;
 
 import org.appwork.remoteapi.exceptions.BadParameterException;
@@ -36,7 +36,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64InputStream;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.content.v2.ContentAPIImplV2;
-import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
+import org.jdownloader.api.utils.PackageControllerUtils;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
@@ -49,77 +49,13 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
-    private LogSource logger;
+    private LogSource                                                 logger;
+    private final PackageControllerUtils<CrawledPackage, CrawledLink> packageControllerUtils;
 
     public LinkCollectorAPIImplV2() {
         RemoteAPIController.validateInterfaces(LinkCollectorAPIV2.class, LinkgrabberInterface.class);
+        packageControllerUtils = new PackageControllerUtils<CrawledPackage, CrawledLink>(LinkCollector.getInstance());
         logger = LogController.getInstance().getLogger(LinkCollectorAPIImplV2.class.getName());
-    }
-
-    public static List<AbstractNode> convertIdsToObjects(long[] linkIds, long[] packageIds) {
-        final ArrayList<AbstractNode> ret = new ArrayList<AbstractNode>();
-
-        return convertIdsToObjects(ret, linkIds, packageIds);
-    }
-
-    public static List<CrawledPackage> convertIdsToPackages(long... packageIds) {
-        final List<CrawledPackage> ret = new ArrayList<CrawledPackage>();
-
-        convertIdsToObjects(ret, null, packageIds);
-        return ret;
-    }
-
-    public static List<CrawledLink> convertIdsToLinks(long... linkIds) {
-        final List<CrawledLink> ret = new ArrayList<CrawledLink>();
-
-        convertIdsToObjects(ret, linkIds, null);
-        return ret;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T extends AbstractNode> List<T> convertIdsToObjects(final List<T> ret, long[] linkIds, long[] packageIds) {
-        final HashSet<Long> linklookUp = DownloadsAPIV2Impl.createLookupSet(linkIds);
-        final HashSet<Long> packageLookup = DownloadsAPIV2Impl.createLookupSet(packageIds);
-
-        LinkCollector dlc = LinkCollector.getInstance();
-
-        if (linklookUp != null || packageLookup != null) {
-
-            boolean readL = dlc.readLock();
-            try {
-                main: for (CrawledPackage pkg : dlc.getPackages()) {
-                    if (packageLookup != null && packageLookup.remove(pkg.getUniqueID().getID())) {
-                        ret.add((T) pkg);
-                        if ((packageLookup == null || packageLookup.size() == 0) && (linklookUp == null || linklookUp.size() == 0)) {
-                            break main;
-                        }
-
-                    }
-                    if (linklookUp != null) {
-                        boolean readL2 = pkg.getModifyLock().readLock();
-                        try {
-                            for (CrawledLink child : pkg.getChildren()) {
-
-                                if (linklookUp.remove(child.getUniqueID().getID())) {
-                                    ret.add((T) child);
-                                    if ((packageLookup == null || packageLookup.size() == 0) && (linklookUp == null || linklookUp.size() == 0)) {
-                                        break main;
-                                    }
-                                }
-
-                            }
-                        } finally {
-                            pkg.getModifyLock().readUnlock(readL2);
-                        }
-                    }
-
-                }
-            } finally {
-                dlc.readUnlock(readL);
-            }
-
-        }
-        return ret;
     }
 
     @Override
@@ -131,7 +67,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         // filter out packages, if specific packageUUIDs given, else return all packages
         List<CrawledPackage> packages;
         if (queryParams.getPackageUUIDs() != null && queryParams.getPackageUUIDs().length > 0) {
-            packages = getPackagesByID(queryParams.getPackageUUIDs());
+            packages = packageControllerUtils.getPackages(queryParams.getPackageUUIDs());
 
         } else {
             packages = lc.getPackagesCopy();
@@ -262,9 +198,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         List<CrawledPackage> matched = null;
 
         if (queryParams.getPackageUUIDs() != null && queryParams.getPackageUUIDs().length > 0) {
-
-            matched = getPackagesByID(queryParams.getPackageUUIDs());
-
+            matched = packageControllerUtils.getPackages(queryParams.getPackageUUIDs());
         } else {
             matched = lc.getPackagesCopy();
         }
@@ -435,141 +369,59 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
     }
 
-    // @Override
-    // public boolean uploadLinkContainer(RemoteAPIRequest request) {
-    // if (request.getRequestType() == REQUESTTYPE.POST) {
-    // PostRequest post = (PostRequest) request.getHttpRequest();
-    // }
-    // return false;
-    // }
-
     @Override
     public long getChildrenChanged(long structureWatermark) {
-        LinkCollector lc = LinkCollector.getInstance();
-        if (lc.getChildrenChanges() != structureWatermark) {
-            return lc.getChildrenChanges();
-        } else {
-            return -1l;
-        }
-    }
-
-    /**
-     * the SelectionInfo Class is actually used for the GUI downloadtable. it generates a logic selection out of selected links and
-     * packages.
-     *
-     * example: if a package is selected, and non if it's links - all its links will be in the selection info<br>
-     * example2: if a package is selected AND SOME of it's children. The packge will not be considered as fully selected. only the actual
-     * selected links.
-     *
-     * @param linkIds
-     * @param packageIds
-     * @return
-     * @throws BadParameterException
-     */
-    public static SelectionInfo<CrawledPackage, CrawledLink> getSelectionInfo(long[] linkIds, long[] packageIds) throws BadParameterException {
-        final ArrayList<AbstractNode> list = new ArrayList<AbstractNode>();
-        if (packageIds != null) {
-            final List<CrawledPackage> packages = getPackagesByID(packageIds);
-            list.addAll(packages);
-        }
-        if (linkIds != null) {
-            final List<CrawledLink> links = getLinksById(linkIds);
-            list.addAll(links);
-        }
-        return new SelectionInfo<CrawledPackage, CrawledLink>(null, list);
-
+        return packageControllerUtils.getChildrenChanged(structureWatermark);
     }
 
     @Override
     public void moveToDownloadlist(final long[] linkIds, final long[] packageIds) throws BadParameterException {
-        LinkCollector.getInstance().moveLinksToDownloadList(new MoveLinksSettings(MoveLinksMode.MANUAL, null, null, null), getSelectionInfo(linkIds, packageIds));
+        SelectionInfo<CrawledPackage, CrawledLink> selectionInfo = packageControllerUtils.getSelectionInfo(linkIds, packageIds);
+        LinkCollector.getInstance().moveLinksToDownloadList(new MoveLinksSettings(MoveLinksMode.MANUAL, null, null, null), selectionInfo);
     }
 
     @Override
     public void removeLinks(final long[] linkIds, final long[] packageIds) throws BadParameterException {
-        LinkCollector lc = LinkCollector.getInstance();
-        lc.removeChildren(getSelectionInfo(linkIds, packageIds).getChildren());
+        packageControllerUtils.remove(linkIds, packageIds);
     }
 
     @Override
     public void renameLink(long linkId, String newName) throws BadParameterException {
-        final CrawledLink lc = getLinkById(linkId);
-        if (lc != null) {
-            lc.setName(newName);
+        final List<CrawledLink> children = packageControllerUtils.getChildren(linkId);
+        if (children.size() > 0) {
+            children.get(0).setName(newName);
         }
-
     }
 
     @Override
     public void renamePackage(long packageId, String newName) throws BadParameterException {
-        final CrawledPackage lc = getPackageByID(packageId);
-        if (lc != null) {
-            lc.setName(newName);
+        final List<CrawledPackage> selectionInfo = packageControllerUtils.getPackages(packageId);
+        if (selectionInfo.size() > 0) {
+            final CrawledPackage lc = selectionInfo.get(0);
+            if (lc != null) {
+                lc.setName(newName);
+            }
         }
     }
 
     @Override
     public void setEnabled(boolean enabled, final long[] linkIds, final long[] packageIds) throws BadParameterException {
-        List<CrawledLink> sdl = getSelectionInfo(linkIds, packageIds).getChildren();
-        for (CrawledLink dl : sdl) {
-            dl.setEnabled(enabled);
-        }
-
+        packageControllerUtils.setEnabled(enabled, linkIds, packageIds);
     }
 
     @Override
     public void movePackages(long[] packageIds, long afterDestPackageId) throws BadParameterException {
-        List<CrawledPackage> selectedPackages = getPackagesByID(packageIds);
-        CrawledPackage afterDestPackage = afterDestPackageId <= 0 ? null : getPackageByID(afterDestPackageId);
-        LinkCollector.getInstance().move(selectedPackages, afterDestPackage);
-    }
-
-    private static CrawledPackage getPackageByID(long afterDestPackageId) throws BadParameterException {
-        CrawledPackage ret = LinkCollector.getInstance().getPackageByID(afterDestPackageId);
-        if (ret == null) {
-            throw new BadParameterException("PackageID Unknown");
-        }
-        return ret;
-    }
-
-    private static List<CrawledPackage> getPackagesByID(long[] packageIds) throws BadParameterException {
-        List<CrawledPackage> ret = LinkCollector.getInstance().getPackagesByID(packageIds);
-        if (ret.size() != packageIds.length) {
-            throw new BadParameterException("One or more PackageIDs Unknown");
-        }
-        return ret;
+        packageControllerUtils.movePackages(packageIds, afterDestPackageId);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void moveLinks(long[] linkIds, long afterLinkID, long destPackageID) throws BadParameterException {
-        LinkCollector dlc = LinkCollector.getInstance();
-        List<CrawledLink> selectedLinks = getLinksById(linkIds);
-        CrawledLink afterLink = afterLinkID <= 0 ? null : getLinkById(afterLinkID);
-        CrawledPackage destpackage = getPackageByID(destPackageID);
-        dlc.move(selectedLinks, destpackage, afterLink);
-
-    }
-
-    private static CrawledLink getLinkById(long linkIds) throws BadParameterException {
-        CrawledLink ret = LinkCollector.getInstance().getLinkByID(linkIds);
-        if (ret == null) {
-            throw new BadParameterException("LinkID Unknown");
-        }
-        return ret;
-    }
-
-    private static List<CrawledLink> getLinksById(long[] linkIds) throws BadParameterException {
-        List<CrawledLink> ret = LinkCollector.getInstance().getLinksByID(linkIds);
-        if (ret.size() != linkIds.length) {
-            throw new BadParameterException("One or more LinkIDs Unknown");
-        }
-        return ret;
+        packageControllerUtils.moveChildren(linkIds, afterLinkID, destPackageID);
     }
 
     @Override
     public List<String> getDownloadFolderHistorySelectionBase() {
-
         return DownloadPathHistoryManager.getInstance().listPaths(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
 
     }
@@ -577,8 +429,9 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     @Override
     public List<LinkVariantStorableV2> getVariants(long linkid) throws BadParameterException {
         final ArrayList<LinkVariantStorableV2> ret = new ArrayList<LinkVariantStorableV2>();
-        CrawledLink cl = getLinkById(linkid);
-        if (cl != null) {
+        final List<CrawledLink> children = packageControllerUtils.getChildren(linkid);
+        if (children.size() > 0) {
+            final CrawledLink cl = children.get(0);
             for (LinkVariant lv : cl.getDownloadLink().getDefaultPlugin().getVariantsByLink(cl.getDownloadLink())) {
                 ret.add(new LinkVariantStorableV2(lv._getUniqueId(), CFG_GUI.EXTENDED_VARIANT_NAMES_ENABLED.isEnabled() ? lv._getExtendedName() : lv._getName()));
             }
@@ -588,85 +441,101 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
     @Override
     public void setVariant(long linkid, String variantID) throws BadParameterException {
-        final CrawledLink cl = getLinkById(linkid);
-        if (cl != null) {
-            for (LinkVariant lv : cl.getDownloadLink().getDefaultPlugin().getVariantsByLink(cl.getDownloadLink())) {
-                if (lv._getUniqueId().equals(variantID)) {
-                    LinkCollector.getInstance().setActiveVariantForLink(cl, lv);
-                    return;
+        final List<CrawledLink> children = packageControllerUtils.getChildren(linkid);
+        if (children.size() > 0) {
+            final CrawledLink cl = children.get(0);
+            if (cl != null) {
+                for (LinkVariant lv : cl.getDownloadLink().getDefaultPlugin().getVariantsByLink(cl.getDownloadLink())) {
+                    if (lv._getUniqueId().equals(variantID)) {
+                        LinkCollector.getInstance().setActiveVariantForLink(cl, lv);
+                        return;
+                    }
                 }
+                throw new BadParameterException("Unknown variantID");
             }
-            throw new BadParameterException("Unknown variantID");
         }
     }
 
     @Override
     public void addVariantCopy(long linkid, final long destinationAfterLinkID, final long destinationPackageID, final String variantID) throws BadParameterException {
-        // get link
-        final CrawledLink link = getLinkById(linkid);
-        if (link != null) {
-            // move and add
-            LinkCollector.getInstance().getQueue().add(new QueueAction<Void, BadParameterException>() {
+        List<CrawledLink> children = packageControllerUtils.getChildren(linkid);
+        if (children.size() > 0) {
+            final CrawledLink link = children.get(0);
+            if (link != null) {
+                // move and add
+                LinkCollector.getInstance().getQueue().add(new QueueAction<Void, BadParameterException>() {
 
-                @Override
-                protected Void run() throws BadParameterException {
-                    // search variant by id
-                    LinkVariant v = null;
-                    for (LinkVariant lv : link.getDownloadLink().getDefaultPlugin().getVariantsByLink(link.getDownloadLink())) {
-                        if (lv._getUniqueId().equals(variantID)) {
-                            v = lv;
-                            break;
-                        }
-                    }
-                    if (v == null) {
-                        throw new BadParameterException("Unknown variantID");
-                    }
-
-                    // create new downloadlink
-                    final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getPluginPatternMatcher(), true);
-                    dllink.setProperties(link.getDownloadLink().getProperties());
-
-                    // create crawledlink
-                    final CrawledLink cl = new CrawledLink(dllink);
-
-                    final ArrayList<CrawledLink> list = new ArrayList<CrawledLink>();
-                    list.add(cl);
-
-                    cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), v);
-
-                    // check if package already contains this variant
-
-                    boolean readL = link.getParentNode().getModifyLock().readLock();
-
-                    try {
-
-                        for (CrawledLink cLink : link.getParentNode().getChildren()) {
-                            if (dllink.getLinkID().equals(cLink.getLinkID())) {
-                                throw new BadParameterException("Variant is already in this package");
+                    @Override
+                    protected Void run() throws BadParameterException {
+                        // search variant by id
+                        LinkVariant v = null;
+                        for (LinkVariant lv : link.getDownloadLink().getDefaultPlugin().getVariantsByLink(link.getDownloadLink())) {
+                            if (lv._getUniqueId().equals(variantID)) {
+                                v = lv;
+                                break;
                             }
                         }
-                    } finally {
-                        link.getParentNode().getModifyLock().readUnlock(readL);
+                        if (v == null) {
+                            throw new BadParameterException("Unknown variantID");
+                        }
+
+                        // create new downloadlink
+                        final DownloadLink dllink = new DownloadLink(link.getDownloadLink().getDefaultPlugin(), link.getDownloadLink().getView().getDisplayName(), link.getDownloadLink().getHost(), link.getDownloadLink().getPluginPatternMatcher(), true);
+                        dllink.setProperties(link.getDownloadLink().getProperties());
+
+                        // create crawledlink
+                        final CrawledLink cl = new CrawledLink(dllink);
+
+                        final ArrayList<CrawledLink> list = new ArrayList<CrawledLink>();
+                        list.add(cl);
+
+                        cl.getDownloadLink().getDefaultPlugin().setActiveVariantByLink(cl.getDownloadLink(), v);
+
+                        // check if package already contains this variant
+
+                        boolean readL = link.getParentNode().getModifyLock().readLock();
+
+                        try {
+
+                            for (CrawledLink cLink : link.getParentNode().getChildren()) {
+                                if (dllink.getLinkID().equals(cLink.getLinkID())) {
+                                    throw new BadParameterException("Variant is already in this package");
+                                }
+                            }
+                        } finally {
+                            link.getParentNode().getModifyLock().readUnlock(readL);
+                        }
+
+                        if (destinationPackageID < 0) {
+                            LinkCollector.getInstance().moveOrAddAt(link.getParentNode(), list, link.getParentNode().indexOf(link) + 1);
+                        } else {
+
+                            LinkCollector dlc = LinkCollector.getInstance();
+                            CrawledLink afterLink = null;
+                            CrawledPackage destpackage = null;
+                            if (destinationAfterLinkID > 0) {
+                                List<CrawledLink> children = packageControllerUtils.getChildren(destinationAfterLinkID);
+                                if (children.size() > 0) {
+                                    afterLink = children.get(0);
+                                }
+                            }
+                            if (destinationPackageID > 0) {
+                                List<CrawledPackage> packages = packageControllerUtils.getPackages(destinationPackageID);
+                                if (packages.size() > 0) {
+                                    destpackage = packages.get(0);
+                                }
+                            }
+                            dlc.move(list, destpackage, afterLink);
+                        }
+
+                        java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
+                        checkableLinks.add(cl);
+                        LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
+                        linkChecker.check(checkableLinks);
+                        return null;
                     }
-
-                    if (destinationPackageID < 0) {
-                        LinkCollector.getInstance().moveOrAddAt(link.getParentNode(), list, link.getParentNode().indexOf(link) + 1);
-                    } else {
-
-                        LinkCollector dlc = LinkCollector.getInstance();
-
-                        CrawledLink afterLink = destinationAfterLinkID <= 0 ? null : getLinkById(destinationAfterLinkID);
-                        CrawledPackage destpackage = getPackageByID(destinationPackageID);
-                        dlc.move(list, destpackage, afterLink);
-                    }
-
-                    java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(1);
-                    checkableLinks.add(cl);
-                    LinkChecker<CheckableLink> linkChecker = new LinkChecker<CheckableLink>(true);
-                    linkChecker.check(checkableLinks);
-                    return null;
-                }
-            });
+                });
+            }
         }
     }
 
@@ -702,14 +571,24 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
     @Override
     public void setPriority(PriorityStorable priority, long[] linkIds, long[] packageIds) throws BadParameterException {
-        org.jdownloader.controlling.Priority jdPriority = org.jdownloader.controlling.Priority.valueOf(priority.name());
-        List<CrawledLink> children = convertIdsToLinks(linkIds);
-        List<CrawledPackage> pkgs = convertIdsToPackages(packageIds);
+        final org.jdownloader.controlling.Priority jdPriority = org.jdownloader.controlling.Priority.valueOf(priority.name());
+        List<CrawledLink> children = packageControllerUtils.getChildren(linkIds);
+        List<CrawledPackage> pkgs = packageControllerUtils.getPackages(packageIds);
         for (CrawledLink dl : children) {
             dl.setPriority(jdPriority);
         }
         for (CrawledPackage pkg : pkgs) {
             pkg.setPriorityEnum(jdPriority);
         }
+    }
+
+    @Override
+    public void startOnlineStatusCheck(long[] linkIds, long[] packageIds) throws BadParameterException {
+        packageControllerUtils.startOnlineStatusCheck(linkIds, packageIds);
+    }
+
+    @Override
+    public HashMap<Long, String> getDownloadUrls(final long[] linkIds, final long[] packageIds) {
+        return packageControllerUtils.getDownloadUrls(linkIds, packageIds);
     }
 }

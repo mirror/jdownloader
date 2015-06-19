@@ -4,12 +4,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.jdownloader.api.RemoteAPIController;
-import org.jdownloader.api.downloads.v2.DownloadsAPIV2Impl;
 import org.jdownloader.api.extraction.ArchiveStatusStorable.ArchiveFileStatus;
+import org.jdownloader.api.utils.PackageControllerUtils;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.DummyArchive;
@@ -23,8 +24,11 @@ import org.jdownloader.myjdownloader.client.bindings.interfaces.ExtractionInterf
 
 public class ExtractionAPIImpl implements ExtractionAPI {
 
+    private final PackageControllerUtils<FilePackage, DownloadLink> packageControllerUtils;
+
     public ExtractionAPIImpl() {
         RemoteAPIController.validateInterfaces(ExtractionAPI.class, ExtractionInterface.class);
+        packageControllerUtils = new PackageControllerUtils<FilePackage, DownloadLink>(DownloadController.getInstance());
     }
 
     @Override
@@ -37,7 +41,7 @@ public class ExtractionAPIImpl implements ExtractionAPI {
         final HashMap<String, Boolean> ret = new HashMap<String, Boolean>();
         final ExtractionExtension extension = ExtractionExtension.getInstance();
         if (extension != null) {
-            final SelectionInfo<FilePackage, DownloadLink> selection = DownloadsAPIV2Impl.getSelectionInfo(linkIds, packageIds);
+            final SelectionInfo<FilePackage, DownloadLink> selection = packageControllerUtils.getSelectionInfo(linkIds, packageIds);
             if (selection != null && !selection.isEmpty()) {
                 final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(selection.getChildren());
                 if (archives != null && !archives.isEmpty()) {
@@ -65,7 +69,7 @@ public class ExtractionAPIImpl implements ExtractionAPI {
         final List<ArchiveStatusStorable> ret = new ArrayList<ArchiveStatusStorable>();
         final ExtractionExtension extension = ArchiveValidator.EXTENSION;
         if (extension != null) {
-            final SelectionInfo<FilePackage, DownloadLink> selection = DownloadsAPIV2Impl.getSelectionInfo(linkIds, packageIds);
+            final SelectionInfo<FilePackage, DownloadLink> selection = packageControllerUtils.getSelectionInfo(linkIds, packageIds);
             if (selection != null && !selection.isEmpty()) {
                 final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(selection.getChildren());
                 if (archives != null && !archives.isEmpty()) {

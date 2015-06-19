@@ -1,8 +1,10 @@
 package org.jdownloader.api.downloads.v2;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 
 import javax.swing.Icon;
 
@@ -17,23 +19,31 @@ import jd.plugins.PluginProgress;
 import jd.plugins.PluginStateCollection;
 
 import org.appwork.remoteapi.exceptions.BadParameterException;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.api.utils.PackageControllerUtils;
+import org.jdownloader.api.utils.SelectionInfoUtils;
 import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsListInterface;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.translate._JDT;
 
 public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
+    private final PackageControllerUtils<FilePackage, DownloadLink> packageControllerUtils;
+
     public DownloadsAPIV2Impl() {
         RemoteAPIController.validateInterfaces(DownloadsAPIV2.class, DownloadsListInterface.class);
-
+        packageControllerUtils = new PackageControllerUtils<FilePackage, DownloadLink>(DownloadController.getInstance());
     }
 
     @Override
@@ -45,7 +55,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         List<FilePackage> packages = null;
 
         if (queryParams.getPackageUUIDs() != null && queryParams.getPackageUUIDs().length > 0) {
-            packages = convertIdsToPackages(queryParams.getPackageUUIDs());
+            packages = packageControllerUtils.getPackages(queryParams.getPackageUUIDs());
 
         } else {
             packages = dlc.getPackagesCopy();
@@ -82,15 +92,17 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         return ret;
     }
 
-    public FilePackageAPIStorableV2 toStorable(PackageQueryStorable queryParams, FilePackage fp, FilePackageView fpView, DownloadWatchDog dwd) {
+    public FilePackageAPIStorableV2 toStorable(PackageQueryStorable queryParams, FilePackage fp, DownloadWatchDog dwd) {
         FilePackageAPIStorableV2 fps = new FilePackageAPIStorableV2(fp);
+        FilePackageView fpView = new FilePackageView(fp);
+        fpView.aggregate();
 
         if (queryParams.isPriority()) {
             fps.setPriority(org.jdownloader.myjdownloader.client.bindings.PriorityStorable.valueOf(fp.getPriorityEnum().name()));
         }
 
         if (queryParams.isSaveTo()) {
-            fps.setSaveTo(fp.getView().getDownloadDirectory());
+            fps.setSaveTo(fpView.getDownloadDirectory());
 
         }
         if (queryParams.isBytesTotal()) {
@@ -99,7 +111,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
         }
         if (queryParams.isChildCount()) {
-            fps.setChildCount(fp.size());
+            fps.setChildCount(fpView.size());
         }
         if (queryParams.isHosts()) {
             DomainInfo[] di = fpView.getDomainInfos();
@@ -145,21 +157,19 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     public static FilePackageAPIStorableV2 setStatus(FilePackageAPIStorableV2 fps, FilePackageView fpView) {
 
-        FilePackageView view = fpView;
-
-        PluginStateCollection ps = view.getPluginStates();
+        PluginStateCollection ps = fpView.getPluginStates();
         if (ps.size() > 0) {
 
             fps.setStatusIconKey(RemoteAPIController.getInstance().getContentAPI().getIconKey(ps.getMergedIcon()));
             fps.setStatus(ps.isMultiline() ? "" : ps.getText());
             return fps;
         }
-        if (view.isFinished()) {
+        if (fpView.isFinished()) {
 
             fps.setStatusIconKey(IconKey.ICON_TRUE);
             fps.setStatus(_GUI._.TaskColumn_getStringValue_finished_());
             return fps;
-        } else if (view.getETA() != -1) {
+        } else if (fpView.getETA() != -1) {
 
             fps.setStatus(_GUI._.TaskColumn_getStringValue_running_());
             return fps;
@@ -167,7 +177,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         return fps;
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public List<DownloadLinkAPIStorableV2> queryLinks(LinkQueryStorable queryParams) {
         List<DownloadLinkAPIStorableV2> result = new ArrayList<DownloadLinkAPIStorableV2>();
@@ -178,7 +187,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
         if (queryParams.getPackageUUIDs() != null && queryParams.getPackageUUIDs().length > 0) {
 
-            packages = convertIdsToPackages(queryParams.getPackageUUIDs());
+            packages = packageControllerUtils.getPackages(queryParams.getPackageUUIDs());
 
         } else {
             packages = dlc.getPackagesCopy();
@@ -241,7 +250,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             fps.setBytesTotal(fpView.getSize());
         }
         if (queryParams.isChildCount()) {
-            fps.setChildCount(fp.size());
+            fps.setChildCount(fpView.size());
         }
         if (queryParams.isHosts()) {
             DomainInfo[] di = fpView.getDomainInfos();
@@ -436,7 +445,6 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                     dls.setStatusIconKey(IconKey.ICON_COMPRESS);
                     dls.setStatus(label);
                     return dls;
-
                 }
             }
             if (FinalLinkState.FINISHED_MIRROR.equals(finalLinkState)) {
@@ -460,12 +468,12 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     @Override
     public int packageCount() {
-        return DownloadController.getInstance().getPackages().size();
+        return DownloadController.getInstance().size();
     }
 
     @Override
     public void removeLinks(final long[] linkIds, final long[] packageIds) {
-        DownloadController.getInstance().removeChildren(getSelectionInfo(linkIds, packageIds).getChildren());
+        packageControllerUtils.remove(linkIds, packageIds);
     }
 
     @Override
@@ -499,31 +507,95 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void movePackages(long[] packageIds, long afterDestPackageId) {
-        List<FilePackage> selectedPackages = convertIdsToPackages(packageIds);
-        FilePackage afterDestPackage = afterDestPackageId <= 0 ? null : convertIdsToPackages(afterDestPackageId).get(0);
-        DownloadController.getInstance().move(selectedPackages, afterDestPackage);
+        packageControllerUtils.movePackages(packageIds, afterDestPackageId);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
+    public void movetoNewPackage(long[] linkIds, long[] pkgIds, String newPkgName, String downloadPath) throws BadParameterException {
+        if (StringUtils.isEmpty(newPkgName)) {
+            throw new BadParameterException("empty package name");
+        }
+
+        final SelectionInfo<FilePackage, DownloadLink> selection = packageControllerUtils.getSelectionInfo(linkIds, pkgIds);
+        final FilePackage newPackage = FilePackage.getInstance();
+        newPackage.setName(newPkgName);
+        if (!StringUtils.isEmpty(downloadPath)) {
+            newPackage.setDownloadDirectory(downloadPath);
+        }
+        DownloadController.getInstance().moveOrAddAt(newPackage, selection.getChildren(), 0, -1);
+    }
+
+    @Override
+    public void splitPackageByHoster(long[] linkIds, long[] pkgIds) {
+        final SelectionInfo<FilePackage, DownloadLink> selection = packageControllerUtils.getSelectionInfo(linkIds, pkgIds);
+        final HashMap<FilePackage, HashMap<String, ArrayList<DownloadLink>>> splitMap = new HashMap<FilePackage, HashMap<String, ArrayList<DownloadLink>>>();
+        int insertAt = -1;
+        for (AbstractNode child : selection.getChildren()) {
+            if (child instanceof DownloadLink) {
+                final DownloadLink cL = (DownloadLink) child;
+                final FilePackage parent = cL.getParentNode();
+                HashMap<String, ArrayList<DownloadLink>> parentMap = splitMap.get(parent);
+                if (parentMap == null) {
+                    parentMap = new HashMap<String, ArrayList<DownloadLink>>();
+                    splitMap.put(parent, parentMap);
+                }
+                final String host = cL.getDomainInfo().getTld();
+                ArrayList<DownloadLink> hostList = parentMap.get(host);
+                if (hostList == null) {
+                    hostList = new ArrayList<DownloadLink>();
+                    parentMap.put(host, hostList);
+                }
+                hostList.add(cL);
+            }
+        }
+
+        final String nameFactory = JsonConfig.create(LinkgrabberSettings.class).getSplitPackageNameFactoryPattern();
+        final Iterator<Entry<FilePackage, HashMap<String, ArrayList<DownloadLink>>>> it = splitMap.entrySet().iterator();
+        while (it.hasNext()) {
+            final Entry<FilePackage, HashMap<String, ArrayList<DownloadLink>>> next = it.next();
+            final FilePackage sourcePackage = next.getKey();
+            final HashMap<String, ArrayList<DownloadLink>> items = next.getValue();
+            final Iterator<Entry<String, ArrayList<DownloadLink>>> it2 = items.entrySet().iterator();
+            while (it2.hasNext()) {
+                final Entry<String, ArrayList<DownloadLink>> next2 = it2.next();
+                final String host = next2.getKey();
+                final String newPackageName = getNewPackageName(nameFactory, sourcePackage.getName(), host);
+                final FilePackage newPkg;
+                newPkg = FilePackage.getInstance();
+                sourcePackage.copyPropertiesTo(newPkg);
+
+                newPkg.setName(newPackageName);
+                DownloadController.getInstance().moveOrAddAt(newPkg, next2.getValue(), 0, insertAt);
+                insertAt++;
+            }
+        }
+    }
+
+    public String getNewPackageName(String nameFactory, String oldPackageName, String host) {
+        if (StringUtils.isEmpty(nameFactory)) {
+            if (!StringUtils.isEmpty(oldPackageName)) {
+                return oldPackageName;
+            }
+            return host;
+        }
+        if (!StringUtils.isEmpty(oldPackageName)) {
+            nameFactory = nameFactory.replaceAll("\\{PACKAGENAME\\}", oldPackageName);
+        } else {
+            nameFactory = nameFactory.replaceAll("\\{PACKAGENAME\\}", _JDT._.LinkCollector_addCrawledLink_variouspackage());
+        }
+        nameFactory = nameFactory.replaceAll("\\{HOSTNAME\\}", host);
+        return nameFactory;
+    }
+
+    @Override
     public void moveLinks(long[] linkIds, long afterLinkID, long destPackageID) {
-        DownloadController dlc = DownloadController.getInstance();
-        List<DownloadLink> selectedLinks = convertIdsToLinks(linkIds);
-        DownloadLink afterLink = afterLinkID <= 0 ? null : convertIdsToLinks(afterLinkID).get(0);
-        FilePackage destpackage = convertIdsToPackages(destPackageID).get(0);
-        dlc.move(selectedLinks, destpackage, afterLink);
+        packageControllerUtils.moveChildren(linkIds, afterLinkID, destPackageID);
     }
 
     @Override
     public long getStructureChangeCounter(long structureWatermark) {
-        DownloadController lc = DownloadController.getInstance();
-        if (lc.getChildrenChanges() != structureWatermark) {
-            return lc.getChildrenChanges();
-        } else {
-            return -1l;
-        }
+        return packageControllerUtils.getChildrenChanged(structureWatermark);
     }
 
     @Override
@@ -548,110 +620,21 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         return null;
     }
 
-    private Object DownloadLinkAPIStorableV2(DownloadLink mark) {
-        return null;
-    }
-
-    /**
-     * the SelectionInfo Class is actually used for the GUI downloadtable. it generates a logic selection out of selected links and
-     * packages.
-     *
-     * example: if a package is selected, and non if it's links - all its links will be in the selection info<br>
-     * example2: if a package is selected AND SOME of it's children. The packge will not be considered as fully selected. only the actual
-     * selected links.
-     *
-     * @param linkIds
-     * @param packageIds
-     * @return
-     */
-    public static SelectionInfo<FilePackage, DownloadLink> getSelectionInfo(long[] linkIds, long[] packageIds) {
-        return new SelectionInfo<FilePackage, DownloadLink>(null, convertIdsToObjects(linkIds, packageIds));
-    }
-
-    public static List<AbstractNode> convertIdsToObjects(long[] linkIds, long[] packageIds) {
-        final ArrayList<AbstractNode> ret = new ArrayList<AbstractNode>();
-        return convertIdsToObjects(ret, linkIds, packageIds);
-    }
-
-    public static List<FilePackage> convertIdsToPackages(long... packageIds) {
-        final List<FilePackage> ret = new ArrayList<FilePackage>();
-        convertIdsToObjects(ret, null, packageIds);
-        return ret;
-    }
-
-    public static List<DownloadLink> convertIdsToLinks(long... linkIds) {
-        final List<DownloadLink> ret = new ArrayList<DownloadLink>();
-        convertIdsToObjects(ret, linkIds, null);
-        return ret;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T extends AbstractNode> List<T> convertIdsToObjects(final List<T> ret, long[] linkIds, long[] packageIds) {
-        final HashSet<Long> linklookUp = createLookupSet(linkIds);
-        final HashSet<Long> packageLookup = createLookupSet(packageIds);
-        DownloadController dlc = DownloadController.getInstance();
-        if (linklookUp != null || packageLookup != null) {
-            boolean readL = dlc.readLock();
-            try {
-                main: for (FilePackage pkg : dlc.getPackages()) {
-                    if (packageLookup != null && packageLookup.remove(pkg.getUniqueID().getID())) {
-                        ret.add((T) pkg);
-                        if ((packageLookup == null || packageLookup.size() == 0) && (linklookUp == null || linklookUp.size() == 0)) {
-                            break main;
-                        }
-                    }
-                    if (linklookUp != null) {
-                        boolean readL2 = pkg.getModifyLock().readLock();
-                        try {
-                            for (DownloadLink child : pkg.getChildren()) {
-
-                                if (linklookUp.remove(child.getUniqueID().getID())) {
-                                    ret.add((T) child);
-                                    if ((packageLookup == null || packageLookup.size() == 0) && (linklookUp == null || linklookUp.size() == 0)) {
-                                        break main;
-                                    }
-                                }
-                            }
-                        } finally {
-                            pkg.getModifyLock().readUnlock(readL2);
-                        }
-                    }
-                }
-            } finally {
-                dlc.readUnlock(readL);
-            }
-        }
-        return ret;
-    }
-
-    public static HashSet<Long> createLookupSet(long[] linkIds) {
-        if (linkIds == null || linkIds.length == 0) {
-            return null;
-        }
-        HashSet<Long> linkLookup = new HashSet<Long>();
-        for (long l : linkIds) {
-            linkLookup.add(l);
-        }
-        return linkLookup;
-    }
-
     @Override
     public void setEnabled(boolean enabled, long[] linkIds, long[] packageIds) {
-        for (DownloadLink dl : getSelectionInfo(linkIds, packageIds).getChildren()) {
-            dl.setEnabled(enabled);
-        }
+        packageControllerUtils.setEnabled(enabled, linkIds, packageIds);
     }
 
     @Override
     public void resetLinks(long[] linkIds, long[] packageIds) {
-        DownloadWatchDog.getInstance().reset(getSelectionInfo(linkIds, packageIds).getChildren());
+        DownloadWatchDog.getInstance().reset(packageControllerUtils.getSelectionInfo(linkIds, packageIds).getChildren());
     }
 
     @Override
     public void setPriority(PriorityStorable priority, long[] linkIds, long[] packageIds) throws BadParameterException {
-        org.jdownloader.controlling.Priority jdPriority = org.jdownloader.controlling.Priority.valueOf(priority.name());
-        List<DownloadLink> children = convertIdsToLinks(linkIds);
-        List<FilePackage> pkgs = convertIdsToPackages(packageIds);
+        final org.jdownloader.controlling.Priority jdPriority = org.jdownloader.controlling.Priority.valueOf(priority.name());
+        final List<DownloadLink> children = packageControllerUtils.getChildren(linkIds);
+        final List<FilePackage> pkgs = packageControllerUtils.getPackages(packageIds);
         for (DownloadLink dl : children) {
             dl.setPriorityEnum(jdPriority);
         }
@@ -662,7 +645,8 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     @Override
     public void setStopMark(long linkId, long packageId) {
-        for (DownloadLink dl : getSelectionInfo(new long[] { linkId }, new long[] { packageId }).getChildren()) {
+        final SelectionInfo<FilePackage, DownloadLink> selectionInfo = packageControllerUtils.getSelectionInfo(new long[] { linkId }, new long[] { packageId });
+        for (DownloadLink dl : selectionInfo.getChildren()) {
             DownloadWatchDog.getInstance().getSession().setStopMark(dl);
         }
     }
@@ -674,18 +658,38 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     @Override
     public void resumeLinks(long[] linkIds, long[] packageIds) throws BadParameterException {
-        DownloadWatchDog dwd = DownloadWatchDog.getInstance();
-        List<DownloadLink> links = getSelectionInfo(linkIds, packageIds).getChildren();
+        final DownloadWatchDog dwd = DownloadWatchDog.getInstance();
+        final List<DownloadLink> links = packageControllerUtils.getSelectionInfo(linkIds, packageIds).getChildren();
         dwd.resume(links);
     }
 
     @Override
     public void setDownloadDirectory(String directory, long[] packageIds) {
-        DownloadWatchDog dwd = DownloadWatchDog.getInstance();
-        List<FilePackage> pkgs = convertIdsToPackages(packageIds);
+        final DownloadWatchDog dwd = DownloadWatchDog.getInstance();
+        final List<FilePackage> pkgs = packageControllerUtils.getPackages(packageIds);
         for (FilePackage pkg : pkgs) {
             dwd.setDownloadDirectory(pkg, directory);
         }
+    }
+
+    @Override
+    public void startOnlineStatusCheck(long[] linkIds, long[] packageIds) throws BadParameterException {
+        final SelectionInfo<FilePackage, DownloadLink> selectionInfo = packageControllerUtils.getSelectionInfo(linkIds, packageIds);
+        SelectionInfoUtils.startOnlineStatusCheck(selectionInfo);
+    }
+
+    @Override
+    public HashMap<Long, String> getDownloadUrls(final long[] linkIds, final long[] packageIds) {
+        final SelectionInfo<FilePackage, DownloadLink> selection = packageControllerUtils.getSelectionInfo(linkIds, packageIds);
+        final List<DownloadLink> children = selection.getChildren();
+        final HashMap<Long, String> result = new HashMap<>();
+        for (Object l : children) {
+            if (l instanceof DownloadLink) {
+                final DownloadLink link = (DownloadLink) l;
+                result.put(link.getUniqueID().getID(), link.getPluginPatternMatcher());
+            }
+        }
+        return result;
     }
 
 }
