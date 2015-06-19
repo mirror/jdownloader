@@ -69,6 +69,7 @@ public class RDMdthk extends PluginForDecrypt {
     private boolean                             grab_subtitle         = false;
     private String                              parameter             = null;
     private String                              title                 = null;
+    private String                              date                  = null;
     ArrayList<DownloadLink>                     decryptedLinks        = new ArrayList<DownloadLink>();
 
     public RDMdthk(final PluginWrapper wrapper) {
@@ -166,6 +167,10 @@ public class RDMdthk extends PluginForDecrypt {
             logger.info("ARDMediathek: MediaID is null! link offline?");
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
+        if (br.containsHTML("(<h1>Leider konnte die gew\\&uuml;nschte Seite<br />nicht gefunden werden\\.</h1>|Die angeforderte Datei existiert leider nicht)")) {
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        }
+        this.date = br.getRegex("Video der Sendung vom (\\d{2}\\.\\d{2}\\.\\d{4})").getMatch(0);
         final String original_ard_ID = broadcastID;
         if (title == null) {
             title = getTitle(br);
@@ -177,13 +182,12 @@ public class RDMdthk extends PluginForDecrypt {
             show = encodeUnicode(show);
             title = show + " - " + title;
         }
+        if (this.date != null) {
+            title = this.date + "_ard_" + title;
+        }
         final Browser br = new Browser();
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.containsHTML("(<h1>Leider konnte die gew\\&uuml;nschte Seite<br />nicht gefunden werden\\.</h1>|Die angeforderte Datei existiert leider nicht)")) {
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-        }
         br.getPage("http://www.ardmediathek.de/play/media/" + original_ard_ID + "?devicetype=pc&features=flash");
         /* No json --> No media to crawl! */
         if (!br.getHttpConnection().getContentType().contains("application/json")) {
@@ -475,6 +479,9 @@ public class RDMdthk extends PluginForDecrypt {
             link.setLinkID(linkid);
         } catch (Throwable e) {/* Stable */
             link.setBrowserUrl(orig_link);
+        }
+        if (this.date != null) {
+            link.setProperty("date", this.date);
         }
         link.setProperty("directURL", url);
         link.setProperty("directName", full_name);
