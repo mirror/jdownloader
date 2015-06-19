@@ -33,6 +33,7 @@ import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class ChallengeResponseController {
     private static final ChallengeResponseController INSTANCE = new ChallengeResponseController();
@@ -69,7 +70,9 @@ public class ChallengeResponseController {
         if (init.compareAndSet(false, true)) {
             addSolver(JACSolver.getInstance());
 
-            addSolver(CaptchaMyJDSolver.getInstance());
+            if (CFG_GENERAL.CFG.isMyJDownloaderCaptchaSolverEnabled()) {
+                addSolver(CaptchaMyJDSolver.getInstance());
+            }
             addSolver(DeathByCaptchaSolver.getInstance());
             addSolver(ImageTyperzCaptchaSolver.getInstance());
             addSolver(CheapCaptchaSolver.getInstance());
