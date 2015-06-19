@@ -3,6 +3,7 @@ package org.jdownloader.captcha.v2.challenge.areyouahuman;
 import java.awt.Rectangle;
 
 import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -17,6 +18,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -129,9 +131,6 @@ public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAre
             if (!c.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            if (!c.isCaptchaResponseValid()) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Captcha reponse value did not validate!");
-            }
             return c.getResult().getValue();
         } catch (InterruptedException e) {
             LogSource.exception(logger, e);
@@ -167,15 +166,15 @@ public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAre
                     }
                     break;
                 case TIMEOUT:
-                    // if (JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
-                    CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(link));
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    if (JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
+                        CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(link));
+                        if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                            HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                        }
                     }
-                    // }
-                    break;
                 case REFRESH:
-                    break;
+                    // we should forward the refresh request to a new pluginstructure soon. For now. the plugin will just retry
+                    return "";
                 case STOP_CURRENT_ACTION:
                     if (Thread.currentThread() instanceof SingleDownloadController) {
                         DownloadWatchDog.getInstance().stopDownloads();

@@ -1,6 +1,7 @@
 package org.jdownloader.captcha.v2.challenge.recaptcha.v2;
 
 import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -15,6 +16,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -36,13 +38,14 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRecaptchaV2<PluginForHost> {
 
-    /* Most likely used for login captchas. */
-    public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br, final String siteKey) {
+    public CaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br, String siteKey) {
         super(plugin, br, siteKey);
+
     }
 
-    public CaptchaHelperHostPluginRecaptchaV2(final PluginForHost plugin, final Browser br) {
+    public CaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br) {
         this(plugin, br, null);
+
     }
 
     public String getToken() throws PluginException, InterruptedException {
@@ -51,7 +54,7 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
             logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
         }
         final PluginForHost plugin = this.plugin;
-        final DownloadLink link = getPlugin().getDownloadLink();
+        final DownloadLink link = plugin.getDownloadLink();
         String apiKey = siteKey;
         if (apiKey == null) {
             apiKey = getRecaptchaV2ApiKey();
@@ -119,9 +122,6 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
             if (!c.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            if (!c.isCaptchaResponseValid()) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Captcha reponse value did not validate!");
-            }
             return c.getResult().getValue();
         } catch (InterruptedException e) {
             LogSource.exception(logger, e);
@@ -157,29 +157,19 @@ public class CaptchaHelperHostPluginRecaptchaV2 extends AbstractCaptchaHelperRec
                     }
                     break;
                 case TIMEOUT:
-                    /*
-                     * TODO: come up with better solution... <br /> For now not using
-                     * JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled() because in previous
-                     * implementation we wouldn't break and would return "" (from refresh) response to plugins!! this is BADDDDDDDDDDDDDD
-                     * idea! we should never return empty response to plugins, specially a response that is shared for different error
-                     * types. Plugins have zero idea what happen to cause issue.
-                     */
-                    // if (!JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
-                    // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "CaptchaDialog timed out!", 5 * 60 * 1000l);
-                    // }
-                    CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(link));
-                    if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
-                        HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                    if (JsonConfig.create(CaptchaSettings.class).isSkipDownloadLinkOnCaptchaTimeoutEnabled()) {
+                        CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(link));
+                        if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
+                            HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI._.ChallengeDialogHandler_viaGUI_skipped_help_msg(), NewTheme.I().getIcon("skipped", 32));
+                        }
                     }
-                    break;
                 case REFRESH:
-                    break;
+                    // we should forward the refresh request to a new pluginstructure soon. For now. the plugin will just retry
+                    return "";
                 case STOP_CURRENT_ACTION:
                     if (Thread.currentThread() instanceof SingleDownloadController) {
                         DownloadWatchDog.getInstance().stopDownloads();
                     }
-                    break;
-                default:
                     break;
                 }
             }

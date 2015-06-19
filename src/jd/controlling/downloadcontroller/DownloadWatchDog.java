@@ -642,7 +642,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * returns how many downloads are currently watched by this DownloadWatchDog
-     *
+     * 
      * @return
      */
     public int getActiveDownloads() {
@@ -651,7 +651,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * returns the ThrottledConnectionManager of this DownloadWatchDog
-     *
+     * 
      * @return
      */
     public DownloadSpeedManager getDownloadSpeedManager() {
@@ -1633,7 +1633,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * returns current pause state
-     *
+     * 
      * @return
      */
     public boolean isPaused() {
@@ -1646,7 +1646,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * may the DownloadWatchDog start new Downloads?
-     *
+     * 
      * @return
      */
     private boolean newDLStartAllowed(DownloadSession session) {
@@ -1686,7 +1686,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * pauses the DownloadWatchDog
-     *
+     * 
      * @param value
      */
 
@@ -2110,9 +2110,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * activates new Downloads as long as possible and returns how many got activated
-     *
+     * 
      * @param downloadLinksWithConditionalSkipReasons
-     *
+     * 
      * @return
      **/
     private List<SingleDownloadController> activateDownloads(final List<DownloadLink> downloadLinksWithConditionalSkipReasons) throws Exception {
@@ -2296,7 +2296,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * activates a new SingleDownloadController for the given SingleDownloadControllerActivator
-     *
+     * 
      * @param activator
      */
     private SingleDownloadController attach(final DownloadLinkCandidate candidate) {
@@ -3382,6 +3382,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             eventSender.fireEvent(new DownloadWatchdogEvent(this, DownloadWatchdogEvent.Type.DATA_UPDATE));
                         }
                         try {
+
                             validateProxyInfoHistory();
                             processJobs();
                             final ArrayList<DownloadLink> downloadLinksWithConditionalSkipReasons = new ArrayList<DownloadLink>();

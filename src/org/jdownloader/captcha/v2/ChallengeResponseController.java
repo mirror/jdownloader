@@ -20,6 +20,7 @@ import org.jdownloader.captcha.event.ChallengeResponseEvent;
 import org.jdownloader.captcha.event.ChallengeResponseEventSender;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
 import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolver;
+import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogClickCaptchaSolver;
@@ -38,7 +39,7 @@ public class ChallengeResponseController {
 
     /**
      * get the only existing instance of ChallengeResponseController. This is a singleton
-     *
+     * 
      * @return
      */
     public static ChallengeResponseController getInstance() {
@@ -71,6 +72,7 @@ public class ChallengeResponseController {
             addSolver(CaptchaMyJDSolver.getInstance());
             addSolver(DeathByCaptchaSolver.getInstance());
             addSolver(ImageTyperzCaptchaSolver.getInstance());
+            addSolver(CheapCaptchaSolver.getInstance());
             addSolver(CBSolver.getInstance());
             addSolver(Captcha9kwSolver.getInstance());
             addSolver(Captcha9kwSolverClick.getInstance());
@@ -146,7 +148,7 @@ public class ChallengeResponseController {
     /**
      * When one job gets a skiprequest, we have to check all pending jobs if this skiprequest affects them as well. if so, we have to skip
      * them as well.
-     *
+     * 
      * @param skipRequest
      * @param solver
      * @param challenge

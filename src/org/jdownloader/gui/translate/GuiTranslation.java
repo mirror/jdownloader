@@ -5968,4 +5968,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "later" })
     String lit_later();
 
+    @Default(lngs = { "en" }, values = { "Semi-automatic Captcha Solving" })
+    String CheapCaptchaSolver_getName_();
+
+    @Default(lngs = { "en" }, values = { "cheapcaptcha.com" })
+    String CheapCaptchaSolver_gettypeName_();
+
 }

@@ -1,4 +1,4 @@
-package org.jdownloader.captcha.v2.solver.captchabrotherhood;
+package org.jdownloader.captcha.v2.solver.cheapcaptcha;
 
 import java.awt.event.ActionEvent;
 import java.util.HashMap;
@@ -22,90 +22,45 @@ import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.captcha.v2.ChallengeSolverConfig;
-import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolverService;
-import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolver;
-import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolverService;
-import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzSolverService;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
-import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolverService;
 import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHABROTHERHOOD;
-import org.jdownloader.settings.staticreferences.CFG_CBH;
+import org.jdownloader.settings.staticreferences.CFG_CHEAP_CAPTCHA;
 
-public class CBSolverService extends AbstractSolverService implements ServicePanelExtender {
-    public static final String         ID = "cb";
-    private CaptchaBrotherHoodSettings config;
-    private CBSolver                   solver;
+public class CheapCaptchaSolverService extends AbstractSolverService implements ServicePanelExtender {
+    private CheapCaptchaConfigInterface config;
+    private CheapCaptchaSolver          solver;
 
-    public CBSolverService() {
-        config = JsonConfig.create(CaptchaBrotherHoodSettings.class);
+    public CheapCaptchaSolverService() {
+        config = JsonConfig.create(CheapCaptchaConfigInterface.class);
+
         AdvancedConfigManager.getInstance().register(config);
 
         if (!Application.isHeadless()) {
             ServicePanel.getInstance().addExtender(this);
-            initServicePanel(CFG_CBH.USER, CFG_CBH.PASS, CFG_CBH.ENABLED);
+            initServicePanel(CFG_CHEAP_CAPTCHA.USER_NAME, CFG_CHEAP_CAPTCHA.PASSWORD, CFG_CHEAP_CAPTCHA.ENABLED);
         }
-    }
-
-    @Override
-    public String getID() {
-        return ID;
-    }
-
-    @Override
-    public void extendServicePabel(List<ServiceCollection<?>> services) {
-        if (getSolver().validateLogins()) {
-            services.add(new ServiceCollection<DeathByCaptchaSolver>() {
-
-                @Override
-                public Icon getIcon() {
-                    return NewTheme.I().getIcon(IconKey.ICON_CBH, 16);
-                }
-
-                @Override
-                public boolean isEnabled() {
-                    return config.isEnabled();
-                }
-
-                @Override
-                protected long getLastActiveTimestamp() {
-                    return System.currentTimeMillis();
-                }
-
-                @Override
-                protected String getName() {
-                    return "captchabrotherhood.com";
-                }
-
-                @Override
-                public ExtTooltip createTooltip(ServicePanel owner) {
-                    return new ServicePanelCBHTooltip(owner, CBSolverService.this);
-                }
-
-            });
-        }
-    }
-
-    @Override
-    public Icon getIcon(int size) {
-        return NewTheme.I().getIcon(IconKey.ICON_CBH, size);
     }
 
     @Override
     public String getType() {
-        return _GUI._.CBSolver_getName_();
+        return _GUI._.CheapCaptchaSolver_getName_();
+    }
+
+    @Override
+    public Icon getIcon(int size) {
+        return NewTheme.I().getIcon("cheapCaptcha", size);
     }
 
     @Override
     public AbstractCaptchaSolverConfigPanel getConfigPanel() {
         AbstractCaptchaSolverConfigPanel ret = new AbstractCaptchaSolverConfigPanel() {
+            private TextInput     username;
 
-            private TextInput     userName;
-            private PasswordInput passWord;
+            private PasswordInput password;
 
             @Override
             public String getPanelID() {
@@ -113,7 +68,7 @@ public class CBSolverService extends AbstractSolverService implements ServicePan
             }
 
             {
-                addHeader(getTitle(), NewTheme.I().getIcon("cbh", 32));
+                addHeader(getTitle(), NewTheme.I().getIcon("cheapCaptcha", 32));
                 addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_ces());
 
                 add(new SettingsButton(new AppAction() {
@@ -124,22 +79,23 @@ public class CBSolverService extends AbstractSolverService implements ServicePan
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        CrossSystem.openURL("http://www.captchabrotherhood.com/");
+                        CrossSystem.openURL("http://www.cheapCaptcha.com/");
 
                     }
                 }), "gapleft 37,spanx,pushx,growx");
-
-                userName = new TextInput(CFG_CAPTCHABROTHERHOOD.USER);
-                passWord = new PasswordInput(CFG_CAPTCHABROTHERHOOD.PASS);
+                username = new TextInput(CFG_CHEAP_CAPTCHA.USER_NAME);
+                password = new PasswordInput(CFG_CHEAP_CAPTCHA.PASSWORD);
 
                 this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
                 // addPair(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_enabled(), null, checkBox);
-                this.addDescriptionPlain(_GUI._.captchabrotherhoodService_createPanel_logins_());
+                this.addDescriptionPlain(_GUI._.dbcService_createPanel_logins_());
+                addPair(_GUI._.DeatchbyCaptcha_Service_createPanel_enabled(), null, new Checkbox(CFG_CHEAP_CAPTCHA.ENABLED, username, password));
+                addPair(_GUI._.captchabrotherhoodService_createPanel_username(), null, username);
+                addPair(_GUI._.captchabrotherhoodService_createPanel_password(), null, password);
 
-                addPair(_GUI._.captchabrotherhoodService_createPanel_enabled(), null, new Checkbox(CFG_CAPTCHABROTHERHOOD.ENABLED, userName, passWord));
-                addPair(_GUI._.captchabrotherhoodService_createPanel_username(), null, userName);
-                addPair(_GUI._.captchabrotherhoodService_createPanel_password(), null, passWord);
-                addBlackWhiteList(CFG_CAPTCHABROTHERHOOD.CFG);
+                addPair(_GUI._.DeatchbyCaptcha_Service_createPanel_feedback(), null, new Checkbox(CFG_CHEAP_CAPTCHA.FEED_BACK_SENDING_ENABLED));
+
+                addBlackWhiteList(CFG_CHEAP_CAPTCHA.CFG);
 
             }
 
@@ -154,12 +110,12 @@ public class CBSolverService extends AbstractSolverService implements ServicePan
 
             @Override
             public Icon getIcon() {
-                return CBSolverService.this.getIcon(32);
+                return CheapCaptchaSolverService.this.getIcon(32);
             }
 
             @Override
             public String getTitle() {
-                return "captchabrotherhood.com";
+                return "CheapCaptcha.com";
             }
 
         };
@@ -173,12 +129,46 @@ public class CBSolverService extends AbstractSolverService implements ServicePan
 
     @Override
     public String getName() {
-        return _GUI._.CBSolver_gettypeName_();
+        return _GUI._.CheapCaptchaSolver_gettypeName_();
     }
 
     @Override
     public ChallengeSolverConfig getConfig() {
         return config;
+    }
+
+    @Override
+    public void extendServicePabel(List<ServiceCollection<?>> services) {
+        if (solver.validateLogins()) {
+            services.add(new ServiceCollection<CheapCaptchaSolver>() {
+
+                @Override
+                public Icon getIcon() {
+                    return CheapCaptchaSolverService.this.getIcon(18);
+                }
+
+                @Override
+                public boolean isEnabled() {
+                    return config.isEnabled();
+                }
+
+                @Override
+                protected long getLastActiveTimestamp() {
+                    return System.currentTimeMillis();
+                }
+
+                @Override
+                protected String getName() {
+                    return "CheapCaptcha.com";
+                }
+
+                @Override
+                public ExtTooltip createTooltip(ServicePanel owner) {
+                    return new CheapCaptchaTooltip(owner, solver);
+                }
+
+            });
+        }
     }
 
     @Override
@@ -190,20 +180,21 @@ public class CBSolverService extends AbstractSolverService implements ServicePan
         // ret.put(CaptchaAPISolver.ID, 60000);
         ret.put(JacSolverService.ID, 30000);
         // ret.put(Captcha9kwSolver.ID, 60000);
-        ret.put(CaptchaMyJDSolverService.ID, 60000);
+        // ret.put(CaptchaMyJDSolver.ID, 60000);
         // ret.put(CBSolver.ID, 60000);
-        ret.put(DeathByCaptchaSolverService.ID, 60000);
-        ret.put(ImageTyperzSolverService.ID, 60000);
-        ret.put(CheapCaptchaSolverService.ID, 60000);
+        // ret.put(CheapCaptchaSolver.ID, 60000);
+
         return ret;
     }
 
-    public void setSolver(CBSolver cbSolver) {
-        this.solver = cbSolver;
+    public static final String ID = "cheapcaptcha";
+
+    @Override
+    public String getID() {
+        return ID;
     }
 
-    public CBSolver getSolver() {
-        return solver;
+    public void setSolver(CheapCaptchaSolver solver) {
+        this.solver = solver;
     }
-
 }
