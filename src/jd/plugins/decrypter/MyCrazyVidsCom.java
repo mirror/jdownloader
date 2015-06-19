@@ -17,7 +17,6 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -49,120 +48,17 @@ public class MyCrazyVidsCom extends PluginForDecrypt {
                 br.getPage(parameter);
             } catch (final BrowserException e) {
                 logger.info("Cannot decrypt link, either offline or server error: " + parameter);
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            if (br.containsHTML(">404 Not Found<")) {
+            if (br.containsHTML(">404 Not Found<") || this.br.getHttpConnection().getResponseCode() == 404) {
                 logger.info("Cannot decrypt link, either offline or server error: " + parameter);
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
-            if (externID != null) {
-                decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
-                return decryptedLinks;
-            }
-
-            externID = br.getRegex("madthumbs\\.com%2Fvideos%2Fembed_config%3Fid%3D(\\d+)").getMatch(0);
-            if (externID != null) {
-                DownloadLink dl = createDownloadlink("http://www.madthumbs.com/videos/amateur/" + new Random().nextInt(100000) + "/" + externID);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
-            externID = br.getRegex("\"(http://(www\\.)?tube8\\.com/embed/[^<>\"/]*?/[^<>\"/]*?/\\d+/?)\"").getMatch(0);
-            if (externID != null) {
-                decryptedLinks.add(createDownloadlink(externID.replace("tube8.com/embed", "tube8.com/")));
-                return decryptedLinks;
-            }
-            externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
-            if (externID == null) {
-                externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
-            }
-            if (externID != null) {
-                DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
-            externID = br.getRegex("(http://drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
-            if (externID != null) {
-                decryptedLinks.add(createDownloadlink(externID));
-                return decryptedLinks;
-            }
-            externID = br.getRegex("\"(http://(www\\.)?deviantclip\\.com/watch/[^<>\"]*?)\"").getMatch(0);
-            if (externID != null) {
-                decryptedLinks.add(createDownloadlink(externID));
-                return decryptedLinks;
-            }
-            externID = br.getRegex("(http://(www\\.)?keezmovies\\.com/embed_player\\.php\\?v?id=\\d+)\"").getMatch(0);
-            if (externID != null) {
-                br.getPage(externID);
-                externID = br.getRegex("<share>(http://[^<>\"]*?)</share>").getMatch(0);
-                if (externID == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                final DownloadLink dl = createDownloadlink(externID);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
-            /* tnaflix.com handling #1 */
-            externID = br.getRegex("player\\.tnaflix\\.com/video/(\\d+)\"").getMatch(0);
-            if (externID != null) {
-                final DownloadLink dl = createDownloadlink("http://www.tnaflix.com/teen-porn/" + System.currentTimeMillis() + "/video" + externID);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
-            /* tnaflix.com handling #2 */
-            externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf\".*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
-            if (externID != null) {
-                decryptedLinks.add(createDownloadlink("https://www.tnaflix.com/embedding_player/" + externID));
-                return decryptedLinks;
-            }
-            // filename needed for all IDs below
             String filename = br.getRegex("<h1 class=\"name\">([^<>]*?)</h1>").getMatch(0);
-            if (filename == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            filename = Encoding.htmlDecode(filename).trim();
-            filename = encodeUnicode(filename);
-            externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
-            if (externID != null) {
-                DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
-                dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
-            externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
-            if (externID == null) {
-                externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
-            }
-            if (externID != null) {
-                DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
-            // pornhub handling number 2
-            externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
-            if (externID != null) {
-                br.getPage(externID);
-                if (br.containsHTML("<link_url>N/A</link_url>") || br.containsHTML("No htmlCode read")) {
-                    logger.info("Link offline: " + parameter);
-                    return decryptedLinks;
-                }
-                externID = br.getRegex("<link_url>(http://[^<>\"]*?)</link_url>").getMatch(0);
-                if (externID == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                decryptedLinks.add(createDownloadlink(externID));
-                return decryptedLinks;
-            }
-            externID = br.getRegex("<embed src=\\'http://(www\\.)?hardsextube\\.com/embed/(\\d+)/\\'").getMatch(0);
-            if (externID != null) {
-                decryptedLinks.add(createDownloadlink("http://www.hardsextube.com/video/" + externID + "/"));
-                return decryptedLinks;
-            }
-            if (externID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
+            decryptedLinks = jd.plugins.components.PornEmbedParser.findEmbedUrls(this.br, filename);
+            if (decryptedLinks == null || decryptedLinks.size() == 0) {
                 return null;
             }
         }
