@@ -157,7 +157,7 @@ public class Music163Com extends PluginForDecrypt {
                 }
                 final DownloadLink dl = createDownloadlink("http://music.163.com/song?id=" + fid);
                 dl.setLinkID(fid);
-                dl.setProperty("trachnumber", tracknumber);
+                dl.setProperty("tracknumber", tracknumber);
                 dl.setProperty("directtitle", content_title);
                 dl.setProperty("directartist", artist);
                 dl.setProperty("contentid", fid);
