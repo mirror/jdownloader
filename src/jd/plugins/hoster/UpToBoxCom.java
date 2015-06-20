@@ -63,6 +63,7 @@ public class UpToBoxCom extends antiDDoSForHost {
 
     private final static String  SSL_CONNECTION               = "SSL_CONNECTION";
 
+    private boolean              happyHour                    = false;
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "Passwor(d|t):</b> <input|Password:</b>";
     private final String         COOKIE_HOST                  = "http://uptobox.com";
@@ -251,7 +252,13 @@ public class UpToBoxCom extends antiDDoSForHost {
                 /* if happy hour */
                 if (new Regex(correctedBR, ">Happy hour!!! Download as many files as you want, we offer you a preview of the Premium\\.</font></p>").matches()) {
                     // yay sending requests too fast can result in class="err">Skipped countdown< ?? see if this helps.
-                    sleep(10000, downloadLink);
+                    happyHour = true;
+                    // random int
+                    int x = 0;
+                    while (x < 5 || x > 25) {
+                        x = new Random().nextInt(25);
+                    }
+                    sleep(x * 1000l, downloadLink);
                 } else {
                     /* Captcha START */
                     if (correctedBR.contains(";background:#ccc;text-align")) {
@@ -501,6 +508,10 @@ public class UpToBoxCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             if (correctedBR.contains("\">Skipped countdown<")) {
+                // to cover bullshit response..
+                if (happyHour) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Apparently there are wait times in happy hour?", 2 * 60 * 1000l);
+                }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
             }
         }
