@@ -52,7 +52,7 @@ public class BonBonmeCom extends PluginForDecrypt {
             }
         }
         String filename = br.getRegex("<div class=\"title\">[\t\n\r ]+<h2>([^<>\"]*?)(</h2>| 觀看次數:<script)").getMatch(0);
-        decryptedLinks = jd.plugins.components.PornEmbedParser.findEmbedUrls(this.br, filename);
+        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
         if (decryptedLinks != null && decryptedLinks.size() > 0) {
             return decryptedLinks;
         }

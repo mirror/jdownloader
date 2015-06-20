@@ -1,4 +1,4 @@
-package jd.plugins.components;
+package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;

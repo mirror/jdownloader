@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -40,6 +41,7 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://");
+        Browser.setRequestIntervalLimitGlobal("primejailbait.com", 500, 2, 20000);
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("images/404\\.png\"") || br.getURL().equals("http://primejailbait.com/404/") || br.getHttpConnection().getResponseCode() == 404) {
