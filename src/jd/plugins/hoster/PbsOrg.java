@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
@@ -25,6 +26,7 @@ import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -50,6 +52,66 @@ public class PbsOrg extends PluginForHost {
 
     private LinkedHashMap<String, Object> entries    = null;
 
+    /* Decrypter */
+    @SuppressWarnings("deprecation")
+    @Override
+    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
+        ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
+        try {
+            if (ret != null && ret.size() > 0) {
+                /*
+                 * we make sure only one result is in ret, thats the case for svn/next major version
+                 */
+                String vid = null;
+                final DownloadLink link = ret.get(0);
+                if (link.getDownloadURL().matches(TYPE_VIDEO)) {
+                    vid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+                } else {
+                    br.getPage(link.getDownloadURL());
+                    vid = br.getRegex("mediaid:\\s*?\\'(\\d+)\\'").getMatch(0);
+                    if (vid == null) {
+                        /* Seems to happen when they embed their own videos: http://www.pbs.org/wgbh/nova/tech/rise-of-the-hackers.html */
+                        vid = br.getRegex("class=\"watch\\-full\\-now\" onclick=\"startVideo\\(\\'(\\d+)'").getMatch(0);
+                    }
+                    if (vid == null) {
+                        /* Seems to happen when they embed their own videos: http://www.pbs.org/wgbh/nova/tech/rise-of-the-hackers.html */
+                        vid = br.getRegex("class=\"vid\\-link\" onclick=\"startVideo\\(\\'(\\d+)\\'").getMatch(0);
+                    }
+                    if (vid == null) {
+                        /* Seems to happen when they embed their own videos: http://www.pbs.org/wgbh/nova/tech/rise-of-the-hackers.html */
+                        vid = br.getRegex("startVideo\\(\\'(\\d+)\\'").getMatch(0);
+                    }
+                }
+                if (vid != null) {
+                    /* Single video */
+                    final String videourl = "http://video.pbs.org/video/" + vid;
+                    final DownloadLink fina = new DownloadLink(this, null, getHost(), videourl, true);
+                    ret.add(fina);
+                    return ret;
+                }
+                /* Either nothing or multiple urls. */
+                final String[] videoids = br.getRegex("data\\-mediaid=\"(\\d+)\"").getColumn(0);
+                if (videoids != null && videoids.length > 0) {
+                    for (final String videoid : videoids) {
+                        final String videourl = "http://video.pbs.org/video/" + videoid;
+                        final DownloadLink fina = new DownloadLink(this, null, getHost(), videourl, true);
+                        fina.setContentUrl(videourl);
+                        ret.add(fina);
+                    }
+                } else {
+                    /* Whatever the user added - it doesn't seem to be a video --> Offline */
+                    final DownloadLink offline = new DownloadLink(this, null, getHost(), "directhttp://" + link.getDownloadURL(), true);
+                    offline.setAvailable(false);
+                    offline.setProperty("OFFLINE", true);
+                    ret.add(offline);
+                }
+            }
+        } catch (final Throwable e) {
+            logger.severe(e.getMessage());
+        }
+        return ret;
+    }
+
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -64,6 +126,14 @@ public class PbsOrg extends PluginForHost {
             if (vid == null) {
                 /* Seems to happen when they embed their own videos: http://www.pbs.org/wgbh/nova/tech/rise-of-the-hackers.html */
                 vid = br.getRegex("class=\"watch\\-full\\-now\" onclick=\"startVideo\\(\\'(\\d+)'").getMatch(0);
+            }
+            if (vid == null) {
+                /* Seems to happen when they embed their own videos: http://www.pbs.org/wgbh/nova/tech/rise-of-the-hackers.html */
+                vid = br.getRegex("class=\"vid\\-link\" onclick=\"startVideo\\(\\'(\\d+)\\'").getMatch(0);
+            }
+            if (vid == null) {
+                /* Seems to happen when they embed their own videos: http://www.pbs.org/wgbh/nova/tech/rise-of-the-hackers.html */
+                vid = br.getRegex("startVideo\\(\\'(\\d+)\\'").getMatch(0);
             }
             /* Whatever the user added - it doesn't seem to be a video --> Offline */
             if (vid == null) {

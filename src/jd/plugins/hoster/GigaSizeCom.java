@@ -202,7 +202,8 @@ public class GigaSizeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         url = url.replaceAll("\\\\/", "/");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 0);
+        /* Status 20.06.2015: Chunkload not possible anymore */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, url, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.getURL().contains("cannot_read_file_from_server") || br.containsHTML("(>Download Error<|GigaSize servers or some storage box has been downed)")) {
