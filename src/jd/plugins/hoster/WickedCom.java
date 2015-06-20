@@ -164,7 +164,7 @@ public class WickedCom extends PluginForHost {
                 }
 
                 /* Remove old cookies & Headers */
-                this.br = new Browser();
+                this.br = prepBR(new Browser());
 
                 br.setFollowRedirects(true);
                 br.getPage("http://ma.wicked.com/access/login/");
@@ -268,6 +268,11 @@ public class WickedCom extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    private Browser prepBR(final Browser br) {
+        br.setAllowedResponseCodes(413);
+        return br;
     }
 
     @Override

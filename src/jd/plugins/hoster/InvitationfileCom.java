@@ -1149,9 +1149,12 @@ public class InvitationfileCom extends PluginForHost {
                 }
                 // this seems to be required
                 try {
-                    br.cloneBrowser().openGetConnection("/app/asset/image/header_bg.png");
-                    br.cloneBrowser().openGetConnection("/app/asset/image/logo.png");
-                    br.cloneBrowser().openGetConnection("/app/asset/image/header_button_register.png");
+                    // br.cloneBrowser().openGetConnection("/app/asset/image/header_bg.png");
+                    // br.cloneBrowser().openGetConnection("/app/asset/image/logo.png");
+                    // br.cloneBrowser().openGetConnection("/app/asset/image/header_button_register.png");
+                    br.cloneBrowser().openGetConnection("/app/asset/stylesheet/style.css");
+                    br.cloneBrowser().openGetConnection("/app/asset/stylesheet/style.css");
+                    br.cloneBrowser().openGetConnection("/app/asset/javascript/common.js");
                 } catch (final Exception e) {
                 }
                 loginform.put("username", Encoding.urlEncode(account.getUser()));

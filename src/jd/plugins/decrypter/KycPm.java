@@ -37,6 +37,7 @@ public class KycPm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        this.br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.toString().length() < 30) {
             try {
@@ -46,26 +47,35 @@ public class KycPm extends PluginForDecrypt {
             }
             return decryptedLinks;
         }
-        boolean failed = true;
-        for (int i = 0; i <= 2; i++) {
-            final Form dlform = br.getForm(0);
-            final String captchaurl = br.getRegex("(/captcha\\.php\\?[^<>\"]*?)\"").getMatch(0);
-            if (dlform == null || captchaurl == null) {
-                return null;
-            }
-            final String code = getCaptchaCode(captchaurl, param);
-            dlform.put("ent_code", code);
-            br.submitForm(dlform);
-            if (br.containsHTML("/captcha\\.php")) {
-                continue;
-            }
-            failed = false;
-            break;
+        String dllink = this.br.getRedirectLocation();
+        if (dllink != null && dllink.contains("kyc.pm/")) {
+            /* Should never happen */
+            br.getPage(dllink);
+            dllink = null;
         }
-        if (failed) {
-            throw new DecrypterException(DecrypterException.CAPTCHA);
+        if (dllink == null) {
+            boolean failed = true;
+            for (int i = 0; i <= 2; i++) {
+                final Form dlform = br.getForm(0);
+                final String captchaurl = br.getRegex("(/captcha\\.php\\?[^<>\"]*?)\"").getMatch(0);
+                if (dlform == null || captchaurl == null) {
+                    return null;
+                }
+                final String code = getCaptchaCode(captchaurl, param);
+                dlform.put("ent_code", code);
+                br.submitForm(dlform);
+                if (br.containsHTML("/captcha\\.php")) {
+                    continue;
+                }
+                failed = false;
+                break;
+            }
+            if (failed) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+
+            dllink = br.getRegex("name=\"next\" action=\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        final String dllink = br.getRegex("name=\"next\" action=\"(http[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             return null;
         }

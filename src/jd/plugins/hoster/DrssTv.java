@@ -84,7 +84,7 @@ public class DrssTv extends PluginForHost {
         }
         filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (link.getBooleanProperty("special_vimeo", false)) {
-            DLLINK = br.getRegex("data\\-url=\"(http://player\\.vimeo\\.com/external/\\d+\\.hd\\.mp4\\?s=[a-z0-9]+)\"").getMatch(0);
+            DLLINK = br.getRegex("data\\-url=\"(http://player\\.vimeo\\.com/external/\\d+\\.hd\\.mp4[^<>\"]*?)\"").getMatch(0);
         } else {
             DLLINK = br.getRegex("\"(http://[^<>\"]*?(\\.mp4|\\.flv|/flv))\"").getMatch(0);
         }

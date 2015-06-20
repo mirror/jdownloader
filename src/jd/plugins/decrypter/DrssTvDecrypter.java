@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -40,22 +41,24 @@ public class DrssTvDecrypter extends PluginForDecrypt {
     }
 
     /* Settings stuff */
-    private static final String     ALLOW_TRAILER       = "ALLOW_TRAILER";
-    private static final String     ALLOW_TEASER_PIC    = "ALLOW_TEASER_PIC";
-    private static final String     ALLOW_GALLERY       = "ALLOW_GALLERY";
-    private static final String     ALLOW_OTHERS        = "ALLOW_OTHERS";
+    private static final String     ALLOW_TRAILER         = "ALLOW_TRAILER";
+    private static final String     ALLOW_TEASER_PIC      = "ALLOW_TEASER_PIC";
+    private static final String     ALLOW_GALLERY         = "ALLOW_GALLERY";
+    private static final String     ALLOW_OTHERS          = "ALLOW_OTHERS";
 
-    private static final String     invalidlinks        = "http://(www\\.)?drss\\.tv/(gaeste/?|sendungen/?|team/?|club/?|impressum/?|feedback/?|index/?)";
-    private static final String     type_video          = "http://(www\\.)?drss\\.tv/video/[a-z0-9\\-]+/";
-    private static final String     type_normal_episode = "http://(www\\.)?drss\\.tv/sendung/\\d{2}\\-\\d{2}\\-\\d{4}/";
-    private static final String     type_profile        = "http://(www\\.)?drss\\.tv/profil/[a-z0-9\\-]+/";
+    private static final String     invalidlinks          = "http://(www\\.)?drss\\.tv/(gaeste/?|sendungen/?|team/?|club/?|impressum/?|feedback/?|index/?)";
+    private static final String     type_video            = "http://(www\\.)?drss\\.tv/video/[a-z0-9\\-]+/";
+    private static final String     type_normal_episode   = "http://(www\\.)?drss\\.tv/sendung/\\d{2}\\-\\d{2}\\-\\d{4}/";
+    private static final String     type_profile          = "http://(www\\.)?drss\\.tv/profil/[a-z0-9\\-]+/";
 
-    private DownloadLink            MAIN                = null;
-    private String                  PARAMETER           = null;
-    private ArrayList<DownloadLink> DECRYPTEDLINKS      = new ArrayList<DownloadLink>();
-    private String[]                ALLVIDEOS           = null;
-    private String                  TITLE               = null;
-    private String                  DESCRIPTION         = null;
+    private static final String     type_directlink_vimeo = "https?://player\\.vimeo\\.com/external/\\d+\\.(?:hd|sd)\\.mp4.+";
+
+    private DownloadLink            MAIN                  = null;
+    private String                  PARAMETER             = null;
+    private ArrayList<DownloadLink> DECRYPTEDLINKS        = new ArrayList<DownloadLink>();
+    private String[]                ALLVIDEOS             = null;
+    private String                  TITLE                 = null;
+    private String                  DESCRIPTION           = null;
 
     /*
      * TODO: Add support for profile links & galleries: http://www.drss.tv/profil/xxx/ , Add plugin settings, download trailer/pictures and
@@ -169,7 +172,7 @@ public class DrssTvDecrypter extends PluginForDecrypt {
                     externID = br.getRegex("<div class=\"player active current player\\-1\">[\t\n\r ]+<div[^>]+data\\-url=\"(http://player\\.vimeo.com/external/\\d+)").getMatch(0);
                 }
                 /* Add special quality if available */
-                final String specialVimeoFULL_HDLink = br.getRegex("<div class=\"player active current player\\-1\">[\t\n\r ]+<div[^>]+data\\-url=\"(http://player\\.vimeo.com/external/\\d+\\.hd\\.mp4\\?s=[a-z0-9]+)\"").getMatch(0);
+                final String specialVimeoFULL_HDLink = br.getRegex("<div class=\"player active current player\\-1\">[\t\n\r ]+<div[^>]+data\\-url=\"(http://player\\.vimeo.com/external/\\d+\\.hd\\.mp4[^<>\"]*?)\"").getMatch(0);
                 if (specialVimeoFULL_HDLink != null) {
                     /*
                      * In theory this is a bad workaround but it's the best solution here as we do not easily get a http link to this
@@ -326,12 +329,21 @@ public class DrssTvDecrypter extends PluginForDecrypt {
                      */
                     if (allow_others) {
                         br.getPage(PARAMETER + "?video=" + real_counter);
-                        final String video_externlink = br.getRegex("player\\-" + real_counter + "\">[\t\n\r ]+<iframe[^<>]+(?:data\\-)?src=\"(http[^<>\"]*?)\"").getMatch(0);
-                        if (video_externlink == null) {
+                        String videolink = br.getRegex("player\\-" + real_counter + "\">[\t\n\r ]+<iframe[^<>]+(?:data\\-)?src=\"(http[^<>\"]*?)\"").getMatch(0);
+                        if (videolink == null) {
+                            videolink = br.getRegex("\"(\\?video=" + real_counter + ")\"").getMatch(0);
+                        }
+                        if (videolink == null) {
                             logger.warning("Failed to find trailer!");
                             throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
                         }
-                        DECRYPTEDLINKS.add(createDownloadlink(video_externlink));
+                        if (videolink.matches("\\?video=\\d+")) {
+                            final DownloadLink segmentdl = crawlSegment(videolink);
+                            segmentdl.setFinalFileName(TITLE + "_" + bigtitle + "_" + subtitle + ".mp4");
+                            DECRYPTEDLINKS.add(segmentdl);
+                        } else {
+                            DECRYPTEDLINKS.add(createDownloadlink(videolink));
+                        }
                         logger.info("Decrypted unknown bigtitle: " + bigtitle);
                         logger.info("Decrypted unknown subtitle: " + subtitle);
                     }
@@ -340,6 +352,21 @@ public class DrssTvDecrypter extends PluginForDecrypt {
                 real_counter++;
             }
         }
+    }
+
+    private DownloadLink crawlSegment(final String input) throws DecrypterException, IOException {
+        final Browser segmentBR = this.br.cloneBrowser();
+        segmentBR.getPage(PARAMETER + input);
+        String finallink = segmentBR.getRegex("data\\-url=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) {
+            logger.warning("Failed to crawl segment: " + input);
+            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+        }
+        if (finallink.matches(type_directlink_vimeo)) {
+            finallink = "directhttp://" + finallink;
+        }
+        final DownloadLink fina = this.createDownloadlink(finallink);
+        return fina;
     }
 
 }
