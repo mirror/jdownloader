@@ -117,7 +117,7 @@ public class VideoOneCom extends PluginForDecrypt {
         }
 
         /** Or not crypted... */
-        decryptedLinks = jd.plugins.components.PornEmbedParser.findEmbedUrls(this.br, filename);
+        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             return null;
         }

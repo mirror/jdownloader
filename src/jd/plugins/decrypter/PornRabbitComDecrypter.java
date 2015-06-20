@@ -54,7 +54,7 @@ public class PornRabbitComDecrypter extends PluginForDecrypt {
         if (filename == null) {
             filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         }
-        decryptedLinks = jd.plugins.components.PornEmbedParser.findEmbedUrls(this.br, filename);
+        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             return null;
         }

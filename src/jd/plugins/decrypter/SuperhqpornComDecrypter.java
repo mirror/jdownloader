@@ -61,7 +61,7 @@ public class SuperhqpornComDecrypter extends PluginForDecrypt {
             br.getPage(externID);
             externID = null;
         }
-        decryptedLinks = jd.plugins.components.PornEmbedParser.findEmbedUrls(this.br, null);
+        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, null);
         if (decryptedLinks != null && decryptedLinks.size() >= 0) {
             return null;
         }
