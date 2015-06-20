@@ -57,60 +57,47 @@ public class SubMangaCom extends PluginForDecrypt {
             return null;
         }
         // We get the title
-        final String[] title = br.getRegex("<strong>submanga\\.com</strong></a> \\&rsaquo; <a href=\"[^>]+>[^<]+</a> \\&rsaquo; <a href=\"[^>]+>([^<]+)</a> \\&rsaquo; <a href=\"[^>]+>([^<]+)</a></td><th width=\"1%\">").getRow(0);
+        final String[] title = br.getRegex("<title>(.*?) -[^-]+ &mdash; submanga</title>").getRow(0);
         if (title == null || title.length == 0) {
             logger.warning("Title not found! : " + parameter);
             return null;
         }
-        String useTitle = (title[0] + "_" + title[1]).replace("Â·", ".");
-        // grab the total pages within viewer
-        String totalPages = br.getRegex("(?i)<option value=\"(\\d+)\">\\d+</option></select>").getMatch(0);
-        if (totalPages == null) {
-            logger.warning("'totalPages' not found! : " + parameter);
-            return null;
-        }
-        int numberOfPages = Integer.parseInt(totalPages);
-        DecimalFormat df_page = new DecimalFormat("00");
-        if (numberOfPages > 999) {
-            df_page = new DecimalFormat("0000");
-        } else if (numberOfPages > 99) {
-            df_page = new DecimalFormat("000");
-        }
+        final String useTitle = title[0].replace("Â·", ".");
 
         FilePackage fp = FilePackage.getInstance();
         fp.setName(useTitle);
 
-        // We load each page and retrieve the URL of the picture
-        for (int i = 1; i <= numberOfPages; i++) {
-            String pageNumber = df_page.format(i);
+        // we don't know how many pages anymore.. this will over come this.
+        int pageNumber = 1;
+        final ArrayList<String> imgs = new ArrayList<String>();
+        while (true) {
             // grab the image source
-            String img = br.getRegex("https?://\\w+.submanga\\.com/pages/(\\d+/){1,}" + uid + "\\w+/\\d+\\.\\w{1,4}").getMatch(-1);
+            final String img = br.getRegex("https?://\\w+.submanga\\.com/pages/(\\d+/){1,}" + uid + "\\w+/\\d+\\.\\w{1,4}").getMatch(-1);
             if (img == null) {
-                logger.warning("No images found for page : " + pageNumber + " : " + parameter);
-                logger.warning("Continuing...");
-                if (i != numberOfPages) {
-                    // load next page for the 'for' loop.
-                    br.getPage(parameter + "/" + (i + 1));
-                }
-                continue;
+                break;
             }
+            imgs.add(img);
+            pageNumber++;
+            br.getPage(parameter + "/" + pageNumber);
+        }
+        // lets now format and return results
+        DecimalFormat df_page = new DecimalFormat("00");
+        if (imgs.size() > 999) {
+            df_page = new DecimalFormat("0000");
+        } else if (imgs.size() > 99) {
+            df_page = new DecimalFormat("000");
+        }
+        pageNumber = 0;
+        for (final String img : imgs) {
+            pageNumber++;
             String extension = img.substring(img.lastIndexOf("."));
             DownloadLink link = createDownloadlink("directhttp://" + img);
-            link.setFinalFileName((useTitle + "_–_page_" + pageNumber + extension).replace(" ", "_"));
+            link.setFinalFileName((useTitle + "_–_page_" + df_page.format(pageNumber) + extension).replace(" ", "_"));
             link.setAvailable(true); // fast add
             fp.add(link);
-            try {
-                distribute(link);
-            } catch (final Throwable e) {
-                /* does not exist in 09581 */
-            }
             decryptedLinks.add(link);
-            if (i != numberOfPages) {
-                // load next page for the 'for' loop.
-                br.getPage(parameter + "/" + (i + 1));
-            }
         }
-        logger.warning("Task Complete! : " + parameter);
+        logger.info("Task Complete! : " + parameter);
         return decryptedLinks;
     }
 
