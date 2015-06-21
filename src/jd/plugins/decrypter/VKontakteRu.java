@@ -502,8 +502,14 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final String audiotabletext = br.getRegex("<table class=\"audio_table\" cellspacing=\"0\" cellpadding=\"0\">(.*?)</table>").getMatch(0);
 
+        final String owner_ID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "audios((?:\\-)?\\d+)").getMatch(0);
         final String albumID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "album_id=(\\d+)").getMatch(0);
-        final String fpName = "audios_album " + albumID;
+        final String fpName;
+        if (cfg.getBooleanProperty(VKAUDIOS_USEIDASPACKAGENAME, false)) {
+            fpName = "audios" + owner_ID;
+        } else {
+            fpName = "audios_album " + albumID;
+        }
         FilePackage fp = null;
         fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName.trim()));
