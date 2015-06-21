@@ -70,13 +70,13 @@ public class YouSendItCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getStringProperty("mainlink", null));
         // File offline
-        if (br.containsHTML("Download link is invalid|>Access has expired<|class=\"fileIcons disabledFile\"|/file_icon_error\\.png")) {
+        if (br.containsHTML("Download link is invalid|>Access has expired<|class=\"fileIcons disabledFile\"|/file_icon_error\\.png") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("file_icon_lock\\.png\"")) {
             /* File abused?! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (link.getStringProperty("fileurl", null) != null) {
+        if (link.getStringProperty("fileurl", null) != null || link.getStringProperty("fileurl_new", null) != null) {
             link.setFinalFileName(link.getStringProperty("directname", null));
             link.setDownloadSize(SizeFormatter.getSize(link.getStringProperty("directsize", null)));
         } else {
@@ -101,8 +101,15 @@ public class YouSendItCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        final String fileurl_new = downloadLink.getStringProperty("fileurl_new", null);
         final String fileurl = downloadLink.getStringProperty("fileurl", null);
-        if (fileurl != null) {
+        if (fileurl_new != null) {
+            br.getPage("https://de.hightail.com/folders?phi_action=app/directDownloadWorkspace&getResult=1&dlFileName=&fId=" + fileurl_new);
+            DLLINK = getJson("downloadLink");
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else if (fileurl != null) {
             DLLINK = "https://www.hightail.com/e?phi_action=app/directDownload&fl=" + fileurl;
         } else {
             if (DLLINK == null) {
@@ -124,6 +131,16 @@ public class YouSendItCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override

@@ -17,11 +17,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,23 +31,39 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moviesand.com" }, urls = { "http://(www\\.)?moviesand\\.com/videos/\\d+/[a-z0-9\\-_]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "moviesand.com" }, urls = { "http://(www\\.)?moviesand\\.com/(videos/\\d+/[a-z0-9\\-_]+\\.html|embedded/\\d+)" }, flags = { 0 })
 public class MovieSandCom extends PluginForHost {
 
     public MovieSandCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK = null;
+    private String              DLLINK      = null;
+    private static final String TYPE_NORMAL = "http://(www\\.)?moviesand\\.com/videos/\\d+/[a-z0-9\\-_]+\\.html";
+    private static final String TYPE_EMBED  = "http://(www\\.)?moviesand\\.com/embedded/\\d+";
 
     @Override
     public String getAGBLink() {
         return "http://www.moviesand.com/terms.php";
     }
 
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        final String fid;
+        final String addedlink = link.getDownloadURL();
+        if (new Regex(addedlink, Pattern.compile(TYPE_EMBED, Pattern.CASE_INSENSITIVE)).matches()) {
+            fid = new Regex(addedlink, "(\\d+)$").getMatch(0);
+            link.setUrlDownload("http://www.moviesand.com/videos/" + fid + "/xyz.html");
+        } else {
+            fid = new Regex(addedlink, "moviesand\\.com/videos/(\\d+)/").getMatch(0);
+        }
+        link.setLinkID(fid);
+    }
+
     /**
      * Other way to get direct downloadlinks: http://www.moviesand.com/emconfig/ +videoID
      */
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
