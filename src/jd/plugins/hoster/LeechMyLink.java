@@ -35,6 +35,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.hoster.PremiumaxNet.UnavailableHost;
 
+import org.appwork.utils.StringUtils;
+
 /**
  *
  * @author raztoki
@@ -244,11 +246,31 @@ public class LeechMyLink extends antiDDoSForHost {
         login(account, false);
         dllink = checkDirectLink(link, NICE_HOSTproperty + "_directlink");
         if (inValidate(dllink)) {
+            // prevent ddos work around
+            if (link.getBooleanProperty("hasFailed", false)) {
+                final int hasFailedInt = link.getIntegerProperty("hasFailedWait", 60);
+                // nullify old storeables
+                link.setProperty("hasFailed", Property.NULL);
+                link.setProperty("hasFailedWait", Property.NULL);
+                sleep(hasFailedInt * 1001, link);
+            }
             br.postPage("http://leechmy.link/api/leecher", "link=" + Encoding.urlEncode(link.getDownloadURL()) + (link.getDownloadPassword() != null ? "&lpass=" + Encoding.urlEncode(link.getDownloadPassword()) : ""));
             dllink = getJson("download_link");
             if ("error".equalsIgnoreCase(getJson("status"))) {
                 final String msg = getJson("msg");
-                // parse errors here.
+                if (StringUtils.startsWithCaseInsensitive(msg, "Received HTTP error code from filehost")) {
+                    // {"status":"error","msg":"Received HTTP error code from filehost. Please Retry.","link":"urlremoved"}
+                    handleErrorRetries(msg, 10, 15 * 60 * 1000l);
+                } else if (StringUtils.startsWithCaseInsensitive(msg, "Link dead")) {
+                    // {"status":"error","msg":"Link dead (2)","link":"urlremoved"}
+                    // in test environment, they reported false positive.. we can not trust this multihoster to report correctly
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 30 * 60 * 1000l);
+                } else if (StringUtils.startsWithCaseInsensitive(msg, "Failed to generate.")) {
+                    // {"status":"error","msg":"Failed to generate. Please try again.","link":"urlremoved","isVideo":false}
+                    handleErrorRetries(msg, 5, 15 * 60 * 1000l);
+                } else if (StringUtils.startsWithCaseInsensitive(msg, "Link is not recognized")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 30 * 60 * 1000l);
+                }
             }
             if (inValidate(dllink)) {
                 // unhandled erorr?
@@ -304,6 +326,9 @@ public class LeechMyLink extends antiDDoSForHost {
             logger.info(error + " -> Retrying");
             timesFailed++;
             this.currentLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, timesFailed);
+            // prevent ddos
+            this.currentLink.setProperty("hasFailed", true);
+            this.currentLink.setProperty("hasFailedWait", 60);
             throw new PluginException(LinkStatus.ERROR_RETRY, error);
         } else {
             this.currentLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
