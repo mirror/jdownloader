@@ -54,7 +54,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "http://video\\.fc2\\.com(/flv2\\.swf\\?i=|(/[a-z]{2})?(/a)?/content/)\\w+" }, flags = { 3 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "http://video\\.fc2\\.com/((?:a/)?flv2\\.swf\\?i=|(?:a/)?content/)\\w+" }, flags = { 3 })
 public class VideoFCTwoCom extends PluginForHost {
 
     public VideoFCTwoCom(PluginWrapper wrapper) {
@@ -106,6 +106,7 @@ public class VideoFCTwoCom extends PluginForHost {
         return 4;
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload("http://video.fc2.com/en/content/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0) + "/");
     }

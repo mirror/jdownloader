@@ -17,6 +17,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -27,62 +30,116 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hightail.com" }, urls = { "http(s)?://(www\\.)?(yousendit|hightail)\\.com/download/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hightail.com" }, urls = { "https?://(?:www\\.)?(?:yousendit|hightail)\\.com/download/[A-Za-z0-9\\-_]+|https?://[a-z]+\\.hightail\\.com/[A-Za-z]+\\?phi_action=app/orchestrate[A-Za-z]+\\&[A-Za-z0-9\\-_\\&=]+" }, flags = { 0 })
 public class HighTailComDecrypter extends PluginForDecrypt {
 
+    @SuppressWarnings("deprecation")
     public HighTailComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @SuppressWarnings({ "unchecked", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
+        String folderID = new Regex(parameter, "\\&folderid=([A-Za-z0-9\\-_]+)").getMatch(0);
         br.getPage(parameter);
-        final String[] linkInfo = br.getRegex("<div class=\"fileContainer list\"(.*?)<div class=\"downloadFiletype list\"").getColumn(0);
-        if (linkInfo != null && linkInfo.length != 0) {
-            // Multiple links
-            for (final String singleLink : linkInfo) {
-                final DownloadLink dl = createDownloadlink("http://yousenditdecrypted.com/download/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                final String filename = new Regex(singleLink, "class=\"downloadFilename list\"><span>([^<>\"]*?)</span>").getMatch(0);
-                final String filesize = new Regex(singleLink, "class=\"downloadFilesize list\">([^<>\"]*?)</div>").getMatch(0);
-                final String fileurl = new Regex(singleLink, "file_url=\"([A-Za-z0-9]+)\"").getMatch(0);
-                if (filename == null || filesize == null || fileurl == null) {
+        if (folderID == null) {
+            folderID = br.getRegex("NYSI\\.WS\\.currentFolderId = \\'([^<>\"\\']*?)\\';").getMatch(0);
+        }
+        final String fid = new Regex(parameter, "\\&id=([A-Za-z0-9\\-_]+)").getMatch(0);
+        if (fid == null) {
+            return null;
+        }
+        if (folderID != null) {
+            /* New system */
+            this.br.postPage("https://de.hightail.com/folders", "phi_action=app%2FgetFolderContent&fId=" + folderID + "&encInviteId=" + fid);
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            entries = (LinkedHashMap<String, Object>) entries.get("wsItems");
+            final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, Object> entry = it.next();
+                entries = (LinkedHashMap<String, Object>) entry.getValue();
+                final String folderID_single = (String) entries.get("fId");
+                if (folderID_single == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                dl.setName(Encoding.htmlDecode(filename.trim()));
-                dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                dl.setProperty("directname", Encoding.htmlDecode(filename.trim()));
-                dl.setProperty("directsize", filesize);
-                dl.setProperty("fileurl", fileurl);
-                dl.setProperty("mainlink", parameter);
-                dl.setAvailable(true);
-                decryptedLinks.add(dl);
-            }
-        } else {
-            // Single link
-            final DownloadLink dl = createDownloadlink(parameter.replaceAll("(yousendit|hightail)\\.com/", "yousenditdecrypted.com/"));
-            dl.setProperty("mainlink", parameter);
-            if (br.containsHTML("Download link is invalid|Download link is invalid|>Access has expired<|class=\"fileIcons disabledFile\"")) {
-                dl.setProperty("offline", true);
-                dl.setAvailable(false);
-            } else {
-                final String filename = br.getRegex("id=\"downloadSingleFilename\">([^<>\"]*?)</span>").getMatch(0);
-                final String filesize = br.getRegex("id=\"downloadSingleFilesize\">([^<>\"]*?)<span>").getMatch(0);
-                if (filename != null && filesize != null) {
-                    dl.setName(Encoding.htmlDecode(filename.trim()));
-                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                final boolean isFile = ((Boolean) entries.get("isFile")).booleanValue();
+                if (isFile) {
+                    final DownloadLink dl = createDownloadlink("http://yousenditdecrypted.com/download/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                    final String filename = (String) entries.get("text");
+                    final long filesize = DummyScriptEnginePlugin.toLong(entries.get("sizeInBytes"), -1);
+                    if (filename == null || filesize == -1) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    dl.setFinalFileName(filename);
+                    dl.setDownloadSize(filesize);
+                    dl.setLinkID(folderID_single);
                     dl.setProperty("directname", Encoding.htmlDecode(filename.trim()));
                     dl.setProperty("directsize", filesize);
+                    dl.setProperty("fileurl_new", folderID_single);
+                    dl.setProperty("mainlink", parameter);
                     dl.setAvailable(true);
+                    decryptedLinks.add(dl);
+                } else {
+                    final String folderlink_new = "https://de.hightail.com/sharedFolder?phi_action=app/orchestrateSharedFolder&id=" + fid + "&folderid=" + folderID_single;
+                    final DownloadLink dl = createDownloadlink(folderlink_new);
+                    decryptedLinks.add(dl);
                 }
             }
-            decryptedLinks.add(dl);
+        } else {
+            /* Old system */
+            final String[] linkInfo = br.getRegex("<div class=\"fileContainer list\"(.*?)<div class=\"downloadFiletype list\"").getColumn(0);
+            if (linkInfo != null && linkInfo.length != 0) {
+                // Multiple links
+                for (final String singleLink : linkInfo) {
+                    final DownloadLink dl = createDownloadlink("http://yousenditdecrypted.com/download/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                    final String filename = new Regex(singleLink, "class=\"downloadFilename list\"><span>([^<>\"]*?)</span>").getMatch(0);
+                    final String filesize = new Regex(singleLink, "class=\"downloadFilesize list\">([^<>\"]*?)</div>").getMatch(0);
+                    final String fileurl = new Regex(singleLink, "file_url=\"([A-Za-z0-9]+)\"").getMatch(0);
+                    if (filename == null || filesize == null || fileurl == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    dl.setName(Encoding.htmlDecode(filename.trim()));
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                    dl.setContentUrl(fileurl);
+                    dl.setProperty("directname", Encoding.htmlDecode(filename.trim()));
+                    dl.setProperty("directsize", filesize);
+                    dl.setProperty("fileurl", fileurl);
+                    dl.setProperty("mainlink", parameter);
+                    dl.setAvailable(true);
+                    decryptedLinks.add(dl);
+                }
+            } else {
+                // Single link
+                final DownloadLink dl = createDownloadlink(parameter.replaceAll("(yousendit|hightail)\\.com/", "yousenditdecrypted.com/"));
+                dl.setLinkID(fid);
+                dl.setProperty("mainlink", parameter);
+                if (br.containsHTML("Download link is invalid|Download link is invalid|>Access has expired<|class=\"fileIcons disabledFile\"")) {
+                    dl.setProperty("offline", true);
+                    dl.setAvailable(false);
+                } else {
+                    final String filename = br.getRegex("id=\"downloadSingleFilename\">([^<>\"]*?)</span>").getMatch(0);
+                    final String filesize = br.getRegex("id=\"downloadSingleFilesize\">([^<>\"]*?)<span>").getMatch(0);
+                    if (filename != null && filesize != null) {
+                        dl.setName(Encoding.htmlDecode(filename.trim()));
+                        dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                        dl.setProperty("directname", Encoding.htmlDecode(filename.trim()));
+                        dl.setProperty("directsize", filesize);
+                        dl.setAvailable(true);
+                    }
+                }
+                decryptedLinks.add(dl);
 
+            }
         }
 
         return decryptedLinks;

@@ -40,12 +40,13 @@ public class StileProjectComDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         final DownloadLink mainlink = createDownloadlink(parameter.replace("stileproject.com/", "stileprojectdecrypted.com/"));
         String filename = br.getRegex("<title>([^<>\"]*?) \\- StileProject\\.com</title>").getMatch(0);
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks != null && decryptedLinks.size() > 0) {
-            return null;
+        /* Check if the video is selfhosted */
+        final String externID = br.getRegex("stileproject\\.com/embed/(\\d+)").getMatch(0);
+        if (externID == null) {
+            decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
+        } else {
+            decryptedLinks.add(mainlink);
         }
-        decryptedLinks = new ArrayList<DownloadLink>();
-        decryptedLinks.add(mainlink);
         return decryptedLinks;
     }
 

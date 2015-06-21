@@ -52,12 +52,12 @@ public class BonBonmeCom extends PluginForDecrypt {
             }
         }
         String filename = br.getRegex("<div class=\"title\">[\t\n\r ]+<h2>([^<>\"]*?)(</h2>| 觀看次數:<script)").getMatch(0);
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks != null && decryptedLinks.size() > 0) {
+        String externID = br.getRegex("/player/redtube_\\.php\\?vid=(\\d+)").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.redtube.com/" + externID));
             return decryptedLinks;
         }
-        decryptedLinks = new ArrayList<DownloadLink>();
-        String externID = br.getRegex("\"http://5278\\.us/player/plus\\.php\\?vid=([^<>\"]*?)\\&").getMatch(0);
+        externID = br.getRegex("/player/plus\\.php\\?vid=([^<>\"]*?)\\&").getMatch(0);
         if (externID != null) {
             /* Double b64 encoded finallink */
             externID = Encoding.Base64Decode(externID);
@@ -67,7 +67,15 @@ public class BonBonmeCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        return null;
+        /* Open RegEx - should suit most other cases! */
+        externID = br.getRegex("/player/[^<>\"]+\\.php\\?vid=([^<>\"]+)").getMatch(0);
+        if (externID != null) {
+            externID = Encoding.htmlDecode(externID);
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
+        return decryptedLinks;
     }
 
     /* NO OVERRIDE!! */

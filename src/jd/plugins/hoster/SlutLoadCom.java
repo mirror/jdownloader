@@ -59,7 +59,7 @@ public class SlutLoadCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
-        if (con.getResponseCode() == 410) {
+        if (con.getResponseCode() == 410 || con.getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.followConnection();

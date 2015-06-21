@@ -169,10 +169,10 @@ public class DrssTvDecrypter extends PluginForDecrypt {
                 externID = br.getRegex("<div class=\"player active current player\\-1\">[\t\n\r ]+<iframe src=\"(https?://player\\.vimeo\\.com/video/\\d+)\"").getMatch(0);
                 if (externID == null) {
                     /* New vimeo embed */
-                    externID = br.getRegex("<div class=\"player active current player\\-1\">[\t\n\r ]+<div[^>]+data\\-url=\"(http://player\\.vimeo.com/external/\\d+)").getMatch(0);
+                    externID = br.getRegex("<div class=\"player active current player\\-1\">[\t\n\r ]+<div[^>]+data\\-url=\"(https?://player\\.vimeo.com/external/\\d+)").getMatch(0);
                 }
                 /* Add special quality if available */
-                final String specialVimeoFULL_HDLink = br.getRegex("<div class=\"player active current player\\-1\">[\t\n\r ]+<div[^>]+data\\-url=\"(http://player\\.vimeo.com/external/\\d+\\.hd\\.mp4[^<>\"]*?)\"").getMatch(0);
+                final String specialVimeoFULL_HDLink = br.getRegex("<div class=\"player active current player\\-1\">[\t\n\r ]+<div[^>]+data\\-url=\"(https?://player\\.vimeo.com/external/\\d+\\.hd\\.mp4[^<>\"]*?)\"").getMatch(0);
                 if (specialVimeoFULL_HDLink != null) {
                     /*
                      * In theory this is a bad workaround but it's the best solution here as we do not easily get a http link to this

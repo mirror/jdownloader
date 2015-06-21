@@ -3,14 +3,19 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 
 public class PornEmbedParser {
 
     /**
+     * PornEmbedParser 0.3.1
+     *
+     *
      * This method is designed to find embedded porn urls in html code.
      *
      * @param br
@@ -27,14 +32,16 @@ public class PornEmbedParser {
         final Browser brdecrypt = br.cloneBrowser();
         // xvideos.com 1
         String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
-            return decryptedLinks;
-        }
         // xvideos.com 2
-        externID = br.getRegex("\"(http://(www\\.)?flashservice\\.xvideos\\.com/embedframe/\\d+)\"").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("\"https?://(?:www\\.)?flashservice\\.xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
+        }
+        // xvideos.com 3
+        if (externID == null) {
+            externID = br.getRegex("\"https?://(?:www\\.)?xvideos\\.com/video(\\d+)/[^<>\"]+\"").getMatch(0);
+        }
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID));
+            decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID + "/"));
             return decryptedLinks;
         }
         externID = br.getRegex("madthumbs\\.com%2Fvideos%2Fembed_config%3Fid%3D(\\d+)").getMatch(0);
@@ -55,6 +62,10 @@ public class PornEmbedParser {
         if (externID == null) {
             externID = br.getRegex("https?://(?:www\\.)?embed\\.redtube\\.com/\\?id=(\\d+)").getMatch(0);
         }
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.redtube.com/" + externID));
+            return decryptedLinks;
+        }
         // drtuber.com embed v3
         externID = br.getRegex("(http://(www\\.)?drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
         if (externID != null) {
@@ -72,7 +83,12 @@ public class PornEmbedParser {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        // slutload.com 1
         externID = br.getRegex("emb\\.slutload\\.com/([A-Za-z0-9]+)\"").getMatch(0);
+        // slutload.com 2
+        if (externID == null) {
+            externID = br.getRegex("\"https?://(?:www\\.)?slutload\\.com/embed_player/([A-Za-z0-9]+)/?\"").getMatch(0);
+        }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://slutload.com/watch/" + externID));
             return decryptedLinks;
@@ -166,9 +182,16 @@ public class PornEmbedParser {
             decryptedLinks.add(createDownloadlink("http://www.empflix.com/embedding_player/embedding_feed.php?viewkey=" + externID));
             return decryptedLinks;
         }
+        // yobt.com 1
         externID = br.getRegex("<iframe src=\"http://(www\\.)?yobt\\.tv/embed/(\\d+)\\.html\"").getMatch(1);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.yobtdecrypted.tv/content/" + externID + "/" + System.currentTimeMillis() + ".html"));
+            return decryptedLinks;
+        }
+        // yobt.com 2
+        externID = br.getRegex("\"(https?://(?:www\\.)?yobt\\.com/content/\\d+/[A-Za-z0-9\\-_]+\\.html)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         externID = br.getRegex("stileproject\\.com/embed/(\\d+)").getMatch(0);
@@ -340,6 +363,26 @@ public class PornEmbedParser {
         externID = br.getRegex("(foxytube\\.com/embedded/\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www." + externID));
+            return decryptedLinks;
+        }
+        externID = new Regex(br.toString(), Pattern.compile("(http://(?:www\\.)?moviesand\\.com/embedded/\\d+)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = new Regex(br.toString(), Pattern.compile("\"(https?://(?:www\\.)?boysfood\\.com/embed/\\d+/?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(https?://video\\.fc2\\.com/a/flv2\\.swf\\?i=\\w+)").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(https?://(?:www\\.)?sextube\\.com/media/\\d+/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         // filename needed for all IDs below

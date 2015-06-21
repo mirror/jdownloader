@@ -43,6 +43,14 @@ public class BoobinspectorComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        externID = this.br.getRedirectLocation();
+        if (externID != null && !externID.contains("boobinspector.com/")) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        } else if (externID != null) {
+            br.getPage(externID);
+            externID = null;
+        }
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
         if (decryptedLinks != null && decryptedLinks.size() > 0) {

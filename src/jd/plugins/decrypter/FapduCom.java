@@ -33,39 +33,27 @@ public class FapduCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String INVALIDLINK = "http://(www\\.)?fapdu\\.com/(search|embed|sitemaps|rss|hd|register|community|pornstars|videos|pics|emo|channels|upload).*?";
+    private static final String INVALIDLINK = "https?://(?:www\\.)?fapdu\\.com/(search|embed|sitemaps|rss|hd|register|community|pornstars|videos|pics|emo|channels|upload).*?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         if (parameter.matches(INVALIDLINK)) {
             logger.info("Link invalid: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         br.getPage(parameter);
-        // Offline link
-        if (br.containsHTML(">This video was removed")) {
-            logger.info("Link offline: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        }
-        // Invalid link
-        if (br.containsHTML("The page you were looking for isn|>Page Not Found") || !br.containsHTML("id=\"sharing\"")) {
-            logger.info("Link invalid: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        }
         String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\">").getMatch(0);
         decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            return null;
+        if (decryptedLinks != null && decryptedLinks.size() > 0) {
+            return decryptedLinks;
         }
+        /* Assume we have a selfhosted video */
+        decryptedLinks = new ArrayList<DownloadLink>();
+        final DownloadLink main = this.createDownloadlink(parameter.replace("fapdu.com/", "fapdudecrypted.com/"));
+        main.setContentUrl(parameter);
+        decryptedLinks.add(main);
         return decryptedLinks;
     }
 
