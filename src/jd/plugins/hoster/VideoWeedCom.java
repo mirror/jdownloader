@@ -46,7 +46,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoweed.es", "videoweed.com" }, urls = { "http://(www\\.)?(videoweed\\.(com|es)/(file/|embed\\.php\\?.*?v=|share\\.php\\?id=)|embed\\.videoweed\\.(com|es)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "videoweed.es", "videoweed.com" }, urls = { "http://(www\\.)?(videoweed\\.(com|es)/(file/|embed\\.php\\?.*?v=|share\\.php\\?id=)|embed\\.videoweed\\.(com|es)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
 public class VideoWeedCom extends PluginForHost {
 
     public VideoWeedCom(PluginWrapper wrapper) {
@@ -179,6 +179,9 @@ public class VideoWeedCom extends PluginForHost {
             String lastdllink = null;
             boolean success = false;
             for (int i = 0; i <= 3; i++) {
+                if (this.isAbort()) {
+                    return;
+                }
                 if (i > 0) {
                     br.getPage("http://www." + DOMAIN + "/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
                 } else {
@@ -201,8 +204,10 @@ public class VideoWeedCom extends PluginForHost {
                         }
                         continue;
                     }
-                } catch (Exception e) {
+                } catch (final Throwable e) {
+                    logger.info("Download attempt failed:\r\n");
                     e.printStackTrace();
+                    continue;
                 }
             }
             if (!success) {

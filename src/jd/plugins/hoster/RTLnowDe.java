@@ -312,8 +312,8 @@ public class RTLnowDe extends PluginForHost {
             for (final Object quality_o : ressourcelist) {
                 entries = (LinkedHashMap<String, Object>) quality_o;
                 bitrate_temp = DummyScriptEnginePlugin.toLong(entries.get("bitrate"), -1);
-                if (bitrate_temp > bitrate_max) {
-                    url_rtmp = (String) entries.get("path");
+                url_rtmp = (String) entries.get("path");
+                if (bitrate_temp > bitrate_max && url_rtmp.endsWith(".f4v")) {
                     bitrate_max = bitrate_temp;
                 }
             }
@@ -332,6 +332,10 @@ public class RTLnowDe extends PluginForHost {
             dl = new HLSDownloader(downloadLink, br, url_hls);
             dl.startDownload();
         } else if (url_rtmp != null && ALLOW_RTMP) {
+            if (!url_rtmp.endsWith(".f4v")) {
+                /* Invalid rtmp url --> this should never happen */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type");
+            }
             final long calculated_filesize = ((bitrate_max * 1000) / 8) * duration;
             final long calculated_filesize_minimum = (long) (calculated_filesize * 0.9);
             logger.info("Calculated filesize: " + calculated_filesize);
