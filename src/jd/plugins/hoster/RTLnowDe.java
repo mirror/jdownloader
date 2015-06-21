@@ -301,8 +301,8 @@ public class RTLnowDe extends PluginForHost {
             /* check if rtmp is possible */
             final String apiurl = "https://api.nowtv.de/v3/movies/" + getURLPart(downloadLink) + "?fields=files";
             br.getPage(apiurl);
-            entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-            final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "files/items");
+            LinkedHashMap<String, Object> entries_rtmp = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries_rtmp, "files/items");
             if (ressourcelist == null || ressourcelist.size() == 0) {
                 if (!isFree) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich (muss gekauft werden)");
@@ -310,10 +310,10 @@ public class RTLnowDe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (final Object quality_o : ressourcelist) {
-                entries = (LinkedHashMap<String, Object>) quality_o;
-                bitrate_temp = DummyScriptEnginePlugin.toLong(entries.get("bitrate"), -1);
-                url_rtmp = (String) entries.get("path");
-                if (bitrate_temp > bitrate_max && url_rtmp.endsWith(".f4v")) {
+                entries_rtmp = (LinkedHashMap<String, Object>) quality_o;
+                bitrate_temp = DummyScriptEnginePlugin.toLong(entries_rtmp.get("bitrate"), -1);
+                url_rtmp = (String) entries_rtmp.get("path");
+                if (bitrate_temp > bitrate_max && !url_rtmp.startsWith("/abr/")) {
                     bitrate_max = bitrate_temp;
                 }
             }
@@ -332,7 +332,7 @@ public class RTLnowDe extends PluginForHost {
             dl = new HLSDownloader(downloadLink, br, url_hls);
             dl.startDownload();
         } else if (url_rtmp != null && ALLOW_RTMP) {
-            if (!url_rtmp.endsWith(".f4v")) {
+            if (url_rtmp.startsWith("/abr/") || !url_rtmp.endsWith(".f4v")) {
                 /* Invalid rtmp url --> this should never happen */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type");
             }

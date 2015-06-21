@@ -364,7 +364,6 @@ public class EzFileCh extends PluginForHost {
         return ai;
     }
 
-    /* TODO: Check this case: A premium user wants to download a private file that was NOT uploaded by him! */
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
