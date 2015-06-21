@@ -66,29 +66,30 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
-public class DepositFiles extends PluginForHost {
+public class DepositFiles extends antiDDoSForHost {
 
-    private final String                  UA                        = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.81 Safari/537.36";
-    private final String                  FILE_NOT_FOUND            = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
-    private final String                  downloadLimitReached      = "<strong>Achtung! Sie haben ein Limit|Sie haben Ihre Download Zeitfrist erreicht\\.<";
-    private final String                  PATTERN_PREMIUM_FINALURL  = "<div id=\"download_url\".*?<a href=\"(.*?)\"";
-    public static AtomicReference<String> MAINPAGE                  = new AtomicReference<String>();
-    public static final String            DOMAINS                   = "(depositfiles\\.(com|org)|dfiles\\.(eu|ru))";
+    private final String                  UA                       = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.81 Safari/537.36";
+    private final String                  FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
+    private final String                  downloadLimitReached     = "<strong>Achtung! Sie haben ein Limit|Sie haben Ihre Download Zeitfrist erreicht\\.<";
+    private final String                  PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\".*?<a href=\"(.*?)\"";
+    public static AtomicReference<String> MAINPAGE                 = new AtomicReference<String>();
+    public static final String            DOMAINS                  = "(depositfiles\\.(com|org)|dfiles\\.(eu|ru))";
 
-    private String                        protocol                  = null;
+    private String                        protocol                 = null;
 
-    public String                         DLLINKREGEX2              = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
-    private final Pattern                 FILE_INFO_NAME            = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
-    private final Pattern                 FILE_INFO_SIZE            = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
+    public String                         DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
+    private final Pattern                 FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
+    private final Pattern                 FILE_INFO_SIZE           = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
 
-    private static Object                 PREMLOCK                  = new Object();
-    private static Object                 LOCK                      = new Object();
+    private static Object                 PREMLOCK                 = new Object();
+    private static Object                 LOCK                     = new Object();
 
-    private static AtomicInteger          simultanpremium           = new AtomicInteger(1);
-    private static AtomicBoolean          useAPI                    = new AtomicBoolean(true);
+    private static AtomicInteger          simultanpremium          = new AtomicInteger(1);
+    private static AtomicBoolean          useAPI                   = new AtomicBoolean(true);
 
-    private final String                  SETTING_SSL_CONNECTION    = "SSL_CONNECTION";
-    private final String                  SETTING_PREFER_SOLVEMEDIA = "SETTING_PREFER_SOLVEMEDIA";
+    private final String                  SETTING_SSL_CONNECTION   = "SSL_CONNECTION";
+
+    // private final String SETTING_PREFER_SOLVEMEDIA = "SETTING_PREFER_SOLVEMEDIA";
 
     public DepositFiles(final PluginWrapper wrapper) {
         super(wrapper);
@@ -355,11 +356,6 @@ public class DepositFiles extends PluginForHost {
                 }
             }
             return lol[0];
-        } else {
-            String fid = br.getRegex("var fid = '(.*?)'").getMatch(0);
-            if (fid != null) {
-                return MAINPAGE.get() + "/get_file.php?fid=" + fid;
-            }
         }
         return null;
     }
@@ -438,6 +434,7 @@ public class DepositFiles extends PluginForHost {
                     }
                 }
                 br.submitForm(form);
+                long timeBefore = System.currentTimeMillis();
                 checkErrors();
                 if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -457,19 +454,20 @@ public class DepositFiles extends PluginForHost {
                 }
                 final String fid = br.getRegex("var fid = \\'(.*?)\\';").getMatch(0);
                 final String wait = br.getRegex("Please wait (\\d+) sec").getMatch(0);
-                dllink = getDllink();
-                if (dllink != null && fid != null && br.containsHTML("/recaptcha/api/js/recaptcha_ajax\\.js")) {
-                    String getData = null;
-                    /*
-                     * seems something wrong with wait time parsing so we do wait each time to be sure
-                     */
-                    long timeBefore = System.currentTimeMillis();
-                    if (this.getPluginConfig().getBooleanProperty(SETTING_PREFER_SOLVEMEDIA, false)) {
-                        /* Solvemedia */
-                        final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                        final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
-                        sm.setChallengeKey("SIJ6c0A4jnoMjxJKEXAaE.ZeenhDtKlH");
-                        File cf = null;
+                // wait required here before ajax
+                sleep(((wait != null ? Integer.parseInt(wait) : 60) * 1000l) - (System.currentTimeMillis() - timeBefore), downloadLink);
+                // // ajax request, here they give you more html && js. Think this is where the captcha type is determined.
+                ajaxGetPage("/get_file.php?fid=" + fid);
+
+                // this changes each time you load page...
+                final String ck = ajax.getRegex("var ACPuzzleKey = '(.*?)';").getMatch(0);
+                if (ck != null) {
+                    // lets prefer solvemedia as it can be passed into CES/headless as browser not required
+                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                    sm.setChallengeKey(ck);
+                    File cf = null;
+                    for (int i = 0; i <= 3; i++) {
                         try {
                             cf = sm.downloadCaptcha(getLocalCaptchaFile());
                         } catch (final Exception e) {
@@ -480,45 +478,24 @@ public class DepositFiles extends PluginForHost {
                         }
                         final String code = getCaptchaCode(cf, downloadLink);
                         final String chid = sm.getChallenge(code);
-                        // dlForm.put("adcopy_challenge", chid);
-                        // dlForm.put("adcopy_response", "manual_challenge");
-                        getData = "&challenge=" + Encoding.urlEncode(chid) + "&response=" + Encoding.urlEncode(code) + "&acpuzzle=1";
-                    } else {
-                        /* recaptcha v2. */
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdyfgcTAAAAAArE1fk9cGyExtKfT4a12dWcViye").getToken();
-                        getData = "&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&response=null";
-                    }
-                    int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-                    int waitThis = 62;
-                    if (wait != null) {
-                        waitThis = Integer.parseInt(wait);
-                    }
-                    waitThis -= passedTime;
-                    if (waitThis > 0) {
-                        this.sleep(waitThis * 1001l, downloadLink);
-                    }
-                    // Important! Setup Header
-                    br.getHeaders().put("Accept-Charset", null);
-                    br.getHeaders().put("Pragma", null);
-                    br.getHeaders().put("Cache-Control", null);
-                    br.getHeaders().put("Accept", "*/*");
-                    br.getHeaders().put("Accept-Encoding", "gzip, deflate");
-                    br.getHeaders().put("Accept-Language", "de");
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br.setFollowRedirects(true);
-                    br.getPage("/get_file.php?fid=" + fid + getData);
-                    if (br.containsHTML("(onclick=\"check_recaptcha|load_recaptcha)")) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    finallink = br.getRegex("\"(https?://fileshare\\d+\\." + DOMAINS + "/auth.*?)\"").getMatch(0);
-                    if (finallink == null) {
-                        finallink = br.getRegex("<form action=\"(https?://.*?)\"").getMatch(0);
-                    }
-                    if (finallink == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        if (chid == null) {
+                            if (i + 1 != 3) {
+                                // wrong answer
+                                continue;
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                            }
+                        }
+                        finallink = submitCapthcaStep("fid=" + fid + "&challenge=" + chid + "&response=" + Encoding.urlEncode(code) + "&acpuzzle=1");
+                        break;
                     }
                 } else {
-                    finallink = dllink;
+                    // recaptcha v2.
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdyfgcTAAAAAArE1fk9cGyExtKfT4a12dWcViye").getToken();
+                    finallink = submitCapthcaStep("fid=" + fid + "&challenge=null&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&response=null");
+                }
+                if (finallink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
@@ -565,6 +542,28 @@ public class DepositFiles extends PluginForHost {
         }
         downloadLink.setProperty("finallink", finallink);
         dl.startDownload();
+    }
+
+    private final String submitCapthcaStep(final String page) throws IOException, PluginException {
+        // Important! Setup Header
+        ajaxGetPage("/get_file.php?" + page);
+        if (ajax.containsHTML("(onclick=\"check_recaptcha|load_recaptcha)")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        String finallink = ajax.getRegex("\"(https?://fileshare\\d+\\." + DOMAINS + "/auth.*?)\"").getMatch(0);
+        if (finallink == null) {
+            finallink = ajax.getRegex("<form action=\"(https?://.*?)\"").getMatch(0);
+        }
+        return finallink;
+    }
+
+    private Browser ajax = null;
+
+    private void ajaxGetPage(final String page) throws IOException {
+        ajax = br.cloneBrowser();
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        ajax.getHeaders().put("Accept", "*/*");
+        ajax.getPage(page);
     }
 
     private void setConstants() {
@@ -925,7 +924,7 @@ public class DepositFiles extends PluginForHost {
         }
     }
 
-    private void getPage(String url) throws Exception {
+    private void apiGetPage(String url) throws Exception {
         br = new Browser();
         apiPrepBr(br);
         br.getPage(fixLinkSSL(url));
@@ -976,7 +975,7 @@ public class DepositFiles extends PluginForHost {
         // this shouldn't be needed!
         // if (versionCheck()) {
         try {
-            getPage("http://depositfiles.com/api/user/login?" + "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&" + apiKeyVal());
+            apiGetPage("http://depositfiles.com/api/user/login?" + "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&" + apiKeyVal());
             if (br.containsHTML("\"error\":\"CaptchaRequired\"")) {
                 for (int i = 0; i <= 2; i++) {
                     DownloadLink dummyLink = new DownloadLink(null, "Account", this.getHost(), MAINPAGE.get(), true);
@@ -1098,7 +1097,7 @@ public class DepositFiles extends PluginForHost {
             apiChunks = 0;
         }
         // atm they share the same dl routine that I can see. Download program indicates captcha!
-        getPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(downloadLink) + "&" + apiKeyVal() + (pass != null ? "&file_password=" + Encoding.urlEncode(pass) : ""));
+        apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(downloadLink) + "&" + apiKeyVal() + (pass != null ? "&file_password=" + Encoding.urlEncode(pass) : ""));
         if (br.containsHTML("\"error\":\"FileIsPasswordProtected\"")) {
             logger.info("This file seems to be password protected.");
             for (int i = 0; i <= 2; i++) {
@@ -1108,7 +1107,7 @@ public class DepositFiles extends PluginForHost {
                 if (pass == null || pass.equals("")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download requires valid password");
                 }
-                getPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(downloadLink) + "&" + apiKeyVal() + "&file_password=" + pass);
+                apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(downloadLink) + "&" + apiKeyVal() + "&file_password=" + pass);
                 if ("FilePasswordIsIncorrect".equalsIgnoreCase(getJson("error"))) {
                     pass = null;
                     continue;
@@ -1143,7 +1142,7 @@ public class DepositFiles extends PluginForHost {
             } else {
                 int deley = Integer.parseInt(delay);
                 sleep(deley * 1001, downloadLink);
-                getPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(downloadLink) + "&" + apiKeyVal() + (pass != null ? "&file_password=" + Encoding.urlEncode(pass) : "") + "&download_token=" + dlToken);
+                apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(downloadLink) + "&" + apiKeyVal() + (pass != null ? "&file_password=" + Encoding.urlEncode(pass) : "") + "&download_token=" + dlToken);
                 if (br.containsHTML("\"error\":\"CaptchaRequired\"")) {
                     for (int i = 0; i <= 2; i++) {
                         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -1156,7 +1155,7 @@ public class DepositFiles extends PluginForHost {
                             logger.warning("User aborted/cancelled captcha");
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         }
-                        getPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(downloadLink) + "&" + apiKeyVal() + (pass != null ? "&file_password=" + Encoding.urlEncode(pass) : "") + "&download_token=" + dlToken + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                        apiGetPage("http://depositfiles.com/api/download/file?token=" + getToken(account) + "&file_id=" + fuid(downloadLink) + "&" + apiKeyVal() + (pass != null ? "&file_password=" + Encoding.urlEncode(pass) : "") + "&download_token=" + dlToken + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                         if (br.containsHTML("\"error\":\"CaptchaInvalid\"")) {
                             logger.info("Invalid Captcha response!");
                         } else {
@@ -1202,14 +1201,6 @@ public class DepositFiles extends PluginForHost {
 
     private String fuid(DownloadLink downloadLink) {
         String result = new Regex(downloadLink.getDownloadURL(), "files/([^/]+)").getMatch(0);
-        return result;
-    }
-
-    private String getJson(String object) {
-        String result = br.getRegex("\"" + object + "\":\"([^\"]+)").getMatch(0);
-        if (result == null) {
-            result = br.getRegex("\"" + object + "\":(\\d+)").getMatch(0);
-        }
         return result;
     }
 
@@ -1270,69 +1261,11 @@ public class DepositFiles extends PluginForHost {
         }
     }
 
-    private static AtomicBoolean stableSucks = new AtomicBoolean(false);
-
-    public static void showSSLWarning(final String domain) {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        boolean xSystem = CrossSystem.isOpenBrowserSupported();
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Wegen einem Bug in in Java 7+ in dieser JDownloader version koennen wir keine HTTPS Post Requests ausfuehren.\r\n";
-                            message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
-                            message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
-                            message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
-                            } else {
-                                message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        } else if ("es".equalsIgnoreCase(lng)) {
-                            title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
-                            message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
-                            message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
-                            message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
-                            message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
-                            } else {
-                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación, enlace :\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        } else {
-                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
-                            message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
-                            message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
-                            message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
-                            } else {
-                                message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        }
-                        int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                        if (xSystem && JOptionPane.OK_OPTION == result) {
-                            CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
-                        }
-                        stableSucks.set(true);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
-    }
-
     private void setConfigElements() {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_SSL_CONNECTION, JDL.L("plugins.hoster.DepositFiles.com.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_PREFER_SOLVEMEDIA, JDL.L("plugins.hoster.DepositFiles.com.preferSolvemediaCaptcha", "Prefer solvemedia captcha over reCaptcha V2?")).setDefaultValue(true));
+        // this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SETTING_PREFER_SOLVEMEDIA,
+        // JDL.L("plugins.hoster.DepositFiles.com.preferSolvemediaCaptcha",
+        // "Prefer solvemedia captcha over reCaptcha V2?")).setDefaultValue(true));
     }
 
     @Override
