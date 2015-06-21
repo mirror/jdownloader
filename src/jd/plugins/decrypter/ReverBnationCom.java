@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "https?://(?:www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|playlist/view_playlist/[0-9\\-]+\\?page_object=artist_\\d+|open_graph/song/\\d+|[A-Za-z0-9\\-_]+/song/\\d+|play_now/song_\\d+|page_object/page_object_photos/artist_\\d+|artist/downloads/\\d+|[A-Za-z0-9\\-_]{5,})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "reverbnation.com" }, urls = { "https?://(?:www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|playlist/view_playlist/[0-9\\-]+\\?page_object=artist_\\d+|open_graph/song/\\d+|[A-Za-z0-9\\-_]+/song/\\d+|play_now/song_\\d+|page_object/page_object_photos/artist_\\d+|artist/downloads/\\d+|[A-Za-z0-9\\-_]{5,})" }, flags = { 0 })
 public class ReverBnationCom extends antiDDoSForDecrypt {
 
     public ReverBnationCom(final PluginWrapper wrapper) {
@@ -79,11 +79,7 @@ public class ReverBnationCom extends antiDDoSForDecrypt {
             br.getPage(parameter);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 logger.info("Link offline: " + parameter);
-                try {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             username = br.getRegex("<a href=\"/([^<>\"/]*?)\" class=\"mr2\">« Back to Profile</a>").getMatch(0);
@@ -130,11 +126,7 @@ public class ReverBnationCom extends antiDDoSForDecrypt {
                 br.getPage(parameter);
                 if (br.containsHTML(">Page Not Found<")) {
                     logger.info("Link offline: " + parameter);
-                    try {
-                        decryptedLinks.add(this.createOfflinelink(parameter));
-                    } catch (final Throwable e) {
-                        /* Not available in old 0.9.581 Stable */
-                    }
+                    decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 }
                 final String showAllSongs = br.getRegex("<a href=\"([^<>\"]+/songs)\" class=\"standard_well see_more\">All Songs</a>").getMatch(0);
@@ -144,11 +136,7 @@ public class ReverBnationCom extends antiDDoSForDecrypt {
             }
             if (br.containsHTML("rel=\"nofollow\" title=\"Listen to") || !br.containsHTML("class=\"artist_name\"") || br.getHttpConnection().getResponseCode() == 404) {
                 logger.info("No content to decrypt: " + parameter);
-                try {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             artist_name_general = br.getRegex("class=\"artist_name\">By: ([^<>\"]*?)</span>").getMatch(0);

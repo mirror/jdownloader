@@ -53,16 +53,17 @@ public class SubMangaCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/404")) {
-            logger.warning("Invalid URL! : " + parameter);
-            return null;
+            logger.warning("Invalid URL or Offline link! : " + parameter);
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
         }
         // We get the title
-        final String[] title = br.getRegex("<title>(.*?) -[^-]+ &mdash; submanga</title>").getRow(0);
-        if (title == null || title.length == 0) {
+        final String title = br.getRegex("<title>(.*?) -[^<]+ &mdash; submanga</title>").getMatch(0);
+        if (title == null || title.length() == 0) {
             logger.warning("Title not found! : " + parameter);
             return null;
         }
-        final String useTitle = title[0].replace("Â·", ".");
+        final String useTitle = title.replace("Â·", ".");
 
         FilePackage fp = FilePackage.getInstance();
         fp.setName(useTitle);
