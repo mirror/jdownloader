@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -30,18 +31,19 @@ import jd.plugins.PluginForDecrypt;
 /**
  * @author raztoki
  * */
-@DecrypterPlugin(revision = "$Revision: 22355 $", interfaceVersion = 2, names = { "prialepaste.com", }, urls = { "https?://[\\w\\.]*prialepaste\\.com/(f[a-z]{0,1}\\.php#[a-zA-Z0-9\\+-/=]+|p/[A-Z0-9]{8})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 22355 $", interfaceVersion = 2, names = { "prialepaste.com", "anonymizer.link" }, urls = { "https?://[\\w\\.]*prialepaste\\.com/(f[a-z]{0,1}\\.php#[a-zA-Z0-9\\+-/=]+|p/[A-Z0-9]{8})", "https?://[\\w\\.]*anonymizer\\.link/(f[a-z]{0,1}\\.php#[a-zA-Z0-9\\+-/=]+|p/[A-Z0-9]{8})" }, flags = { 0, 0 })
 public class PrlPstCm extends PluginForDecrypt {
 
     public PrlPstCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        final String host = Browser.getHost(parameter);
         String finallink = null;
-        if (parameter.contains("prialepaste.com/f")) {
+        if (parameter.contains(host + "/f")) {
             br.getPage(parameter.substring(0, parameter.indexOf("#")));
             String hash = new Regex(parameter, "#(.+)$").getMatch(0);
             String redirect = br.getRegex("var url_redir\\s*=\\s*\"(https?://[^/]+/redirect[^\"]+)").getMatch(0);
