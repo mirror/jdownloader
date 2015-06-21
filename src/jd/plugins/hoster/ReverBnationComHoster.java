@@ -63,6 +63,7 @@ public class ReverBnationComHoster extends PluginForHost {
         if (getMainlink(link) == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        br.setFollowRedirects(true);
         br.getPage(getMainlink(link));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -84,7 +85,7 @@ public class ReverBnationComHoster extends PluginForHost {
         br.setFollowRedirects(false);
         // alternative Downloadmethode
         final Regex infoRegex = new Regex(downloadLink.getDownloadURL(), "reverbnationcomid(\\d+)reverbnationcomartist(\\d+)");
-        br.postPage("http://www.reverbnation.com/controller/audio_player/download_song/" + infoRegex.getMatch(0) + "?modal=true", "");
+        br.postPage("/controller/audio_player/download_song/" + infoRegex.getMatch(0) + "?modal=true", "");
         String dllink = br.getRegex("location\\.href=\\'(.*?)\\'").getMatch(0);
         // der harte Weg
         if (dllink == null) {
@@ -98,7 +99,7 @@ public class ReverBnationComHoster extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // Probably no correct file
+        // Probably not correct file
         if (dl.getConnection().getLongContentLength() < 40000) {
             if (downloadLink.getBooleanProperty("downloadstream")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This song is not downloadable");
@@ -143,7 +144,7 @@ public class ReverBnationComHoster extends PluginForHost {
             if (pass == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage("http://www.reverbnation.com/audio_player/html_player_stream/" + pass + "?client=234s3rwas&song_id=" + song_id);
+            br.getPage("/audio_player/html_player_stream/" + pass + "?client=234s3rwas&song_id=" + song_id);
             finallink = br.getRedirectLocation();
         } else {
             /*
@@ -151,17 +152,17 @@ public class ReverBnationComHoster extends PluginForHost {
              */
             final String song_cookie = pass + "song-" + song_id;
             br.setCookie(br.getURL(), "_reverb_currentsong", song_cookie);
-            br.getPage("http://www.reverbnation.com/controller/audio_player/get_xml/?player=InlineAudioPlayer");
+            br.getPage("/controller/audio_player/get_xml/?player=InlineAudioPlayer");
             // br.getHeaders().put("X-CSRF-Token", "xxxxxxxkIobXmDTc=");
             br.getHeaders().put("X-RN-FRAMEWORK-VERSION", "R4.1.003");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getHeaders().put("Referer", "http://www.reverbnation.com/neoclubber/songs");
             br.getHeaders().put("Accept", "*/*");
-            br.postPage("http://www.reverbnation.com/audio_player/add_to_beginning/" + song_id + "?from_page_object=artist_" + artist_id, "");
-            br.getPage("http://www.reverbnation.com/audio_player/html_player_stream/" + pass + "?client=234s3rwas&song_id=" + song_id);
+            br.postPage("/audio_player/add_to_beginning/" + song_id + "?from_page_object=artist_" + artist_id, "");
+            br.getPage("/audio_player/html_player_stream/" + pass + "?client=234s3rwas&song_id=" + song_id);
             finallink = br.getRedirectLocation();
             if (finallink == null) {
-                finallink = br.getRegex("location\\.href = (?:\\'|\")(http://[^<>\"]*?)(?:\\'|\")").getMatch(0);
+                finallink = br.getRegex("location\\.href = ('|\")(http://[^<>\"]*?)\\1").getMatch(1);
             }
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -255,18 +256,18 @@ public class ReverBnationComHoster extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content: reverbnation.com/username\r\n*title* = Title of the song\r\n*artist* = Artist of the song\r\n*songid* = Internal ReverbNation id of the song e.g. '12345678'\r\n*artistid* = Internal ReverbNation id of the artist e.g. '12345678'\r\n*ext* = Extension of the file, usually '.mp3'");
-            put("LABEL_FILENAME", "Define custom filename:");
-                                                  }
-    };
+                                                  {
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content: reverbnation.com/username\r\n*title* = Title of the song\r\n*artist* = Artist of the song\r\n*songid* = Internal ReverbNation id of the song e.g. '12345678'\r\n*artistid* = Internal ReverbNation id of the artist e.g. '12345678'\r\n*ext* = Extension of the file, usually '.mp3'");
+                                                      put("LABEL_FILENAME", "Define custom filename:");
+        }
+                                              };
 
     private HashMap<String, String> phrasesDE = new HashMap<String, String>() {
-        {
-            put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat: reverbnation.com/username\r\n*title* = Titel des Songs\r\n*artist* = Name des Urhebers\r\n*songid* = Interne ReverbNation id des Songs z.B. '12345678'\r\n*artistid* = Interne ReverbNation id des Urhebers z.B. '12345678'\r\n*ext* = Dateiendung, meistens '.mp3'");
-            put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
-        }
-    };
+                                                  {
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat: reverbnation.com/username\r\n*title* = Titel des Songs\r\n*artist* = Name des Urhebers\r\n*songid* = Interne ReverbNation id des Songs z.B. '12345678'\r\n*artistid* = Interne ReverbNation id des Urhebers z.B. '12345678'\r\n*ext* = Dateiendung, meistens '.mp3'");
+                                                      put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
