@@ -34,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudtime.to", "divxstage.to", "divxstage.net" }, urls = { "http://(www\\.)?((divxstage\\.(net|eu|to)|cloudtime\\.to)/video/|embed\\.(divxstage\\.(net|eu|to)|cloudtime\\.to)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloudtime.to", "divxstage.to", "divxstage.net" }, urls = { "http://(www\\.)?((divxstage\\.(net|eu|to)|cloudtime\\.to)/video/|embed\\.(divxstage\\.(net|eu|to)|cloudtime\\.to)/embed\\.php\\?v=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0, 0, 0 })
 public class DivxStageNet extends PluginForHost {
 
     /* Similar plugins: NovaUpMovcom, VideoWeedCom, NowVideoEu, MovShareNet, DivxStageNet */
@@ -77,6 +77,7 @@ public class DivxStageNet extends PluginForHost {
         return super.rewriteHost(host);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         /* Important to handle domainchanges... */
@@ -141,9 +142,12 @@ public class DivxStageNet extends PluginForHost {
             final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             String lastdllink = null;
             boolean success = false;
-            for (int i = 0; i <= 3; i++) {
+            for (int i = 0; i <= 5; i++) {
+                if (this.isAbort()) {
+                    return;
+                }
                 if (i > 0) {
-                    br.getPage("http://www." + DOMAIN + "/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
+                    br.getPage("http://www." + DOMAIN + "/api/player.api.php?cid=1&user=undefined&pass=undefined&key=" + key + "&cid3=undefined&numOfErrors=" + i + "&cid2=" + cid2 + "&file=" + fid + "&errorUrl=" + Encoding.urlEncode(dllink) + "&errorCode=404");
                 } else {
                     br.getPage("http://www." + DOMAIN + "/api/player.api.php?cid2=" + cid2 + "&numOfErrors=0&user=undefined&cid=1&pass=undefined&key=" + key + "&file=" + fid + "&cid3=undefined");
                 }
@@ -160,6 +164,10 @@ public class DivxStageNet extends PluginForHost {
                         lastdllink = dllink;
                         continue;
                     }
+                } catch (final Throwable e) {
+                    logger.info("Download attempt failed:\r\n");
+                    e.printStackTrace();
+                    continue;
                 } finally {
                     try {
                         dl.getConnection().disconnect();

@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movshare.net", "epornik.com" }, urls = { "http://(www\\.)?movshare\\.net/video/[a-z0-9]+|http://embed\\.movshare\\.net/embed\\.php\\?v=[a-z0-9]+", "http://(www\\.)?epornik\\.com/video/[a-z0-9]+" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "movshare.net", "epornik.com" }, urls = { "http://(www\\.)?movshare\\.net/video/[a-z0-9]+|http://embed\\.movshare\\.net/embed\\.php\\?v=[a-z0-9]+", "http://(www\\.)?epornik\\.com/video/[a-z0-9]+" }, flags = { 0, 0 })
 public class MovShareNet extends PluginForHost {
 
     private static final String HUMANTEXT = "We need you to prove you\\'re human";
@@ -115,6 +115,7 @@ public class MovShareNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         String dllink = null;
@@ -155,6 +156,9 @@ public class MovShareNet extends PluginForHost {
             String lastdllink = null;
             boolean success = false;
             for (int i = 0; i <= 3; i++) {
+                if (this.isAbort()) {
+                    return;
+                }
                 if (i > 0) {
                     br.getPage("http://www." + DOMAIN + "/api/player.api.php?user=undefined&errorUrl=" + Encoding.urlEncode(lastdllink) + "&pass=undefined&cid3=undefined&errorCode=404&cid=1&cid2=" + cid2 + "&key=" + key + "&file=" + fid + "&numOfErrors=" + i);
                 } else {
@@ -173,6 +177,10 @@ public class MovShareNet extends PluginForHost {
                         lastdllink = dllink;
                         continue;
                     }
+                } catch (final Throwable e) {
+                    logger.info("Download attempt failed:\r\n");
+                    e.printStackTrace();
+                    continue;
                 } finally {
                     try {
                         dl.getConnection().disconnect();
