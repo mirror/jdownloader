@@ -40,6 +40,7 @@ import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
 import org.jdownloader.myjdownloader.client.json.MyCaptchaChallenge;
 import org.jdownloader.myjdownloader.client.json.MyCaptchaChallenge.TYPE;
 import org.jdownloader.myjdownloader.client.json.MyCaptchaSolution;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
 
@@ -113,7 +114,7 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
     }
 
     public boolean isEnabled() {
-        if (true) {
+        if (!CFG_GENERAL.CFG.isMyJDownloaderCaptchaSolverEnabled()) {
 
             return false;
         }
@@ -121,7 +122,7 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
     }
 
     public boolean canHandle() {
-        if (true) {
+        if (!CFG_GENERAL.CFG.isMyJDownloaderCaptchaSolverEnabled()) {
 
             return false;
         }
