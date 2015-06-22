@@ -28,28 +28,34 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tinymoviez.info", "re-direcciona.me", "asianspankee.com", "mediaboom.org", "bookgn.com", "vip-files.net", "url4u.org", "tunesies.com", "xtragfx.com", "psdkeys.com" },
+/**
+ *
+ * Decrypts base64 strings<br />
+ * <br />
+ *
+ * NOTE: make sure the FIRST listening range is BASE64 otherwise this plugin will fail!
+ *
+ * @author raztoki
+ *
+ */
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "binbox.io", "tinymoviez.info", "re-direcciona.me", "asianspankee.com", "mediaboom.org", "bookgn.com", "vip-files.net", "url4u.org", "tunesies.com", "xtragfx.com", "psdkeys.com" },
 
-urls = { "http://(www\\.)?tinymoviez\\.info/download\\.php\\?link=[a-zA-Z0-9_/\\+\\=\\-]+", "http://(www\\.)?re-direcciona\\.me/(I|r)/[A-Za-z0-9=]+", "http://(www\\.)?asianspankee\\.com/.*\\?goto=[a-zA-Z0-9_/+=\\-%]+", "http://(www\\.)?mediaboom\\.org/engine/go\\.php\\?url=[A-Za-z0-9=%]+", "http://(www\\.)?bookgn\\.com/engine/go\\.php\\?url=[A-Za-z0-9=%]+", "http://(www\\.)?vip\\-files\\.net/download\\.php\\?e=[A-Za-z0-9=%]+", "http://www\\.url4u\\.org/[A-Za-z0-9=%]+", "https?://(www\\.)?tunesies\\.com/go/[a-zA-Z0-9_/\\+\\=\\-]+", "https?://(www\\.)?xtragfx\\.com/engine/go\\.php\\?url=[A-Za-z0-9=%]+", "https?://(www\\.)?psdkeys\\.com/engine/go\\.php\\?url=[A-Za-z0-9=%]+" },
+urls = { "https?://(?:\\w+\\.)?binbox\\.io/o/([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?tinymoviez\\.info/download\\.php\\?link=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?re-direcciona\\.me/(?:I|r)/([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?asianspankee\\.com/.*\\?goto=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?mediaboom\\.org/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?bookgn\\.com/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?vip-files\\.net/download\\.php\\?e=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://www\\.url4u\\.org/([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?tunesies\\.com/go/([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?xtragfx\\.com/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?psdkeys\\.com/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)" },
 
-flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GenericBase64Decrypter extends PluginForDecrypt {
 
     public GenericBase64Decrypter(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /** Decrypts base64 strings... */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        String b64 = Encoding.htmlDecode(new Regex(parameter, "(?:&|\\?)[A-Za-z]+=([A-Za-z0-9=%_\\-\\+]+)$").getMatch(0));
+        final String b64 = Encoding.htmlDecode(new Regex(parameter, this.getSupportedLinks()).getMatch(0));
         if (b64 == null) {
-            b64 = Encoding.htmlDecode(new Regex(parameter, "([A-Za-z0-9=%_\\-\\+]+)$").getMatch(0));
-            if (b64 == null) {
-                return null;
-            }
+            return null;
         }
         int i = 0;
         String finallink = b64;
