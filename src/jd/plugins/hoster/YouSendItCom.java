@@ -42,6 +42,7 @@ public class YouSendItCom extends PluginForHost {
         return "https://www.hightail.com/aboutus/legal/terms-of-service";
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("yousenditdecrypted.com/", "yousendit.com/"));
     }
@@ -128,6 +129,9 @@ public class YouSendItCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (this.br.containsHTML("An Error Has Occurred<")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

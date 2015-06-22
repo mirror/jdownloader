@@ -43,7 +43,7 @@ public class PornRabbitComDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         // Link offline? Add it to the hosterplugin so the user can see it.
-        if (br.containsHTML("(>Page Not Found<|>Sorry but the page you are looking for has|>Sorry, this video was not found)")) {
+        if (br.containsHTML("(>Page Not Found<|>Sorry but the page you are looking for has|>Sorry, this video was not found|video_removed_dmca\\.jpg\")")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("pornrabbit.com/", "pornrabbitdecrypted.com/"));
             dl.setAvailable(false);
             dl.setProperty("offline", true);

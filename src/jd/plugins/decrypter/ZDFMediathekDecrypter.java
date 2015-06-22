@@ -16,7 +16,9 @@
 
 package jd.plugins.decrypter;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -34,6 +36,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdfmediathek.de", "phoenix.de" }, urls = { "http://(www\\.)?zdf\\.de/ZDFmediathek#?/[^<>\"]*?beitrag/video/\\d+(?:.+)?", "https?://(?:www\\.)?phoenix\\.de/content/\\d+|http://(?:www\\.)?phoenix\\.de/podcast/runde/video/rss\\.xml" }, flags = { 0, 0 })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -135,6 +138,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     private ArrayList<DownloadLink> getDownloadLinks(final SubConfiguration cfg) {
         final boolean grabSubtitles = cfg.getBooleanProperty(Q_SUBTITLES, false);
         String date = null;
+        String date_formatted = null;
         String id = null;
         String title = null;
         String show = null;
@@ -190,6 +194,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             if (date == null || title == null || show == null) {
                 return null;
             }
+
+            date_formatted = formatDateZDF(date);
 
             final Browser br2 = br.cloneBrowser();
             final String[][] downloads = br2.getRegex("<formitaet basetype=\"([^\"]+)\" isDownload=\"[^\"]+\">(.*?)</formitaet>").getMatches();
@@ -264,7 +270,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     }
 
                     final String fmtUPPR = fmt.toUpperCase(Locale.ENGLISH);
-                    final String name = date + "_zdf_" + show + " - " + title + "@" + fmtUPPR + extension;
+                    final String name = date_formatted + "_zdf_" + show + " - " + title + "@" + fmtUPPR + extension;
                     final DownloadLink link = createDownloadlink(String.format(decrypterurl, fmt));
                     link.setAvailable(true);
                     link.setFinalFileName(name);
@@ -275,7 +281,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         /* Stable */
                         link.setBrowserUrl(PARAMETER_ORIGINAL);
                     }
-                    link.setProperty("date", date);
+                    link.setProperty("date", date_formatted);
                     link.setProperty("directURL", url);
                     link.setProperty("directName", name);
                     link.setProperty("directQuality", stream[0]);
@@ -323,11 +329,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             if (grabSubtitles && subtitleURL != null) {
                 final String dlfmt = dl.getStringProperty("directfmt", null);
                 final String startTime = new Regex(subtitleInfo, "<offset>(\\-)?(\\d+)</offset>").getMatch(1);
-                final String name = date + "_" + title + "@" + dlfmt + ".xml";
+                final String name = date_formatted + "_" + title + "@" + dlfmt + ".xml";
                 final DownloadLink subtitle = createDownloadlink(String.format(decrypterurl, dlfmt + "subtitle"));
                 subtitle.setAvailable(true);
                 subtitle.setFinalFileName(name);
-                subtitle.setProperty("date", date);
+                subtitle.setProperty("date", date_formatted);
                 subtitle.setProperty("directURL", subtitleURL);
                 subtitle.setProperty("directName", name);
                 subtitle.setProperty("streamingType", "subtitle");
@@ -346,7 +352,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         }
         if (decryptedLinks.size() > 1) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(date + "_zdf_" + show + " - " + title);
+            fp.setName(date_formatted + "_zdf_" + show + " - " + title);
             fp.addLinks(decryptedLinks);
         }
         return ret;
@@ -411,6 +417,21 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             return true;
         }
         return false;
+    }
+
+    private String formatDateZDF(final String input) {
+        final long date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy HH:mm", Locale.GERMAN);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     /* NO OVERRIDE!! */

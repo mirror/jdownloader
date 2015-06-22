@@ -42,6 +42,7 @@ public class BonBonmeCom extends PluginForDecrypt {
             con = br.openGetConnection(parameter);
             if (con.getResponseCode() == 404) {
                 logger.info("Link offline: " + parameter);
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             br.followConnection();
@@ -50,6 +51,11 @@ public class BonBonmeCom extends PluginForDecrypt {
                 con.disconnect();
             } catch (Throwable e) {
             }
+        }
+        if (this.br.containsHTML("<tr><td>null</td></tr>")) {
+            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
         }
         String filename = br.getRegex("<div class=\"title\">[\t\n\r ]+<h2>([^<>\"]*?)(</h2>| 觀看次數:<script)").getMatch(0);
         String externID = br.getRegex("/player/redtube_\\.php\\?vid=(\\d+)").getMatch(0);

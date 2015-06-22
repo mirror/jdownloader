@@ -17,14 +17,23 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,11 +41,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xyou.com" }, urls = { "http://(www\\.)?xyou\\.com/[a-z]{2}/s\\d+/episode/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xyou.com" }, urls = { "http://(?:www\\.|members\\.)?xyou\\.com/[a-z]{2}/s\\d+/episode/\\d+" }, flags = { 2 })
 public class XyouCom extends PluginForHost {
 
+    @SuppressWarnings("deprecation")
     public XyouCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://www.xyou.com/en/s2/free-join/");
     }
 
     /* DEV NOTES */
@@ -46,29 +57,42 @@ public class XyouCom extends PluginForHost {
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
+    private static final String  default_Extension         = ".mp4";
     /* Connection stuff */
-    private static final boolean free_resume       = false;
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = -1;
+    private static final boolean FREE_RESUME               = true;
+    private static final int     FREE_MAXCHUNKS            = 0;
+    private static final int     FREE_MAXDOWNLOADS         = 20;
+    private static final boolean ACCOUNT_FREE_RESUME       = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
 
-    private String               DLLINK            = null;
+    /* don't touch the following! */
+    private static AtomicInteger maxPrem                   = new AtomicInteger(1);
+
+    private String               DLLINK                    = null;
 
     @Override
     public String getAGBLink() {
         return "http://www.clients-support.com/privacy.html";
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         DLLINK = null;
         final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         /* Offline links should also have nice filenames */
         downloadLink.setName(fid + ".mp4");
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa != null) {
+            this.login(aa, false);
+            br.getPage(downloadLink.getDownloadURL());
+        } else {
+            /* Make sure not to access members-only-urls when we dont have an account!. */
+            br.getPage(downloadLink.getDownloadURL().replace("members.xyou.com/", "xyou.com/"));
+        }
         if (!br.getURL().contains("/episode") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -132,9 +156,13 @@ public class XyouCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    }
+
+    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -142,37 +170,10 @@ public class XyouCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty(directlinkproperty, DLLINK);
         dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = openConnection(br2, dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
     }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */
@@ -193,7 +194,97 @@ public class XyouCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return FREE_MAXDOWNLOADS;
+    }
+
+    private static final String MAINPAGE = "http://xyou.com";
+    private static Object       LOCK     = new Object();
+
+    @SuppressWarnings("unchecked")
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                // Load cookies
+                this.br.setAllowedResponseCodes(401);
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            br.setCookie(MAINPAGE, key, value);
+                        }
+                        this.br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
+                        return;
+                    }
+                }
+                br.setFollowRedirects(true);
+                this.br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
+                br.getPage("http://members.xyou.com/");
+                if (!br.containsHTML(">My Favorites<") || this.br.getHttpConnection().getResponseCode() == 401) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                // Save cookies
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = br.getCookies(MAINPAGE);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        ai.setUnlimitedTraffic();
+        maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
+        try {
+            account.setType(AccountType.FREE);
+            /* free accounts can still have captcha */
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(false);
+        } catch (final Throwable e) {
+            /* not available in old Stable 0.9.581 */
+        }
+        ai.setStatus("Registered (free) user");
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {

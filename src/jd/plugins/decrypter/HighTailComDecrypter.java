@@ -42,6 +42,8 @@ public class HighTailComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private static final String TYPE_OLD = "https?://(?:www\\.)?(?:yousendit|hightail)\\.com/download/[A-Za-z0-9\\-_]+";
+
     @SuppressWarnings({ "unchecked", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -52,7 +54,7 @@ public class HighTailComDecrypter extends PluginForDecrypt {
         if (folderID == null) {
             folderID = br.getRegex("NYSI\\.WS\\.currentFolderId = \\'([^<>\"\\']*?)\\';").getMatch(0);
         }
-        final String fid = new Regex(parameter, "\\&id=([A-Za-z0-9\\-_]+)").getMatch(0);
+        final String fid = new Regex(this.br.getURL(), "\\&(?:id|batch_id)=([A-Za-z0-9\\-_]+)").getMatch(0);
         if (fid == null) {
             return null;
         }
@@ -120,8 +122,12 @@ public class HighTailComDecrypter extends PluginForDecrypt {
                 }
             } else {
                 // Single link
-                final DownloadLink dl = createDownloadlink(parameter.replaceAll("(yousendit|hightail)\\.com/", "yousenditdecrypted.com/"));
-                dl.setLinkID(fid);
+                String download_id = getJson("file_download_link");
+                if (download_id == null) {
+                    download_id = fid;
+                }
+                final DownloadLink dl = createDownloadlink("http://yousenditdecrypted.com/download/" + System.currentTimeMillis() + new Random().nextInt(100000));
+                dl.setLinkID(download_id);
                 dl.setProperty("mainlink", parameter);
                 if (br.containsHTML("Download link is invalid|Download link is invalid|>Access has expired<|class=\"fileIcons disabledFile\"")) {
                     dl.setProperty("offline", true);
@@ -134,6 +140,8 @@ public class HighTailComDecrypter extends PluginForDecrypt {
                         dl.setDownloadSize(SizeFormatter.getSize(filesize));
                         dl.setProperty("directname", Encoding.htmlDecode(filename.trim()));
                         dl.setProperty("directsize", filesize);
+                        dl.setProperty("fileurl", download_id);
+                        dl.setProperty("mainlink", parameter);
                         dl.setAvailable(true);
                     }
                 }
@@ -143,6 +151,16 @@ public class HighTailComDecrypter extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
 }

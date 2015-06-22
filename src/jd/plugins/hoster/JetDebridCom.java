@@ -17,7 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -30,7 +30,6 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -41,11 +40,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hyperspeeds.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
-public class HyperspeedsCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jetdebrid.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
+public class JetDebridCom extends PluginForHost {
 
     /**
      * TODO API: Return max downloadable filesize (especially for free accounts), return traffic information (if not unlimited), return host
@@ -53,8 +51,8 @@ public class HyperspeedsCom extends PluginForHost {
      * website workaround
      */
     /* Tags: Script vinaget.us */
-    private static final String                            DOMAIN               = "http://hyperspeeds.com/dl/debrid";
-    private static final String                            NICE_HOST            = "hyperspeeds.com";
+    private static final String                            DOMAIN               = "http://jetdebrid.com/";
+    private static final String                            NICE_HOST            = "jetdebrid.com";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
 
@@ -70,7 +68,7 @@ public class HyperspeedsCom extends PluginForHost {
 
     /* Last updated: 31.03.15 */
     private static final int                               defaultMAXDOWNLOADS  = 20;
-    private static final int                               defaultMAXCHUNKS     = 0;
+    private static final int                               defaultMAXCHUNKS     = -7;
     private static final boolean                           defaultRESUME        = true;
 
     private static Object                                  CTRLLOCK             = new Object();
@@ -81,14 +79,14 @@ public class HyperspeedsCom extends PluginForHost {
     private static Object                                  LOCK                 = new Object();
 
     @SuppressWarnings("deprecation")
-    public HyperspeedsCom(PluginWrapper wrapper) {
+    public JetDebridCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://hyperspeeds.com/signup");
+        this.enablePremium("http://jetdebrid.com/user_register_session.php");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://hyperspeeds.com/page/terms";
+        return "http://jetdebrid.com/";
     }
 
     private Browser newBrowser() {
@@ -119,7 +117,6 @@ public class HyperspeedsCom extends PluginForHost {
         if (fsize == -1) {
             fsize = downloadLink.getDownloadSize();
         }
-        final long max_file_size = account.getLongProperty("max_file_size", -1);
         final String currentHost = this.correctHost(downloadLink.getHost());
         /* Make sure that we do not start more than the allowed number of max simultan downloads for the current host. */
         synchronized (hostRunningDlsNumMap) {
@@ -130,10 +127,6 @@ public class HyperspeedsCom extends PluginForHost {
                     return false;
                 }
             }
-        }
-        /* Make sure that our account type allows downloading a link with this filesize. */
-        if (max_file_size > -1 && fsize > max_file_size) {
-            return false;
         }
         return true;
     }
@@ -184,7 +177,7 @@ public class HyperspeedsCom extends PluginForHost {
         if (dl.getConnection().getResponseCode() == 416) {
             logger.info("Resume impossible, disabling it for the next try");
             link.setChunksProgress(null);
-            link.setProperty(HyperspeedsCom.NORESUME, Boolean.valueOf(true));
+            link.setProperty(JetDebridCom.NORESUME, Boolean.valueOf(true));
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("json")) {
@@ -243,8 +236,8 @@ public class HyperspeedsCom extends PluginForHost {
         if (dllink == null || forceNewLinkGeneration) {
             /* request creation of downloadlink */
             br.setFollowRedirects(true);
-            this.getAPISafe(DOMAIN + "/deb_api.php?link=" + Encoding.urlEncode(link.getDownloadURL()));
-            dllink = getJson("link");
+            this.postAPISafe("http://jetdebrid.com/index.php?rand=0." + System.currentTimeMillis(), "urllist=" + Encoding.urlEncode(link.getDownloadURL()) + "&captcha=none&");
+            dllink = br.getRegex("(https?://[a-z0-9\\-]+\\.jetdebrid\\.com/dl/[^<>\"\\']+)").getMatch(0);
             if (dllink == null) {
                 logger.warning("Final downloadlink is null");
                 handleErrorRetries("dllinknull", 10, 10 * 60 * 1000l);
@@ -296,7 +289,7 @@ public class HyperspeedsCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "deprecation" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         this.setConstants(account, null);
@@ -306,12 +299,15 @@ public class HyperspeedsCom extends PluginForHost {
 
         this.login(account, true);
 
-        final String accounttype = getJson("type");
-        final String validuntil = getJson("expiration");
-        final String max_file_size = getJson("max_file_size");
+        this.getAPISafe(DOMAIN + "user_dashboard.php");
 
-        if (accounttype.equals("premium")) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd", Locale.ENGLISH));
+        final String accounttype = br.getRegex(">Status</td>.*?value=([^<>\"]*?)>").getMatch(0);
+        final String validuntil = br.getRegex(">Expire Date</td>.*?value=([^<>\"]*?)>").getMatch(0);
+
+        if (accounttype.equalsIgnoreCase("Premium")) {
+            if (validuntil != null) {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+            }
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
         } else {
@@ -321,39 +317,14 @@ public class HyperspeedsCom extends PluginForHost {
             ai.setStatus("Registered (free) account");
         }
 
-        if (max_file_size != null) {
-            /* Usually only free accounts have max_file_size limits. */
-            account.setProperty("max_file_size", SizeFormatter.getSize(max_file_size));
-        } else {
-            /* Make sure that in case the users' account type changed we remove the old property. */
-            account.setProperty("max_file_size", Property.NULL);
-        }
-
-        /* TODO: Add API call for this once it's available */
-        // this.getAPISafe("/deb_hosters.php");
-        this.getAPISafe("http://hyperspeeds.com/");
-        ArrayList<String> supportedhostslist = new ArrayList();
-        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
-        final String[] crippledHosts = br.getRegex("hosters\\-icons/([^<>\"]*?)\\.png").getColumn(0);
-        for (final String crippledhost : crippledHosts) {
-            if (crippledhost.equals("filecloud")) {
-                /* Workaround as .io is not in the array above also multiple filecloud's exist. */
-                supportedhostslist.add("filecloud.io");
-            } else {
-                /* Go insane */
-                for (final String possibledomain : possible_domains) {
-                    final String full_possible_host = crippledhost + "." + possibledomain;
-                    supportedhostslist.add(full_possible_host);
-                }
-            }
-        }
+        final String[] supportedHosts = br.getRegex("class=\"host-icon-work\" alt=\"([^<>\"]*?)\"").getColumn(0);
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         ai.setUnlimitedTraffic();
 
         hostMaxchunksMap.clear();
         hostMaxdlsMap.clear();
-        ai.setMultiHostSupport(this, supportedhostslist);
+        ai.setMultiHostSupport(this, Arrays.asList(supportedHosts));
         return ai;
     }
 
@@ -377,65 +348,32 @@ public class HyperspeedsCom extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(DOMAIN, key, value);
                         }
+                        return;
                     }
-                } else {
-                    br.setFollowRedirects(true);
-                    this.getAPISafe(DOMAIN + "/deb_login.php?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&api_key=apikeytest");
-                    final String cookietext = this.getJson("cookie");
-                    if (cookietext == null) {
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    }
-                    /* Get cookies from json and set them */
-                    final String[][] cookiePairs = new Regex(cookietext, "([^<>\"=;]+)=([^<>\"=;]+)").getMatches();
-                    for (final String[] cookiePair : cookiePairs) {
-                        final String key = cookiePair[0].trim();
-                        final String value = cookiePair[1];
-                        this.br.setCookie(DOMAIN, key, value);
-                    }
-                    /* Save cookies */
-                    final HashMap<String, String> cookies = new HashMap<String, String>();
-                    final Cookies add = this.br.getCookies(DOMAIN);
-                    for (final Cookie c : add.getCookies()) {
-                        cookies.put(c.getKey(), c.getValue());
-                    }
-                    account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                    account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                    account.setProperty("cookies", cookies);
                 }
-                /*
-                 * This call is always needed to check the account as the call before simply returns cookies but no useful information at
-                 * all.
-                 */
-                this.getAPISafe(DOMAIN + "/deb_account.php");
-                final String username = getJson("username");
-                final String email = getJson("email");
-                if (username == null && email == null || username.equals("null") || email.equals("null")) {
-                    /* 2nd failover, should not be needed! */
+                br.setFollowRedirects(true);
+                this.postAPISafe(DOMAIN + "user_login_session.php", "B1=Login&user_name1=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (this.br.getCookie(DOMAIN, "secureid") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                /* Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(DOMAIN);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
             }
         }
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     private void tempUnavailableHoster(final long timeout) throws PluginException {
@@ -506,13 +444,10 @@ public class HyperspeedsCom extends PluginForHost {
      * 0 = everything ok, 1-99 = official errorcodes, 100-199 = login-errors, 666 = hell
      */
     private void updatestatuscode() {
-        /* First look for errorcode */
-        String error = this.getJson("error");
-        if (inValidate(error)) {
-            error = null;
-        }
-        if (error != null) {
-            statuscode = Integer.parseInt(error);
+        if (br.containsHTML(">Invalid Username or Password")) {
+            statuscode = 1;
+        } else if (br.containsHTML(">This IP already\\! Multiple users can not be login")) {
+            statuscode = 2;
         } else {
             statuscode = 0;
         }
@@ -533,40 +468,17 @@ public class HyperspeedsCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             case 2:
-                /* Should never happen */
-                statusMessage = "'link' parameter is empty or 'http://' is missing";
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_linkparameterempty", 10, 5 * 60 * 1000l);
-            case 3:
-                /* Should never happen */
-                statusMessage = "Host not supported by multihost or unknown linktype";
-                tempUnavailableHoster(5 * 60 * 1000l);
-            case 4:
-                /* Should never happen */
-                statusMessage = "This filehost is only enabled in Premium mode or Link dead or filehoster not supported";
-                // handleErrorRetries(NICE_HOSTproperty + "timesfailed_host_unsupported_or_link_dead", 10, 5 * 60 * 1000l);
-                tempUnavailableHoster(5 * 60 * 1000l);
-            case 5:
-                /* Also covered within canHandle - should never happen here! */
-                statusMessage = "You can only generate & download links during happy hours";
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, this.getHost() + ": You can only generate & download links during happy hours", 1 * 60 * 1000l);
-            case 6:
-                statusMessage = "Free account limits exceeded!";
-                this.currAcc.getAccountInfo().setTrafficLeft(0);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree account limits exceeded!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            case 7:
-                /* Also covered within canHandle - should never happen here! */
-                statusMessage = "File is too big to download with this multihost/account";
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is too big to download with this multihost/account", 1 * 60 * 1000l);
-            case 8:
-                statusMessage = "Host not supported by multihost or under maintenance";
-                tempUnavailableHoster(10 * 60 * 1000l);
+                statusMessage = "IP login limit reached";
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDu kannst dich mit dieser IP und diesem Account momentan nicht einloggen.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou cannot login with your current API and this account at the moment.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
             case 666:
                 /* Unknown error */
                 statusMessage = "Unknown error";
                 logger.info(NICE_HOST + ": Unknown API error");
-                // handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 10, 5 * 60 * 1000l);
-                /* TODO: Remove this once the plugin is tested well enough */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 10, 5 * 60 * 1000l);
             }
         } catch (final PluginException e) {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);

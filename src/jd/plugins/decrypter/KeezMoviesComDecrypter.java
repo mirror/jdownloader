@@ -56,7 +56,8 @@ public class KeezMoviesComDecrypter extends PluginForDecrypt {
         if (decryptedLinks != null && decryptedLinks.size() > 0) {
             return decryptedLinks;
         }
-
+        /* No external url found --> Video must be selfhosted. */
+        decryptedLinks = new ArrayList<DownloadLink>();
         decryptedLinks.add(decryptedMainlink);
         return decryptedLinks;
     }

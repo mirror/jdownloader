@@ -44,6 +44,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.rapeit.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PremiumRapeitNet extends antiDDoSForHost {
 
+    /* Tags: Script vinaget.us */
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            NOCHUNKS           = "NOCHUNKS";
     private static final String                            MAINPAGE           = "https://premium.rapeit.net";
@@ -145,7 +146,7 @@ public class PremiumRapeitNet extends antiDDoSForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     * 
+     *
      * @param dl
      *            : The DownloadLink
      * @param error

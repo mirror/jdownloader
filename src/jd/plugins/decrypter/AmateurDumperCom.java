@@ -55,29 +55,15 @@ public class AmateurDumperCom extends PluginForDecrypt {
                 filename = br.getRegex("<title>Homemade Sex :: (.*?)</title>").getMatch(0);
             }
         }
+        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
+        if (decryptedLinks != null && decryptedLinks.size() > 0) {
+            return decryptedLinks;
+        }
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         filename = filename.trim();
-        // myxvids.com 1
-        externID = br.getRegex("\"(http://(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID));
-            return decryptedLinks;
-        }
-        // myxvids.com 2
-        externID = br.getRegex("(\\'|\")(http://(www\\.)?myxvids\\.com/embed_code/\\d+/\\d+/myxvids_embed\\.js)(\\'|\")").getMatch(1);
-        if (externID != null) {
-            br.getPage(externID);
-            final String finallink = br.getRegex("\"(http://(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
-            if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            decryptedLinks.add(createDownloadlink(finallink));
-            return decryptedLinks;
-        }
         externID = br.getRegex("flash\\.serious\\-cash\\.com/flvplayer\\.swf\".*?flashvars=\"(\\&)?file=([^<>\"]*?)\\&").getMatch(1);
         if (externID != null) {
             DownloadLink dl = createDownloadlink("directhttp://http://flash.serious-cash.com/" + externID + ".flv");
@@ -144,11 +130,8 @@ public class AmateurDumperCom extends PluginForDecrypt {
             logger.info("Link broken: " + parameter);
             return decryptedLinks;
         }
-        if (externID == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        return decryptedLinks;
+        logger.warning("Decrypter broken for link: " + parameter);
+        return null;
     }
 
     /* NO OVERRIDE!! */
