@@ -322,7 +322,6 @@ public class RTLnowDe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
-            // throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type");
         }
 
         if (ALLOW_HLS && url_hds != null && url_hds.matches(this.HDSTYPE_NEW_DETAILED)) {
@@ -334,7 +333,7 @@ public class RTLnowDe extends PluginForHost {
         } else if (url_rtmp != null && ALLOW_RTMP) {
             if (url_rtmp.startsWith("/abr/") || !url_rtmp.endsWith(".f4v")) {
                 /* Invalid rtmp url --> this should never happen */
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich (muss gekauft werden)");
             }
             final long calculated_filesize = ((bitrate_max * 1000) / 8) * duration;
             final long calculated_filesize_minimum = (long) (calculated_filesize * 0.9);
