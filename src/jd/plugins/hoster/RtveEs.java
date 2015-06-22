@@ -154,6 +154,7 @@ public class RtveEs extends PluginForHost {
         }
         /* encrypt request query */
         String getEncData = org.appwork.utils.encoding.Base64.encodeToString(getBlowfish(JDHexUtils.getByteArray(JDHexUtils.getHexString(flashVars[0] + "_default_" + ("audios".equals(flashVars[2]) ? "audio" : "video") + "_" + flashVars[1])), false), false);
+        getEncData = getEncData.replaceAll("/", "_");
         Browser enc = br.cloneBrowser();
         enc.getPage("http://ztnr.rtve.es/ztnr/res/" + getEncData);
         /* Check for empty page */
