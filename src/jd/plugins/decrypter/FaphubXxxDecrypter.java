@@ -44,6 +44,14 @@ public class FaphubXxxDecrypter extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        externID = this.br.getRedirectLocation();
+        if (externID != null && !externID.contains("faphub.xxx/")) {
+            decryptedLinks.add(this.createDownloadlink(externID));
+            return decryptedLinks;
+        } else if (externID != null) {
+            this.br.getPage(externID);
+            externID = null;
+        }
         String filename = br.getRegex("<title>([^<>\"]*?) at faphub\\.xxx</title>").getMatch(0);
         decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
         if (decryptedLinks != null && decryptedLinks.size() > 0) {

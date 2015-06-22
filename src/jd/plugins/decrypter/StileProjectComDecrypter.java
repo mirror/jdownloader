@@ -42,7 +42,7 @@ public class StileProjectComDecrypter extends PluginForDecrypt {
         String filename = br.getRegex("<title>([^<>\"]*?) \\- StileProject\\.com</title>").getMatch(0);
         /* Check if the video is selfhosted */
         final String externID = br.getRegex("stileproject\\.com/embed/(\\d+)").getMatch(0);
-        if (externID == null) {
+        if (externID == null && this.br.getHttpConnection().getResponseCode() == 200) {
             decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
         } else {
             decryptedLinks.add(mainlink);

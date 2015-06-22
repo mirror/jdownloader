@@ -211,7 +211,9 @@ public class EzFileCh extends PluginForHost {
             if (this.isPrivateFile) {
                 /*
                  * TODO: Find a way to check if maybe the current user IS the owner of that file so we can actually download it instead of
-                 * showing this error message!
+                 * showing this error message! Free account + private file that the account owner owns is the only case that will not work
+                 * with JDownloader due to a missing full login / API function (free account). According to the admin this case is so rare
+                 * that we can ignore it.
                  */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This is a private file which can only be downloaded by its owner");
             }

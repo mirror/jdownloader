@@ -85,6 +85,11 @@ public class LinkSnappyCom extends PluginForHost {
     /* Last checked: 18.06.2015 */
     private static final String reCaptchaV2_sitekey    = "6LfhJgQTAAAAAIM7Pz3XxW1QMWssU51lcN-kUDRA";
 
+    /**
+     * Status 22.06.15: Host has ddos problems. Along with that they added login captchas. For the website version of the plugin that works
+     * fine - not so for the API login. Admin does not want to add it for API as well so as long as it only occurs in rare cases users
+     * should barely notice that.
+     */
     /*
      * TODO: Implement correct connection limits - admin said, max 36 connectins per file (no total limit), waiting for more input and/or
      * even api implementation
@@ -557,7 +562,6 @@ public class LinkSnappyCom extends PluginForHost {
         return true;
     }
 
-    /** TODO: Fix captcha handling for API login */
     private boolean api_login(final Account account) throws Exception {
         this.br.setCookiesExclusive(true);
         getPage(HTTP_S + "gen.linksnappy.com/lseAPI.php?act=USERDETAILS");

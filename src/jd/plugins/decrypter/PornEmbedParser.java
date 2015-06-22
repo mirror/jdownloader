@@ -40,6 +40,10 @@ public class PornEmbedParser {
         if (externID == null) {
             externID = br.getRegex("\"https?://(?:www\\.)?xvideos\\.com/video(\\d+)/[^<>\"]+\"").getMatch(0);
         }
+        // xvideos.com 4
+        if (externID == null) {
+            externID = br.getRegex("name=\"flashvars\" value=\"id_video=(\\d+)\" /><embed src=\"https?://static\\.xvideos\\.com").getMatch(0);
+        }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID + "/"));
             return decryptedLinks;
@@ -129,13 +133,19 @@ public class PornEmbedParser {
             decryptedLinks.add(createDownloadlink("http://www.metacafe.com/watch/" + externID + "/" + System.currentTimeMillis()));
             return decryptedLinks;
         }
+        // pornhub handling number #1
         externID = br.getRegex("\"(http://(www\\.)?pornhub\\.com/embed/[a-z0-9]+)\"").getMatch(0);
         if (externID != null) {
-            DownloadLink dl = createDownloadlink(externID);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        // pornhub handling number 2
+        // pornhub handling number #2
+        externID = br.getRegex("\"(https?://(?:www\\.)?pornhub\\.com/view_video\\.php\\?viewkey=[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        // pornhub handling number #3
         externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
         if (externID != null) {
             brdecrypt.getPage(externID);
@@ -381,6 +391,11 @@ public class PornEmbedParser {
             return decryptedLinks;
         }
         externID = br.getRegex("\"(https?://(?:www\\.)?sextube\\.com/media/\\d+/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(https?://(?:www\\.)?pornstarnetwork\\.com/video/embed\\?id=\\d+[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
