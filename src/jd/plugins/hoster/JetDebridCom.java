@@ -45,11 +45,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jetdebrid.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class JetDebridCom extends PluginForHost {
 
-    /**
-     * TODO API: Return max downloadable filesize (especially for free accounts), return traffic information (if not unlimited), return host
-     * array based on account e.g. free accounts get another host list than premium, implement list of supported hosts via API, remove the
-     * website workaround
-     */
     /* Tags: Script vinaget.us */
     private static final String                            DOMAIN               = "http://jetdebrid.com/";
     private static final String                            NICE_HOST            = "jetdebrid.com";
@@ -310,17 +305,17 @@ public class JetDebridCom extends PluginForHost {
             }
             account.setType(AccountType.PREMIUM);
             ai.setStatus("Premium account");
+            ai.setUnlimitedTraffic();
         } else {
-            /* TODO: Remove this hardcoded value. This is the max. number of daily downloads for free accounts. */
-            account.setMaxSimultanDownloads(2);
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) account");
+            /* It's impossible to download anything with free accounts of this service. */
+            ai.setTrafficLeft(0);
         }
 
         final String[] supportedHosts = br.getRegex("class=\"host-icon-work\" alt=\"([^<>\"]*?)\"").getColumn(0);
         account.setValid(true);
         account.setConcurrentUsePossible(true);
-        ai.setUnlimitedTraffic();
 
         hostMaxchunksMap.clear();
         hostMaxdlsMap.clear();
@@ -448,6 +443,8 @@ public class JetDebridCom extends PluginForHost {
             statuscode = 1;
         } else if (br.containsHTML(">This IP already\\! Multiple users can not be login")) {
             statuscode = 2;
+        } else if (br.containsHTML(">Please upgrade to premium to use this service\\.</font>")) {
+            statuscode = 3;
         } else {
             statuscode = 0;
         }
@@ -473,6 +470,13 @@ public class JetDebridCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDu kannst dich mit dieser IP und diesem Account momentan nicht einloggen.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou cannot login with your current API and this account at the moment.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            case 3:
+                statusMessage = "Premium account needed to download with this account";
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPremium Account benötigt um mit diesem Anbieter herunterladen zu können!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYou need a premium account to download via this service!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             case 666:
                 /* Unknown error */
