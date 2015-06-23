@@ -115,19 +115,17 @@ public class PobierzBiz extends PluginForHost {
 
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hostDomains));
 
-        // long expireTime = TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", Locale.ENGLISH);
-        // ai.setValidUntil(expireTime);
         account.setValid(true);
         ai.setMultiHostSupport(this, supportedHosts);
-        String transferLeft = br.getRegex("Pozostały transfer: <b>(\\d+\\.\\d+ [GM]B)</b>").getMatch(0);
-
-        ai.setTrafficLeft(SizeFormatter.getSize(transferLeft.replace(".", ",")));
+        String transferLeft = br.getRegex("Pozostały transfer: <b>(\\d+\\.\\d+ [GM]B)</b>").getMatch(0).replace(".", ",");
+        long trafficLeftLong = ((transferLeft == null) ? 0 : SizeFormatter.getSize(transferLeft));
 
         if (br.containsHTML("Konto ważne do: <b>nieaktywne</b>")) {
             ai.setExpired(true);
             ai.setProperty("free", true);
+            ai.setTrafficLeft(trafficLeftLong);
 
-            ai.setStatus("Premium expired");
+            ai.setStatus(getPhrase("PREMIUM_EXPIRED"));
             return ai;
         } else {
             validUntil = br.getRegex("Konto ważne do: <b>(\\d{4}\\-\\d{2}\\-\\d{2})</b>").getMatch(0);
@@ -136,9 +134,10 @@ public class PobierzBiz extends PluginForHost {
             }
 
             ai.setProperty("free", false);
-            ai.setStatus("Premium User");
+            ai.setUnlimitedTraffic();
             ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "yyyy-MM-dd", Locale.ENGLISH));
-            // ai.setValidPremiumUntil(Long.parseLong(validUntil));
+            ai.setProperty("Available traffic", trafficLeftLong);
+            ai.setStatus(getPhrase("PREMIUM") + " (" + getPhrase("TRAFFIC_LEFT") + ": " + SizeFormatter.formatBytes(trafficLeftLong) + ")");
         }
 
         return ai;
@@ -204,15 +203,18 @@ public class PobierzBiz extends PluginForHost {
             String postData = "v=usr%2Csprawdzone%7Cusr%2Clinki&c=pob&f=sprawdzLinki&usr=" + userId + "&progress_type=check&linki=" + url;
             showMessage(link, "Phase 2/4: Checking Link");
             br.postPage(MAINPAGE + "index.php", postData);
-            sleep(3 * 1000l, link);
+            sleep(2 * 1000l, link);
             if (!br.containsHTML("<td class='file_ok' id='linkstatus_1'>OK</td>")) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("PLUGIN_BROKEN"), PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            if (br.containsHTML("Rozmiar pobieranych plików przekracza dostępny transfer")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("NO_TRAFFIC"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
 
             postData = "v=usr%2Cpliki%7Cusr%2Clinki&c=pob&f=zapiszRozpoczete&usr=" + userId + "&progress_type=verified&link_ok%5B1%5D=" + url;
             br.postPage(MAINPAGE + "index.php", postData);
             String fileId = "";
-            sleep(3 * 1000l, link);
+            sleep(2 * 1000l, link);
 
             for (int i = 1; i <= 3; i++) {
 
@@ -233,7 +235,7 @@ public class PobierzBiz extends PluginForHost {
             postData = "v=usr%2Cpliki&c=fil&f=usunUsera&perm=wygeneruj+linki&fil%5B" + fileId + "%5D=on";
             showMessage(link, "Phase 3/4: Generating Link");
             br.postPage(MAINPAGE + "index.php", postData);
-            sleep(3 * 1000l, link);
+            sleep(2 * 1000l, link);
 
             generatedLink = br.getRegex("<h2>Wygenerowane linki bezpośrednie</h2><textarea rows='1' style='width: 650px; height: 40px'>(.*)</textarea>").getMatch(0);
             if (generatedLink == null) {
@@ -372,6 +374,12 @@ public class PobierzBiz extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    public void showAccountDetailsDialog(Account account) {
+        AccountInfo ai = account.getAccountInfo();
+        long availableTraffic = Long.parseLong(ai.getProperty("Available traffic").toString(), 10);
+        jd.gui.UserIO.getInstance().requestMessageDialog("Pobierz.biz", getPhrase("ACCOUNT_TYPE") + ": Premium\n" + getPhrase("TRAFFIC_LEFT") + ": " + SizeFormatter.formatBytes(availableTraffic));
+    }
+
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
                                                   {
                                                       put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
@@ -382,6 +390,10 @@ public class PobierzBiz extends PluginForHost {
                                                       put("RETRY", "Retry in few secs");
                                                       put("NO_TRAFFIC", "No traffic left");
                                                       put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
+                                                      put("PREMIUM", "Premium User");
+                                                      put("TRAFFIC_LEFT", "Traffic Left");
+                                                      put("PREMIUM_EXPIRED", "Premium expired");
+                                                      put("ACCOUNT_TYPE", "Account type");
                                                   }
                                               };
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
@@ -394,6 +406,10 @@ public class PobierzBiz extends PluginForHost {
                                                       put("RETRY", "Ponowna próba za kilka sekund");
                                                       put("NO_TRAFFIC", "Brak dostępnego transferu");
                                                       put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
+                                                      put("PREMIUM", "Użytkownik Premium");
+                                                      put("TRAFFIC_LEFT", "Pozostały transfer");
+                                                      put("PREMIUM_EXPIRED", "Konto Premium wygasło");
+                                                      put("ACCOUNT_TYPE", "Typ konta");
                                                   }
                                               };
 
