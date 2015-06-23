@@ -53,7 +53,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(account/)?(download|get|file|document|embed|photo|video|audio|mp3|office|rar|zip|archive|music)/.+?/.*|https?://api\\.4shared(\\-china)?\\.com/download/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(-china)?\\.com/(account/)?(download|get|file|document|embed|photo|video|audio|mp3|office|rar|zip|archive|music)/.+?/.*|https?://api\\.4shared(-china)?\\.com/download/[A-Za-z0-9]+" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
 
     // DEV NOTES:
@@ -65,7 +65,7 @@ public class FourSharedCom extends PluginForHost {
     private static Object                  LOCK                                      = new Object();
 
     private static final boolean           TRY_FAST_FREE                             = true;
-    private static final String            type_api_direct                           = "https?://api\\.4shared(\\-china)?\\.com/download/[A-Za-z0-9]+";
+    private static final String            type_api_direct                           = "https?://api\\.4shared(-china)?\\.com/download/[A-Za-z0-9]+";
 
     private static AtomicReference<String> agent                                     = new AtomicReference<String>();
     private String                         DLLINK                                    = null;
@@ -150,36 +150,36 @@ public class FourSharedCom extends PluginForHost {
     private String getStreamLinks() {
         String url = br.getRegex("<meta property=\"og:audio\" content=\"(http://.*?)\"").getMatch(0);
         if (url == null) {
-            url = br.getRegex("var (flvLink|mp4Link|oggLink|mp3Link|streamerLink) = \\'(http://[^<>\"\\']{5,500})\\'").getMatch(1);
+            url = br.getRegex("var (flvLink|mp4Link|oggLink|mp3Link|streamerLink) = '(http://[^<>']{5,500})'").getMatch(1);
         }
         return url;
     }
 
     private String getNormalDownloadlink() {
-        String url = br.getRegex("<div class=\"xxlarge bold\">[\t\n\r ]+<a class=\"linkShowD3.*?href=\\'(http://[^<>\"\\']+)\\'").getMatch(0);
+        String url = br.getRegex("<div class=\"xxlarge bold\">[\t\n\r ]+<a class=\"linkShowD3.*?href='(http://[^<>']+)'").getMatch(0);
         if (url == null) {
             url = br.getRegex("<a href=\"(https?://[^<>\"]*?)\" class=\"linkShowD3").getMatch(0);
         }
         if (url == null) {
-            url = br.getRegex("<input type=\"hidden\" name=\"d3torrent\" value=\"(http://dc\\d+\\.4shared\\.com/download\\-torrent/[^<>\"\\']+)\"").getMatch(0);
+            url = br.getRegex("<input type=\"hidden\" name=\"d3torrent\" value=\"(http://dc\\d+\\.4shared\\.com/download-torrent/[^<>\"]+)\"").getMatch(0);
             if (url != null) {
                 url = url.replace("/download-torrent/", "/download/");
             }
             /** For registered users */
             if (url == null) {
-                url = br.getRegex("<div class=\"xxlarge bold\">[\t\n\r ]+<a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+                url = br.getRegex("<div class=\"xxlarge bold\">[\t\n\r ]+<a href=\"(http://[^<>\"]+)\"").getMatch(0);
             }
         }
         return url;
     }
 
     private String getDirectDownloadlink() {
-        String url = br.getRegex("size=\"tall\" annotation=\"inline\" width=\"200\" count=\"false\"[\t\n\r ]+href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+        String url = br.getRegex("size=\"tall\" annotation=\"inline\" width=\"200\" count=\"false\"[\t\n\r ]+href=\"(http://[^<>\"]+)\"").getMatch(0);
         if (url == null) {
-            url = br.getRegex("<a href=\"(http://[^<>\"\\']+)\"  class=\"dbtn nt gaClick\" data\\-element").getMatch(0);
+            url = br.getRegex("<a href=\"(http://[^<>\"']+)\"  class=\"dbtn nt gaClick\" data-element").getMatch(0);
         }
         if (url == null) {
-            url = br.getRegex("value=\"(http://dc\\d+\\.4shared\\.com/download/[^<>\"']+)").getMatch(0);
+            url = br.getRegex("value=\"(http://dc\\d+\\.4shared\\.com/download/[^<>\"]+)").getMatch(0);
         }
         return url;
     }
@@ -214,7 +214,7 @@ public class FourSharedCom extends PluginForHost {
             boolean wait = true;
             if (DLLINK == null && acc != null && TRY_FAST_FREE) {
                 try {
-                    final String host = new Regex(downloadLink.getDownloadURL(), "https?://(www\\.)?(4shared(\\-china)?\\.com)").getMatch(1);
+                    final String host = new Regex(downloadLink.getDownloadURL(), "https?://(www\\.)?(4shared(-china)?\\.com)").getMatch(1);
                     final Browser cbr = new Browser();
                     cbr.getHeaders().put("User-Agent", "UniversalUserAgent(winHTTP)");
                     cbr.getPage("http://www." + host + "/downloadhelper/flink?login=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&url=" + Encoding.urlEncode(downloadLink.getDownloadURL()) + "&forDownloadHelper%3Dtrue%26lgfp%3D" + new Random().nextInt(10000));
@@ -243,9 +243,9 @@ public class FourSharedCom extends PluginForHost {
                     if (DLLINK == null) {
                         /* If file isn't available for free users we can still try to get the stream link */
                         handleErrors(downloadLink);
-                        continueLink = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]+)\"  ?class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
+                        continueLink = br.getRegex("<a href=\"(http://(www\\.)?4shared(-china)?\\.com/get[^\\;\"]+)\"  ?class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
                         if (continueLink == null) {
-                            continueLink = br.getRegex("\"(http://(www\\.)?4shared(\\-china)?\\.com/get/[A-Za-z0-9\\-_]+/.*?)\"").getMatch(0);
+                            continueLink = br.getRegex("\"(http://(www\\.)?4shared(-china)?\\.com/get/[A-Za-z0-9\\-_]+/.*?)\"").getMatch(0);
                         }
                     }
                     if (continueLink == null) {
@@ -282,7 +282,7 @@ public class FourSharedCom extends PluginForHost {
                             // Ticket Time
                             String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
                             if (ttt == null) {
-                                ttt = br.getRegex("id=\"downloadDelayTimeSec\"\\s+?class=\"sec alignCenter light\\-blue\">(\\d+)</div>").getMatch(0);
+                                ttt = br.getRegex("id=\"downloadDelayTimeSec\"\\s+?class=\"sec alignCenter light-blue\">(\\d+)</div>").getMatch(0);
                             }
                             int tt = 20;
                             if (ttt != null) {
@@ -397,7 +397,7 @@ public class FourSharedCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "The download limit has been reached", 60 * 60 * 1000l);
         }
 
-        if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short\\-time maintenance)")) {
+        if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short-time maintenance)")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - ongoing maintenance!", 60 * 60 * 1000l);
         }
         if (br.containsHTML("The file link that you requested is not valid|This file is no longer available because of a claim|This file is no longer available because it is identical to a file banned because of a claim|This file was deleted\\.<")) {
@@ -588,6 +588,10 @@ public class FourSharedCom extends PluginForHost {
             br2.getHeaders().put("X-Requested-With", null);
         }
         br.getPage("/web/account/settings/overview");
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().endsWith("/verifyemail")) {
+            account.setValid(false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Please verify your email account in your webbrowser: http://www.4shared.com/web/acc/verifyemail", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         String expire = br.getRegex(">Expires in:.*?(\\d+) days<span><br>after last log in</span>").getMatch(0);
         if (expire == null) {
             expire = br.getRegex(">Expiration Date:.*\\s.*(Until Cancellation)<").getMatch(0);
@@ -687,41 +691,41 @@ public class FourSharedCom extends PluginForHost {
                     if (filename != null) {
                         filename = Encoding.htmlDecode(filename.trim()) + ".mp3";
                     }
-                } else if (br.containsHTML("MPEG\\-4 Video File|Matroska Video File") && filename == null) {
+                } else if (br.containsHTML("MPEG-4 Video File|Matroska Video File") && filename == null) {
                     filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
                     if (filename != null) {
                         /* Full filename WITHOUT extension --> add extension */
                         filename += ".mp4";
                     } else {
                         /* Crippled filename WITH extension */
-                        filename = br.getRegex("style=\"background\\-image: url\\(http://[a-z0-9]+\\.4shared\\.com/img/[A-Za-z0-9]+/[A-Za-z0-9]+/([^<>\"]*?)\\)\"").getMatch(0);
+                        filename = br.getRegex("style=\"background-image: url\\(http://[a-z0-9]+\\.4shared\\.com/img/[A-Za-z0-9]+/[A-Za-z0-9]+/([^<>\"]*?)\\)\"").getMatch(0);
                     }
                 }
                 if (filename == null) {
-                    filename = br.getRegex("photos and media in one place\\. Access anytime from everywhere\\! Download \\&quot;([^<>\"]*?)\\&quot; at 4shared\\' />").getMatch(0);
+                    filename = br.getRegex("photos and media in one place\\. Access anytime from everywhere\\! Download \\&quot;([^<>\"]*?)\\&quot; at 4shared' />").getMatch(0);
                 }
                 if (filename == null) {
-                    filename = br.getRegex("filename:\\'([^<>\"]*?)\\'\\}\\);").getMatch(0);
+                    filename = br.getRegex("filename:'([^<>']*?)'\\}\\);").getMatch(0);
                 }
                 /* Here, extension might be missing */
                 if (filename == null) {
-                    filename = br.getRegex("<h1 class=\"fileName light\\-blue lucida f24\">([^<>\"]*?)</h1>").getMatch(0);
+                    filename = br.getRegex("<h1 class=\"fileName light-blue lucida f24\">([^<>\"]*?)</h1>").getMatch(0);
                 }
                 /* Get filename out of forum img code - seems like the best way so far */
                 if (filename == null) {
-                    filename = br.getRegex("value=\"\\[URL=https?://(www\\.)?4shared(\\-china)?\\.com/[^<>\"]*?\\.html\\]\\[IMG\\]http://dc\\d+\\.4shared(\\-china)?\\.com/img/[A-Za-z0-9]+/[A-Za-z0-9]+/([^<>\"]*?)\\[/IMG\\]\\[/URL\\]\" readonly=\"readonly\"").getMatch(3);
+                    filename = br.getRegex("value=\"\\[URL=https?://(www\\.)?4shared(-china)?\\.com/[^<>\"]*?\\.html\\]\\[IMG\\]http://dc\\d+\\.4shared(-china)?\\.com/img/[A-Za-z0-9]+/[A-Za-z0-9]+/([^<>\"]*?)\\[/IMG\\]\\[/URL\\]\" readonly=\"readonly\"").getMatch(3);
                 }
                 /* Get filename out of forum url code - seems like the best way so far */
                 if (filename == null) {
-                    filename = br.getRegex("value=\"\\[URL=https?://(www\\.)?4shared(\\-china)?\\.com/[^<>\"]*?\\.html\\]([^<>\"]*?)\\[/URL\\]\" readonly=\"readonly\"").getMatch(2);
+                    filename = br.getRegex("value=\"\\[URL=https?://(www\\.)?4shared(-china)?\\.com/[^<>\"]*?\\.html\\]([^<>\"]*?)\\[/URL\\]\" readonly=\"readonly\"").getMatch(2);
                 }
                 /* This one might gets you a double extension (.rar.rar) */
                 if (filename == null) {
-                    filename = br.getRegex("trinityConfigInit\\(\\'[A-Za-z0-9\\-_]+\\', \\'([^<>\"]*?)\\',").getMatch(0);
+                    filename = br.getRegex("trinityConfigInit\\('[A-Za-z0-9\\-_]+', '([^<>\"]*?)',").getMatch(0);
                 }
                 /* Here, extension might be missing */
                 if (filename == null) {
-                    filename = br.getRegex("class=\"greylink1 gaClick\" data\\-element=\"t1\">([^<>\"]*?)</a>").getMatch(0);
+                    filename = br.getRegex("class=\"greylink1 gaClick\" data-element=\"t1\">([^<>\"]*?)</a>").getMatch(0);
                 }
                 /* Here, extension might be missing */
                 if (filename == null) {
@@ -730,18 +734,18 @@ public class FourSharedCom extends PluginForHost {
                 if (filename == null) {
                     filename = br.getRegex(Pattern.compile("id=\"fileNameTextSpan\">(.*?)</span>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
                     if (filename == null) {
-                        filename = br.getRegex("<title>(.*?) \\- 4shared\\.com \\- online file sharing and storage \\- download</title>").getMatch(0);
+                        filename = br.getRegex("<title>(.*?) - 4shared\\.com - online file sharing and storage - download</title>").getMatch(0);
                         if (filename == null) {
                             filename = br.getRegex("<h1 id=\"fileNameText\">(.*?)</h1>").getMatch(0);
                         }
                     }
                 }
-                size = br.getRegex("<td class=\"finforight lgraybox\" style=\"border\\-top:1px #dddddd solid\">([0-9,]+ [a-zA-Z]+)</td>").getMatch(0);
+                size = br.getRegex("<td class=\"finforight lgraybox\" style=\"border-top:1px #dddddd solid\">([0-9,]+ [a-zA-Z]+)</td>").getMatch(0);
                 if (size == null) {
                     size = br.getRegex("<span title=\"Size: (.*?)\">").getMatch(0);
                     // For mp3 stream- and maybe also normal stream links
                     if (size == null) {
-                        size = br.getRegex("class=\"fileOwner dark\\-gray lucida f11\">[^<>\"/]*?</a>([^<>\"]*?) \\|").getMatch(0);
+                        size = br.getRegex("class=\"fileOwner dark-gray lucida f11\">[^<>\"/]*?</a>([^<>\"]*?) \\|").getMatch(0);
                     }
                     if (size == null) {
                         size = br.getRegex("fileInfo light-gray f11 floatLeft\">([^<>\"]*?) \\|").getMatch(0);
