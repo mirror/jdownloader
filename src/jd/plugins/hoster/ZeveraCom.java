@@ -42,6 +42,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.PremiumaxNet.UnavailableHost;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -54,16 +55,16 @@ public class ZeveraCom extends PluginForHost {
     // supports last09 based on pre-generated links and jd2
     /* Important - all of these belong together: zevera.com, multihosters.com, putdrive.com(?!) */
 
-    private static final String                            mName              = "zevera.com";
-    private static final String                            NICE_HOSTproperty  = mName.replaceAll("(\\.|\\-)", "");
-    private static final String                            mProt              = "http://";
-    private static final String                            mServ              = mProt + "api." + mName;
-    private static Object                                  LOCK               = new Object();
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+    private static final String                                       mName              = "zevera.com";
+    private static final String                                       NICE_HOSTproperty  = mName.replaceAll("(\\.|\\-)", "");
+    private static final String                                       mProt              = "http://";
+    private static final String                                       mServ              = mProt + "api." + mName;
+    private static Object                                             LOCK               = new Object();
+    private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new HashMap<Account, HashMap<String, UnavailableHost>>();
 
-    private static final String                            NOCHUNKS           = "NOCHUNKS";
-    private Account                                        currAcc            = null;
-    private DownloadLink                                   currDownloadLink   = null;
+    private static final String                                       NOCHUNKS           = "NOCHUNKS";
+    private Account                                                   currAcc            = null;
+    private DownloadLink                                              currDownloadLink   = null;
 
     public ZeveraCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -281,7 +282,7 @@ public class ZeveraCom extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     * 
+     *
      * @param error
      *            : The name of the error
      * @param maxRetries
@@ -289,7 +290,6 @@ public class ZeveraCom extends PluginForHost {
      */
     private void handleErrorRetries(final String error, final int maxRetries, final long timeout) throws PluginException {
         int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        this.currDownloadLink.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
             logger.info(mName + ": " + error + " -> Retrying");
             timesFailed++;
@@ -298,7 +298,7 @@ public class ZeveraCom extends PluginForHost {
         } else {
             this.currDownloadLink.setProperty(NICE_HOSTproperty + "failedtimes_" + error, Property.NULL);
             logger.info(mName + ": " + error + " -> Disabling current host");
-            tempUnavailableHoster(timeout);
+            tempUnavailableHoster(timeout, error);
         }
     }
 
@@ -307,12 +307,13 @@ public class ZeveraCom extends PluginForHost {
         prepBrowser();
 
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
+            final HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null && unavailableMap.containsKey(link.getHost())) {
+                final Long lastUnavailable = unavailableMap.get(link.getHost()).getErrorTimeout();
+                final String errorReason = unavailableMap.get(link.getHost()).getErrorReason();
                 if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
                     final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(link.getHost());
                     if (unavailableMap.size() == 0) {
@@ -339,19 +340,15 @@ public class ZeveraCom extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dllink.contains("/member/systemmessage.aspx")) {
-            logger.info("zevera.com: known unknown error");
-            br.getPage(dllink);
-            if (br.containsHTML("reached its traffic limits")) {
-                if (br.containsHTML("according to our agreement with")) {
 
-                    // TODO Raztoki
-                } else {
-                    // TODO Raztoki
-                }
-            }
+        if (new Regex(dllink, "/member/systemmessage\\.aspx\\?hoster=[\\w\\.\\-]+_customer").matches()) {
+            // out of traffic for that given host
+            tempUnavailableHoster(1 * 60 * 60 * 1000l, "No traffic left for this host.");
+        } else if (new Regex(dllink, "/member/systemmessage\\.aspx").matches()) {
+            // we assume that they might have other error types for that same URL.
             handleErrorRetries("known_unknownerror", 20, 1 * 60 * 60 * 1000l);
         }
+
         showMessage(link, "Task 2: Download begins!");
         handleDL(link, dllink);
     }
@@ -476,18 +473,20 @@ public class ZeveraCom extends PluginForHost {
         }
     }
 
-    private void tempUnavailableHoster(final long timeout) throws PluginException {
+    private void tempUnavailableHoster(final long timeout, final String reason) throws PluginException {
         if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
+
+        final UnavailableHost nue = new UnavailableHost(System.currentTimeMillis() + timeout, reason);
+
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
+            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(this.currAcc);
             if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
+                unavailableMap = new HashMap<String, UnavailableHost>();
                 hostUnavailableMap.put(this.currAcc, unavailableMap);
             }
-            /* wait 30 mins to retry this host */
-            unavailableMap.put(this.currDownloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            unavailableMap.put(this.currDownloadLink.getHost(), nue);
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
     }
