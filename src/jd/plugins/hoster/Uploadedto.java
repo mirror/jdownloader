@@ -81,7 +81,7 @@ public class Uploadedto extends PluginForHost {
     // link isn't https (free tested).
 
     /* Constants (limits) */
-    private static final long              FREE_RECONNECTWAIT                        = 10800000L;
+    private static final long              FREE_RECONNECTWAIT                        = 60 * 60 * 1000L;
     /* Enable/disable usage of multiple free accounts at the same time */
     private static final boolean           ACCOUNT_FREE_CONCURRENT_USAGE_POSSIBLE    = true;
     private static final boolean           ACCOUNT_PREMIUM_CONCURRENT_USAGE_POSSIBLE = true;
