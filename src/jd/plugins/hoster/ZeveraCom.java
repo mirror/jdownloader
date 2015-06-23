@@ -281,7 +281,7 @@ public class ZeveraCom extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     *
+     * 
      * @param error
      *            : The name of the error
      * @param maxRetries
@@ -341,6 +341,15 @@ public class ZeveraCom extends PluginForHost {
         }
         if (dllink.contains("/member/systemmessage.aspx")) {
             logger.info("zevera.com: known unknown error");
+            br.getPage(dllink);
+            if (br.containsHTML("reached its traffic limits")) {
+                if (br.containsHTML("according to our agreement with")) {
+
+                    // TODO Raztoki
+                } else {
+                    // TODO Raztoki
+                }
+            }
             handleErrorRetries("known_unknownerror", 20, 1 * 60 * 60 * 1000l);
         }
         showMessage(link, "Task 2: Download begins!");
