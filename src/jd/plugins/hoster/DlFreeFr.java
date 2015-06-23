@@ -167,11 +167,6 @@ public class DlFreeFr extends PluginForHost {
             // These are not used, so why throw exception?
             // final Form captchaForm = br.getForm(1);
             // if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String filename = br.getRegex(Pattern.compile("Fichier:</td>.*?<td.*?>(.*?)<", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-            String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)soit", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (filename == null || filesize == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
 
             // Old
             // /* special captcha handling */
@@ -274,9 +269,9 @@ public class DlFreeFr extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        String filename = br.getRegex(Pattern.compile("Fichier:</td>.*?<td.*?>(.*?)<", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)soit", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (filename == null || filesize == null) {
+        String filename = br.getRegex(Pattern.compile("Fichier:</td>.*?<td.*?>(.*?)</td>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)</td>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         downloadLink.setName(filename.trim());
