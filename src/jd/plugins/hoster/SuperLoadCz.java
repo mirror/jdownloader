@@ -38,23 +38,23 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
+import jd.plugins.hoster.PremiumaxNet.UnavailableHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superload.cz" }, urls = { "http://\\w+\\.superload\\.eu/download\\.php\\?a=[a-z0-9]+" }, flags = { 2 })
-public class SuperLoadCz extends PluginForHost {
+public class SuperLoadCz extends antiDDoSForHost {
     /* IMPORTANT: superload.cz and stahomat.cz use the same api */
     /* IMPORTANT2: 30.04.15: They block IPs from the following countries: es, it, jp, fr, cl, br, ar, de, mx, cn, ve */
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
 
-    private static final String                            mName              = "superload.cz/";
-    private static final String                            mProt              = "http://";
-    private static final String                            mAPI               = "http://api.superload.cz/a-p-i";
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+    private static final String                                       mName              = "superload.cz/";
+    private static final String                                       mProt              = "http://";
+    private static final String                                       mAPI               = "http://api.superload.cz/a-p-i";
+    private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new HashMap<Account, HashMap<String, UnavailableHost>>();
 
-    private static Object                                  LOCK               = new Object();
+    private static Object                                             LOCK               = new Object();
 
     public SuperLoadCz(final PluginWrapper wrapper) {
         super(wrapper);
@@ -203,12 +203,13 @@ public class SuperLoadCz extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
 
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
+            final HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null && unavailableMap.containsKey(link.getHost())) {
+                final Long lastUnavailable = unavailableMap.get(link.getHost()).getErrorTimeout();
+                final String errorReason = unavailableMap.get(link.getHost()).getErrorReason();
                 if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
                     final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(link.getHost());
                     if (unavailableMap.size() == 0) {
@@ -229,14 +230,14 @@ public class SuperLoadCz extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (br.containsHTML("\"error\":\"invalidLink\"")) {
                 logger.info("Superload.cz says 'invalid link', disabling real host for 1 hour.");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l, "Invalid Link");
             } else if (br.containsHTML("\"error\":\"temporarilyUnsupportedServer\"")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temp. Error. Try again later", 5 * 60 * 1000l);
             } else if (br.containsHTML("\"error\":\"fileNotFound\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("\"error\":\"unsupportedServer\"")) {
                 logger.info("Superload.cz says 'unsupported server', disabling real host for 1 hour.");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+                tempUnavailableHoster(account, link, 60 * 60 * 1000l, "Unsuported Server");
             } else if (br.containsHTML("\"error\":\"Lack of credits\"")) {
                 logger.info("Superload.cz says 'Lack of credits', temporarily disabling account.");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -362,101 +363,26 @@ public class SuperLoadCz extends PluginForHost {
         if (ai == null) {
             account.setAccountInfo(ac);
         }
-        return ai;
+        return ac;
     }
 
-    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
+    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout, final String reason) throws PluginException {
         if (downloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
         }
+
+        final UnavailableHost nue = new UnavailableHost(System.currentTimeMillis() + timeout, reason);
+
         synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(account);
             if (unavailableMap == null) {
-                unavailableMap = new HashMap<String, Long>();
+                unavailableMap = new HashMap<String, UnavailableHost>();
                 hostUnavailableMap.put(account, unavailableMap);
             }
             /* wait 'long timeout' to retry this host */
-            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
+            unavailableMap.put(downloadLink.getHost(), nue);
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     private boolean getSuccess(final Browser ibr) {
@@ -465,20 +391,28 @@ public class SuperLoadCz extends PluginForHost {
 
     private void postPageSafe(final Account acc, final String page, final String postData) throws Exception {
         boolean failed = true;
+        boolean tokenFailed = false;
         for (int i = 1; i <= 5; i++) {
             logger.info("Request try " + i + " of 5");
             br.postPage(page, postData + getToken(acc));
             if (br.getHttpConnection() == null) {
                 Thread.sleep(2500);
-                continue;
-            }
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 401) {
+            } else if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 401) {
                 logger.info("Request failed (401) -> Re-newing token and trying again");
                 acc.getProperty("token", Property.NULL);
-                continue;
+            } else if ("Invalid token".equalsIgnoreCase(getJson("error"))) {
+                logger.info("Old token failed, will retry one more time, but this time with new token");
+                // dump old token, will force new full login.
+                acc.setProperty("token", Property.NULL);
+                if (tokenFailed) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Can not gather new token", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
+                // prevent more than one retry.
+                tokenFailed = true;
+            } else {
+                failed = false;
+                break;
             }
-            failed = false;
-            break;
         }
         if (failed) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 10 * 60 * 1000l);
