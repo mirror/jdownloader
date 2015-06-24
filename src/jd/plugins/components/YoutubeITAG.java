@@ -39,7 +39,7 @@ public enum YoutubeITAG {
 
     DASH_VIDEO_720P_H264(136, "H264", "720p", null, null, VideoResolution.P_720, VideoContainer.MP4, VideoCodec.H264),
     DASH_VIDEO_ITAG308_VP9_1440P_60FPS(308, "vp9", "1440p 60fps", null, null, VideoResolution.P_1440, VideoContainer.WEBM, VideoCodec.VP9, MediaTagsVarious.VIDEO_FPS_60),
-    DASH_VIDEO_ITAG313_VP9_2160P_30FPS(313, "vp9", "2160p", null, null, VideoResolution.P_2160, VideoContainer.WEBM, VideoCodec.VP9),
+    DASH_VIDEO_ITAG313_VP9_2160P_30FPS(313, "vp9 Low Quality Profile", "2160p", null, null, VideoResolution.P_2160, VideoContainer.WEBM, VideoCodec.VP9_WORSE_PROFILE_1),
     DASH_VIDEO_ITAG315_VP9_2160P_60FPS(315, "vp9", "2160p 60fps", null, null, VideoResolution.P_2160, VideoContainer.WEBM, VideoCodec.VP9, MediaTagsVarious.VIDEO_FPS_60),
     // has usually a lower quality than DASH_VIDEO_2160_H264_FPS_60
     DASH_VIDEO_ORIGINAL_H264(138, "H264", "Original (2160p)", null, null, VideoResolution.P_2160_ESTIMATED, VideoContainer.MP4, VideoCodec.H264),
@@ -65,8 +65,8 @@ public enum YoutubeITAG {
     DASH_WEBM_VIDEO_240P_VP9(242, "vp9", "240p", null, null, VideoResolution.P_240, VideoContainer.WEBM, VideoCodec.VP9),
     DASH_WEBM_VIDEO_360P_VP9(243, "vp9", "360p", null, null, VideoResolution.P_360, VideoContainer.WEBM, VideoCodec.VP9),
     DASH_WEBM_VIDEO_480P_VP9(244, "vp9", "480p", null, null, VideoResolution.P_480, VideoContainer.WEBM, VideoCodec.VP9),
-    DASH_WEBM_VIDEO_480P_VP9_2(245, "vp9", "480p", null, null, VideoResolution.P_480, VideoContainer.WEBM, VideoCodec.VP9_BETTER_PROFILE_1),
-    DASH_WEBM_VIDEO_480P_VP9_3(246, "vp9", "480p", null, null, VideoResolution.P_480, VideoContainer.WEBM, VideoCodec.VP9_BETTER_PROFILE_2),
+    DASH_WEBM_VIDEO_480P_VP9_2(245, "vp9 High Quality Profile", "480p", null, null, VideoResolution.P_480, VideoContainer.WEBM, VideoCodec.VP9_BETTER_PROFILE_1),
+    DASH_WEBM_VIDEO_480P_VP9_3(246, "vp9 Higher Quality Profile", "480p", null, null, VideoResolution.P_480, VideoContainer.WEBM, VideoCodec.VP9_BETTER_PROFILE_2),
     DASH_WEBM_VIDEO_720P_VP9(247, "vp9", "720p", null, null, VideoResolution.P_720, VideoContainer.WEBM, VideoCodec.VP9),
     // https://www.youtube.com/watch?v=T3ny9zIckP0
     DASH_WEBM_VIDEO_720P_VP9_60FPS(302, "vp9", "720p 60fps", null, null, VideoResolution.P_720, VideoContainer.WEBM, VideoCodec.VP9, MediaTagsVarious.VIDEO_FPS_60),

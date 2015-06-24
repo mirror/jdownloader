@@ -37,7 +37,6 @@ import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzSolverService;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
-import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
 import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolverService;
 import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.gui.IconKey;
@@ -230,10 +229,7 @@ public class BrowserSolverService extends AbstractSolverService {
     }
 
     public static void fillCookies(Browser rcBr) {
-        if (CaptchaMyJDSolver.getInstance().canHandle()) {
-            // ("Do not try to get easy recaptchas. My.JD is active");
-            return;
-        }
+
         if (StringUtils.isNotEmpty(getInstance().getConfig().getGoogleComCookieValueSID()) && StringUtils.isNotEmpty(getInstance().getConfig().getGoogleComCookieValueHSID())) {
             rcBr.setCookie("http://google.com", "SID", getInstance().getConfig().getGoogleComCookieValueSID());
             rcBr.setCookie("http://google.com", "HSID", getInstance().getConfig().getGoogleComCookieValueHSID());

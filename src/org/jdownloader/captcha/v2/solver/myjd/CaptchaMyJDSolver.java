@@ -1,11 +1,8 @@
 package org.jdownloader.captcha.v2.solver.myjd;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-
-import javax.imageio.ImageIO;
 
 import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
 import jd.controlling.accountchecker.AccountCheckerThread;
@@ -17,7 +14,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -143,30 +139,7 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
                     if (validLogins) {
                         if (c instanceof RecaptchaV1CaptchaChallenge) {
                             logger.info("is RC1");
-                            if (!Application.isHeadless()) {
-                                FileInputStream is = null;
-                                try {
-                                    is = new FileInputStream(((RecaptchaV1CaptchaChallenge) c).getImageFile());
-                                    int type = ImageIO.read(is).getType();
-                                    logger.info("Image Type: " + type);
-                                    if (type == 5) {
-                                        logger.info("Can handle FALSE");
-                                        // type 5= colored images. the digit captchas. MyJD cannot solve this type
-                                        return false;
-                                    }
-                                } catch (IOException e) {
-                                    logger.log(e);
-                                    logger.info("Can handle FALSE");
-                                    return false;
-                                } finally {
-                                    if (is != null) {
-                                        try {
-                                            is.close();
-                                        } catch (IOException e) {
-                                        }
-                                    }
-                                }
-                            }
+
                         }
                         return true;
                     }
@@ -248,7 +221,7 @@ public class CaptchaMyJDSolver extends CESChallengeSolver<String> implements Cha
                         break;
                     case SOLVED:
                         job.getLogger().info(this + "my.jdownloader.org Answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s: " + ret);
-                        job.setAnswer(new CaptchaMyJDCESResponse(challenge, this, solution.getResponse(), 90, solution));
+                        job.setAnswer(new CaptchaMyJDCESResponse(challenge, this, solution.getResponse(), 99, solution));
                         return;
                     }
                     checkInterruption();

@@ -322,7 +322,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     DASH_VP9_2160P_30FPS_OPUS_64KBIT("2160P_WebM", YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.DASH_VIDEO, "webm", YoutubeITAG.DASH_VIDEO_ITAG313_VP9_2160P_30FPS, YoutubeITAG.DASH_AUDIO_OPUS_64KBIT, null, null, null) {
         @Override
         public String _getName() {
-            return _GUI._.YoutubeVariant_name_generic_video("2160p", "WebM");
+            return _GUI._.YoutubeVariant_name_generic_video("2160p", "WebM") + getQualityRating();
         }
 
         @Override
@@ -2169,28 +2169,33 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
     @Override
     public String _getExtendedName() {
         // String nadsme = _getName();
+        String ret = null;
         switch (getGroup()) {
         case AUDIO:
             if (getiTagVideo() != null) {
-                return getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_audio() + " [" + getAudioQuality() + "-" + getAudioCodec() + "-DEMUX]";
+                ret = getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_audio() + " [" + getAudioQuality() + "-" + getAudioCodec() + "-DEMUX]";
 
             } else {
-                return getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_audio() + " [" + getAudioQuality() + "-" + getAudioCodec() + "]";
+                ret = getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_audio() + " [" + getAudioQuality() + "-" + getAudioCodec() + "]";
 
             }
-
+            break;
         case IMAGE:
-            return getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_image() + " [" + getResolution() + "]";
+            ret = getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_image() + " [" + getResolution() + "]";
+            break;
         case SUBTITLES:
-            return _getName();
+            ret = _getName();
+            break;
         case VIDEO:
-            return getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_video() + "[" + getResolution() + "-" + getVideoCodec() + "_" + getAudioQuality() + "-" + getAudioCodec() + "]";
-
+            ret = getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_video() + "[" + getResolution() + "-" + getVideoCodec() + "_" + getAudioQuality() + "-" + getAudioCodec() + "]";
+            break;
         case VIDEO_3D:
-            return getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_3d_video() + "[" + getResolution() + "-" + getVideoCodec() + "_" + getAudioQuality() + "-" + getAudioCodec() + "]";
-
+            ret = getFileExtension().toUpperCase(Locale.ENGLISH) + "-" + _GUI._.lit_3d_video() + "[" + getResolution() + "-" + getVideoCodec() + "_" + getAudioQuality() + "-" + getAudioCodec() + "]";
+            break;
         }
-        return null;
+
+        ret += "(" + name() + " A:" + getiTagAudio() + " V:" + getiTagVideo() + ") " + getQualityRating();
+        return ret;
     }
 
     public Icon _getIcon() {

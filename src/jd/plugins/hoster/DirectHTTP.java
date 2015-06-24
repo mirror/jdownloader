@@ -29,6 +29,7 @@ import java.util.logging.Level;
 
 import jd.PluginWrapper;
 import jd.captcha.utils.RecaptchaTypeTester;
+import jd.captcha.utils.RecaptchaTypeTester.RecaptchaType;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
@@ -58,7 +59,6 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
 import org.jdownloader.statistics.StatsManager;
 
 /**
@@ -105,8 +105,8 @@ public class DirectHTTP extends PluginForHost {
                 FileInputStream is = null;
                 try {
                     is = new FileInputStream(captchaFile);
-
-                    track("captcha/rc/imagetype/" + RecaptchaTypeTester.getType(captchaFile) + "/" + helperID);
+                    RecaptchaType type = RecaptchaTypeTester.getType(captchaFile);
+                    track("captcha/rc/imagetype/" + type + "/" + helperID);
 
                 } catch (IOException e) {
                     track("captcha/rc/imagetype/" + e.getMessage() + "/" + helperID);
@@ -243,11 +243,6 @@ public class DirectHTTP extends PluginForHost {
 
                         }
 
-                    } else {
-                        if (CaptchaMyJDSolver.getInstance().canHandle()) {
-                            helperID = "MYJD";
-
-                        }
                     }
 
                 } catch (Throwable e) {

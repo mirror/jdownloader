@@ -24,7 +24,7 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import jd.controlling.AccountController;
-import jd.gui.UserIO;
+import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -39,6 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginCache;
 import jd.plugins.PluginException;
+import jd.plugins.components.GoogleHelper;
 import jd.plugins.components.ItagHelper;
 import jd.plugins.components.YoutubeClipData;
 import jd.plugins.components.YoutubeCustomConvertVariant;
@@ -60,28 +61,20 @@ import jd.plugins.components.youtube.VideoContainer;
 import jd.plugins.components.youtube.VideoResolution;
 import jd.plugins.hoster.YoutubeDashV2.SubtitleVariant;
 import jd.plugins.hoster.YoutubeDashV2.YoutubeConfig;
-import jd.utils.locale.JDL;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.txtresource.TranslationFactory;
-import org.appwork.uio.InputDialogInterface;
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.statistics.StatsManager;
 
 public class YoutubeHelper implements YoutubeHelperInterface {
     static {
@@ -1408,175 +1401,69 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             this.br.setCookiesExclusive(true);
             // delete all cookies
             this.br.clearCookies(null);
-
+            Thread thread = Thread.currentThread();
+            boolean forceUpdateAndBypassCache = thread instanceof AccountCheckerThread && ((AccountCheckerThread) thread).getJob().isForce();
             br.setCookie("http://youtube.com", "PREF", "hl=en-GB");
-            if (account.getProperty("cookies") != null) {
+            if (account.getProperty("cookies") != null && !forceUpdateAndBypassCache) {
                 @SuppressWarnings("unchecked")
                 HashMap<String, String> cookies = (HashMap<String, String>) account.getProperty("cookies");
                 // cookies = null;
                 if (cookies != null) {
-                    if (cookies.containsKey("LOGIN_INFO")) {
+                    if (cookies.containsKey("SSID")) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
                             this.br.setCookie("youtube.com", key, value);
                         }
-
-                        if (refresh == false) {
+                        if (!refresh) {
                             return;
                         } else {
                             this.br.getPage("https://www.youtube.com");
-                            if (this.br.containsHTML("<span class=\"yt-uix-button-content\">Sign out </span></a>")) {
+                            if (this.br.containsHTML("<span.*?>\\s*Sign out\\s*</span>")) {
                                 return;
                             }
                         }
+
                     }
                 }
             }
 
             this.br.setFollowRedirects(true);
-            getPageFollowRedirectsDuringLogin(br, this.replaceHttps("http://www.youtube.com/"));
-            /* first call to google */
-
-            getPageFollowRedirectsDuringLogin(br, "https://accounts.google.com/ServiceLogin?uilel=3&service=youtube&passive=true&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252Findex&hl=en_US&ltmpl=sso");
-
-            String checkConnection = this.br.getRegex("iframeUri: \\'(https.*?)\\'").getMatch(0);
-            if (checkConnection != null) {
-                // JS octal encoding http://brajeshwar.github.io/entities/
-                checkConnection = checkConnection.replaceAll("\\\\0?75", "=").replaceAll("\\\\0?46", "&");
-                checkConnection += "&timestamp=" + System.currentTimeMillis();
-                /*
-                 * don't know if this is important but seems to set pstMsg to 1 ;)
-                 */
-                // checkConnection = JSonStorage.restoreFromString("\"" + checkConnection + "\"", TypeRef.STRING);
-                checkConnection = Encoding.unescape(checkConnection);
-                try {
-                    this.br.cloneBrowser().getPage(checkConnection);
-                } catch (final Exception e) {
-                    this.logger.info("checkConnection failed, continuing anyways...");
+            GoogleHelper helper = new GoogleHelper(br) {
+                @Override
+                protected boolean validateSuccess() {
+                    return br.getCookie("http://youtube.com", "SID") != null;
                 }
-            }
-            final Form form = this.br.getForm(0);
-            form.put("pstMsg", "1");
-            form.put("dnConn", "https%3A%2F%2Faccounts.youtube.com&continue=http%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26nomobiletemp%3D1%26hl%3Den_US%26next%3D%252F");
-            form.put("Email", Encoding.urlEncode(account.getUser()));
-            form.put("Passwd", Encoding.urlEncode(account.getPass()));
-            form.put("GALX", this.br.getCookie("http://www.google.com", "GALX"));
-            form.put("timeStmp", "");
-            form.put("secTok", "");
-            form.put("rmShown", "1");
-            form.put("signIn", "Anmelden");
-            form.put("asts", "");
-            this.br.setFollowRedirects(false);
-            final String cook = this.br.getCookie("http://www.google.com", "GALX");
-            if (cook == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            this.br.submitForm(form);
 
-            if (this.br.getRedirectLocation() != null) {
-                getPageFollowRedirectsDuringLogin(br, this.br.getRedirectLocation());
-            }
+                protected String breakRedirects(String url) throws IOException {
 
-            Form challengeForm = br.getFormbyProperty("id", "challengeform");
-            if (challengeForm != null) {
-                if (!showDialog || true) {
-                    // count how often this actually happens.
-                    StatsManager.I().track("jd2/counter/plugin/Youtube/Verification");
-                    logger.info("Youtube Login Verification required");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                // TODO: Fix. I cannot reproduce this right now.
-                challengeForm.getInputField("challengetype").setValue("RecoveryEmailChallenge");
-                challengeForm.getInputField("phoneNumber").setValue("");
-
-                challengeForm.getInputField("emailAnswer").setValue(Encoding.urlEncode("***"));
-
-                br.submitForm(challengeForm);
-
-                if (this.br.getRedirectLocation() != null && this.br.getRedirectLocation().contains("ChangePassword")) {
-                    if (showDialog) {
-                        CrossSystem.openURL(this.br.getRedirectLocation());
-                        InputDialog d = new InputDialog(Dialog.STYLE_PASSWORD, "Youtube Password change required!", "Youtube want's you to change our password for the account '" + account.getUser() + "'. Please log in your youtube/google account in our browser and follow the steps.\r\nHint: If you are already logged in, try to log out, and login afterwards.\r\n\r\nPlease enter the new password here:", null);
-                        UIOManager.I().show(InputDialogInterface.class, d);
-                        String newPassword = d.getText();
-                        if (StringUtils.isNotEmpty(newPassword) && !StringUtils.equals(newPassword, account.getPass())) {
-                            account.setPass(newPassword);
-                            login(account, refresh, showDialog);
-                            return;
-                        }
+                    String sidt = new Regex(url, "accounts\\/SetSID\\?ssdc\\=1\\&sidt=([^\\&]+)").getMatch(0);
+                    if (sidt != null) {
+                        String jsonUrl = br.getRegex("uri\\:\\s*\\'(.*?)\\'\\,").getMatch(0);
+                        jsonUrl = Encoding.unescape(jsonUrl);
+                        br.getPage(jsonUrl);
+                        return null;
                     }
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (br.getURL() != null && br.getURL().contains("/accounts/SetSID")) {
+                        return null;
+                    }
+                    return url;
                 }
 
-            }
-            if (this.br.containsHTML("Google will check if this")) {
-                if (showDialog) {
-                    UserIO.getInstance().requestMessageDialog(0, "Youtube Login Error", "Please logout and login again at youtube.com, account check needed!");
+            };
+            helper.setCacheEnabled(false);
+            if (helper.login(account)) {
+
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies cYT = this.br.getCookies("youtube.com");
+                for (final Cookie c : cYT.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
                 }
-                account.setValid(false);
+                // set login cookie of the account.
+                account.setProperty("cookies", cookies);
+            } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-
-            // 2-step verification
-            if (this.br.containsHTML("2-step verification")) {
-                final String step = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN | UserIO.NO_ICON, JDL.L("plugins.hoster.youtube.2step.title", "2-Step verification required"), JDL.L("plugins.hoster.youtube.2step.message", "Youtube.com requires Google's 2-Step verification. Please input the code from your phone or the backup list."), "", null, null, null);
-                Form stepform = this.br.getForm(0);
-                stepform.put("smsUserPin", step);
-                stepform.remove("exp");
-                stepform.remove("ltmpl");
-                this.br.setFollowRedirects(true);
-                this.br.submitForm(stepform);
-
-                if (this.br.containsHTML("The code you entered didn&#39;t verify")) {
-                    account.setValid(false);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.youtube.2step.failed", "2-Step verification code couldn't be verified!"));
-                }
-
-                stepform = this.br.getForm(0);
-                if (stepform != null) {
-                    stepform.remove("nojssubmit");
-                    this.br.submitForm(stepform);
-                    this.br.getPage(this.replaceHttps("http://www.youtube.com/signin?action_handle_signin=true"));
-                } else {
-                    String url = this.br.getRegex("\"(https?://www\\.youtube\\.com/signin\\?action_handle_signin.*?)\"").getMatch(0);
-                    if (url != null) {
-                        url = Encoding.unescape(url);
-                        this.br.getPage(url);
-                    }
-                }
-            } else if (this.br.containsHTML("class=\"gaia captchahtml desc\"")) {
-                if (true) {
-                    account.setValid(false);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.youtube.logincaptcha.failed", "The captcha login verification is broken. Please contact our support."));
-                }
-                final String captchaLink = this.br.getRegex("<img src=\\'(https?://accounts\\.google\\.com/Captcha\\?[^<>\"]*?)\\'").getMatch(0);
-                if (captchaLink == null) {
-                    account.setValid(false);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.youtube.logincaptcha.failed", "The captcha login verification is broken. Please contact our support."));
-                }
-                // final DownloadLink dummyLink = new DownloadLink(this, "Account", "youtube.com", "http://youtube.com", true);
-                // final String c = getCaptchaCode(captchaLink, dummyLink);
-                // Lots of stuff needed here
-                // br.postPage("https://accounts.google.com/LoginVerification", "");
-                throw new WTFException("Not Implemented");
-
-            }
-            if (this.br.getRedirectLocation() != null && this.br.getCookie("http://www.youtube.com", "LOGIN_INFO") == null) {
-                getPageFollowRedirectsDuringLogin(br, this.br.getRedirectLocation());
-            }
-
-            if (this.br.getCookie("http://www.youtube.com", "LOGIN_INFO") == null) {
-                account.setValid(false);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies cYT = this.br.getCookies("youtube.com");
-            for (final Cookie c : cYT.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            // set login cookie of the account.
-            account.setProperty("cookies", cookies);
         } catch (final PluginException e) {
             account.setProperty("cookies", null);
             throw e;
@@ -1838,7 +1725,9 @@ public class YoutubeHelper implements YoutubeHelperInterface {
             // validate
             // if (height > 0) {
             MediaQualityInterface[] tags = itag.getQualityTags();
-            type = type.replace("3gp", "3gp threegp");
+            if (type != null) {
+                type = type.replace("3gp", "3gp threegp");
+            }
             for (MediaQualityInterface tag : tags) {
                 if (tag instanceof VideoResolution) {
                     if (height > 0 && tag.getRating() != height) {

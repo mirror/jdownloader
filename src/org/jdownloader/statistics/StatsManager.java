@@ -98,11 +98,11 @@ import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class StatsManager implements GenericConfigEventListener<Object>, DownloadWatchdogListener, Runnable {
-    private static final String       CLICK_SOURCE                 = "cs";
-    private static final String       ACCOUNT_ADDED_TIME           = "at";
-    private static final String       ACCOUNTINSTANCE_CREATED_TIME = "it";
-    private static final String       REGISTERED_TIME              = "rt";
-    private static final String       EXPIRE_TIME                  = "et";
+    public static final String        CLICK_SOURCE                 = "cs";
+    public static final String        ACCOUNT_ADDED_TIME           = "at";
+    public static final String        ACCOUNTINSTANCE_CREATED_TIME = "it";
+    public static final String        REGISTERED_TIME              = "rt";
+    public static final String        EXPIRE_TIME                  = "et";
 
     private static final StatsManager INSTANCE                     = new StatsManager();
 
@@ -110,7 +110,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
-     *
+     * 
      * @return
      */
     public static StatsManager I() {
@@ -497,7 +497,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * this setter does not set the config flag. Can be used to disable the logger for THIS session.
-     *
+     * 
      * @param b
      */
     public void setEnabled(boolean b) {
@@ -1512,7 +1512,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
-     *
+     * 
      * @param reducer
      * @param path
      */
