@@ -193,6 +193,8 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
             case VIDEO:
                 if (ytv.name().startsWith("MP4")) {
                     videoMP4.add(ytv);
+                } else if (ytv.name().startsWith("DASH_H264")) {
+                    videoMP4.add(ytv);
 
                 } else if (ytv.name().startsWith("FLV")) {
                     videoFLV.add(ytv);

@@ -29,6 +29,10 @@ public class AccountChecker {
             }
         }
 
+        public boolean isForce() {
+            return force;
+        }
+
         public Account getAccount() {
             return account;
         }

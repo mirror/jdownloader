@@ -24,8 +24,13 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.api.myjdownloader.MyJDownloaderConnectionStatus;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderListener;
+import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolverService;
+import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolverService;
+import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolverService;
+import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzSolverService;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
 import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
+import org.jdownloader.captcha.v2.solver.solver9kw.NineKwSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
@@ -189,15 +194,17 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
     @Override
     public Map<String, Integer> getWaitForOthersDefaultMap() {
         HashMap<String, Integer> ret = new HashMap<String, Integer>();
-        // ret.put(Captcha9kwSolverClick.ID, 60000);
+
         // ret.put(DialogClickCaptchaSolver.ID, 60000);
         // ret.put(DialogBasicCaptchaSolver.ID, 60000);
         // ret.put(CaptchaAPISolver.ID, 60000);
         ret.put(JacSolverService.ID, 30000);
-        // ret.put(Captcha9kwSolver.ID, 60000);
+        ret.put(NineKwSolverService.ID, 60000);
         // ret.put(CaptchaMyJDSolver.ID, 60000);
-        // ret.put(CBSolver.ID, 60000);
-        // ret.put(DeathByCaptchaSolver.ID, 60000);
+        ret.put(CBSolverService.ID, 60000);
+        ret.put(DeathByCaptchaSolverService.ID, 60000);
+        ret.put(CheapCaptchaSolverService.ID, 60000);
+        ret.put(ImageTyperzSolverService.ID, 60000);
 
         return ret;
     }

@@ -27,7 +27,6 @@ import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzSolverService;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
-import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolverService;
 import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
@@ -243,8 +242,8 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
         // ret.put(CaptchaAPISolver.ID, 60000);
         ret.put(JacSolverService.ID, 30000);
         // ret.put(Captcha9kwSolver.ID, 60000);
-        ret.put(CaptchaMyJDSolverService.ID, 60000);
-        // ret.put(CBSolver.ID, 60000);
+        // ret.put(CaptchaMyJDSolverService.ID, 60000);
+        // ret.put(CBSolverService.ID, 60000);
         ret.put(DeathByCaptchaSolverService.ID, 60000);
         ret.put(ImageTyperzSolverService.ID, 60000);
         ret.put(CheapCaptchaSolverService.ID, 60000);

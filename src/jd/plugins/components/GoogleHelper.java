@@ -1,6 +1,7 @@
 package jd.plugins.components;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,6 +15,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 
 import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -26,6 +28,7 @@ import jd.plugins.PluginException;
 
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
@@ -47,6 +50,10 @@ public class GoogleHelper {
     public GoogleHelper(Browser ytbr) {
         this.br = ytbr;
 
+        Thread thread = Thread.currentThread();
+        boolean forceUpdateAndBypassCache = thread instanceof AccountCheckerThread && ((AccountCheckerThread) thread).getJob().isForce();
+
+        cacheEnabled = !forceUpdateAndBypassCache;
     }
 
     public boolean login(String type) {
@@ -113,7 +120,8 @@ public class GoogleHelper {
             int max = 20;
             int wait = 0;
             while (max-- > 0) {
-                if (url == null || new URL(url).getHost().toLowerCase(Locale.ENGLISH).contains(getService().serviceName)) {
+                url = breakRedirects(url);
+                if (url == null) {
                     break;
                 }
                 if (wait > 0) {
@@ -138,6 +146,13 @@ public class GoogleHelper {
         }
     }
 
+    protected String breakRedirects(String url) throws MalformedURLException, IOException {
+        if (StringUtils.isEmpty(url) || new URL(url).getHost().toLowerCase(Locale.ENGLISH).contains(getService().serviceName)) {
+            return null;
+        }
+        return url;
+    }
+
     public boolean login(Account account) throws Exception {
 
         try {
@@ -147,6 +162,7 @@ public class GoogleHelper {
             this.br.clearCookies(null);
 
             br.setCookie("http://google.com", "PREF", "hl=en-GB");
+
             if (isCacheEnabled() && account.getProperty(COOKIES2) != null) {
 
                 @SuppressWarnings("unchecked")
@@ -163,7 +179,7 @@ public class GoogleHelper {
                             return true;
                         }
                         getPageFollowRedirects(br, "https://accounts.google.com/CheckCookie?hl=en&checkedDomains=" + Encoding.urlEncode(getService().serviceName) + "&checkConnection=" + Encoding.urlEncode(getService().checkConnectionString) + "&pstMsg=1&chtml=LoginDoneHtml&service=" + Encoding.urlEncode(getService().serviceName) + "&continue=" + Encoding.urlEncode(getService().continueAfterCheckCookie) + "&gidl=CAA");
-                        if (br.containsHTML("accounts/SetSID")) {
+                        if (validateSuccess()) {
                             validate(account);
                             return true;
                         }
@@ -206,7 +222,7 @@ public class GoogleHelper {
                 cookies.put(c.getKey(), c.getValue());
             }
             account.setProperty(COOKIES2, cookies);
-            if (br.containsHTML("accounts/SetSID")) {
+            if (validateSuccess()) {
                 validate(account);
                 return true;
             } else {
@@ -214,10 +230,15 @@ public class GoogleHelper {
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
             account.setProperty(COOKIES2, null);
             throw e;
         }
 
+    }
+
+    protected boolean validateSuccess() {
+        return br.containsHTML("accounts/SetSID");
     }
 
     protected void validate(Account account) {
@@ -323,5 +344,28 @@ public class GoogleHelper {
     private boolean isCacheEnabled() {
         return cacheEnabled;
     }
+
+    // public void followRedirect() throws IOException, InterruptedException {
+    // int wait = 0;
+    // String url = null;
+    // if (br.getRedirectLocation() != null) {
+    // url = br.getRedirectLocation();
+    //
+    // }
+    //
+    // String[] redirect = br.getRegex(META_HTTP_EQUIV_REFRESH_CONTENT_D_S_URL_39_39).getRow(0);
+    // if (redirect != null) {
+    // url = Encoding.htmlDecode(redirect[1]);
+    // wait = Integer.parseInt(redirect[0]) * 1000;
+    // }
+    //
+    // if (url != null) {
+    // if (wait > 0) {
+    // Thread.sleep(wait);
+    // }
+    // getPageFollowRedirects(br, url, false);
+    //
+    // }
+    // }
 
 }
