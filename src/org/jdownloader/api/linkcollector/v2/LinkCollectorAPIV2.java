@@ -1,13 +1,14 @@
 package org.jdownloader.api.linkcollector.v2;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
+import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 
 @ApiNamespace("linkgrabberv2")
 public interface LinkCollectorAPIV2 extends RemoteAPIInterface {
@@ -50,6 +51,6 @@ public interface LinkCollectorAPIV2 extends RemoteAPIInterface {
 
     void startOnlineStatusCheck(long[] linkIds, long[] packageIds) throws BadParameterException;
 
-    HashMap<Long, String> getDownloadUrls(long[] linkIds, long[] packageIds) throws BadParameterException;
+    Map<String, List<Long>> getDownloadUrls(final long[] linkIds, final long[] packageIds, UrlDisplayTypeStorable[] urlDisplayTypes) throws BadParameterException;
 
 }

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.swing.Icon;
@@ -31,10 +32,12 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
+import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsListInterface;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.settings.UrlDisplayType;
 import org.jdownloader.translate._JDT;
 
 public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
@@ -679,8 +682,16 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     }
 
     @Override
-    public HashMap<Long, String> getDownloadUrls(final long[] linkIds, final long[] packageIds) {
-        return packageControllerUtils.getDownloadUrls(linkIds, packageIds);
+    public Map<String, List<Long>> getDownloadUrls(final long[] linkIds, final long[] packageIds, UrlDisplayTypeStorable[] urlDisplayTypes) throws BadParameterException {
+        final List<UrlDisplayType> types = new ArrayList<UrlDisplayType>();
+        for (final UrlDisplayTypeStorable urlDisplayType : urlDisplayTypes) {
+            try {
+                types.add(UrlDisplayType.valueOf(urlDisplayType.name()));
+            } catch (Exception e) {
+                throw new BadParameterException(e.getMessage());
+            }
+        }
+        return SelectionInfoUtils.getURLs(packageControllerUtils.getSelectionInfo(linkIds, packageIds), types);
     }
 
 }

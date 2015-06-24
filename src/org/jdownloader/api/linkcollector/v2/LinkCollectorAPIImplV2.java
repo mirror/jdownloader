@@ -5,9 +5,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.swing.Icon;
@@ -37,6 +37,7 @@ import org.appwork.utils.net.Base64InputStream;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.content.v2.ContentAPIImplV2;
 import org.jdownloader.api.utils.PackageControllerUtils;
+import org.jdownloader.api.utils.SelectionInfoUtils;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
@@ -44,8 +45,10 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
+import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.LinkgrabberInterface;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.UrlDisplayType;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
@@ -589,7 +592,15 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     }
 
     @Override
-    public HashMap<Long, String> getDownloadUrls(final long[] linkIds, final long[] packageIds) {
-        return packageControllerUtils.getDownloadUrls(linkIds, packageIds);
+    public Map<String, List<Long>> getDownloadUrls(final long[] linkIds, final long[] packageIds, UrlDisplayTypeStorable[] urlDisplayTypes) throws BadParameterException {
+        final List<UrlDisplayType> types = new ArrayList<UrlDisplayType>();
+        for (final UrlDisplayTypeStorable urlDisplayType : urlDisplayTypes) {
+            try {
+                types.add(UrlDisplayType.valueOf(urlDisplayType.name()));
+            } catch (Exception e) {
+                throw new BadParameterException(e.getMessage());
+            }
+        }
+        return SelectionInfoUtils.getURLs(packageControllerUtils.getSelectionInfo(linkIds, packageIds), types);
     }
 }
