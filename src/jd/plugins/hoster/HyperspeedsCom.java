@@ -594,12 +594,10 @@ public class HyperspeedsCom extends PluginForHost {
     private int correctChunks(int maxchunks) {
         if (maxchunks < 1) {
             maxchunks = 1;
-        } else if (maxchunks > 20) {
-            maxchunks = 20;
         } else if (maxchunks > 1) {
             maxchunks = -maxchunks;
         }
-        /* Else maxchunks = 1 */
+        /* Else maxchunks == 1 */
         return maxchunks;
     }
 
