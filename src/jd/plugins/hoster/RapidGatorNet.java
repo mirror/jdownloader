@@ -772,8 +772,14 @@ public class RapidGatorNet extends PluginForHost {
                         }
                         if (force) {
                             /* Even if login is forced, use cookies and check if they're still valid to avoid the captcha below */
+                            this.br.setFollowRedirects(true);
                             br.getPage("http://rapidgator.net/");
                             if (br.containsHTML("<a href=\"/auth/logout\"")) {
+                                if (this.br.containsHTML("Account:&nbsp;<a href=\"/article/premium\">Free</a>")) {
+                                    account.setType(AccountType.FREE);
+                                } else {
+                                    account.setType(AccountType.PREMIUM);
+                                }
                                 return cookies;
                             }
                         } else {
@@ -781,9 +787,7 @@ public class RapidGatorNet extends PluginForHost {
                         }
                     }
                 }
-
                 this.br.setFollowRedirects(true);
-
                 /* Maybe cookies were used but are expired --> Clear them */
                 br.clearCookies("https://rapidgator.net/");
                 for (int i = 1; i <= 3; i++) {
