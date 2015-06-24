@@ -37,6 +37,8 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "arte.tv", "concert.arte.tv", "creative.arte.tv", "future.arte.tv", "cinema.arte.tv" }, urls = { "http://www\\.arte\\.tv/guide/(?:de|fr)/\\d+\\-\\d+(?:\\-(?:D|F))?/[a-z0-9\\-_]+", "http://concert\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+", "http://creative\\.arte\\.tv/(?:de|fr)/(?!scald_dmcloud_json)[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://future\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?", "http://cinema\\.arte\\.tv/(?:de|fr)/[a-z0-9\\-]+(/[a-z0-9\\-]+)?" }, flags = { 0, 0, 0, 0, 0 })
 public class ArteMediathekDecrypter extends PluginForDecrypt {
 
@@ -104,6 +106,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig("arte.tv");
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String hybridAPIUrl = null;
+        String date_formatted = "-";
         final boolean fastLinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
 
         setBrowserExclusive();
@@ -291,6 +294,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                 final String vru = (String) videoJsonPlayer.get("VRU");
                 final String vra = (String) videoJsonPlayer.get("VRA");
                 if (vru != null && vra != null) {
+                    date_formatted = formatDate(vra);
                     /*
                      * In this case the video is not yet released and there usually is a value "VDB" which contains the release-date of the
                      * video --> But we don't need that - right now, such videos are simply offline and will be added as offline.
@@ -344,7 +348,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
                     final String short_lang_current = get_short_lang_from_format_code(format_code);
                     final String quality_intern = selectedLanguage + "_" + get_intern_format_code_from_format_code(format_code) + "_" + protocol + "_" + videoBitrate;
                     final String linkid = fid + "_" + quality_intern;
-                    final String filename = title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(format_code) + "_" + videoresolution + "_" + videoBitrate + ".mp4";
+                    final String filename = date_formatted + "_arte_" + title + "_" + getLongLanguage(selectedLanguage) + "_" + get_user_format_from_format_code(format_code) + "_" + videoresolution + "_" + videoBitrate + ".mp4";
                     /* Ignore HLS/RTMP versions */
                     if (!url.startsWith("http") || url.contains(".m3u8")) {
                         logger.info("Skipping " + filename + " because it is not a supported streaming format");
@@ -448,7 +452,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             }
             if (decryptedLinks.size() > 1) {
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(title);
+                fp.setName(date_formatted + "_arte_" + title);
                 fp.addLinks(decryptedLinks);
             }
         } catch (final Exception e) {
@@ -702,6 +706,21 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    private String formatDate(final String input) {
+        final long date = TimeFormatter.getMilliSeconds(input, "dd/MM/yyyy HH:mm:ss Z", Locale.GERMAN);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     /* NO OVERRIDE!! */

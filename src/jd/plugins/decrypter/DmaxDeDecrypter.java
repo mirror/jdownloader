@@ -17,7 +17,9 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Random;
 
@@ -32,6 +34,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dmax.de" }, urls = { "http://(www\\.)?(dmax|tlc|animalplanet|discovery)\\.de/.+" }, flags = { 0 })
@@ -62,6 +65,7 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.DmaxDe.formats;
         final String nicehost = new Regex(parameter, "http://(?:www\\.)?([^/]+)").getMatch(0);
+        final String nicehost_nicer = new Regex(parameter, "http://(?:www\\.)?([^/]+)\\.de/").getMatch(0);
         final String decryptedhost = "http://" + nicehost + "decrypted";
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         this.br.setFollowRedirects(false);
@@ -77,6 +81,7 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
+            String date_formatted = "-";
             String title = (String) entries.get("name");
             /*
              * Most times we will have 10 entries available - sometimes less and sometimes also less http-urls but usually at least 2 of 4
@@ -87,8 +92,7 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
                 return null;
             }
             title = encodeUnicode(title);
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(title);
+            FilePackage fp = null;
 
             for (final Object o : ressourcelist) {
                 final LinkedHashMap<String, Object> vdata = (LinkedHashMap<String, Object>) o;
@@ -96,6 +100,10 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
                 final Object osize = vdata.get("size");
                 final Object owidth = vdata.get("frameWidth");
                 final Object oheight = vdata.get("frameHeight");
+                final Object odate = vdata.get("uploadTimestampMillis");
+                if (odate != null) {
+                    date_formatted = formatDate(DummyScriptEnginePlugin.toLong(odate, -1));
+                }
                 String width = null;
                 String height = null;
                 if (owidth != null && oheight != null) {
@@ -113,11 +121,16 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
                     directlink = "http://discoveryint1.edgeboss.net/download/discoveryint1/" + vpath;
                 }
 
+                if (fp == null) {
+                    fp = FilePackage.getInstance();
+                    fp.setName(date_formatted + "_" + nicehost_nicer + "_" + title);
+                }
+
                 if (width != null && height != null && osize != null && formats.containsKey(width) && cfg.getBooleanProperty(width, true)) {
                     final long filesize = jd.plugins.hoster.DummyScriptEnginePlugin.toLong(osize, -1);
                     final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
                     final String[] vidinfo = formats.get(width);
-                    String filename = title + "_" + getFormatString(vidinfo, width + "x" + height);
+                    String filename = date_formatted + "_" + nicehost_nicer + "_" + title + "_" + getFormatString(vidinfo, width + "x" + height);
                     filename += ".mp4";
 
                     try {
@@ -144,7 +157,7 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
                     logger.info("Found single undefined quality --> Decrypting that");
                     /* Unknown format (usually only 1 quality available then --> Decrypt it regardless of the users' settings. */
                     final DownloadLink dl = createDownloadlink(decryptedhost + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                    final String filename = title + ".mp4";
+                    final String filename = date_formatted + "_" + nicehost_nicer + "_" + title + ".mp4";
 
                     try {
                         dl.setContentUrl(parameter);
@@ -268,6 +281,20 @@ public class DmaxDeDecrypter extends PluginForDecrypt {
         // br.getPage("https://api.brightcove.com/services/library?command=find_video_by_id&video_fields=name%2CFLVURL%2CreferenceId%2CitemState%2Cid&media_delivery=http&video_id=2827406067001&token=XoVA15ecuocTY5wBbxNImXVFbQd72epyxxVcH3ZVmOA.");
         final String url = "https://api.brightcove.com/services/library?token=" + this.apiTokenCurrent + "&command=" + command + "&" + params;
         this.br.getPage(url);
+    }
+
+    private String formatDate(final long input) {
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(input);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = Long.toString(input);
+        }
+        return formattedDate;
     }
 
     /**

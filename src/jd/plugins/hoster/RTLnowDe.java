@@ -20,8 +20,11 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -43,6 +46,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hds.HDSDownloader;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.w3c.dom.Document;
@@ -196,7 +200,7 @@ public class RTLnowDe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setConstants(null, downloadLink);
         setBrowserExclusive();
-        String filename = null;
+        String filename = "";
         final String addedlink = downloadLink.getDownloadURL();
         final String urlpart = getURLPart(downloadLink);
         /* urlpart is the same throughout different TV stations so it is a reliable way to detect duplicate urls. */
@@ -212,6 +216,8 @@ public class RTLnowDe extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("Download nicht möglich (muss gekauft werden)");
             return AvailableStatus.TRUE;
         }
+        final String tv_station = (String) format.get("station");
+        final String date = (String) entries.get("broadcastStartDate");
         final String episode_str = new Regex(addedlink, "folge\\-(\\d+)").getMatch(0);
         final long season = DummyScriptEnginePlugin.toLong(entries.get("season"), -1);
         long episode = DummyScriptEnginePlugin.toLong(entries.get("episode"), -1);
@@ -221,12 +227,15 @@ public class RTLnowDe extends PluginForHost {
         final String description = (String) entries.get("articleLong");
         String title = (String) entries.get("title");
         String title_series = (String) format.get("title");
-        if (title == null || title_series == null) {
+        if (title == null || title_series == null || tv_station == null || date == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String date_formatted = formatDate(date);
         title = encodeUnicode(title);
         title_series = encodeUnicode(title_series);
 
+        /* TODO: */
+        // filename += date_formatted + "_" + tv_station + "_";
         filename = title_series;
         if (season != -1 && episode != -1) {
             final DecimalFormat df = new DecimalFormat("00");
@@ -246,7 +255,7 @@ public class RTLnowDe extends PluginForHost {
             }
         } catch (final Throwable e) {
         }
-        downloadLink.setFinalFileName(filename);
+        downloadLink.setName(filename);
         return AvailableStatus.TRUE;
     }
 
@@ -271,7 +280,7 @@ public class RTLnowDe extends PluginForHost {
         }
         if (isDRM) {
             /* There really is no way to download these videos and if, you will get encrypted trash data so let's just stop here. */
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [DRM]");
         }
         br.getPage("http://rtl-now.rtl.de/hds/videos/" + movieID + "/manifest-hds.f4m?&ts=" + System.currentTimeMillis());
         final String[] hdsurls = br.getRegex("<media (.*?)/>").getColumn(0);
@@ -325,13 +334,15 @@ public class RTLnowDe extends PluginForHost {
         }
 
         if (ALLOW_HLS && url_hds != null && url_hds.matches(this.HDSTYPE_NEW_DETAILED)) {
+            /* Now we're sure that our .mp4 availablecheck-filename is correct */
+            downloadLink.setFinalFileName(downloadLink.getName());
             url_hls = url_hds.replace("hds", "hls");
             url_hls = url_hls.replace(".f4m", ".m3u8");
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, url_hls);
             dl.startDownload();
         } else if (url_rtmp != null && ALLOW_RTMP) {
-            if (url_rtmp.startsWith("/abr/") || !url_rtmp.endsWith(".f4v")) {
+            if (url_rtmp.startsWith("/abr/") || !(url_rtmp.endsWith(".f4v") || url_rtmp.endsWith(".flv"))) {
                 /* Invalid rtmp url --> this should never happen */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich (muss gekauft werden)");
             }
@@ -352,7 +363,20 @@ public class RTLnowDe extends PluginForHost {
             app = convertAppToRealApp(app);
             /* We don't need the exact url of the video, especially because we do not even always have it. An url of the mainpage is enough! */
             final String pageURL = convertAppToMainpage(app);
-            final String rtmp_playpath = "mp4:" + urlregex.getMatch(1);
+            final String rtmp_playpath;
+            if (url_rtmp.endsWith(".f4v")) {
+                /* From 2011 or newer */
+                rtmp_playpath = "mp4:" + urlregex.getMatch(1);
+                /* Now we're sure that our .mp4 availablecheck-filename is correct */
+                downloadLink.setFinalFileName(downloadLink.getName());
+            } else {
+                /*
+                 * 2011 - 2007 or even older --> We have to remove the extension from the url and also correct the extensiom from previously
+                 * set .mp4 to .flv
+                 */
+                rtmp_playpath = "flv:" + urlregex.getMatch(1).replace(".flv", "");
+                downloadLink.setFinalFileName(downloadLink.getName().replace(".mp4", ".flv"));
+            }
             /* Either use fms-fra[1-32].rtl.de or just fms.rtl.de */
             final String rtmpurl = "rtmpe://fms.rtl.de/" + app + "/";
 
@@ -387,9 +411,11 @@ public class RTLnowDe extends PluginForHost {
             }
 
         } else {
+            /* Now we're sure that our .mp4 availablecheck-filename is correct */
+            downloadLink.setFinalFileName(downloadLink.getName());
             /* TODO */
             if (true) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type [HDS]");
             }
             if (url_hds.matches(this.HDSTYPE_NEW_DETAILED)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming type / encrypted HDS");
@@ -562,6 +588,21 @@ public class RTLnowDe extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    private String formatDate(final String input) {
+        final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     // private long crc32Hash(final String wahl) throws UnsupportedEncodingException {

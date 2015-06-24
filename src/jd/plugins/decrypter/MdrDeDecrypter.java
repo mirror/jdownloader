@@ -16,8 +16,11 @@
 
 package jd.plugins.decrypter;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -31,7 +34,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mdr.de" }, urls = { "http://(www\\.)?mdr\\.de/(mediathek/)?[a-z0-9\\-]+/video\\d+[a-z0-9\\-_]*\\.html" }, flags = { 0 })
+import org.appwork.utils.formatter.TimeFormatter;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mdr.de" }, urls = { "http://(www\\.)?mdr\\.de/(mediathek/)?[^<>\"]+/video\\d+[a-z0-9\\-_]*\\.html" }, flags = { 0 })
 public class MdrDeDecrypter extends PluginForDecrypt {
 
     public MdrDeDecrypter(PluginWrapper wrapper) {
@@ -60,7 +65,7 @@ public class MdrDeDecrypter extends PluginForDecrypt {
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        final Regex clipinfo = new Regex(parameter, "mdr\\.de/(?:mediathek/)?([a-z0-9\\-]+)/video(\\d+)");
+        final Regex clipinfo = new Regex(parameter, "mdr\\.de/([^<>\"]+)/video(\\d+)");
         final String url_clipname = clipinfo.getMatch(0);
         final String clip_id = clipinfo.getMatch(1);
         br.setFollowRedirects(true);
@@ -72,18 +77,20 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        final String date = getXML("broadcastStartDate");
         final String subtitle_url = br.getRegex("<videoSubtitleUrl>(http://[^<>\"]*?\\.xml)</videoSubtitleUrl>").getMatch(0);
 
         /* Decrypt start */
         String title = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        if (title == null) {
+        if (title == null || date == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        final String date_formatted = formatDate(date);
         title = Encoding.htmlDecode(title.trim());
         title = encodeUnicode(title);
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(title);
+        fp.setName(date_formatted + "_mdr_" + title);
 
         /** Decrypt qualities START */
         final String[] qualities = br.getRegex("<asset>(.*?)</asset>").getColumn(0);
@@ -107,7 +114,7 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             } else {
                 qualityString = sizewidth + "x" + sizeheight;
             }
-            String filename = title;
+            String filename = date_formatted + "_mdr_" + title;
             final String ext = ".mp4";
             filename += "_" + qualityString + ext;
             final DownloadLink fina = createDownloadlink("http://mdrdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(10000000));
@@ -193,7 +200,7 @@ public class MdrDeDecrypter extends PluginForDecrypt {
                     final DownloadLink stitle_dl = createDownloadlink("http://mdrdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(10000000));
                     final String video_qualitystring = dl.getStringProperty("plain_qualityString", null);
                     final String video_linkdupeid = dl.getStringProperty("LINKDUPEID", null) + "_subtitle";
-                    final String subtitle_filename = title + "_" + video_qualitystring + ".xml";
+                    final String subtitle_filename = date_formatted + "_mdr_" + title + "_" + video_qualitystring + ".xml";
                     final String linkdupeid = "mdrde" + clip_id + "_subtitle" + video_qualitystring;
                     stitle_dl.setProperty("mainlink", parameter);
                     stitle_dl.setProperty("directlink", subtitle_url);
@@ -227,6 +234,10 @@ public class MdrDeDecrypter extends PluginForDecrypt {
         return new Regex(source, "<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>]*?)</" + parameter + ">").getMatch(1);
     }
 
+    private String getXML(final String parameter) {
+        return getXML(this.br.toString(), parameter);
+    }
+
     /* Avoid chars which are not allowed in filenames under certain OS' */
     private static String encodeUnicode(final String input) {
         String output = input;
@@ -241,6 +252,21 @@ public class MdrDeDecrypter extends PluginForDecrypt {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    private String formatDate(final String input) {
+        final long date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy HH:mm", Locale.GERMAN);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     /**

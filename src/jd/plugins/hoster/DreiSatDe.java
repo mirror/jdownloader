@@ -16,7 +16,9 @@
 
 package jd.plugins.hoster;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -41,6 +43,7 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.TimeFormatter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -110,7 +113,25 @@ public class DreiSatDe extends PluginForHost {
 
                     /* xmlData --> HashMap */
                     // /response/video/formitaeten/formitaet... --> name, quality, stream url
+                    final NodeList nl_details = doc.getElementsByTagName("details");
+                    final Node childNodemain = nl_details.item(0);
                     NodeList nl = doc.getElementsByTagName("formitaet");
+
+                    NodeList t = childNodemain.getChildNodes();
+                    MediaEntry = new HashMap<String, String>();
+                    for (int j = 0; j < t.getLength(); j++) {
+                        Node g = t.item(j);
+                        if ("#text".equals(g.getNodeName())) {
+                            continue;
+                        }
+                        MediaEntry.put(g.getNodeName(), g.getTextContent());
+                    }
+
+                    final String date = MediaEntry.get("airtime");
+                    if (date == null) {
+                        return null;
+                    }
+                    final String date_formatted = formatDate(date);
 
                     for (int i = 0; i < nl.getLength(); i++) {
                         Node childNode = nl.item(i);
@@ -121,7 +142,7 @@ public class DreiSatDe extends PluginForHost {
                         if (!(mediaType.contains("http_na_na") || mediaType.contains("rtmp_zdfmeta"))) {
                             continue;
                         }
-                        NodeList t = childNode.getChildNodes();
+                        t = childNode.getChildNodes();
                         MediaEntry = new HashMap<String, String>();
                         for (int j = 0; j < t.getLength(); j++) {
                             Node g = t.item(j);
@@ -194,7 +215,7 @@ public class DreiSatDe extends PluginForHost {
                         }
 
                         String ext = MediaEntry.get("basetype").split("_")[2];
-                        name = name.split("@")[0] + "__" + MediaEntry.get("quality") + "_" + protocol + "@" + MediaEntry.get("videoBitrate") + "bps." + ext;
+                        name = date_formatted + "_3sat_" + name.split("@")[0] + "__" + MediaEntry.get("quality") + "_" + protocol + "@" + MediaEntry.get("videoBitrate") + "bps." + ext;
                         final DownloadLink link = new DownloadLink(this, name, getHost(), sourceLink.getDownloadURL(), true);
                         link.setAvailable(true);
                         link.setFinalFileName(name);
@@ -246,7 +267,7 @@ public class DreiSatDe extends PluginForHost {
                             fp.remove(sourceLink);
                         } else if (newRet.size() > 1) {
                             fp = FilePackage.getInstance();
-                            fp.setName(title);
+                            fp.setName(date_formatted + "_3sat_" + title);
                             fp.addLinks(newRet);
                         }
                         ret = newRet;
@@ -364,6 +385,21 @@ public class DreiSatDe extends PluginForHost {
             downloadLink.setProperty("directURL", host + "@" + app + "@" + newUrl[1]);
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String formatDate(final String input) {
+        final long date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy HH:mm", Locale.GERMAN);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     @Override
