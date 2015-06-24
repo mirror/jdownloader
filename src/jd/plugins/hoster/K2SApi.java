@@ -1788,6 +1788,7 @@ public abstract class K2SApi extends PluginForHost {
      *
      */
     public static class JSonUtils {
+
         public static String escape(final String s) {
             final StringBuilder sb = new StringBuilder();
             char ch;
@@ -1905,7 +1906,6 @@ public abstract class K2SApi extends PluginForHost {
         }
 
         /**
-         *
          * Tries to return value of key from JSon response, from String source.
          *
          * @author raztoki
@@ -1914,6 +1914,7 @@ public abstract class K2SApi extends PluginForHost {
          * @return
          */
         public static String getJson(final String source, final String key) {
+            // json based
             String result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
             if (result == null) {
                 result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*\"([^\"]*)\"").getMatch(0);
@@ -1929,6 +1930,25 @@ public abstract class K2SApi extends PluginForHost {
                     }
                 }
             }
+            if (result == null) {
+                // javascript doesn't always encase keyname with quotation
+                result = new Regex(source, Pattern.quote(key) + "[ \t]*:[ \t]*(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
+                if (result == null) {
+                    result = new Regex(source, Pattern.quote(key) + "[ \t]*:[ \t]*\"([^\"]*)\"").getMatch(0);
+                    if (result != null) {
+                        // some rudimentary detection if we have braked at the wrong place.
+                        while (result.endsWith("\\")) {
+                            String xtraResult = new Regex(source, Pattern.quote(key) + "[ \t]*:[ \t]*\"(" + Pattern.quote(result) + "\"[^\"]*\"?)\"").getMatch(0);
+                            if (xtraResult != null) {
+                                result = xtraResult;
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
             result = validateResultForArrays(source, result);
             if (result != null) {
                 result = unescape(result);
@@ -1954,7 +1974,11 @@ public abstract class K2SApi extends PluginForHost {
          * @author raztoki
          * */
         public static String getJsonArray(final String source, final String key) {
-            String result = new Regex(source, "\"" + Pattern.quote(key) + "\":(\\[.*?\\])(?:,|\\})").getMatch(0);
+            String result = new Regex(source, "\"" + Pattern.quote(key) + "\":(\\[\\{.*?\\}\\]|\\[.*?\\])(?:,|\\})").getMatch(0);
+            if (result == null) {
+                // javascript doesn't always encase keyname with quotation
+                result = new Regex(source, Pattern.quote(key) + ":(\\[\\{.*?\\}\\]|\\[.*?\\])(?:,|\\})").getMatch(0);
+            }
             result = validateResultForArrays(source, result);
             if (result != null) {
                 result = unescape(result);
@@ -1995,7 +2019,11 @@ public abstract class K2SApi extends PluginForHost {
             if (source == null) {
                 return null;
             }
-            String result = new Regex(source, "\"" + Pattern.quote(key) + "\":\\{(.*?)\\}(?:,|\\})").getMatch(0);
+            String result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*\\{(.*?)\\}(?:,|\\})").getMatch(0);
+            if (result == null) {
+                // javascript doesn't always encase keyname with quotation
+                result = new Regex(source, Pattern.quote(key) + "[ \t]*:[ \t]*\\{(.*?)\\}(?:,|\\})").getMatch(0);
+            }
             result = validateResultForArrays(source, result);
             return result;
         }
