@@ -205,7 +205,7 @@ public class FileCryptCc extends PluginForDecrypt {
             // Use clicknload first as it doesn't rely on JD service.jdownloader.org, which can go down!
             handleCnl2(decryptedLinks, parameter);
             if (!decryptedLinks.isEmpty()) {
-                return decryptedLinks;
+                continue;
             }
             /* Second try DLC, then single links */
             final String dlc_id = br.getRegex("DownloadDLC\\('([^<>\"]*?)'\\)").getMatch(0);
