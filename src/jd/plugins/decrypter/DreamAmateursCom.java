@@ -24,10 +24,9 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dreamamateurs.com" }, urls = { "http://(www\\.)?dreamamateurs\\.com/[A-Za-z0-9]+/\\d+/.*?\\.html" }, flags = { 0 })
-public class DreamAmateursCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dreamamateurs.com" }, urls = { "http://(www\\.)?dreamamateurs\\.com/[A-Za-z0-9]+/\\d+/.*?\\.html" }, flags = { 0 })
+public class DreamAmateursCom extends PornEmbedParser {
 
     public DreamAmateursCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,8 +39,7 @@ public class DreamAmateursCom extends PluginForDecrypt {
         br.getPage(parameter);
         String externID = br.getRedirectLocation();
         if (externID != null) {
-            DownloadLink dl = createDownloadlink(externID);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         String filename = br.getRegex("<div class=\"hed\"><h1>(.*?)</h1>").getMatch(0);
@@ -51,8 +49,8 @@ public class DreamAmateursCom extends PluginForDecrypt {
                 filename = br.getRegex("<title>Amateur Porn :: (.*?)</title>").getMatch(0);
             }
         }
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks != null && decryptedLinks.size() > 0) {
+        decryptedLinks.addAll(findEmbedUrls(filename));
+        if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
         if (filename == null) {

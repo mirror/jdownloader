@@ -25,10 +25,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muchacarne.com" }, urls = { "http://(www\\.)?muchacarne\\.(com|xxx)/hosted(\\-id\\d+\\-.*?\\.html|/media/[a-z0-9\\-]+,\\d+\\.php)" }, flags = { 0 })
-public class MuchaCarneCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "muchacarne.com" }, urls = { "http://(www\\.)?muchacarne\\.(com|xxx)/hosted(\\-id\\d+\\-.*?\\.html|/media/[a-z0-9\\-]+,\\d+\\.php)" }, flags = { 0 })
+public class MuchaCarneCom extends PornEmbedParser {
 
     public MuchaCarneCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,8 +52,8 @@ public class MuchaCarneCom extends PluginForDecrypt {
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks != null && decryptedLinks.size() > 0) {
+        decryptedLinks.addAll(findEmbedUrls(filename));
+        if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
         // For all following ids, a filename is needed

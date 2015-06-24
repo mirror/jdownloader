@@ -23,11 +23,10 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.1.3
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stileproject.com" }, urls = { "http://(www\\.)?stileproject\\.com/video/\\d+" }, flags = { 0 })
-public class StileProjectComDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "http://(www\\.)?stileproject\\.com/video/\\d+" }, flags = { 0 })
+public class StileProjectComDecrypter extends PornEmbedParser {
 
     public StileProjectComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,7 +42,7 @@ public class StileProjectComDecrypter extends PluginForDecrypt {
         /* Check if the video is selfhosted */
         final String externID = br.getRegex("stileproject\\.com/embed/(\\d+)").getMatch(0);
         if (externID == null && this.br.getHttpConnection().getResponseCode() == 200) {
-            decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
+            decryptedLinks.addAll(findEmbedUrls(filename));
         } else {
             decryptedLinks.add(mainlink);
         }

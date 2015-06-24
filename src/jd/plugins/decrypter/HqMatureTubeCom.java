@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hqmaturetube.com" }, urls = { "http://(www\\.)?hqmaturetube\\.com/cms/watch/\\d+\\.php" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqmaturetube.com" }, urls = { "http://(www\\.)?hqmaturetube\\.com/cms/watch/\\d+\\.php" }, flags = { 0 })
 public class HqMatureTubeCom extends PluginForDecrypt {
 
     public HqMatureTubeCom(PluginWrapper wrapper) {
@@ -40,16 +40,14 @@ public class HqMatureTubeCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("(<TITLE>404 Not Found</TITLE>|<H1>Not Found</H1>|was not found on this server\\.<P>)")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        if (br.getURL().equals("http://www.hqmaturetube.com/")) {
-            logger.info("Link offline: " + parameter);
+        if (br.containsHTML("(<TITLE>404 Not Found</TITLE>|<H1>Not Found</H1>|was not found on this server\\.<P>)") || br.getURL().equals("http://www.hqmaturetube.com/")) {
+            decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
             return decryptedLinks;
         }
         String filename = br.getRegex("<title>(.*?) \\| HQ Mature Tube \\| Free streaming porn videos</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h2 style=\"text-transform:uppercase;\">(.*?)</h2>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h2 style=\"text-transform:uppercase;\">(.*?)</h2>").getMatch(0);
+        }
         if (filename == null) {
             logger.warning("hqmaturetube decrypter broken(filename regex) for link: " + parameter);
             return null;
@@ -90,7 +88,9 @@ public class HqMatureTubeCom extends PluginForDecrypt {
             }
             DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
             String type = br.getRegex("<meta rel=\"type\">(.*?)</meta>").getMatch(0);
-            if (type == null) type = "flv";
+            if (type == null) {
+                type = "flv";
+            }
             dl.setFinalFileName(filename + "." + type);
             decryptedLinks.add(dl);
             return decryptedLinks;

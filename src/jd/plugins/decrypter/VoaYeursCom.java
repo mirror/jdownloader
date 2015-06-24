@@ -23,10 +23,9 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "voayeurs.com" }, urls = { "http://(www\\.)?voayeurs\\.com/(video_\\d+/.*?|.*?\\d+)\\.html" }, flags = { 0 })
-public class VoaYeursCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "voayeurs.com" }, urls = { "http://(www\\.)?voayeurs\\.com/(video_\\d+/.*?|.*?\\d+)\\.html" }, flags = { 0 })
+public class VoaYeursCom extends PornEmbedParser {
 
     public VoaYeursCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,8 +40,8 @@ public class VoaYeursCom extends PluginForDecrypt {
         if (filename == null) {
             filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         }
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+        decryptedLinks.addAll(findEmbedUrls(filename));
+        if (decryptedLinks.isEmpty()) {
             return null;
         }
         return decryptedLinks;

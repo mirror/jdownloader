@@ -25,10 +25,9 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bonbonme.com" }, urls = { "http://(www\\.)?((av|dl)\\.)?bonbonme\\.com/(?!makemoney|data/|forum/)[A-Za-z0-9\\-_]+/(?!list_)[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
-public class BonBonmeCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bonbonme.com" }, urls = { "http://(www\\.)?((av|dl)\\.)?bonbonme\\.com/(?!makemoney|data/|forum/)[A-Za-z0-9\\-_]+/(?!list_)[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
+public class BonBonmeCom extends PornEmbedParser {
 
     public BonBonmeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,8 +40,7 @@ public class BonBonmeCom extends PluginForDecrypt {
         try {
             con = br.openGetConnection(parameter);
             if (con.getResponseCode() == 404) {
-                logger.info("Link offline: " + parameter);
-                decryptedLinks.add(this.createOfflinelink(parameter));
+                decryptedLinks.add(this.createOfflinelink(parameter, "Offline Content"));
                 return decryptedLinks;
             }
             br.followConnection();
@@ -80,7 +78,7 @@ public class BonBonmeCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
+        decryptedLinks.addAll(findEmbedUrls(filename));
         return decryptedLinks;
     }
 

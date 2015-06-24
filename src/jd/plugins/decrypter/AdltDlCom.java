@@ -125,7 +125,6 @@ public class AdltDlCom extends PluginForDecrypt {
                         captcha.put(arg[0], Encoding.urlEncode(arg[1]));
                     }
                 }
-                System.out.println("sucess");
             } else if (br2.containsHTML("class=\"g-recaptcha\"") && br2.containsHTML("google\\.com/recaptcha")) {
                 final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br2).getToken();
                 captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));

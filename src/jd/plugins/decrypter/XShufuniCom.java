@@ -23,10 +23,9 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xshufuni.com" }, urls = { "http://(www\\.)?xshufuni\\.com/gallery/[a-z0-9\\-]+/index\\.html" }, flags = { 0 })
-public class XShufuniCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xshufuni.com" }, urls = { "http://(www\\.)?xshufuni\\.com/gallery/[a-z0-9\\-]+/index\\.html" }, flags = { 0 })
+public class XShufuniCom extends PornEmbedParser {
 
     public XShufuniCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,8 +43,8 @@ public class XShufuniCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         String filename = br.getRegex("<title>([^<>\"]*?)\\| nudeamateurgirls\\.net</title>").getMatch(0);
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+        decryptedLinks.addAll(findEmbedUrls(filename));
+        if (decryptedLinks.isEmpty()) {
             return null;
         }
         return decryptedLinks;

@@ -23,10 +23,9 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hqtubexxx.com" }, urls = { "http://(www\\.)?hqtubexxx\\.com/[a-z0-9\\-]+\\-\\d+\\.html" }, flags = { 0 })
-public class HqTubeXxxCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hqtubexxx.com" }, urls = { "http://(www\\.)?hqtubexxx\\.com/[a-z0-9\\-]+\\-\\d+\\.html" }, flags = { 0 })
+public class HqTubeXxxCom extends PornEmbedParser {
 
     public HqTubeXxxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,14 +41,15 @@ public class HqTubeXxxCom extends PluginForDecrypt {
             br.getPage(parameter);
         } catch (final Exception e) {
             logger.info("Received server error for link: " + parameter);
+            decryptedLinks.add(createOfflinelink(parameter, "Server Error"));
             return decryptedLinks;
         }
         String filename = br.getRegex("<h1 class=\"name\">([^<>\"\\']+)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"\\']+) \\-    </title>").getMatch(0);
         }
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+        decryptedLinks.addAll(findEmbedUrls(filename));
+        if (decryptedLinks.isEmpty()) {
             return null;
         }
         return decryptedLinks;

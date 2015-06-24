@@ -26,11 +26,10 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.1
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mycrazyvids.com" }, urls = { "http://(www\\.)?mycrazyvids\\.com/([a-z0-9\\-_]+\\-\\d+\\.html|\\?go=click\\&c=\\d+\\&n=\\d+\\&e=\\d+\\&g=\\d+\\&r=\\d+\\&u=http[^<>\"/]+)" }, flags = { 0 })
-public class MyCrazyVidsCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mycrazyvids.com" }, urls = { "http://(www\\.)?mycrazyvids\\.com/([a-z0-9\\-_]+\\-\\d+\\.html|\\?go=click\\&c=\\d+\\&n=\\d+\\&e=\\d+\\&g=\\d+\\&r=\\d+\\&u=http[^<>\"/]+)" }, flags = { 0 })
+public class MyCrazyVidsCom extends PornEmbedParser {
 
     public MyCrazyVidsCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,8 +56,8 @@ public class MyCrazyVidsCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
             String filename = br.getRegex("<h1 class=\"name\">([^<>]*?)</h1>").getMatch(0);
-            decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-            if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            decryptedLinks.addAll(findEmbedUrls(filename));
+            if (decryptedLinks.isEmpty()) {
                 return null;
             }
         }
