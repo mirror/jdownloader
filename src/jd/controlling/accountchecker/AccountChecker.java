@@ -15,11 +15,11 @@ public class AccountChecker {
 
     public class AccountCheckJob {
 
-        private Account     account;
-        private boolean     isChecked  = false;
-        private boolean     isChecking = false;
-        private boolean     force      = false;
-        private AccountInfo ai         = null;
+        private final Account        account;
+        private volatile boolean     isChecked  = false;
+        private volatile boolean     isChecking = false;
+        private final boolean        force;
+        private volatile AccountInfo ai         = null;
 
         private AccountCheckJob(Account account, boolean force) {
             this.account = account;

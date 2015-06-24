@@ -20,6 +20,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.UrlDisplayType;
 
 public class LinkTreeUtils {
 
@@ -160,6 +161,39 @@ public class LinkTreeUtils {
             } else {
                 return new File(PackagizerController.replaceDynamicTags(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), packagename), path);
             }
+        }
+    }
+
+    public static String getUrlByType(final UrlDisplayType dt, final AbstractNode node) {
+        final DownloadLink link;
+        if (node instanceof DownloadLink) {
+            link = (DownloadLink) node;
+        } else if (node instanceof CrawledLink) {
+            link = ((CrawledLink) node).getDownloadLink();
+        } else {
+            return null;
+        }
+        switch (dt) {
+        case CUSTOM:
+            return link.getCustomUrl();
+        case REFERRER:
+            return link.getReferrerUrl();
+        case CONTAINER:
+            return link.getContainerUrl();
+        case ORIGIN:
+            return link.getOriginUrl();
+        case CONTENT:
+            switch (link.getUrlProtection()) {
+            case UNSET:
+                if (link.getContentUrl() != null) {
+                    return link.getContentUrl();
+                }
+                return link.getPluginPatternMatcher();
+            default:
+                return null;
+            }
+        default:
+            return null;
         }
     }
 
