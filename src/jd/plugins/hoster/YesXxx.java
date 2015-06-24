@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yes.xxx" }, urls = { "http://(www\\.)?yes\\.xxx/\\?v=[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yes.xxx" }, urls = { "http://(www\\.)?yes\\.xxx/(global\\.php)?\\?(v|id)=[A-Z0-9]+" }, flags = { 0 })
 public class YesXxx extends PluginForHost {
 
     public YesXxx(PluginWrapper wrapper) {
