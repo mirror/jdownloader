@@ -1266,6 +1266,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * changes the enabled status of this DownloadLink, aborts download if its currently running
      */
     public void setEnabled(final boolean isEnabled) {
+        final boolean old = this.isEnabled;
         synchronized (this) {
             if (this.isEnabled == isEnabled) {
                 return;
@@ -1273,7 +1274,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 this.isEnabled = isEnabled;
             }
         }
-        if (hasNotificationListener()) {
+        if (isEnabled != old && hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.ENABLED, isEnabled));
         }
     }

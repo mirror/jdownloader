@@ -314,11 +314,25 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
             case ENABLED:
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", dl.getUniqueID().getID());
-                dls.put("enabled", dl.isEnabled());
+                boolean enabled = dl.isEnabled();
+                dls.put("enabled", enabled);
                 fire(BASIC_EVENT.LINK_UPDATE.name() + ".enabled", dls, BASIC_EVENT.LINK_UPDATE.name() + ".enabled." + dl.getUniqueID().getID());
                 dls = new HashMap<String, Object>();
                 dls.put("uuid", parent.getUniqueID().getID());
-                dls.put("enabled", parent.isEnabled());
+                if (enabled == false) {
+                    final boolean readL = parent.getModifyLock().readLock();
+                    try {
+                        for (DownloadLink link : parent.getChildren()) {
+                            if (link.isEnabled()) {
+                                enabled = true;
+                                break;
+                            }
+                        }
+                    } finally {
+                        parent.getModifyLock().readUnlock(readL);
+                    }
+                }
+                dls.put("enabled", enabled);
                 fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".enabled", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".enabled." + parent.getUniqueID().getID());
                 break;
             case EXTRACTION_STATUS:
