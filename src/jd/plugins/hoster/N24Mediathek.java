@@ -16,6 +16,10 @@
 
 package jd.plugins.hoster;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -26,6 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "n24.de" }, urls = { "http://(www\\.|m\\.)?n24\\.de/[^<>\"]*?(M|m)ediathek/[^/]+/d/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 32 })
@@ -62,13 +67,18 @@ public class N24Mediathek extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        final String date = br.getRegex("name=\"date\" content=\"([^<>\"]*?)\"").getMatch(0);
+        String date_formatted = "-";
         String titleName = br.getRegex("title: \\'([^<>\"\\']*?)\\'").getMatch(0);
         if (br.containsHTML(html_videounavailable)) {
+            if (date != null) {
+                date_formatted = formatDate(date_formatted);
+            }
             if (titleName == null) {
                 titleName = getFilenamefromURL(downloadLink.getDownloadURL());
             }
             titleName = Encoding.htmlDecode(titleName.trim());
-            titleName = encodeUnicode(titleName);
+            titleName = date_formatted + "_n24_" + encodeUnicode(titleName);
             downloadLink.setName(titleName + ".mp4");
             return AvailableStatus.TRUE;
         }
@@ -79,11 +89,12 @@ public class N24Mediathek extends PluginForHost {
             /* Not a video (offline or maybe picture gallery) */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (titleName == null) {
+        if (titleName == null || date == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        titleName = Encoding.htmlDecode(titleName).trim();
-        downloadLink.setFinalFileName(titleName + ".mp4");
+        date_formatted = formatDate(date);
+        titleName = date_formatted + "_n24_" + Encoding.htmlDecode(titleName).trim() + ".mp4";
+        downloadLink.setFinalFileName(titleName);
 
         return AvailableStatus.TRUE;
     }
@@ -194,6 +205,23 @@ public class N24Mediathek extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    private String formatDate(String input) {
+        /* 2015-06-23T20:15:00.000+02:00 --> 2015-06-23T20:15:00.000+0200 */
+        input = input.substring(0, input.lastIndexOf(":")) + "00";
+        final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd'T'HH:mm:ssZ", Locale.GERMAN);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     @Override

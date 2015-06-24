@@ -16,16 +16,15 @@
 
 package jd.plugins.hoster;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map.Entry;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -34,6 +33,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1gold.de", "sixx.de" }, urls = { "http://(www\\.)?prosieben\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://www\\.prosiebenmaxx\\.de/[^<>\"\\']*?videos?/[\\w\\-]+", "http://(www\\.)?the\\-voice\\-of\\-germany\\.de/video/[\\w\\-]+", "http://(www\\.)?kabeleins\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(www\\.)?sat1\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(www\\.)?sat1gold\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(www\\.)?sixx\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+" }, flags = { 32, 32, 32, 32, 32, 32, 32 })
 public class ProSevenDe extends PluginForHost {
@@ -45,8 +46,7 @@ public class ProSevenDe extends PluginForHost {
     private static final String            URLTEXT_NO_FLASH = "no_flash_de";
     private static AtomicReference<String> agent_hbbtv      = new AtomicReference<String>(null);
     private static AtomicReference<String> agent_normal     = new AtomicReference<String>(null);
-    private HashMap<String, String>        fileDesc;
-    private String                         clipUrl          = null;
+    private String                         json             = null;
 
     public ProSevenDe(final PluginWrapper wrapper) {
         super(wrapper);
@@ -82,41 +82,37 @@ public class ProSevenDe extends PluginForHost {
         prepareBrowser();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         /* Possible API (needs video-ID) http://hbbtv.sat1.de/video_center?action=action.get.clip&clip_id=<videoid>&category_id=123&order=1 */
-        String jsonString = br.getRegex("\"json\",\\s+(?:\"|\\')(.*?)(?:\"|\\')\\);\n").getMatch(0);
-        if (jsonString == null || !br.containsHTML("SIMVideoPlayer")) {
+        final String date = br.getRegex("property=\"og:published_time\" content=\"([^<>\"]*?)\"").getMatch(0);
+
+        json = br.getRegex("SIMAD_CONFIG = \\{(.*?)</script>").getMatch(0);
+        if (json == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String brand = getJson(json, "brand");
+        final String channel = getJson(json, "channel");
+        final String title = getJson(json, "subchannel1");
+        final String subtitle = getJson(json, "subchannel3");
+        if (brand == null || channel == null || title == null || subtitle == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        jsonString = decodeUnicode(jsonString);
-        /* Small corrections for the json parser. */
-        jsonString = jsonString.replace("\\\"", "'");
-        jsonString = jsonString.replace("\\", "");
-        try {
-            jsonParser(jsonString, "downloadFilename");
-        } catch (final Throwable e) {
-            return AvailableStatus.UNCHECKABLE;
+        if (date == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (fileDesc == null || fileDesc.size() < 5) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        final String date_formatted = formatDate(date);
 
-        for (Entry<String, String> next : fileDesc.entrySet()) {
-            if (next.getValue() == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        }
-
-        clipUrl = fileDesc.get("downloadFilename");
-
-        String ext = new Regex(clipUrl, "(\\.\\w{3})$").getMatch(0);
+        String ext = null;
         ext = ext == null ? ".mp4" : ext;
-        downloadLink.setFinalFileName(Encoding.htmlDecode((fileDesc.get("show_artist") + "_" + fileDesc.get("title")).trim()) + ext);
+        downloadLink.setFinalFileName(date_formatted + "_" + brand + "_" + title + " - " + subtitle + ext);
         return AvailableStatus.TRUE;
     }
 
     @SuppressWarnings("deprecation")
     private void downloadRTMP(final DownloadLink downloadLink) throws Exception {
-        final String protocol = new Regex(this.clipUrl, "^(rtmp(?:e|t)?://)").getMatch(0);
+        final String protocol = new Regex(this.json, "^(rtmp(?:e|t)?://)").getMatch(0);
         String app;
         if (protocol.equals("rtmpe://")) {
             app = "psdvodrtmpdrm";
@@ -131,12 +127,12 @@ public class ProSevenDe extends PluginForHost {
         // app = "psdvodrtmpdrm";
         String url = protocol + app + ".fplive.net:1935/" + app;
         // url = "rtmpe://psdvodrtmpdrm.fplive.net:1935/psdvodrtmp";
-        final String playpath = new Regex(this.clipUrl, "(mp4:.+)").getMatch(0);
+        final String playpath = new Regex(this.json, "(mp4:.+)").getMatch(0);
         if (playpath == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // playpath = playpath.replace("?start_time=", "?country=DE&start_time=");
-        dl = new RTMPDownload(this, downloadLink, clipUrl);
+        dl = new RTMPDownload(this, downloadLink, json);
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
         /* Setup connection */
         rtmp.setApp(app);
@@ -159,7 +155,7 @@ public class ProSevenDe extends PluginForHost {
 
         br.setFollowRedirects(false);
         /* Let's find the downloadlink */
-        final String clipID = br.getRegex("\"clip_id\":[\t\n\r ]*?\"(\\d+)\"").getMatch(0);
+        final String clipID = getJson(json, "clip_id");
         if (clipID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -181,34 +177,34 @@ public class ProSevenDe extends PluginForHost {
         br.getHeaders().put("User-Agent", agent_hbbtv.get());
         br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clipID + "&app=hbbtv&type=1&method=1&callback=video" + clipID);
         getDllink();
-        if (clipUrl == null) {
+        if (json == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (clipUrl.contains(URLTEXT_NO_FLASH)) {
+        if (json.contains(URLTEXT_NO_FLASH)) {
             this.br = new Browser();
             /* User-Agent not necessarily needed */
             br.getHeaders().put("User-Agent", agent_normal.get());
             /* http stream not available --> It's either rtmp or rtmpe */
             br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clipID + "&app=moveplayer&method=2&callback=SIMVideoPlayer.FlashPlayer.jsonpCallback");
             getDllink();
-            if (clipUrl == null) {
+            if (json == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
 
-        if (clipUrl.contains("/not_available_")) {
+        if (json.contains("/not_available_")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not available in your country #1");
-        } else if (clipUrl.contains("wrong_cc_de_en_")) {
+        } else if (json.contains("wrong_cc_de_en_")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not available in your country #2");
         }
-        if (clipUrl.startsWith("rtmp")) {
+        if (json.startsWith("rtmp")) {
             downloadRTMP(downloadLink);
         } else {
             /* Happens if usually the clip is streamed via rtmpe --> No HbbTV version available either. */
-            if (clipUrl.contains(URLTEXT_NO_FLASH)) {
+            if (json.contains(URLTEXT_NO_FLASH)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol rtmpe:// not supported");
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, clipUrl, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, json, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -229,37 +225,8 @@ public class ProSevenDe extends PluginForHost {
         if (dllink != null) {
             dllink = dllink.replaceAll("\\\\", "");
         }
-        clipUrl = dllink;
+        json = dllink;
         return dllink;
-    }
-
-    private void jsonParser(final String json, final String path) throws Exception {
-        final org.codehaus.jackson.map.ObjectMapper mapper = new org.codehaus.jackson.map.ObjectMapper();
-        final org.codehaus.jackson.JsonNode rootNode = mapper.readTree(json);
-        final Iterator<org.codehaus.jackson.JsonNode> catIter = rootNode.get("categoryList").iterator();
-        while (catIter.hasNext()) {
-            final Iterator<org.codehaus.jackson.JsonNode> clipIter = catIter.next().path("clipList").iterator();
-            while (clipIter.hasNext()) {
-                final org.codehaus.jackson.JsonNode ta = clipIter.next();
-                final org.codehaus.jackson.JsonNode tb = ta.path("metadata");
-                fileDesc = new HashMap<String, String>();
-                if (ta.path("title") != null) {
-                    fileDesc.put("title", ta.path("title").getTextValue());
-                }
-                if (ta.path("id") != null) {
-                    fileDesc.put("id", ta.path("id").getTextValue());
-                }
-                if (tb.path(path) != null) {
-                    fileDesc.put(path, tb.path(path).getTextValue());
-                }
-                if (tb.path("show_artist") != null) {
-                    fileDesc.put("show_artist", tb.path("show_artist").getTextValue());
-                }
-                if (tb.path("geoblocking") != null) {
-                    fileDesc.put("geoblocking", tb.path("geoblocking").getTextValue());
-                }
-            }
-        }
     }
 
     public String decodeUnicode(final String s) {
@@ -270,6 +237,43 @@ public class ProSevenDe extends PluginForHost {
             res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
         }
         return res;
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
+    }
+
+    private String formatDate(String input) {
+        /* 2015-06-23T20:15:00.000+02:00 --> 2015-06-23T20:15:00.000+0200 */
+        input = input.substring(0, input.lastIndexOf(":")) + "00";
+        final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd'T'HH:mm:ssZ", Locale.GERMAN);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     @Override

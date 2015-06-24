@@ -17,8 +17,11 @@
 package jd.plugins.decrypter;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -32,6 +35,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "swrmediathek.de" }, urls = { "http://(www\\.)?swrmediathek\\.de/player\\.htm\\?show=[a-z0-9\\-]+" }, flags = { 0 })
 public class SwrMediathekDeDecrypter extends PluginForDecrypt {
@@ -53,7 +58,9 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
 
     /* Variables */
     private LinkedHashMap<String, String> FOUNDQUALITIES       = new LinkedHashMap<String, String>();
-    private String                        FILENAME             = null;
+    private String                        TITLE                = null;
+    private String                        DATE                 = null;
+    private String                        DATE_FORMATTED       = null;
     private String                        PARAMETER            = null;
 
     private static Object                 ctrlLock             = new Object();
@@ -105,9 +112,11 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
             final LinkedHashMap<String, Object> attr_main = (LinkedHashMap<String, Object>) entries.get("attr");
             final String description = (String) attr_main.get("entry_descl");
             final boolean rtmpExists = br.containsHTML("rtmp://");
-            FILENAME = (String) attr_main.get("entry_title");
-            FILENAME = encodeUnicode(FILENAME);
-            fp.setName(FILENAME);
+            TITLE = (String) attr_main.get("entry_title");
+            TITLE = encodeUnicode(TITLE);
+            DATE = (String) attr_main.get("entry_pdateh");
+            DATE_FORMATTED = formatDate(DATE);
+            fp.setName(DATE_FORMATTED + "_swr_" + TITLE);
             final ArrayList<Object> sub = (ArrayList) entries.get("sub");
             for (final Object o : sub) {
                 final LinkedHashMap<String, Object> media_info = (LinkedHashMap<String, Object>) o;
@@ -231,7 +240,7 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
         final String directlink = FOUNDQUALITIES.get(plain_qualityname);
         if (directlink != null) {
             final String ext = directlink.substring(directlink.lastIndexOf("."));
-            final String ftitle = FILENAME + "_" + plain_qualityname + ext;
+            final String ftitle = DATE_FORMATTED + "_swr_" + TITLE + "_" + plain_qualityname + ext;
             dl = createDownloadlink("http://swrmediathekdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(10000));
             dl.setProperty("directlink", directlink);
             dl.setProperty("plain_qualityname", plain_qualityname);
@@ -258,7 +267,7 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
     private DownloadLink getSubtitleDownloadlink(final DownloadLink vidlink) throws ParseException {
         final String plain_qualityname = vidlink.getStringProperty("plain_qualityname", null);
         final String ext = ".xml";
-        final String ftitle = FILENAME + "_" + plain_qualityname + ext;
+        final String ftitle = DATE_FORMATTED + "_swr_" + TITLE + "_" + plain_qualityname + ext;
         final DownloadLink dl = createDownloadlink("http://swrmediathekdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(10000));
         dl.setProperty("directlink", SUBTITLE_URL);
         dl.setProperty("plain_qualityname", plain_qualityname);
@@ -292,6 +301,21 @@ public class SwrMediathekDeDecrypter extends PluginForDecrypt {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    private String formatDate(final String input) {
+        final long date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy, HH.mm", Locale.GERMAN);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     /**

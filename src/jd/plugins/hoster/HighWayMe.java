@@ -219,7 +219,7 @@ public class HighWayMe extends PluginForHost {
             /* request creation of downloadlink */
             br.setFollowRedirects(true);
             postAPISafe(DOMAIN + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
-            this.getAPISafe("http://http.high-way.me/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()));
+            this.getAPISafe("http://http.high-way.me/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&pass=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
             dllink = getJson("download");
             if (dllink == null) {
                 logger.warning("Final downloadlink is null");

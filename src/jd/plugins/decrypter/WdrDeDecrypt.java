@@ -16,8 +16,11 @@
 
 package jd.plugins.decrypter;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -31,6 +34,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wdr.de" }, urls = { "http://([a-z0-9]+\\.)?wdr\\.de/([a-z0-9\\-_/]+/sendungen/[a-z0-9\\-_/]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)" }, flags = { 32 })
 public class WdrDeDecrypt extends PluginForDecrypt {
@@ -147,11 +152,13 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 return null;
             }
             br.getPage("http://www1.wdr.de" + player_link);
+            final String date = br.getRegex("name=\"DC\\.Date\" content=\"([^<>\"]*?)\"").getMatch(0);
             String flashvars = br.getRegex("name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
-            if (flashvars == null) {
+            if (flashvars == null || date == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            final String date_formatted = formatDate(date);
             flashvars = Encoding.htmlDecode(flashvars);
             String subtitle_url = new Regex(flashvars, "vtCaptionsURL=(http://[^<>\"]*?\\.xml)\\&vtCaptions").getMatch(0);
             if (subtitle_url != null) {
@@ -185,7 +192,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                     resolution = "512x288";
                     quality_name = "Q_LOW";
                 }
-                final String final_video_name = plain_name + "_" + resolution + ".mp4";
+                final String final_video_name = date_formatted + "_wdr_" + plain_name + "_" + resolution + ".mp4";
                 final DownloadLink dl_video = createDownloadlink("http://wdrdecrypted.de/?format=mp4&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
                 dl_video.setProperty("mainlink", parameter);
                 dl_video.setProperty("direct_link", final_url);
@@ -236,7 +243,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 if (keep != null) {
                     /* Add subtitle link for every quality so players will automatically find it */
                     if (grab_subtitle && subtitle_url != null) {
-                        final String subtitle_filename = plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
+                        final String subtitle_filename = date_formatted + "_wdr_" + plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
                         final String resolution = keep.getStringProperty("plain_resolution", null);
                         final DownloadLink dl_subtitle = createDownloadlink("http://wdrdecrypted.de/?format=xml&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
                         dl_subtitle.setProperty("mainlink", parameter);
@@ -256,7 +263,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 }
             }
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(plain_name);
+            fp.setName(date_formatted + "_wdr_" + plain_name);
             fp.addLinks(decryptedLinks);
         }
 
@@ -286,6 +293,23 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    private String formatDate(String input) {
+        /* 2015-06-23T20:15+02:00 --> 2015-06-23T20:15:00+0200 */
+        input = input.substring(0, input.lastIndexOf(":")) + "00";
+        final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd'T'HH:mmZZ", Locale.GERMAN);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     /* NO OVERRIDE!! */
