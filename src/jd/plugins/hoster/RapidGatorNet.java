@@ -771,7 +771,7 @@ public class RapidGatorNet extends PluginForHost {
                             this.br.setCookie(RapidGatorNet.MAINPAGE, key, value);
                         }
                         if (force) {
-                            /* Even if login is forced, use cookies and check if they're still valid to avoid the captcha below */
+                            /* Even if login is forced, use cookies and check if they are still valid to avoid the captcha below */
                             this.br.setFollowRedirects(true);
                             br.getPage("http://rapidgator.net/");
                             if (br.containsHTML("<a href=\"/auth/logout\"")) {
@@ -1146,9 +1146,9 @@ public class RapidGatorNet extends PluginForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             * 
+             *
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             * 
+             *
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
