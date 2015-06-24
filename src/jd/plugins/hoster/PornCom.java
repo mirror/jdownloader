@@ -28,10 +28,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "porn.com" }, urls = { "http://(www\\.)?porn\\.com/videos/[^<>\"/]+\\d+(\\.html)?" }, flags = { 0 })
-public class PornCom extends PluginForHost {
+public class PornCom extends antiDDoSForHost {
 
     private String DLLINK = null;
 
@@ -115,6 +114,29 @@ public class PornCom extends PluginForHost {
             if (DLLINK == null) {
                 DLLINK = brc.getRegex("\"trailer\"(file)?:\"(http:.*?)\"").getMatch(1);
             }
+        }
+        if (DLLINK != null) {
+            return;
+        }
+        // json
+        final String a = getJsonArray("streams");
+        final String[] array = getJsonResultsFromArray(a);
+        if (array != null) {
+            int highestQual = 0;
+            String bestUrl = null;
+            for (final String aa : array) {
+                final String quality = getJson(aa, "name");
+                final String q = quality != null ? new Regex(quality, "\\d+").getMatch(-1) : null;
+                final int qual = q != null ? Integer.parseInt(q) : 0;
+                if (qual > highestQual) {
+                    highestQual = qual;
+                    final String url = getJson(aa, "url");
+                    if (url != null) {
+                        bestUrl = url;
+                    }
+                }
+            }
+            DLLINK = bestUrl;
         }
     }
 
