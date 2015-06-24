@@ -16,8 +16,11 @@
 
 package jd.plugins.decrypter;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -30,6 +33,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ndr.de" }, urls = { "https?://(www\\.)?ndr\\.de/fernsehen/sendungen/[A-Za-z0-9\\-_]+/[^<>\"/]+\\.html" }, flags = { 0 })
 public class NdrDeDecrypter extends PluginForDecrypt {
@@ -65,11 +70,13 @@ public class NdrDeDecrypter extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
+        final String date = this.br.getRegex("itemprop=\"startDate\" content=\"([^<>\"]*?)\"").getMatch(0);
         String title = br.getRegex("name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (title == null) {
+        if (title == null || date == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        final String date_formatted = formatDate(date);
         final String availablequalitiestext = br.getRegex("\\.,([a-z,]+),\\.mp4\\.csmil/master\\.m3u8\\'").getMatch(0);
         final Regex afnreg = br.getRegex("afn: \"TV-(\\d{4})(\\d{4})([0-9\\-]+)\"");
         final String v_year = afnreg.getMatch(0);
@@ -86,7 +93,7 @@ public class NdrDeDecrypter extends PluginForDecrypt {
         final String linkdupeid = v_rest + "_%S_%S";
         final String[] availablequalities = availablequalitiestext.split(",");
         for (final String quality : availablequalities) {
-            final String finalfilename = title + "_" + getNiceQuality(quality) + ".mp4";
+            final String finalfilename = date_formatted + "_ndr_" + title + "_" + getNiceQuality(quality) + ".mp4";
             final String directlink = "http://media.ndr.de/progressive/" + v_year + "/" + v_id + "/TV-" + v_year + v_id + v_rest + "." + quality + ".mp4";
             final DownloadLink dl = createDownloadlink("http://ndrdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
             try {
@@ -149,7 +156,7 @@ public class NdrDeDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 if (subtitle_url != null && qsubtitles) {
                     final String quality = dl.getStringProperty("quality", null);
-                    final String finalfilename = title + "_" + getNiceQuality(quality) + ".xml";
+                    final String finalfilename = date_formatted + "_ndr_" + title + "_" + getNiceQuality(quality) + ".xml";
                     final DownloadLink dlsubtitle = createDownloadlink("http://ndrdecrypted.de/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
                     try {
                         dlsubtitle.setContentUrl(parameter);
@@ -180,7 +187,7 @@ public class NdrDeDecrypter extends PluginForDecrypt {
         }
 
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(title.trim()));
+        fp.setName(date_formatted + "_ndr_" + Encoding.htmlDecode(title.trim()));
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
@@ -196,5 +203,22 @@ public class NdrDeDecrypter extends PluginForDecrypt {
             nicequal = "LOW";
         }
         return nicequal;
+    }
+
+    private String formatDate(String input) {
+        /* 2015-06-23T20:15:00.000+02:00 --> 2015-06-23T20:15:00.000+0200 */
+        input = input.substring(0, input.lastIndexOf(":")) + "00";
+        final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.GERMAN);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 }
