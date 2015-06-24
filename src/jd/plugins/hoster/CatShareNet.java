@@ -73,9 +73,8 @@ public class CatShareNet extends PluginForHost {
                 logger.warning("Waittime detected for link " + theLink.getDownloadURL());
                 Long waitTimeSeconds = Long.parseLong(waitTime);
                 if (waitTimeSeconds != 60l) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Waittime detected", (waitTimeSeconds + 5) * 1000L);
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("WAITTIME"), (waitTimeSeconds + 5) * 1000L);
                 }
-
             }
         }
 
@@ -84,17 +83,17 @@ public class CatShareNet extends PluginForHost {
     // never got one, but left this for future usage
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (new Regex(BRBEFORE, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+            throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("SERVER_ERROR"));
         }
         if (new Regex(BRBEFORE, "(Not Found|<h1>(404 )?Not Found</h1>)").matches()) {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("Twój dzienny limit transferu")) {
-            UserIO.getInstance().requestMessageDialog(0, "CatShare.net Premium Error", "Daily Limit exceeded!" + "\r\nPremium disabled, will continue downloads as Free User");
+            UserIO.getInstance().requestMessageDialog(0, getPhrase("PREMIUM_ERROR"), getPhrase("DAILY_LIMIT") + "\r\n" + getPhrase("PREMIUM_DISABLED"));
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         } else if (br.containsHTML("<input type=\"submit\" class=\"btn btn-large btn-inverse\" style=\"font-size:30px; font-weight: bold; padding:30px\" value=\"Pobierz szybko\" />")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Link is broken at the server side");
+            throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("LINK_BROKEN"));
         }
 
     }
@@ -113,7 +112,7 @@ public class CatShareNet extends PluginForHost {
         if (new Regex(BRBEFORE, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
             dlForm = br.getForm(0);
             if (dlForm == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no reCaptcha form!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("NO_RECAPTCHA_FORM"));
             }
 
             logger.info("Detected captcha method \"Re Captcha\" for this host");
@@ -144,14 +143,14 @@ public class CatShareNet extends PluginForHost {
 
         } else {
             logger.warning("Unknown ReCaptcha method for: " + downloadLink.getDownloadURL());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown ReCaptcha method!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("UNKNOWN_RECAPTCHA"));
         }
 
         /* Captcha END */
         // if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             logger.info("5 reCaptcha tryouts for <" + downloadLink.getDownloadURL() + "> were incorrect");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "reCaptcha error or server doesn't accept reCaptcha challenges", 1 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("RECAPTCHA_ERROR"), 1 * 60 * 1000l);
         }
 
         doSomething();
@@ -159,7 +158,7 @@ public class CatShareNet extends PluginForHost {
         dllink = getDllink();
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("REGEX_ERROR"));
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxChunks);
@@ -168,7 +167,7 @@ public class CatShareNet extends PluginForHost {
             br.followConnection();
             doSomething();
             checkServerErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("FINAL_LINK_ERROR"));
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
@@ -243,14 +242,12 @@ public class CatShareNet extends PluginForHost {
         if (br.containsHTML("<title>Error 404</title>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
         String fileName = new Regex(BRBEFORE, "<h3 class=\"pull-left\" style=\"margin-left: 10px;\">(.*)</h3>[ \t\n\r\f]+<h3 class=\"pull-right\"").getMatch(0);
-
         String fileSize = new Regex(BRBEFORE, "<h3 class=\"pull-right\" style=\"margin-right: 10px;\">(.+?)</h3>").getMatch(0);
 
         if (fileName == null || fileSize == null) {
             logger.warning("For link: " + downloadURL + ", final filename or filesize is null!");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "filename or filesize not found!");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, getPhrase("NO_LINK_DATA"));
         }
 
         link.setName(fileName.trim());
@@ -267,68 +264,70 @@ public class CatShareNet extends PluginForHost {
         try {
             login(account, true);
         } catch (PluginException e) {
-            ai.setStatus("Login failed or not Premium");
-            UserIO.getInstance().requestMessageDialog(0, "CatShare.net Premium Error", "Login failed or not Premium!\r\nPlease check your Username and Password!");
+            ai.setStatus(getPhrase("LOGIN_ERROR"));
+            UserIO.getInstance().requestMessageDialog(0, "Catshare.net: " + getPhrase("LOGIN_ERROR"), getPhrase("LOGIN_FAILED"));
             account.setValid(false);
             return ai;
         }
 
-        final String dailyLimitLeft = br.getRegex("<li><a href=\"/premium\">([^<>\"\\']+)</a></li>").getMatch(0);
-        if (dailyLimitLeft != null) {
-            ai.setTrafficMax(SizeFormatter.getSize("20 GB"));
-            ai.setTrafficLeft(SizeFormatter.getSize(dailyLimitLeft, true, true));
-        } else {
-            ai.setUnlimitedTraffic();
-        }
+        if ("true".equals(account.getProperty("premium"))) {
+            final String dailyLimitLeft = br.getRegex("<li><a href=\"/premium\">([^<>\"\\']+)</a></li>").getMatch(0);
+            if (dailyLimitLeft != null) {
+                ai.setTrafficMax(SizeFormatter.getSize("20 GB"));
+                ai.setTrafficLeft(SizeFormatter.getSize(dailyLimitLeft, true, true));
+            } else {
+                ai.setUnlimitedTraffic();
+            }
 
-        String expire = br.getRegex(">Konto premium ważne do : <strong>(\\d{4}\\-\\d+{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})<").getMatch(0);
-        if (expire == null) {
-            expire = br.getRegex("(\\d{4}\\-\\d+{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            String expire = br.getRegex(">Konto premium ważne do : <strong>(\\d{4}\\-\\d+{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})<").getMatch(0);
             if (expire == null) {
-                // for the last day of the premium period
-                if (br.containsHTML("Konto premium ważne do : <strong>-</strong></span>")) {
-                    // 0 days left
-                    expire = br.getRegex("<a href=\"/premium\">(Konto:[\t\n\r ]+)*Premium \\(<b>(\\d) dni</b>\\)+[ \t\n\r]+</a>").getMatch(1);
+                expire = br.getRegex("(\\d{4}\\-\\d+{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+                if (expire == null) {
+                    // for the last day of the premium period
+                    if (br.containsHTML("Konto premium ważne do : <strong>-</strong></span>")) {
+                        // 0 days left
+                        expire = br.getRegex("<a href=\"/premium\">(Konto:[\t\n\r ]+)*Premium \\(<b>(\\d) dni</b>\\)+[ \t\n\r]+</a>").getMatch(1);
+                        if (expire == null) {
+                            expire = br.getRegex("(Konto:[\r\t\n ]+)+Premium \\(<b><span style=\"color: red\">(\\d+) godzin</span></b>\\)").getMatch(1);
+                            hours = true;
+                        }
+                    }
                     if (expire == null) {
-                        expire = br.getRegex("(Konto:[\r\t\n ]+)+Premium \\(<b><span style=\"color: red\">(\\d+) godzin</span></b>\\)").getMatch(1);
-                        hours = true;
+                        ai.setExpired(true);
+                        return ai;
                     }
                 }
-                if (expire == null) {
-                    ai.setExpired(true);
-                    account.setValid(false);
-                    return ai;
+            }
+            if (expire.equals("0") && (dailyLimitLeft != null)) {
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+                String dateNow = formatter.format(Calendar.getInstance().getTime());
+                dateNow = dateNow + " 23:59:59";
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(dateNow, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+            } else {
+                if (hours) {
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(new Date());
+                    cal.add(Calendar.HOUR_OF_DAY, Integer.parseInt(expire));
+                    String dateExpire = formatter.format(cal.getTime());
+
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(dateExpire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+
+                } else {
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
                 }
             }
-        }
-        if (expire.equals("0") && (dailyLimitLeft != null)) {
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-            String dateNow = formatter.format(Calendar.getInstance().getTime());
-            dateNow = dateNow + " 23:59:59";
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(dateNow, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
-        } else {
-            if (hours) {
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(new Date());
-                cal.add(Calendar.HOUR_OF_DAY, Integer.parseInt(expire));
-                String dateExpire = formatter.format(cal.getTime());
-
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(dateExpire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
-
-            } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+            try {
+                account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
             }
-        }
-        account.setValid(true);
-        try {
-            account.setMaxSimultanDownloads(-1);
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            // not available in old Stable 0.9.581
-        }
 
-        ai.setStatus("Premium User");
+            ai.setStatus(getPhrase("PREMIUM"));
+        } else {
+            ai.setStatus(getPhrase("FREE"));
+        }
         return ai;
     }
 
@@ -357,15 +356,18 @@ public class CatShareNet extends PluginForHost {
                 Form login = br.getForm(0);
                 if (login == null) {
                     logger.warning("Couldn't find login form");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("NO_LOGIN_FORM"));
                 }
                 login.put("user_email", Encoding.urlEncode(account.getUser()));
                 login.put("user_password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);
                 br.getPage("/");
-                if ((!br.containsHTML("(Konto:[\r\t\n ]+)*Premium \\(<b>\\d+ dni</b>\\)")) && (!br.containsHTML("(Konto:[\r\t\n ]+)+Premium \\(<b><span style=\"color: red\">\\d+ godzin</span></b>\\)"))) {
-                    logger.warning("Couldn't determine premium status or account is Free not Premium!");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium Account is invalid: it's free or not recognized!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.containsHTML("(Konto:[\r\t\n ]+)*Darmowe")) {
+                    account.setProperty("premium", "false");
+                } else if ((br.containsHTML("(Konto:[\r\t\n ]+)*Premium \\(<b>\\d+ dni</b>\\)")) || (br.containsHTML("(Konto:[\r\t\n ]+)+Premium \\(<b><span style=\"color: red\">\\d+ godzin</span></b>\\)"))) {
+                    account.setProperty("premium", "true");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, getPhrase("LOGIN_ERROR"), PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -387,21 +389,26 @@ public class CatShareNet extends PluginForHost {
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
         String passCode = null;
         requestFileInformation(downloadLink);
-        login(account, false);
+        login(account, true);
+        br.getPage(downloadLink.getDownloadURL());
+
+        if ("false".equals(account.getProperty("premium"))) {
+            doFree(downloadLink, false, 1);
+            return;
+        }
+
         br.getPage(downloadLink.getDownloadURL());
         doSomething();
         String dllink = getDllink();
         if (dllink == null) {
             if (br.containsHTML("Twój dzienny limit transferu")) {
-                UserIO.getInstance().requestMessageDialog(0, "CatShare.net Premium Error", "Daily Limit exceeded!" + "\r\nPremium disabled, will continue downloads as Free User");
+                UserIO.getInstance().requestMessageDialog(0, getPhrase("PREMIUM_ERROR"), getPhrase("DAILY_LIMIT") + "\r\n" + getPhrase("PREMIUM_DISABLED"));
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else if (br.containsHTML("Plik chwilowo niedostępny z powodu awarii")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "file unavailabe - hoster reports crash", 60 * 60 * 1000l);
-            }
-
-            else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("LINK_BROKEN"), 60 * 60 * 1000l);
+            } else {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("REGEX_ERROR"));
             }
         }
 
@@ -418,7 +425,7 @@ public class CatShareNet extends PluginForHost {
             br.followConnection();
             doSomething();
             checkServerErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("FINAL_LINK_ERROR"));
         }
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
@@ -455,5 +462,64 @@ public class CatShareNet extends PluginForHost {
             return true;
         }
         return false;
+    }
+
+    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
+        {
+            put("WAITTIME", "Waittime detected");
+            put("PREMIUM_ERROR", "CatShare.net Premium Error");
+            put("DAILY_LIMIT", "Daily Limit exceeded!");
+            put("SERVER_ERROR", "Server error");
+            put("PREMIUM_DISABLED", "Premium disabled, will continue downloads as anonymous user");
+            put("LINK_BROKEN", "Link is broken at the server side");
+            put("NO_RECAPTCHA_FORM", "no reCaptcha form!");
+            put("UNKNOWN_RECAPTCHA", "Unknown ReCaptcha method!");
+            put("RECAPTCHA_ERROR", "reCaptcha error or server doesn't accept reCaptcha challenges");
+            put("REGEX_ERROR", "Regex didn't match - no final link found");
+            put("FINAL_LINK_ERROR", "The final dllink seems not to be a file!");
+            put("NO_LINK_DATA", "filename or filesize not found!");
+            put("LOGIN_ERROR", "Login Error");
+            put("LOGIN_FAILED", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct?\r\nSome hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
+            put("PREMIUM", "Premium User");
+            put("FREE", "Free User");
+            put("NO_LOGIN_FORM", "no login form");
+                                                  }
+    };
+    private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
+        {
+            put("WAITTIME", "Wykryto czas oczekiwania");
+            put("PREMIUM_ERROR", "CatShare.net Błąd Konta Premium");
+            put("DAILY_LIMIT", "Wyczerpano dzienny limit!");
+            put("SERVER_ERROR", "Błąd serwera");
+            put("PREMIUM_DISABLED", "Konto Premium zostanie wyłączone, pobierania będą kontynuowane jako anonimowe");
+            put("LINK_BROKEN", "Plik jest uszkodzony na serwerze");
+            put("NO_RECAPTCHA_FORM", "brak formularza reCaptcha!");
+            put("UNKNOWN_RECAPTCHA", "Nieznany typ ReCaptcha!");
+            put("RECAPTCHA_ERROR", "błąd reCaptcha lub serwer nie akceptuje prób wprowadzenia kodu reCaptcha");
+            put("REGEX_ERROR", "Wyrażenie regularne nie znalazło finalnego linku");
+            put("FINAL_LINK_ERROR", "Finałowy link jest nieprawidłowy");
+            put("NO_LINK_DATA", "Brak nazwy i rozmiaru pliku!");
+            put("LOGIN_ERROR", "Błąd logowania");
+            put("LOGIN_FAILED", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło?\r\nSugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
+            put("PREMIUM", "Użytkownik Premium");
+            put("FREE", "Użytkownik darmowy");
+            put("NO_LOGIN_FORM", "brak formularza logowania");
+        }
+    };
+
+    /**
+     * Returns a Polish/English translation of a phrase. We don't use the JDownloader translation framework since we need only Polish and
+     * English.
+     *
+     * @param key
+     * @return
+     */
+    private String getPhrase(String key) {
+        if ("pl".equals(System.getProperty("user.language")) && phrasesPL.containsKey(key)) {
+            return phrasesPL.get(key);
+        } else if (phrasesEN.containsKey(key)) {
+            return phrasesEN.get(key);
+        }
+        return "Translation not found!";
     }
 }
