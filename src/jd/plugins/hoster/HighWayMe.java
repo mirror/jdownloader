@@ -35,6 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -218,8 +219,21 @@ public class HighWayMe extends PluginForHost {
         if (dllink == null) {
             /* request creation of downloadlink */
             br.setFollowRedirects(true);
+            String passCode = Encoding.urlEncode(link.getStringProperty("pass", null));
             postAPISafe(DOMAIN + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
-            this.getAPISafe("http://http.high-way.me/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&pass=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
+            this.getAPISafe("http://http.high-way.me/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&pass=" + Encoding.urlEncode(passCode));
+            if (this.statuscode == 13) {
+                /* We alredy tried the saved password --> Ask for PW now */
+                logger.info("MOCH and download password ...");
+                passCode = Plugin.getUserInput("Password?", link);
+                this.getAPISafe("/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&pass=" + Encoding.urlEncode(passCode));
+                if (this.statuscode == 13) {
+                    link.setProperty("pass", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                }
+                /* Seems like the password is valid --> Save it */
+                link.setProperty("pass", passCode);
+            }
             dllink = getJson("download");
             if (dllink == null) {
                 logger.warning("Final downloadlink is null");
