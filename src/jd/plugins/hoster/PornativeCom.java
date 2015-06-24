@@ -27,7 +27,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornative.com" }, urls = { "http://(www\\.)?pornative\\.com/\\d+\\.html" }, flags = { 32 })
-public class PornativeCom extends PluginForHost {
+public class PornativeCom extends antiDDoSForHost {
 
     private String dllink = null;
 
@@ -47,12 +47,12 @@ public class PornativeCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        br.getPage(downloadLink.getDownloadURL());
+        getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null && "http://www.pornative.com".equalsIgnoreCase(br.getRedirectLocation())) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.getRedirectLocation() != null) {
-            br.getPage(br.getRedirectLocation());
+            getPage(br.getRedirectLocation());
         }
         if (!br.getURL().contains(".html")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
