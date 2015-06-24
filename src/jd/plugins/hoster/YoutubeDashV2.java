@@ -681,7 +681,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
                     if (e.getErrorMessage() != null) {
 
-                        if (e.getErrorMessage().contains("This video is private")) {
+                        if (StringUtils.equalsIgnoreCase(e.getErrorMessage(), "This video is private")) {
                             throw e;
                         }
 
