@@ -31,19 +31,22 @@ public class SelectionInfoUtils {
         }
     }
 
-    public static Map<String, List<Long>> getURLs(final SelectionInfo<? extends AbstractPackageNode, ? extends AbstractNode> selectionInfo, final UrlDisplayType urlDisplayType) {
+    public static Map<String, List<Long>> getURLs(final SelectionInfo<? extends AbstractPackageNode, ? extends AbstractNode> selectionInfo, final List<UrlDisplayType> urlDisplayTypes) {
         final List<? extends AbstractNode> children = selectionInfo.getChildren();
         final HashMap<String, List<Long>> ret = new HashMap<String, List<Long>>();
         if (children.size() > 0) {
-            for (AbstractNode node : children) {
-                final String url = LinkTreeUtils.getUrlByType(urlDisplayType, node);
-                if (url != null) {
-                    List<Long> list = ret.get(url);
-                    if (list == null) {
-                        list = new ArrayList<Long>();
-                        ret.put(url, list);
+            for (final AbstractNode node : children) {
+                for (final UrlDisplayType urlDisplayType : urlDisplayTypes) {
+                    final String url = LinkTreeUtils.getUrlByType(urlDisplayType, node);
+                    if (url != null) {
+                        List<Long> list = ret.get(url);
+                        if (list == null) {
+                            list = new ArrayList<Long>();
+                            ret.put(url, list);
+                        }
+                        list.add(node.getUniqueID().getID());
+                        break;
                     }
-                    list.add(node.getUniqueID().getID());
                 }
             }
         }
