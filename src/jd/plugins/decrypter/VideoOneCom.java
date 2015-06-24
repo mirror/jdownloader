@@ -114,6 +114,11 @@ public class VideoOneCom extends PornEmbedParser {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        externID = this.br.getRegex("iframe src=\"(ftp://[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
 
         /** Or not crypted... */
         decryptedLinks.addAll(findEmbedUrls(filename));

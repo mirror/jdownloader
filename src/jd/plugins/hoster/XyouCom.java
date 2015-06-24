@@ -59,11 +59,11 @@ public class XyouCom extends PluginForHost {
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension         = ".mp4";
     /* Connection stuff */
-    private static final boolean FREE_RESUME               = true;
-    private static final int     FREE_MAXCHUNKS            = 0;
+    private static final boolean FREE_RESUME               = false;
+    private static final int     FREE_MAXCHUNKS            = 1;
     private static final int     FREE_MAXDOWNLOADS         = 20;
-    private static final boolean ACCOUNT_FREE_RESUME       = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS    = 0;
+    private static final boolean ACCOUNT_FREE_RESUME       = false;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
 
     /* don't touch the following! */
