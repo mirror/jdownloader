@@ -105,7 +105,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             this.decryptedLinks = null;
             return;
         }
-        final String fpname = encodeUnicode(date_general + "_" + title_general);
+        final String fpname = encodeUnicode(formatDatePHOENIX(date_general) + "_" + title_general);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpname);
         for (final String item : items) {
@@ -120,7 +120,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 return;
             }
             final DownloadLink dl = this.createDownloadlink("directhttp://" + url);
-            String final_filename = date + "_" + tvstation + "_" + title + ".mp4";
+            String final_filename = formatDatePHOENIX(date) + "_" + tvstation + "_" + title + ".mp4";
             final_filename = encodeUnicode(final_filename);
             if (description != null) {
                 dl.setComment(description);
@@ -421,6 +421,26 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     private String formatDateZDF(final String input) {
         final long date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy HH:mm", Locale.GERMAN);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
+    }
+
+    private String formatDatePHOENIX(String input) {
+        /* It contains the day twice --> Fix that */
+        if (input.contains(",")) {
+            input = input.substring(input.lastIndexOf(",") + 2);
+        }
+        // Tue, 23 Jun 2015 11:33:00 +0200
+        final long date = TimeFormatter.getMilliSeconds(input, "dd MMM yyyy HH:mm:ss Z", Locale.ENGLISH);
         String formattedDate = null;
         final String targetFormat = "yyyy-MM-dd";
         Date theDate = new Date(date);

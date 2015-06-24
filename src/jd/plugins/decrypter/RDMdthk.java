@@ -17,7 +17,9 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -37,6 +39,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/.+|http://www\\.daserste\\.de/[^<>\"]+/videos/[a-z0-9\\-]+\\.html" }, flags = { 32 })
 public class RDMdthk extends PluginForDecrypt {
@@ -171,6 +175,9 @@ public class RDMdthk extends PluginForDecrypt {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         this.date = br.getRegex("Video der Sendung vom (\\d{2}\\.\\d{2}\\.\\d{4})").getMatch(0);
+        if (this.date == null) {
+            this.date = br.getRegex("class=\"subtitle\">([^<>\"]*?) \\| ").getMatch(0);
+        }
         final String original_ard_ID = broadcastID;
         if (title == null) {
             title = getTitle(br);
@@ -183,7 +190,7 @@ public class RDMdthk extends PluginForDecrypt {
             title = show + " - " + title;
         }
         if (this.date != null) {
-            title = this.date + "_ard_" + title;
+            title = formatDate(this.date) + "_ard_" + title;
         }
         final Browser br = new Browser();
         setBrowserExclusive();
@@ -622,6 +629,21 @@ public class RDMdthk extends PluginForDecrypt {
             return true;
         }
         return false;
+    }
+
+    private String formatDate(final String input) {
+        final long date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy", Locale.GERMAN);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     /* NO OVERRIDE!! */
