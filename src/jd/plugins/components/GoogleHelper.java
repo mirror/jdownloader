@@ -192,6 +192,8 @@ public class GoogleHelper {
 
             getPageFollowRedirects(br, "https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
 
+            // Set-Cookie: GAPS=1:u14pnu_cVhnJlNpZ_xhGBJLeS1FDxA:R-JYyKg6DETne8XP;Path=/;Expires=Fri, 23-Jun-2017 13:04:05
+            // GMT;Secure;HttpOnly;Priority=HIGH
             LinkedHashMap<String, String> post = new LinkedHashMap<String, String>();
 
             post.put("GALX", br.getCookie("http://google.com", "GALX"));
@@ -211,6 +213,11 @@ public class GoogleHelper {
             post.put("rmShown", "1");
 
             postPageFollowRedirects(br, "https://accounts.google.com/ServiceLoginAuth", post);
+            if (!br.getURL().matches("https?\\:\\/\\/accounts\\.google\\.com\\/CheckCookie\\?.*")) {
+
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+
+            }
             Form form = br.getFormBySubmitvalue("Verify");
 
             if (form != null && "SecondFactor".equals(form.getAction())) {
