@@ -46,7 +46,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?(m\\.xhamster\\.com/preview/\\d+|xhamster\\.com/(xembed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html))" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xhamster.com" }, urls = { "https?://(www\\.)?([a-z]{2}\\.)?(m\\.xhamster\\.com/preview/\\d+|xhamster\\.(?:com|xxx)/(x?embed\\.php\\?video=\\d+|movies/[0-9]+/.*?\\.html))" }, flags = { 2 })
 public class XHamsterCom extends PluginForHost {
 
     public XHamsterCom(PluginWrapper wrapper) {
@@ -61,6 +61,7 @@ public class XHamsterCom extends PluginForHost {
 
     private static final String  HTML_PASSWORD_PROTECTED         = "id=\\'videoPass\\'";
     private static final String  HTML_PAID_VIDEO                 = "class=\"buy_tips\"";
+    private static final String  DOMAIN_CURRENT                  = "xhamster.com";
 
     private void setConfigElements() {
         String user_text;
@@ -86,8 +87,8 @@ public class XHamsterCom extends PluginForHost {
         return "http://xhamster.com/terms.php";
     }
 
-    private static final String TYPE_MOBILE = "^http://(www\\.)?m\\.xhamster\\.com/preview/\\d+$";
-    private static final String TYPE_EMBED  = "^http://(www\\.)?xhamster\\.com/xembed\\.php\\?video=\\d+$";
+    private static final String TYPE_MOBILE = "^https?://(?:www\\.)?m\\.xhamster\\.com/preview/\\d+$";
+    private static final String TYPE_EMBED  = "^https?://(?:www\\.)?xhamster\\.(?:com|xxx)/x?embed\\.php\\?video=\\d+$";
     private static final String NORESUME    = "NORESUME";
     private String              DLLINK      = null;
 
@@ -96,6 +97,9 @@ public class XHamsterCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("://(www\\.)?([a-z]{2}\\.)?", "://"));
         if (link.getDownloadURL().matches(TYPE_MOBILE) || link.getDownloadURL().matches(TYPE_EMBED)) {
             link.setUrlDownload("http://xhamster.com/movies/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/" + System.currentTimeMillis() + new Random().nextInt(10000) + ".html");
+        } else {
+            final String thisdomain = new Regex(link.getDownloadURL(), "https?://(?:www\\.)?([^/]+)/.+").getMatch(0);
+            link.getDownloadURL().replace(thisdomain, DOMAIN_CURRENT);
         }
     }
 
@@ -133,12 +137,28 @@ public class XHamsterCom extends PluginForHost {
         } else {
             /* E.g. url_mode == 3 */
             /* Example-ID: 685813 */
+            String flashvars = br.getRegex("flashvars: \"([^<>\"]*?)\"").getMatch(0);
             dllink = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\" class=\"mp4Thumb\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\"").getMatch(0);
             }
             if (dllink == null) {
+                dllink = br.getRegex("\"(https?://\\d+\\.xhcdn\\.com/key=[^<>\"]*?)\"").getMatch(0);
+            }
+            if (dllink == null) {
                 dllink = br.getRegex("flashvars.*?file=(http%3.*?)&").getMatch(0);
+            }
+            if (dllink == null && flashvars != null) {
+                /* E.g. 4753816 */
+                flashvars = Encoding.htmlDecode(flashvars);
+                flashvars = flashvars.replace("\\", "");
+                final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
+                for (final String quality : qualities) {
+                    dllink = new Regex(flashvars, "\"" + quality + "\":\\[\"(http[^<>\"]*?)\"\\]").getMatch(0);
+                    if (dllink != null) {
+                        break;
+                    }
+                }
             }
         }
         DLLINK = Encoding.htmlDecode(dllink);
@@ -252,8 +272,13 @@ public class XHamsterCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         DLLINK = getDllink();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
+        String ext;
+        if (DLLINK != null) {
+            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            if (ext == null || ext.length() > 5) {
+                ext = ".flv";
+            }
+        } else {
             ext = ".flv";
         }
         filename = Encoding.htmlDecode(filename.trim() + ext);

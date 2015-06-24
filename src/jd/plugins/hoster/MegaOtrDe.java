@@ -29,9 +29,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega-otr.de" }, urls = { "http://(www\\.)?mega\\-otr\\.de/\\?file=[^<>\"/]*?\\.otrkey" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega-otr.de" }, urls = { "http://(www\\.)?mega\\-otrdecrypted\\.de/\\?file=[^<>\"/]*?\\.otrkey" }, flags = { 0 })
 public class MegaOtrDe extends PluginForHost {
 
+    @SuppressWarnings("deprecation")
     public MegaOtrDe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,12 +42,20 @@ public class MegaOtrDe extends PluginForHost {
         return "http://mega-otr.de/impressum.php";
     }
 
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("mega-otrdecrypted.de/", "mega-otr.de/"));
+    }
+
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Datei nicht gefunden<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Datei nicht gefunden<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = new Regex(link.getDownloadURL(), "file=(.+)$").getMatch(0);
         link.setName(filename);
         return AvailableStatus.TRUE;
@@ -58,7 +67,9 @@ public class MegaOtrDe extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage("http://mega-otr.de/downl.php?file=" + downloadLink.getName());
         final String dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         try {
             ((Ftp) JDUtilities.getNewPluginForHostInstance("ftp")).download(dllink, downloadLink, false);
         } catch (InterruptedIOException e) {

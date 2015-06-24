@@ -54,6 +54,9 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("madthumbs\\.com%2Fvideos%2Fembed_config%3Fid%3D(\\d+)").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("http%3A%2F%2F(?:www\\.)?madthumbs\\.com%2Fvideos%2Fembed_config%3Fvid%3D[^<>\"]+videos%2F[^<>\"]+%2F(\\d+)%26splash%3Dhttp").getMatch(0);
+        }
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("http://www.madthumbs.com/videos/amateur/" + new Random().nextInt(100000) + "/" + externID);
             decryptedLinks.add(dl);
@@ -87,7 +90,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("\"(http://(www\\.)?xhamster\\.com/xembed\\.php\\?video=\\d+)\"").getMatch(0);
+        externID = br.getRegex("\"(http://(?:www\\.)?xhamster\\.(?:com|xxx)/x?embed\\.php\\?video=\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
@@ -151,16 +154,16 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         // pornhub handling number #3
-        externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
+        externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(?:www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
         if (externID != null) {
             brdecrypt.getPage(externID);
             if (brdecrypt.containsHTML("<link_url>N/A</link_url>") || brdecrypt.containsHTML("No htmlCode read") || brdecrypt.containsHTML(">404 Not Found<")) {
                 decryptedLinks.add(createOfflinelink("http://www.pornhub.com/view_video.php?viewkey=" + new Random().nextInt(10000000), externID));
                 return decryptedLinks;
             }
-            externID = br.getRegex("<link_url>(http://[^<>\"]*?)</link_url>").getMatch(0);
+            externID = brdecrypt.getRegex("<link_url>(http://[^<>\"]*?)</link_url>").getMatch(0);
             if (externID == null) {
-                return null;
+                return decryptedLinks;
             }
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
@@ -177,7 +180,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             br.getPage(externID);
             final String finallink = br.getRegex("\"(http://(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
             if (finallink == null) {
-                return null;
+                return decryptedLinks;
             }
             decryptedLinks.add(createDownloadlink(finallink));
             return decryptedLinks;
@@ -370,7 +373,14 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("(http://(www\\.)?keezmovies\\.com/embed_player\\.php\\?v?id=\\d+)\"").getMatch(0);
+        /* keezmovies.com #1 */
+        externID = br.getRegex("(https?://(?:www\\.)?keezmovies\\.com/embed_player\\.php\\?v?id=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        /* keezmovies.com #2 */
+        externID = br.getRegex("\"(https?://(?:www\\.)?keezmovies\\.com/embed/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
@@ -405,9 +415,14 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("\"(https?://(?:www\\.)?playvid\\.com/embed/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         // filename needed for all IDs below
         if (title == null) {
-            return null;
+            return decryptedLinks;
         }
         /* TODO: Remove as much Browser-accesses as possible, handle all embedded urls in the corresponding host plugins! */
         title = Encoding.htmlDecode(title).trim();
@@ -439,19 +454,19 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             brdecrypt.setCookie("http://youporn.com/", "language", "en");
             brdecrypt.getPage(Encoding.htmlDecode(externID));
             if (brdecrypt.getRequest().getHttpConnection().getResponseCode() == 404) {
-                return null;
+                return decryptedLinks;
             }
             if (brdecrypt.containsHTML("download\\.youporn\\.com/agecheck")) {
                 return decryptedLinks;
             }
             externID = brdecrypt.getRegex("\"(http://(www\\.)?download\\.youporn.com/download/\\d+/\\?xml=1)\"").getMatch(0);
             if (externID == null) {
-                return null;
+                return decryptedLinks;
             }
             brdecrypt.getPage(externID);
             final String finallink = brdecrypt.getRegex("<location>(http://.*?)</location>").getMatch(0);
             if (finallink == null) {
-                return null;
+                return decryptedLinks;
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
             String type = brdecrypt.getRegex("<meta rel=\"type\">(.*?)</meta>").getMatch(0);
@@ -470,7 +485,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             return decryptedLinks;
 
         }
-        return null;
+        return decryptedLinks;
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */

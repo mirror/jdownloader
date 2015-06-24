@@ -38,8 +38,16 @@ public class DreamAmateursCom extends PornEmbedParser {
         String parameter = param.toString();
         br.getPage(parameter);
         String externID = br.getRedirectLocation();
-        if (externID != null) {
+        if (externID != null && !externID.contains("dreamamateurs.com/")) {
             decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        } else if (externID != null) {
+            /* Follow redirect */
+            this.br.getPage(externID);
+            externID = null;
+        }
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String filename = br.getRegex("<div class=\"hed\"><h1>(.*?)</h1>").getMatch(0);
@@ -95,6 +103,14 @@ public class DreamAmateursCom extends PornEmbedParser {
 
         }
         externID = br.getRegex("flashvars=\"file=(http://(www\\.)?hostave3\\.net/[^<>\"]*?)\\&screenfile=").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+
+        }
+        externID = br.getRegex("\\&file=(https?://static\\.mofos\\.com/scenes/[^<>\"]*?)\\&").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(filename + ".flv");
