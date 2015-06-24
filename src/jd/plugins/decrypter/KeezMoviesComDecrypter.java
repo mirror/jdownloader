@@ -23,10 +23,9 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://(www\\.)?keezmovies\\.com/(video|embed)/[\\w\\-]+" }, flags = { 0 })
-public class KeezMoviesComDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "keezmovies.com" }, urls = { "http://(www\\.)?keezmovies\\.com/(video|embed)/[\\w\\-]+" }, flags = { 0 })
+public class KeezMoviesComDecrypter extends PornEmbedParser {
 
     public KeezMoviesComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,18 +41,15 @@ public class KeezMoviesComDecrypter extends PluginForDecrypt {
         final DownloadLink decryptedMainlink = createDownloadlink(parameter.replace("keezmovies.com/", "keezmoviesdecrypted.com/"));
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         String filename = br.getRegex("<span class=\"fn\" style=\"display:none\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) \\- KeezMovies\\.com</title>").getMatch(0);
         }
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks != null && decryptedLinks.size() > 0) {
+        decryptedLinks.addAll(findEmbedUrls(filename));
+        if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
         /* No external url found --> Video must be selfhosted. */

@@ -23,11 +23,10 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.2.8
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boobinspector.com" }, urls = { "http://(www\\.)?boobinspector\\.com/videos/\\d+" }, flags = { 0 })
-public class BoobinspectorComDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boobinspector.com" }, urls = { "http://(www\\.)?boobinspector\\.com/videos/\\d+" }, flags = { 0 })
+public class BoobinspectorComDecrypter extends PornEmbedParser {
 
     public BoobinspectorComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,8 +38,7 @@ public class BoobinspectorComDecrypter extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(this.createOfflinelink(parameter, "Offline Content"));
             return decryptedLinks;
         }
         externID = this.br.getRedirectLocation();
@@ -52,8 +50,8 @@ public class BoobinspectorComDecrypter extends PluginForDecrypt {
             externID = null;
         }
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks != null && decryptedLinks.size() > 0) {
+        decryptedLinks.addAll(findEmbedUrls(filename));
+        if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
         decryptedLinks = new ArrayList<DownloadLink>();

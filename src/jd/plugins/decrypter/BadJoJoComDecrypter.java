@@ -23,10 +23,9 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badjojo.com" }, urls = { "http://(www\\.)?badjojo\\.com/\\d+/.{1}" }, flags = { 0 })
-public class BadJoJoComDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "badjojo.com" }, urls = { "http://(www\\.)?badjojo\\.com/\\d+/.{1}" }, flags = { 0 })
+public class BadJoJoComDecrypter extends PornEmbedParser {
 
     public BadJoJoComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,10 +36,7 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         if ("http://www.badjojo.com/".equals(br.getRedirectLocation()) || br.getRequest().getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink dl = createDownloadlink(parameter.replace("badjojo.com", "decryptedbadjojo.com"));
-            dl.setAvailable(false);
-            dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
             return decryptedLinks;
         }
         br.setFollowRedirects(true);
@@ -48,8 +44,8 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
             br.getPage(br.getRedirectLocation());
         }
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks != null && decryptedLinks.size() > 0) {
+        decryptedLinks.addAll(findEmbedUrls(filename));
+        if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
 

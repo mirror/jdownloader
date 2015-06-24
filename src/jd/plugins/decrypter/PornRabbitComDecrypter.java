@@ -23,12 +23,11 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.1.1
 //Mods: removed pornrabbit decrypt, added youporn.com decrypt
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornrabbit.com" }, urls = { "http://(www\\.)?pornrabbit\\.com/(\\d+/[a-z0-9_\\-]+\\.html|video/\\d+/)" }, flags = { 0 })
-public class PornRabbitComDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornrabbit.com" }, urls = { "http://(www\\.)?pornrabbit\\.com/(\\d+/[a-z0-9_\\-]+\\.html|video/\\d+/)" }, flags = { 0 })
+public class PornRabbitComDecrypter extends PornEmbedParser {
 
     public PornRabbitComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,18 +43,15 @@ public class PornRabbitComDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         // Link offline? Add it to the hosterplugin so the user can see it.
         if (br.containsHTML("(>Page Not Found<|>Sorry but the page you are looking for has|>Sorry, this video was not found|video_removed_dmca\\.jpg\")")) {
-            final DownloadLink dl = createDownloadlink(parameter.replace("pornrabbit.com/", "pornrabbitdecrypted.com/"));
-            dl.setAvailable(false);
-            dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
             return decryptedLinks;
         }
         String filename = br.getRegex("<title>([^<>\"]*?): Porn Rabbit</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         }
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+        decryptedLinks.addAll(findEmbedUrls(filename));
+        if (decryptedLinks.isEmpty()) {
             return null;
         }
         decryptedLinks = new ArrayList<DownloadLink>();

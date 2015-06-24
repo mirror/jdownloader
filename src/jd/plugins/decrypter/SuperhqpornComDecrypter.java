@@ -23,11 +23,10 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.2.8
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "superhqporn.com" }, urls = { "http://www\\.superhqporn\\.com/\\?v=[A-Z0-9]+" }, flags = { 0 })
-public class SuperhqpornComDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superhqporn.com" }, urls = { "http://www\\.superhqporn\\.com/\\?v=[A-Z0-9]+" }, flags = { 0 })
+public class SuperhqpornComDecrypter extends PornEmbedParser {
 
     public SuperhqpornComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,12 +40,8 @@ public class SuperhqpornComDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         final DownloadLink main = createDownloadlink(parameter.replace("superhqporn.com/", "superhqporndecrypted.com/"));
-        try {
-            main.setContentUrl(parameter);
-        } catch (final Throwable e) {
-            /* Not available in 0.9.581 Stable */
-            main.setBrowserUrl(parameter);
-        }
+        main.setContentUrl(parameter);
+
         if (br.containsHTML(">Video Not Exists<|>Requested video not exist") || br.getHttpConnection().getResponseCode() == 404) {
             main.setAvailable(false);
             main.setProperty("offline", true);
@@ -61,9 +56,9 @@ public class SuperhqpornComDecrypter extends PluginForDecrypt {
             br.getPage(externID);
             externID = null;
         }
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, null);
-        if (decryptedLinks != null && decryptedLinks.size() >= 0) {
-            return null;
+        decryptedLinks.addAll(findEmbedUrls(null));
+        if (!decryptedLinks.isEmpty()) {
+            return decryptedLinks;
         }
         /* No extern id found --> Add main-link */
         decryptedLinks.add(main);

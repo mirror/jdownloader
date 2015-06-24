@@ -23,11 +23,10 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.1.9
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tuberealm.com" }, urls = { "http://(www\\.)?tuberealm\\.com/tube\\-sex\\-movies/[a-z0-9\\-]+\\.html" }, flags = { 0 })
-public class TubeRealmCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tuberealm.com" }, urls = { "http://(www\\.)?tuberealm\\.com/tube\\-sex\\-movies/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+public class TubeRealmCom extends PornEmbedParser {
 
     public TubeRealmCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,10 +39,7 @@ public class TubeRealmCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.containsHTML("Sorry, this page was deleted")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter, "Content deleted"));
             return decryptedLinks;
         }
         externID = br.getRedirectLocation();
@@ -52,8 +48,8 @@ public class TubeRealmCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+        decryptedLinks.addAll(findEmbedUrls(filename));
+        if (decryptedLinks.isEmpty()) {
             return null;
         }
         return decryptedLinks;

@@ -23,11 +23,10 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.1.1
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapdu.com" }, urls = { "http://(www\\.)?fapdu\\.com/[a-z0-9\\-]+" }, flags = { 0 })
-public class FapduCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fapdu.com" }, urls = { "http://(www\\.)?fapdu\\.com/[a-z0-9\\-]+" }, flags = { 0 })
+public class FapduCom extends PornEmbedParser {
 
     public FapduCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,16 +38,27 @@ public class FapduCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         if (parameter.matches(INVALIDLINK)) {
-            logger.info("Link invalid: " + parameter);
-            decryptedLinks.add(this.createOfflinelink(parameter));
+            decryptedLinks.add(createOfflinelink(parameter, "Invalid Link"));
             return decryptedLinks;
         }
         br.getPage(parameter);
-        String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\">").getMatch(0);
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks != null && decryptedLinks.size() > 0) {
+        // Offline link
+        if (br.containsHTML(">This video was removed")) {
+            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(createOfflinelink(parameter, "Offline Link"));
             return decryptedLinks;
         }
+        // Invalid link
+        if (br.containsHTML("The page you were looking for isn|>Page Not Found") || !br.containsHTML("id=\"sharing\"")) {
+            decryptedLinks.add(createOfflinelink(parameter, "Invalid Link"));
+            return decryptedLinks;
+        }
+        String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\">").getMatch(0);
+        decryptedLinks.addAll(findEmbedUrls(filename));
+        if (!decryptedLinks.isEmpty()) {
+            return decryptedLinks;
+        }
+
         /* Assume we have a selfhosted video */
         decryptedLinks = new ArrayList<DownloadLink>();
         final DownloadLink main = this.createDownloadlink(parameter.replace("fapdu.com/", "fapdudecrypted.com/"));

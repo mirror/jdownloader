@@ -24,11 +24,10 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.1.1
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video-one.com" }, urls = { "http://(www\\.)?video\\-one\\.com/video/[a-z0-9]+\\.html" }, flags = { 0 })
-public class VideoOneCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.com" }, urls = { "http://(www\\.)?video\\-one\\.com/video/[a-z0-9]+\\.html" }, flags = { 0 })
+public class VideoOneCom extends PornEmbedParser {
 
     public VideoOneCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -117,8 +116,8 @@ public class VideoOneCom extends PluginForDecrypt {
         }
 
         /** Or not crypted... */
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+        decryptedLinks.addAll(findEmbedUrls(filename));
+        if (decryptedLinks.isEmpty()) {
             return null;
         }
         return decryptedLinks;

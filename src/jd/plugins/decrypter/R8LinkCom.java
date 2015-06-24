@@ -80,7 +80,7 @@ public class R8LinkCom extends PluginForDecrypt {
                     break;
                 }
             } else if (br.containsHTML("class=\"g\\-recaptcha\"")) {
-                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, this.br).getToken();
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
                 br.postPage(br.getURL(), "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
             }
         }

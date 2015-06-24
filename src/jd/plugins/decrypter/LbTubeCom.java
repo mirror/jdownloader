@@ -23,10 +23,9 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lbtube.com" }, urls = { "http://(www\\.)?lbtube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
-public class LbTubeCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lbtube.com" }, urls = { "http://(www\\.)?lbtube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+public class LbTubeCom extends PornEmbedParser {
 
     public LbTubeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,12 +42,12 @@ public class LbTubeCom extends PluginForDecrypt {
         br.getPage(parameter);
         br.setFollowRedirects(false);
         if (br.getURL().equals("http://www.lbtube.com/404.php")) {
-            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
             return decryptedLinks;
         }
         String filename = br.getRegex("class=\"title_vid\">([^<>\"]*?)</div>").getMatch(0);
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+        decryptedLinks.addAll(findEmbedUrls(filename));
+        if (decryptedLinks.isEmpty()) {
             return null;
         }
         return decryptedLinks;

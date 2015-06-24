@@ -5,15 +5,20 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 
-public class PornEmbedParser {
+public abstract class PornEmbedParser extends antiDDoSForDecrypt {
+
+    public PornEmbedParser(PluginWrapper wrapper) {
+        super(wrapper);
+    }
 
     /**
-     * PornEmbedParser 0.3.1
+     * PornEmbedParser 0.3.2
      *
      *
      * This method is designed to find embedded porn urls in html code.
@@ -27,7 +32,7 @@ public class PornEmbedParser {
      *
      *
      */
-    public static ArrayList<DownloadLink> findEmbedUrls(final Browser br, String title) throws IOException {
+    public final ArrayList<DownloadLink> findEmbedUrls(String title) throws IOException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final Browser brdecrypt = br.cloneBrowser();
         // xvideos.com 1
@@ -50,11 +55,11 @@ public class PornEmbedParser {
         }
         externID = br.getRegex("madthumbs\\.com%2Fvideos%2Fembed_config%3Fid%3D(\\d+)").getMatch(0);
         if (externID != null) {
-            DownloadLink dl = createDownloadlink("http://www.madthumbs.com/videos/amateur/" + new Random().nextInt(100000) + "/" + externID);
+            final DownloadLink dl = createDownloadlink("http://www.madthumbs.com/videos/amateur/" + new Random().nextInt(100000) + "/" + externID);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = br.getRegex("(\"|\\')(http://(www\\.)?tube8\\.com/embed/[^<>\"/]*?/[^<>\"/]*?/\\d+/?)(\"|\\')").getMatch(1);
+        externID = br.getRegex("(\"|\\')(http://(www\\.)?tube8\\.com/embed/[^<>\"/]*?/[^<>\"/]*?/\\d+/?)\\1").getMatch(1);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID.replace("tube8.com/embed/", "tube8.com/")));
             return decryptedLinks;
@@ -150,10 +155,7 @@ public class PornEmbedParser {
         if (externID != null) {
             brdecrypt.getPage(externID);
             if (brdecrypt.containsHTML("<link_url>N/A</link_url>") || brdecrypt.containsHTML("No htmlCode read") || brdecrypt.containsHTML(">404 Not Found<")) {
-                final DownloadLink offline = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + new Random().nextInt(10000000));
-                offline.setName(externID);
-                offline.setAvailable(false);
-                decryptedLinks.add(offline);
+                decryptedLinks.add(createOfflinelink("http://www.pornhub.com/view_video.php?viewkey=" + new Random().nextInt(10000000), externID));
                 return decryptedLinks;
             }
             externID = br.getRegex("<link_url>(http://[^<>\"]*?)</link_url>").getMatch(0);
@@ -170,7 +172,7 @@ public class PornEmbedParser {
             return decryptedLinks;
         }
         // myxvids.com 2
-        externID = br.getRegex("(\\'|\")(http://(www\\.)?myxvids\\.com/embed_code/\\d+/\\d+/myxvids_embed\\.js)(\\'|\")").getMatch(1);
+        externID = br.getRegex("(\\'|\")(http://(www\\.)?myxvids\\.com/embed_code/\\d+/\\d+/myxvids_embed\\.js)\\1").getMatch(1);
         if (externID != null) {
             br.getPage(externID);
             final String finallink = br.getRegex("\"(http://(www\\.)?myxvids\\.com/embed/\\d+)\"").getMatch(0);
@@ -226,15 +228,21 @@ public class PornEmbedParser {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = br.getRegex("pornative\\.com/embed/player\\.swf\\?movie_id=(\\d+)").getMatch(0);
+        externID = br.getRegex("<[^>]+pornative\\.com/embed/player\\.swf[^>]*>").getMatch(-1);
         if (externID != null) {
-            DownloadLink dl = createDownloadlink("http://pornative.com/" + externID + ".html");
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            String fuid = new Regex(externID, "\\?movie_id=(\\d+)").getMatch(0);
+            if (fuid == null) {
+                fuid = new Regex(externID, "FlashVars=\"movie_id=(\\d+)\"").getMatch(0);
+            }
+            if (fuid != null) {
+                final DownloadLink dl = createDownloadlink("http://pornative.com/" + fuid + ".html");
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
         }
         externID = br.getRegex("pornyeah\\.com/playerConfig\\.php\\?[a-z0-9]+\\.[a-z0-9\\.]+\\|(\\d+)").getMatch(0);
         if (externID != null) {
-            DownloadLink dl = createDownloadlink("http://www.pornyeah.com/videos/" + Integer.toString(new Random().nextInt(1000000)) + "-" + externID + ".html");
+            final DownloadLink dl = createDownloadlink("http://www.pornyeah.com/videos/" + Integer.toString(new Random().nextInt(1000000)) + "-" + externID + ".html");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
@@ -287,10 +295,7 @@ public class PornEmbedParser {
         externID = br.getRegex("\"(http://(www\\.)?embeds\\.sunporno\\.com/embed/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             if (externID.equals("http://embeds.sunporno.com/embed/videos")) {
-                final DownloadLink offline = createDownloadlink("directhttp://" + externID);
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
+                decryptedLinks.add(createDownloadlink(externID));
                 return decryptedLinks;
             }
             decryptedLinks.add(createDownloadlink(externID));
@@ -484,8 +489,4 @@ public class PornEmbedParser {
         return output;
     }
 
-    protected static DownloadLink createDownloadlink(final String link) {
-        final String host = jd.http.Browser.getHost(link);
-        return new DownloadLink(null, null, host, Encoding.urlDecode(link, true), true);
-    }
 }

@@ -24,10 +24,9 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "amateurdumper.com" }, urls = { "http://(www\\.)?amateurdumper\\.com/(index\\.php\\?ctr=view\\&id=\\d+|\\d+/.*?\\.html)" }, flags = { 0 })
-public class AmateurDumperCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "amateurdumper.com" }, urls = { "http://(www\\.)?amateurdumper\\.com/(index\\.php\\?ctr=view\\&id=\\d+|\\d+/.*?\\.html)" }, flags = { 0 })
+public class AmateurDumperCom extends PornEmbedParser {
 
     public AmateurDumperCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,8 +54,8 @@ public class AmateurDumperCom extends PluginForDecrypt {
                 filename = br.getRegex("<title>Homemade Sex :: (.*?)</title>").getMatch(0);
             }
         }
-        decryptedLinks = jd.plugins.decrypter.PornEmbedParser.findEmbedUrls(this.br, filename);
-        if (decryptedLinks != null && decryptedLinks.size() > 0) {
+        decryptedLinks.addAll(findEmbedUrls(filename));
+        if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
         if (filename == null) {
