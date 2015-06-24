@@ -495,6 +495,7 @@ public class ChoMikujPl extends PluginForHost {
         if (!account_resume) {
             account_maxchunks = 1;
         }
+        br.followConnection();
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, account_resume, account_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
