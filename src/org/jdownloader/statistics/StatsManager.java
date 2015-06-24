@@ -110,7 +110,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static StatsManager I() {
@@ -193,55 +193,56 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             if (event.getType() == AccountControllerEvent.Types.ADDED || (event.getType() == AccountControllerEvent.Types.ACCOUNT_CHECKED && event.getAccount().getBooleanProperty("fireStatsCall"))) {
                                 final Account account = event.getAccount();
                                 accountHoster = account.getHoster();
-                                account.removeProperty("fireStatsCall");
                                 if (account.getLongProperty("added", 0) <= 0) {
                                     account.setProperty("added", System.currentTimeMillis());
                                 }
-                                if (account != null && account.isValid()) {
-                                    long lastValid = account.getLastValidTimestamp();
-                                    if (lastValid <= 0 && event.getType() == AccountControllerEvent.Types.ADDED) {
-                                        // the account may not be checked yet. send stats later
-                                        account.setProperty("fireStatsCall", true);
-                                        return;
-                                    }
-                                    final AccountInfo accountInfo = account.getAccountInfo();
+                                if (account.getError() != null || account.getLastValidTimestamp() <= 0) {
+                                    // account is not checked yet or currently in error state. send stats later
+                                    account.setProperty("fireStatsCall", true);
+                                    return;
+                                } else {
                                     final HashMap<String, String> infos = new HashMap<String, String>();
-                                    infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
-                                    infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
-                                    infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty("added", System.currentTimeMillis())));
-                                    final String id;
-                                    if (accountInfo != null) {
-                                        final long validUntilTimeStamp = accountInfo.getValidUntil();
-                                        final long expireInMs = validUntilTimeStamp - System.currentTimeMillis();
-                                        if (validUntilTimeStamp > 0) {
-                                            infos.put(EXPIRE_TIME, Long.toString(expireInMs));
-                                            if (expireInMs > 0) {
-                                                id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/until";
+                                    final File file;
+                                    try {
+                                        file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(accountHoster) + ".json");
+                                        final AccountInfo accountInfo = account.getAccountInfo();
+                                        infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
+                                        infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
+                                        infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty("added", System.currentTimeMillis())));
+                                        final String id;
+                                        if (accountInfo != null) {
+                                            final long validUntilTimeStamp = accountInfo.getValidUntil();
+                                            final long expireInMs = validUntilTimeStamp - System.currentTimeMillis();
+                                            if (validUntilTimeStamp > 0) {
+                                                infos.put(EXPIRE_TIME, Long.toString(expireInMs));
+                                                if (expireInMs > 0) {
+                                                    id = "premium/valid/" + accountHoster + "/" + account.getType() + "/until";
+                                                } else {
+                                                    id = "premium/valid/" + accountHoster + "/" + account.getType() + "/expired";
+                                                }
                                             } else {
-                                                id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/expired";
+                                                infos.put(EXPIRE_TIME, Long.toString(-1));
+                                                id = "premium/valid/" + accountHoster + "/" + account.getType() + "/unlimited";
                                             }
                                         } else {
-                                            infos.put(EXPIRE_TIME, Long.toString(-1));
-                                            id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/unlimited";
+                                            id = "premium/valid/" + accountHoster + "/" + account.getType() + "/unknown";
                                         }
-                                    } else {
-                                        id = "premium/valid/" + account.getHoster() + "/" + account.getType() + "/unknown";
+                                        StatsManager.I().track(id, infos);
+                                    } finally {
+                                        account.removeProperty("fireStatsCall");
                                     }
-                                    StatsManager.I().track(id, infos);
-                                    final String domain = account.getHoster();
-                                    final File file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(domain) + ".json");
                                     if (file.exists()) {
                                         try {
                                             final ArrayList<ClickedAffLinkStorable> list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
                                             });
                                             if (list != null && list.size() > 0) {
                                                 infos.put(CLICK_SOURCE, JSonStorage.serializeToJson(list));
-                                                StatsManager.I().track("premium/addedAfter/" + account.getHoster() + "/" + account.getType(), infos);
+                                                StatsManager.I().track("premium/addedAfter/" + accountHoster + "/" + account.getType(), infos);
                                             } else {
-                                                StatsManager.I().track("premium/affTrackError/" + account.getHoster() + "/empty");
+                                                StatsManager.I().track("premium/affTrackError/" + accountHoster + "/empty");
                                             }
                                         } catch (Throwable e) {
-                                            StatsManager.I().track("premium/affTrackError/" + account.getHoster() + "/" + e.getMessage());
+                                            StatsManager.I().track("premium/affTrackError/" + accountHoster + "/" + e.getMessage());
                                             logger.log(e);
                                             file.delete();
                                         }
@@ -497,7 +498,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * this setter does not set the config flag. Can be used to disable the logger for THIS session.
-     * 
+     *
      * @param b
      */
     public void setEnabled(boolean b) {
@@ -1512,7 +1513,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
-     * 
+     *
      * @param reducer
      * @param path
      */

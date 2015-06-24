@@ -139,7 +139,7 @@ public class Account extends Property {
     }
 
     public boolean isValid() {
-        AccountError lerror = getError();
+        final AccountError lerror = getError();
         return lerror == null || AccountError.TEMP_DISABLED.equals(lerror);
     }
 
@@ -469,30 +469,34 @@ public class Account extends Property {
     public boolean setProperty(String key, Object value) {
         if (IS_MULTI_HOSTER_ACCOUNT.equalsIgnoreCase(key)) {
             isMulti = value != null && Boolean.TRUE.equals(value);
-        } else if ("nopremium".equalsIgnoreCase(key)) {
-            // convert.. some day we will use the setType only. The earlier we start to the correct fields, the better
-            if (Boolean.TRUE.equals(value)) {
-                setType(AccountType.FREE);
-            } else {
-                setType(AccountType.PREMIUM);
-            }
-        } else if ("free".equalsIgnoreCase(key)) {
-            if (Boolean.TRUE.equals(value)) {
-                setType(AccountType.FREE);
-            } else {
-                setType(AccountType.PREMIUM);
-            }
-        } else if ("session_type".equalsIgnoreCase(key)) {
-            if (!"premium".equals(value)) {
-                setType(AccountType.FREE);
-            } else {
-                setType(AccountType.PREMIUM);
-            }
-        } else if ("premium".equalsIgnoreCase(key)) {
-            if (Boolean.TRUE.equals(value)) {
-                setType(AccountType.PREMIUM);
-            } else {
-                setType(AccountType.FREE);
+        } else {
+            if (Property.NULL != value) {
+                if ("nopremium".equalsIgnoreCase(key)) {
+                    // convert.. some day we will use the setType only. The earlier we start to the correct fields, the better
+                    if (Boolean.TRUE.equals(value)) {
+                        setType(AccountType.FREE);
+                    } else {
+                        setType(AccountType.PREMIUM);
+                    }
+                } else if ("free".equalsIgnoreCase(key)) {
+                    if (Boolean.TRUE.equals(value)) {
+                        setType(AccountType.FREE);
+                    } else {
+                        setType(AccountType.PREMIUM);
+                    }
+                } else if ("session_type".equalsIgnoreCase(key)) {
+                    if (!"premium".equals(value)) {
+                        setType(AccountType.FREE);
+                    } else {
+                        setType(AccountType.PREMIUM);
+                    }
+                } else if ("premium".equalsIgnoreCase(key)) {
+                    if (Boolean.TRUE.equals(value)) {
+                        setType(AccountType.PREMIUM);
+                    } else {
+                        setType(AccountType.FREE);
+                    }
+                }
             }
         }
         return super.setProperty(key, value);

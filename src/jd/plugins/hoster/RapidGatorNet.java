@@ -54,6 +54,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -132,7 +133,7 @@ public class RapidGatorNet extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (!Account.AccountType.PREMIUM.equals(acc.getType())) {
             /* free accounts also have captchas */
             return true;
         }
@@ -523,9 +524,9 @@ public class RapidGatorNet extends PluginForHost {
                 }
             }
 
-            String dllink = this.br.getRegex("'(http://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
+            String dllink = this.br.getRegex("'(https?://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
             if (dllink == null) {
-                dllink = this.br.getRegex("'(http://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
+                dllink = this.br.getRegex("'(https?://[A-Za-z0-9\\-_]+\\.rapidgator\\.net//\\?r=download/index&session_id=[A-Za-z0-9]+)'").getMatch(0);
             }
             // Old regex
             if (dllink == null) {
@@ -623,24 +624,11 @@ public class RapidGatorNet extends PluginForHost {
                          * expire date and traffic left are available, so its a premium account, add one day extra to prevent it from
                          * expiring too early
                          */
-                        ai.setValidUntil(Long.parseLong(expire_date) * 1000 + 24 * 60 * 60 * 1000l);
+                        ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l));
                         ai.setTrafficLeft(Long.parseLong(traffic_left));
                         if (!ai.isExpired()) {
-                            account.setProperty("session_type", "premium");
-                            account.setProperty("free", false);
+                            account.setType(AccountType.PREMIUM);
                             /* account still valid */
-                            if (reset_in != null) {
-                                // this is pointless, when traffic == 0 == core automatically sets ai.settraffic("No Traffic Left")
-                                // ai.setStatus("Traffic exceeded " + reset_in);
-                                // account.setAccountInfo(ai);
-
-                                // is reset_in == seconds, * 1000 back into ms.
-                                Long l = Long.parseLong(reset_in) * 1000;
-                                account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", l);
-                                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                            } else {
-                                ai.setStatus("Premium Account");
-                            }
                             try {
                                 RapidGatorNet.maxPrem.set(-1);
                                 account.setMaxSimultanDownloads(-1);
@@ -648,12 +636,26 @@ public class RapidGatorNet extends PluginForHost {
                             } catch (final Throwable e) {
                                 // not available in old Stable 0.9.581
                             }
+                            if (account.getAccountInfo() == null) {
+                                account.setAccountInfo(ai);
+                            }
+                            if (reset_in != null) {
+                                // this is pointless, when traffic == 0 == core automatically sets ai.settraffic("No Traffic Left")
+                                // ai.setStatus("Traffic exceeded " + reset_in);
+                                // account.setAccountInfo(ai);
+
+                                // is reset_in == seconds, * 1000 back into ms.
+                                final Long resetInTimestamp = Long.parseLong(reset_in) * 1000;
+                                account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", resetInTimestamp);
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                            } else {
+                                ai.setStatus("Premium Account");
+                            }
                             return ai;
                         }
                     }
                     ai.setStatus("Free Account");
-                    account.setProperty("session_type", "free");
-                    account.setProperty("free", true);
+                    account.setType(AccountType.FREE);
                     try {
                         RapidGatorNet.maxPrem.set(1);
                         account.setMaxSimultanDownloads(1);
@@ -663,15 +665,13 @@ public class RapidGatorNet extends PluginForHost {
                     }
                     return ai;
                 }
-                account.setProperty("free", Property.NULL);
-                account.setProperty("session_type", Property.NULL);
+                account.setType(null);
                 account.setProperty("session_id", Property.NULL);
                 account.setValid(false);
                 return ai;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() != 256) {
-                    account.setProperty("free", Property.NULL);
-                    account.setProperty("session_type", Property.NULL);
+                    account.setType(null);
                     account.setProperty("session_id", Property.NULL);
                     account.setValid(false);
                 }
@@ -689,7 +689,8 @@ public class RapidGatorNet extends PluginForHost {
             account.setValid(false);
             throw e;
         }
-        if (account.getBooleanProperty("free")) {
+        final boolean isPremium = Account.AccountType.PREMIUM.equals(account.getType());
+        if (!isPremium) {
             ai.setStatus("Registered (free) User");
             try {
                 RapidGatorNet.maxPrem.set(1);
@@ -718,20 +719,23 @@ public class RapidGatorNet extends PluginForHost {
                 /* Probably not true but our errorhandling for empty traffic should work well */
                 ai.setUnlimitedTraffic();
             }
-            String expire = this.br.getRegex("Premium services will end on ([^<>\"]*?)\\.<br").getMatch(0);
-            if (expire == null) {
+            String expireDate = this.br.getRegex("Premium services will end on ([^<>\"]*?)\\.<br").getMatch(0);
+            if (expireDate == null) {
+                expireDate = this.br.getRegex("login-open1.*Premium till (\\d{4}-\\d{2}-\\d{2})").getMatch(0);
+            }
+            if (expireDate == null) {
                 /**
                  * eg subscriptions
                  */
                 this.br.getPage("http://rapidgator.net/Payment/Payment");
-                expire = this.br.getRegex("style=\"width:100px;\">\\d+</td><td>([^<>\"]*?)</td>").getMatch(0);
+                expireDate = this.br.getRegex("style=\"width:100px;\">\\d+</td><td>([^<>\"]*?)</td>").getMatch(0);
             }
-            if (expire == null) {
+            if (expireDate == null) {
                 this.logger.warning("Could not find expire date!");
                 account.setValid(false);
                 return ai;
             } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000);
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
             }
             ai.setStatus("Premium User");
             try {
@@ -782,7 +786,6 @@ public class RapidGatorNet extends PluginForHost {
 
                 /* Maybe cookies were used but are expired --> Clear them */
                 br.clearCookies("https://rapidgator.net/");
-
                 for (int i = 1; i <= 3; i++) {
                     logger.info("Site login attempt " + i + " of 3");
                     this.br.getPage("https://rapidgator.net/auth/login");
@@ -837,9 +840,9 @@ public class RapidGatorNet extends PluginForHost {
                     }
                 }
                 if (this.br.containsHTML("Account:&nbsp;<a href=\"/article/premium\">Free</a>")) {
-                    account.setProperty("free", true);
+                    account.setType(AccountType.FREE);
                 } else {
-                    account.setProperty("free", false);
+                    account.setType(AccountType.PREMIUM);
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -852,7 +855,7 @@ public class RapidGatorNet extends PluginForHost {
                 account.setProperty("cookies", cookies);
                 return cookies;
             } catch (final PluginException e) {
-                account.setProperty("free", Property.NULL);
+                account.setType(null);
                 account.setProperty("cookies", Property.NULL);
                 throw e;
             }
@@ -860,7 +863,6 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     private String login_api(final Account account) throws Exception {
-        String session_id = null;
         URLConnectionAdapter con = null;
         synchronized (RapidGatorNet.LOCK) {
             try {
@@ -869,9 +871,9 @@ public class RapidGatorNet extends PluginForHost {
                 this.handleErrors_api(null, null, account, con);
                 if (con.getResponseCode() == 200) {
                     this.br.followConnection();
-                    session_id = this.getJSonValueByKey("session_id");
-                    boolean isPremium = false;
+                    final String session_id = this.getJSonValueByKey("session_id");
                     if (session_id != null) {
+                        boolean isPremium = false;
                         final String expire_date = this.getJSonValueByKey("expire_date");
                         final String traffic_left = this.getJSonValueByKey("traffic_left");
                         if (expire_date != null && traffic_left != null) {
@@ -880,13 +882,13 @@ public class RapidGatorNet extends PluginForHost {
                              * expiring too early
                              */
                             final AccountInfo ai = new AccountInfo();
-                            ai.setValidUntil(Long.parseLong(expire_date) * 1000 + 24 * 60 * 60 * 1000l);
+                            ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l));
                             isPremium = !ai.isExpired();
                         }
                         if (isPremium) {
-                            account.setProperty("session_type", "premium");
+                            account.setType(Account.AccountType.PREMIUM);
                         } else {
-                            account.setProperty("session_type", "free");
+                            account.setType(Account.AccountType.FREE);
                         }
                         account.setProperty("session_id", session_id);
                     }
@@ -988,7 +990,6 @@ public class RapidGatorNet extends PluginForHost {
                 } else if (errorMessage.contains("User is not PREMIUM") || errorMessage.contains("This file can be downloaded by premium only") || errorMessage.contains("You can download files up to")) {
                     if (sessionReset) {
                         account.setProperty("session_id", Property.NULL);
-                        account.setProperty("session_type", Property.NULL);
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else if (errorMessage.contains("Login or password is wrong") || errorMessage.contains("Error: Error e-mail or password")) {
@@ -1022,7 +1023,6 @@ public class RapidGatorNet extends PluginForHost {
                 } else if (errorMessage.contains("Session not exist")) {
                     if (sessionReset) {
                         account.setProperty("session_id", Property.NULL);
-                        account.setProperty("session_type", Property.NULL);
                     }
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else if (errorMessage.contains("\"Error: Error e\\-mail or password")) {
@@ -1073,9 +1073,7 @@ public class RapidGatorNet extends PluginForHost {
             if (session_id == null) {
                 session_id = this.login_api(account);
             }
-            if ("premium".equals(account.getStringProperty("session_type", null))) {
-                isPremium = true;
-            }
+            isPremium = Account.AccountType.PREMIUM.equals(account.getType());
         }
         if (isPremium == false) {
             this.handleFree(link);
@@ -1144,9 +1142,9 @@ public class RapidGatorNet extends PluginForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             *
+             * 
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             *
+             * 
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
@@ -1191,7 +1189,8 @@ public class RapidGatorNet extends PluginForHost {
                 break;
             }
         }
-        if (account.getBooleanProperty("free")) {
+        final boolean isPremium = Account.AccountType.PREMIUM.equals(account.getType());
+        if (!isPremium) {
             this.doFree(link);
         } else {
             String dllink = this.br.getRedirectLocation();
