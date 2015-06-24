@@ -44,32 +44,34 @@ public class HighWayMe extends PluginForHost {
 
     /** General API information: According to admin we can 'hammer' the API every 60 seconds */
 
-    private static final String                            DOMAIN                  = "http://http.high-way.me/api.php";
-    private static final String                            NICE_HOST               = "high-way.me";
-    private static final String                            NICE_HOSTproperty       = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                            NORESUME                = NICE_HOSTproperty + "NORESUME";
-    private static final int                               ERRORHANDLING_MAXLOGINS = 2;
+    private static final String                            DOMAIN                              = "http://http.high-way.me/api.php";
+    private static final String                            NICE_HOST                           = "high-way.me";
+    private static final String                            NICE_HOSTproperty                   = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                            NORESUME                            = NICE_HOSTproperty + "NORESUME";
+    private static final int                               ERRORHANDLING_MAXLOGINS             = 2;
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap      = new HashMap<Account, HashMap<String, Long>>();
+    private static final int                               STATUSCODE_PASSWORD_NEEDED_OR_WRONG = 13;
+
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap                  = new HashMap<Account, HashMap<String, Long>>();
     /* Contains <host><number of max possible chunks per download> */
-    private static HashMap<String, Boolean>                hostResumeMap           = new HashMap<String, Boolean>();
+    private static HashMap<String, Boolean>                hostResumeMap                       = new HashMap<String, Boolean>();
     /* Contains <host><number of max possible chunks per download> */
-    private static HashMap<String, Integer>                hostMaxchunksMap        = new HashMap<String, Integer>();
+    private static HashMap<String, Integer>                hostMaxchunksMap                    = new HashMap<String, Integer>();
     /* Contains <host><number of max possible simultan downloads> */
-    private static HashMap<String, Integer>                hostMaxdlsMap           = new HashMap<String, Integer>();
+    private static HashMap<String, Integer>                hostMaxdlsMap                       = new HashMap<String, Integer>();
     /* Contains <host><number of currently running simultan downloads> */
-    private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap    = new HashMap<String, AtomicInteger>();
+    private static HashMap<String, AtomicInteger>          hostRunningDlsNumMap                = new HashMap<String, AtomicInteger>();
 
     /* Last updated: 31.03.15 */
-    private static final int                               defaultMAXDOWNLOADS     = 10;
-    private static final int                               defaultMAXCHUNKS        = -4;
-    private static final boolean                           defaultRESUME           = false;
+    private static final int                               defaultMAXDOWNLOADS                 = 10;
+    private static final int                               defaultMAXCHUNKS                    = -4;
+    private static final boolean                           defaultRESUME                       = false;
 
-    private static Object                                  CTRLLOCK                = new Object();
-    private int                                            statuscode              = 0;
-    private static AtomicInteger                           maxPrem                 = new AtomicInteger(1);
-    private Account                                        currAcc                 = null;
-    private DownloadLink                                   currDownloadLink        = null;
+    private static Object                                  CTRLLOCK                            = new Object();
+    private int                                            statuscode                          = 0;
+    private static AtomicInteger                           maxPrem                             = new AtomicInteger(1);
+    private Account                                        currAcc                             = null;
+    private DownloadLink                                   currDownloadLink                    = null;
 
     public HighWayMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -222,12 +224,12 @@ public class HighWayMe extends PluginForHost {
             String passCode = Encoding.urlEncode(link.getStringProperty("pass", null));
             postAPISafe(DOMAIN + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
             this.getAPISafe("http://http.high-way.me/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&pass=" + Encoding.urlEncode(passCode));
-            if (this.statuscode == 13) {
+            if (this.statuscode == STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
                 /* We alredy tried the saved password --> Ask for PW now */
                 logger.info("MOCH and download password ...");
                 passCode = Plugin.getUserInput("Password?", link);
                 this.getAPISafe("/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&pass=" + Encoding.urlEncode(passCode));
-                if (this.statuscode == 13) {
+                if (this.statuscode == STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
                     link.setProperty("pass", Property.NULL);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 }
