@@ -9,7 +9,7 @@ import jd.plugins.DownloadLink;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.UrlDisplayEntry;
 import org.jdownloader.settings.UrlDisplayType;
@@ -18,10 +18,7 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
     private static class ChangeListener implements GenericConfigEventListener<Object> {
 
-        private LogSource logger = LogController.getInstance().getLogger(DefaultDownloadLinkViewImpl.class.getName());
-
         public void update() {
-
             List<UrlDisplayType> lst = new ArrayList<UrlDisplayType>();
             UrlDisplayEntry[] newOrder = CFG_GENERAL.CFG.getUrlOrder();
             //
@@ -34,7 +31,7 @@ public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
                                 lst.add(UrlDisplayType.valueOf(e.getType()));
                             }
                         } catch (Throwable e1) {
-                            logger.log(e1);
+                            LogController.getInstance().getLogger(DefaultDownloadLinkViewImpl.class.getName()).log(e1);
                         }
                     }
                 }
@@ -81,16 +78,13 @@ public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
         }
     };
 
-    public static UrlDisplayType[] DISPLAY_URL_TYPE = null;
-    private static ChangeListener  CHANGELISTENER;
+    public static UrlDisplayType[]      DISPLAY_URL_TYPE = null;
+    private static final ChangeListener CHANGELISTENER   = new ChangeListener();
     static {
-
-        CHANGELISTENER = new ChangeListener();
         CFG_GENERAL.URL_ORDER.getEventSender().addListener(CHANGELISTENER);
         CHANGELISTENER.update();
-
     }
-    protected DownloadLink         link;
+    protected DownloadLink              link;
 
     public DefaultDownloadLinkViewImpl() {
 
@@ -147,84 +141,15 @@ public class DefaultDownloadLinkViewImpl implements DownloadLinkView {
         }
         // http://board.jdownloader.org/showpost.php?p=305216&postcount=12
         for (UrlDisplayType dt : DISPLAY_URL_TYPE) {
-            if (dt == null) {
-                continue;
-            }
-            String ret = getUrlByType(dt, link);
-            if (ret != null) {
-                return ret;
-            }
-
-        }
-
-        return null;
-        // if (CFG_GUI.SHOW_BROWSER_URL_IF_POSSIBLE) {
-        //
-        // switch (link.getUrlProtection()) {
-        // case PROTECTED_CONTAINER:
-        // case PROTECTED_DECRYPTER:
-        // if (link.hasBrowserUrl()) {
-        // return link.getBrowserUrl();
-        // } else {
-        // return null;
-        // }
-        //
-        // default:
-        // if (link.hasBrowserUrl()) {
-        // return link.getBrowserUrl();
-        // } else {
-        // return link.getPluginPattern();
-        //
-        // }
-        // }
-        // }
-        // Workaround for links added before this change
-
-        // switch (link.getUrlProtection()) {
-        // case PROTECTED_CONTAINER:
-        // case PROTECTED_DECRYPTER:
-        // if (link.hasBrowserUrl()) {
-        // return link.getBrowserUrl();
-        // } else {
-        // return null;
-        // }
-        //
-        // case PROTECTED_INTERNAL_URL:
-        // if (link.hasBrowserUrl()) {
-        // return link.getBrowserUrl();
-        // }
-        //
-        // default:
-        // return link.getPluginPattern();
-        // }
-
-    }
-
-    public static String getUrlByType(UrlDisplayType dt, DownloadLink link) {
-
-        switch (dt) {
-        case CUSTOM:
-            return link.getCustomUrl();
-
-        case REFERRER:
-            return link.getReferrerUrl();
-
-        case CONTAINER:
-            return link.getContainerUrl();
-
-        case ORIGIN:
-            return link.getOriginUrl();
-
-        case CONTENT:
-            switch (link.getUrlProtection()) {
-            case UNSET:
-                if (link.getContentUrl() != null) {
-                    return link.getContentUrl();
+            if (dt != null) {
+                final String ret = LinkTreeUtils.getUrlByType(dt, link);
+                if (ret != null) {
+                    return ret;
                 }
-                return link.getPluginPatternMatcher();
             }
         }
         return null;
+
     }
 
 }

@@ -15,6 +15,7 @@ import jd.controlling.ClipboardMonitoring;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -27,13 +28,14 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.settings.UrlDisplayType;
 
 public class UrlColumn extends ExtTextColumn<AbstractNode> {
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
@@ -46,7 +48,6 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
     }
 
     protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
-
         return false;
     }
 
@@ -90,19 +91,28 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
         return false;
     }
 
-    public DownloadLink getLink(AbstractNode value) {
-        DownloadLink dlLink = null;
-        if (value instanceof CrawledPackage && ((CrawledPackage) value).getChildren().size() == 1) {
-            value = ((CrawledPackage) value).getChildren().get(0);
-        } else if (value instanceof FilePackage && ((FilePackage) value).getChildren().size() == 1) {
-            value = ((FilePackage) value).getChildren().get(0);
-        }
-        if (value instanceof CrawledLink) {
-            dlLink = ((CrawledLink) value).getDownloadLink();
+    public DownloadLink getLink(final AbstractNode value) {
+        if (value instanceof AbstractPackageNode) {
+            final AbstractPackageNode pkg = (AbstractPackageNode) value;
+            final boolean readL = pkg.getModifyLock().readLock();
+            try {
+                if (pkg.getChildren().size() == 1) {
+                    final AbstractNode node = (AbstractNode) pkg.getChildren().get(0);
+                    if (node instanceof CrawledLink) {
+                        return ((CrawledLink) node).getDownloadLink();
+                    } else if (node instanceof DownloadLink) {
+                        return (DownloadLink) node;
+                    }
+                }
+            } finally {
+                pkg.getModifyLock().readUnlock(readL);
+            }
+        } else if (value instanceof CrawledLink) {
+            return ((CrawledLink) value).getDownloadLink();
         } else if (value instanceof DownloadLink) {
-            dlLink = (DownloadLink) value;
+            return (DownloadLink) value;
         }
-        return dlLink;
+        return null;
     }
 
     private long         lastHide = 0;
@@ -149,19 +159,17 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
                 popup.add(SwingUtils.toBold(new JLabel("Debug View. Jared Version does not show  Identifier, Plugin Pattern & Null Entries")));
             }
             for (UrlDisplayType dt : DefaultDownloadLinkViewImpl.DISPLAY_URL_TYPE) {
-                if (dt == null) {
-                    continue;
-                }
-                if (dt == UrlDisplayType.CONTENT && !Application.isJared(null)) {
-                    String link = DefaultDownloadLinkViewImpl.getUrlByType(dt, dlLink);
-                    if (StringUtils.equals(link, dlLink.getPluginPatternMatcher())) {
-                        link = null;
+                if (dt != null) {
+                    if (dt == UrlDisplayType.CONTENT && !Application.isJared(null)) {
+                        String link = LinkTreeUtils.getUrlByType(dt, dlLink);
+                        if (StringUtils.equals(link, dlLink.getPluginPatternMatcher())) {
+                            link = null;
+                        }
+                        add(popup, dt, link);
+                    } else {
+                        add(popup, dt, LinkTreeUtils.getUrlByType(dt, dlLink));
                     }
-                    add(popup, dt, link);
-                } else {
-                    add(popup, dt, DefaultDownloadLinkViewImpl.getUrlByType(dt, dlLink));
                 }
-
             }
             if (!Application.isJared(null)) {
                 add(popup, null, dlLink.getPluginPatternMatcher());
@@ -174,7 +182,6 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
         } catch (final Exception e1) {
             e1.printStackTrace();
         }
-
         return true;
     }
 
@@ -223,7 +230,7 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
     }
 
     @Override
-    public String getStringValue(AbstractNode value) {
+    public String getStringValue(final AbstractNode value) {
         if (value instanceof CrawledPackage) {
             return ((CrawledPackage) value).getView().getCommonSourceUrl();
         } else if (value instanceof FilePackage) {
