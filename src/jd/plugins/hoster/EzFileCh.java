@@ -229,6 +229,15 @@ public class EzFileCh extends PluginForHost {
                     }
                 }
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            } else if (br.containsHTML("Sign\\-in now with any of the options on the left if you wish to download this file")) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
             }
             final String f1 = br.getRegex("\\'f1\\':[\t\n\r ]*?\\'([^<>\"\\']*?)\\'").getMatch(0);
             final String f2 = br.getRegex("\\'f2\\':[\t\n\r ]*?\\'([^<>\"\\']*?)\\'").getMatch(0);
@@ -240,6 +249,7 @@ public class EzFileCh extends PluginForHost {
             postData += Encoding.urlEncode(recaptchaV2Response);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("/?m=download&a=request", postData);
+            handleErrorsAPI();
             this.dllink = getJson("downloadUrl");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -257,11 +267,9 @@ public class EzFileCh extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Possible cloudflare failure", 10 * 60 * 1000l);
-            }
+            handleServerErrors();
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         }
         downloadLink.setProperty("free_directlink", dllink);
         if (!this.dl.startDownload()) {
@@ -395,11 +403,9 @@ public class EzFileCh extends PluginForHost {
 
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, ACCOUNT_PREMIUM_RESUME, maxchunks);
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections", 10 * 60 * 1000l);
-                }
+                handleServerErrors();
                 br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
             }
             if (!this.dl.startDownload()) {
                 try {
@@ -424,29 +430,42 @@ public class EzFileCh extends PluginForHost {
         handleErrorsAPI();
     }
 
+    private void handleServerErrors() throws PluginException {
+        if (dl.getConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+        } else if (dl.getConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        } else if (dl.getConnection().getResponseCode() == 503) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections or possible cloudflare failure", 10 * 60 * 1000l);
+        }
+    }
+
     private void handleErrorsAPI() throws PluginException {
         final String message = getJson("message");
         if (message != null) {
-            if ("Not enough direct download bandwidth in your account to download this file".equals(message)) {
+            if ("Try the reCaptcha challenge again, you have made a mistake.".equalsIgnoreCase(message)) {
+                logger.warning("Extremely rare case: reCaptchaV2 response was not accepted --> Wrong user input or server issues");
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else if ("Not enough direct download bandwidth in your account to download this file".equalsIgnoreCase(message)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nAccount is out of traffic.\r\nAccount hat nicht genug Traffic.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            } else if (message.equals("no akey parameter provided") || message.equals("unable to fetch apikey") || message.equals("Account disabled") || message.equals("no such user")) {
+            } else if (message.equalsIgnoreCase("no akey parameter provided") || message.equalsIgnoreCase("unable to fetch apikey") || message.equalsIgnoreCase("Account disabled") || message.equalsIgnoreCase("no such user")) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-            } else if (message.equals("no such file")) {
+            } else if (message.equalsIgnoreCase("no such file")) {
                 /* Should usually be covered by code executed before this */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (message.equals("private file")) {
+            } else if (message.equalsIgnoreCase("private file")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "This is a private file which can only be downloaded by its owner");
-            } else if (message.equals("The server this file is located on is under maintenance, try again later.")) {
+            } else if (message.equalsIgnoreCase("The server this file is located on is under maintenance, try again later.")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'The server this file is located on is under maintenance, try again later.'", 30 * 60 * 1000l);
-            } else if (message.equals("Unable to retrieve server details, try again later.")) {
+            } else if (message.equalsIgnoreCase("Unable to retrieve server details, try again later.")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unable to retrieve server details, try again later.'", 10 * 60 * 1000l);
-            } else if (message.equals("Unable to issue download ticket.")) {
+            } else if (message.equalsIgnoreCase("Unable to issue download ticket.")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unable to issue download ticket.'", 5 * 60 * 1000l);
-            } else if (message.equals(API_ERROR_NO_PERMISSION)) {
+            } else if (message.equalsIgnoreCase(API_ERROR_NO_PERMISSION)) {
                 /* Don't do anything here - this is covered by additional errorhandling! */
                 logger.info("Needed API permissions not given");
             } else {
