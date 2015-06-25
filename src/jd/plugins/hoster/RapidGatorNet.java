@@ -621,7 +621,7 @@ public class RapidGatorNet extends PluginForHost {
                     final String reset_in = this.getJSonValueByKey("reset_in");
                     if (expire_date != null && traffic_left != null) {
                         /*
-                         * expire date and traffic left are available, so its a premium account, add one day extra to prevent it from
+                         * expire date and traffic left are available, so it is a premium account, add one day extra to prevent it from
                          * expiring too early
                          */
                         ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l));
@@ -1146,9 +1146,9 @@ public class RapidGatorNet extends PluginForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             *
+             * 
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             *
+             * 
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
