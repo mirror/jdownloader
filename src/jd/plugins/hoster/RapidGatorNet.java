@@ -661,7 +661,6 @@ public class RapidGatorNet extends PluginForHost {
                         account.setMaxSimultanDownloads(1);
                         account.setConcurrentUsePossible(false);
                     } catch (final Throwable e) {
-                        // not available in old Stable 0.9.581
                     }
                     return ai;
                 }
@@ -1146,9 +1145,9 @@ public class RapidGatorNet extends PluginForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             * 
+             *
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             * 
+             *
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
