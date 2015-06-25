@@ -134,11 +134,7 @@ public class OBoomCom extends PluginForHost {
         if (premium != null && !"null".equalsIgnoreCase(premium.trim())) {
             long premiumUntil = Long.parseLong(premium) * 1000l;
             ai.setValidUntil(premiumUntil);
-            try {
-                // JD 2 CALL!
-                ai.setValidPremiumUntil(premiumUntil);
-            } catch (Throwable e) {
-            }
+
             if (!ai.isExpired()) {
                 ai.setStatus("Premium account");
                 return ai;
@@ -216,7 +212,7 @@ public class OBoomCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -226,7 +222,7 @@ public class OBoomCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -519,10 +515,10 @@ public class OBoomCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
         }
         if (/*
-         * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
-         * account != null &&
-         */
-                br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
+             * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
+             * account != null &&
+             */
+        br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already downloading?", 5 * 60 * 1000l);
         }
     }

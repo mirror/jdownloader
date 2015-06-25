@@ -75,7 +75,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück wieviel (in Cent) Geld gerade auf diesem Account ist
-     *
+     * 
      * @return
      */
     public long getAccountBalance() {
@@ -84,7 +84,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück wieviele Files auf dem Account hochgeladen sind
-     *
+     * 
      * @return
      */
     public long getFilesNum() {
@@ -93,7 +93,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt an wieviele PremiumPunkte der Account hat
-     *
+     * 
      * @return
      */
     public long getPremiumPoints() {
@@ -106,7 +106,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt an wieviel Traffic noch frei ist (in bytes)
-     *
+     * 
      * @return
      */
     public long getTrafficLeft() {
@@ -119,7 +119,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück wieviel Platz (bytes) die Oploads auf diesem Account belegen
-     *
+     * 
      * @return
      */
     public long getUsedSpace() {
@@ -128,7 +128,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt einen Timestamp zurück zu dem der Account auslaufen wird bzw. ausgelaufen ist.(-1 für Nie)
-     *
+     * 
      * @return
      */
     public long getValidUntil() {
@@ -137,7 +137,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück ob der Account abgelaufen ist
-     *
+     * 
      * @return
      */
     public boolean isExpired() {
@@ -221,7 +221,7 @@ public class AccountInfo extends Property {
 
     /**
      * Wrapper, will use standard httpd Date pattern.
-     *
+     * 
      * @author raztoki
      * @param validuntil
      * @param br
@@ -236,7 +236,7 @@ public class AccountInfo extends Property {
      * server time. <br />
      * This should also allow when computer clocks are wrong. <br />
      * *** WARNING *** This method wont work when httpd DATE response isn't of hoster time!
-     *
+     * 
      * @author raztoki
      * @since JD2
      * @param validuntil
@@ -274,30 +274,16 @@ public class AccountInfo extends Property {
 
     /**
      * -1 für Niemals ablaufen
-     *
+     * 
      * @param validUntil
      */
     public void setValidUntil(final long validUntil) {
         this.account_validUntil = validUntil;
     }
 
-    private long validPremiumUntil = 0l;
-
-    public long getValidPremiumUntil() {
-        return validPremiumUntil;
-    }
-
-    /**
-     * @param validPremiumUntil
-     * @since JD2
-     */
-    public void setValidPremiumUntil(long validPremiumUntil) {
-        this.validPremiumUntil = validPremiumUntil;
-    }
-
     /**
      * Removes forbidden hosts, adds host corrections, de-dupes, and then sets AccountInfo property 'multiHostSupport'
-     *
+     * 
      * @author raztoki
      * @param multiHostPlugin
      *            TODO

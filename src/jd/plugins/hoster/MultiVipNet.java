@@ -222,7 +222,7 @@ public class MultiVipNet extends PluginForHost {
                     /* Our account has expired */
                     final String expire_date = br.getRegex("Unfortunately this key was expired <strong>([^<>\"]*?)</strong>").getMatch(0);
                     if (expire_date != null) {
-                        account.getAccountInfo().setValidPremiumUntil(TimeFormatter.getMilliSeconds(expire_date, "MM-dd-yy, hh:mm", Locale.ENGLISH));
+                        account.getAccountInfo().setValidUntil(TimeFormatter.getMilliSeconds(expire_date, "MM-dd-yy, hh:mm", Locale.ENGLISH));
                     }
                     account.getAccountInfo().setExpired(true);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -235,7 +235,7 @@ public class MultiVipNet extends PluginForHost {
                 final String expire_date = account_info.getMatch(1);
                 if (traffic_left != null && expire_date != null) {
                     account.getAccountInfo().setTrafficLeft(SizeFormatter.getSize(traffic_left));
-                    account.getAccountInfo().setValidPremiumUntil(TimeFormatter.getMilliSeconds(expire_date, "MM-dd-yy, hh:mm", Locale.ENGLISH));
+                    account.getAccountInfo().setValidUntil(TimeFormatter.getMilliSeconds(expire_date, "MM-dd-yy, hh:mm", Locale.ENGLISH));
                 }
                 dllink = br.getRegex("\"(http[^<>\"]*?)\"").getMatch(0);
             }

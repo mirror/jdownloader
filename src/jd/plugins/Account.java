@@ -91,7 +91,7 @@ public class Account extends Property {
     }
 
     /**
-     *
+     * 
      * @param string
      * @return
      */
@@ -108,7 +108,7 @@ public class Account extends Property {
     }
 
     /**
-     *
+     * 
      * @param user
      * @param pass
      */
@@ -123,7 +123,7 @@ public class Account extends Property {
 
     /**
      * -1 = unlimited, 0 = use deprecated getMaxSimultanPremiumDownloadNum/getMaxSimultanFreeDownloadNum,>1 = use this
-     *
+     * 
      * @since JD2
      * */
     public void setMaxSimultanDownloads(int max) {
@@ -197,19 +197,28 @@ public class Account extends Property {
         if (info != null) {
             if (AccountType.PREMIUM.equals(getType()) && !info.isExpired() && info.getValidUntil() > 0) {
                 setValidPremiumUntil(info.getValidUntil());
-            } else if (info.getValidPremiumUntil() > 0) {
-                setValidPremiumUntil(info.getValidPremiumUntil());
             }
         }
     }
 
+    /**
+     * The expire Date of a premiumaccount. if the account is not a premiumaccount any more, this timestamp points to the last valid expire
+     * date. it can be used to check when an account has expired
+     * 
+     * @param validUntil
+     */
     private void setValidPremiumUntil(long validUntil) {
         setProperty(VALID_UNTIL, validUntil);
     }
 
     /**
      * this method returns for how long this account will be (or has been) a premium account
-     *
+     * 
+     * The expire Date of a premiumaccount. if the account is not a premiumaccount any more, this timestamp points to the last valid expire
+     * date. it can be used to check when an account has expired
+     * 
+     * @param validUntil
+     * 
      * @return
      */
     public long getValidPremiumUntil() {
@@ -218,9 +227,6 @@ public class Account extends Property {
         if (info != null) {
             if (AccountType.PREMIUM.equals(getType()) && !info.isExpired()) {
                 ret = info.getValidUntil();
-            }
-            if (ret <= 0 && info.getValidPremiumUntil() > 0) {
-                ret = info.getValidPremiumUntil();
             }
         }
 
@@ -454,7 +460,7 @@ public class Account extends Property {
 
     /**
      * JD2 Code!
-     *
+     * 
      * @since JD2
      */
     public void setType(AccountType type) {

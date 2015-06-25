@@ -45,6 +45,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -98,11 +99,13 @@ import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class StatsManager implements GenericConfigEventListener<Object>, DownloadWatchdogListener, Runnable {
+    public static final String        ACCOUNT_PSEUDO_ID            = "uid";
     public static final String        CLICK_SOURCE                 = "cs";
     public static final String        ACCOUNT_ADDED_TIME           = "at";
     public static final String        ACCOUNTINSTANCE_CREATED_TIME = "it";
     public static final String        REGISTERED_TIME              = "rt";
     public static final String        EXPIRE_TIME                  = "et";
+    public static final String        UPGRADE_TIME                 = "ut";
 
     private static final StatsManager INSTANCE                     = new StatsManager();
 
@@ -110,7 +113,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
-     *
+     * 
      * @return
      */
     public static StatsManager I() {
@@ -189,9 +192,12 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     @Override
                     public synchronized void onAccountControllerEvent(AccountControllerEvent event) {
                         String accountHoster = null;
+                        final Account account = event.getAccount();
+
                         try {
+
                             if (event.getType() == AccountControllerEvent.Types.ADDED || (event.getType() == AccountControllerEvent.Types.ACCOUNT_CHECKED && event.getAccount().getBooleanProperty("fireStatsCall"))) {
-                                final Account account = event.getAccount();
+
                                 accountHoster = account.getHoster();
                                 if (account.getLongProperty("added", 0) <= 0) {
                                     account.setProperty("added", System.currentTimeMillis());
@@ -206,6 +212,13 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                     try {
                                         file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(accountHoster) + ".json");
                                         final AccountInfo accountInfo = account.getAccountInfo();
+                                        try {
+                                            HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
+                                            infos.put("rev", "" + map.get("JDownloaderRevision"));
+                                        } catch (Throwable e) {
+                                            logger.log(e);
+                                        }
+                                        infos.put(ACCOUNT_PSEUDO_ID, hashUser(account.getUser()));
                                         infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
                                         infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
                                         infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty("added", System.currentTimeMillis())));
@@ -247,12 +260,81 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                             file.delete();
                                         }
                                     }
+                                    return;
                                 }
                             }
                         } catch (Throwable e) {
                             StatsManager.I().track("premium/affTrackError/" + accountHoster + "/" + e.getMessage());
                             logger.log(e);
                         }
+
+                        try {
+
+                            if (account != null && account.isValid() && account.getLastValidTimestamp() > 0) {
+                                final AccountInfo accountInfo = account.getAccountInfo();
+                                if (accountInfo != null) {
+                                    AccountType currentType = account.getType();
+                                    long currentExpireDate = accountInfo.getValidUntil();
+
+                                    String lastKnownType = account.getStringProperty("lastKnownType", null);
+                                    long lastKnownExpireDate = account.getLongProperty("lastKnownExpireDate", -3);
+                                    account.setProperty("lastKnownType", currentType.name());
+                                    account.setProperty("lastKnownExpireDate", lastKnownExpireDate);
+                                    if (StringUtils.isNotEmpty(lastKnownType) && lastKnownExpireDate > 0) {
+
+                                        boolean accountUpgrade = false;
+                                        if (currentType == AccountType.PREMIUM && !AccountType.PREMIUM.name().equals(lastKnownType)) {
+                                            // is premium now
+                                            accountUpgrade = true;
+                                        }
+
+                                        if ((currentExpireDate - lastKnownExpireDate) > 24 * 60 * 60 * 1000l) {
+                                            accountUpgrade = true;
+                                        }
+                                        if (accountUpgrade) {
+                                            accountHoster = account.getHoster();
+
+                                            final HashMap<String, String> infos = new HashMap<String, String>();
+                                            try {
+                                                HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
+                                                infos.put("rev", "" + map.get("JDownloaderRevision"));
+                                            } catch (Throwable e) {
+                                                logger.log(e);
+                                            }
+                                            infos.put(ACCOUNT_PSEUDO_ID, hashUser(account.getUser()));
+                                            infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
+                                            infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
+                                            infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty("added", System.currentTimeMillis())));
+                                            final long validUntilTimeStamp = accountInfo.getValidUntil();
+                                            final long expireInMs = validUntilTimeStamp - System.currentTimeMillis();
+                                            infos.put(EXPIRE_TIME, Long.toString(expireInMs));
+                                            infos.put(UPGRADE_TIME, Long.toString(currentExpireDate - lastKnownExpireDate));
+                                            File file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(accountHoster) + ".json");
+                                            if (file.exists()) {
+                                                final ArrayList<ClickedAffLinkStorable> list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
+                                                });
+                                                if (list != null && list.size() > 0) {
+                                                    infos.put(CLICK_SOURCE, JSonStorage.serializeToJson(list));
+                                                }
+                                            }
+
+                                            String id = "premium/upgrade/" + accountHoster;
+                                        }
+                                    }
+                                }
+
+                            }
+                        } catch (Throwable e) {
+                            logger.log(e);
+                        }
+                    }
+
+                    private String hashUser(String user) {
+                        // this should result in ids that are not absolutly unique, but unique enough for stats reasons.
+                        // it would be almost impossible to lookup and get back to the user
+                        String hash = Hash.getSHA256(user + "vyHeUnLbJI2AEHe2w7b4Mb9H7txwypmATmejYEnnmBhVJOgH47xT5daSJgo4LWXe3M2ejxssWXxv8W3q");
+
+                        return hash.substring(0, ((2 * hash.length()) / 3));
                     }
                 });
             }
@@ -498,7 +580,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * this setter does not set the config flag. Can be used to disable the logger for THIS session.
-     *
+     * 
      * @param b
      */
     public void setEnabled(boolean b) {
@@ -1513,7 +1595,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
-     *
+     * 
      * @param reducer
      * @param path
      */
