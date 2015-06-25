@@ -47,7 +47,7 @@ public class DownloadLinkSandBox {
     public long getDownloadTime() {
         if (downloadLink != null) {
             long time = downloadLink.getView().getDownloadTime();
-            PluginProgress progress = downloadLink.getPluginProgress();
+            final PluginProgress progress = downloadLink.getPluginProgress();
             if (progress instanceof DownloadPluginProgress) {
                 time = time + ((DownloadPluginProgress) progress).getDuration();
             }
@@ -85,8 +85,18 @@ public class DownloadLinkSandBox {
     public long getDownloadSessionDuration() {
         if (downloadLink != null) {
             final SingleDownloadController controller = downloadLink.getDownloadLinkController();
-            if (controller != null && downloadLink.getPluginProgress() instanceof DownloadPluginProgress) {
+            if (controller != null) {
                 return System.currentTimeMillis() - controller.getStartTimestamp();
+            }
+        }
+        return -1;
+    }
+
+    public long getDownloadDuration() {
+        if (downloadLink != null) {
+            final PluginProgress progress = downloadLink.getPluginProgress();
+            if (progress instanceof DownloadPluginProgress) {
+                return ((DownloadPluginProgress) progress).getDuration();
             }
         }
         return -1;
