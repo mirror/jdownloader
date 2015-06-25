@@ -125,8 +125,8 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
                 Dialog.getInstance().showMessageDialog(_GUI._.accountdialog_check_invalid(errorMessage));
                 return false;
             case EXPIRED:
+                Dialog.getInstance().showConfirmDialog(0, _GUI._.accountdialog_check_expired_title(), _GUI._.accountdialog_check_expired(ac.getUser()), null, _GUI._.accountdialog_check_expired_renew(), null);
                 AccountController.getInstance().addAccount(ac, false);
-                Dialog.getInstance().showConfirmDialog(0, _GUI._.accountdialog_check_expired_title(), _GUI._.accountdialog_check_expired(null), null, _GUI._.accountdialog_check_expired_renew(), null);
                 return true;
             case TEMP_DISABLED:
                 if (StringUtils.isEmpty(errorMessage)) {

@@ -113,7 +113,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static StatsManager I() {
@@ -152,6 +152,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     }
 
+    private final Number revision;
+
     /**
      * Create a new instance of StatsManager. This is a singleton class. Access the only existing instance by using {@link #link()}.
      */
@@ -172,6 +174,21 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         if (reducerRandomMap == null) {
             reducerRandomMap = new HashMap<String, Integer>();
         }
+        Number revision = null;
+        try {
+            final HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
+            final Object object = map.get("JDownloaderRevision");
+            if (object instanceof Number) {
+                revision = (Number) object;
+            }
+        } catch (Throwable e) {
+            logger.log(e);
+        }
+        if (revision == null) {
+            this.revision = -1;
+        } else {
+            this.revision = revision;
+        }
 
         DownloadWatchDog.getInstance().getEventSender().addListener(this);
         config._getStorageHandler().getKeyHandler("enabled").getEventSender().addListener(this);
@@ -191,150 +208,166 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
                     @Override
                     public synchronized void onAccountControllerEvent(AccountControllerEvent event) {
-                        String accountHoster = null;
                         final Account account = event.getAccount();
-
-                        try {
-
-                            if (event.getType() == AccountControllerEvent.Types.ADDED || (event.getType() == AccountControllerEvent.Types.ACCOUNT_CHECKED && event.getAccount().getBooleanProperty("fireStatsCall"))) {
-
-                                accountHoster = account.getHoster();
-                                if (account.getLongProperty("added", 0) <= 0) {
-                                    account.setProperty("added", System.currentTimeMillis());
-                                }
-                                if (account.getError() != null || account.getLastValidTimestamp() <= 0) {
-                                    // account is not checked yet or currently in error state. send stats later
-                                    account.setProperty("fireStatsCall", true);
-                                    return;
-                                } else {
-                                    final HashMap<String, String> infos = new HashMap<String, String>();
-                                    final File file;
-                                    try {
-                                        file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(accountHoster) + ".json");
-                                        final AccountInfo accountInfo = account.getAccountInfo();
-                                        try {
-                                            HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
-                                            infos.put("rev", "" + map.get("JDownloaderRevision"));
-                                        } catch (Throwable e) {
-                                            logger.log(e);
-                                        }
-                                        infos.put(ACCOUNT_PSEUDO_ID, hashUser(account.getUser()));
-                                        infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
-                                        infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
-                                        infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty("added", System.currentTimeMillis())));
-                                        final String id;
-                                        if (accountInfo != null) {
-                                            final long validUntilTimeStamp = accountInfo.getValidUntil();
-                                            final long expireInMs = validUntilTimeStamp - System.currentTimeMillis();
-                                            if (validUntilTimeStamp > 0) {
-                                                infos.put(EXPIRE_TIME, Long.toString(expireInMs));
-                                                if (expireInMs > 0) {
-                                                    id = "premium/valid/" + accountHoster + "/" + account.getType() + "/until";
-                                                } else {
-                                                    id = "premium/valid/" + accountHoster + "/" + account.getType() + "/expired";
-                                                }
-                                            } else {
-                                                infos.put(EXPIRE_TIME, Long.toString(-1));
-                                                id = "premium/valid/" + accountHoster + "/" + account.getType() + "/unlimited";
-                                            }
-                                        } else {
-                                            id = "premium/valid/" + accountHoster + "/" + account.getType() + "/unknown";
-                                        }
-                                        StatsManager.I().track(id, infos);
-                                    } finally {
-                                        account.removeProperty("fireStatsCall");
+                        if (account != null) {
+                            final String accountHoster = account.getHoster();
+                            final String addedProperty = "added";
+                            boolean isFireStatsCall = false;
+                            try {
+                                final String fireStatsCallProperty = "fireStatsCall";
+                                isFireStatsCall = event.getAccount().getBooleanProperty(fireStatsCallProperty);
+                                if (event.getType() == AccountControllerEvent.Types.ADDED || (event.getType() == AccountControllerEvent.Types.ACCOUNT_CHECKED && isFireStatsCall)) {
+                                    if (account.getLongProperty(addedProperty, 0) <= 0) {
+                                        account.setProperty(addedProperty, System.currentTimeMillis());
                                     }
-                                    if (file.exists()) {
+                                    if (account.getError() != null || account.getLastValidTimestamp() <= 0) {
+                                        // account is not checked yet or currently in error state. send stats later
+                                        account.setProperty(fireStatsCallProperty, true);
+                                    } else {
+                                        final HashMap<String, String> infos = new HashMap<String, String>();
+                                        final File file;
                                         try {
-                                            final ArrayList<ClickedAffLinkStorable> list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
-                                            });
-                                            if (list != null && list.size() > 0) {
-                                                infos.put(CLICK_SOURCE, JSonStorage.serializeToJson(list));
-                                                StatsManager.I().track("premium/addedAfter/" + accountHoster + "/" + account.getType(), infos);
-                                            } else {
-                                                StatsManager.I().track("premium/affTrackError/" + accountHoster + "/empty");
+                                            file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(accountHoster) + ".json");
+                                            final AccountInfo accountInfo = account.getAccountInfo();
+                                            final String user = account.getUser();
+                                            if (StringUtils.isNotEmpty(user)) {
+                                                infos.put(ACCOUNT_PSEUDO_ID, pseudoID(user));
                                             }
-                                        } catch (Throwable e) {
-                                            StatsManager.I().track("premium/affTrackError/" + accountHoster + "/" + e.getMessage());
-                                            logger.log(e);
-                                            file.delete();
-                                        }
-                                    }
-                                    return;
-                                }
-                            }
-                        } catch (Throwable e) {
-                            StatsManager.I().track("premium/affTrackError/" + accountHoster + "/" + e.getMessage());
-                            logger.log(e);
-                        }
-
-                        try {
-
-                            if (account != null && account.isValid() && account.getLastValidTimestamp() > 0) {
-                                final AccountInfo accountInfo = account.getAccountInfo();
-                                if (accountInfo != null) {
-                                    AccountType currentType = account.getType();
-                                    long currentExpireDate = accountInfo.getValidUntil();
-
-                                    String lastKnownType = account.getStringProperty("lastKnownType", null);
-                                    long lastKnownExpireDate = account.getLongProperty("lastKnownExpireDate", -3);
-                                    account.setProperty("lastKnownType", currentType.name());
-                                    account.setProperty("lastKnownExpireDate", lastKnownExpireDate);
-                                    if (StringUtils.isNotEmpty(lastKnownType) && lastKnownExpireDate > 0) {
-
-                                        boolean accountUpgrade = false;
-                                        if (currentType == AccountType.PREMIUM && !AccountType.PREMIUM.name().equals(lastKnownType)) {
-                                            // is premium now
-                                            accountUpgrade = true;
-                                        }
-
-                                        if ((currentExpireDate - lastKnownExpireDate) > 24 * 60 * 60 * 1000l) {
-                                            accountUpgrade = true;
-                                        }
-                                        if (accountUpgrade) {
-                                            accountHoster = account.getHoster();
-
-                                            final HashMap<String, String> infos = new HashMap<String, String>();
-                                            try {
-                                                HashMap<String, Object> map = JSonStorage.restoreFromString(IO.readFileToString(Application.getResource("build.json")), TypeRef.HASHMAP);
-                                                infos.put("rev", "" + map.get("JDownloaderRevision"));
-                                            } catch (Throwable e) {
-                                                logger.log(e);
-                                            }
-                                            infos.put(ACCOUNT_PSEUDO_ID, hashUser(account.getUser()));
                                             infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
                                             infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
-                                            infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty("added", System.currentTimeMillis())));
-                                            final long validUntilTimeStamp = accountInfo.getValidUntil();
-                                            final long expireInMs = validUntilTimeStamp - System.currentTimeMillis();
-                                            infos.put(EXPIRE_TIME, Long.toString(expireInMs));
-                                            infos.put(UPGRADE_TIME, Long.toString(currentExpireDate - lastKnownExpireDate));
-                                            File file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(accountHoster) + ".json");
-                                            if (file.exists()) {
+                                            infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty(addedProperty, System.currentTimeMillis())));
+                                            final String id;
+                                            if (accountInfo != null) {
+                                                final long validUntilTimeStamp = accountInfo.getValidUntil();
+                                                final long expireInMs = validUntilTimeStamp - System.currentTimeMillis();
+                                                if (validUntilTimeStamp > 0) {
+                                                    infos.put(EXPIRE_TIME, Long.toString(expireInMs));
+                                                    if (expireInMs > 0) {
+                                                        id = "premium/valid/" + accountHoster + "/" + account.getType() + "/until";
+                                                    } else {
+                                                        id = "premium/valid/" + accountHoster + "/" + account.getType() + "/expired";
+                                                    }
+                                                } else {
+                                                    infos.put(EXPIRE_TIME, Long.toString(-1));
+                                                    id = "premium/valid/" + accountHoster + "/" + account.getType() + "/unlimited";
+                                                }
+                                            } else {
+                                                id = "premium/valid/" + accountHoster + "/" + account.getType() + "/unknown";
+                                            }
+                                            StatsManager.I().track(id, infos);
+                                        } finally {
+                                            account.removeProperty(fireStatsCallProperty);
+                                        }
+                                        if (file.exists()) {
+                                            try {
                                                 final ArrayList<ClickedAffLinkStorable> list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
                                                 });
                                                 if (list != null && list.size() > 0) {
                                                     infos.put(CLICK_SOURCE, JSonStorage.serializeToJson(list));
+                                                    StatsManager.I().track("premium/addedAfter/" + accountHoster + "/" + account.getType(), infos);
+                                                } else {
+                                                    StatsManager.I().track("premium/affTrackError/" + accountHoster + "/empty");
                                                 }
+                                            } catch (Throwable e) {
+                                                StatsManager.I().track("premium/affTrackError/" + accountHoster + "/" + e.getMessage());
+                                                logger.log(e);
+                                                file.delete();
                                             }
+                                        }
+                                    }
+                                    return;
+                                }
+                            } catch (Throwable e) {
+                                StatsManager.I().track("premium/affTrackError/" + accountHoster + "/" + e.getMessage());
+                                logger.log(e);
+                            }
 
-                                            String id = "premium/upgrade/" + accountHoster;
+                            try {
+                                if (event.getType() == AccountControllerEvent.Types.ADDED || (event.getType() == AccountControllerEvent.Types.ACCOUNT_CHECKED && !isFireStatsCall)) {
+                                    final String lastKnownAccountTypeProperty = "lastKnownAccountType";
+                                    final String lastKnownValidUntilTimeStampProperty = "lastKnownValidUntilTimeStamp";
+                                    if (account.getError() == null && account.getLastValidTimestamp() > 0) {
+                                        final AccountInfo accountInfo = account.getAccountInfo();
+                                        if (accountInfo != null) {
+                                            final String lastKnownAccountType;
+                                            final AccountType currentAccountType = account.getType();
+                                            if (currentAccountType != null) {
+                                                lastKnownAccountType = account.getStringProperty(lastKnownAccountTypeProperty, currentAccountType.name());
+                                                account.setProperty(lastKnownAccountTypeProperty, currentAccountType.name());
+                                            } else {
+                                                lastKnownAccountType = account.getStringProperty(lastKnownAccountTypeProperty, AccountType.UNKNOWN.name());
+                                                account.setProperty(lastKnownAccountTypeProperty, AccountType.UNKNOWN.name());
+                                            }
+                                            final long currentValidUntilTimeStamp = accountInfo.getValidUntil();
+                                            final boolean hasLastKnownPremiumValidUntilTimeStamp = account.hasProperty(lastKnownValidUntilTimeStampProperty);
+                                            final long lastKnownPremiumValidUntilTimeStamp = account.getLongProperty(lastKnownValidUntilTimeStampProperty, currentValidUntilTimeStamp);
+
+                                            final boolean isPremiumAccount = AccountType.PREMIUM.equals(currentAccountType);
+                                            final boolean isPremiumUpgrade = isPremiumAccount && !AccountType.PREMIUM.name().equals(lastKnownAccountType);
+                                            final boolean isExtended = (currentValidUntilTimeStamp > lastKnownPremiumValidUntilTimeStamp && (currentValidUntilTimeStamp - lastKnownPremiumValidUntilTimeStamp) > 24 * 60 * 60 * 1000l);
+                                            final boolean isPremiumExtended = isPremiumAccount && isExtended;
+                                            final boolean isUnlimited = currentValidUntilTimeStamp != lastKnownPremiumValidUntilTimeStamp && currentValidUntilTimeStamp == -1;
+                                            final boolean isPremiumUnlimited = isPremiumAccount && isUnlimited;
+                                            if (isPremiumExtended || isPremiumUnlimited) {
+                                                account.setProperty(lastKnownValidUntilTimeStampProperty, currentValidUntilTimeStamp);
+                                            } else if (isPremiumAccount && !hasLastKnownPremiumValidUntilTimeStamp) {
+                                                account.setProperty(lastKnownValidUntilTimeStampProperty, currentValidUntilTimeStamp);
+                                            }
+                                            if (isPremiumUpgrade || isPremiumExtended || isPremiumUnlimited) {
+                                                final HashMap<String, String> infos = new HashMap<String, String>();
+                                                final String user = account.getUser();
+                                                if (StringUtils.isNotEmpty(user)) {
+                                                    infos.put(ACCOUNT_PSEUDO_ID, pseudoID(user));
+                                                }
+                                                infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
+                                                infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
+                                                infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty(addedProperty, System.currentTimeMillis())));
+                                                if (currentValidUntilTimeStamp > 0) {
+                                                    final long expireInMs = currentValidUntilTimeStamp - System.currentTimeMillis();
+                                                    final long upgradeInMs;
+                                                    if (lastKnownPremiumValidUntilTimeStamp > 0 && (lastKnownPremiumValidUntilTimeStamp - System.currentTimeMillis() > 0)) {
+                                                        upgradeInMs = currentValidUntilTimeStamp - lastKnownPremiumValidUntilTimeStamp;
+                                                    } else {
+                                                        upgradeInMs = currentValidUntilTimeStamp - System.currentTimeMillis();
+                                                    }
+                                                    infos.put(EXPIRE_TIME, Long.toString(expireInMs));
+                                                    infos.put(UPGRADE_TIME, Long.toString(upgradeInMs));
+                                                } else {
+                                                    infos.put(EXPIRE_TIME, Long.toString(-1));
+                                                }
+                                                final File file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(accountHoster) + ".json");
+                                                if (file.exists()) {
+                                                    try {
+                                                        final ArrayList<ClickedAffLinkStorable> list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
+                                                        });
+                                                        if (list != null && list.size() > 0) {
+                                                            infos.put(CLICK_SOURCE, JSonStorage.serializeToJson(list));
+                                                        } else {
+                                                            StatsManager.I().track("premium/upgradeTrackError/" + accountHoster + "/empty");
+                                                        }
+                                                    } catch (Throwable e) {
+                                                        StatsManager.I().track("premium/upgradeTrackError/" + accountHoster + "/" + e.getMessage());
+                                                        logger.log(e);
+                                                        file.delete();
+                                                    }
+                                                }
+                                                StatsManager.I().track("premium/upgrade/" + accountHoster, infos);
+                                            }
                                         }
                                     }
                                 }
-
+                            } catch (Throwable e) {
+                                StatsManager.I().track("premium/upgradeTrackError/" + accountHoster + "/" + e.getMessage());
+                                logger.log(e);
                             }
-                        } catch (Throwable e) {
-                            logger.log(e);
                         }
                     }
 
-                    private String hashUser(String user) {
+                    final private String pseudoID(String user) {
                         // this should result in ids that are not absolutly unique, but unique enough for stats reasons.
                         // it would be almost impossible to lookup and get back to the user
-                        String hash = Hash.getSHA256(user + "vyHeUnLbJI2AEHe2w7b4Mb9H7txwypmATmejYEnnmBhVJOgH47xT5daSJgo4LWXe3M2ejxssWXxv8W3q");
-
-                        return hash.substring(0, ((2 * hash.length()) / 3));
+                        final String modifiedHash = Hash.getSHA256(user + "vyHeUnLbJI2AEHe2w7b4Mb9H7txwypmATmejYEnnmBhVJOgH47xT5daSJgo4LWXe3M2ejxssWXxv8W3q");
+                        return modifiedHash.substring(0, ((2 * modifiedHash.length()) / 3));
                     }
                 });
             }
@@ -580,7 +613,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * this setter does not set the config flag. Can be used to disable the logger for THIS session.
-     * 
+     *
      * @param b
      */
     public void setEnabled(boolean b) {
@@ -1571,6 +1604,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     }
                     cvar.put("source", "jd2");
                     cvar.put("os", CrossSystem.getOS().name());
+                    cvar.put("rev", revision.toString());
                     if (infos != null) {
                         cvar.putAll(infos);
                     }
@@ -1595,7 +1629,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
-     * 
+     *
      * @param reducer
      * @param path
      */
