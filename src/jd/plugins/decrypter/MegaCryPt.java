@@ -68,7 +68,7 @@ public class MegaCryPt extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         br.getPage(parameter);
         br.setCookie(this.getHost(), "devicePixelRatio", "1");
-        if (br.containsHTML("asdasd")) {
+        if (br.containsHTML(">Page not found</h1>|<title>Nothing found for")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
