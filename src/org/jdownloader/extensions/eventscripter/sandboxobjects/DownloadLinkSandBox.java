@@ -83,6 +83,9 @@ public class DownloadLinkSandBox {
     }
 
     public long getDownloadSessionDuration() {
+        if (true) {
+            return -1;
+        }
         if (downloadLink != null) {
             final SingleDownloadController controller = downloadLink.getDownloadLinkController();
             if (controller != null) {
