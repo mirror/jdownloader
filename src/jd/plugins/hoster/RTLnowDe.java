@@ -78,7 +78,12 @@ public class RTLnowDe extends PluginForHost {
      * http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/<seriesID (same for app episodes of one
      * series>/V_\\d+_[A-Z0-9]+_E\\d+_\\d+_h264-mq_<[a-f0-9] usually {30,}>\\.f4v\\.f4m\\?ts=\\d+
      */
-    private final String                  HDSTYPE_OLD          = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/\\d+/V_\\d+_[A-Z0-9]+_E\\d+_\\d+_h264-mq_[a-f0-9]+\\.f4v\\.f4m\\?ts=\\d+";
+    private static final String           HDSTYPE_OLD          = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/\\d+/V_\\d+_[A-Z0-9]+_E\\d+_\\d+_h264-mq_[a-f0-9]+\\.f4v\\.f4m\\?ts=\\d+";
+
+    private static final String           RTMPTYPE_VERY_OLD    = "^\\d+/.+_\\d+k\\.flv$";
+    private static final String           RTMPTYPE_OLD         = "^\\d+/.+\\-h264\\-.+\\.f4v$";
+    private static final String           RTMPTYPE_NEW         = "^\\d+/.+_h264\\-.+\\.f4v$";
+
     private Document                      doc;
     private static final boolean          ALLOW_HLS            = true;
     private static final boolean          ALLOW_RTMP           = true;
@@ -275,6 +280,7 @@ public class RTLnowDe extends PluginForHost {
         long bitrate_max = 0;
         long bitrate_temp = 0;
         final String movieID = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("id"), -1));
+
         if (movieID.equals("-1")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -361,21 +367,32 @@ public class RTLnowDe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             app = convertAppToRealApp(app);
-            /* We don't need the exact url of the video, especially because we do not even always have it. An url of the mainpage is enough! */
+            /*
+             * We don't need the exact url of the video, especially because we do not even always have it. An url of the "old" mainpage is
+             * enough!
+             */
             final String pageURL = convertAppToMainpage(app);
+            final String rtmp_playpath_part = urlregex.getMatch(1);
             final String rtmp_playpath;
-            if (url_rtmp.endsWith(".f4v")) {
-                /* From 2011 or newer */
-                rtmp_playpath = "mp4:" + urlregex.getMatch(1);
+            if (rtmp_playpath_part.matches(RTMPTYPE_VERY_OLD)) {
+                /*
+                 * 2011 - 2007 or even older --> We have to remove the extension from the url and also correct the extensiom of the filename
+                 * from previously set .mp4 to .flv.
+                 */
+                /* Other possible playpath beginning: "flv:" */
+                rtmp_playpath = "flv:/" + rtmp_playpath_part.replace(".flv", "");
+                downloadLink.setFinalFileName(downloadLink.getName().replace(".mp4", ".flv"));
+            } else if (rtmp_playpath_part.matches(RTMPTYPE_OLD)) {
+                /* From 2011 or newer #1 */
+                /* Other possible playpath beginning: "mp4:" */
+                rtmp_playpath = "mp4:/" + rtmp_playpath_part;
                 /* Now we're sure that our .mp4 availablecheck-filename is correct */
                 downloadLink.setFinalFileName(downloadLink.getName());
             } else {
-                /*
-                 * 2011 - 2007 or even older --> We have to remove the extension from the url and also correct the extensiom from previously
-                 * set .mp4 to .flv
-                 */
-                rtmp_playpath = "flv:" + urlregex.getMatch(1).replace(".flv", "");
-                downloadLink.setFinalFileName(downloadLink.getName().replace(".mp4", ".flv"));
+                /* From 2011 or newer #2 */
+                rtmp_playpath = "mp4:/" + rtmp_playpath_part;
+                /* Now we're sure that our .mp4 availablecheck-filename is correct */
+                downloadLink.setFinalFileName(downloadLink.getName());
             }
             /* Either use fms-fra[1-32].rtl.de or just fms.rtl.de */
             final String rtmpurl = "rtmpe://fms.rtl.de/" + app + "/";
@@ -400,8 +417,8 @@ public class RTLnowDe extends PluginForHost {
 
             if (this.getPluginConfig().getBooleanProperty(MINIMUM_FILESIZE, false) && downloadLink.getDownloadCurrent() < calculated_filesize_minimum && downloadSuccessful) {
                 /*
-                 * Maybe the downloaded file is too small - some rtmp servers tend to just stop after small files even though the download
-                 * is by far not complete --> Reset progress and try again later!
+                 * Maybe the downloaded file is too small - some rtmp servers tend to just stop after a short time even though the download
+                 * is by far not complete --> Reset progress and try again later! This should be a very rare errorcase!
                  */
                 try {
                     downloadLink.setChunksProgress(null);
@@ -445,7 +462,7 @@ public class RTLnowDe extends PluginForHost {
         return new Regex(dl.getDownloadURL(), "/([a-z0-9\\-]+/[a-z0-9\\-]+)$").getMatch(0);
     }
 
-    /** Corrects the rtmpdump app-parameter for some rare cases */
+    /** Corrects the rtmpdump app-parameter for some rare cases where it does not match the exact domain name. */
     private String convertAppToRealApp(final String input) {
         final String output;
         if (input.equals("rtlnitronow")) {
@@ -458,7 +475,7 @@ public class RTLnowDe extends PluginForHost {
         return output;
     }
 
-    /** Returns the main URL that fits the given rtmpdump-app */
+    /** Returns the main URL that fits the given rtmpdump-app. Needed for some special cases! */
     private String convertAppToMainpage(final String input) {
         final String output;
         if (input.equals("nitronow")) {
@@ -528,6 +545,7 @@ public class RTLnowDe extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
+        /* More possible but the servers freak out then so keep the load low! */
         return 1;
     }
 
@@ -590,6 +608,7 @@ public class RTLnowDe extends PluginForHost {
         return output;
     }
 
+    /** Formats the existing date to the 'general' date used for german TV online services: yyyy-MM-dd */
     private String formatDate(final String input) {
         final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd HH:mm:ss", Locale.GERMAN);
         String formattedDate = null;
@@ -616,7 +635,7 @@ public class RTLnowDe extends PluginForHost {
     // }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DEFAULTTIMEOUT, JDL.L("plugins.hoster.rtlnowde.enabledeafulttimeout", "Enable default timeout?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DEFAULTTIMEOUT, JDL.L("plugins.hoster.rtlnowde.enabledefaulttimeout", "Enable default timeout?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MINIMUM_FILESIZE, JDL.L("plugins.hoster.rtlnowde.enable_minimum_filesize", "Enable minimum filesize to try to prevent too small/crippled files?")).setDefaultValue(false));
     }
 

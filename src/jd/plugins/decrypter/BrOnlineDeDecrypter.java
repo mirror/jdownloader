@@ -16,8 +16,11 @@
 
 package jd.plugins.decrypter;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -31,6 +34,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "br.de" }, urls = { "http://(www\\.)?br\\.de/mediathek/video/(sendungen/[A-Za-z0-9\\-_]+/)?[A-Za-z0-9\\-_]+\\.html" }, flags = { 32 })
 public class BrOnlineDeDecrypter extends PluginForDecrypt {
@@ -98,6 +103,7 @@ public class BrOnlineDeDecrypter extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        final String date_formatted = formatDate(date);
         if (show == null) {
             /* Show is not always given */
             show = "-";
@@ -120,7 +126,7 @@ public class BrOnlineDeDecrypter extends PluginForDecrypt {
             final String height = this.getXML(qinfo, "frameHeight");
             final String fsize = this.getXML(qinfo, "size");
             final String resolution = width + "x" + height;
-            final String final_video_name = date + "_br_" + show + " - " + plain_name + "_" + resolution + ".mp4";
+            final String final_video_name = date_formatted + "_br_" + show + " - " + plain_name + "_" + resolution + ".mp4";
             final DownloadLink dl_video = createDownloadlink("http://brdecrypted-online.de/?format=mp4&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
             dl_video.setProperty("mainlink", parameter);
             dl_video.setProperty("direct_link", final_url);
@@ -186,7 +192,7 @@ public class BrOnlineDeDecrypter extends PluginForDecrypt {
             if (keep != null) {
                 /* Add subtitle link for every quality so players will automatically find it */
                 if (grab_subtitle && subtitle_url != null) {
-                    final String subtitle_filename = date + "_br_" + show + " - " + plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
+                    final String subtitle_filename = date_formatted + "_br_" + show + " - " + plain_name + "_" + keep.getStringProperty("plain_resolution", null) + ".xml";
                     final String resolution = keep.getStringProperty("plain_resolution", null);
                     final DownloadLink dl_subtitle = createDownloadlink("http://brdecrypted-online.de/?format=xml&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
                     dl_subtitle.setProperty("mainlink", parameter);
@@ -202,7 +208,7 @@ public class BrOnlineDeDecrypter extends PluginForDecrypt {
             }
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(date + "_br_" + show + " - " + plain_name);
+        fp.setName(date_formatted + "_br_" + show + " - " + plain_name);
         fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
@@ -233,6 +239,21 @@ public class BrOnlineDeDecrypter extends PluginForDecrypt {
 
     private String getXML(final String parameter) {
         return getXML(this.br.toString(), parameter);
+    }
+
+    private String formatDate(final String input) {
+        final long date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy", Locale.GERMAN);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     /* NO OVERRIDE!! */
