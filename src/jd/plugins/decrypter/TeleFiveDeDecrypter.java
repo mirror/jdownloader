@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -228,6 +230,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
      * @throws IOException
      */
     public HashMap<String, DownloadLink> getURLsFromMedianac(final Browser br, final String decryptedhost, final String video_source, final HashMap<String, String[]> formats) throws IOException {
+        final String service_name = new Regex(br.getURL(), "https?://(?:www\\.)([A-Za-z0-9\\-\\.]+)\\.[A-Za-z]+/").getMatch(0);
         /* parse flash url */
         HashMap<String, DownloadLink> foundLinks = new HashMap<String, DownloadLink>();
 
@@ -354,6 +357,7 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         /* creating downloadLinks */
         for (Entry<String, HashMap<String, String>> next : KalturaMediaEntry.entrySet()) {
             KalturaFlavorAsset = new HashMap<String, String>(next.getValue());
+            final String date = KalturaFlavorAsset.get("createdAt");
             final String bitrate = KalturaFlavorAsset.get("bitrate");
             String fName = fileInfo.get("categories");
             if (isEmpty(fName)) {
@@ -388,7 +392,8 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             if (formatString.endsWith("_")) {
                 formatString = formatString.substring(0, formatString.lastIndexOf("_"));
             }
-            final String filename = fileInfo.get("categories") + "_" + fileInfo.get("name").replaceAll("\\|", "-") + "_" + formatString + "." + KalturaFlavorAsset.get("fileExt");
+            final String date_formatted = formatDate(date);
+            final String filename = date_formatted + "_" + service_name + "_" + fileInfo.get("categories") + "_" + fileInfo.get("name").replaceAll("\\|", "-") + "_" + formatString + "." + KalturaFlavorAsset.get("fileExt");
 
             /* Always access rtmp urls as this way we get all qualities/formats --> Then build http urls out of them --> :) */
             String vidlink = "http://api.medianac.com/p/" + v.get("partnerId") + "/sp/" + v.get("subpId") + "/playManifest/entryId/" + v.get("entryId") + "/format/rtmp/protocol/rtmp/cdnHost/api.medianac.com";
@@ -439,6 +444,20 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             foundLinks.put(qualityInfo, dl);
         }
         return foundLinks;
+    }
+
+    public String formatDate(final String input) {
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        final Date theDate = new Date(Long.parseLong(input) * 1000);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
     }
 
     public String getUrlValues(String s) throws UnsupportedEncodingException {

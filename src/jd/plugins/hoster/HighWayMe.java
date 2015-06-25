@@ -221,7 +221,7 @@ public class HighWayMe extends PluginForHost {
         if (dllink == null) {
             /* request creation of downloadlink */
             br.setFollowRedirects(true);
-            String passCode = Encoding.urlEncode(link.getStringProperty("pass", null));
+            String passCode = Encoding.urlEncode(link.getStringProperty("pass", ""));
             postAPISafe(DOMAIN + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
             this.getAPISafe("http://http.high-way.me/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&pass=" + Encoding.urlEncode(passCode));
             if (this.statuscode == STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
