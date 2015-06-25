@@ -81,8 +81,7 @@ public class RTLnowDe extends PluginForHost {
     private static final String           HDSTYPE_OLD          = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/\\d+/V_\\d+_[A-Z0-9]+_E\\d+_\\d+_h264-mq_[a-f0-9]+\\.f4v\\.f4m\\?ts=\\d+";
 
     private static final String           RTMPTYPE_VERY_OLD    = "^\\d+/.+_\\d+k\\.flv$";
-    private static final String           RTMPTYPE_OLD         = "^\\d+/.+\\-h264\\-.+\\.f4v$";
-    private static final String           RTMPTYPE_NEW         = "^\\d+/.+_h264\\-.+\\.f4v$";
+    private static final String           RTMPTYPE_NEW         = "^\\d+/.+h264\\.+\\.f4v$";
 
     private Document                      doc;
     private static final boolean          ALLOW_HLS            = true;
@@ -382,14 +381,9 @@ public class RTLnowDe extends PluginForHost {
                 /* Other possible playpath beginning: "flv:" */
                 rtmp_playpath = "flv:/" + rtmp_playpath_part.replace(".flv", "");
                 downloadLink.setFinalFileName(downloadLink.getName().replace(".mp4", ".flv"));
-            } else if (rtmp_playpath_part.matches(RTMPTYPE_OLD)) {
-                /* From 2011 or newer #1 */
-                /* Other possible playpath beginning: "mp4:" */
-                rtmp_playpath = "mp4:/" + rtmp_playpath_part;
-                /* Now we're sure that our .mp4 availablecheck-filename is correct */
-                downloadLink.setFinalFileName(downloadLink.getName());
             } else {
-                /* From 2011 or newer #2 */
+                // TYPE = RTMPTYPE_NEW
+                /* From 2011 or newer */
                 rtmp_playpath = "mp4:/" + rtmp_playpath_part;
                 /* Now we're sure that our .mp4 availablecheck-filename is correct */
                 downloadLink.setFinalFileName(downloadLink.getName());
