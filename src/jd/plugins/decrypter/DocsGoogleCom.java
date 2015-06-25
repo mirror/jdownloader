@@ -55,8 +55,6 @@ public class DocsGoogleCom extends PluginForDecrypt {
     private static final String FOLDER_OLD    = "https?://(www\\.)?docs\\.google\\.com/folderview\\?(pli=1\\&id=[A-Za-z0-9_]+(\\&tid=[A-Za-z0-9]+)?|id=[A-Za-z0-9_]+\\&usp=sharing)";
     private static final String FOLDER_NEW    = "https?://(www\\.)?drive\\.google\\.com/folderview\\?id=?[A-Za-z0-9_\\\\]+";
 
-    boolean                     USE_OLD_WAY   = false;
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -87,7 +85,7 @@ public class DocsGoogleCom extends PluginForDecrypt {
 
         final String count_docs = br.getRegex("class=\"flip-folder-item-count\">(\\d+)").getMatch(0);
 
-        if (br.containsHTML("<p class=\"errorMessage\" style=\"padding\\-top: 50px\">Sorry, the file you have requested does not exist\\.</p>") || br.getHttpConnection().getResponseCode() == 404 || count_docs == null) {
+        if (br.containsHTML("<p class=\"errorMessage\" style=\"padding-top: 50px\">Sorry, the file you have requested does not exist\\.</p>") || br.getHttpConnection().getResponseCode() == 404 || count_docs == null) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
             offline.setProperty("offline", true);
@@ -133,7 +131,7 @@ public class DocsGoogleCom extends PluginForDecrypt {
                 return null;
             }
             final String[] all_items_list = all_items.split("\\][\r\t\n ]+,\\[");
-            final String[] filelinks = new Regex(content, "\"(https?://docs\\.google\\.com/file/d/[^<>\"]*?)\"\\]").getColumn(0);
+            final String[] filelinks = new Regex(content, "\"(https?://(?:docs|drive)\\.google\\.com/file/d/[^<>\"]*?)\"\\]").getColumn(0);
             if (filelinks != null && all_items_list != null && all_items_list.length == filelinks.length) {
                 int counter = 0;
                 for (final String item : all_items_list) {
