@@ -84,6 +84,7 @@ public class SaveTv extends PluginForHost {
     // private static final String APIKEY_android_2_1_0 = "QTJGQ0YyNjQtMDBCNS00QkZELUE5RUQtNTlENDdGRDE5M0VF";
     // private static final String APIKEY_windows_xp_dlm_2_2_0_0 = "RTI4NDVGQUQtRkE2My00RTQ2LTlDRTgtRjlBNUE4REY0N0U4";
     // private static final String APIKEY_windows_8_beta_app = "QkQ3NTExRTEtOTk5Ni00QkMwLTlENDctMEI3QjRFNTk4RjI0";
+    /* Doc of an eventually soon existing new (finally public) API [Date added: 2015-06-25]: https://api.save.tv/v3/docs/index */
     public static final String   APIPAGE                                   = "https://api.save.tv/v2/Api.svc";
     public static final double   QUALITY_HD_MB_PER_MINUTE                  = 22;
     public static final double   QUALITY_H264_NORMAL_MB_PER_MINUTE         = 12.605;
