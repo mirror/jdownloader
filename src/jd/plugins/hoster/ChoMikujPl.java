@@ -33,6 +33,7 @@ import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -42,12 +43,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://chomikujdecrypted\\.pl/.*?,\\d+$" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chomikuj.pl" }, urls = { "http://chomikujdecrypted\\.pl/.*?,\\d+$" }, flags = { 2 })
 public class ChoMikujPl extends PluginForHost {
 
     private String              DLLINK                      = null;
@@ -364,6 +366,21 @@ public class ChoMikujPl extends PluginForHost {
                 }
                 postPage(br, "http://chomikuj.pl/action/License/DownloadWarningAccept", "FileId=" + fid + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
             }
+            // this can happen also
+            if (cbr.containsHTML("/action/License/acceptLargeTransfer")) {
+                // problem is.. general cleanup is wrong, response is = Content-Type: application/json; charset=utf-8
+                cleanupBrowser(cbr, JSonUtils.unescape(br.toString()));
+                // so we can get output in logger for debug purposes.
+                logger.info(cbr.toString());
+                final Form f = cbr.getFormbyAction("/action/License/acceptLargeTransfer");
+                if (f != null) {
+                    submitForm(br, f);
+                } else {
+                    // so statserv will pickup
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+
             DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
             if (DLLINK == null) {
                 DLLINK = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
@@ -591,6 +608,12 @@ public class ChoMikujPl extends PluginForHost {
 
     private void postPageRaw(final Browser br, final String url, final String postData) throws Exception {
         br.postPageRaw(url, postData);
+        cbr = br.cloneBrowser();
+        cleanupBrowser(cbr, correctBR(br.toString()));
+    }
+
+    private void submitForm(final Browser br, final Form form) throws Exception {
+        br.submitForm(form);
         cbr = br.cloneBrowser();
         cleanupBrowser(cbr, correctBR(br.toString()));
     }
