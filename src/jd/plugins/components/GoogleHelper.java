@@ -213,15 +213,17 @@ public class GoogleHelper {
             post.put("rmShown", "1");
 
             postPageFollowRedirects(br, "https://accounts.google.com/ServiceLoginAuth", post);
-            if (!br.getURL().matches("https?\\:\\/\\/accounts\\.google\\.com\\/CheckCookie\\?.*")) {
 
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-
-            }
             Form form = br.getFormBySubmitvalue("Verify");
 
             if (form != null && "SecondFactor".equals(form.getAction())) {
                 handle2FactorAuthSms(form);
+            }
+
+            if (!br.getURL().matches("https?\\:\\/\\/accounts\\.google\\.com\\/CheckCookie\\?.*")) {
+
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+
             }
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies cYT = this.br.getCookies("google.com");
