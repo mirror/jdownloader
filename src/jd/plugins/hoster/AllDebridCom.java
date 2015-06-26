@@ -303,7 +303,7 @@ public class AllDebridCom extends antiDDoSForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dl.getDownloadURL());
-            if ((con.isContentDisposition() || con.isOK()) && !con.getContentType().contains(".html")) {
+            if ((con.isContentDisposition() || con.isOK()) && !con.getContentType().contains("html")) {
                 if (dl.getFinalFileName() == null) {
                     dl.setFinalFileName(getFileNameFromHeader(con));
                 }
