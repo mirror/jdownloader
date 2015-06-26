@@ -358,6 +358,12 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("\"(https?://(?:www\\.)?xtube\\.com/watch\\.php\\?v=[a-z0-9_-]+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        // not to be confused with xtube.com
         externID = br.getRegex("\"(https?://(?:www\\.)?xxxtube\\.com/embed/\\d+/?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));

@@ -213,6 +213,9 @@ public class Tube8Com extends PluginForHost {
 
         String isEncrypted = values.get("encrypted");
         dllink = values.get("video_url");
+        if (dllink != null) {
+            dllink = dllink.replace("\\/", "/");
+        }
         if ("1".equals(isEncrypted) || Boolean.parseBoolean(isEncrypted)) {
             String decrypted = values.get("video_url");
             String key = values.get("video_title");
