@@ -10,6 +10,8 @@ public class CaptchaJob implements Storable {
     private String type;
     private String captchaCategory;
     private String explain;
+    private int    timeout;
+    private long   created;
 
     /**
      * @return the type
@@ -79,6 +81,22 @@ public class CaptchaJob implements Storable {
 
     public void setExplain(String explain) {
         this.explain = explain;
+    }
+
+    public long getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
+    }
+
+    public long getCreated() {
+        return created;
+    }
+
+    public void setCreated(long created) {
+        this.created = created;
     }
 
 }

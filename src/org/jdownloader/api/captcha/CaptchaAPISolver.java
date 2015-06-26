@@ -135,6 +135,8 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
                 job.setID(entry.getChallenge().getId().getID());
                 job.setHoster(((ImageCaptchaChallenge) entry.getChallenge()).getPlugin().getHost());
                 job.setCaptchaCategory(entry.getChallenge().getTypeID());
+                job.setTimeout(entry.getChallenge().getTimeout());
+                job.setCreated(entry.getChallenge().getCreated());
                 ret.add(job);
             }
 

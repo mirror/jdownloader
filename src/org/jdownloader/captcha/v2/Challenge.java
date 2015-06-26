@@ -83,6 +83,10 @@ public abstract class Challenge<T> {
         return typeID;
     }
 
+    public long getCreated() {
+        return created;
+    }
+
     public void setTypeID(String typeID) {
         this.typeID = typeID;
     }

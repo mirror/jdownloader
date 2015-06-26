@@ -102,7 +102,6 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 CrawledPackageAPIStorableV2 cps = new CrawledPackageAPIStorableV2(pkg);
                 final CrawledPackageView view = new CrawledPackageView();
                 view.setItems(pkg.getChildren());
-                view.aggregate();
 
                 if (queryParams.isSaveTo()) {
                     cps.setSaveTo(LinkTreeUtils.getDownloadDirectory(pkg).toString());
@@ -110,7 +109,6 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 }
                 if (queryParams.isBytesTotal()) {
                     cps.setBytesTotal(view.getFileSize());
-
                 }
                 if (queryParams.isChildCount()) {
                     cps.setChildCount(view.size());
