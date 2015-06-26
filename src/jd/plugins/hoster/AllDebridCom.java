@@ -313,9 +313,9 @@ public class AllDebridCom extends antiDDoSForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        } catch (final Exception e) {
+        } catch (final Throwable e) {
             if (e instanceof PluginException) {
-                throw e;
+                throw (PluginException) e;
             }
             getLogger().log(e);
             dl.setAvailable(false);
