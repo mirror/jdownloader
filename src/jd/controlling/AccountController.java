@@ -45,6 +45,7 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountError;
 import jd.plugins.Account.AccountPropertyChangeHandler;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountProperty;
 import jd.plugins.LinkStatus;
@@ -80,12 +81,12 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
-        @Override
-        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-            listener.onAccountControllerEvent(event);
-        }
+                                                                                                      @Override
+                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+                                                                                                          listener.onAccountControllerEvent(event);
+                                                                                                      }
 
-    };
+                                                                                                  };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -401,8 +402,8 @@ public class AccountController implements AccountControllerListener, AccountProp
                     try {
                         onlineCheck.getExternalIP();
                     } catch (final OfflineException e2) { /*
-                     * we are offline, so lets just return without any account update
-                     */
+                                                           * we are offline, so lets just return without any account update
+                                                           */
                         logger.clear();
                         LogController.CL().info("It seems Computer is currently offline, skipped Accountcheck for " + whoAmI);
                         account.setError(AccountError.TEMP_DISABLED, "No Internet Connection");
@@ -449,6 +450,7 @@ public class AccountController implements AccountControllerListener, AccountProp
             account.setNotifyHandler(null);
             account.setChecking(false);
             getEventSender().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, account));
+            checkAccountUpOrDowngrade(account);
             final AccountError errorNow = account.getError();
             if (errorBefore != errorNow) {
                 AccountProperty latestChangeEvent = null;
@@ -458,6 +460,96 @@ public class AccountController implements AccountControllerListener, AccountProp
                 if (latestChangeEvent != null) {
                     getEventSender().fireEvent(new AccountPropertyChangedEvent(latestChangeEvent.getAccount(), latestChangeEvent));
                 }
+            }
+        }
+    }
+
+    private final String lastKnownAccountTypeProperty         = "lastKnownAccountType";
+    private final String lastKnownValidUntilTimeStampProperty = "lastKnownValidUntilTimeStamp";
+
+    private final long   minimumExtendTime                    = 24 * 60 * 60 * 1000l;
+
+    private void checkAccountUpOrDowngrade(final Account account) {
+        final AccountInfo accountInfo = account.getAccountInfo();
+        if (accountInfo != null && account.getError() == null && account.getLastValidTimestamp() > 0 && account.getPlugin() != null) {
+            final String lastKnownAccountType;
+            final AccountType currentAccountType = account.getType();
+            if (currentAccountType != null) {
+                lastKnownAccountType = account.getStringProperty(lastKnownAccountTypeProperty, currentAccountType.name());
+                account.setProperty(lastKnownAccountTypeProperty, currentAccountType.name());
+            } else {
+                lastKnownAccountType = account.getStringProperty(lastKnownAccountTypeProperty, AccountType.UNKNOWN.name());
+                account.setProperty(lastKnownAccountTypeProperty, AccountType.UNKNOWN.name());
+            }
+
+            final long currentValidUntilTimeStamp = account.getValidPremiumUntil();
+            final boolean hasLastKnownPremiumValidUntilTimeStamp = account.hasProperty(lastKnownValidUntilTimeStampProperty);
+            final long lastKnownPremiumValidUntilTimeStamp = account.getLongProperty(lastKnownValidUntilTimeStampProperty, currentValidUntilTimeStamp);
+
+            final boolean isPremiumAccount = AccountType.PREMIUM.equals(currentAccountType);
+            final boolean wasPremiumAccount = AccountType.PREMIUM.name().equals(lastKnownAccountType);
+            final boolean isPremiumUpgraded = isPremiumAccount && !wasPremiumAccount;
+            final boolean isPremiumDowngraded = !isPremiumAccount && wasPremiumAccount;
+
+            final boolean isLimitedRenewal = (currentValidUntilTimeStamp > lastKnownPremiumValidUntilTimeStamp && (currentValidUntilTimeStamp - lastKnownPremiumValidUntilTimeStamp) > minimumExtendTime);
+            final boolean isPremiumLimitedRenewal = isPremiumAccount && isLimitedRenewal;
+
+            final boolean isUnlimitedRenewal = currentValidUntilTimeStamp != lastKnownPremiumValidUntilTimeStamp && currentValidUntilTimeStamp == -1;
+            final boolean isPremiumUnlimitedRenewal = isPremiumAccount && isUnlimitedRenewal;
+
+            if (isPremiumLimitedRenewal || isPremiumUnlimitedRenewal) {
+                account.setProperty(lastKnownValidUntilTimeStampProperty, currentValidUntilTimeStamp);
+            } else if (isPremiumAccount && !hasLastKnownPremiumValidUntilTimeStamp) {
+                account.setProperty(lastKnownValidUntilTimeStampProperty, currentValidUntilTimeStamp);
+            }
+            final long renewalDuration;
+            if (currentValidUntilTimeStamp > 0) {
+                if (lastKnownPremiumValidUntilTimeStamp > 0 && (lastKnownPremiumValidUntilTimeStamp - System.currentTimeMillis() > 0)) {
+                    renewalDuration = currentValidUntilTimeStamp - lastKnownPremiumValidUntilTimeStamp;
+                } else {
+                    renewalDuration = currentValidUntilTimeStamp - System.currentTimeMillis();
+                }
+            } else {
+                renewalDuration = 0;
+            }
+            if (isPremiumDowngraded || isPremiumUpgraded || isPremiumLimitedRenewal || isPremiumUnlimitedRenewal) {
+                getEventSender().fireEvent(new AccountUpOrDowngradeEvent(this, account) {
+
+                    @Override
+                    public boolean isPremiumAccount() {
+                        return isPremiumAccount;
+                    }
+
+                    @Override
+                    public boolean isPremiumUpgraded() {
+                        return isPremiumUpgraded;
+                    }
+
+                    @Override
+                    public boolean isPremiumDowngraded() {
+                        return isPremiumDowngraded;
+                    }
+
+                    @Override
+                    public boolean isPremiumLimitedRenewal() {
+                        return isPremiumLimitedRenewal;
+                    }
+
+                    @Override
+                    public boolean isPremiumUnlimitedRenewal() {
+                        return isPremiumUnlimitedRenewal;
+                    }
+
+                    @Override
+                    public long getPremiumRenewalDuration() {
+                        return renewalDuration;
+                    }
+
+                    @Override
+                    public long getExpireTimeStamp() {
+                        return currentValidUntilTimeStamp;
+                    }
+                });
             }
         }
     }
@@ -784,6 +876,42 @@ public class AccountController implements AccountControllerListener, AccountProp
             }
         }
         return ret;
+    }
+
+    public boolean hasAccount(final String host, final Boolean isEnabled, final Boolean isValid, final Boolean isPremium, final Boolean isExpired) {
+        if (StringUtils.isEmpty(host)) {
+            return false;
+        }
+        synchronized (AccountController.this) {
+            final List<Account> accounts = ACCOUNTS.get(host.toLowerCase(Locale.ENGLISH));
+            if (accounts != null) {
+                for (final Account account : accounts) {
+                    if (account.getPlugin() != null) {
+                        if (isEnabled != null && isEnabled != account.isEnabled()) {
+                            continue;
+                        }
+                        if (isValid != null && isValid != (account.getError() == null)) {
+                            continue;
+                        }
+                        if (isPremium != null && isPremium != AccountType.PREMIUM.equals(account.getType())) {
+                            continue;
+                        }
+                        if (isExpired != null) {
+                            final AccountInfo ai = account.getAccountInfo();
+                            if (ai != null) {
+                                final long validUntilTimeStamp = ai.getValidUntil();
+                                final boolean expired = validUntilTimeStamp > 0 && validUntilTimeStamp - System.currentTimeMillis() < 0;
+                                if (isExpired != expired) {
+                                    continue;
+                                }
+                            }
+                        }
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     public List<Account> getMultiHostAccounts(final String host) {

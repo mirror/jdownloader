@@ -23,6 +23,7 @@ import jd.SecondLevelLaunch;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
+import jd.controlling.AccountUpOrDowngradeEvent;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.TopRightPainter;
 import jd.http.Browser;
@@ -164,7 +165,7 @@ public class UploadedController implements AccountControllerListener, Sponsor {
 
     public static class UlBannerData implements Storable {
         public static final TypeRef<UlBannerData> TYPREF = new TypeRef<UlBannerData>() {
-                                                         };
+        };
 
         public UlBannerData(/* Storable */) {
         }
@@ -500,35 +501,42 @@ public class UploadedController implements AccountControllerListener, Sponsor {
     public void onAccountControllerEvent(AccountControllerEvent event) {
         try {
             delayer.resetAndStart();
-
-            if (event != null && event.getAccount() != null && event.getAccount().getPlugin() != null && AccountControllerEvent.Types.ACCOUNT_CHECKED.equals(event.getType()) && CFG_GUI.CFG.isPremiumExpireWarningEnabled()) {
-                long premiumUntil = -1;
-                premiumUntil = event.getAccount().getValidPremiumUntil();
+            if (event != null && AccountControllerEvent.Types.ACCOUNT_UP_OR_DOWNGRADE.equals(event.getType()) && CFG_GUI.CFG.isPremiumExpireWarningEnabled()) {
+                final AccountUpOrDowngradeEvent accountEvent = (AccountUpOrDowngradeEvent) event;
+                final long DAY = 24 * 60 * 60 * 1000l;
                 final Account account = event.getAccount();
-                final long rest = premiumUntil - System.currentTimeMillis();
-                if (rest > 0 && rest < 1 * 24 * 60 * 60 * 1000l) {
-                    boolean notify = false;
-                    synchronized (this) {
-                        final Long lastNotify = expireNotifies.get(account.getHoster());
-                        // ask at max once a month
-                        if (lastNotify == null || System.currentTimeMillis() - lastNotify > 30 * 24 * 60 * 60 * 1000l) {
-                            notify = true;
-                            expireNotifies.put(account.getHoster(), System.currentTimeMillis());
-                            CFG_GUI.CFG.setPremiumExpireWarningMapV2(expireNotifies);
+                final String hoster = account.getHoster();
+                final long expireTimeStamp = accountEvent.getExpireTimeStamp();
+                if (accountEvent.isPremiumAccount() && !accountEvent.isPremiumExpired()) {
+                    if (expireTimeStamp > 0 && (expireTimeStamp - System.currentTimeMillis() < DAY)) {
+                        boolean notify;
+                        synchronized (this) {
+                            final String ID = "warn_" + hoster;
+                            final Long lastNotify = expireNotifies.get(ID);
+                            if (lastNotify == null || (System.currentTimeMillis() - lastNotify > (30 * DAY))) {
+                                notify = true;
+                                expireNotifies.put(ID, System.currentTimeMillis());
+                                CFG_GUI.CFG.setPremiumExpireWarningMapV2(expireNotifies);
+                            } else {
+                                notify = false;
+                            }
+                        }
+                        if (notify) {
+                            notify(account, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_title(hoster), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_msg(account.getUser(), hoster));
                         }
                     }
-                    if (notify) {
-                        notify(account, _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_title(account.getHoster()), _GUI._.OboomController_onAccountControllerEvent_premiumexpire_warn_still_premium_msg(account.getUser(), account.getHoster()));
-                    }
-                } else if (rest < 0 && rest > -7 * 24 * 60 * 60 * 1000l) {
-                    boolean notify = false;
+                } else if (accountEvent.isPremiumDowngraded() && !AccountController.getInstance().hasAccount(hoster, true, true, true, false)) {
+                    boolean notify;
                     synchronized (this) {
-                        final Long lastNotify = expireNotifies.get(account.getHoster());
+                        final String ID = "expired_" + hoster;
+                        final Long lastNotify = expireNotifies.get(ID);
                         // ask at max once a month
-                        if (lastNotify == null || System.currentTimeMillis() - lastNotify > 30 * 24 * 60 * 60 * 1000l) {
+                        if (lastNotify == null || System.currentTimeMillis() - lastNotify > 30 * DAY) {
                             notify = true;
-                            expireNotifies.put(account.getHoster(), System.currentTimeMillis());
+                            expireNotifies.put(ID, System.currentTimeMillis());
                             CFG_GUI.CFG.setPremiumExpireWarningMapV2(expireNotifies);
+                        } else {
+                            notify = false;
                         }
                     }
                     if (notify) {
