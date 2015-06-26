@@ -104,8 +104,13 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     public static final String        ACCOUNT_ADDED_TIME           = "at";
     public static final String        ACCOUNTINSTANCE_CREATED_TIME = "it";
     public static final String        REGISTERED_TIME              = "rt";
+    public static final String        CHECK_TIME                   = "ct";
     public static final String        EXPIRE_TIME                  = "et";
     public static final String        UPGRADE_TIME                 = "ut";
+
+    public static final String        UPGRADE_PREMIUM              = "up";
+    public static final String        UPGRADE_EXTENDED             = "ue";
+    public static final String        UPGRADE_UNLIMITED            = "uu";
 
     private static final StatsManager INSTANCE                     = new StatsManager();
 
@@ -319,6 +324,10 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                                 if (StringUtils.isNotEmpty(user)) {
                                                     infos.put(ACCOUNT_PSEUDO_ID, pseudoID(user));
                                                 }
+                                                infos.put(UPGRADE_PREMIUM, isPremiumUpgrade ? "1" : "0");
+                                                infos.put(UPGRADE_EXTENDED, isPremiumExtended ? "1" : "0");
+                                                infos.put(UPGRADE_UNLIMITED, isPremiumUnlimited ? "1" : "0");
+                                                infos.put(CHECK_TIME, Long.toString(System.currentTimeMillis()));
                                                 infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
                                                 infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
                                                 infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty(addedProperty, System.currentTimeMillis())));

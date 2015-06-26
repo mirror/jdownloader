@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -70,7 +71,6 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "easybytez.com" }, urls = { "https?://(www\\.)?easybytez\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
@@ -779,7 +779,7 @@ public class EasyBytezCom extends PluginForHost {
         return ai;
     }
 
-    public void updateAccountInfo(Account account, AccountInfo ai, Browser cbr) {
+    public void updateAccountInfo(Account account, AccountInfo ai, Browser cbr) throws Exception {
         if (ai == null) {
             ai = account.getAccountInfo();
         }
@@ -811,22 +811,10 @@ public class EasyBytezCom extends PluginForHost {
         final String expireDay = cbr.getRegex("(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
         boolean isFree = true;
         if (!inValidate(expireDay)) {
-
-            long expire = 0, expireD = 0, expireS = 0;
-            if (!inValidate(expireDay)) {
-                expireD = TimeFormatter.getMilliSeconds(expireDay, "dd MMMM yyyy", Locale.ENGLISH);
-            }
-            if (expireS != 0) {
-                expire = expireS;
-            } else {
-                expire = expireD;
-            }
-            ai.setValidUntil(expire);
-            if (!ai.isExpired()) {
-                isFree = false;
-                account.setProperty("free", false);
-                ai.setStatus("Premium Account");
-                account.setProperty("totalMaxSim", 20);
+            final long expire = new SimpleDateFormat("dd MMMM yyyy", Locale.ENGLISH).parse(expireDay).getTime();
+            if (expire > 0) {
+                ai.setValidUntil(expire);
+                isFree = !ai.isExpired();
             }
         }
         if (isFree) {
@@ -834,8 +822,11 @@ public class EasyBytezCom extends PluginForHost {
             account.setProperty("free", true);
             ai.setStatus("Free Account");
             account.setProperty("totalMaxSim", 20);
+        } else {
+            account.setProperty("free", false);
+            ai.setStatus("Premium Account");
+            account.setProperty("totalMaxSim", 20);
         }
-
     }
 
     @SuppressWarnings("unchecked")
@@ -1899,7 +1890,7 @@ public class EasyBytezCom extends PluginForHost {
      * @author raztoki
      * */
     private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
+        if (s == null || (s.matches("[\r\n\t ]+") || s.equals(""))) {
             return true;
         } else {
             return false;
