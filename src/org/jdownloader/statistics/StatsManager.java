@@ -28,6 +28,7 @@ import jd.SecondLevelLaunch;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 import jd.controlling.AccountControllerListener;
+import jd.controlling.AccountUpOrDowngradeEvent;
 import jd.controlling.downloadcontroller.AccountCache;
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.downloadcontroller.DownloadController;
@@ -45,7 +46,6 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -288,81 +288,46 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                             }
 
                             try {
-                                if (event.getType() == AccountControllerEvent.Types.ADDED || (event.getType() == AccountControllerEvent.Types.ACCOUNT_CHECKED && !isFireStatsCall)) {
-                                    final String lastKnownAccountTypeProperty = "lastKnownAccountType";
-                                    final String lastKnownValidUntilTimeStampProperty = "lastKnownValidUntilTimeStamp";
-                                    if (account.getError() == null && account.getLastValidTimestamp() > 0) {
-                                        final AccountInfo accountInfo = account.getAccountInfo();
-                                        if (accountInfo != null) {
-                                            final String lastKnownAccountType;
-                                            final AccountType currentAccountType = account.getType();
-                                            if (currentAccountType != null) {
-                                                lastKnownAccountType = account.getStringProperty(lastKnownAccountTypeProperty, currentAccountType.name());
-                                                account.setProperty(lastKnownAccountTypeProperty, currentAccountType.name());
-                                            } else {
-                                                lastKnownAccountType = account.getStringProperty(lastKnownAccountTypeProperty, AccountType.UNKNOWN.name());
-                                                account.setProperty(lastKnownAccountTypeProperty, AccountType.UNKNOWN.name());
-                                            }
-                                            final long currentValidUntilTimeStamp = accountInfo.getValidUntil();
-                                            final boolean hasLastKnownPremiumValidUntilTimeStamp = account.hasProperty(lastKnownValidUntilTimeStampProperty);
-                                            final long lastKnownPremiumValidUntilTimeStamp = account.getLongProperty(lastKnownValidUntilTimeStampProperty, currentValidUntilTimeStamp);
-
-                                            final boolean isPremiumAccount = AccountType.PREMIUM.equals(currentAccountType);
-                                            final boolean isPremiumUpgrade = isPremiumAccount && !AccountType.PREMIUM.name().equals(lastKnownAccountType);
-                                            final boolean isExtended = (currentValidUntilTimeStamp > lastKnownPremiumValidUntilTimeStamp && (currentValidUntilTimeStamp - lastKnownPremiumValidUntilTimeStamp) > 24 * 60 * 60 * 1000l);
-                                            final boolean isPremiumExtended = isPremiumAccount && isExtended;
-                                            final boolean isUnlimited = currentValidUntilTimeStamp != lastKnownPremiumValidUntilTimeStamp && currentValidUntilTimeStamp == -1;
-                                            final boolean isPremiumUnlimited = isPremiumAccount && isUnlimited;
-                                            if (isPremiumExtended || isPremiumUnlimited) {
-                                                account.setProperty(lastKnownValidUntilTimeStampProperty, currentValidUntilTimeStamp);
-                                            } else if (isPremiumAccount && !hasLastKnownPremiumValidUntilTimeStamp) {
-                                                account.setProperty(lastKnownValidUntilTimeStampProperty, currentValidUntilTimeStamp);
-                                            }
-                                            if (isPremiumUpgrade || isPremiumExtended || isPremiumUnlimited) {
-                                                final HashMap<String, String> infos = new HashMap<String, String>();
-                                                final String user = account.getUser();
-                                                if (StringUtils.isNotEmpty(user)) {
-                                                    infos.put(ACCOUNT_PSEUDO_ID, pseudoID(user));
-                                                }
-                                                infos.put(UPGRADE_PREMIUM, isPremiumUpgrade ? "1" : "0");
-                                                infos.put(UPGRADE_EXTENDED, isPremiumExtended ? "1" : "0");
-                                                infos.put(UPGRADE_UNLIMITED, isPremiumUnlimited ? "1" : "0");
-                                                infos.put(CHECK_TIME, Long.toString(System.currentTimeMillis()));
-                                                infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
-                                                infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
-                                                infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty(addedProperty, System.currentTimeMillis())));
-                                                if (currentValidUntilTimeStamp > 0) {
-                                                    final long expireInMs = currentValidUntilTimeStamp - System.currentTimeMillis();
-                                                    final long upgradeInMs;
-                                                    if (lastKnownPremiumValidUntilTimeStamp > 0 && (lastKnownPremiumValidUntilTimeStamp - System.currentTimeMillis() > 0)) {
-                                                        upgradeInMs = currentValidUntilTimeStamp - lastKnownPremiumValidUntilTimeStamp;
-                                                    } else {
-                                                        upgradeInMs = currentValidUntilTimeStamp - System.currentTimeMillis();
-                                                    }
-                                                    infos.put(EXPIRE_TIME, Long.toString(expireInMs));
-                                                    infos.put(UPGRADE_TIME, Long.toString(upgradeInMs));
+                                if (event.getType() == AccountControllerEvent.Types.ACCOUNT_UP_OR_DOWNGRADE && !isFireStatsCall) {
+                                    final AccountUpOrDowngradeEvent accountEvent = (AccountUpOrDowngradeEvent) event;
+                                    if (accountEvent.isPremiumUpgraded() || accountEvent.isPremiumLimitedRenewal() || accountEvent.isPremiumUnlimitedRenewal()) {
+                                        final HashMap<String, String> infos = new HashMap<String, String>();
+                                        final String user = account.getUser();
+                                        if (StringUtils.isNotEmpty(user)) {
+                                            infos.put(ACCOUNT_PSEUDO_ID, pseudoID(user));
+                                        }
+                                        infos.put(UPGRADE_PREMIUM, accountEvent.isPremiumUpgraded() ? "1" : "0");
+                                        infos.put(UPGRADE_EXTENDED, accountEvent.isPremiumLimitedRenewal() ? "1" : "0");
+                                        infos.put(UPGRADE_UNLIMITED, accountEvent.isPremiumUnlimitedRenewal() ? "1" : "0");
+                                        infos.put(CHECK_TIME, Long.toString(System.currentTimeMillis()));
+                                        infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
+                                        infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
+                                        infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty(addedProperty, System.currentTimeMillis())));
+                                        final long currentValidUntilTimeStamp = accountEvent.getExpireTimeStamp();
+                                        if (currentValidUntilTimeStamp > 0) {
+                                            final long expireInMs = currentValidUntilTimeStamp - System.currentTimeMillis();
+                                            infos.put(EXPIRE_TIME, Long.toString(expireInMs));
+                                            infos.put(UPGRADE_TIME, Long.toString(accountEvent.getPremiumRenewalDuration()));
+                                        } else {
+                                            infos.put(EXPIRE_TIME, Long.toString(-1));
+                                        }
+                                        final File file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(accountHoster) + ".json");
+                                        if (file.exists()) {
+                                            try {
+                                                final ArrayList<ClickedAffLinkStorable> list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
+                                                });
+                                                if (list != null && list.size() > 0) {
+                                                    infos.put(CLICK_SOURCE, JSonStorage.serializeToJson(list));
                                                 } else {
-                                                    infos.put(EXPIRE_TIME, Long.toString(-1));
+                                                    StatsManager.I().track("premium/upgradeTrackError/" + accountHoster + "/empty");
                                                 }
-                                                final File file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(accountHoster) + ".json");
-                                                if (file.exists()) {
-                                                    try {
-                                                        final ArrayList<ClickedAffLinkStorable> list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
-                                                        });
-                                                        if (list != null && list.size() > 0) {
-                                                            infos.put(CLICK_SOURCE, JSonStorage.serializeToJson(list));
-                                                        } else {
-                                                            StatsManager.I().track("premium/upgradeTrackError/" + accountHoster + "/empty");
-                                                        }
-                                                    } catch (Throwable e) {
-                                                        StatsManager.I().track("premium/upgradeTrackError/" + accountHoster + "/" + e.getMessage());
-                                                        logger.log(e);
-                                                        file.delete();
-                                                    }
-                                                }
-                                                StatsManager.I().track("premium/upgrade/" + accountHoster, infos);
+                                            } catch (Throwable e) {
+                                                StatsManager.I().track("premium/upgradeTrackError/" + accountHoster + "/" + e.getMessage());
+                                                logger.log(e);
+                                                file.delete();
                                             }
                                         }
+                                        StatsManager.I().track("premium/upgrade/" + accountHoster, infos);
                                     }
                                 }
                             } catch (Throwable e) {

@@ -37,7 +37,8 @@ public class AccountControllerEvent extends SimpleEvent<AccountController, Objec
         ADDED,
         REMOVED,
         ACCOUNT_PROPERTY_UPDATE,
-        ACCOUNT_CHECKED
+        ACCOUNT_CHECKED,
+        ACCOUNT_UP_OR_DOWNGRADE
     }
 
 }
