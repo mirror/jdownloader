@@ -814,7 +814,7 @@ public class EasyBytezCom extends PluginForHost {
             final long expire = new SimpleDateFormat("dd MMMM yyyy", Locale.ENGLISH).parse(expireDay).getTime();
             if (expire > 0) {
                 ai.setValidUntil(expire);
-                isFree = !ai.isExpired();
+                isFree = ai.isExpired();
             }
         }
         if (isFree) {
