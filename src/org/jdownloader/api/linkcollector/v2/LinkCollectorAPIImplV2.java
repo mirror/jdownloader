@@ -100,8 +100,8 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             boolean readL = pkg.getModifyLock().readLock();
             try {
                 CrawledPackageAPIStorableV2 cps = new CrawledPackageAPIStorableV2(pkg);
-                final CrawledPackageView view = new CrawledPackageView();
-                view.setItems(pkg.getChildren());
+                final CrawledPackageView view = new CrawledPackageView(pkg);
+                view.aggregate();
 
                 if (queryParams.isSaveTo()) {
                     cps.setSaveTo(LinkTreeUtils.getDownloadDirectory(pkg).toString());
