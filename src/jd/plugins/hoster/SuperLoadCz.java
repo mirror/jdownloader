@@ -40,6 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.hoster.PremiumaxNet.UnavailableHost;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superload.cz" }, urls = { "http://\\w+\\.superload\\.eu/download\\.php\\?a=[a-z0-9]+" }, flags = { 2 })
@@ -52,6 +53,7 @@ public class SuperLoadCz extends antiDDoSForHost {
     private static final String                                       mName              = "superload.cz/";
     private static final String                                       mProt              = "http://";
     private static final String                                       mAPI               = "http://api.superload.cz/a-p-i";
+    private static final String                                       NICE_HOSTproperty  = "superloadcz";
     private static HashMap<Account, HashMap<String, UnavailableHost>> hostUnavailableMap = new HashMap<Account, HashMap<String, UnavailableHost>>();
 
     private static Object                                             LOCK               = new Object();
@@ -176,25 +178,35 @@ public class SuperLoadCz extends antiDDoSForHost {
     }
 
     private void handleDL(final Account account, final DownloadLink link, final String dllink) throws Exception {
-        /* we want to follow redirects in final stage */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-        if (!dl.getConnection().isContentDisposition()) {
-            /* download is not contentdisposition, so remove this host from premiumHosts list */
-            br.followConnection();
-            if (br.containsHTML(">Omlouváme se, ale soubor se nepovedlo stáhnout")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+        boolean updateCredits = true;
+        try {
+            /* we want to follow redirects in final stage */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+            if (!dl.getConnection().isContentDisposition()) {
+                /* download is not contentdisposition, so remove this host from premiumHosts list */
+                br.followConnection();
+                if (br.containsHTML("Not enough credits")) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                updateCredits = false;
+                if (br.containsHTML(">Omlouváme se, ale soubor se nepovedlo stáhnout")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+                }
+                /* temp disabled the host */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                link.setProperty("superloadczdirectlink", dllink);
+                /* contentdisposition, lets download it */
+                dl.startDownload();
             }
-            /* temp disabled the host */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            link.setProperty("superloadczdirectlink", dllink);
-            /* contentdisposition, lets download it */
-            dl.startDownload();
-            try {
-                updateCredits(null, account);
-            } catch (Throwable e) {
-                logger.info("Could not updateCredits handleDL!");
-                logger.info(e.toString());
+        } finally {
+            if (updateCredits) {
+                try {
+                    updateCredits(null, account);
+                } catch (final Throwable e) {
+                    logger.info("Could not updateCredits handleDL!");
+                    logger.info(e.toString());
+                }
             }
         }
     }
@@ -226,25 +238,30 @@ public class SuperLoadCz extends antiDDoSForHost {
             showMessage(link, "Task 1: Generating Link");
             /* request Download */
             postPageSafe(account, mAPI + "/download-url", "url=" + Encoding.urlEncode(link.getDownloadURL()) + (pass != null ? "&password=" + Encoding.urlEncode(pass) : "") + "&token=");
-            if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (br.containsHTML("\"error\":\"invalidLink\"")) {
-                logger.info("Superload.cz says 'invalid link', disabling real host for 1 hour.");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l, "Invalid Link");
-            } else if (br.containsHTML("\"error\":\"temporarilyUnsupportedServer\"")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temp. Error. Try again later", 5 * 60 * 1000l);
-            } else if (br.containsHTML("\"error\":\"fileNotFound\"")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML("\"error\":\"unsupportedServer\"")) {
-                logger.info("Superload.cz says 'unsupported server', disabling real host for 1 hour.");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l, "Unsuported Server");
-            } else if (br.containsHTML("\"error\":\"Lack of credits\"")) {
-                logger.info("Superload.cz says 'Lack of credits', temporarily disabling account.");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
             dllink = getJson("link");
             if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final String error = getJson("error");
+                if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else if (StringUtils.equalsIgnoreCase(error, "invalidLink")) {
+                    logger.info("Superload.cz says 'invalid link', disabling real host for 1 hour.");
+                    tempUnavailableHoster(account, link, 60 * 60 * 1000l, "Invalid Link");
+                } else if (StringUtils.equalsIgnoreCase(error, "temporarilyUnsupportedServer")) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temp. Error. Try again later", 5 * 60 * 1000l);
+                } else if (StringUtils.equalsIgnoreCase(error, "fileNotFound")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (StringUtils.equalsIgnoreCase(error, "unsupportedServer")) {
+                    logger.info("Superload.cz says 'unsupported server', disabling real host for 1 hour.");
+                    tempUnavailableHoster(account, link, 60 * 60 * 1000l, "Unsuported Server");
+                } else if (StringUtils.equalsIgnoreCase(error, "Lack of credits")) {
+                    logger.info("Superload.cz says 'Lack of credits', temporarily disabling account.");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else if (StringUtils.containsIgnoreCase(error, "Unable to download the file")) {
+                    handleErrorRetries(account, link, "Unable to download file", 10, 15 * 60 * 1000l);
+                } else if (dllink == null) {
+                    // this will allow statserv to pick up these errors, and we can improve the plugin.
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled Error Type");
+                }
             }
             showMessage(link, "Task 2: Download begins!");
         }
@@ -416,6 +433,29 @@ public class SuperLoadCz extends antiDDoSForHost {
         }
         if (failed) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 10 * 60 * 1000l);
+        }
+    }
+
+    /**
+     * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
+     * from the host list.
+     *
+     * @param error
+     *            : The name of the error
+     * @param maxRetries
+     *            : Max retries before out of date error is thrown
+     */
+    private void handleErrorRetries(final Account account, final DownloadLink downloadlink, final String error, final int maxRetries, final long disableTime) throws PluginException {
+        int timesFailed = downloadlink.getIntegerProperty(NICE_HOSTproperty + "-failedtimes_" + error, 0);
+        if (timesFailed <= maxRetries) {
+            logger.info("Retrying -> " + error);
+            timesFailed++;
+            downloadlink.setProperty(NICE_HOSTproperty + "-failedtimes_" + error, timesFailed);
+            throw new PluginException(LinkStatus.ERROR_RETRY, error);
+        } else {
+            downloadlink.setProperty(NICE_HOSTproperty + "-failedtimes_" + error, Property.NULL);
+            logger.info("Disabling current host -> " + error);
+            tempUnavailableHoster(account, downloadlink, disableTime, error);
         }
     }
 
