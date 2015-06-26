@@ -102,6 +102,8 @@ public class MegaCryPt extends PluginForDecrypt {
                 if ("".equals(code)) {
                     // this will effectively change the hash value without doing another request
                     br.getRequest().setHtmlCode(br.toString().replace(imageHash, JDHash.getSHA1(System.currentTimeMillis() + "")));
+                    forms = br.getForms();
+                    captcha = getCaptchaForm(forms);
                     continue;
                 }
                 captcha.put("siwp_captcha_value", Encoding.urlEncode(code));
