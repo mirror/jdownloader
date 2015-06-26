@@ -132,11 +132,12 @@ public class XyouCom extends PluginForHost {
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
-        br.getHeaders().put("Referer", "http://www.xyou.com/jwplayer.flash.swf");
+        br2.getHeaders().put("Referer", "http://www.xyou.com/jwplayer.flash.swf");
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, DLLINK);
+                // con = openConnection(br2, DLLINK);
+                con = br2.openGetConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
