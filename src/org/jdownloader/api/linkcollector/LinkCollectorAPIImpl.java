@@ -75,8 +75,8 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
             boolean readL = pkg.getModifyLock().readLock();
             try {
                 CrawledPackageAPIStorable cps = new CrawledPackageAPIStorable(pkg);
-                final CrawledPackageView view = new CrawledPackageView();
-                view.setItems(pkg.getChildren());
+                final CrawledPackageView view = new CrawledPackageView(pkg);
+                view.aggregate();
                 org.jdownloader.myjdownloader.client.json.JsonMap infomap = new org.jdownloader.myjdownloader.client.json.JsonMap();
                 if (queryParams._getQueryParam("saveTo", Boolean.class, false)) {
                     infomap.put("saveTo", LinkTreeUtils.getDownloadDirectory(pkg).toString());
