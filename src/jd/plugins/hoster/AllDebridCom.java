@@ -93,7 +93,7 @@ public class AllDebridCom extends antiDDoSForHost {
                             logger.info("NOT adding the following host to array of supported hosts as its daily limit is reached: " + host);
                             continue;
                         }
-                    } catch (final Throwable e) {
+                    } catch (final Exception e) {
                         logger.severe(e.toString());
                     }
                     try {
@@ -101,7 +101,7 @@ public class AllDebridCom extends antiDDoSForHost {
                             logger.info("NOT adding the following host to array of supported hosts as its daily limit is reached: " + host);
                             continue;
                         }
-                    } catch (final Throwable e) {
+                    } catch (final Exception e) {
                         logger.severe(e.toString());
                     }
                     try {
@@ -109,7 +109,7 @@ public class AllDebridCom extends antiDDoSForHost {
                             logger.info("NOT adding the following host to array of supported hosts as its daily limit is reached: " + host);
                             continue;
                         }
-                    } catch (final Throwable e) {
+                    } catch (final Exception e) {
                         logger.severe(e.toString());
                     }
                     supportedHosts.add(host);
@@ -313,7 +313,7 @@ public class AllDebridCom extends antiDDoSForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        } catch (final Throwable e) {
+        } catch (final Exception e) {
             if (e instanceof PluginException) {
                 throw e;
             }
