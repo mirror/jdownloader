@@ -303,7 +303,7 @@ public class AllDebridCom extends antiDDoSForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dl.getDownloadURL());
-            if (con.isContentDisposition()) {
+            if ((con.isContentDisposition() || con.isOK()) && !con.getContentType().contains(".html")) {
                 if (dl.getFinalFileName() == null) {
                     dl.setFinalFileName(getFileNameFromHeader(con));
                 }
@@ -314,6 +314,10 @@ public class AllDebridCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } catch (final Throwable e) {
+            if (e instanceof PluginException) {
+                throw e;
+            }
+            getLogger().log(e);
             dl.setAvailable(false);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } finally {
