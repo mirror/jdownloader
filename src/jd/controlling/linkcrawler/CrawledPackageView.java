@@ -22,7 +22,7 @@ import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 public class CrawledPackageView extends ChildrenView<CrawledLink> {
 
     protected volatile long                fileSize                 = 0;
-    private volatile DomainInfo[]          domainInfos;
+    private volatile DomainInfo[]          domainInfos              = new DomainInfo[0];
     protected volatile boolean             enabled                  = false;
     private volatile int                   offline                  = 0;
     private volatile int                   online                   = 0;
@@ -33,29 +33,43 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     private volatile String                commonSourceUrl;
     private volatile String                availabilityColumnString = null;
     private volatile ChildrenAvailablility availability             = ChildrenAvailablility.UNKNOWN;
+    private final CrawledPackage           pkg;
 
     public CrawledPackageView() {
-        domainInfos = new DomainInfo[0];
+        this(null);
+    }
+
+    public CrawledPackageView(CrawledPackage pkg) {
+        this.pkg = pkg;
     }
 
     @Override
     public CrawledPackageView aggregate() {
-        synchronized (this) {
-            Temp tmp = new Temp();
-            /* this is called for repaint, so only update values that could have changed for existing items */
-            final PackageControllerTableModelDataPackage tableModelDataPackage = getTableModelDataPackage();
-            int size = 0;
-            if (tableModelDataPackage != null) {
-                for (AbstractNode item : tableModelDataPackage.getVisibleChildren()) {
-                    size++;
-                    addtoTmp(tmp, (CrawledLink) item);
-                }
+        if (pkg != null) {
+            final boolean readL = pkg.getModifyLock().readLock();
+            try {
+                return setItems(pkg.getChildren());
+            } finally {
+                pkg.getModifyLock().readUnlock(readL);
             }
-            writeTmpToFields(tmp);
-            updateAvailability(size, tmp.newOffline, tmp.newOnline);
-            availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, size);
+        } else {
+            synchronized (this) {
+                Temp tmp = new Temp();
+                /* this is called for repaint, so only update values that could have changed for existing items */
+                final PackageControllerTableModelDataPackage tableModelDataPackage = getTableModelDataPackage();
+                int size = 0;
+                if (tableModelDataPackage != null) {
+                    for (AbstractNode item : tableModelDataPackage.getVisibleChildren()) {
+                        size++;
+                        addtoTmp(tmp, (CrawledLink) item);
+                    }
+                }
+                writeTmpToFields(tmp);
+                updateAvailability(size, tmp.newOffline, tmp.newOnline);
+                availabilityColumnString = _GUI._.AvailabilityColumn_getStringValue_object_(tmp.newOnline, size);
+            }
+            return this;
         }
-        return this;
     }
 
     private class Temp {
