@@ -183,6 +183,8 @@ public class XHamsterCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBr();
+        // quick fix to force old player
+        br.setCookie(MAINPAGE, "playerVer", "old");
         String filename = null;
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
