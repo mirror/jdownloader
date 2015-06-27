@@ -321,11 +321,11 @@ public class TusFilesNet extends PluginForHost {
                         if (inValidate(fileInfo[0])) {
                             fileInfo[0] = cbr.getRegex(sharebox0).getMatch(0);
                             if (inValidate(fileInfo[0])) {
+                                fileInfo[0] = cbr.getRegex(sharebox1).getMatch(0);
                                 if (inValidate(fileInfo[0])) {
-                                    fileInfo[0] = cbr.getRegex(sharebox1).getMatch(0);
                                     fileInfo[0] = cbr.getRegex("b>Password:</b></div>[\t\n\t ]+<h3>([^<>\"]*?)</h3>").getMatch(0);
                                     if (inValidate(fileInfo[0])) {
-                                        fileInfo[0] = cbr.getRegex(">(.*?)</button>").getMatch(0);
+                                        fileInfo[0] = cbr.getRegex("<button[^>]*>(.*?)</button>").getMatch(0);
                                     }
                                 }
                             }
