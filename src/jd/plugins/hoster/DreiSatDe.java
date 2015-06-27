@@ -49,7 +49,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3sat.de" }, urls = { "http://(www\\.)?3sat\\.de/mediathek/(index\\.php)?(\\?display=\\d+\\&|\\?)mode=play(set)?\\&obj=\\d+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3sat.de" }, urls = { "http://(www\\.)?3sat\\.de/mediathek/.+\\&obj=\\d+" }, flags = { 32 })
 public class DreiSatDe extends PluginForHost {
 
     private static final String Q_LOW      = "Q_LOW";
@@ -86,8 +86,9 @@ public class DreiSatDe extends PluginForHost {
                 // Quicktime: 5=auto; 51=low; 53=high; 54=veryhigh; 5?=hd --> rtsp://
                 // WindowsMedia: 2=auto; 21=low; 23=high; 24=veryhigh; 2?=hd --> mms://
                 if (ID != null) {
+                    final String parameter = "http://www.3sat.de/mediathek/?mode=play&display=1&obj=" + ID;
                     Browser br = new Browser();
-                    br.getPage(sourceLink.getDownloadURL());
+                    br.getPage(parameter);
 
                     String title = br.getRegex("<div class=\"MainBoxHeadline\">([^<]+)</").getMatch(0);
                     String titleUT = br.getRegex("<span class=\"BoxHeadlineUT\">([^<]+)</").getMatch(0);
@@ -219,16 +220,12 @@ public class DreiSatDe extends PluginForHost {
                         final DownloadLink link = new DownloadLink(this, name, getHost(), sourceLink.getDownloadURL(), true);
                         link.setAvailable(true);
                         link.setFinalFileName(name);
-                        try {/* JD2 only */
-                            link.setContentUrl(sourceLink.getBrowserUrl());
-                        } catch (Throwable e) {/* Stable */
-                            link.setBrowserUrl(sourceLink.getBrowserUrl());
-                        }
                         link.setProperty("directURL", url);
                         link.setProperty("directName", name);
                         link.setProperty("directQuality", fmt);
                         link.setProperty("streamingType", protocol);
-                        link.setProperty("LINKDUPEID", "3sat" + JDHash.getMD5(ID + name + fmt + MediaEntry.get("videoBitrate") + System.nanoTime()));
+                        link.setProperty("LINKDUPEID", "3sat" + JDHash.getMD5(ID + name + fmt + MediaEntry.get("videoBitrate")));
+                        link.setContentUrl(parameter);
 
                         try {
                             link.setDownloadSize(Long.parseLong(MediaEntry.get("filesize")));

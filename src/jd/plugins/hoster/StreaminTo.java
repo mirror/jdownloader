@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streamin.to" }, urls = { "https?://(www\\.)?streamin\\.to/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streamin.to" }, urls = { "https?://(www\\.)?streamin\\.to/(?:(?:vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class StreaminTo extends antiDDoSForHost {
 
     private String               correctedBR                  = "";

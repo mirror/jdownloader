@@ -96,9 +96,10 @@ public class VideoOneCom extends PornEmbedParser {
             }
             if (externID.matches("http://media\\.8\\-d\\.com/getcode\\.php\\?id=\\d+\\&code=\\d+")) {
                 br.getPage(externID);
-                externID = br.getRegex("<url>([^<>\"]*?)</url>").getMatch(0);
+                externID = br.getRegex("<url>([^<>]*?)</url>").getMatch(0);
                 if (externID == null) {
-                    if (br.containsHTML("<url>\\]>")) {
+                    if (this.br.containsHTML("<url>\\]>") || this.br.containsHTML("<url>http")) {
+                        /* Serverside broken url --> Video will not play via browser either! */
                         decryptedLinks.add(this.createOfflinelink(parameter));
                         return decryptedLinks;
                     }

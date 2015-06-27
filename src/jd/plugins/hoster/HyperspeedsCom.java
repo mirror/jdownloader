@@ -193,6 +193,9 @@ public class HyperspeedsCom extends PluginForHost {
             handleAPIErrors(this.br);
             handleErrorRetries("unknowndlerror", 10, 5 * 60 * 1000l);
         }
+        final String filename_server = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        /* MOCH sometimes tags filenames (maybe only for free accounts) --> Fix that! */
+        link.setFinalFileName(filename_server.replace("HyperSpeeds_com_", ""));
         try {
             controlSlot(+1);
             this.dl.startDownload();

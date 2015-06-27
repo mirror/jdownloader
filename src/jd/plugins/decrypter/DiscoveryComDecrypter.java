@@ -104,7 +104,7 @@ public class DiscoveryComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        json = br.getRegex("var videoItems = (\\{.*?\\});").getMatch(0);
+        json = this.br.cloneBrowser().getPage(this.br.getURL() + "?flat=1");
         if (json == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

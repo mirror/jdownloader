@@ -75,8 +75,7 @@ import org.jdownloader.DomainInfo;
 public class SaveTv extends PluginForHost {
 
     /**
-     * Status 01.06.2015: HD downloads via API do not seem to work anymore. API only always contains HQ instead of HD. Either general
-     * serverside issues or they limited the HD versions to only appear when new API keys are used.
+     * Status 2015-06-26: HD downloads via API work fine again. They have not been working for ~ a month but it's all back to normal now!
      */
     /* Static information */
     private static final String  APIKEY_android_1_9_2                      = "Q0FFQjZDQ0YtMDdFNC00MDQ4LTkyMDQtOUU5QjMxOEU3OUIz";
