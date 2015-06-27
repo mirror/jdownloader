@@ -307,13 +307,27 @@ public class ZeveraCom extends PluginForHost {
         prepBrowser();
 
         synchronized (hostUnavailableMap) {
-            final HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(account);
+            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(null);
             if (unavailableMap != null && unavailableMap.containsKey(link.getHost())) {
                 final Long lastUnavailable = unavailableMap.get(link.getHost()).getErrorTimeout();
                 final String errorReason = unavailableMap.get(link.getHost()).getErrorReason();
                 if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
                     final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this multihoster: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(null);
+                    }
+                }
+            }
+            unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null && unavailableMap.containsKey(link.getHost())) {
+                final Long lastUnavailable = unavailableMap.get(link.getHost()).getErrorTimeout();
+                final String errorReason = unavailableMap.get(link.getHost()).getErrorReason();
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this account: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(link.getHost());
                     if (unavailableMap.size() == 0) {
@@ -340,17 +354,24 @@ public class ZeveraCom extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        handleRedirectionErrors(dllink);
 
+        showMessage(link, "Task 2: Download begins!");
+        handleDL(link, dllink);
+    }
+
+    private void handleRedirectionErrors(final String dllink) throws PluginException {
         if (new Regex(dllink, "/member/systemmessage\\.aspx\\?hoster=[\\w\\.\\-]+_customer").matches()) {
-            // out of traffic for that given host
+            // out of traffic for that given host for that given account.
             tempUnavailableHoster(1 * 60 * 60 * 1000l, "No traffic left for this host.");
+        } else if (new Regex(dllink, "/member/systemmessage\\.aspx\\?hoster=[\\w\\.\\-]+$").matches()) {
+            // out of traffic for that given host for whole of multihoster, set to null account to prevent retry
+            this.currAcc = null;
+            tempUnavailableHoster(30 * 60 * 60 * 1000l, "No traffic left for this host.");
         } else if (new Regex(dllink, "/member/systemmessage\\.aspx").matches()) {
             // we assume that they might have other error types for that same URL.
             handleErrorRetries("known_unknownerror", 20, 1 * 60 * 60 * 1000l);
         }
-
-        showMessage(link, "Task 2: Download begins!");
-        handleDL(link, dllink);
     }
 
     @Override
