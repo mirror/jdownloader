@@ -45,7 +45,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.logging2.LogSource;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "http://((www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)[^<>/\"]+/((b|c|v)/\\d+|videos(\\?page=\\d+)?)|(www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "https?://((www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)[^<>/\"]+/((b|c|v)/\\d+|videos(\\?page=\\d+)?)|(www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)" }, flags = { 0 })
 public class JustinTvDecrypt extends PluginForDecrypt {
 
     public JustinTvDecrypt(PluginWrapper wrapper) {
@@ -70,7 +70,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
     private void ajaxGetPagePlayer(final String string) throws IOException {
         ajax = br.cloneBrowser();
         ajax.getHeaders().put("Accept", "*/*");
-        ajax.getHeaders().put("X-Requested-With", "ShockwaveFlash/17.0.0.134");
+        ajax.getHeaders().put("X-Requested-With", "ShockwaveFlash/18.0.0.194");
         ajax.getPage(string);
     }
 
@@ -81,6 +81,9 @@ public class JustinTvDecrypt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> desiredLinks = new ArrayList<DownloadLink>();
+        // currently they redirect https to http
+        String parameter = param.toString().replaceFirst("^https://", "http://").replaceAll("://([a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)", "://www.twitch.tv");
+        final String vid = new Regex(parameter, "(\\d+)$").getMatch(0);
 
         final SubConfiguration cfg = this.getPluginConfig();
         br = new Browser();
@@ -88,7 +91,6 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         // redirects occur to de.domain when browser accept language set to German!
         br.getHeaders().put("Accept-Language", "en-gb");
         // currently redirect to www.
-        String parameter = param.toString().replaceAll("://([a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)", "://www.twitch.tv");
         br.setFollowRedirects(true);
 
         /* Log in if possible to be able to download "for subscribers only" videos */
@@ -104,12 +106,10 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         } else {
             logger.info("NOT logged in via decrypter");
         }
-
         br.getPage(parameter);
-        if (parameter.matches("http://(www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+")) {
-            parameter = "http://www.twitch.tv/" + System.currentTimeMillis() + "/b/" + new Regex(parameter, "(\\d+)$").getMatch(0);
+        if (parameter.matches("https?://(www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+")) {
+            parameter = new Regex(parameter, "https?://[^/]+/").getMatch(-1) + System.currentTimeMillis() + "/b/" + new Regex(parameter, "(\\d+)$").getMatch(0);
         }
-        final String vid = new Regex(parameter, "(\\d+)$").getMatch(0);
         if (br.containsHTML(">Sorry, we couldn\\'t find that stream\\.|<h1>This channel is closed</h1>|>I\\'m sorry, that page is in another castle") || br.getHttpConnection().getResponseCode() == 404) {
             try {
                 decryptedLinks.add(createOfflinelink(parameter, null));
@@ -310,7 +310,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 final String privileged = getJson(ajax.toString().replaceAll("\\\\\"", "\""), "privileged");
                 // auth required
                 // http://usher.twitch.tv/vod/3707868?nauth=%7B%22user_id%22%3Anull%2C%22vod_id%22%3A3707868%2C%22expires%22%3A1421885482%2C%22chansub%22%3A%7B%22restricted_bitrates%22%3A%5B%5D%7D%2C%22privileged%22%3Afalse%7D&nauthsig=d4ecb4772b28b224accbbc4711dff1c786725ce9
-                final String a = Encoding.urlEncode("{\"user_id\":" + (userId != null ? userId : "null") + ",\"vod_id\":" + vid + ",\"expires\":" + expire + ",\"chansub\":{\"restricted_bitrates\":[]},\"privileged\":" + privileged + "}") + "&nauthsig=" + auth;
+                final String a = Encoding.urlEncode("{\"user_id\":" + (userId != null ? userId : "null") + ",\"vod_id\":" + vid + ",\"expires\":" + expire + ",\"chansub\":{\"restricted_bitrates\":[]},\"privileged\":" + privileged + "}") + "&player=twitchweb&nauthsig=" + auth + "&allow_source=true";
                 this.ajaxGetPagePlayer("http://usher.twitch.tv/vod/" + vid + "?nauth=" + a);
                 // #EXTM3U
                 // #EXT-X-MEDIA:TYPE=VIDEO,GROUP-ID="chunked",NAME="Source",AUTOSELECT=YES,DEFAULT=YES
