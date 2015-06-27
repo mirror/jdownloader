@@ -307,6 +307,8 @@ public class TusFilesNet extends PluginForHost {
     }
 
     private String[] scanInfo(final DownloadLink downloadLink, final String[] fileInfo) {
+        final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
+        final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
         // standard traits from base page
         if (inValidate(fileInfo[0])) {
             fileInfo[0] = cbr.getRegex("You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
@@ -317,9 +319,15 @@ public class TusFilesNet extends PluginForHost {
                     if (inValidate(fileInfo[0])) {
                         fileInfo[0] = cbr.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
                         if (inValidate(fileInfo[0])) {
-                            fileInfo[0] = cbr.getRegex("<textarea[^\r\n]+><[^>]+" + fuid + "\">(.*?) - [\\d\\.]+ (B|KB|MB|GB)</").getMatch(0);
+                            fileInfo[0] = cbr.getRegex(sharebox0).getMatch(0);
                             if (inValidate(fileInfo[0])) {
-                                fileInfo[0] = cbr.getRegex("b>Password:</b></div>[\t\n\t ]+<h3>([^<>\"]*?)</h3>").getMatch(0);
+                                if (inValidate(fileInfo[0])) {
+                                    fileInfo[0] = cbr.getRegex(sharebox1).getMatch(0);
+                                    fileInfo[0] = cbr.getRegex("b>Password:</b></div>[\t\n\t ]+<h3>([^<>\"]*?)</h3>").getMatch(0);
+                                    if (inValidate(fileInfo[0])) {
+                                        fileInfo[0] = cbr.getRegex(">(.*?)</button>").getMatch(0);
+                                    }
+                                }
                             }
                         }
                     }
@@ -331,21 +339,24 @@ public class TusFilesNet extends PluginForHost {
         }
         /* For password protected links */
         if (inValidate(fileInfo[1])) {
-            fileInfo[1] = cbr.getRegex("<textarea[^\r\n]+><[^>]+" + fuid + "\">(?:.*?) - ([\\d\\.]+ (B|KB|MB|GB))</").getMatch(0);
+            fileInfo[1] = cbr.getRegex(sharebox0).getMatch(1);
             if (inValidate(fileInfo[1])) {
-                fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+                fileInfo[1] = cbr.getRegex(sharebox1).getMatch(1);
                 if (inValidate(fileInfo[1])) {
-                    fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
+                    fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
                     if (inValidate(fileInfo[1])) {
-                        fileInfo[1] = cbr.getRegex("<li>[^\r\n]+</li>[\r\n\t ]+<li><b>Size:</b> <small>(.*?)</small>").getMatch(0);
+                        fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
                         if (inValidate(fileInfo[1])) {
-                            fileInfo[1] = cbr.getRegex("class=\"tsSize\">([^<>\"]*?)</span>").getMatch(0);
+                            fileInfo[1] = cbr.getRegex("<li>[^\r\n]+</li>[\r\n\t ]+<li><b>Size:</b> <small>(.*?)</small>").getMatch(0);
                             if (inValidate(fileInfo[1])) {
-                                fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                                fileInfo[1] = cbr.getRegex("class=\"tsSize\">([^<>\"]*?)</span>").getMatch(0);
                                 if (inValidate(fileInfo[1])) {
-                                    fileInfo[1] = cbr.getRegex("Size:</th>\\s+?<[^<>]+>(\\d+(\\.\\d+)? ?(B|KB|MB|GB))").getMatch(0);
-                                    if (inValidate(fileInfo[0])) {
-                                        fileInfo[0] = cbr.getRegex("b>Password:</b></div>[\t\n\t ]+<h3>([^<>\"]*?)</h3>").getMatch(0);
+                                    fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                                    if (inValidate(fileInfo[1])) {
+                                        fileInfo[1] = cbr.getRegex("Size:</th>\\s+?<[^<>]+>(\\d+(\\.\\d+)? ?(B|KB|MB|GB))").getMatch(0);
+                                        if (inValidate(fileInfo[0])) {
+                                            fileInfo[0] = cbr.getRegex("b>Password:</b></div>[\t\n\t ]+<h3>([^<>\"]*?)</h3>").getMatch(0);
+                                        }
                                     }
                                 }
                             }

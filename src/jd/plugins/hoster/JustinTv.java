@@ -95,7 +95,7 @@ public class JustinTv extends PluginForHost {
                 }
 
                 br.getHeaders().put("Accept", "*/*");
-                br.getHeaders().put("X-Requested-With", "ShockwaveFlash/16.0.0.257");
+                br.getHeaders().put("X-Requested-With", "ShockwaveFlash/18.0.0.194");
                 br.getHeaders().put("Referer", downloadLink.getContentUrl());
                 HLSDownloader downloader = new HLSDownloader(downloadLink, br, downloadLink.getStringProperty("m3u", null));
                 StreamInfo streamInfo = downloader.getProbe();
