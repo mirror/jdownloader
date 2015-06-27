@@ -114,7 +114,8 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_VIDEO_ALBUM                     = "https?://(www\\.)?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(\\-)?\\d+)";
     private static final String     PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS = "https?://(www\\.)?vk\\.com/videos(\\-)?\\d+\\?.+";
     private static final String     PATTERN_VIDEO_COMMUNITY_ALBUM           = "https?://(www\\.)?vk\\.com/video\\?gid=\\d+";
-    private static final String     PATTERN_PHOTO_SINGLE                    = "https?://(www\\.)?vk\\.com/photo(\\-)?\\d+_\\d+";
+    private static final String     PATTERN_PHOTO_SINGLE                    = "https?://(www\\.)?vk\\.com/photo(\\-)?\\d+_\\d+.*?";
+    private static final String     PATTERN_PHOTO_SINGLE_Z                  = "https?://(?:www\\.)?vk\\.com/.+z=photo(?:\\-)?\\d+_\\d+.*?";
     private static final String     PATTERN_PHOTO_MODULE                    = "https?://(www\\.)?vk\\.com/[A-Za-z0-9\\-_\\.]+\\?z=photo(\\-)?\\d+_\\d+/(wall|album)\\-\\d+_\\d+";
     private static final String     PATTERN_PHOTO_ALBUM                     = ".*?(tag|album(?:\\-)?\\d+_|photos(?:\\-)?)\\d+";
     private static final String     PATTERN_PHOTO_ALBUMS                    = "https?://(www\\.)?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)";
@@ -239,11 +240,11 @@ public class VKontakteRu extends PluginForDecrypt {
             final String finallink = new Regex(CRYPTEDLINK_ORIGINAL, "\\?to=(.+)").getMatch(0);
             decryptedLinks.add(createDownloadlink(finallink));
             return decryptedLinks;
-        } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_SINGLE)) {
+        } else if (CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_SINGLE) || (CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_SINGLE_Z) && !CRYPTEDLINK_ORIGINAL.matches(PATTERN_PHOTO_MODULE))) {
             /**
              * Single photo links, those are just passed to the hosterplugin! Example:http://vk.com/photo125005168_269986868
              */
-            final DownloadLink decryptedPhotolink = getSinglePhotoDownloadLink(new Regex(CRYPTEDLINK_ORIGINAL, "((\\-)?\\d+_\\d+)").getMatch(0));
+            final DownloadLink decryptedPhotolink = getSinglePhotoDownloadLink(new Regex(CRYPTEDLINK_ORIGINAL, "photo((\\-)?\\d+_\\d+)").getMatch(0));
             decryptedLinks.add(decryptedPhotolink);
             return decryptedLinks;
         } else if (isSingeVideo(CRYPTEDLINK_ORIGINAL)) {

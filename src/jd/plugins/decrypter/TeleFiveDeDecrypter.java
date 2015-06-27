@@ -173,7 +173,11 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         }
 
         final String[] youtubeurls = br.getRegex("\"(https?://(www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getColumn(0);
-        final String[] videosinfo = br.getRegex("kWidget\\.(?:thumb)?Embed\\(\\{(.*?)</script>").getColumn(0);
+        String[] videosinfo = br.getRegex("kWidget\\.(?:thumb)?Embed\\(\\{(.*?)</script>").getColumn(0);
+        if (videosinfo == null || videosinfo.length == 0) {
+            /* Trailers are available via embed urls */
+            videosinfo = br.getRegex("\"(https?://api\\.medianac\\.com/p/\\d+/sp/\\d+/embedIframeJs/uiconf_id/\\d+/partner_id/[^<>\"/]*?)\"").getColumn(0);
+        }
         if ((videosinfo == null || videosinfo.length == 0) && (youtubeurls == null || youtubeurls.length == 0)) {
             if (!br.containsHTML("kaltura_player_")) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
@@ -370,10 +374,17 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             final String videoHeight = KalturaFlavorAsset.get("height");
             final String videoResolution = videoWidth + "x" + videoHeight;
             final String qualityInfo = videoBitrate.substring(0, 1) + "_" + videoWidth.substring(0, 1) + "_" + videoHeight.substring(0, 1);
-            final String[] formatinfo = formats.get(qualityInfo);
-            final String audioCodec = formatinfo[3];
-            final String audioBitrate = formatinfo[4];
-            final String videoCodec = formatinfo[0];
+            /* Dirty "workaround": Force unknown formats */
+            String[] formatinfo = null;
+            String audioCodec = null;
+            String audioBitrate = null;
+            String videoCodec = null;
+            if (formats.containsKey(qualityInfo)) {
+                formatinfo = formats.get(qualityInfo);
+                audioCodec = formatinfo[3];
+                audioBitrate = formatinfo[4];
+                videoCodec = formatinfo[0];
+            }
             if (videoCodec != null) {
                 formatString += videoCodec + "_";
             }

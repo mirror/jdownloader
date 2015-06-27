@@ -135,7 +135,7 @@ public class FaceBookComVideos extends PluginForHost {
             if (getThisPage != null) {
                 br.getPage(getThisPage.replace("\\", ""));
             }
-            if (br.containsHTML("<h2 class=\"accessible_elem\">")) {
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
                 link.setFinalFileName(link.getDownloadURL());
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
