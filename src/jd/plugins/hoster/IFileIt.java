@@ -552,6 +552,8 @@ public class IFileIt extends antiDDoSForHost {
             getPluginConfig().setProperty("username", Property.NULL);
             getPluginConfig().setProperty("password", Property.NULL);
             postPage(br, (br.getHttpConnection() == null ? MAINPAGE : "") + "/api-fetch_apikey.api", "username=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()));
+            // error handling
+            handleApiErrors(br);
             apikey = getJson(br, "akey");
             if (apikey != null) {
                 getPluginConfig().setProperty("apikey", apikey);
@@ -560,6 +562,19 @@ public class IFileIt extends antiDDoSForHost {
             }
         }
         return Encoding.urlEncode(apikey);
+    }
+
+    private void handleApiErrors(Browser br) throws PluginException {
+        final String msg = getJson(br, "message");
+        final boolean error = "error".equalsIgnoreCase(getJson(br, "status")) ? true : false;
+        if (error) {
+            if ("no such user".equalsIgnoreCase(msg)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "User/Password Incorrect", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            // catch unhandled errors, in statserve or user reports.
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
     }
 
     @Override
