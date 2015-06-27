@@ -214,36 +214,36 @@ public class DownloadSession extends Property {
     }
 
     private final CopyOnWriteArraySet<SingleDownloadController> controllers        = new CopyOnWriteArraySet<SingleDownloadController>() {
-                                                                                       /**
+        /**
          *
          */
-                                                                                       private static final long serialVersionUID = -3897088297641777499L;
+        private static final long serialVersionUID = -3897088297641777499L;
 
-                                                                                       public boolean add(SingleDownloadController e) {
-                                                                                           downloadsStarted.incrementAndGet();
-                                                                                           e.getDownloadLinkCandidate().getLink().setDownloadLinkController(e);
-                                                                                           return super.add(e);
-                                                                                       };
+        public boolean add(SingleDownloadController e) {
+            downloadsStarted.incrementAndGet();
+            e.getDownloadLinkCandidate().getLink().setDownloadLinkController(e);
+            return super.add(e);
+        };
 
-                                                                                       @Override
-                                                                                       public boolean remove(Object e) {
-                                                                                           boolean ret = super.remove(e);
-                                                                                           if (ret) {
-                                                                                               try {
-                                                                                                   getDiskSpaceManager().freeAllReservationsBy(e);
-                                                                                               } catch (final Throwable ignore) {
-                                                                                               }
-                                                                                               try {
-                                                                                                   getFileAccessManager().unlockAllHeldby(e);
-                                                                                               } finally {
-                                                                                                   if (e instanceof SingleDownloadController) {
-                                                                                                       ((SingleDownloadController) e).getDownloadLinkCandidate().getLink().setDownloadLinkController(null);
-                                                                                                   }
-                                                                                               }
-                                                                                           }
-                                                                                           return ret;
-                                                                                       };
-                                                                                   };
+        @Override
+        public boolean remove(Object e) {
+            boolean ret = super.remove(e);
+            if (ret) {
+                try {
+                    getDiskSpaceManager().freeAllReservationsBy(e);
+                } catch (final Throwable ignore) {
+                }
+                try {
+                    getFileAccessManager().unlockAllHeldby(e);
+                } finally {
+                    if (e instanceof SingleDownloadController) {
+                        ((SingleDownloadController) e).getDownloadLinkCandidate().getLink().setDownloadLinkController(null);
+                    }
+                }
+            }
+            return ret;
+        };
+    };
     private long                                                createTime;
     private static volatile WeakReference<FileBytesCache>       downloadWriteCache = null;
 
@@ -264,15 +264,14 @@ public class DownloadSession extends Property {
     public synchronized PluginForHost getPlugin(String host) {
         if (!StringUtils.isEmpty(host)) {
             final Iterator<Entry<PluginForHost, PluginClassLoaderChild>> it = getActivationPluginCache().entrySet().iterator();
-            PluginForHost plugin = null;
             while (it.hasNext()) {
                 final Entry<PluginForHost, PluginClassLoaderChild> next = it.next();
-                plugin = next.getKey();
-                if (StringUtils.equalsIgnoreCase(host, plugin.getHost())) {
+                final PluginForHost plugin = next.getKey();
+                if (plugin != null && StringUtils.equalsIgnoreCase(host, plugin.getHost())) {
                     return plugin;
                 }
             }
-            plugin = JDUtilities.getPluginForHost(host);
+            final PluginForHost plugin = JDUtilities.getPluginForHost(host);
             getActivationPluginCache().put(plugin, PluginClassLoader.getSharedChild(plugin));
             return plugin;
         }
