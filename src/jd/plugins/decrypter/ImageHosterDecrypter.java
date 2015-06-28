@@ -384,7 +384,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                 finallink = br.getRegex("\"(/allimages/[^<>\"]*?)\"").getMatch(0);
             }
             if (finallink != null) {
-                finallink = finallink.replace("allimages/2_image2you_ru", "allimages/image2you_ru");
+                finallink = finallink.replace("allimages/2_", "allimages/");
                 finallink = "http://image2you.ru" + finallink;
             }
         }

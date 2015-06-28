@@ -45,11 +45,12 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(www\\.)?vimeo\\.com/(\\d+|channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos)|http://player\\.vimeo.com/(video|external)/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vimeo.com" }, urls = { "https?://(www\\.)?vimeo\\.com/(\\d+|channels/[a-z0-9\\-_]+/\\d+|[A-Za-z0-9\\-_]+/videos)|https?://player\\.vimeo.com/(video|external)/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?" }, flags = { 0 })
 public class VimeoComDecrypter extends PluginForDecrypt {
 
-    private static final String type_player_private_external = "http://player\\.vimeo.com/external/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?";
-    private static final String type_player_private          = "http://player\\.vimeo.com/video/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?";
+    private static final String type_player_private_external = "https?://player\\.vimeo.com/external/\\d+(\\&forced_referer=[A-Za-z0-9=]+)?";
+    private static final String type_player_private          = "https?://player\\.vimeo.com/video/\\d+\\&forced_referer=[A-Za-z0-9=]+";
+    private static final String type_player                  = "https?://player\\.vimeo.com/video/\\d+";
     private static final String Q_MOBILE                     = "Q_MOBILE";
     private static final String Q_ORIGINAL                   = "Q_ORIGINAL";
     private static final String Q_HD                         = "Q_HD";
@@ -70,6 +71,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         String parameter = param.toString();
         if (parameter.matches(type_player_private_external)) {
             parameter = parameter.replace("/external/", "/video/");
+        } else if (!parameter.matches(type_player_private) && parameter.matches(type_player)) {
+            parameter = "http://vimeo.com/" + parameter.substring(parameter.lastIndexOf("/") + 1);
         }
         final SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
         // when testing and dropping to frame, components will fail without clean browser.
@@ -161,7 +164,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
              * accessed via their 'player'-link with a specified Referer - if the referer is not given in such a case the site will say that
              * our video would be a private video.
              */
-            if (parameter.matches(type_player_private) && new_way_allowed) {
+            if ((parameter.matches(type_player_private) || parameter.matches(type_player)) && new_way_allowed) {
                 if (vimeo_forced_referer != null) {
                     br.getHeaders().put("Referer", vimeo_forced_referer);
                 }

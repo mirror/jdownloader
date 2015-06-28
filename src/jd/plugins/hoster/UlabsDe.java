@@ -48,6 +48,8 @@ public class UlabsDe extends PluginForHost {
     private static final String                            NICE_HOST          = MAINPAGE.replaceAll("(https://|http://)", "");
     private static final String                            NICE_HOSTproperty  = MAINPAGE.replaceAll("(https://|http://|\\.|\\-)", "");
 
+    private static final String                            url_accountboerse  = "https://u-labs.de/accountBoerse/";
+
     /* Contains <host><aavailable_traffic> */
     private static HashMap<String, Long>                   hostTrafficleftMap = new HashMap<String, Long>();
 
@@ -230,8 +232,8 @@ public class UlabsDe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        if (br.getURL() == null || !br.getURL().equals("https://u-labs.de/accountBoerse/home/index/")) {
-            br.getPage("https://u-labs.de/accountBoerse/home/index/");
+        if (br.getURL() == null || !br.getURL().equals(url_accountboerse)) {
+            br.getPage(url_accountboerse);
         }
         final String[] hosts = br.getRegex("\"name\":[\t\n\r ]+\"([^<>\"]*?)\"").getColumn(0);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
@@ -287,7 +289,7 @@ public class UlabsDe extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 String postData = "cookieuser=1&s=&securitytoken=guest&do=login&url=https%3A%2F%2Fu-labs.de%2FaccountBoerse%2Fhome%2Findex%2F&hiddenlogin=do&vb_login_username=" + Encoding.urlEncode(account.getUser()) + "&vb_login_password=" + Encoding.urlEncode(account.getPass());
-                br.postPage("https://u-labs.de/login.php?do=login", postData);
+                br.postPage("https://u-labs.de/forum/login.php?do=login", postData);
                 if (br.getCookie(MAINPAGE, "bb_password") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -317,7 +319,7 @@ public class UlabsDe extends PluginForHost {
         String dllink;
         String hoster;
         site_login(acc, false);
-        br.getPage("https://u-labs.de/accountBoerse/home/index/");
+        br.getPage(url_accountboerse);
         final String userid = br.getRegex("\\'userid\\':[\t\n\r ]+(\\d+)").getMatch(0);
         final String authentificationToken = br.getRegex("\\'authentificationToken\\':[\t\n\r ]+\\'([^<>\"]*?)\\'").getMatch(0);
         final String externalBackendURL = br.getRegex("\\'externalBackendURL\\':[\t\n\r ]+\\'(http[^<>\"]*?)\\'").getMatch(0);
