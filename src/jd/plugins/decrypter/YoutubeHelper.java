@@ -670,12 +670,12 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     /**
      * *
-     * 
+     *
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     * 
+     *
      * @return
      * @throws IOException
      * @throws PluginException
@@ -980,7 +980,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         /* this cookie makes html5 available and skip controversy check */
 
         this.br.setCookie("youtube.com", "PREF", "f1=50000000&hl=en");
-        this.br.getHeaders().put("User-Agent", "Wget/1.12");
+        // this.br.getHeaders().put("User-Agent", "Wget/1.12");
 
         getAbsolute(base + "/watch?v=" + vid.videoID + "&gl=US&hl=en&has_verified=1&bpctr=9999999999", null, br);
 
@@ -1300,7 +1300,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     /**
      * this method calls an API which has been deprecated by youtube. TODO: Find new API!
-     * 
+     *
      * @deprecated
      * @param vid
      * @throws IOException
