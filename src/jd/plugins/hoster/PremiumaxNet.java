@@ -183,13 +183,29 @@ public class PremiumaxNet extends antiDDoSForHost {
         setConstants(account, link);
 
         synchronized (hostUnavailableMap) {
-            final HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null && unavailableMap.containsKey(link.getHost())) {
-                final Long lastUnavailable = unavailableMap.get(link.getHost()).getErrorTimeout();
-                final String errorReason = unavailableMap.get(link.getHost()).getErrorReason();
+            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(null);
+            UnavailableHost nue = unavailableMap != null ? unavailableMap.get(link.getHost()) : null;
+            if (nue != null) {
+                final Long lastUnavailable = nue.getErrorTimeout();
+                final String errorReason = nue.getErrorReason();
                 if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
                     final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this multihoster: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(null);
+                    }
+                }
+            }
+            unavailableMap = hostUnavailableMap.get(account);
+            nue = unavailableMap != null ? unavailableMap.get(link.getHost()) : null;
+            if (nue != null) {
+                final Long lastUnavailable = nue.getErrorTimeout();
+                final String errorReason = nue.getErrorReason();
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this account: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(link.getHost());
                     if (unavailableMap.size() == 0) {
@@ -217,6 +233,7 @@ public class PremiumaxNet extends antiDDoSForHost {
                         tempUnavailableHoster(60 * 60 * 1000l, "No rights to download from " + link.getHost() + " (Disabled Host)");
                     } else if (br.containsHTML("We do not support your link")) {
                         logger.info("Current hoster is not supported by premiumax.net -> Disabling it");
+                        this.currAcc = null;
                         tempUnavailableHoster(3 * 60 * 60 * 1000l, "Unsupported link format (Disabled Host)");
                     } else if (br.containsHTML("You only can download")) {
                         /* We're too fast - usually this should not happen */

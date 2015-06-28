@@ -132,13 +132,29 @@ public class RapidsPl extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
 
         synchronized (hostUnavailableMap) {
-            final HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null && unavailableMap.containsKey(link.getHost())) {
-                final Long lastUnavailable = unavailableMap.get(link.getHost()).getErrorTimeout();
-                final String errorReason = unavailableMap.get(link.getHost()).getErrorReason();
+            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(null);
+            UnavailableHost nue = unavailableMap != null ? unavailableMap.get(link.getHost()) : null;
+            if (nue != null) {
+                final Long lastUnavailable = nue.getErrorTimeout();
+                final String errorReason = nue.getErrorReason();
                 if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
                     final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this multihoster: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(null);
+                    }
+                }
+            }
+            unavailableMap = hostUnavailableMap.get(account);
+            nue = unavailableMap != null ? unavailableMap.get(link.getHost()) : null;
+            if (nue != null) {
+                final Long lastUnavailable = nue.getErrorTimeout();
+                final String errorReason = nue.getErrorReason();
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this account: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(link.getHost());
                     if (unavailableMap.size() == 0) {
