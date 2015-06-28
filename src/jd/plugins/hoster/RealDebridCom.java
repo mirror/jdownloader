@@ -55,7 +55,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+\\.(?:real\\-debrid\\.com|rdb\\.so)/dl?/\\w+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+\\.(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends PluginForHost {
 
     // DEV NOTES
@@ -84,6 +84,7 @@ public class RealDebridCom extends PluginForHost {
         setConfigElements();
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
         Browser.setRequestIntervalLimitGlobal("rdb.so", 500);
+        Browser.setRequestIntervalLimitGlobal("rdeb.io", 500);
     }
 
     @Override
