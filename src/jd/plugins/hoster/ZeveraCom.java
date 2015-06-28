@@ -308,7 +308,7 @@ public class ZeveraCom extends PluginForHost {
 
         synchronized (hostUnavailableMap) {
             HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(null);
-            UnavailableHost nue = unavailableMap != null ? unavailableMap.get(link.getHost()) : null;
+            UnavailableHost nue = unavailableMap != null ? (UnavailableHost) unavailableMap.get(link.getHost()) : null;
             if (nue != null) {
                 final Long lastUnavailable = nue.getErrorTimeout();
                 final String errorReason = nue.getErrorReason();
@@ -323,7 +323,7 @@ public class ZeveraCom extends PluginForHost {
                 }
             }
             unavailableMap = hostUnavailableMap.get(account);
-            nue = unavailableMap != null ? unavailableMap.get(link.getHost()) : null;
+            nue = unavailableMap != null ? (UnavailableHost) unavailableMap.get(link.getHost()) : null;
             if (nue != null) {
                 final Long lastUnavailable = nue.getErrorTimeout();
                 final String errorReason = nue.getErrorReason();
@@ -339,191 +339,191 @@ public class ZeveraCom extends PluginForHost {
             }
         }
 
-            login(account, false);
-            setConstants(account, link);
-            showMessage(link, "Task 1: Generating Link");
-            /* request Download */
-            if (link.getStringProperty("pass", null) != null) {
-                br.getPage(mServ + "/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()) + "&FilePass=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
+        login(account, false);
+        setConstants(account, link);
+        showMessage(link, "Task 1: Generating Link");
+        /* request Download */
+        if (link.getStringProperty("pass", null) != null) {
+            br.getPage(mServ + "/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()) + "&FilePass=" + Encoding.urlEncode(link.getStringProperty("pass", null)));
+        } else {
+            br.getPage(mServ + "/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()));
+        }
+        // handleErrors();
+        br.setFollowRedirects(false);
+        final String continuePage = br.getRedirectLocation();
+        br.getPage(continuePage);
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        handleRedirectionErrors(dllink);
+
+        showMessage(link, "Task 2: Download begins!");
+        handleDL(link, dllink);
+    }
+
+    private void handleRedirectionErrors(final String dllink) throws PluginException {
+        if (new Regex(dllink, "/member/systemmessage\\.aspx\\?hoster=[\\w\\.\\-]+_customer").matches()) {
+            // out of traffic for that given host for that given account.
+            tempUnavailableHoster(1 * 60 * 60 * 1000l, "No traffic left for this host.");
+        } else if (new Regex(dllink, "/member/systemmessage\\.aspx\\?hoster=[\\w\\.\\-]+$").matches()) {
+            // out of traffic for that given host for whole of multihoster, set to null account to prevent retry across different accounts.
+            this.currAcc = null;
+            tempUnavailableHoster(30 * 60 * 60 * 1000l, "No traffic left for this host.");
+        } else if (new Regex(dllink, "/member/systemmessage\\.aspx").matches()) {
+            // we assume that they might have other error types for that same URL.
+            handleErrorRetries("known_unknownerror", 20, 1 * 60 * 60 * 1000l);
+        }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        setConstants(account, null);
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            ai.setProperty("multiHostSupport", Property.NULL);
+            throw e;
+        }
+        account.setValid(true);
+        account.setConcurrentUsePossible(true);
+        account.setMaxSimultanDownloads(-1);
+        // doesn't contain useful info....
+        // br.getPage(mServ + "/jDownloader.ashx?cmd=accountinfo");
+        // grab website page instead.
+        br.getPage(mServ + "/Member/Dashboard.aspx");
+        final String expire = br.getRegex(">Expiration date:</label>.+?txExpirationDate\">(.*?)</label").getMatch(0);
+        final String server = br.getRegex(">Server time:</label>.+?txServerTime\">(.*?)</label").getMatch(0);
+        String expireTime = new Regex(expire, "(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))").getMatch(0);
+        String serverTime = new Regex(server, "(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))").getMatch(0);
+        long eTime = -1, sTime = -1;
+        if (expireTime != null) {
+            eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm a", null);
+            if (eTime == -1) {
+                eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm:ss a", null);
+            }
+        }
+        if (serverTime != null) {
+            sTime = TimeFormatter.getMilliSeconds(serverTime, "MM/dd/yyyy hh:mm a", null);
+            if (sTime == -1) {
+                sTime = TimeFormatter.getMilliSeconds(serverTime, "MM/dd/yyyy hh:mm:ss a", null);
+            }
+        }
+        if (eTime >= 0 && sTime >= 0) {
+            // accounts for different time zones! Should always be correct assuming the user doesn't change time every five minutes. Adjust
+            // expire time based on users current system time.
+            ai.setValidUntil(System.currentTimeMillis() + (eTime - sTime));
+        } else if (eTime >= 0) {
+            // fail over..
+            ai.setValidUntil(eTime);
+        } else {
+            if (StringUtils.contains(expire, "NEVER")) {
+                final String dayTraffic = br.getRegex(">Day Traffic left:</label>.+?txDayTrafficLeft\">(.*?)</label").getMatch(0);
+                if (dayTraffic != null) {
+                    final String dayTrafficLeft = new Regex(dayTraffic, "(\\d+ (MB|GB|TB))").getMatch(0);
+                    if (dayTrafficLeft != null) {
+                        ai.setTrafficLeft(SizeFormatter.getSize(dayTrafficLeft));
+                    }
+                }
             } else {
-                br.getPage(mServ + "/getFiles.aspx?ourl=" + Encoding.urlEncode(link.getDownloadURL()));
-            }
-            // handleErrors();
-            br.setFollowRedirects(false);
-            final String continuePage = br.getRedirectLocation();
-            br.getPage(continuePage);
-            String dllink = br.getRedirectLocation();
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            handleRedirectionErrors(dllink);
-
-            showMessage(link, "Task 2: Download begins!");
-            handleDL(link, dllink);
-        }
-
-        private void handleRedirectionErrors(final String dllink) throws PluginException {
-            if (new Regex(dllink, "/member/systemmessage\\.aspx\\?hoster=[\\w\\.\\-]+_customer").matches()) {
-                // out of traffic for that given host for that given account.
-                tempUnavailableHoster(1 * 60 * 60 * 1000l, "No traffic left for this host.");
-            } else if (new Regex(dllink, "/member/systemmessage\\.aspx\\?hoster=[\\w\\.\\-]+$").matches()) {
-                // out of traffic for that given host for whole of multihoster, set to null account to prevent retry across different accounts.
-                this.currAcc = null;
-                tempUnavailableHoster(30 * 60 * 60 * 1000l, "No traffic left for this host.");
-            } else if (new Regex(dllink, "/member/systemmessage\\.aspx").matches()) {
-                // we assume that they might have other error types for that same URL.
-                handleErrorRetries("known_unknownerror", 20, 1 * 60 * 60 * 1000l);
+                // epic fail?
+                logger.warning("Expire time could not be found/set. Please report to JDownloader Development Team");
             }
         }
+        ai.setStatus("Premium User");
+        try {
+            String hostsSup = br.cloneBrowser().getPage(mServ + "/jDownloader.ashx?cmd=gethosters");
+            String[] hosts = new Regex(hostsSup, "([^,]+)").getColumn(0);
+            ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+            /*
+             * set ArrayList<String> with all supported multiHosts of this service
+             */
+            // we used local cached links provided by our decrypter, locked to ip addresses. Can not use multihoster
+            ai.setMultiHostSupport(this, supportedHosts);
+        } catch (Throwable e) {
+            logger.info("Could not fetch ServerList from Multishare: " + e.toString());
+        }
+        return ai;
+    }
 
-        @Override
-        public AccountInfo fetchAccountInfo(Account account) throws Exception {
-            setConstants(account, null);
-            AccountInfo ai = new AccountInfo();
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
             try {
-                login(account, true);
-            } catch (PluginException e) {
-                account.setValid(false);
-                ai.setProperty("multiHostSupport", Property.NULL);
+                /** Load cookies */
+                br.setCookiesExclusive(true);
+                prepBrowser();
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(mProt + mName, key, value);
+                        }
+                        return;
+                    }
+                }
+                br.getPage(mServ);
+                br.getPage(mServ + "/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) {
+                    final String lang = System.getProperty("user.language");
+                    if ("de".equalsIgnoreCase(lang)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(mProt + mName);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
                 throw e;
             }
-            account.setValid(true);
-            account.setConcurrentUsePossible(true);
-            account.setMaxSimultanDownloads(-1);
-            // doesn't contain useful info....
-            // br.getPage(mServ + "/jDownloader.ashx?cmd=accountinfo");
-            // grab website page instead.
-            br.getPage(mServ + "/Member/Dashboard.aspx");
-            final String expire = br.getRegex(">Expiration date:</label>.+?txExpirationDate\">(.*?)</label").getMatch(0);
-            final String server = br.getRegex(">Server time:</label>.+?txServerTime\">(.*?)</label").getMatch(0);
-            String expireTime = new Regex(expire, "(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))").getMatch(0);
-            String serverTime = new Regex(server, "(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))").getMatch(0);
-            long eTime = -1, sTime = -1;
-            if (expireTime != null) {
-                eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm a", null);
-                if (eTime == -1) {
-                    eTime = TimeFormatter.getMilliSeconds(expireTime, "MM/dd/yyyy hh:mm:ss a", null);
-                }
-            }
-            if (serverTime != null) {
-                sTime = TimeFormatter.getMilliSeconds(serverTime, "MM/dd/yyyy hh:mm a", null);
-                if (sTime == -1) {
-                    sTime = TimeFormatter.getMilliSeconds(serverTime, "MM/dd/yyyy hh:mm:ss a", null);
-                }
-            }
-            if (eTime >= 0 && sTime >= 0) {
-                // accounts for different time zones! Should always be correct assuming the user doesn't change time every five minutes. Adjust
-                // expire time based on users current system time.
-                ai.setValidUntil(System.currentTimeMillis() + (eTime - sTime));
-            } else if (eTime >= 0) {
-                // fail over..
-                ai.setValidUntil(eTime);
-            } else {
-                if (StringUtils.contains(expire, "NEVER")) {
-                    final String dayTraffic = br.getRegex(">Day Traffic left:</label>.+?txDayTrafficLeft\">(.*?)</label").getMatch(0);
-                    if (dayTraffic != null) {
-                        final String dayTrafficLeft = new Regex(dayTraffic, "(\\d+ (MB|GB|TB))").getMatch(0);
-                        if (dayTrafficLeft != null) {
-                            ai.setTrafficLeft(SizeFormatter.getSize(dayTrafficLeft));
-                        }
-                    }
-                } else {
-                    // epic fail?
-                    logger.warning("Expire time could not be found/set. Please report to JDownloader Development Team");
-                }
-            }
-            ai.setStatus("Premium User");
-            try {
-                String hostsSup = br.cloneBrowser().getPage(mServ + "/jDownloader.ashx?cmd=gethosters");
-                String[] hosts = new Regex(hostsSup, "([^,]+)").getColumn(0);
-                ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
-                /*
-                 * set ArrayList<String> with all supported multiHosts of this service
-                 */
-                // we used local cached links provided by our decrypter, locked to ip addresses. Can not use multihoster
-                ai.setMultiHostSupport(this, supportedHosts);
-            } catch (Throwable e) {
-                logger.info("Could not fetch ServerList from Multishare: " + e.toString());
-            }
-            return ai;
         }
-
-        private void login(Account account, boolean force) throws Exception {
-            synchronized (LOCK) {
-                try {
-                    /** Load cookies */
-                    br.setCookiesExclusive(true);
-                    prepBrowser();
-                    final Object ret = account.getProperty("cookies", null);
-                    boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                    if (acmatch) {
-                        acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                    }
-                    if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                        final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                        if (account.isValid()) {
-                            for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                                final String key = cookieEntry.getKey();
-                                final String value = cookieEntry.getValue();
-                                this.br.setCookie(mProt + mName, key, value);
-                            }
-                            return;
-                        }
-                    }
-                    br.getPage(mServ);
-                    br.getPage(mServ + "/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                    if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) {
-                        final String lang = System.getProperty("user.language");
-                        if ("de".equalsIgnoreCase(lang)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    }
-                    /** Save cookies */
-                    final HashMap<String, String> cookies = new HashMap<String, String>();
-                    final Cookies add = this.br.getCookies(mProt + mName);
-                    for (final Cookie c : add.getCookies()) {
-                        cookies.put(c.getKey(), c.getValue());
-                    }
-                    account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                    account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                    account.setProperty("cookies", cookies);
-                } catch (final PluginException e) {
-                    account.setProperty("cookies", Property.NULL);
-                    throw e;
-                }
-            }
-        }
-
-        private void tempUnavailableHoster(final long timeout, final String reason) throws PluginException {
-            if (this.currDownloadLink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
-            }
-
-            final UnavailableHost nue = new UnavailableHost(System.currentTimeMillis() + timeout, reason);
-
-            synchronized (hostUnavailableMap) {
-                HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(this.currAcc);
-                if (unavailableMap == null) {
-                    unavailableMap = new HashMap<String, UnavailableHost>();
-                    hostUnavailableMap.put(this.currAcc, unavailableMap);
-                }
-                unavailableMap.put(this.currDownloadLink.getHost(), nue);
-            }
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-
-        private void showMessage(DownloadLink link, String message) {
-            link.getLinkStatus().setStatusText(message);
-        }
-
-        @Override
-        public void reset() {
-        }
-
-        @Override
-        public void resetDownloadlink(DownloadLink link) {
-        }
-
     }
+
+    private void tempUnavailableHoster(final long timeout, final String reason) throws PluginException {
+        if (this.currDownloadLink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
+
+        final UnavailableHost nue = new UnavailableHost(System.currentTimeMillis() + timeout, reason);
+
+        synchronized (hostUnavailableMap) {
+            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(this.currAcc);
+            if (unavailableMap == null) {
+                unavailableMap = new HashMap<String, UnavailableHost>();
+                hostUnavailableMap.put(this.currAcc, unavailableMap);
+            }
+            unavailableMap.put(this.currDownloadLink.getHost(), nue);
+        }
+        throw new PluginException(LinkStatus.ERROR_RETRY);
+    }
+
+    private void showMessage(DownloadLink link, String message) {
+        link.getLinkStatus().setStatusText(message);
+    }
+
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public void resetDownloadlink(DownloadLink link) {
+    }
+
+}
