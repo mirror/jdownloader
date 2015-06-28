@@ -226,13 +226,29 @@ public class LeechMyLink extends antiDDoSForHost {
         setConstants(account, link);
 
         synchronized (hostUnavailableMap) {
-            final HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null && unavailableMap.containsKey(link.getHost())) {
-                final Long lastUnavailable = unavailableMap.get(link.getHost()).getErrorTimeout();
-                final String errorReason = unavailableMap.get(link.getHost()).getErrorReason();
+            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(null);
+            UnavailableHost nue = unavailableMap != null ? unavailableMap.get(link.getHost()) : null;
+            if (nue != null) {
+                final Long lastUnavailable = nue.getErrorTimeout();
+                final String errorReason = nue.getErrorReason();
                 if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
                     final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this multihoster: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(null);
+                    }
+                }
+            }
+            unavailableMap = hostUnavailableMap.get(account);
+            nue = unavailableMap != null ? unavailableMap.get(link.getHost()) : null;
+            if (nue != null) {
+                final Long lastUnavailable = nue.getErrorTimeout();
+                final String errorReason = nue.getErrorReason();
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this account: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(link.getHost());
                     if (unavailableMap.size() == 0) {
@@ -269,6 +285,7 @@ public class LeechMyLink extends antiDDoSForHost {
                     // {"status":"error","msg":"Failed to generate. Please try again.","link":"urlremoved","isVideo":false}
                     handleErrorRetries(msg, 5, 15 * 60 * 1000l);
                 } else if (StringUtils.startsWithCaseInsensitive(msg, "Link is not recognized")) {
+                    // {"status":"error","msg":"Link is not recognized","link":"urlremoved","isVideo":false}
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 30 * 60 * 1000l);
                 }
             }

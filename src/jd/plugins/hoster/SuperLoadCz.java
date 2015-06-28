@@ -215,13 +215,29 @@ public class SuperLoadCz extends antiDDoSForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
 
         synchronized (hostUnavailableMap) {
-            final HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null && unavailableMap.containsKey(link.getHost())) {
-                final Long lastUnavailable = unavailableMap.get(link.getHost()).getErrorTimeout();
-                final String errorReason = unavailableMap.get(link.getHost()).getErrorReason();
+            HashMap<String, UnavailableHost> unavailableMap = hostUnavailableMap.get(null);
+            UnavailableHost nue = unavailableMap != null ? unavailableMap.get(link.getHost()) : null;
+            if (nue != null) {
+                final Long lastUnavailable = nue.getErrorTimeout();
+                final String errorReason = nue.getErrorReason();
                 if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
                     final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this multihoster: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(link.getHost());
+                    if (unavailableMap.size() == 0) {
+                        hostUnavailableMap.remove(null);
+                    }
+                }
+            }
+            unavailableMap = hostUnavailableMap.get(account);
+            nue = unavailableMap != null ? unavailableMap.get(link.getHost()) : null;
+            if (nue != null) {
+                final Long lastUnavailable = nue.getErrorTimeout();
+                final String errorReason = nue.getErrorReason();
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    final long wait = lastUnavailable - System.currentTimeMillis();
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable for this account: " + errorReason != null ? errorReason : "via " + this.getHost(), wait);
                 } else if (lastUnavailable != null) {
                     unavailableMap.remove(link.getHost());
                     if (unavailableMap.size() == 0) {
@@ -245,19 +261,19 @@ public class SuperLoadCz extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else if (StringUtils.equalsIgnoreCase(error, "invalidLink")) {
                     logger.info("Superload.cz says 'invalid link', disabling real host for 1 hour.");
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l, "Invalid Link");
+                    tempUnavailableHoster(null, link, 60 * 60 * 1000l, "Invalid Link");
                 } else if (StringUtils.equalsIgnoreCase(error, "temporarilyUnsupportedServer")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temp. Error. Try again later", 5 * 60 * 1000l);
                 } else if (StringUtils.equalsIgnoreCase(error, "fileNotFound")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (StringUtils.equalsIgnoreCase(error, "unsupportedServer")) {
                     logger.info("Superload.cz says 'unsupported server', disabling real host for 1 hour.");
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000l, "Unsuported Server");
+                    tempUnavailableHoster(null, link, 60 * 60 * 1000l, "Unsuported Server");
                 } else if (StringUtils.equalsIgnoreCase(error, "Lack of credits")) {
                     logger.info("Superload.cz says 'Lack of credits', temporarily disabling account.");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else if (StringUtils.containsIgnoreCase(error, "Unable to download the file")) {
-                    handleErrorRetries(account, link, "Unable to download file", 10, 15 * 60 * 1000l);
+                    handleErrorRetries(null, link, "Unable to download file", 10, 15 * 60 * 1000l);
                 } else if (dllink == null) {
                     // this will allow statserv to pick up these errors, and we can improve the plugin.
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unhandled Error Type");
