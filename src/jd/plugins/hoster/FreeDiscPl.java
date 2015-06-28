@@ -90,7 +90,7 @@ public class FreeDiscPl extends PluginForHost {
             }
             throw e;
         }
-        if (br.containsHTML("Ten plik został usunięty przez użytkownika lub administratora|Użytkownik nie posiada takiego pliku") || !br.getURL().contains(",f")) {
+        if (br.containsHTML("Ten plik został usunięty przez użytkownika lub administratora|Użytkownik nie posiada takiego pliku|<title>404 error") || !br.getURL().contains(",f")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Handle no public files as offline
