@@ -254,7 +254,6 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         addHeader(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_or_package_pattern_header(), NewTheme.I().getIcon(IconKey.ICON_FILE, 18));
         addDescriptionPlain(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_tags());
-
         for (jd.plugins.components.YoutubeReplacer r : YoutubeHelper.REPLACER) {
 
             StringBuilder sb = new StringBuilder();
@@ -276,7 +275,15 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
             add(txt, "gaptop 0,spanx,growx,pushx,wmin 10,gapbottom 0,gaptop 0,aligny top");
 
         }
+        {
+            // TODO: Coalado place some type of help guide in here for
+            // title:
+            // Optional in tag components: to be used within *tags* above. Must be presented after standard tag name
+            // Body:
+            // [UC] UpperCase or [LC] LowerCase, you can only use ONE of these.
+            // [SU] Space to Underscore
 
+        }
         addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("FilenamePattern", StringKeyHandler.class)));
         addPair(_GUI._.YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("PackagePattern", StringKeyHandler.class)));
 
