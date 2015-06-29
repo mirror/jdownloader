@@ -426,6 +426,21 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("\"(https?://(?:www\\.)?pornhd\\.com/video/embed/\\d+[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        // isharemybitch.com #1
+        externID = br.getRegex("\"(https?://(?:www\\.)?isharemybitch\\.com/flvPlayer\\.swf\\?settings=[^<>\"]*?)\"").getMatch(0);
+        // isharemybitch.com #2
+        if (externID == null) {
+            externID = br.getRegex("\"(https?://(?:www\\.)?isharemybitch\\.com/gallery\\-widget/[^<>\"]*?)\"").getMatch(0);
+        }
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         // filename needed for all IDs below
         if (title == null) {
             return decryptedLinks;

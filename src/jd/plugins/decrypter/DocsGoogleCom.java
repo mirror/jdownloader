@@ -92,7 +92,7 @@ public class DocsGoogleCom extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        final String fid = new Regex(parameter, "id=([A-Za-z0-9]+)").getMatch(0);
+        final String fid = new Regex(parameter, "(?:id=|/d/)([A-Za-z0-9]+)").getMatch(0);
         if (fid == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

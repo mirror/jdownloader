@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.crypto.Cipher;
@@ -13,12 +15,20 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Base64;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.nativeintegration.LocalBrowser;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -26,15 +36,24 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|photo/\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+|photo/\\d+)" }, flags = { 2 })
 public class PornHubCom extends PluginForHost {
 
-    private static final String type_photo        = "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+";
-    private static final String html_privatevideo = "id=\"iconLocked\"";
-    private String              dlUrl             = null;
+    /* Connection stuff */
+    private static final boolean FREE_RESUME               = true;
+    private static final int     FREE_MAXCHUNKS            = 0;
+    private static final int     FREE_MAXDOWNLOADS         = 20;
+    private static final boolean ACCOUNT_FREE_RESUME       = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
+
+    private static final String  type_photo                = "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/photo/\\d+";
+    private static final String  html_privatevideo         = "id=\"iconLocked\"";
+    private String               dlUrl                     = null;
 
     public PornHubCom(final PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("");
     }
 
     @SuppressWarnings("deprecation")
@@ -47,11 +66,6 @@ public class PornHubCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.pornhub.com/terms";
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @SuppressWarnings("deprecation")
@@ -97,51 +111,15 @@ public class PornHubCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    @Override
-    public void handleFree(final DownloadLink link) throws Exception {
-        final boolean resume;
-        final int maxchunks;
-        if (link.getDownloadURL().matches(type_photo)) {
-            resume = true;
-            /* We only have small pictures --> No chunkload needed */
-            maxchunks = 1;
-            requestFileInformation(link);
-        } else {
-            resume = true;
-            maxchunks = 0;
-            requestVideo(link);
-            if (br.containsHTML(html_privatevideo)) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "You're not authorized to watch/download this private video");
-            }
-            if (dlUrl == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlUrl, resume, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        dl.startDownload();
-    }
-
-    @SuppressWarnings("deprecation")
     private AvailableStatus requestVideo(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        br.setCookie("http://pornhub.com/", "age_verified", "1");
-        br.setCookie("http://pornhub.com/", "is_really_pc", "1");
-        br.setCookie("http://pornhub.com/", "phub_in_player", "1");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:22.0) Gecko/20100101 Firefox/22.0");
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
-        br.getHeaders().put("Accept-Charset", null);
+        prepBr();
 
         br.setFollowRedirects(true);
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa != null) {
+            this.login(aa, false);
+        }
         br.getPage(downloadLink.getDownloadURL());
         // Convert embed links to normal links
         if (downloadLink.getDownloadURL().matches("http://(www\\.)?pornhub\\.com/embed_player\\.php\\?id=\\d+")) {
@@ -174,7 +152,11 @@ public class PornHubCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
 
-        getVideoLink(downloadLink.getDownloadURL());
+        if (aa != null) {
+            getVideoLinkAccount();
+        } else {
+            getVideoLinkFree(downloadLink.getDownloadURL());
+        }
 
         if (dlUrl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -183,8 +165,12 @@ public class PornHubCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private void getVideoLinkAccount() {
+        dlUrl = this.br.getRegex("class=\"downloadBtn greyButton\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+    }
+
     @SuppressWarnings("unchecked")
-    private void getVideoLink(String dllink) throws Exception {
+    private void getVideoLinkFree(String dllink) throws Exception {
         String flashVars = br.getRegex("\\'flashvars\\' :[\t\n\r ]+\\{([^\\}]+)").getMatch(0);
         if (flashVars == null) {
             flashVars = br.getRegex("var flashvars_\\d+ = (\\{.*?);\n").getMatch(0);
@@ -230,6 +216,149 @@ public class PornHubCom extends PluginForHost {
                 dlUrl = null;
             }
         }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    @SuppressWarnings("deprecation")
+    private void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        final boolean resume;
+        final int maxchunks;
+        if (downloadLink.getDownloadURL().matches(type_photo)) {
+            resume = true;
+            /* We only have small pictures --> No chunkload needed */
+            maxchunks = 1;
+            requestFileInformation(downloadLink);
+        } else {
+            resume = ACCOUNT_FREE_RESUME;
+            maxchunks = ACCOUNT_FREE_MAXCHUNKS;
+            requestVideo(downloadLink);
+            if (br.containsHTML(html_privatevideo)) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "You're not authorized to watch/download this private video");
+            }
+            if (dlUrl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, resume, maxchunks);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return FREE_MAXDOWNLOADS;
+    }
+
+    private static final String MAINPAGE = "http://pornhub.com";
+    private static Object       LOCK     = new Object();
+
+    @SuppressWarnings("unchecked")
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                // Load cookies
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            br.setCookie(MAINPAGE, key, value);
+                        }
+                        return;
+                    }
+                }
+                br.setFollowRedirects(false);
+                br.getPage("http://www.pornhub.com/");
+                final String login_key = this.br.getRegex("id=\"login_key\" value=\"([^<>\"]*?)\"").getMatch(0);
+                final String login_hash = this.br.getRegex("id=\"login_hash\" value=\"([^<>\"]*?)\"").getMatch(0);
+                if (login_key == null || login_hash == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                final String postData = "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&redirect=&login_key=" + login_key + "&login_hash=" + login_hash + "&remember_me=1";
+                br.postPage("/front/login_json", postData);
+                if (br.getCookie(MAINPAGE, "gateway_security_key") == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                // Save cookies
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = br.getCookies(MAINPAGE);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        ai.setUnlimitedTraffic();
+        try {
+            account.setType(AccountType.FREE);
+            /* free accounts can still have captcha */
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
+        } catch (final Throwable e) {
+            /* not available in old Stable 0.9.581 */
+        }
+        ai.setStatus("Registered (free) user");
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        /* No need to login as we're already logged in. */
+        doFree(link);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return ACCOUNT_FREE_MAXDOWNLOADS;
     }
 
     /**
@@ -322,6 +451,16 @@ public class PornHubCom extends PluginForHost {
             System.arraycopy(keyBytes, 0, keyBytes, nBits / 2, nBits / 2);
             return new SecretKeySpec(keyBytes, "AES");
         }
+    }
+
+    private void prepBr() {
+        br.setCookie("http://pornhub.com/", "age_verified", "1");
+        br.setCookie("http://pornhub.com/", "is_really_pc", "1");
+        br.setCookie("http://pornhub.com/", "phub_in_player", "1");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:22.0) Gecko/20100101 Firefox/22.0");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+        br.getHeaders().put("Accept-Charset", null);
     }
 
     private void getPolicyFiles() throws Exception {
