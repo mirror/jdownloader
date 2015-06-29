@@ -575,14 +575,13 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     }
 
     public void setCurrentActiveItem(Item item) {
-        if (currentActiveItem == item) {
-            return;
+        if (currentActiveItem != item) {
+            if (currentActiveItem != null && item != null && StringUtils.equals(currentActiveItem.getPath(), item.getPath())) {
+                return;
+            }
+            this.currentActiveItem = item;
+            fireEvent(ExtractionEvent.Type.ACTIVE_ITEM);
         }
-        if (currentActiveItem != null && item != null && StringUtils.equals(currentActiveItem.getPath(), item.getPath())) {
-            return;
-        }
-        this.currentActiveItem = item;
-        fireEvent(ExtractionEvent.Type.ACTIVE_ITEM);
     }
 
     public Item getCurrentActiveItem() {
