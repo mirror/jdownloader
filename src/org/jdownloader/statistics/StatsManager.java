@@ -124,7 +124,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static StatsManager I() {
@@ -244,13 +244,12 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                             if (StringUtils.isNotEmpty(user)) {
                                                 infos.put(ACCOUNT_PSEUDO_ID, pseudoID(user));
                                             }
-                                            long imported = account.getLongProperty(IMPORTED_TIMESTAMP, -1);
-                                            if (imported > 0) {
-                                                infos.put(IMPORTED_TIMESTAMP, Long.toString(imported));
+                                            final long importedTimeStamp = account.getLongProperty(IMPORTED_TIMESTAMP, -1);
+                                            if (importedTimeStamp > 0) {
+                                                infos.put(IMPORTED_TIMESTAMP, Long.toString(importedTimeStamp));
                                                 infos.put(SLID, Long.toString(account.getLongProperty(SLID, -1)));
                                                 infos.put(SLV, Long.toString(account.getLongProperty(SLV, -1)));
                                             }
-
                                             infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
                                             infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
                                             infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty(addedProperty, System.currentTimeMillis())));
@@ -309,13 +308,12 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                         if (StringUtils.isNotEmpty(user)) {
                                             infos.put(ACCOUNT_PSEUDO_ID, pseudoID(user));
                                         }
-                                        long imported = account.getLongProperty(IMPORTED_TIMESTAMP, -1);
-                                        if (imported > 0) {
-                                            infos.put(IMPORTED_TIMESTAMP, Long.toString(imported));
+                                        final long importedTimeStamp = account.getLongProperty(IMPORTED_TIMESTAMP, -1);
+                                        if (importedTimeStamp > 0) {
+                                            infos.put(IMPORTED_TIMESTAMP, Long.toString(importedTimeStamp));
                                             infos.put(SLID, Long.toString(account.getLongProperty(SLID, -1)));
                                             infos.put(SLV, Long.toString(account.getLongProperty(SLV, -1)));
                                         }
-
                                         infos.put(UPGRADE_PREMIUM, accountEvent.isPremiumUpgraded() ? "1" : "0");
                                         infos.put(UPGRADE_EXTENDED, accountEvent.isPremiumLimitedRenewal() ? "1" : "0");
                                         infos.put(UPGRADE_UNLIMITED, accountEvent.isPremiumUnlimitedRenewal() ? "1" : "0");
@@ -607,7 +605,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * this setter does not set the config flag. Can be used to disable the logger for THIS session.
-     * 
+     *
      * @param b
      */
     public void setEnabled(boolean b) {
@@ -1623,7 +1621,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
-     * 
+     *
      * @param reducer
      * @param path
      */
