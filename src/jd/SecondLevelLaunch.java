@@ -85,6 +85,7 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.SecuritySoftwareInfo;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.SlowEDTDetector;
@@ -1057,13 +1058,30 @@ public class SecondLevelLaunch {
         // init statsmanager
         StatsManager.I();
         new Thread("Print Sec Infos") {
+
+            private String getNameSoftware(SecuritySoftwareInfo software) {
+                String antiVirus = null;
+                if (software != null) {
+                    antiVirus = software.getName();
+                    if (StringUtils.isEmpty(antiVirus)) {
+                        antiVirus = new File(software.get("pathToSignedProductExe")).getName();
+                    }
+                    if (StringUtils.isEmpty(antiVirus)) {
+                        antiVirus = new File(software.get("pathToSignedReportingExe")).getName();
+                    }
+                }
+                return antiVirus;
+            }
+
             public void run() {
 
                 if (CrossSystem.isWindows()) {
 
                     try {
                         LOG.info("AntiVirusProduct START");
-                        CrossSystem.getAntiVirusSoftwareInfo();
+                        String software = getNameSoftware(CrossSystem.getAntiVirusSoftwareInfo());
+                        StatsManager.I().track(100, "sec/av/" + software);
+                    } catch (UnsupportedOperationException e) {
 
                     } catch (Throwable e1) {
                         LOG.log(e1);
@@ -1073,7 +1091,10 @@ public class SecondLevelLaunch {
 
                     try {
                         LOG.info("FirewallProduct START");
-                        CrossSystem.getFirewallSoftwareInfo();
+                        String software = getNameSoftware(CrossSystem.getFirewallSoftwareInfo());
+                        StatsManager.I().track(100, "sec/fw/" + software);
+                    } catch (UnsupportedOperationException e) {
+
                     } catch (Throwable e1) {
                         LOG.log(e1);
                     } finally {
@@ -1082,7 +1103,10 @@ public class SecondLevelLaunch {
 
                     try {
                         LOG.info("AntiSpywareProduct START");
-                        CrossSystem.getAntiSpySoftwareInfo();
+                        String software = getNameSoftware(CrossSystem.getAntiSpySoftwareInfo());
+                        StatsManager.I().track(100, "sec/as/" + software);
+                    } catch (UnsupportedOperationException e) {
+
                     } catch (Throwable e1) {
                         LOG.log(e1);
                     } finally {
