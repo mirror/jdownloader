@@ -112,6 +112,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     public static final String        UPGRADE_EXTENDED             = "ue";
     public static final String        UPGRADE_UNLIMITED            = "uu";
 
+    public static final String        FIRE_STATS_CALL              = "fsc";
+
     private static final StatsManager INSTANCE                     = new StatsManager();
 
     public static final int           STACKTRACE_VERSION           = 1;
@@ -238,6 +240,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                             if (StringUtils.isNotEmpty(user)) {
                                                 infos.put(ACCOUNT_PSEUDO_ID, pseudoID(user));
                                             }
+                                            infos.put(FIRE_STATS_CALL, isFireStatsCall ? "1" : "0");
                                             infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
                                             infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
                                             infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty(addedProperty, System.currentTimeMillis())));
