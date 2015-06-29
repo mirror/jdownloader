@@ -276,6 +276,18 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
 
         }
         {
+            addDescriptionPlain(_GUI._.YoutubeHelper_getDescription_upperlowercasereplacetags_header());
+
+            JLabel txt = new JLabel("<html>" + _GUI._.YoutubeHelper_getDescription_upperlowercase().replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>");
+            SwingUtils.setOpaque(txt, false);
+            txt.setEnabled(false);
+            add(txt, "gaptop 0,growx,pushx,spanx,gapleft 10,gapbottom 0,gaptop 0,aligny top");
+
+            txt = new JLabel("<html>" + _GUI._.YoutubeHelper_getDescription_replacetags().replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>");
+            SwingUtils.setOpaque(txt, false);
+            txt.setEnabled(false);
+            add(txt, "gaptop 0,growx,pushx,spanx,gapleft 10,gapbottom 0,gaptop 0,aligny top");
+
             // TODO: Coalado place some type of help guide in here for
             // title:
             // Optional in tag components: to be used within *tags* above. Must be presented after standard tag name

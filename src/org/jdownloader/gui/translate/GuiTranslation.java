@@ -5974,4 +5974,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "cheapcaptcha.com" })
     String CheapCaptchaSolver_gettypeName_();
 
+    @Default(lngs = { "en" }, values = { "Additional naming options:" })
+    String YoutubeHelper_getDescription_upperlowercasereplacetags_header();
+
+    @Default(lngs = { "en" }, values = { "Upper/Lower case: Append [UC] or [LC]. Example: *videoname[UC]*" })
+    String YoutubeHelper_getDescription_upperlowercase();
+
+    @Default(lngs = { "en" }, values = { "Replace whitespace by underscores: Append [SU]. Examples: *videoname[UC][SU]* or *channelname[SU]*" })
+    String YoutubeHelper_getDescription_replacetags();
+
 }
