@@ -37,8 +37,8 @@ public class AmateurDumperCom extends PornEmbedParser {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("No htmlCode read|>404 The page was not found!<")) {
-            logger.info("Link broken: " + parameter);
+        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No htmlCode read|>404 The page was not found!<")) {
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         String externID = br.getRedirectLocation();
