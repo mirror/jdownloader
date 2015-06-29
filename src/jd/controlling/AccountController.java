@@ -68,6 +68,7 @@ import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChi
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
+import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 
 public class AccountController implements AccountControllerListener, AccountPropertyChangeHandler {
@@ -99,6 +100,10 @@ public class AccountController implements AccountControllerListener, AccountProp
     private AccountController() {
         super();
         config = JsonConfig.create(AccountSettings.class);
+        if (config.getListID() <= 0) {
+            config.setListID(System.currentTimeMillis());
+        }
+
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
@@ -171,6 +176,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                 }
             }
         }
+        config.setListVersion(System.currentTimeMillis());
         config.setAccounts(ret);
     }
 
@@ -632,7 +638,7 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     /**
      * Restores accounts from old database
-     *
+     * 
      * @return
      */
     private HashMap<String, ArrayList<AccountData>> restore() {
@@ -954,13 +960,22 @@ public class AccountController implements AccountControllerListener, AccountProp
     }
 
     public List<Account> importAccounts(File f) {
+
         /* TODO: add cleanup to avoid memleak */
         AccountSettings cfg = JsonConfig.create(new File(f.getParent(), "org.jdownloader.settings.AccountSettings"), AccountSettings.class);
+        StatsManager.I().track("premium/import/" + cfg.getListID() + "/" + cfg.getListVersion());
+        long time = System.currentTimeMillis();
         HashMap<String, List<Account>> accounts = loadAccounts(cfg, false);
         ArrayList<Account> added = new ArrayList<Account>();
         for (Entry<String, List<Account>> es : accounts.entrySet()) {
             for (Account ad : es.getValue()) {
-                addAccount(ad);
+
+                Account acc = new Account(ad.getUser(), ad.getPass());
+                acc.setHoster(ad.getHoster());
+                acc.setProperty(StatsManager.IMPORTED_TIMESTAMP, time);
+                acc.setProperty(StatsManager.SLID, cfg.getListID());
+                acc.setProperty(StatsManager.SLV, cfg.getListVersion());
+                addAccount(acc);
                 added.add(ad);
             }
         }

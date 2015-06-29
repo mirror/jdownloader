@@ -9,6 +9,7 @@ import org.appwork.storage.config.annotations.AllowStorage;
 import org.appwork.storage.config.annotations.CryptedStorage;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.DevConfig;
 import org.appwork.storage.config.annotations.SpinnerValidator;
@@ -36,5 +37,15 @@ public interface AccountSettings extends ConfigInterface {
     boolean isAutoAccountRefreshEnabled();
 
     void setAutoAccountRefreshEnabled(boolean b);
+
+    @DefaultLongValue(-1)
+    long getListID();
+
+    void setListID(long id);
+
+    @DefaultLongValue(-1)
+    long getListVersion();
+
+    void setListVersion(long id);
 
 }

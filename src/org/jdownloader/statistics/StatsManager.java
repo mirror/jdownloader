@@ -99,6 +99,12 @@ import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class StatsManager implements GenericConfigEventListener<Object>, DownloadWatchdogListener, Runnable {
+    public static final String        SLV                          = "slv";
+    public static final String        SLID                         = "slid";
+    public static final String        IMPORTED_TIMESTAMP           = "im";
+
+    public static final String        FIRE_STATS_CALL2             = "fireStatsCall";
+    public static final String        ADDED                        = "added";
     public static final String        ACCOUNT_PSEUDO_ID            = "uid";
     public static final String        CLICK_SOURCE                 = "cs";
     public static final String        ACCOUNT_ADDED_TIME           = "at";
@@ -112,15 +118,13 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     public static final String        UPGRADE_EXTENDED             = "ue";
     public static final String        UPGRADE_UNLIMITED            = "uu";
 
-    public static final String        FIRE_STATS_CALL              = "fsc";
-
     private static final StatsManager INSTANCE                     = new StatsManager();
 
     public static final int           STACKTRACE_VERSION           = 1;
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
-     *
+     * 
      * @return
      */
     public static StatsManager I() {
@@ -218,10 +222,10 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         final Account account = event.getAccount();
                         if (account != null) {
                             final String accountHoster = account.getHoster();
-                            final String addedProperty = "added";
+                            final String addedProperty = ADDED;
                             boolean isFireStatsCall = false;
                             try {
-                                final String fireStatsCallProperty = "fireStatsCall";
+                                final String fireStatsCallProperty = FIRE_STATS_CALL2;
                                 isFireStatsCall = event.getAccount().getBooleanProperty(fireStatsCallProperty);
                                 if (event.getType() == AccountControllerEvent.Types.ADDED || (event.getType() == AccountControllerEvent.Types.ACCOUNT_CHECKED && isFireStatsCall)) {
                                     if (account.getLongProperty(addedProperty, 0) <= 0) {
@@ -240,7 +244,13 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                             if (StringUtils.isNotEmpty(user)) {
                                                 infos.put(ACCOUNT_PSEUDO_ID, pseudoID(user));
                                             }
-                                            infos.put(FIRE_STATS_CALL, isFireStatsCall ? "1" : "0");
+                                            long imported = account.getLongProperty(IMPORTED_TIMESTAMP, -1);
+                                            if (imported > 0) {
+                                                infos.put(IMPORTED_TIMESTAMP, Long.toString(imported));
+                                                infos.put(SLID, Long.toString(account.getLongProperty(SLID, -1)));
+                                                infos.put(SLV, Long.toString(account.getLongProperty(SLV, -1)));
+                                            }
+
                                             infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
                                             infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
                                             infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty(addedProperty, System.currentTimeMillis())));
@@ -299,6 +309,13 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                         if (StringUtils.isNotEmpty(user)) {
                                             infos.put(ACCOUNT_PSEUDO_ID, pseudoID(user));
                                         }
+                                        long imported = account.getLongProperty(IMPORTED_TIMESTAMP, -1);
+                                        if (imported > 0) {
+                                            infos.put(IMPORTED_TIMESTAMP, Long.toString(imported));
+                                            infos.put(SLID, Long.toString(account.getLongProperty(SLID, -1)));
+                                            infos.put(SLV, Long.toString(account.getLongProperty(SLV, -1)));
+                                        }
+
                                         infos.put(UPGRADE_PREMIUM, accountEvent.isPremiumUpgraded() ? "1" : "0");
                                         infos.put(UPGRADE_EXTENDED, accountEvent.isPremiumLimitedRenewal() ? "1" : "0");
                                         infos.put(UPGRADE_UNLIMITED, accountEvent.isPremiumUnlimitedRenewal() ? "1" : "0");
@@ -590,7 +607,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * this setter does not set the config flag. Can be used to disable the logger for THIS session.
-     *
+     * 
      * @param b
      */
     public void setEnabled(boolean b) {
@@ -1606,7 +1623,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
-     *
+     * 
      * @param reducer
      * @param path
      */
