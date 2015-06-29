@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -85,7 +84,6 @@ import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
@@ -865,8 +863,8 @@ public class YoutubeDashV2 extends PluginForHost {
             // _JDT._.CountryIPBlockException_createCandidateResult(), 1 * 24 * 60 * 60 * 100l);
             // }
             if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error,/*
-                                                                                                                                 * 15.12.2014
-                                                                                                                                 */"This video is not available.")) {
+             * 15.12.2014
+             */"This video is not available.")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.CountryIPBlockException_createCandidateResult());
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
@@ -1099,21 +1097,6 @@ public class YoutubeDashV2 extends PluginForHost {
 
             @Override
             public void setDownloadTotalBytes(long l) {
-            }
-
-            @Override
-            public long[] getChunksProgress() {
-                return chunkProgress;
-            }
-
-            @Override
-            public void setChunksProgress(long[] ls) {
-                chunkProgress = ls;
-                if (ls == null) {
-                    downloadLink.setProperty(dashChunksProperty, Property.NULL);
-                } else {
-                    downloadLink.setProperty(dashChunksProperty, ls);
-                }
             }
 
             @Override
@@ -2001,12 +1984,7 @@ public class YoutubeDashV2 extends PluginForHost {
             //
             // }
 
-            try {
-
-                downloadLink.setLinkID("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + URLEncode.encodeRFC2396(filename));
-            } catch (UnsupportedEncodingException e) {
-                downloadLink.setLinkID("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + filename);
-            }
+            downloadLink.setLinkID("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID));
 
         } else if (variant instanceof YoutubeVariantInterface) {
             YoutubeVariantInterface v = (YoutubeVariantInterface) variant;
@@ -2028,11 +2006,8 @@ public class YoutubeDashV2 extends PluginForHost {
             // "&variant=" + variant);
             //
             // }
-            try {
-                downloadLink.setLinkID("youtubev2://" + v._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + URLEncode.encodeRFC2396(filename));
-            } catch (UnsupportedEncodingException e) {
-                downloadLink.setLinkID("youtubev2://" + v._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID) + "/" + filename);
-            }
+
+            downloadLink.setLinkID("youtubev2://" + v._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID));
 
         }
         if (downloadLink.getStringProperty(YoutubeHelper.YT_TITLE, null) == null) {
