@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -80,18 +79,6 @@ public class DreamAmateursCom extends PornEmbedParser {
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
-
-        }
-        externID = br.getRegex("src=\"http://videos\\.allelitepass\\.com/txc/([^<>\"/]*?)\\.swf\"").getMatch(0);
-        if (externID != null) {
-            br.getPage("http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(externID));
-            externID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
-            if (externID != null) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + externID);
-                dl.setFinalFileName(filename + ".flv");
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
 
         }
         externID = br.getRegex("\\&file=(http://(www\\.)?revengetv\\.net/[^<>\"]*?)\\&beginimage").getMatch(0);

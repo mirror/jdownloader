@@ -126,17 +126,6 @@ public class MuchaCarneCom extends PornEmbedParser {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = br.getRegex("src=\"http://videos\\.allelitepass\\.com/txc/([^<>\"/]*?)\\.swf\"").getMatch(0);
-        if (externID != null) {
-            br.getPage("http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(externID));
-            externID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
-            if (externID != null) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + externID);
-                dl.setFinalFileName(filename + ".flv");
-                decryptedLinks.add(dl);
-                return decryptedLinks;
-            }
-        }
         externID = br.getRegex("latinteencash\\.com/flash_video\\.swf\" width=\"\\d+\" height=\"\\d+\" flashvars=\"file=(http[^<>\"]*?\\.flv)\\&").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(externID));
