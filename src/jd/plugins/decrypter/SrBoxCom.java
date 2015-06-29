@@ -131,7 +131,7 @@ public class SrBoxCom extends PluginForDecrypt {
             int iImageNet = 0;
             for (String strImageLink : TabImage1) {
                 if (!strImageLink.toLowerCase().contains("foto")) {
-                    String strNet = "org";
+                    String strNet = "info";
                     if (TabNet[iImageNet] != null) {
                         strNet = TabNet[iImageNet];
                     }
