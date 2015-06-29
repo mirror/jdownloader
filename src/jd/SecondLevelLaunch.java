@@ -261,9 +261,9 @@ public class SecondLevelLaunch {
          * previous implementation silently ignored such a situation. If the previous behavior is desired, you can use the new system
          * property, java.util.Arrays.useLegacyMergeSort, to restore previous mergesort behavior. Nature of Incompatibility: behavioral RFE:
          * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6804124
-         * 
+         *
          * Sorting live data (values changing during sorting) violates the general contract
-         * 
+         *
          * java.lang.IllegalArgumentException: Comparison method violates its general contract!
          */
         System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
@@ -296,8 +296,8 @@ public class SecondLevelLaunch {
 
     /**
      * LÃ¤dt ein Dynamicplugin.
-     * 
-     * 
+     *
+     *
      * @throws IOException
      */
 
@@ -1074,7 +1074,6 @@ public class SecondLevelLaunch {
                         if (path != null) {
                             antiVirus = new File(path).getName();
                         }
-
                     }
                 }
                 return antiVirus;

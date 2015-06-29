@@ -466,19 +466,25 @@ public class FilesMonsterCom extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         String expires = br.getRegex("<span>\\s*Valid until: <span class='green'>([^<>\"]+)</span>").getMatch(0);
-        if (expires == null) {
+        long expireTimeStamp = -1;
+        if (expires != null) {
+            expireTimeStamp = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy HH:mm", null);
+            if (expireTimeStamp <= 0) {
+                expireTimeStamp = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy", Locale.ENGLISH);
+            }
+        } else {
             // picks up expired accounts.
             expires = br.getRegex("(?:<span.*?>Expire(?:s|d):|<span class=\"expire-date\\s*\">)\\s*(\\d{2}/\\d{2}/\\d{2})\\s*</span>").getMatch(0);
-        }
-        long ms = 0;
-        if (expires != null) {
-            ms = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy HH:mm", null);
-            if (ms <= 0) {
-                ms = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy", Locale.ENGLISH);
+            if (expires != null) {
+                expireTimeStamp = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy", Locale.ENGLISH);
             }
-            ai.setValidUntil(ms);
         }
-        if (!ai.isExpired()) {
+        boolean isFree = true;
+        if (expireTimeStamp > 0) {
+            ai.setValidUntil(expireTimeStamp);
+            isFree = ai.isExpired();
+        }
+        if (!isFree) {
             try {
                 trafficUpdate(ai, account);
             } catch (IOException e) {

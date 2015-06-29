@@ -82,12 +82,12 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
 
-                                                                                                      @Override
-                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                          listener.onAccountControllerEvent(event);
-                                                                                                      }
+        @Override
+        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+            listener.onAccountControllerEvent(event);
+        }
 
-                                                                                                  };
+    };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -103,7 +103,6 @@ public class AccountController implements AccountControllerListener, AccountProp
         if (config.getListID() <= 0) {
             config.setListID(System.currentTimeMillis());
         }
-
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
@@ -408,8 +407,8 @@ public class AccountController implements AccountControllerListener, AccountProp
                     try {
                         onlineCheck.getExternalIP();
                     } catch (final OfflineException e2) { /*
-                                                           * we are offline, so lets just return without any account update
-                                                           */
+                     * we are offline, so lets just return without any account update
+                     */
                         logger.clear();
                         LogController.CL().info("It seems Computer is currently offline, skipped Accountcheck for " + whoAmI);
                         account.setError(AccountError.TEMP_DISABLED, "No Internet Connection");
@@ -638,7 +637,7 @@ public class AccountController implements AccountControllerListener, AccountProp
 
     /**
      * Restores accounts from old database
-     * 
+     *
      * @return
      */
     private HashMap<String, ArrayList<AccountData>> restore() {
@@ -960,19 +959,17 @@ public class AccountController implements AccountControllerListener, AccountProp
     }
 
     public List<Account> importAccounts(File f) {
-
         /* TODO: add cleanup to avoid memleak */
-        AccountSettings cfg = JsonConfig.create(new File(f.getParent(), "org.jdownloader.settings.AccountSettings"), AccountSettings.class);
+        final AccountSettings cfg = JsonConfig.create(new File(f.getParent(), "org.jdownloader.settings.AccountSettings"), AccountSettings.class);
         StatsManager.I().track("premium/import/" + cfg.getListID() + "/" + cfg.getListVersion());
-        long time = System.currentTimeMillis();
-        HashMap<String, List<Account>> accounts = loadAccounts(cfg, false);
-        ArrayList<Account> added = new ArrayList<Account>();
+        final long timeStamp = System.currentTimeMillis();
+        final HashMap<String, List<Account>> accounts = loadAccounts(cfg, false);
+        final ArrayList<Account> added = new ArrayList<Account>();
         for (Entry<String, List<Account>> es : accounts.entrySet()) {
             for (Account ad : es.getValue()) {
-
-                Account acc = new Account(ad.getUser(), ad.getPass());
+                final Account acc = new Account(ad.getUser(), ad.getPass());
                 acc.setHoster(ad.getHoster());
-                acc.setProperty(StatsManager.IMPORTED_TIMESTAMP, time);
+                acc.setProperty(StatsManager.IMPORTED_TIMESTAMP, timeStamp);
                 acc.setProperty(StatsManager.SLID, cfg.getListID());
                 acc.setProperty(StatsManager.SLV, cfg.getListVersion());
                 addAccount(acc);
