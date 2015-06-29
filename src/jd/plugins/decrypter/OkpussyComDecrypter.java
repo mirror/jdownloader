@@ -20,14 +20,15 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "badjojo.com" }, urls = { "http://(www\\.)?badjojo\\.com/\\d+/.{1}" }, flags = { 0 })
-public class BadJoJoComDecrypter extends PornEmbedParser {
+@DecrypterPlugin(revision = "$Revision: 30726 $", interfaceVersion = 3, names = { "okpussy.com" }, urls = { "http://(www\\.)?okpussy\\.com/[^/]+/\\d+/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+public class OkpussyComDecrypter extends PornEmbedParser {
 
-    public BadJoJoComDecrypter(PluginWrapper wrapper) {
+    public OkpussyComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -35,22 +36,26 @@ public class BadJoJoComDecrypter extends PornEmbedParser {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if ("http://www.badjojo.com/".equals(br.getRedirectLocation()) || br.getRequest().getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
+        br.setFollowRedirects(false);
+        String externID = br.getRedirectLocation();
+        if (externID != null && !externID.contains("okpussy.com/")) {
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
+        } else if (externID != null) {
+            br.getPage(externID);
+            externID = null;
         }
-        br.setFollowRedirects(true);
-        if (br.getRedirectLocation() != null) {
-            br.getPage(br.getRedirectLocation());
+        String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0);
         }
-        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
 
         decryptedLinks = new ArrayList<DownloadLink>();
-        decryptedLinks.add(createDownloadlink(parameter.replace("badjojo.com/", "decryptedbadjojo.com/")));
+        decryptedLinks.add(createDownloadlink(parameter.replace("okpussy.com/", "okpussydecrypted.com/")));
         return decryptedLinks;
     }
 

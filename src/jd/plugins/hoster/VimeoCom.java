@@ -446,6 +446,9 @@ public class VimeoCom extends PluginForHost {
                 json = gq.toString();
             } else {
                 json = ibr.getRegex("a=(\\{\"cdn_url\".*?);if\\(a\\.request\\)").getMatch(0);
+                if (json == null) {
+                    json = ibr.getRegex("t=(\\{\"cdn_url\".*?);if\\(\\!t\\.request\\)").getMatch(0);
+                }
             }
             /* Old handling without DummyScriptEnginePlugin removed AFTER revision 28754 */
             if (json != null) {

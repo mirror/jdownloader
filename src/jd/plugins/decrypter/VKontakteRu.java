@@ -1398,7 +1398,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String postID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/wall((\\-)?\\d+_\\d+)").getMatch(0);
         final String wallID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "vk\\.com/(wall(\\-)?\\d+)_\\d+").getMatch(0);
 
-        getPage(br, "https://api.vk.com/method/wall.getById?&posts=" + postID + "&extended=0");
+        getPage(br, "https://api.vk.com/method/wall.getById?posts=" + postID + "&extended=0&copy_history_depth=2");
         Map<String, Object> map = (Map<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
 
         if (map == null) {
@@ -1879,6 +1879,7 @@ public class VKontakteRu extends PluginForDecrypt {
             }
 
         }
+        apiHandleErrors();
     }
 
     /** Returns current API 'error_code', returns -1 if there is none */

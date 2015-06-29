@@ -52,6 +52,8 @@ public class OneDriveLiveCom extends PluginForDecrypt {
     /* Constants */
     private static final int        MAX_ENTRIES_PER_REQUEST      = 1000;
     private static final long       ITEM_TYPE_FILE               = 1;
+    private static final long       ITEM_TYPE_PICTURE            = 3;
+    private static final long       ITEM_TYPE_VIDEO              = 5;
     private static final int        ITEM_TYPE_FOLDER             = 32;
     /* Plugin settings */
     private static final String     DOWNLOAD_ZIP                 = "DOWNLOAD_ZIP_2";
@@ -165,7 +167,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         fpName = (String) entries.get("name");
         totalItemType = ((Number) entries.get("itemType")).longValue();
 
-        if (totalItemType == ITEM_TYPE_FILE) {
+        if (totalItemType == ITEM_TYPE_FILE || totalItemType == ITEM_TYPE_PICTURE || totalItemType == ITEM_TYPE_VIDEO) {
             /* Single file */
             parseFile(entries);
         } else {

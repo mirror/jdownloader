@@ -25,6 +25,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,7 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexu.com" }, urls = { "http://(www\\.)?sexu\\.com/\\d+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexu.com" }, urls = { "http://(www\\.)?sexu\\.com/\\d+/" }, flags = { 0 })
 public class SexuCom extends PluginForHost {
 
     public SexuCom(PluginWrapper wrapper) {
@@ -63,6 +64,8 @@ public class SexuCom extends PluginForHost {
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        final String lid = new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0);
+        downloadLink.setLinkID(lid);
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -71,7 +74,7 @@ public class SexuCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String[] qualities = { "1080p", "720p", "480p", "360p", "320p", "240p" };
-        String js = br.getRegex("var jw = jwplayer\\(\"jw_video\"\\)\\.setup\\((.*?)\\);").getMatch(0);
+        String js = br.cloneBrowser().getPage("http://sexu.com/v.php?v_id=" + downloadLink.getLinkID() + "&bitrate=720p&_=" + System.currentTimeMillis());
         // js = js.replace("'", "\"");
         final HashMap<String, Object> entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(js);
         final ArrayList<Object> sources = (ArrayList) entries.get("sources");
