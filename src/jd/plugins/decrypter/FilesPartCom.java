@@ -39,6 +39,10 @@ public class FilesPartCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 Not Found<|not found<")) {
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         if (parameter.contains("filespart.com/go")) {
             final String finallink = br.getRedirectLocation();
             if (finallink == null) {
@@ -61,20 +65,28 @@ public class FilesPartCom extends PluginForDecrypt {
                     }
                     final String code = getCaptchaCode("http://filespart.com" + captchaLink, param);
                     br.postPage(parameter, "capid=" + code);
-                    if (br.containsHTML(">Please Enter Captcha For Download:")) continue;
+                    if (br.containsHTML(">Please Enter Captcha For Download:")) {
+                        continue;
+                    }
                     break;
                 }
-                if (br.containsHTML(">Please Enter Captcha For Download:")) throw new DecrypterException(DecrypterException.CAPTCHA);
+                if (br.containsHTML(">Please Enter Captcha For Download:")) {
+                    throw new DecrypterException(DecrypterException.CAPTCHA);
+                }
             }
             final String linkTextarea = br.getRegex("onclick=\"this\\.select\\(\\);\">(.*?)</textarea>").getMatch(0);
-            if (linkTextarea == null) { return null; }
+            if (linkTextarea == null) {
+                return null;
+            }
             final String[] allLinks = HTMLParser.getHttpLinks(linkTextarea, null);
             if (allLinks == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             for (final String singleLink : allLinks) {
-                if (!singleLink.contains("filespart.com/")) decryptedLinks.add(createDownloadlink(singleLink));
+                if (!singleLink.contains("filespart.com/")) {
+                    decryptedLinks.add(createDownloadlink(singleLink));
+                }
             }
         }
 
