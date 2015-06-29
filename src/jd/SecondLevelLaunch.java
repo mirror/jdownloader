@@ -1064,10 +1064,17 @@ public class SecondLevelLaunch {
                 if (software != null) {
                     antiVirus = software.getName();
                     if (StringUtils.isEmpty(antiVirus)) {
-                        antiVirus = new File(software.get("pathToSignedProductExe")).getName();
+                        String path = software.get("pathToSignedProductExe");
+                        if (path != null) {
+                            antiVirus = new File(path).getName();
+                        }
                     }
                     if (StringUtils.isEmpty(antiVirus)) {
-                        antiVirus = new File(software.get("pathToSignedReportingExe")).getName();
+                        String path = software.get("pathToSignedReportingExe");
+                        if (path != null) {
+                            antiVirus = new File(path).getName();
+                        }
+
                     }
                 }
                 return antiVirus;
