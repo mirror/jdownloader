@@ -1062,7 +1062,7 @@ public class SecondLevelLaunch {
             private String getNameSoftware(SecuritySoftwareInfo software) {
                 String antiVirus = null;
                 if (software != null) {
-                    antiVirus = software.getName();
+
                     if (StringUtils.isEmpty(antiVirus)) {
                         String path = software.get("pathToSignedProductExe");
                         if (path != null) {
@@ -1083,39 +1083,57 @@ public class SecondLevelLaunch {
             public void run() {
 
                 if (CrossSystem.isWindows()) {
-
+                    SecuritySoftwareInfo sw = null;
                     try {
                         LOG.info("AntiVirusProduct START");
-                        String software = getNameSoftware(CrossSystem.getAntiVirusSoftwareInfo());
-                        StatsManager.I().track(100, "sec/av/" + software);
+                        sw = CrossSystem.getAntiVirusSoftwareInfo();
+                        String software = getNameSoftware(sw);
+                        HashMap<String, String> infos = new HashMap<String, String>();
+                        if (sw != null) {
+                            infos.put("name", sw.getName());
+                        }
+                        StatsManager.I().track(100, "secur", "sec/av/" + software, infos);
                     } catch (UnsupportedOperationException e) {
 
                     } catch (Throwable e1) {
                         LOG.log(e1);
+                        StatsManager.I().track(100, "secur", "sec/av/error/" + e1.getMessage(), null);
                     } finally {
                         LOG.info("AntiVirusProduct END");
                     }
 
                     try {
                         LOG.info("FirewallProduct START");
-                        String software = getNameSoftware(CrossSystem.getFirewallSoftwareInfo());
-                        StatsManager.I().track(100, "sec/fw/" + software);
+                        sw = CrossSystem.getFirewallSoftwareInfo();
+                        String software = getNameSoftware(sw);
+                        HashMap<String, String> infos = new HashMap<String, String>();
+                        if (sw != null) {
+                            infos.put("name", sw.getName());
+                        }
+                        StatsManager.I().track(100, "secur", "sec/fw/" + software, infos);
                     } catch (UnsupportedOperationException e) {
 
                     } catch (Throwable e1) {
                         LOG.log(e1);
+                        StatsManager.I().track(100, "secur", "sec/fw/error/" + e1.getMessage(), null);
                     } finally {
                         LOG.info("FirewallProduct END");
                     }
 
                     try {
                         LOG.info("AntiSpywareProduct START");
-                        String software = getNameSoftware(CrossSystem.getAntiSpySoftwareInfo());
-                        StatsManager.I().track(100, "sec/as/" + software);
+                        sw = CrossSystem.getAntiSpySoftwareInfo();
+                        String software = getNameSoftware(sw);
+                        HashMap<String, String> infos = new HashMap<String, String>();
+                        if (sw != null) {
+                            infos.put("name", sw.getName());
+                        }
+                        StatsManager.I().track(100, "secur", "sec/as/" + software, infos);
                     } catch (UnsupportedOperationException e) {
 
                     } catch (Throwable e1) {
                         LOG.log(e1);
+                        StatsManager.I().track(100, "secur", "sec/as/error/" + e1.getMessage(), null);
                     } finally {
                         LOG.info("AntiSpywareProduct END");
                     }
