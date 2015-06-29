@@ -49,7 +49,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3sat.de" }, urls = { "http://(www\\.)?3sat\\.de/mediathek/.+\\&obj=\\d+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3sat.de" }, urls = { "http://(?:www\\.)?3sat\\.de/mediathek/.+obj=\\d+" }, flags = { 32 })
 public class DreiSatDe extends PluginForHost {
 
     private static final String Q_LOW      = "Q_LOW";
@@ -81,7 +81,7 @@ public class DreiSatDe extends PluginForHost {
                  * we make sure only one result is in ret, thats the case for svn/next major version
                  */
                 final DownloadLink sourceLink = ret.get(0);
-                String ID = new Regex(sourceLink.getDownloadURL(), "\\&obj=(\\d+)").getMatch(0);
+                final String ID = new Regex(sourceLink.getDownloadURL(), "(?:\\&|\\?)obj=(\\d+)").getMatch(0);
                 // Flash: 1=auto; 11=low; 13=high; 14=veryhigh; 1?=hd --> rtmp://
                 // Quicktime: 5=auto; 51=low; 53=high; 54=veryhigh; 5?=hd --> rtsp://
                 // WindowsMedia: 2=auto; 21=low; 23=high; 24=veryhigh; 2?=hd --> mms://
@@ -185,6 +185,10 @@ public class DreiSatDe extends PluginForHost {
 
                         if (fmt != null) {
                             fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
+                        }
+                        if (!protocol.equals("http") || url.endsWith(".3gp") || url.endsWith(".webm")) {
+                            /* We only want http urls and .mp3 videos. Filters out rtmp urls and, .3gp- and .webm video urls. */
+                            continue;
                         }
                         if (fmt != null) {
                             /* best selection is done at the end */

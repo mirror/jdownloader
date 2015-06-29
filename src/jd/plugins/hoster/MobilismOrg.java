@@ -30,6 +30,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -45,6 +46,7 @@ public class MobilismOrg extends PluginForHost {
 
     /* Tags: Script vinaget.us */
     private static final String                            DOMAIN               = "http://mobilism.org/";
+    private static final String                            DOMAIN_2             = "http://89.32.131.24/";
     private static final String                            NICE_HOST            = "mobilism.org";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
@@ -231,9 +233,17 @@ public class MobilismOrg extends PluginForHost {
             br.setAllowedResponseCodes(403);
             /* request creation of downloadlink */
             br.setFollowRedirects(true);
-            this.getAPISafe("http://images.mobilism.org/downloader/premium.php");
-            this.postAPISafe("http://images.mobilism.org/downloader/premium.php", "submit=Go&add_to_url=" + Encoding.urlEncode(link.getDownloadURL()));
-            this.postAPISafe("http://89.32.131.24/downloader/app/index.php" + System.currentTimeMillis(), "premium_acc=on&link=" + Encoding.urlEncode(link.getDownloadURL()));
+            this.br = newBrowser();
+            this.br.setFollowRedirects(true);
+            login(account, false);
+            this.getAPISafe("http://89.32.131.24/downloader/premium.php");
+            this.getAPISafe("/downloader/app/index.php?dl=" + Encoding.urlEncode(link.getDownloadURL()));
+            this.postAPISafe("/downloader/app/index.php", "premium_acc=on&link=" + Encoding.urlEncode(link.getDownloadURL()));
+            final Form dlform = this.br.getForm(0);
+            if (dlform == null) {
+                handleErrorRetries("dlformnull", 10, 10 * 60 * 1000l);
+            }
+            this.postAPIFormSafe(dlform);
             dllink = br.getRegex("(https?://[^/]+/downloader/app/files/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 logger.warning("Final downloadlink is null");
@@ -329,6 +339,7 @@ public class MobilismOrg extends PluginForHost {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(DOMAIN, key, value);
+                            this.br.setCookie(DOMAIN_2, key, value);
                         }
                         this.br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
                         return;
@@ -388,6 +399,12 @@ public class MobilismOrg extends PluginForHost {
 
     private void postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
         this.br.postPage(accesslink, postdata);
+        updatestatuscode();
+        handleAPIErrors(this.br);
+    }
+
+    private void postAPIFormSafe(final Form form) throws Exception {
+        this.br.submitForm(form);
         updatestatuscode();
         handleAPIErrors(this.br);
     }
@@ -461,43 +478,43 @@ public class MobilismOrg extends PluginForHost {
         }
     }
 
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /** Corrects input so that it fits what we use in our plugins. */
-    private int correctChunks(int maxchunks) {
-        if (maxchunks < 1) {
-            maxchunks = 1;
-        } else if (maxchunks > 1) {
-            maxchunks = -maxchunks;
-        }
-        /* Else maxchunks == 1 */
-        return maxchunks;
-    }
-
-    /** Corrects input so that it fits what we use in our plugins. */
-    private int correctMaxdls(int maxdls) {
-        if (maxdls < 1) {
-            maxdls = 1;
-        } else if (maxdls > 20) {
-            maxdls = 20;
-        }
-        /* Else we should have a valid value! */
-        return maxdls;
-    }
+    // /**
+    // * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
+    // *
+    // * @param s
+    // * Imported String to match against.
+    // * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
+    // * @author raztoki
+    // * */
+    // private boolean inValidate(final String s) {
+    // if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
+    // return true;
+    // } else {
+    // return false;
+    // }
+    // }
+    //
+    // /** Corrects input so that it fits what we use in our plugins. */
+    // private int correctChunks(int maxchunks) {
+    // if (maxchunks < 1) {
+    // maxchunks = 1;
+    // } else if (maxchunks > 1) {
+    // maxchunks = -maxchunks;
+    // }
+    // /* Else maxchunks == 1 */
+    // return maxchunks;
+    // }
+    //
+    // /** Corrects input so that it fits what we use in our plugins. */
+    // private int correctMaxdls(int maxdls) {
+    // if (maxdls < 1) {
+    // maxdls = 1;
+    // } else if (maxdls > 20) {
+    // maxdls = 20;
+    // }
+    // /* Else we should have a valid value! */
+    // return maxdls;
+    // }
 
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {

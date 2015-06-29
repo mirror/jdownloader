@@ -441,6 +441,15 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("src=\"http://videos\\.allelitepass\\.com/txc/([^<>\"/]*?)\\.swf\"").getMatch(0);
+        if (externID != null) {
+            /* Add as offline -this site is down! */
+            final String final_url = "directhttp://http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(externID);
+            final DownloadLink dl = createDownloadlink(final_url);
+            dl.setProperty("OFFLINE", true);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         // filename needed for all IDs below
         if (title == null) {
             return decryptedLinks;
