@@ -235,10 +235,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                         // account is not checked yet or currently in error state. send stats later
                                         account.setProperty(fireStatsCallProperty, true);
                                     } else {
-                                        final HashMap<String, String> infos = new HashMap<String, String>();
-                                        final File file;
                                         try {
-                                            file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(accountHoster) + ".json");
+                                            final HashMap<String, String> infos = new HashMap<String, String>();
+                                            final File file = Application.getResource("cfg/clicked/" + CrossSystem.alleviatePathParts(accountHoster) + ".json");
                                             final AccountInfo accountInfo = account.getAccountInfo();
                                             final String user = account.getUser();
                                             if (StringUtils.isNotEmpty(user)) {
@@ -259,7 +258,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                                     });
                                                     if (list != null && list.size() > 0) {
                                                         infos.put(CLICK_SOURCE, JSonStorage.serializeToJson(list));
-
                                                     }
                                                 } catch (Throwable e) {
                                                     StatsManager.I().track("premium/affTrackError/" + accountHoster + "/" + e.getMessage());
@@ -267,7 +265,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                                     file.delete();
                                                 }
                                             }
-
                                             final String id;
                                             if (accountInfo != null) {
                                                 final long validUntilTimeStamp = accountInfo.getValidUntil();
@@ -290,7 +287,6 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                         } finally {
                                             account.removeProperty(fireStatsCallProperty);
                                         }
-
                                     }
                                     return;
                                 }
