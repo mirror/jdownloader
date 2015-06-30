@@ -176,7 +176,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
         if (dllink == null) {
             String host_downloadlink = link.getDownloadURL();
             /* Workaround for serverside debriditalia bug. */
-            if (link.getHost().equals("share-online.biz") && host_downloadlink.contains("https://")) {
+            if ((link.getHost().equals("share-online.biz") || link.getHost().equals("depfile.com")) && host_downloadlink.startsWith("https://")) {
                 host_downloadlink = host_downloadlink.replace("https://", "http://");
             }
             final String encodedLink = Encoding.urlEncode(host_downloadlink);
