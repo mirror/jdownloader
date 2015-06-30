@@ -214,48 +214,78 @@ public class DataFileCom extends PluginForHost {
     }
 
     public static class ScriptEnv {
-        public static String atob(String string) {
+        private ScriptEngine engine;
+
+        public ScriptEnv(ScriptEngine engine) {
+            this.engine = engine;
+        }
+
+        public void log(String log) {
+
+            System.out.println(log);
+        }
+
+        public void eval(String eval) throws ScriptException {
+
+            engine.eval(eval);
+            Object value = engine.get("WcmpFN");
+        }
+
+        public String atob(String string) {
             String ret = Encoding.Base64Decode(string);
+
             return ret;
         }
 
     }
 
     private void redirectAntiDDos(Browser br) throws Exception {
-        String js = br.getRegex("<style type=\"text/css\">a\\{color\\: white\\;\\}</style><script language=\"JavaScript\">(.*)</script>").getMatch(0);
-        if (js != null) {
-            ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-            final ScriptEngine engine = mgr.getEngineByName("JavaScript");
-            // history.length<1){document.body.innerHTML=''
-            engine.eval("document={};document.body={};");
-            engine.eval("window={};window.location={};");
-            engine.eval("history=[];");
-            // load java environment trusted
-            DummyScriptEnginePlugin.runTrusted(new ThrowingRunnable<ScriptException>() {
 
-                @Override
-                public void run() throws ScriptException {
-                    // atob requires String to be loaded for its parameter and return type
-                    engine.eval("var string=" + String.class.getName() + ";");
-                    engine.eval("var scriptEnv=Packages." + ScriptEnv.class.getName() + ";");
+        try {
+            String js = br.getRegex("<script language=\"JavaScript\">(.*)</script>").getMatch(0);
+            if (js != null) {
 
-                    // create the atob function and redirect it to our java function
-                    engine.eval("atob=function(str){return Packages." + ScriptEnv.class.getName() + ".atob(str)+\"\";}");
-                    // cleanup
-                    engine.eval("delete java;");
-                    engine.eval("delete jd;");
+                ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                final ScriptEngine engine = mgr.getEngineByName("JavaScript");
+                // history.length<1){document.body.innerHTML=''
+                engine.eval("document={};document.body={};");
+                engine.eval("window={};window.location={};");
+                engine.eval("history=[];");
+                // load java environment trusted
+                DummyScriptEnginePlugin.runTrusted(new ThrowingRunnable<ScriptException>() {
+
+                    @Override
+                    public void run() throws ScriptException {
+
+                        ScriptEnv env = new ScriptEnv(engine);
+                        // atob requires String to be loaded for its parameter and return type
+                        engine.put("env", env);
+                        engine.eval("var string=" + String.class.getName() + ";");
+
+                        engine.eval("log=function(str){return env.log(str);};");
+                        engine.eval("eval=function(str){return env.eval(str);};");
+
+                        engine.eval("atob=function(str){return env.atob(str);};");
+                        // cleanup
+                        engine.eval("delete java;");
+                        engine.eval("delete jd;");
+                    }
+
+                });
+
+                engine.eval(js);
+
+                Object redirect = engine.eval("window.location.href");
+                if (redirect != null) {
+                    br.getPage(redirect + "");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "AntiDDOS JS failed");
                 }
 
-            });
-
-            engine.eval(js);
-
-            Object redirect = engine.eval("window.location.href");
-            if (redirect != null) {
-                br.getPage(redirect + "");
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "AntiDDOS JS failed");
             }
+        } catch (Exception e) {
+            throw e;
+        } finally {
 
         }
 
@@ -654,7 +684,7 @@ public class DataFileCom extends PluginForHost {
 
     /**
      * code = 6 or 9
-     *
+     * 
      * Should only happen for free/free account mode.
      * */
     private void errorFreeTooManySimultanDownloads() throws PluginException {
@@ -672,9 +702,9 @@ public class DataFileCom extends PluginForHost {
 
     /**
      * code = 7
-     *
+     * 
      * Can happen in any download mode
-     *
+     * 
      * @throws PluginException
      * */
     private void errorDailyDownloadlimitReached() throws PluginException {
@@ -1059,7 +1089,7 @@ public class DataFileCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from String source.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -1075,7 +1105,7 @@ public class DataFileCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -1084,7 +1114,7 @@ public class DataFileCom extends PluginForHost {
 
     /**
      * Tries to return value of key from JSon response, from provided Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final Browser ibr, final String key) {
@@ -1097,13 +1127,13 @@ public class DataFileCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     *
+     * 
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     *
+     * 
      * @param controlSlot
      *            (+1|-1)
      * @author raztoki
