@@ -41,7 +41,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "online.nolife-tv.com" }, urls = { "http://(www\\.)?online\\.nolife\\-tv\\.com/emission/#\\!/\\d+/[a-z0-9\\-_]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "online.nolife-tv.com" }, urls = { "http://(www\\.)?online\\.nolife\\-tv\\.com/emission/#(!|%21)/\\d+/[a-z0-9\\-_]+" }, flags = { 2 })
 public class OnlineNoLifeTvCom extends PluginForHost {
 
     private String              DLLINK              = null;

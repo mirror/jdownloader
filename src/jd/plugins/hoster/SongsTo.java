@@ -30,7 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "songs.to" }, urls = { "http://(www\\.)?songs\\.to/([a-z0-9\\-]+/|#\\!pl=)[a-z0-9]{40}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "songs.to" }, urls = { "http://(www\\.)?songs\\.to/([a-z0-9\\-]+/|#(!|%21)pl=)[a-z0-9]{40}" }, flags = { 0 })
 public class SongsTo extends PluginForHost {
 
     public SongsTo(PluginWrapper wrapper) {
@@ -52,11 +52,15 @@ public class SongsTo extends PluginForHost {
         br.setFollowRedirects(true);
         FID = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         br.getPage("http://songs.to/json/songlist.php?record=" + FID);
-        if (br.containsHTML("\\{\"data\":\\[\\]\\}")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("\\{\"data\":\\[\\]\\}")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String artist = getJson("artist");
         final String album = getJson("album");
         final String title = getJson("title");
-        if (album == null || artist == null || title == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (album == null || artist == null || title == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String filename = null;
         if (album.equals("")) {
             filename = unescape(artist) + " - " + unescape(title) + ".mp3";
@@ -71,10 +75,11 @@ public class SongsTo extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -88,7 +93,9 @@ public class SongsTo extends PluginForHost {
         /* we have to make sure the youtube plugin is loaded */
         if (pluginloaded == false) {
             final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            if (plugin == null) {
+                throw new IllegalStateException("youtube plugin not found!");
+            }
             pluginloaded = true;
         }
         return jd.plugins.hoster.Youtube.unescape(s);
@@ -107,7 +114,9 @@ public class SongsTo extends PluginForHost {
 
     private String getJson(final String parameter) {
         String result = br.getRegex(FID + ".*?" + "\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = br.getRegex(FID + ".*?" + "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        if (result == null) {
+            result = br.getRegex(FID + ".*?" + "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        }
         return result;
     }
 
