@@ -57,8 +57,10 @@ public class HitFileNet extends PluginForHost {
     private static final String  SETTING_FREE_PARALLEL_DOWNLOADSTARTS = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
 
     private final String         UA                                   = RandomUserAgent.generate();
-    private static final String  RECAPTCHATEXT                        = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static final String  CAPTCHATEXT                          = "hitfile\\.net/captcha/";
+    private static final String  HTML_RECAPTCHATEXT                   = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+    private static final String  HTML_CAPTCHATEXT                     = "hitfile\\.net/captcha/";
+    /* Website will say something like "Searching file..." which means that it is offline. */
+    public static final String   HTML_FILE_OFFLINE                    = "class=\"code\\-404\"";
     private static final String  MAINPAGE                             = "http://hitfile.net";
     public static Object         LOCK                                 = new Object();
     private static final String  BLOCKED                              = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
@@ -224,7 +226,7 @@ public class HitFileNet extends PluginForHost {
         br.setFollowRedirects(true);
         prepareBrowser(UA);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>Please wait, searching file|\\'File not found\\. Probably it was deleted)")) {
+        if (br.containsHTML("(\\'File not found\\. Probably it was deleted)") || br.containsHTML(HTML_FILE_OFFLINE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex fileInfo = br.getRegex("class=\\'file-icon\\d+ [a-z0-9]+\\'></span><span>(.*?)</span>[\n\t\r ]+<span style=\"color: #626262; font\\-weight: bold; font\\-size: 14px;\">\\((.*?)\\)</span>");
@@ -245,6 +247,9 @@ public class HitFileNet extends PluginForHost {
         } catch (final Throwable e) {
         }
         br.getPage("/download/free/" + fileID);
+        if (br.containsHTML(HTML_FILE_OFFLINE)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().equals(downloadLink.getDownloadURL().replace("www.", ""))) {
                 try {
@@ -260,7 +265,7 @@ public class HitFileNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        if (!(br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CAPTCHATEXT))) {
+        if (!(br.containsHTML(HTML_RECAPTCHATEXT) || br.containsHTML(HTML_CAPTCHATEXT))) {
             if (br.containsHTML(hf(0))) {
                 waittime = br.getRegex(hf(1)).getMatch(0);
                 final int wait = waittime != null ? Integer.parseInt(waittime) : -1;
@@ -278,7 +283,7 @@ public class HitFileNet extends PluginForHost {
             }
         }
 
-        if (br.containsHTML(RECAPTCHATEXT)) {
+        if (br.containsHTML(HTML_RECAPTCHATEXT)) {
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.parse();
@@ -286,11 +291,11 @@ public class HitFileNet extends PluginForHost {
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             final String c = getCaptchaCode("recaptcha", cf, downloadLink);
             rc.setCode(c);
-            if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CAPTCHATEXT)) {
+            if (br.containsHTML(HTML_RECAPTCHATEXT) || br.containsHTML(HTML_CAPTCHATEXT)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         } else {
-            if (!br.containsHTML(CAPTCHATEXT)) {
+            if (!br.containsHTML(HTML_CAPTCHATEXT)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Handling normal captchas");
@@ -325,7 +330,7 @@ public class HitFileNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500: Server has server issues and/or user entered wrong captcha", 10 * 60 * 1000l);
                     }
                 }
-                if (!br.containsHTML(CAPTCHATEXT)) {
+                if (!br.containsHTML(HTML_CAPTCHATEXT)) {
                     try {
                         validateLastChallengeResponse();
                     } catch (final Throwable e) {
@@ -338,7 +343,7 @@ public class HitFileNet extends PluginForHost {
                     }
                 }
             }
-            if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CAPTCHATEXT)) {
+            if (br.containsHTML(HTML_RECAPTCHATEXT) || br.containsHTML(HTML_CAPTCHATEXT)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }

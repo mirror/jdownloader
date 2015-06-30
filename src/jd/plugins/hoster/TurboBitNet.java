@@ -266,6 +266,7 @@ public class TurboBitNet extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         // support for public premium links
@@ -285,7 +286,7 @@ public class TurboBitNet extends PluginForHost {
         String dllink = downloadLink.getDownloadURL();
         sleep(2500, downloadLink);
         getPage(dllink);
-        if (br.containsHTML("(>Please wait, searching file|'File not found\\. Probably it was deleted)")) {
+        if (br.containsHTML("('File not found\\. Probably it was deleted)") || br.containsHTML(HitFileNet.HTML_FILE_OFFLINE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fileSize = br.getRegex("class=\"file-size\">([^<>\"]*?)</span>").getMatch(0);
@@ -302,6 +303,9 @@ public class TurboBitNet extends PluginForHost {
         String downloadUrl = null, waittime = null;
         String id = getFUID(downloadLink);
         getPage("/download/free/" + id);
+        if (br.containsHTML(HitFileNet.HTML_FILE_OFFLINE)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         Form captchaform = null;
         final Form[] allForms = br.getForms();
