@@ -95,13 +95,13 @@ public class WarpedCo extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean free_RESUME                                  = true;
-    private static final int     free_MAXCHUNKS                               = 1;
+    private static final int     free_MAXCHUNKS                               = 0;
     private static final int     free_MAXDOWNLOADS                            = 20;
     private static final boolean account_FREE_RESUME                          = true;
-    private static final int     account_FREE_MAXCHUNKS                       = 1;
+    private static final int     account_FREE_MAXCHUNKS                       = 0;
     private static final int     account_FREE_MAXDOWNLOADS                    = 20;
     private static final boolean account_PREMIUM_RESUME                       = true;
-    private static final int     account_PREMIUM_MAXCHUNKS                    = 1;
+    private static final int     account_PREMIUM_MAXCHUNKS                    = 0;
     private static final int     account_PREMIUM_MAXDOWNLOADS                 = 20;
 
     private static AtomicInteger MAXPREM                                      = new AtomicInteger(1);
