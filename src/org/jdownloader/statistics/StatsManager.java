@@ -251,6 +251,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                                 infos.put(SLID, Long.toString(account.getLongProperty(SLID, -1)));
                                                 infos.put(SLV, Long.toString(account.getLongProperty(SLV, -1)));
                                             }
+                                            infos.put(LID, Long.toString(JsonConfig.create(AccountSettings.class).getListID()));
                                             infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
                                             infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
                                             infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty(addedProperty, System.currentTimeMillis())));
