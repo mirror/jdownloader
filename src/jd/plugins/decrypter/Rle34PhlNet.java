@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rule34.paheal.net" }, urls = { "http://(www\\.)?rule34\\.paheal\\.net/post/list/[\\%A-Za-z0-9_\\-\\.]+/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rule34.paheal.net" }, urls = { "http://(www\\.)?rule34\\.paheal\\.net/post/list/[\\w\\-\\.%!]+/\\d+" }, flags = { 0 })
 public class Rle34PhlNet extends PluginForDecrypt {
 
     public Rle34PhlNet(PluginWrapper wrapper) {
@@ -39,18 +39,23 @@ public class Rle34PhlNet extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML(">No Images Found<")) {
-            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
             return decryptedLinks;
         }
-        String[] links = br.getRegex("<br><a href=\\'(http://.*?)\\'>").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\\'(http://rule34\\-images\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\'").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("('|\")(http://rule34\\-[a-zA-Z0-9\\-]*?\\.paheal\\.net/_images/[a-z0-9]+/.*?)('|\")").getColumn(1);
+        String[] links = br.getRegex("<br><a href=('|\")(http://.*?)\\1>").getColumn(1);
         if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            links = br.getRegex("('|\")(http://rule34-images\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\1").getColumn(1);
+            if (links == null || links.length == 0) {
+                links = br.getRegex("('|\")(http://rule34-[a-zA-Z0-9\\-]*?\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\1").getColumn(1);
+                if (links == null || links.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+            }
         }
-        for (String dl : links)
+        for (String dl : links) {
             decryptedLinks.add(createDownloadlink("directhttp://" + dl));
+        }
         FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(parameter, "rule34\\.paheal\\.net/post/list/(.*?)/\\d+").getMatch(0));
         fp.addLinks(decryptedLinks);
