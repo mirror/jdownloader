@@ -32,10 +32,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "finevids.xxx" }, urls = { "http://(www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+" }, flags = { 0 })
-public class FinevidsXxx extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kernel-video-sharing.com", "befuck.com", "gayfall.com", "finevids.xxx", "freepornvs.com" }, urls = { "http://(www\\.)?kvs\\-demo\\.com/videos/[a-z0-9\\-]+/", "http://(www\\.)?befuck\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(www\\.)?gayfall\\.com/videos/[a-z0-9\\-]+/", "http://(www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "http://(www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-_]+/" }, flags = { 0, 0, 0, 0, 0 })
+public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
 
-    public FinevidsXxx(PluginWrapper wrapper) {
+    public GeneralKernelVideoSharingComPlugin(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -44,6 +44,22 @@ public class FinevidsXxx extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
+    /**
+     * specifications that have to be met for hosts to be added here:
+     *
+     * -404 error response on file not found
+     *
+     * -Possible filename inside URL
+     *
+     * -No serverside downloadlimits
+     *
+     * -No account support
+     *
+     * -Final downloadlink that fits the RegExes
+     *
+     * -Website should NOT link to external sources (needs decrypter)
+     *
+     * */
 
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension = ".mp4";
@@ -56,7 +72,7 @@ public class FinevidsXxx extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.hdzog.com/terms/";
+        return "http://www.kvs-demo.com/terms.php";
     }
 
     @SuppressWarnings("deprecation")
@@ -69,20 +85,33 @@ public class FinevidsXxx extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h1>([^<>]*?)</h1>").getMatch(0);
+        String filename = br.getRegex("class=\"block\\-title\">[\t\n\r ]*?<h\\d+>([^<>]*?)</h\\d+>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("class=\"block\\-title\">[\t\n\r ]+<h\\d+>([^<>]*?)<").getMatch(0);
+            filename = br.getRegex("<h\\d+ class=\"block_header\">([^<>]*?)</h\\d+>").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            filename = br.getRegex("var video_title[\t\n\r ]*?=[\t\n\r ]*?\"([^<>]*?)\";").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("class=\"headline\">[\t\n\r ]+<h\\d+>([^<>]*?)<").getMatch(0);
+            filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
         }
         if (filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
+            filename = br.getRegex("<h1>([^<>]*?)</h1>").getMatch(0);
         }
-        DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
+        // if (filename == null) {
+        // filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        // }
+        if (filename == null) {
+            filename = new Regex(downloadLink.getDownloadURL(), "videos/(?:\\d+/)?([a-z0-9\\-]+)/?$").getMatch(0);
+            if (filename != null) {
+                filename = filename.replace("-", " ");
+            }
+        }
+        /* Most times this RegEx should do the job */
+        DLLINK = br.getRegex("video_url[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
+        }
         if (DLLINK == null) {
             DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         }
@@ -95,7 +124,7 @@ public class FinevidsXxx extends PluginForHost {
         if (DLLINK == null) {
             DLLINK = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (DLLINK == null) {
+        if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);

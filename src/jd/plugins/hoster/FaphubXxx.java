@@ -39,8 +39,7 @@ public class FaphubXxx extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.1
-    // Tags: Script, template
+    // Tags: Porn_plugin
     // mods: filename RegEx
     // limit-info:
     // protocol: no https
