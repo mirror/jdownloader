@@ -85,6 +85,7 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.SecuritySoftwareException;
 import org.appwork.utils.os.SecuritySoftwareInfo;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTHelper;
@@ -1090,10 +1091,17 @@ public class SecondLevelLaunch {
                         HashMap<String, String> infos = new HashMap<String, String>();
                         if (sw != null) {
                             infos.put("name", sw.getName());
+                            infos.put("response", sw.get("response"));
                         }
                         StatsManager.I().track(100, "secur", "sec/av/" + software, infos);
                     } catch (UnsupportedOperationException e) {
+                    } catch (SecuritySoftwareException e) {
+                        LOG.log(e);
+                        HashMap<String, String> infos = new HashMap<String, String>();
 
+                        infos.put("response", e.getMessage());
+
+                        StatsManager.I().track(100, "secur", "sec/as/error/" + e.getMessage(), null);
                     } catch (Throwable e1) {
                         LOG.log(e1);
                         StatsManager.I().track(100, "secur", "sec/av/error/" + e1.getMessage(), null);
@@ -1108,10 +1116,17 @@ public class SecondLevelLaunch {
                         HashMap<String, String> infos = new HashMap<String, String>();
                         if (sw != null) {
                             infos.put("name", sw.getName());
+                            infos.put("response", sw.get("response"));
                         }
                         StatsManager.I().track(100, "secur", "sec/fw/" + software, infos);
                     } catch (UnsupportedOperationException e) {
+                    } catch (SecuritySoftwareException e) {
+                        LOG.log(e);
+                        HashMap<String, String> infos = new HashMap<String, String>();
 
+                        infos.put("response", e.getMessage());
+
+                        StatsManager.I().track(100, "secur", "sec/as/error/" + e.getMessage(), null);
                     } catch (Throwable e1) {
                         LOG.log(e1);
                         StatsManager.I().track(100, "secur", "sec/fw/error/" + e1.getMessage(), null);
@@ -1126,10 +1141,18 @@ public class SecondLevelLaunch {
                         HashMap<String, String> infos = new HashMap<String, String>();
                         if (sw != null) {
                             infos.put("name", sw.getName());
+                            infos.put("response", sw.get("response"));
                         }
                         StatsManager.I().track(100, "secur", "sec/as/" + software, infos);
                     } catch (UnsupportedOperationException e) {
 
+                    } catch (SecuritySoftwareException e) {
+                        LOG.log(e);
+                        HashMap<String, String> infos = new HashMap<String, String>();
+
+                        infos.put("response", e.getMessage());
+
+                        StatsManager.I().track(100, "secur", "sec/as/error/" + e.getMessage(), null);
                     } catch (Throwable e1) {
                         LOG.log(e1);
                         StatsManager.I().track(100, "secur", "sec/as/error/" + e1.getMessage(), null);
