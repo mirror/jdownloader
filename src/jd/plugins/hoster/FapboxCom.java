@@ -39,9 +39,7 @@ public class FapboxCom extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.1
-    // Tags: Script, template
-    // mods: filename RegEx
+    // Porn_plugin
     // limit-info:
     // protocol: no https
     // other:

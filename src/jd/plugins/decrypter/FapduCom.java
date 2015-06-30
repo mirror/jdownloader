@@ -24,7 +24,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-//EmbedDecrypter 0.1.1
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fapdu.com" }, urls = { "http://(www\\.)?fapdu\\.com/[a-z0-9\\-]+" }, flags = { 0 })
 public class FapduCom extends PornEmbedParser {
 
