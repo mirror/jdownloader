@@ -19,7 +19,7 @@ package jd.controlling;
 import java.util.EventListener;
 
 public interface AccountControllerListener extends EventListener {
-
+    //
     public void onAccountControllerEvent(AccountControllerEvent event);
 
 }
