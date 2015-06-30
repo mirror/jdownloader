@@ -253,6 +253,21 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                             infos.put(REGISTERED_TIME, Long.toString(account.getRegisterTimeStamp()));
                                             infos.put(ACCOUNTINSTANCE_CREATED_TIME, Long.toString(account.getId().getID()));
                                             infos.put(ACCOUNT_ADDED_TIME, Long.toString(account.getLongProperty(addedProperty, System.currentTimeMillis())));
+                                            if (file.exists()) {
+                                                try {
+                                                    final ArrayList<ClickedAffLinkStorable> list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
+                                                    });
+                                                    if (list != null && list.size() > 0) {
+                                                        infos.put(CLICK_SOURCE, JSonStorage.serializeToJson(list));
+
+                                                    }
+                                                } catch (Throwable e) {
+                                                    StatsManager.I().track("premium/affTrackError/" + accountHoster + "/" + e.getMessage());
+                                                    logger.log(e);
+                                                    file.delete();
+                                                }
+                                            }
+
                                             final String id;
                                             if (accountInfo != null) {
                                                 final long validUntilTimeStamp = accountInfo.getValidUntil();
@@ -260,37 +275,22 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                                                 if (validUntilTimeStamp > 0) {
                                                     infos.put(EXPIRE_TIME, Long.toString(expireInMs));
                                                     if (expireInMs > 0) {
-                                                        id = "premium/valid/" + accountHoster + "/" + account.getType() + "/until";
+                                                        id = "premium/added/" + accountHoster + "/" + account.getType() + "/until";
                                                     } else {
-                                                        id = "premium/valid/" + accountHoster + "/" + account.getType() + "/expired";
+                                                        id = "premium/added/" + accountHoster + "/" + account.getType() + "/expired";
                                                     }
                                                 } else {
                                                     infos.put(EXPIRE_TIME, Long.toString(-1));
-                                                    id = "premium/valid/" + accountHoster + "/" + account.getType() + "/unlimited";
+                                                    id = "premium/added/" + accountHoster + "/" + account.getType() + "/unlimited";
                                                 }
                                             } else {
-                                                id = "premium/valid/" + accountHoster + "/" + account.getType() + "/unknown";
+                                                id = "premium/added/" + accountHoster + "/" + account.getType() + "/unknown";
                                             }
                                             StatsManager.I().track(id, infos);
                                         } finally {
                                             account.removeProperty(fireStatsCallProperty);
                                         }
-                                        if (file.exists()) {
-                                            try {
-                                                final ArrayList<ClickedAffLinkStorable> list = JSonStorage.restoreFromString(IO.readFileToString(file), new TypeRef<ArrayList<ClickedAffLinkStorable>>() {
-                                                });
-                                                if (list != null && list.size() > 0) {
-                                                    infos.put(CLICK_SOURCE, JSonStorage.serializeToJson(list));
-                                                    StatsManager.I().track("premium/addedAfter/" + accountHoster + "/" + account.getType(), infos);
-                                                } else {
-                                                    StatsManager.I().track("premium/affTrackError/" + accountHoster + "/empty");
-                                                }
-                                            } catch (Throwable e) {
-                                                StatsManager.I().track("premium/affTrackError/" + accountHoster + "/" + e.getMessage());
-                                                logger.log(e);
-                                                file.delete();
-                                            }
-                                        }
+
                                     }
                                     return;
                                 }
