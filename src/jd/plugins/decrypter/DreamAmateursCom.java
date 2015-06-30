@@ -24,7 +24,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dreamamateurs.com" }, urls = { "http://(www\\.)?dreamamateurs\\.com/[A-Za-z0-9]+/\\d+/.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dreamamateurs.com" }, urls = { "http://(www\\.)?dreamamateurs\\.com/(?:[A-Za-z0-9]+/\\d+/.*?\\.html|link/\\d+/|\\d+/\\w+\\.html)" }, flags = { 0 })
 public class DreamAmateursCom extends PornEmbedParser {
 
     public DreamAmateursCom(PluginWrapper wrapper) {
@@ -112,11 +112,6 @@ public class DreamAmateursCom extends PornEmbedParser {
             decryptedLinks.add(dl);
             return decryptedLinks;
 
-        }
-        externID = br.getRegex("\"(http://(www\\.)?xrabbit\\.com/video/embed/[A-Za-z0-9=]+/?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID));
-            return decryptedLinks;
         }
         if (br.containsHTML("\\&file=http://embed\\.kickassratios\\.com/")) {
             logger.info("Link offline: " + parameter);

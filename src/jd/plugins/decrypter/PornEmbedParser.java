@@ -444,10 +444,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         externID = br.getRegex("src=\"http://videos\\.allelitepass\\.com/txc/([^<>\"/]*?)\\.swf\"").getMatch(0);
         if (externID != null) {
             /* Add as offline -this site is down! */
-            final String final_url = "directhttp://http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(externID);
-            final DownloadLink dl = createDownloadlink(final_url);
-            dl.setProperty("OFFLINE", true);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(createOfflinelink("http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(externID)));
             return decryptedLinks;
         }
         externID = br.getRegex("\"(https?://(?:www\\.)?isharemybitch\\.com/flvPlayer\\.swf\\?settings=[^<>\"]*?)\"").getMatch(0);
@@ -519,6 +516,12 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
 
+        }
+        // perm offline
+        externID = br.getRegex("\"(http://(www\\.)?xrabbit\\.com/video/embed/[A-Za-z0-9=]+/?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
         }
         return decryptedLinks;
     }
