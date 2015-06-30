@@ -435,7 +435,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         externID = br.getRegex("\"(https?://(?:www\\.)?isharemybitch\\.com/flvPlayer\\.swf\\?settings=[^<>\"]*?)\"").getMatch(0);
         // isharemybitch.com #2
         if (externID == null) {
-            externID = br.getRegex("\"(https?://(?:www\\.)?isharemybitch\\.com/gallery\\-widget/[^<>\"]*?)\"").getMatch(0);
+            externID = br.getRegex("\"(https?://(?:www\\.)?share\\-image\\.com/gallery/[^<>\"]*?)\"").getMatch(0);
         }
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
@@ -448,6 +448,11 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             final DownloadLink dl = createDownloadlink(final_url);
             dl.setProperty("OFFLINE", true);
             decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(https?://(?:www\\.)?isharemybitch\\.com/flvPlayer\\.swf\\?settings=[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         // filename needed for all IDs below

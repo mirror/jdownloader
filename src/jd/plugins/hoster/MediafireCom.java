@@ -411,6 +411,7 @@ public class MediafireCom extends PluginForHost {
 
     private String                         dlURL;
 
+    @SuppressWarnings("deprecation")
     public MediafireCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(5000);
@@ -541,7 +542,10 @@ public class MediafireCom extends PluginForHost {
                     // TODO: This errorhandling is missing for premium users!
                     captchaCorrect = false;
                     Form form = br.getFormbyProperty("name", "form_captcha");
-                    final String freeArea = br.getRegex("class=\"nonOwner nonpro_adslayout dl\\-page dlCaptchaActive\"(.*?)class=\"captchaPromo\"").getMatch(0);
+                    String freeArea = br.getRegex("class=\"nonOwner nonpro_adslayout dl\\-page dlCaptchaActive\"(.*?)class=\"captchaPromo\"").getMatch(0);
+                    if (freeArea == null) {
+                        freeArea = br.getRegex("class=\"nonOwner nonpro_adslayout dl\\-page dlCaptchaActive\"(.*?)class=\"dl\\-utility\\-nav\"").getMatch(0);
+                    }
                     if (freeArea != null && freeArea.contains("solvemedia.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
                         handleExtraReconnectSettingOnCaptcha(account);
@@ -605,6 +609,10 @@ public class MediafireCom extends PluginForHost {
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                         form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                         br.submitForm(form);
+                    } else if (freeArea != null && freeArea.contains("for=\"customCaptchaCheckbox\"")) {
+                        /* Mediafire custom checkbox "captcha" */
+                        form.put("mf_captcha_response", "1");
+                        br.submitForm(form);
                     }
                 }
             } catch (final Exception e) {
@@ -620,41 +628,8 @@ public class MediafireCom extends PluginForHost {
                 url = br.getRegex("kNO = \"(http://.*?)\"").getMatch(0);
                 logger.info("Kno= " + url);
                 if (url == null) {
-                    final Browser brc = br.cloneBrowser();
-                    this.fileID = getID(downloadLink);
-                    URLConnectionAdapter con = null;
-                    try {
-                        logger.info("try dlget");
-                        con = brc.openGetConnection("http://www.mediafire.com/dynamic/dlget.php?qk=" + fileID);
-                        if (con.getResponseCode() != 404) {
-                            brc.followConnection();
-                        } else {
-                            logger.info("Dynamic is 404");
-                            continue;
-                        }
-                    } finally {
-                        try {
-                            con.disconnect();
-                        } catch (final Throwable e) {
-                        }
-                    }
-                    url = brc.getRegex("dllink\":\"(http:.*?)\"").getMatch(0);
-                    if (url != null) {
-                        logger.info("dllink= " + url);
-                        url = url.replaceAll("\\\\", "");
-                    } else {
-                        logger.info("dllink failed " + brc.toString());
-                        logger.info("Try fallback:");
-                        try {
-                            logger.info(brc.toString());
-                        } catch (final Throwable e) {
-                            logger.info(e.getMessage());
-                        }
-                    }
-                    if (url == null) {
-                        /* pw protected files can directly redirect to download */
-                        url = br.getRedirectLocation();
-                    }
+                    /* pw protected files can directly redirect to download */
+                    url = br.getRedirectLocation();
                 }
             }
             trycounter++;
@@ -703,6 +678,7 @@ public class MediafireCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private String getID(DownloadLink link) {
         String fileID = new Regex(link.getDownloadURL(), "\\?([a-zA-Z0-9]+)").getMatch(0);
         if (fileID == null) {
@@ -1004,6 +980,7 @@ public class MediafireCom extends PluginForHost {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         br.setFollowRedirects(false);
@@ -1019,6 +996,7 @@ public class MediafireCom extends PluginForHost {
             downloadLink.setName(fid);
             return AvailableStatus.TRUE;
         }
+        downloadLink.setLinkID(fid);
         final Browser apiBR = br.cloneBrowser();
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {

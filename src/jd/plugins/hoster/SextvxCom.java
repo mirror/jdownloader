@@ -17,9 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -34,33 +31,38 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.TimeFormatter;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sextvx.com" }, urls = { "http://(www\\.)?sextvx\\.com/[a-z]{2}/video/\\d+/[a-z0-9\\-]+" }, flags = { 0 })
+public class SextvxCom extends PluginForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megatv.com" }, urls = { "http://(www\\.)?megatv\\.com/[^<>\"]+\\.asp\\?catid=\\d+\\&subid=\\d+\\&pubid=\\d+" }, flags = { 0 })
-public class MegatvCom extends PluginForHost {
-
-    public MegatvCom(PluginWrapper wrapper) {
+    public SextvxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.3
     // Tags:
     // protocol: no https
     // other:
 
     /* Extension which will be used if no correct extension is found */
     private static final String  default_Extension = ".mp4";
-    /* Connection stuff */
+    /* Connection stuff - too many connections = server returns 404 on download attempt! */
     private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
+    private static final int     free_maxchunks    = 1;
+    private static final int     free_maxdownloads = 5;
 
     private String               DLLINK            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://www.megatv.com/";
+        return "http://sextvx.com/en/terms";
+    }
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        final Regex urlregex = new Regex(link.getDownloadURL(), "sextvx\\.com/[a-z]{2}/video/(\\d+)/(.+)");
+        final String fid = urlregex.getMatch(0);
+        link.setUrlDownload("http://sextvx.com/en/video/" + fid + "/" + urlregex.getMatch(1));
+        link.setLinkID(fid);
     }
 
     @SuppressWarnings("deprecation")
@@ -70,30 +72,38 @@ public class MegatvCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.containsHTML("class=\"ext-video-player-wrapper\"") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<div class=\"caption\">[\t\n\r ]+([^<>\"]*?)[\t\n\r ]+</div>").getMatch(0);
+        String filename = br.getRegex("<h1>([^<>]*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            filename = br.getRegex("class=\"block\\-title\">[\t\n\r ]+<h\\d+>([^<>]*?)<").getMatch(0);
         }
         if (filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
         }
-        DLLINK = br.getRegex("file:\"(http[^<>\"]*?\\.mp4)\"").getMatch(0);
-        if (DLLINK == null) {
+        if (filename == null) {
+            filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9\\-]+)$").getMatch(0);
+        }
+        // if (filename == null) {
+        // filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        // }
+        final Regex ajaxdataregex = br.getRegex("path=\"\\d+,(\\d+)\\.([^<>\"]*?)\"");
+        final String server = ajaxdataregex.getMatch(0);
+        String path = ajaxdataregex.getMatch(1);
+        if (filename == null || server == null || path == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        path = path.replace(".", ",").replace("/", ",");
+        br.getPage("http://sextvx.com/flux?d=web.flv&s=" + server + "&p=" + path);
+        DLLINK = this.br.toString();
+        if (DLLINK == null || !DLLINK.startsWith("http") || DLLINK.length() > 500) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
-        final String date = new Regex(DLLINK, "content/(\\d{4}/\\d{2}/\\d{2})/").getMatch(0);
-        if (date == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String date_formatted = formatDate(date);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        filename = date_formatted + "_megatv_" + filename;
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
@@ -104,6 +114,7 @@ public class MegatvCom extends PluginForHost {
         }
         downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("Referer", "http://sextvx.com/static/player/player.swf");
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
@@ -181,21 +192,6 @@ public class MegatvCom extends PluginForHost {
 
     private boolean isJDStable() {
         return System.getProperty("jd.revision.jdownloaderrevision") == null;
-    }
-
-    private String formatDate(final String input) {
-        final long date = TimeFormatter.getMilliSeconds(input, "yyyy/MM/dd", Locale.GERMANY);
-        String formattedDate = null;
-        final String targetFormat = "yyyy-MM-dd";
-        Date theDate = new Date(date);
-        try {
-            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
-            formattedDate = formatter.format(theDate);
-        } catch (Exception e) {
-            /* prevent input error killing plugin */
-            formattedDate = input;
-        }
-        return formattedDate;
     }
 
     @Override
