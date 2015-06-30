@@ -45,7 +45,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdstream.to" }, urls = { "https?://(www\\.)?hdstream\\.to/(#\\!f=[A-Za-z0-9]+(\\-[A-Za-z0-9]+)?|f/.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdstream.to" }, urls = { "https?://(www\\.)?hdstream\\.to/(#(!|%21)f=[A-Za-z0-9]+(\\-[A-Za-z0-9]+)?|f/.+)" }, flags = { 2 })
 public class HdStreamTo extends PluginForHost {
 
     public HdStreamTo(PluginWrapper wrapper) {

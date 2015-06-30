@@ -57,7 +57,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.PluginTaskID;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(encrypterme\\.ga|megacrypter\\.noestasinvitado\\.com|youpaste\\.co|(?:megacrypter\\.)?linkcrypter\\.net)/\\![A-Za-z0-9\\-_\\!]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(encrypterme\\.ga|megacrypter\\.noestasinvitado\\.com|youpaste\\.co|(?:megacrypter\\.)?linkcrypter\\.net)/(!|%21)[A-Za-z0-9\\-_\\!%]+" }, flags = { 2 })
 public class MegaCrypterCom extends PluginForHost {
 
     // note: hosts removed due to be down.
