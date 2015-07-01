@@ -40,7 +40,6 @@ public class RuschTvCom extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.3
     // Tags:
     // protocol: no https
     // other:

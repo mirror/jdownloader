@@ -1084,7 +1084,7 @@ public class DirectHTTP extends PluginForHost {
 
     /**
      * update this map to your needs
-     * 
+     *
      * @param mimeType
      * @return
      */
@@ -1193,8 +1193,6 @@ public class DirectHTTP extends PluginForHost {
                 br.getHeaders().put("Referer", "https://sites.google.com");
             } else if (link.contains("tinypic.com/")) {
                 // they seem to block direct link access
-                br.getHeaders().put("Referer", link);
-            } else if (link.contains("photobucket.com")) {
                 br.getHeaders().put("Referer", link);
             } else if (link.contains("imagezilla.net")) {
                 br.getHeaders().put("Referer", link);

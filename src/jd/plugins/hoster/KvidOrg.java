@@ -39,7 +39,7 @@ public class KvidOrg extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.3
+    // Porn_Plugin
     // Tags:
     // protocol: no https
     // other:
