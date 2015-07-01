@@ -167,7 +167,8 @@ public class ShareHostEu extends PluginForHost {
 
         if ("true".equals(userIsPremium)) {
             ai.setProperty("premium", "true");
-            ai.setTrafficMax(PREMIUM_DAILY_TRAFFIC_MAX);
+            // ai.setTrafficMax(PREMIUM_DAILY_TRAFFIC_MAX); // Compile error
+            ai.setTrafficMax(SizeFormatter.getSize(PREMIUM_DAILY_TRAFFIC_MAX));
             ai.setStatus(getPhrase("PREMIUM"));
             final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.getDefault());
             Date date;
@@ -179,8 +180,8 @@ public class ShareHostEu extends PluginForHost {
             }
         } else {
             ai.setProperty("premium", "false");
-            ai.setTrafficMax(FREE_DAILY_TRAFFIC_MAX);
-            // ai.setTrafficMax(PREMIUM_DAILY_TRAFFIC_MAX);
+            // ai.setTrafficMax(FREE_DAILY_TRAFFIC_MAX); // Compile error
+            ai.setTrafficMax(SizeFormatter.getSize(FREE_DAILY_TRAFFIC_MAX));
             ai.setStatus(getPhrase("FREE"));
         }
         account.setValid(true);
@@ -398,7 +399,7 @@ public class ShareHostEu extends PluginForHost {
     /*
      * *
      * Wrapper<br/> Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      */
     private String getJson(final String key) {
@@ -438,38 +439,38 @@ public class ShareHostEu extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
-            put("PREMIUM", "Premium User");
-            put("FREE", "Free (Registered) User");
-            put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
-            put("LOGIN_ERROR", "ShareHost.Eu: Login Error");
-            put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
-            put("NO_TRAFFIC", "No traffic left");
-            put("DOWNLOAD_LIMIT", "You can only download 1 file per 15 minutes");
-            put("CAPTCHA_ERROR", "Wrong Captcha code in 3 trials!");
-        }
-    };
+                                                  {
+                                                      put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
+                                                      put("PREMIUM", "Premium User");
+                                                      put("FREE", "Free (Registered) User");
+                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
+                                                      put("LOGIN_ERROR", "ShareHost.Eu: Login Error");
+                                                      put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
+                                                      put("NO_TRAFFIC", "No traffic left");
+                                                      put("DOWNLOAD_LIMIT", "You can only download 1 file per 15 minutes");
+                                                      put("CAPTCHA_ERROR", "Wrong Captcha code in 3 trials!");
+                                                  }
+                                              };
 
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-        {
-            put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
-            put("PREMIUM", "Użytkownik Premium");
-            put("FREE", "Użytkownik zarejestrowany (darmowy)");
-            put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
-            put("LOGIN_ERROR", "ShareHost.Eu: Błąd logowania");
-            put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
-            put("NO_TRAFFIC", "Brak dostępnego transferu");
-            put("DOWNLOAD_LIMIT", "Można pobrać maksymalnie 1 plik na 15 minut");
-            put("CAPTCHA_ERROR", "Wprowadzono 3-krotnie nieprawiłowy kod Captcha!");
+                                                  {
+                                                      put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
+                                                      put("PREMIUM", "Użytkownik Premium");
+                                                      put("FREE", "Użytkownik zarejestrowany (darmowy)");
+                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
+                                                      put("LOGIN_ERROR", "ShareHost.Eu: Błąd logowania");
+                                                      put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
+                                                      put("NO_TRAFFIC", "Brak dostępnego transferu");
+                                                      put("DOWNLOAD_LIMIT", "Można pobrać maksymalnie 1 plik na 15 minut");
+                                                      put("CAPTCHA_ERROR", "Wprowadzono 3-krotnie nieprawiłowy kod Captcha!");
 
-        }
-    };
+                                                  }
+                                              };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
      * English.
-     *
+     * 
      * @param key
      * @return
      */
