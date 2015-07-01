@@ -386,7 +386,7 @@ public class FaceBookComVideos extends PluginForHost {
                 }
             }
             br.setFollowRedirects(true);
-            br.getPage(FACEBOOKMAINPAGE);
+            br.getPage("https://www.facebook.com/login.php");
             final String lang = System.getProperty("user.language");
             final Form loginForm = br.getForm(0);
             if (loginForm == null) {
