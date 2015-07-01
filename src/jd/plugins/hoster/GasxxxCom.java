@@ -40,7 +40,7 @@ public class GasxxxCom extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.3
+    // playerConfig.php
     // Tags:
     // protocol: no https
     // other:

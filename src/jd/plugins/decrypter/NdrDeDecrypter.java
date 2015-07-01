@@ -70,7 +70,7 @@ public class NdrDeDecrypter extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        final String date = this.br.getRegex("itemprop=\"startDate\" content=\"([^<>\"]*?)\"").getMatch(0);
+        final String date = this.br.getRegex("itemprop=\"(?:startDate|datePublished)\" content=\"([^<>\"]*?)\"").getMatch(0);
         String title = br.getRegex("name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (title == null || date == null) {
             logger.warning("Decrypter broken for link: " + parameter);

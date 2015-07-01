@@ -41,7 +41,7 @@ public class SmashTapesCom extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.3
+    // Porn_Plugin
     // Tags:
     // protocol: no https
     // other:
@@ -57,7 +57,7 @@ public class SmashTapesCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "";
+        return "http://smashtapes.com/terms-of-use/";
     }
 
     @SuppressWarnings("deprecation")
@@ -75,10 +75,7 @@ public class SmashTapesCom extends PluginForHost {
         if (filename == null) {
             filename = new Regex(downloadLink.getDownloadURL(), "/video/(.+)/$").getMatch(0).replace("-", " ");
         }
-        DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-        }
+        DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
         }

@@ -36,7 +36,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megatv.com" }, urls = { "http://(www\\.)?megatv\\.com/[^<>\"]+\\.asp\\?catid=\\d+\\&subid=\\d+\\&pubid=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megatv.com" }, urls = { "http://www\\.megatvdecrypted\\.com/[^<>\"]+\\.asp\\?catid=\\d+\\&subid=\\d+\\&pubid=\\d+" }, flags = { 0 })
 public class MegatvCom extends PluginForHost {
 
     public MegatvCom(PluginWrapper wrapper) {
@@ -44,7 +44,6 @@ public class MegatvCom extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.3
     // Tags:
     // protocol: no https
     // other:
@@ -64,15 +63,24 @@ public class MegatvCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("megatvdecrypted.com/", "megatv.com/"));
+    }
+
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        final String linkid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        downloadLink.setLinkID(linkid);
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        final String catid = new Regex(downloadLink.getDownloadURL(), "catid=(\\d+)").getMatch(0);
         if (!br.containsHTML("class=\"ext-video-player-wrapper\"") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String name_series = br.getRegex("catid=" + catid + "\">([^<>\"]*?)</a></li>").getMatch(0);
         String filename = br.getRegex("<div class=\"caption\">[\t\n\r ]+([^<>\"]*?)[\t\n\r ]+</div>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
@@ -81,7 +89,7 @@ public class MegatvCom extends PluginForHost {
             filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         }
         DLLINK = br.getRegex("file:\"(http[^<>\"]*?\\.mp4)\"").getMatch(0);
-        if (DLLINK == null) {
+        if (DLLINK == null || name_series == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
@@ -90,10 +98,10 @@ public class MegatvCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String date_formatted = formatDate(date);
+        filename = date_formatted + "_megatv_" + name_series + " - " + filename;
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        filename = date_formatted + "_megatv_" + filename;
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {

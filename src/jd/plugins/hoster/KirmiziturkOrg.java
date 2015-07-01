@@ -39,7 +39,6 @@ public class KirmiziturkOrg extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.1
     // Tags: Script, template
     // mods: filename RegEx
     // limit-info:

@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -32,7 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kernel-video-sharing.com", "befuck.com", "gayfall.com", "finevids.xxx", "freepornvs.com" }, urls = { "http://(www\\.)?kvs\\-demo\\.com/videos/[a-z0-9\\-]+/", "http://(www\\.)?befuck\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(www\\.)?gayfall\\.com/videos/[a-z0-9\\-]+/", "http://(www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "http://(www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-_]+/" }, flags = { 0, 0, 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kernel-video-sharing.com", "befuck.com", "gayfall.com", "finevids.xxx", "freepornvs.com", "hclips.com", "mylust.com", "pornfun.com", "pornoid.com", "pornwhite.com", "sheshaft.com" }, urls = { "http://(?:www\\.)?kvs\\-demo\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?befuck\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?gayfall\\.com/videos/[a-z0-9\\-]+/", "http://(?:www\\.)?finevids\\.xxx/videos/\\d+/[a-z0-9\\-]+", "http://(?:www\\.)?freepornvs\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?hclips\\.com/videos/[a-z0-9\\-]+", "http://(?:www\\.)?mylust\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?pornfun\\.com/videos/\\d+/[a-z0-9\\-]+/", "http://(?:www\\.)?pornoid\\.com/videos/\\d+/[a-z0-9\\-_]+/", "http://(?:www\\.)?pornwhite\\.com/videos/\\d+/[a-z0-9\\-_]+/",
+"http://(?:www\\.)?sheshaft\\.com/videos/\\d+/[a-z0-9\\-]+/" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
 
     public GeneralKernelVideoSharingComPlugin(PluginWrapper wrapper) {
@@ -40,7 +40,7 @@ public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.3
+    // Porn_get_file_/videos/_basic Version 0.4
     // Tags:
     // protocol: no https
     // other:
@@ -85,27 +85,25 @@ public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("class=\"block\\-title\">[\t\n\r ]*?<h\\d+>([^<>]*?)</h\\d+>").getMatch(0);
+        String filename = br.getRegex("class=\"block\\-title\">[\t\n\r ]*?<h\\d+>([^<>]*?)<").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<h\\d+ class=\"block_header\">([^<>]*?)</h\\d+>").getMatch(0);
+            filename = br.getRegex("<h\\d+ class=\"block_header\">([^<>]*?)<").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<h\\d+ class=\"album_title\">([^<>]*?)<").getMatch(0);
         }
         if (filename == null) {
             filename = br.getRegex("var video_title[\t\n\r ]*?=[\t\n\r ]*?\"([^<>]*?)\";").getMatch(0);
         }
         if (filename == null) {
-            filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("<h1>([^<>]*?)</h1>").getMatch(0);
+            filename = br.getRegex("itemprop=\"name\">([^<>]*?)<").getMatch(0);
         }
         // if (filename == null) {
         // filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         // }
         if (filename == null) {
             filename = new Regex(downloadLink.getDownloadURL(), "videos/(?:\\d+/)?([a-z0-9\\-]+)/?$").getMatch(0);
-            if (filename != null) {
-                filename = filename.replace("-", " ");
-            }
+            filename = filename.replace("-", " ");
         }
         /* Most times this RegEx should do the job */
         DLLINK = br.getRegex("video_url[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
@@ -183,30 +181,6 @@ public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = openConnection(br2, dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return dllink;
     }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */

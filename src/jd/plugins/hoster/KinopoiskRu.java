@@ -38,7 +38,6 @@ public class KinopoiskRu extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.2
     // Tags:
     // protocol: no https
     // other:

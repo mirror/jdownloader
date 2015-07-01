@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alotporn.com" }, urls = { "http://(www\\.)?alotporn\\.com/\\d+(/[A-Za-z0-9\\-_]+/)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alotporn.com" }, urls = { "http://(www\\.)?alotporn\\.com/(?:\\d+(/[A-Za-z0-9\\-_]+/)?|(?:embed\\.php\\?id=|embed/)\\d+)" }, flags = { 0 })
 public class AlotPornCom extends PluginForHost {
 
     // DEV NOTES
@@ -53,15 +53,13 @@ public class AlotPornCom extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        /* Correct embed urls */
+        final String embed_fid = new Regex(link.getDownloadURL(), "(?:embed\\.php\\?id=|embed/)(\\d+)$").getMatch(0);
+        if (embed_fid != null) {
+            link.setUrlDownload("http://www.alotporn.com/" + embed_fid + "/xyz/");
         }
-        dl.startDownload();
     }
 
     @SuppressWarnings("deprecation")
@@ -70,21 +68,17 @@ public class AlotPornCom extends PluginForHost {
         DLLINK = null;
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        String dURL = null;
         if (!downloadLink.getDownloadURL().matches("https?://(\\w+\\.)?alotporn\\.com/\\d+/.+")) {
             br.getPage(downloadLink.getDownloadURL());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            dURL = br.getURL();
-        } else {
-            dURL = downloadLink.getDownloadURL();
         }
         br.getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String[] values = new Regex(dURL, "http://.*?/(\\d+)/([\\w-]+)").getRow(0);
+        final String[] values = new Regex(this.br.getURL(), "http://.*?/(\\d+)/([\\w-]+)").getRow(0);
         String filename = values[1].replaceAll("-", "_");
         DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
         if (DLLINK == null) {
@@ -139,6 +133,17 @@ public class AlotPornCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {

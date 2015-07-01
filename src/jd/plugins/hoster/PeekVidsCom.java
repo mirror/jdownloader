@@ -47,7 +47,6 @@ public class PeekVidsCom extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.2
     // Tags:
     // protocol: no https
     // other:
@@ -73,6 +72,7 @@ public class PeekVidsCom extends PluginForHost {
         return "https://www.peekvids.com/terms.html";
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* Forced https */
         link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
