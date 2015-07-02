@@ -82,7 +82,7 @@ public class SaleFilesCom extends PluginForHost {
     private final String               COOKIE_HOST                  = "http://salefiles.com";
     // domain names used within download links.
     private final String               DOMAINS                      = "(salefiles\\.com)";
-    private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private final String               PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input|>Password:</b> <input";
     private final String               MAINTENANCE                  = ">This server is in maintenance mode";
     private final String               dllinkRegex                  = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/(files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+";
     private final boolean              supportsHTTPS                = false;

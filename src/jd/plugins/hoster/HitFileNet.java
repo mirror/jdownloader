@@ -327,7 +327,7 @@ public class HitFileNet extends PluginForHost {
                 } catch (final BrowserException e) {
                     if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
                         // Server- or captcha error
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500: Server has server issues and/or user entered wrong captcha", 10 * 60 * 1000l);
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500: Server has server issues and/or user entered wrong captcha", 5 * 60 * 1000l);
                     }
                 }
                 if (!br.containsHTML(HTML_CAPTCHATEXT)) {
