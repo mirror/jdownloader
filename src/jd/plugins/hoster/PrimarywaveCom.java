@@ -76,7 +76,13 @@ public class PrimarywaveCom extends PluginForHost {
         }
         final Regex trackregex = br.getRegex("href=\"/artist/[A-Za-z0-9]+/?\" title=\"([^<>\"]*?)\">[^<>]+</a> \\&quot;([^<>\"]*?)\\&quot;</div>");
         String artist = trackregex.getMatch(0);
+        if (artist == null) {
+            artist = br.getRegex("<b>Performed By:</b>([^<>]*?)<").getMatch(0);
+        }
         String track = trackregex.getMatch(1);
+        if (track == null) {
+            track = br.getRegex("<title>Primary Wave Music \\-([^<>]*?)</title>").getMatch(0);
+        }
         if (artist == null || track == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -94,7 +100,9 @@ public class PrimarywaveCom extends PluginForHost {
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;
         }
-        downloadLink.setFinalFileName(artist + " - " + track + ext);
+        String filename = artist + " - " + track + ext;
+        filename = encodeUnicode(filename);
+        downloadLink.setFinalFileName(filename);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -165,20 +173,20 @@ public class PrimarywaveCom extends PluginForHost {
     // }
 
     /* Avoid chars which are not allowed in filenames under certain OS' */
-    // private static String encodeUnicode(final String input) {
-    // String output = input;
-    // output = output.replace(":", ";");
-    // output = output.replace("|", "¦");
-    // output = output.replace("<", "[");
-    // output = output.replace(">", "]");
-    // output = output.replace("/", "/");
-    // output = output.replace("\\", "");
-    // output = output.replace("*", "#");
-    // output = output.replace("?", "¿");
-    // output = output.replace("!", "¡");
-    // output = output.replace("\"", "'");
-    // return output;
-    // }
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "/");
+        output = output.replace("\\", "");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
+    }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
