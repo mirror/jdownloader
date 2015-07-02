@@ -207,7 +207,12 @@ public class NdrDeDecrypter extends PluginForDecrypt {
 
     private String formatDate(String input) {
         /* 2015-06-23T20:15:00.000+02:00 --> 2015-06-23T20:15:00.000+0200 */
-        input = input.substring(0, input.lastIndexOf(":")) + "00";
+        if (input == null || input.equals("")) {
+            return "-";
+        }
+        if (input.contains(":")) {
+            input = input.substring(0, input.lastIndexOf(":")) + "00";
+        }
         final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.GERMAN);
         String formattedDate = null;
         final String targetFormat = "yyyy-MM-dd";

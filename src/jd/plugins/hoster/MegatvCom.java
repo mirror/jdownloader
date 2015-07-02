@@ -72,6 +72,7 @@ public class MegatvCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         final String linkid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         downloadLink.setLinkID(linkid);
+        downloadLink.setName(downloadLink.getLinkID());
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -81,15 +82,15 @@ public class MegatvCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String name_series = br.getRegex("catid=" + catid + "\">([^<>\"]*?)</a></li>").getMatch(0);
-        String filename = br.getRegex("<div class=\"caption\">[\t\n\r ]+([^<>\"]*?)[\t\n\r ]+</div>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        String title = br.getRegex("<div class=\"caption\">[\t\n\r ]+([^<>\"]*?)[\t\n\r ]+</div>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        if (title == null) {
+            title = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         }
         DLLINK = br.getRegex("file:\"(http[^<>\"]*?\\.mp4)\"").getMatch(0);
-        if (DLLINK == null || name_series == null) {
+        if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
@@ -98,7 +99,11 @@ public class MegatvCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String date_formatted = formatDate(date);
-        filename = date_formatted + "_megatv_" + name_series + " - " + filename;
+        String filename = date_formatted + "_megatv_";
+        if (name_series != null) {
+            filename += name_series + "_";
+        }
+        filename += title;
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);

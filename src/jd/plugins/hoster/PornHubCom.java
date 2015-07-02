@@ -461,6 +461,7 @@ public class PornHubCom extends PluginForHost {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getHeaders().put("Accept-Charset", null);
+        br.setLoadLimit(br.getLoadLimit() * 3);
     }
 
     private void getPolicyFiles() throws Exception {
