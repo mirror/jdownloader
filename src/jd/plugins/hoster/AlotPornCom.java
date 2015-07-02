@@ -36,6 +36,7 @@ public class AlotPornCom extends PluginForHost {
 
     // DEV NOTES
     // only need UID for a valid link!
+    // Porn_get_file_/videos/_basic Version 0.X
 
     private String DLLINK = null;
 

@@ -72,10 +72,7 @@ public class FapboxCom extends PluginForHost {
             filename = br.getRegex("<title>([^<>\"]*?) \\- FapBox</title>").getMatch(0);
         }
         if (DLLINK == null) {
-            DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("\\'file\\':[\t\n\r]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-            }
+            DLLINK = br.getRegex("\\'file\\':[\t\n\r]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
             if (DLLINK == null) {
                 DLLINK = br.getRegex("file:\"(http[^<>\"]*?)\"").getMatch(0);
             }

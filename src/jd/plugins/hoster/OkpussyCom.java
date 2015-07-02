@@ -75,10 +75,7 @@ public class OkpussyCom extends PluginForHost {
         if (filename == null) {
             filename = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
         }
-        DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("encodeURIComponent\\(\\'(http://[^<>\"]*?)\\'\\)").getMatch(0);
-        }
+        DLLINK = br.getRegex("encodeURIComponent\\(\\'(http://[^<>\"]*?)\\'\\)").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         }

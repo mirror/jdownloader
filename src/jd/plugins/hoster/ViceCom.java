@@ -46,7 +46,6 @@ public class ViceCom extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.3
     // Tags: ooyala.com, ooyala Player, ooyala player API
     // protocol: no https
     /*
@@ -55,21 +54,21 @@ public class ViceCom extends PluginForHost {
      * http://player.ooyala.com/mobile_player.js?embedCodes=BmZ21sZTpx1K8pFKz_hat0Dq5zap77Xs&expires=1431993600&height=360&locale=de&playerId
      * =ooyalaPlayer243936600_us5e93k235&rootItemEmbedCode=BmZ21sZTpx1K8pFKz_hat0Dq5zap77Xs&signature=VFus8riyCPBCsXeAuiXwFZElPFWpw0d%2
      * BSFIFMQtxD8s&video_pcode=JqcWY6ikg5nwtXilzVurvI-vU6Ik&width=480&device="+device+"&domain="
-     *
-     *
+     * 
+     * 
      * Additional thanks: https://github.com/rg3/youtube-dl/blob/e3216b82bf6ef54db63984f7fece4e95fbc3b981/youtube_dl/extractor/vice.py
-     *
+     * 
      * And: https://github.com/rg3/youtube-dl/blob/e3216b82bf6ef54db63984f7fece4e95fbc3b981/youtube_dl/extractor/ooyala.py
      */
 
     /*
      * Small documentation of the vice.com (NOT ooyala) API which we cannot really use at this point as the articleIDs seem not to be
      * available via desktop website.
-     *
+     * 
      * User-Agent: okhttp/2.2.0
-     *
+     * 
      * Get array of current articles: vice.com/de/api/getvicetoday/0
-     *
+     * 
      * Get information about an article: vice.com/de/api/article/<article_ID>
      */
 
