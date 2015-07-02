@@ -29,6 +29,7 @@ import java.util.Map;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -226,6 +227,11 @@ public class ZeveraCom extends PluginForHost {
         } catch (final SocketException e) {
             logger.info("Zevera download failed because of a timeout/connection problem -> This is probably caused by zevera and NOT a JD issue!");
             handleErrorRetries("timeout", 20, 5 * 60 * 1000l);
+        } catch (final BrowserException e) {
+            // some exemptions happen in browser exceptions and not collected by sockettimeoutexception/socketexception
+            logger.info("Zevera download failed because of a timeout/connection problem -> This is probably caused by zevera and NOT a JD issue!");
+            getLogger().log(e);
+            handleErrorRetries("BrowserException", 20, 5 * 60 * 1000l);
         } catch (final Exception e) {
             logger.info("Zevera download FATAL failed because: " + e.getMessage());
             throw e;
@@ -354,7 +360,26 @@ public class ZeveraCom extends PluginForHost {
         br.getPage(continuePage);
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // not defect, zevera will respond with invalid redirect
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // ----------------Response Information------------
+            // Connection-Time: keep-Alive
+            // ----------------Response------------------------
+            // HTTP/1.1 302 Found
+            // Cache-Control: private
+            // Content-Type: text/html; charset=utf-8
+            // Server: Microsoft-IIS/8.0
+            // X-AspNet-Version: 4.0.30319
+            // X-Powered-By: ASP.NET
+            // Date: Wed, 01 Jul 2015 21:55:08 GMT
+            // Content-Length: 117
+            // ------------------------------------------------
+            //
+            //
+            // --ID:1927TS:1435787721587-7/2/15 5:55:21 AM - [jd.http.Browser(loadConnection)] ->
+            // <html><head><title>Object moved</title></head><body>
+            // <h2>Object moved to <a href="">here</a>.</h2>
+            // </body></html>
         }
         handleRedirectionErrors(dllink);
 
@@ -363,13 +388,15 @@ public class ZeveraCom extends PluginForHost {
     }
 
     private void handleRedirectionErrors(final String dllink) throws PluginException {
-        if (new Regex(dllink, "/member/systemmessage\\.aspx\\?hoster=[\\w\\.\\-]+_customer").matches()) {
+        if (dllink == null) {
+            handleErrorRetries("dllink_null_redirect", 20, 1 * 60 * 60 * 1000l);
+        } else if (new Regex(dllink, "/member/systemmessage\\.aspx\\?hoster=[\\w\\.\\-]+_customer").matches()) {
             // out of traffic for that given host for that given account.
             tempUnavailableHoster(1 * 60 * 60 * 1000l, "No traffic left for this host.");
         } else if (new Regex(dllink, "/member/systemmessage\\.aspx\\?hoster=[\\w\\.\\-]+$").matches()) {
             // out of traffic for that given host for whole of multihoster, set to null account to prevent retry across different accounts.
             this.currAcc = null;
-            tempUnavailableHoster(30 * 60 * 60 * 1000l, "No traffic left for this host.");
+            tempUnavailableHoster(30 * 60 * 1000l, "No traffic left for this host.");
         } else if (new Regex(dllink, "/member/systemmessage\\.aspx").matches()) {
             // we assume that they might have other error types for that same URL.
             handleErrorRetries("known_unknownerror", 20, 1 * 60 * 60 * 1000l);
