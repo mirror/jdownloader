@@ -90,7 +90,7 @@ public class XxxBunkerCom extends PluginForDecrypt {
             filename = br.getRegex("class=vpVideoTitle><h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
         }
         if (filename == null) {
-            filename = new Regex(parameter, "xxxbunker.com/(.+)").getMatch(0);
+            filename = new Regex(parameter, "xxxbunker\\.com/(.+)").getMatch(0);
         }
         // filename needed for all IDs below here
         if (filename == null) {
@@ -125,8 +125,7 @@ public class XxxBunkerCom extends PluginForDecrypt {
             br.getPage("http://xxxbunker.com/videoPlayer.php?videoid=" + externID3 + "&autoplay=true&ageconfirm=true&title=true&html5=false&hasflash=true&r=" + System.currentTimeMillis());
             externID = br.getRegex("\\&amp;file=(http[^<>\"]*?\\.(?:flv|mp4))").getMatch(0);
             if (externID != null) {
-                final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(externID));
-                dl.setFinalFileName(filename + externID.substring(externID.lastIndexOf(".")));
+                final DownloadLink dl = createDownloadlink(parameter.replace("xxxbunker.com/", "xxxbunkerdecrypted.com/"));
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
@@ -178,43 +177,14 @@ public class XxxBunkerCom extends PluginForDecrypt {
             } else {
                 externID = br.getRegex("player\\.swf\\?config=(http%3A%2F%2Fxxxbunker\\.com%2FplayerConfig\\.php%3F[^<>\"]*?)\"").getMatch(0);
                 if (externID != null) {
-                    br2.getPage(Encoding.htmlDecode(externID));
-                    String relayurl = br2.getRegex("<relayurl>([^<>\"]*?)</relayurl>").getMatch(0);
-                    externID = br2.getRegex("<file>(http[^<>\"]*?)</file>").getMatch(0);
-                    if (relayurl == null) {
-                        relayurl = externID;
-                    }
-                    if (relayurl == null) {
-                        logger.warning("Decrypter broken for link: " + parameter);
-                        return null;
-                    }
-                    relayurl = Encoding.Base64Decode(relayurl);
-                    final DownloadLink dl = createDownloadlink(relayurl + ".jdeatme");
-                    dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+                    final DownloadLink dl = createDownloadlink(parameter.replace("xxxbunker.com/", "xxxbunkerdecrypted.com/"));
                     decryptedLinks.add(dl);
                     return decryptedLinks;
                 }
             }
         }
-        if (externID == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        return decryptedLinks;
-    }
-
-    private boolean checkDirectLink(final String directlink) {
-        try {
-            final Browser br2 = br.cloneBrowser();
-            URLConnectionAdapter con = br2.openGetConnection(directlink);
-            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                return false;
-            }
-            con.disconnect();
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
+        logger.warning("Decrypter broken for link: " + parameter);
+        return null;
     }
 
     private DownloadLink getOffline(final String parameter) {

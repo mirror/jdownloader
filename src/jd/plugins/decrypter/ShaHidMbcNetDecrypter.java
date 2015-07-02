@@ -42,7 +42,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "http://(www\\.)?(shahid\\.mbc\\.net/(media/video|ar/episode)/\\d+(/\\w+)?|bluefishtv\\.com/Store/[_a-zA-Z]+/\\d+/.*)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "https?://(www\\.)?(shahid\\.mbc\\.net/(media/video|ar/episode)/\\d+(/\\w+)?|bluefishtv\\.com/Store/[_a-zA-Z]+/\\d+/.*)" }, flags = { 0 })
 public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
 
     public static enum Quality {
@@ -82,7 +82,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString().replace("http://", "https://");
         setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(parameter);
