@@ -66,10 +66,7 @@ public class TubeqXxx extends PluginForHost {
             filename = br.getRegex("<title>([^<>\"]*?) \\- TubeQ\\.xxx</title>").getMatch(0);
         }
         if (DLLINK == null) {
-            DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("file\\':[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-            }
+            DLLINK = br.getRegex("file\\':[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
             if (DLLINK == null) {
                 DLLINK = br.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
             }

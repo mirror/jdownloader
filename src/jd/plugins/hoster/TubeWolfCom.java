@@ -35,7 +35,8 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubewolf.com" }, urls = { "http://(www\\.)?tubewolf\\.com/movies/[\\w\\-]+" }, flags = { 0 })
 public class TubeWolfCom extends PluginForHost {
 
-    /* All similar: TubeWolfCom, AlphaPornoCom, BravoTubeNet, BravoTeensCom */
+    /* All similar: TubeWolfCom, AlphaPornoCom */
+    // Porn_get_file_/videos/_basic Version 0.X
     private String               DLLINK               = null;
     private String               AHV                  = "MTEyYjA4ZTBiOGU0MWIxNmU2ZjFiZjMxYzZjZTEyNWQ=";
     private static final boolean ENABLE_HIGH_SECURITY = false;

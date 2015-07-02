@@ -39,7 +39,6 @@ public class TelviDe extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.3
     // Tags:
     // protocol: no https
     // other: This is a CMS used by some website. This is a general host plugin for their (embed) video urls.

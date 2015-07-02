@@ -40,8 +40,7 @@ public class UploadbbCo extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.2
-    // Tags:
+    // YetiShareBasic Version ???-psp heavily modified!
     // protocol: no https
     // other:
 
@@ -76,10 +75,7 @@ public class UploadbbCo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-        }
+        DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
         }

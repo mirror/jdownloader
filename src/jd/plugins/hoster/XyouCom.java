@@ -51,7 +51,7 @@ public class XyouCom extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Porn_get_file_/videos/_basic Version 0.3
+    // Porn_Plugin
     // Tags:
     // protocol: no https
     // other:
@@ -100,10 +100,7 @@ public class XyouCom extends PluginForHost {
         if (filename == null) {
             filename = fid;
         }
-        DLLINK = br.getRegex("(http://[a-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-        }
+        DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
         }
