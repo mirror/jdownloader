@@ -178,7 +178,7 @@ public class XxxBunkerCom extends PluginForHost {
         output = output.replace("|", "¦");
         output = output.replace("<", "[");
         output = output.replace(">", "]");
-        output = output.replace("/", "/");
+        output = output.replace("/", "⁄");
         output = output.replace("\\", "");
         output = output.replace("*", "#");
         output = output.replace("?", "¿");
