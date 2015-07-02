@@ -30,9 +30,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+)" }, flags = { 0 })
+import org.appwork.utils.StringUtils;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+|organizer/\\d+|(usergallery|showfavorites)\\.php\\?userid=\\d+(&folderid=-?\\d+)?)" }, flags = { 0 })
 public class MgfpCm extends PluginForDecrypt {
 
     public MgfpCm(PluginWrapper wrapper) {
@@ -40,21 +41,77 @@ public class MgfpCm extends PluginForDecrypt {
     }
 
     private static final String type_invalid = "https?://(www\\.)?imagefap\\.com/gallery/search=.+";
-    private String              gid          = null;
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> allPages = new ArrayList<String>();
-        /* Load sister-hostplugin */
-        JDUtilities.getPluginForHost("imagefap.com");
-        allPages.add("0");
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+
         br.setFollowRedirects(false);
         String parameter = param.toString();
-        gid = new Regex(parameter, "(?:pictures|gallery)/(\\d+)/?").getMatch(0);
+        final String oid = new Regex(parameter, "(?:organizer)/(\\d+)").getMatch(0);
+        if (oid != null) {
+            /** organizerID link **/
+            int pageIndex = 0;
+            br.setFollowRedirects(true);
+            while (true) {
+                br.getPage("http://www.imagefap.com/organizer/" + oid + "/?page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
+                pageIndex++;
+                final String galleries[] = br.getRegex("(/gallery/\\d+|/gallery\\.php\\?gid=\\d+)").getColumn(0);
+                if (galleries == null || galleries.length == 0) {
+                    break;
+                }
+                for (final String gallery : galleries) {
+                    final DownloadLink link = createDownloadlink("http://www.imagefap.com" + gallery);
+                    decryptedLinks.add(link);
+                }
+            }
+            return decryptedLinks;
+        }
+        final String userID = new Regex(parameter, "userid=(\\d+)").getMatch(0);
+        final String folderID = new Regex(parameter, "folderid=(-?\\d+)").getMatch(0);
+        if (userID != null && folderID != null) {
+            /** user/folderID link **/
+            final boolean userGallery = StringUtils.containsIgnoreCase(parameter, "usergallery.php");
+            final boolean favoriteGallery = StringUtils.containsIgnoreCase(parameter, "showfavorites.php");
+            int pageIndex = 0;
+            br.setFollowRedirects(true);
+            while (true) {
+                if (userGallery) {
+                    br.getPage("http://www.imagefap.com/usergallery.php?userid=" + userID + "&folderid=" + folderID + "&page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
+                } else if (favoriteGallery) {
+                    br.getPage("http://www.imagefap.com/showfavorites.php?userid=" + userID + "&folderid=" + folderID + "&page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
+                } else {
+                    return null;
+                }
+                pageIndex++;
+                final String galleries[] = br.getRegex("(/gallery/\\d+|/gallery\\.php\\?gid=\\d+)").getColumn(0);
+                if (galleries == null || galleries.length == 0) {
+                    break;
+                }
+                for (final String gallery : galleries) {
+                    final DownloadLink link = createDownloadlink("http://www.imagefap.com" + gallery);
+                    decryptedLinks.add(link);
+                }
+            }
+            return decryptedLinks;
+        } else if (userID != null) {
+            br.setFollowRedirects(true);
+            br.getPage(parameter);
+            final String galleries[] = br.getRegex("((usergallery|showfavorites)\\.php\\?userid=\\d+&folderid=-?\\d+)").getColumn(0);
+            if (galleries != null) {
+                for (final String gallery : galleries) {
+                    final DownloadLink link = createDownloadlink("http://www.imagefap.com/" + gallery);
+                    decryptedLinks.add(link);
+                }
+            }
+            return decryptedLinks;
+        }
+        String gid = new Regex(parameter, "(?:pictures|gallery)/(\\d+)/?").getMatch(0);
         if (gid == null) {
             gid = new Regex(parameter, "gallery\\.php\\?p?gid=(\\d+)").getMatch(0);
         }
+        final ArrayList<String> allPages = new ArrayList<String>();
+        allPages.add("0");
         if (parameter.matches(type_invalid)) {
             final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + new Random().nextInt(1000000));
             link.setFinalFileName(new Regex(parameter, "imagefap\\.com/(.+)").getMatch(0));
