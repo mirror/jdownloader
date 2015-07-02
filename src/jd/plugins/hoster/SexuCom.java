@@ -70,7 +70,7 @@ public class SexuCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("class=\"container page404\"") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("class=\"container page404\"|>This video was deleted<") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String[] qualities = { "1080p", "720p", "480p", "360p", "320p", "240p" };
@@ -95,6 +95,7 @@ public class SexuCom extends PluginForHost {
         }
         String filename = br.getRegex("<title>([^<>\"]*?)\\- Sexu\\.Com</title>").getMatch(0);
         if (filename == null || DLLINK == null) {
+            logger.info("filename: " + filename + ", DLLINK: " + DLLINK);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
