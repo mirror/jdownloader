@@ -28,6 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
@@ -119,11 +120,11 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
             final String useCaptcha = getJson(security, "useCaptcha");
             final String captchaType = getJson(security, "captchaType");
             final String usePassword = getJson(security, "usePassword");
-            if (!inValidate(security) && (Boolean.parseBoolean(useCaptcha) || Boolean.parseBoolean(usePassword))) {
+            if (!inValidate(security) && (JSonUtils.parseBoolean(useCaptcha) || JSonUtils.parseBoolean(usePassword))) {
                 int tries = 4;
                 for (int i = 0; i < tries; i++) {
                     String nextPost = null;
-                    if (Boolean.parseBoolean(usePassword)) {
+                    if (JSonUtils.parseBoolean(usePassword)) {
                         // we need to get the password.
                         String psw = null;
                         if (i <= 1) {
@@ -138,7 +139,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                         }
                         nextPost = ammendJson(nextPost, "password", psw);
                     }
-                    if (Boolean.parseBoolean(useCaptcha) && captchaType.matches("\\d+")) {
+                    if (JSonUtils.parseBoolean(useCaptcha)) {
                         // captchas:[
                         // {name:"SolveMedia",id:0,isDefault:!0,enabled:!0,publicKey:solvemediaPublicKey,init:function(e){!function
                         // t(){window.ACPuzzle?window.ACPuzzle.create(e.publicKey,"captcha",{lang:"en",size:"standard"}):setTimeout(t,500)}()},getModel:function(){return{answer:window.ACPuzzle.get_response(),challengeId:window.ACPuzzle.get_challenge()}},refresh:function(){window.ACPuzzle.reload()}},

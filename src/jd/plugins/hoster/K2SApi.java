@@ -1915,7 +1915,7 @@ public abstract class K2SApi extends PluginForHost {
          */
         public static String getJson(final String source, final String key) {
             // json based
-            String result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
+            String result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*(![01]|-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
             if (result == null) {
                 result = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*\"([^\"]*)\"").getMatch(0);
                 if (result != null) {
@@ -1932,9 +1932,9 @@ public abstract class K2SApi extends PluginForHost {
             }
             if (result == null) {
                 // javascript doesn't always encase keyname with quotation
-                result = new Regex(source, Pattern.quote(key) + "[ \t]*:[ \t]*(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
+                result = new Regex(source, Pattern.quote(key) + "[ \t]*:[ \t]*(![01]|-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
                 if (result == null) {
-                    result = new Regex(source, Pattern.quote(key) + "[ \t]*:[ \t]*\"([^\"]*)\"").getMatch(0);
+                    result = new Regex(source, Pattern.quote(key) + "[ \t]*:[ \t]*([^\"]*)\"").getMatch(0);
                     if (result != null) {
                         // some rudimentary detection if we have braked at the wrong place.
                         while (result.endsWith("\\")) {
@@ -2102,6 +2102,36 @@ public abstract class K2SApi extends PluginForHost {
                 break;
             }
             return i;
+        }
+
+        /**
+         * JSon boolean parser, which also evaulates int values as boolean.
+         *
+         * @author raztoki
+         * @param input
+         * @return
+         */
+        public static boolean parseBoolean(final String input) {
+            if (input == null) {
+                return false;
+            }
+            // true : false
+            // 0 : 1 = false : true
+            // 0 : !0 = fasle : true
+            if ("true".equalsIgnoreCase(input)) {
+                return true;
+            } else if ("false".equalsIgnoreCase(input)) {
+                return false;
+            } else if ("0".equalsIgnoreCase(input)) {
+                return false;
+            } else if ("1".equalsIgnoreCase(input)) {
+                return true;
+            } else if ("!0".equalsIgnoreCase(input)) {
+                return true;
+            } else if ("!1".equalsIgnoreCase(input)) {
+                return false;
+            }
+            return false;
         }
 
     }
