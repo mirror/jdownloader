@@ -547,6 +547,8 @@ public class YoutubeDashV2 extends PluginForHost {
         return "Youtube:" + link.getStringProperty(YoutubeHelper.YT_VARIANT) + link.getName() + "_" + link.getView().getBytesTotal();
     }
 
+    private boolean isDownloading = false;
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -565,6 +567,37 @@ public class YoutubeDashV2 extends PluginForHost {
         YoutubeHelper helper = getCachedHelper();
 
         YoutubeVariantInterface variant = getVariant(downloadLink);
+
+        {
+            // update linkid
+            final String linkid = downloadLink.getLinkID();
+            if (linkid != null && !isDownloading) {
+                switch (variant.getType()) {
+                case SUBTITLES: {
+                    if (!("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID)).equals(linkid)) {
+                        // update it
+                        downloadLink.setLinkID("youtubev2://" + YoutubeVariant.SUBTITLES + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID));
+                        return AvailableStatus.TRUE;
+                    }
+                    break;
+                }
+                case VIDEO:
+                case DASH_AUDIO:
+                case DASH_VIDEO: {
+                    if (!("youtubev2://" + variant._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID)).equals(linkid)) {
+                        // update it
+                        downloadLink.setLinkID("youtubev2://" + variant._getUniqueId() + "/" + downloadLink.getStringProperty(YoutubeHelper.YT_ID));
+                        return AvailableStatus.TRUE;
+                    }
+                    break;
+                }
+                case IMAGE:
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
         URLConnectionAdapter con;
         long totalSize = -1;
         // youtube uses redirects - maybe for load balancing
@@ -631,9 +664,7 @@ public class YoutubeDashV2 extends PluginForHost {
                         UrlCollection urls = getUrlPair(downloadLink);
 
                         if (StringUtils.isNotEmpty(urls.video)) {
-                            String url = "http://www.youtube.com/" + new Regex(urls.video, "/(videoplayback.*)").getMatch(0);
-                            url = urls.video;
-                            // + "&cmo=pf%3D1"
+                            String url = urls.video;
                             br.openRequestConnection(new HeadRequest(url)).disconnect();
                             con = br.getHttpConnection();
                             if (con.getResponseCode() == 200) {
@@ -653,9 +684,7 @@ public class YoutubeDashV2 extends PluginForHost {
                         }
 
                         if (StringUtils.isNotEmpty(urls.audio)) {
-                            String url = "http://www.youtube.com/" + new Regex(urls.audio, "/(videoplayback.*)").getMatch(0);
-                            url = urls.audio;
-                            // + "&cmo=pf%3D1"
+                            String url = urls.audio;
                             br.openRequestConnection(new HeadRequest(url)).disconnect();
                             con = br.getHttpConnection();
                             if (con.getResponseCode() == 200) {
@@ -863,8 +892,8 @@ public class YoutubeDashV2 extends PluginForHost {
             // _JDT._.CountryIPBlockException_createCandidateResult(), 1 * 24 * 60 * 60 * 100l);
             // }
             if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error,/*
-             * 15.12.2014
-             */"This video is not available.")) {
+                                                                                                                                 * 15.12.2014
+                                                                                                                                 */"This video is not available.")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.CountryIPBlockException_createCandidateResult());
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
@@ -1466,6 +1495,7 @@ public class YoutubeDashV2 extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        isDownloading = true;
         YoutubeProperties data = downloadLink.bindData(YoutubeProperties.class);
         cfg = PluginJsonConfig.get(YoutubeConfig.class);
 
