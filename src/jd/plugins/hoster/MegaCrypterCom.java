@@ -20,16 +20,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.CipherOutputStream;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -38,7 +35,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
-import jd.http.Request;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -47,18 +43,16 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
-import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.PluginTaskID;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(encrypterme\\.ga|megacrypter\\.noestasinvitado\\.com|youpaste\\.co|(?:megacrypter\\.)?linkcrypter\\.net)/(!|%21)[A-Za-z0-9\\-_\\!%]+" }, flags = { 2 })
-public class MegaCrypterCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "megacrypter" }, urls = { "https?://(?:www\\.)?(encrypterme\\.ga|megacrypter\\.noestasinvitado\\.com|youpaste\\.co|(?:megacrypter\\.)?linkcrypter\\.net)/(!|%21)[A-Za-z0-9\\-_\\!%]+" }, flags = { 2 })
+public class MegaCrypterCom extends antiDDoSForHost {
 
     // note: hosts removed due to be down.
     // 20150206 megacrypter.megabuscame.me/ account suspended on datacenter server.
@@ -70,7 +64,7 @@ public class MegaCrypterCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("megacrypter.linkcrypter.net/", "linkcrypter.net/"));
+        link.setUrlDownload(link.getDownloadURL().replace("megacrypter.linkcrypter.net/", "linkcrypter.net/").replace("%21", "!"));
     }
 
     private void setUrl(final DownloadLink downloadLink) {
@@ -117,13 +111,6 @@ public class MegaCrypterCom extends PluginForHost {
         return "http://megacrypter.com/";
     }
 
-    // TODO: Add decrypt part
-    private String       linkPart  = null;
-    // Encrpt stuff
-    private final String USE_TMP   = "USE_TMP";
-    private final String encrypted = ".encrypted";
-    private boolean      dl_start  = false;
-
     private static enum MegaCrypterComApiErrorCodes {
         FILE_NOT_FOUND(3),
         MC_EMETHOD(1),
@@ -162,11 +149,11 @@ public class MegaCrypterCom extends PluginForHost {
         }
     }
 
-    private void checkError(Browser br) throws PluginException {
-        String code = br.getRegex("\"error\"\\s*\\:\\s*(\\-?\\d+)").getMatch(0);
-        if (code != null) {
+    private void checkError(final Browser br, final boolean throwE) throws PluginException {
+        final String code = getJson(br, "error");
+        if (!inValidate(code)) {
             int codeInt = Integer.parseInt(code);
-            for (MegaCrypterComApiErrorCodes v : MegaCrypterComApiErrorCodes.values()) {
+            for (final MegaCrypterComApiErrorCodes v : MegaCrypterComApiErrorCodes.values()) {
                 if (v.code == codeInt) {
                     switch (v) {
                     case FILE_NOT_FOUND:
@@ -179,7 +166,6 @@ public class MegaCrypterCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server busy. Try again later", 5 * 60 * 1000l);
                     case MC_INTERNAL_ERROR:
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error. Try again later", 15 * 60 * 1000l);
-
                     case MC_EMETHOD:
                     case MC_EREQ:
                     case MC_LINK_ERROR:
@@ -204,9 +190,7 @@ public class MegaCrypterCom extends PluginForHost {
                     case MEGA_ESID:
                     case MEGA_ETEMPUNAVAIL:
                     case MEGA_EWRITE:
-
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error:" + v + ". Try again later", 15 * 60 * 1000l);
-
                     default:
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error " + code);
                     }
@@ -216,12 +200,19 @@ public class MegaCrypterCom extends PluginForHost {
         }
     }
 
+    private String        noExpire            = null;
+    private String        key                 = null;
+    private String        linkPart            = null;
+    // Encrypt stuff
+    private final String  USE_TMP             = "USE_TMP";
+    private final String  encrypted           = ".encrypted";
+    private boolean       dl_start            = false;
+
     private boolean       supportsHTTPS       = false;
     private final String  preferHTTPS         = "preferHTTPS";
     private final boolean preferHTTPS_default = false;
     private boolean       enforcesHTTPS       = false;
 
-    @SuppressWarnings({ "unused", "deprecation" })
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), preferHTTPS, JDL.L("plugins.hoster.megacryptercom.preferHTTPS", "Force secure communication requests via HTTPS over SSL/TLS when supported. Not all hosts support HTTPS!")).setDefaultValue(preferHTTPS_default));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megacryptercom.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
@@ -230,27 +221,54 @@ public class MegaCrypterCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        correctDownloadLink(link);
         setUrl(link);
         br.setFollowRedirects(true);
         linkPart = new Regex(link.getDownloadURL(), "/(\\!.+)").getMatch(0);
+        noExpire = link.getStringProperty("expire", null);
         // youpaste.co actually verifies if content-type application/json has been set
         br.getHeaders().put("Content-Type", "application/json");
-        br.postPageRaw(mcUrl, "{\"m\": \"info\", \"link\":\"" + linkPart + "\"}");
+        br.postPageRaw(mcUrl, "{\"m\": \"info\", \"link\":\"" + JSonUtils.escape(linkPart) + "\"}");
         try {
-            checkError(br);
+            checkError(br, true);
         } catch (final PluginException e) {
+            if (noExpire != null) {
+                // expire links wont return info, we assume its fine
+                return AvailableStatus.TRUE;
+            }
             if (!dl_start && e.getLinkStatus() == LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) {
                 return AvailableStatus.UNCHECKABLE;
             }
             throw e;
         }
-        final String filename = br.getRegex("\"name\":\"([^<>\"]*?)\"").getMatch(0);
-        final String filesize = br.getRegex("\"size\":(\\d+)").getMatch(0);
-        if (filename == null || filesize == null) {
+        // needed for decryption. since linkchecking fails when link expires we need to cache this
+        key = getJson("key");
+        String filename = getJson("name");
+        final String filesize = getJson("size");
+        final String expire = getJson("expire");
+        // filename
+        final String pass = getJson("pass");
+        if (!inValidate(pass)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // TODO, password support
+            // {"name":"Zm1pXXQq4\/ovygn9YBtfTHCeDVYbipODFxmdU2RK1ns=","size":195075582,"key":"z\/JW7nqri8R0RjyN2\/iMhWnFOOKRMDo5cJ7J2MLej5n1\/uQ6pkNf7aCU4H12\/Qm4","extra":false,"expire":"1435932308#NTShVnmHzm4+12lxNuybUqng9TIPfjcUz35mRsgUzSI=","pass":"14#Y59Jufe6caJGS4fWft7PB3UTWpYvS59\/5FpQTvY3DEw=#kdFqasP9u\/U=#TTcjSEShR4kdMmzTH+WOeA=="}
+
+            // decrypt filename and key
+            // https://tonikelope.github.io/megacrypter/
+        }
+        // we need key!
+        link.setProperty("key", key);
+
+        if (inValidate(filename)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (!inValidate(filesize)) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        if (!inValidate(expire)) {
+            link.setProperty("expire", expire);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -258,18 +276,20 @@ public class MegaCrypterCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         dl_start = true;
         requestFileInformation(downloadLink);
-        final String key = br.getRegex("\"key\":\"([^<>\"]*?)\"").getMatch(0);
-        if (key == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        key = getJson("key");
+        if (inValidate(key)) {
+            key = downloadLink.getStringProperty("key", null);
+            if (inValidate(key)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         br.getHeaders().put("Content-Type", "application/json");
-        br.postPageRaw(mcUrl, "{\"m\": \"dl\", \"link\":\"" + linkPart + "\"}");
-        checkError(br);
-        String dllink = br.getRegex("\"url\":\"(https?:[^<>\"]*?)\"").getMatch(0);
+        br.postPageRaw(mcUrl, "{\"m\": \"dl\", \"link\":\"" + JSonUtils.escape(linkPart) + "\"" + (inValidate(noExpire) ? "" : ", \"noexpire\":\"" + JSonUtils.escape(noExpire.split("#")[1]) + "\"") + "}");
+        checkError(br, true);
+        String dllink = getJson("url");
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = dllink.replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -280,87 +300,6 @@ public class MegaCrypterCom extends PluginForHost {
                 decrypt(downloadLink, key);
             }
         }
-    }
-
-    private String decrypt(String input, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, PluginException {
-        byte[] b64Dec = b64decode(keyString);
-        int[] intKey = aByte_to_aInt(b64Dec);
-        byte[] key = aInt_to_aByte(intKey[0] ^ intKey[4], intKey[1] ^ intKey[5], intKey[2] ^ intKey[6], intKey[3] ^ intKey[7]);
-        byte[] iv = aInt_to_aByte(0, 0, 0, 0);
-        final IvParameterSpec ivSpec = new IvParameterSpec(iv);
-        final SecretKeySpec skeySpec = new SecretKeySpec(key, "AES");
-        Cipher cipher = Cipher.getInstance("AES/CBC/nopadding");
-        cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
-        byte[] unPadded = b64decode(input);
-        int len = 16 - ((unPadded.length - 1) & 15) - 1;
-        byte[] payLoadBytes = new byte[unPadded.length + len];
-        System.arraycopy(unPadded, 0, payLoadBytes, 0, unPadded.length);
-        payLoadBytes = cipher.doFinal(payLoadBytes);
-        String ret = new String(payLoadBytes, "UTF-8");
-        if (ret != null && !ret.startsWith("MEGA{")) {
-            /* verify if the keyString is correct */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        return ret;
-    }
-
-    private boolean oldStyle() {
-        String style = System.getProperty("ftpStyle", null);
-        if ("new".equalsIgnoreCase(style)) {
-            return false;
-        }
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        int rev = Integer.parseInt(prev);
-        if (rev < 10000) {
-            return true;
-        }
-        return false;
-    }
-
-    private RAFDownload createHackedDownloadInterface2(final PluginForHost plugin, final DownloadLink downloadLink, final Request request) throws IOException, PluginException {
-        final RAFDownload dl = new RAFDownload(plugin, downloadLink, request);
-        plugin.setDownloadInterface(dl);
-        dl.setResume(true);
-        dl.setChunkNum(1);
-        return dl;
-    }
-
-    /* Workaround for Bug in old 09581 Downloadsystem bug */
-    private RAFDownload createHackedDownloadInterface(PluginForHost plugin, final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {
-        Request r = br.createRequest(url);
-        RAFDownload dl = this.createHackedDownloadInterface2(plugin, downloadLink, r);
-        try {
-            r.getHeaders().remove("Accept-Encoding");
-            dl.connect(br);
-        } catch (final PluginException e) {
-            if (e.getValue() == -1) {
-
-                int maxRedirects = 10;
-                while (maxRedirects-- > 0) {
-                    dl = this.createHackedDownloadInterface2(plugin, downloadLink, r = br.createGetRequestRedirectedRequest(r));
-                    try {
-                        r.getHeaders().remove("Accept-Encoding");
-                        dl.connect(br);
-                        break;
-                    } catch (final PluginException e2) {
-                        continue;
-                    }
-                }
-                if (maxRedirects <= 0) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Redirectloop");
-                }
-
-            }
-        }
-        if (plugin.getBrowser() == br) {
-            plugin.setDownloadInterface(dl);
-        }
-        return dl;
     }
 
     private void decrypt(DownloadLink link, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IOException {
