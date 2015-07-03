@@ -21,16 +21,19 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
+import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "mfs_shorturlscript" }, urls = { "https?://(www\\.)?nullified\\.jdownloader\\.org/[a-zA-Z0-9]+" }, flags = { 0 })
-public class MFS_ShortUrlScript extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "mfs_shorturlscript", "lourl.us", "urlshortener.co.in" }, urls = { "https?://(?:www\\.)?nullified\\.jdownloader\\.org/([a-zA-Z0-9]+)", "https?://(?:www\\.)?lourl\\.us/([a-zA-Z0-9_\\-]+)$", "https?://(?:www\\.)?urlshortener\\.co\\.in/([a-zA-Z0-9_\\-]+)$" }, flags = { 0, 0, 0 })
+public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
 
     /**
      * This class supports, http://mfscripts.com/short_url_script.html template.
@@ -56,27 +59,65 @@ public class MFS_ShortUrlScript extends PluginForDecrypt {
         if (host == null || "".equalsIgnoreCase(host)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (host.contains("4link.in")) {
+        if ("lourl.us".equalsIgnoreCase(host) || "urlshortener.co.in".equalsIgnoreCase(host)) {
             supportsHTTPS = false;
             hasCaptcha = false;
         }
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         setConstants(param);
-        String parameter = param.toString().replaceFirst("^https?://", (supportsHTTPS ? "https://" : "http://"));
+        final String parameter = param.toString().replaceFirst("^https?://", (supportsHTTPS ? "https://" : "http://"));
+        final String fuid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        // redirects happen
         br.getPage(parameter);
-        String frame = br.getRegex("<frame src=\"(interstitualAdTop\\.php\\?url=\\d+)\"").getMatch(0);
+        // password files
+        final String redirect = br.getRedirectLocation();
+        if (!inValidate(redirect)) {
+            br.getPage(redirect);
+            final int repeat = 3;
+            Form password = br.getFormByInputFieldKeyValue("accessPass", "");
+            for (int i = 0; i <= repeat; i++) {
+                if (password == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find password form");
+                }
+                final String pass = getUserInput("Password protected link", param);
+                if (inValidate(pass)) {
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                }
+                password.put("accessPass", Encoding.urlEncode(pass));
+                br.submitForm(password);
+                password = br.getFormByInputFieldKeyValue("accessPass", "");
+                if (password != null) {
+                    if (i + 1 >= repeat) {
+                        logger.warning("Incorrect solve of password");
+                        throw new DecrypterException(DecrypterException.PASSWORD);
+                    }
+                    continue;
+                } else {
+                    break;
+                }
+            }
+        }
+        String frame = br.getRegex("<frame [^>]*src=\"(interstitualAdTop\\.php\\?url=\\d+)\"").getMatch(0);
         if (frame == null) {
             logger.warning("Possible Plugin Defect, confirm in browser: " + parameter);
             return decryptedLinks;
         }
         br.getPage(frame);
-        String link = br.getRegex("<a href=\"(.*?)\" class=[^>]+>skip advert\\s*></a>").getMatch(0);
+        String link = br.getRegex("<a [^>]*href=\"(.*?)\" class=[^>]+>skip advert\\s*></a>").getMatch(0);
         if (link == null) {
-            logger.warning("Possible Plugin Defect, confirm in browser: " + parameter);
-            return null;
+            link = br.getRegex("<a [^>]*href=\"(sk_redirect_ads\\.html\\?url=" + fuid + ")\"").getMatch(0);
+            if (link != null) {
+                final Browser br2 = br.cloneBrowser();
+                br2.getPage(link);
+                link = br2.getRedirectLocation();
+                if (link == null) {
+                    logger.warning("Possible Plugin Defect, confirm in browser: " + parameter);
+                    return null;
+                }
+            }
         }
         decryptedLinks.add(createDownloadlink(HTMLEntities.unhtmlentities(link)));
         return decryptedLinks;
