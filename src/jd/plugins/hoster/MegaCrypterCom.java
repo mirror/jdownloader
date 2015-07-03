@@ -149,7 +149,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
         }
     }
 
-    private void checkError(final Browser br, final boolean throwE) throws PluginException {
+    private void checkError(final Browser br) throws PluginException {
         final String code = getJson(br, "error");
         if (!inValidate(code)) {
             int codeInt = Integer.parseInt(code);
@@ -230,7 +230,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
         br.getHeaders().put("Content-Type", "application/json");
         br.postPageRaw(mcUrl, "{\"m\": \"info\", \"link\":\"" + JSonUtils.escape(linkPart) + "\"}");
         try {
-            checkError(br, true);
+            checkError(br);
         } catch (final PluginException e) {
             if (noExpire != null) {
                 // expire links wont return info, we assume its fine
@@ -285,7 +285,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
         }
         br.getHeaders().put("Content-Type", "application/json");
         br.postPageRaw(mcUrl, "{\"m\": \"dl\", \"link\":\"" + JSonUtils.escape(linkPart) + "\"" + (inValidate(noExpire) ? "" : ", \"noexpire\":\"" + JSonUtils.escape(noExpire.split("#")[1]) + "\"") + "}");
-        checkError(br, true);
+        checkError(br);
         String dllink = getJson("url");
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
