@@ -93,12 +93,17 @@ public class BigassWs extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
+                br2.getHeaders().put("Range", "bytes=" + 0 + "-");
                 con = br2.openGetConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                if (con.getHeaderField("X-Mod-H264-Streaming") == null) {
+                    downloadLink.setVerifiedFileSize(con.getLongContentLength());
+                } else {
+                    downloadLink.setVerifiedFileSize(-1);
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -115,6 +120,7 @@ public class BigassWs extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
