@@ -59,7 +59,7 @@ public class DansMoviesCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("class=\\'notification error\\'") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("class=\\'notification error\\'") || br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains("/video/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<div class=\"title\">[\t\n\r ]+<h1>([^<>]*?)</h1>").getMatch(0);
