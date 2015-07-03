@@ -49,10 +49,11 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rabidfiles.com" }, urls = { "https?://(www\\.)?rabidfiles\\.com/[A-Za-z0-9]+" }, flags = { 2 })
-public class RabitFilesCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rabidfiles.com" }, urls = { "https?://(www\\.)?rabidfiles\\.com/[A-Za-z0-9]+" }, flags = { 2 })
+public class RabidFilesCom extends PluginForHost {
 
-    public RabitFilesCom(PluginWrapper wrapper) {
+    @SuppressWarnings("deprecation")
+    public RabidFilesCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
     }

@@ -84,8 +84,14 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://");
         setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
+        br.setFollowRedirects(false);
+
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
 
         PROVIDER = br.getHost().contains("mbc.net") ? "shahid.mbc.net" : "bluefishtv.com";
         FilePackage fp = FilePackage.getInstance();
@@ -102,14 +108,6 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
             }
         }
 
-        if (br.getRedirectLocation() != null) {
-            if ("http://shahid.mbc.net/media/episodes".equals(br.getRedirectLocation())) {
-                logger.info("Content not found! Link: " + parameter);
-                return decryptedLinks;
-            }
-            br.setFollowRedirects(true);
-            br.getPage(br.getRedirectLocation());
-        }
         if (br.getHttpConnection().getResponseCode() == 503) {
             String available = br.getHeaders().get("Retry-After");
             logger.warning("503 Service Unavailable! " + (available != null ? "Server is available in " + available : ""));
