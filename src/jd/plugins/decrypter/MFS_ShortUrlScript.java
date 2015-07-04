@@ -32,6 +32,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.utils.StringUtils;
+
 @DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "mfs_shorturlscript", "lourl.us", "urlshortener.co.in" }, urls = { "https?://(?:www\\.)?nullified\\.jdownloader\\.org/([a-zA-Z0-9]+)", "https?://(?:www\\.)?lourl\\.us/([a-zA-Z0-9_\\-]+)$", "https?://(?:www\\.)?urlshortener\\.co\\.in/([a-zA-Z0-9_\\-]+)$" }, flags = { 0, 0, 0 })
 public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
 
@@ -75,6 +77,9 @@ public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
         // password files
         final String redirect = br.getRedirectLocation();
         if (!inValidate(redirect)) {
+            if (StringUtils.containsIgnoreCase(redirect, Browser.getHost(redirect) + "/error.html?")) {
+                return decryptedLinks;
+            }
             br.getPage(redirect);
             final int repeat = 3;
             Form password = br.getFormByInputFieldKeyValue("accessPass", "");
