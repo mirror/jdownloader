@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
@@ -306,7 +307,7 @@ public class TheFileMe extends antiDDoSForHost {
     }
 
     private String getDllink() {
-        return br.getRegex("\"(https?://(www\\.)?(?:[A-Za-z0-9\\.]+\\.)?" + domains + "/[^<>\"\\?]*?\\?download_token=[A-Za-z0-9]+)\"").getMatch(0);
+        return br.getRegex("\"(https?://(?:www\\.)?(?:[A-Za-z0-9\\.]+\\.)?(?:" + domains + "|" + IP.IP_PATTERN + "(?::\\d+)?)/[^<>\"\\?]*?\\?download_token=[A-Za-z0-9]+)\"").getMatch(0);
     }
 
     private void handlePassword(final DownloadLink dl) throws Exception {
