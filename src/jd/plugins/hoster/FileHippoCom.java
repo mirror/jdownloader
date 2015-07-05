@@ -123,13 +123,13 @@ public class FileHippoCom extends PluginForHost {
         br.setFollowRedirects(false);
         String normalPage = br.getRegex("id=\"dlbox\">[\n\r\t ]+<a href=\"(/.*?)\"").getMatch(0);
         if (normalPage == null) {
-            normalPage = br.getRegex("download\\-link green button\\-link active long\" href=\"(/download_[^<>\"]*?)\"").getMatch(0);
+            normalPage = br.getRegex("download\\-link green button\\-link active long\" href=\"(http://filehippo\\.com)?([^<>\"]*?)\"").getMatch(1);
             if (normalPage == null) {
                 normalPage = br.getRegex("direct-download-link-container\"><a href=\"(/download_[^<>\"]*?)\"").getMatch(0);
             }
         }
         final String mirrorPage = br.getRegex("table id=\"dlboxinner\"[^\n\r\t]*?<a href=\"(/.*?)\"").getMatch(0);
-        if ((normalPage == null) && (mirrorPage == null)) {
+        if ((normalPage == null) && (mirrorPage == null)) { // Download link
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String pages[] = new String[] { mirrorPage, normalPage };
