@@ -248,7 +248,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
         final String expire = getJson("expire");
         // filename
         final String pass = getJson("pass");
-        if (!inValidate(pass)) {
+        if (JSonUtils.parseBoolean(pass)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             // TODO, password support
             // {"name":"Zm1pXXQq4\/ovygn9YBtfTHCeDVYbipODFxmdU2RK1ns=","size":195075582,"key":"z\/JW7nqri8R0RjyN2\/iMhWnFOOKRMDo5cJ7J2MLej5n1\/uQ6pkNf7aCU4H12\/Qm4","extra":false,"expire":"1435932308#NTShVnmHzm4+12lxNuybUqng9TIPfjcUz35mRsgUzSI=","pass":"14#Y59Jufe6caJGS4fWft7PB3UTWpYvS59\/5FpQTvY3DEw=#kdFqasP9u\/U=#TTcjSEShR4kdMmzTH+WOeA=="}
