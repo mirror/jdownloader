@@ -54,7 +54,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "http://video\\.fc2\\.com/((?:a/)?flv2\\.swf\\?i=|(?:a/)?content/)\\w+" }, flags = { 3 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.fc2.com" }, urls = { "http://(?:video\\.fc2\\.com|xiaojiadianvideo\\.asia)/((?:[a-z]{2}/)?(?:a/)?flv2\\.swf\\?i=|(?:[a-z]{2}/)?(?:a/)?content/)\\w+" }, flags = { 3 })
 public class VideoFCTwoCom extends PluginForHost {
 
     public VideoFCTwoCom(PluginWrapper wrapper) {
@@ -303,7 +303,11 @@ public class VideoFCTwoCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         br.getPage(dllink);
-        String filename = br.getRegex("<title>.*?◎?(.*?) \\-.*?</title>").getMatch(0);
+        // capturing the title in this manner reduces lazy regex scope to just this found string vs entire document.
+        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (filename != null) {
+            filename = new Regex(filename, ".*?◎?(.*?) \\-.*?").getMatch(0);
+        }
         if (filename == null || filename.isEmpty() || filename.matches("[\\s\\p{Z}]+")) {
             filename = br.getRegex("title=\".*?◎([^\"]+)").getMatch(0);
         }
