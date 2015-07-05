@@ -487,8 +487,13 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 final String trafficDayData[] = trafficDay.split(";");
                 final long usedDay = Long.parseLong(trafficDayData[0].trim());
                 final long freeDay = maxDay - usedDay;
+                logger.info("Real daily traffic left: " + freeDay);
                 ai.setTrafficMax(maxDay);
-                ai.setTrafficLeft(freeDay);
+                if ("Penalty-Premium".equalsIgnoreCase(account.getStringProperty("group", null))) {
+                    ai.setTrafficLeft(1024 * 1024);
+                } else {
+                    ai.setTrafficLeft(freeDay);
+                }
                 if (userTrafficWorkaround()) {
                     ai.setSpecialTraffic(true);
                 }
