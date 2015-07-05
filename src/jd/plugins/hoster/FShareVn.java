@@ -315,7 +315,9 @@ public class FShareVn extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            if (dllink.contains("logout")) {
+            if (StringUtils.containsIgnoreCase(dllink, "Server error") && StringUtils.containsIgnoreCase(dllink, "please try again later")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            } else if (dllink.contains("logout")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL premium error");
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -3);
