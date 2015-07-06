@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
@@ -31,9 +32,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dnbshare.com" }, urls = { "http://[\\w\\.]*?dnbshare\\.com/download/[^<>\"/]*?\\.html" }, flags = { 2 })
 public class DnbShareCom extends PluginForHost {
 
+    @SuppressWarnings("deprecation")
     public DnbShareCom(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
@@ -43,7 +44,7 @@ public class DnbShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 15;
+        return 1;
     }
 
     @SuppressWarnings("deprecation")
@@ -54,7 +55,13 @@ public class DnbShareCom extends PluginForHost {
         if (br.containsHTML("not found\\.|was deleted due to low activity|was deleted due to reported infringement") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        String filename = br.getRegex("name=\"file\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<em>Filename</em>:([^<>\"]*?)<").getMatch(0);
+        }
+        if (filename == null) {
+            filename = new Regex(parameter.getDownloadURL(), "/([^/]+)\\.html").getMatch(0);
+        }
         final String filesize = br.getRegex("<em>Filesize</em>: (.*?)</li>").getMatch(0);
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -91,6 +98,9 @@ public class DnbShareCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 2 * 60 * 1000l);
+            }
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

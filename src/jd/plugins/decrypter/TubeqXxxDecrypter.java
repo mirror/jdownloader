@@ -24,10 +24,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boobinspector.com" }, urls = { "http://(www\\.)?boobinspector\\.com/videos/\\d+" }, flags = { 0 })
-public class BoobinspectorComDecrypter extends PornEmbedParser {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tubeq.xxx" }, urls = { "http://(www\\.)?tubeq\\.xxx/video/\\d+\\.html" }, flags = { 0 })
+public class TubeqXxxDecrypter extends PornEmbedParser {
 
-    public BoobinspectorComDecrypter(PluginWrapper wrapper) {
+    public TubeqXxxDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -36,26 +36,25 @@ public class BoobinspectorComDecrypter extends PornEmbedParser {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter, "Offline Content"));
-            return decryptedLinks;
-        }
         externID = this.br.getRedirectLocation();
-        if (externID != null && !externID.contains("boobinspector.com/")) {
+        if (externID != null && !externID.contains("tubeq.xxx/")) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         } else if (externID != null) {
             br.getPage(externID);
             externID = null;
         }
-        String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        String filename = br.getRegex("class=\"videotitle\">([^<>\"]*?)<").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?) \\- TubeQ\\.xxx</title>").getMatch(0);
+        }
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (!decryptedLinks.isEmpty()) {
             return decryptedLinks;
         }
         decryptedLinks = new ArrayList<DownloadLink>();
         /* No embed url found --> Probably video is selfhosted */
-        final DownloadLink main = createDownloadlink(parameter.replace("boobinspector.com/", "boobinspectordecrypted.com/"));
+        final DownloadLink main = createDownloadlink(parameter.replace("tubeq.xxx/", "tubeqdecrypted.xxx/"));
         decryptedLinks.add(main);
         return decryptedLinks;
     }
