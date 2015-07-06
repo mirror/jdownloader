@@ -109,8 +109,8 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_VIDEO_SINGLE_SEARCH             = "https?://(www\\.)?vk\\.com/search\\?(c\\[q\\]|c%5Bq%5D)=[^<>\"/]*?\\&c(\\[section\\]|%5Bsection%5D)=video(\\&c(\\[sort\\]|%5Bsort%5D)=\\d+)?\\&z=video(\\-)?\\d+_\\d+";
     private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL           = "https?://(www\\.)?vk\\.com/video(\\-)?\\d+_\\d+";
     private static final String     PATTERN_VIDEO_SINGLE_ORIGINAL_LIST      = "https?://(www\\.)?vk\\.com/video(\\-)?\\d+_\\d+\\?list=[a-z0-9]+";
-    private static final String     PATTERN_VIDEO_SINGLE_EMBED              = "https?://(www\\.)?vk\\.com/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+";
-    private static final String     PATTERN_VIDEO_SINGLE_EMBED_HASH         = "https?://(www\\.)?vk\\.com/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+\\&hash=[a-z0-9]+";
+    private static final String     PATTERN_VIDEO_SINGLE_EMBED              = "https?://(www\\.)?vk\\.com/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+.*?";
+    private static final String     PATTERN_VIDEO_SINGLE_EMBED_HASH         = "https?://(www\\.)?vk\\.com/video_ext\\.php\\?oid=(\\-)?\\d+\\&id=\\d+\\&hash=[a-z0-9]+.*?";
     private static final String     PATTERN_VIDEO_ALBUM                     = "https?://(www\\.)?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos(\\-)?\\d+)";
     private static final String     PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS = "https?://(www\\.)?vk\\.com/videos(\\-)?\\d+\\?.+";
     private static final String     PATTERN_VIDEO_COMMUNITY_ALBUM           = "https?://(www\\.)?vk\\.com/video\\?gid=\\d+";
