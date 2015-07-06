@@ -64,6 +64,7 @@ public class Wrdprss extends antiDDoSForDecrypt {
         completePattern.append("|hi10anime\\.com/([\\w\\-]+/){2}");
         completePattern.append("|watchseries-online\\.ch/episode/.+");
         completePattern.append("|solarmovie\\.ws/watch-[\\w-]+\\.html");
+        completePattern.append("|scene-rls\\.com/[\\w-]+/?$");
         completePattern.append(")");
         // System.out.println(("Wrdprss: " + (10 + listType1.length + listType2.length) + " Pattern added!"));
         return new String[] { completePattern.toString() };
@@ -140,8 +141,8 @@ public class Wrdprss extends antiDDoSForDecrypt {
             else if (link.matches("^/.+")) {
                 link = protocol + "//" + Browser.getHost(br.getURL(), true) + link;
             }
-            if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true) && !link.matches(".+\\.(css|xml)(.*)?|.+://img\\.hd-area\\.org/.+")) {
-                DownloadLink dLink = createDownloadlink(link);
+            if (!canHandle(link) && DistributeData.hasPluginFor(link, true) && !link.matches(".+\\.(css|xml)(.*)?|.+://img\\.hd-area\\.org/.+")) {
+                final DownloadLink dLink = createDownloadlink(link);
                 if (link_passwds != null && link_passwds.size() > 0) {
                     dLink.setSourcePluginPasswordList(link_passwds);
                 }

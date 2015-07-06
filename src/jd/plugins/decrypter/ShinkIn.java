@@ -24,6 +24,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
@@ -35,13 +36,15 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPlu
  * listener is case insensitive by default... so we need to ENFORCE case sensitivity. -raztoki 20150308 <br />
  * - uid seems to be fixed to 5 chars (at this time) -raztoki 20150308 <br />
  * - uses cloudflare -raztoki 20150308 <br />
- * 
+ *
  * @author psp
  * @author raztoki
- * 
+ *
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shink.in" }, urls = { "http://(www\\.)?shink\\.in/(?-i)[a-zA-Z0-9]{5}" }, flags = { 0 })
 public class ShinkIn extends antiDDoSForDecrypt {
+
+    private static Object CTRLLOCK = new Object();
 
     public ShinkIn(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,24 +54,29 @@ public class ShinkIn extends antiDDoSForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(false);
-        getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        }
-        final Form dform = br.getFormbyProperty("id", "skip");
-        if (dform == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        // can contain recaptchav2
-        if (dform.containsHTML("class=(\"|')g-recaptcha\\1")) {
-            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            dform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+        Form dform = null;
+        // they seem to only show recaptchav2 once!! they track ip session (as restarting client doesn't get recaptchav2, the only cookies
+        // that are cached are cloudflare and they are only kept in memory, and restarting will flush it)
+        synchronized (CTRLLOCK) {
+            getPage(parameter);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+                offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
+                offline.setAvailable(false);
+                offline.setProperty("offline", true);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
+            dform = br.getFormbyProperty("id", "skip");
+            if (dform == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            // can contain recaptchav2
+            if (dform.containsHTML("class=(\"|')g-recaptcha\\1")) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                dform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            }
         }
         submitForm(dform);
         final String finallink = br.getRedirectLocation();

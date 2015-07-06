@@ -334,7 +334,6 @@ public class DebridItaliaCom extends antiDDoSForHost {
      */
     private void handleErrorRetries(final String error, final int maxRetries, final long timeout) throws PluginException {
         int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
-        this.currDownloadLink.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {
             logger.info(NICE_HOST + ": " + error + " -> Retrying");
             timesFailed++;

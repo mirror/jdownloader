@@ -65,8 +65,7 @@ public class KeezMoviesCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        // DEV NOTE: you can get the DLLINK from the embed page without need for
-        // crypto!
+        // DEV NOTE: you can get the DLLINK from the embed page without need for crypto!
         setBrowserExclusive();
         br.setFollowRedirects(false);
         /* Offline links should also get nice filenames. */

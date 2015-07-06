@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeviewmovies.com" }, urls = { "http://(www\\.)?freeviewmoviesdecrypted/(porn|video)/\\d+" }, flags = { 0 })
 public class FreeViewMoviesCom extends PluginForHost {
 
-    private String DLLINK = null;
+    private String dllink = null;
 
     public FreeViewMoviesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,7 +52,7 @@ public class FreeViewMoviesCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -62,7 +62,6 @@ public class FreeViewMoviesCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
         if (downloadLink.getDownloadURL().contains("freeviewmoviesdecrypted/")) {
             downloadLink.setUrlDownload(downloadLink.getDownloadURL().replace("freeviewmoviesdecrypted/", "freeviewmovies.com/"));
         }
@@ -80,14 +79,12 @@ public class FreeViewMoviesCom extends PluginForHost {
                 filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\" />").getMatch(0);
             }
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("file: \'(http[^']+)").getMatch(0);
-        }
-        if (filename == null || DLLINK == null) {
+        dllink = br.getRegex("file: \'(http[^']+)").getMatch(0);
+        if (filename == null || dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = filename.trim();
-        String ext = new Regex(DLLINK.substring(DLLINK.lastIndexOf(".")), "([^\\?]+)").getMatch(0);
+        String ext = new Regex(dllink.substring(dllink.lastIndexOf(".")), "([^\\?]+)").getMatch(0);
         if (ext == null || ext.length() > 5) {
             ext = ".mp4";
         }
@@ -97,7 +94,7 @@ public class FreeViewMoviesCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openGetConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

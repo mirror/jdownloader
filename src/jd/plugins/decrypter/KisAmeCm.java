@@ -30,10 +30,10 @@ import jd.plugins.FilePackage;
 
 /**
  *
- * 
+ *
  * @author raztoki
  * */
-@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 2, names = { "kissanime.com" }, urls = { "https?://(?:www\\.)?kissanime\\.com/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 20515 $", interfaceVersion = 3, names = { "kissanime.com" }, urls = { "https?://(?:www\\.)?kissanime\\.com/anime/[a-zA-Z0-9\\-\\_]+/[a-zA-Z0-9\\-\\_]+" }, flags = { 0 })
 public class KisAmeCm extends antiDDoSForDecrypt {
 
     public KisAmeCm(PluginWrapper wrapper) {

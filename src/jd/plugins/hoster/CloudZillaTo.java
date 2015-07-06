@@ -116,7 +116,13 @@ public class CloudZillaTo extends PluginForHost {
         final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, br.getRegex("var grecaptcha_key = \"([\\w-]+)\";").getMatch(0)).getToken();
+            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
+                @Override
+                public String getRecaptchaV2ApiKey(final String source) {
+                    final String apiKey = new Regex(source, "var grecaptcha_key = \"([\\w-]+)\"").getMatch(0);
+                    return apiKey;
+                }
+            }.getToken();
             br.getHeaders().put("Accept", "*/*");
             br.getHeaders().put("X-Requested-With   XMLHttpRequest", "XMLHttpRequest");
             br.postPage("/generateticket/", "key=&file_id=" + fid + "&captcha=" + Encoding.urlEncode(recaptchaV2Response));

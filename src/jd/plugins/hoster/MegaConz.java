@@ -173,10 +173,8 @@ public class MegaConz extends PluginForHost {
         File src = null;
         if (path.endsWith(encrypted)) {
             src = new File(path);
-
         } else {
             src = new File(path);
-            ;
         }
         if (src.exists() && src.length() == link.getVerifiedFileSize()) {
             // ready for decryption

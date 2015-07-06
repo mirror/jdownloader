@@ -217,7 +217,7 @@ public class UppleIt extends antiDDoSForHost {
                         logger.info("Current pre-download page has no waittime");
                     }
                     final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
-                    if (br.containsHTML("data\\-sitekey=")) {
+                    if (br.containsHTML("data-sitekey=")) {
                         final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=Submit&submitted=1&d=1&capcode=false&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response), resume, maxchunks);
                     } else if (rcID != null) {
@@ -370,7 +370,7 @@ public class UppleIt extends antiDDoSForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
