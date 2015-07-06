@@ -26,6 +26,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.regex.Pattern;
@@ -44,6 +45,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -54,6 +56,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.TimeFormatter;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.engines.AESEngine;
@@ -333,7 +336,20 @@ public class CrunchyRollCom extends antiDDoSForHost {
             account.setValid(false);
             return ai;
         }
-        ai.setStatus("Premium Account");
+        // date + 4 days
+        final String nextbillingdate = br.getRegex("Next Billing Date:</th>\\s*<td>([a-zA-Z]{3,4} \\d{1,2}, \\d{4})</td>").getMatch(0);
+        long date = TimeFormatter.getMilliSeconds(nextbillingdate, "MMM dd, yyyy", Locale.ENGLISH);
+        if (date > 0) {
+            date += (4 * 24 * 60 * 60 * 1000l);
+        }
+        ai.setValidUntil(date, br);
+        if (!ai.isExpired()) {
+            account.setType(AccountType.PREMIUM);
+            ai.setStatus("Premium Account");
+        } else {
+            account.setType(AccountType.FREE);
+            ai.setStatus("Free Account");
+        }
         ai.setValidUntil(-1);
         account.setValid(true);
         return ai;
