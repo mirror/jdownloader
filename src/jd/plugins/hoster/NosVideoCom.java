@@ -93,13 +93,18 @@ public class NosVideoCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        /* Offline urls should also get nice filenames */
+        link.setName(fid);
+        link.setLinkID(fid);
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         prepBrowser();
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|>Reason for deletion:<)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|>Reason for deletion:<|File Not Found<|>The file you were looking for could not be found|>Possible causes of this error could be)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (correctedBR.contains(MAINTENANCE)) {
