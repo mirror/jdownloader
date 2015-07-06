@@ -284,7 +284,7 @@ public class MegaCrypterCom extends antiDDoSForHost {
             }
         }
         br.getHeaders().put("Content-Type", "application/json");
-        br.postPageRaw(mcUrl, "{\"m\": \"dl\", \"link\":\"" + JSonUtils.escape(linkPart) + "\"" + (!JSonUtils.parseBoolean(noExpire) ? "" : ", \"noexpire\":\"" + JSonUtils.escape(noExpire.split("#")[1]) + "\"") + "}");
+        br.postPageRaw(mcUrl, "{\"m\": \"dl\", \"link\":\"" + JSonUtils.escape(linkPart) + "\"" + (inValidate(noExpire) || noExpire.split("#").length != 2 ? "" : ", \"noexpire\":\"" + JSonUtils.escape(noExpire.split("#")[1]) + "\"") + "}");
         checkError(br);
         String dllink = getJson("url");
         if (dllink == null) {
