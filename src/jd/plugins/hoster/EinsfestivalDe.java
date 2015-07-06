@@ -17,13 +17,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,10 +34,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubeq.xxx" }, urls = { "http://(www\\.)?tubeqdecrypted\\.xxx/video/\\d+\\.html" }, flags = { 0 })
-public class TubeqXxx extends PluginForHost {
+import org.appwork.utils.formatter.TimeFormatter;
 
-    public TubeqXxx(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "einsfestival.de" }, urls = { "http://(www\\.)?einsfestival\\.de/mediathek/player\\.jsp\\?vid=\\d+" }, flags = { 0 })
+public class EinsfestivalDe extends PluginForHost {
+
+    public EinsfestivalDe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -45,46 +50,52 @@ public class TubeqXxx extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               dllink            = null;
+    private String               DLLINK            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://tubeq.xxx/tos/";
-    }
-
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("tubeqdecrypted.xxx/", "tubeq.xxx/"));
+        return "http://www.einsfestival.de/impressum/impressum.jsp";
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Es ist ein Fehler aufgetreten|>Bitte versuche es erneut oder später noch einmal")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("class=\"videotitle\">([^<>\"]*?)<").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?) \\- TubeQ\\.xxx</title>").getMatch(0);
+        final String url_http_normal = br.getRegex("Query\\(video\\)\\.attr\\(\\'src\\',\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
+        final String url_rtmp_hq = br.getRegex("class=\"trailerboxHqLink\".+dslSrc=(rtmp[^<>\"]*?/mdb/ondemand/[^<>\"]*?\\.mp4)").getMatch(0);
+        final String date = br.getRegex("name=\\'VideoDate\\' content=\\'([^<>\"]*?)\\'").getMatch(0);
+        String title = br.getRegex("<title>([^<>]*?) \\| Einsfestival</title>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("class=\"videoInfoHead\">([^<>]*?)<").getMatch(0);
         }
-        dllink = br.getRegex("file\\':[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("file:[\t\n\r ]*?\"(http[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("url:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
-            }
+        if (title == null) {
+            title = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
         }
-        if (filename == null || dllink == null) {
+        if (title == null) {
+            title = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        }
+        if (title == null || date == null || (url_http_normal == null && url_rtmp_hq == null)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
+        if (url_rtmp_hq != null) {
+            /* Convert higher quality rtmp url to http */
+            DLLINK = "http://http-ras.wdr.de//CMS2010/mdb/ondemand/" + new Regex(url_rtmp_hq, "/ondemand/(.+)").getMatch(0);
+        } else {
+            /* User given http url, usually lower quality than rtmp hq */
+            DLLINK = url_http_normal;
+        }
+        final String date_formatted = formatDate(date);
+        String filename = date_formatted + "_einsfestival_" + title;
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = dllink.substring(dllink.lastIndexOf("."));
+        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;
@@ -99,7 +110,7 @@ public class TubeqXxx extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(dllink);
+                con = openConnection(br2, DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -108,7 +119,7 @@ public class TubeqXxx extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", dllink);
+            downloadLink.setProperty("directlink", DLLINK);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -121,7 +132,7 @@ public class TubeqXxx extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
@@ -129,44 +140,41 @@ public class TubeqXxx extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             }
             br.followConnection();
+            try {
+                dl.getConnection().disconnect();
+            } catch (final Throwable e) {
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
+    private String formatDate(String input) {
+        /* 2015-06-23T20:15+02:00 --> 2015-06-23T20:15:00+0200 */
+        input = input.substring(0, input.lastIndexOf(":")) + "00";
+        final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd'T'HH:mmZZ", Locale.GERMAN);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
         }
-        return dllink;
+        return formattedDate;
     }
 
-    /* Avoid chars which are not allowed in filenames under certain OS' */
+    /** Avoid chars which are not allowed in filenames under certain OS' */
     private static String encodeUnicode(final String input) {
         String output = input;
         output = output.replace(":", ";");
         output = output.replace("|", "¦");
         output = output.replace("<", "[");
         output = output.replace(">", "]");
-        output = output.replace("/", "/");
-        output = output.replace("\\", "");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
         output = output.replace("*", "#");
         output = output.replace("?", "¿");
         output = output.replace("!", "¡");
@@ -177,6 +185,20 @@ public class TubeqXxx extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
+        }
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

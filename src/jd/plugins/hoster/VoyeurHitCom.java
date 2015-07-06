@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -52,6 +51,7 @@ public class VoyeurHitCom extends PluginForHost {
     /* Extension which will be used if no correct extension is found */
     private static final String default_Extension = ".mp4";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -79,12 +79,14 @@ public class VoyeurHitCom extends PluginForHost {
             ext = default_Extension;
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(dllink);
+            con = br.openHeadConnection(dllink);
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                /* Small workaround for buggy servers that redirect and fail if the Referer is wrong then. Examples: hdzog.com */
+                final String redirect_url = this.br.getHttpConnection().getRequest().getUrl();
+                con = this.br.openHeadConnection(redirect_url);
+            }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
