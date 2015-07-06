@@ -25,10 +25,9 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "you-sex-tube.com" }, urls = { "http://(www\\.)?you\\-sex\\-tube\\.com/(video|porn)/.+" }, flags = { 0 })
-public class YouSexTubeCom extends PluginForDecrypt {
+public class YouSexTubeCom extends PornEmbedParser {
 
     public YouSexTubeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -63,27 +62,14 @@ public class YouSexTubeCom extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink(redirect);
             decryptedLinks.add(dl);
             return decryptedLinks;
+        } else if (redirect != null) {
+            this.br.getPage(redirect);
         }
-        externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
-        if (externID == null) {
-            externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        decryptedLinks.addAll(findEmbedUrls(null));
+        if (decryptedLinks.isEmpty()) {
+            return null;
         }
-        if (externID != null) {
-            final DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        externID = br.getRegex("(\"|\\')(http://(www\\.)?tube8\\.com/embed/[^<>\"/]*?/[^<>\"/]*?/\\d+/?)(\"|\\')").getMatch(1);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID.replace("tube8.com/embed/", "tube8.com/")));
-            return decryptedLinks;
-        }
-        if (br.getURL().contains("xvideos.com/")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        logger.warning("Decrypter broken for link: " + parameter);
-        return null;
+        return decryptedLinks;
     }
 
     /* NO OVERRIDE!! */
