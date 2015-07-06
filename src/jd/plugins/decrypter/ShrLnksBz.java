@@ -308,7 +308,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         final String dlclink = br.getRegex("get as dlc container\".*?\"javascript:_get\\('(.*?)', 0, 'dlc'\\);\"").getMatch(0);
         if (dlclink != null) {
             decryptedLinks = loadcontainer(br, MAINPAGE + "get/dlc/" + dlclink);
-            if (decryptedLinks != null && decryptedLinks.size() > 0) {
+            if (!decryptedLinks.isEmpty()) {
                 return decryptedLinks;
             }
         }

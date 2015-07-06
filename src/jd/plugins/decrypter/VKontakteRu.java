@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.regex.Matcher;
@@ -46,6 +45,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.StringUtils;
@@ -1028,135 +1028,6 @@ public class VKontakteRu extends PluginForDecrypt {
             res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
         }
         return res;
-    }
-
-    public static class JSonUtils {
-        public static String escape(final String s) {
-            final StringBuilder sb = new StringBuilder();
-            char ch;
-            String ss;
-            for (int i = 0; i < s.length(); i++) {
-                ch = s.charAt(i);
-                switch (ch) {
-                case '"':
-                    sb.append("\\\"");
-                    continue;
-                case '\\':
-                    sb.append("\\\\");
-                    continue;
-                case '\b':
-                    sb.append("\\b");
-                    continue;
-                case '\f':
-                    sb.append("\\f");
-                    continue;
-                case '\n':
-                    sb.append("\\n");
-                    continue;
-                case '\r':
-                    sb.append("\\r");
-                    continue;
-                case '\t':
-                    sb.append("\\t");
-                    continue;
-
-                }
-
-                if (ch >= '\u0000' && ch <= '\u001F' || ch >= '\u007F' && ch <= '\u009F' || ch >= '\u2000' && ch <= '\u20FF') {
-                    ss = Integer.toHexString(ch);
-                    sb.append("\\u");
-                    for (int k = 0; k < 4 - ss.length(); k++) {
-                        sb.append('0');
-                    }
-                    sb.append(ss.toUpperCase(Locale.ENGLISH));
-                    continue;
-                }
-
-                sb.append(ch);
-
-            }
-            return sb.toString();
-        }
-
-        /**
-         * @param string
-         * @return
-         */
-        public static String unescape(final String s) {
-            char ch;
-            final StringBuilder sb = new StringBuilder();
-            final StringBuilder sb2 = new StringBuilder();
-            int ii;
-            int i;
-            for (i = 0; i < s.length(); i++) {
-                ch = s.charAt(i);
-                try {
-                    switch (ch) {
-                    case '\\':
-                        ch = s.charAt(++i);
-                        switch (ch) {
-                        case '"':
-                            sb.append('"');
-                            continue;
-                        case '\\':
-                            sb.append('\\');
-                            continue;
-                        case 'r':
-                            sb.append('\r');
-                            continue;
-                        case 'n':
-                            sb.append('\n');
-                            continue;
-                        case 't':
-                            sb.append('\t');
-                            continue;
-                        case 'f':
-                            sb.append('\f');
-                            continue;
-                        case 'b':
-                            sb.append('\b');
-                            continue;
-
-                        case 'u':
-                            sb2.delete(0, sb2.length());
-
-                            i++;
-                            ii = i + 4;
-                            for (; i < ii; i++) {
-                                ch = s.charAt(i);
-                                if (sb2.length() > 0 || ch != '0') {
-                                    sb2.append(ch);
-                                }
-                            }
-                            i--;
-                            // can not use short....
-                            // java.lang.NumberFormatException: Value out of range. Value:"8abf" Radix:16
-                            sb.append((char) Long.parseLong(sb2.toString(), 16));
-                            continue;
-                        default:
-                            sb.append(ch);
-                            continue;
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                sb.append(ch);
-            }
-
-            return sb.toString();
-        }
-
-        public static String getJson(final String source, final String parameter) {
-            String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.\\-]+)").getMatch(1);
-            if (result == null) {
-                result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^\"]*?)\"").getMatch(1);
-            }
-            if (result != null) {
-                return unescape(result);
-            }
-            return result;
-        }
     }
 
     /**

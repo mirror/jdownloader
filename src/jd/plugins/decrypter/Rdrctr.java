@@ -23,10 +23,9 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
-public class Rdrctr extends PluginForDecrypt {
+public class Rdrctr extends antiDDoSForDecrypt {
     /**
      * Returns the annotations names array
      *
@@ -88,7 +87,7 @@ public class Rdrctr extends PluginForDecrypt {
         // Workaround for ponyurl.com Links
         parameter = parameter.replace("ponyurl.com/", "ponyurl.com/forward.php?");
         try {
-            br.getPage(parameter);
+            getPage(parameter);
         } catch (final SocketTimeoutException e) {
             logger.info("Link offline (server offline?): " + parameter);
             return decryptedLinks;

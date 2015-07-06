@@ -2117,7 +2117,7 @@ public abstract class K2SApi extends PluginForHost {
             }
             // true : false
             // 0 : 1 = false : true
-            // 0 : !0 = fasle : true
+            // 0 : !0 = false : true
             if ("true".equalsIgnoreCase(input)) {
                 return true;
             } else if ("false".equalsIgnoreCase(input)) {

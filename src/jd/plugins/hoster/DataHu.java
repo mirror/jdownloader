@@ -32,7 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.VKontakteRu.JSonUtils;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;

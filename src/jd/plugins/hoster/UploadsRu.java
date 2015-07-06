@@ -50,7 +50,7 @@ public class UploadsRu extends PluginForHost {
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String               dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -60,25 +60,24 @@ public class UploadsRu extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (!br.containsHTML("id=\"viewing\"") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        DLLINK = br.getRegex("id=\"viewing\">Просмотр <a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(http://(www\\.)?uploads\\.ru/i/[^<>\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("id=\"viewing\">Просмотр <a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://(www\\.)?uploads\\.ru/i/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://s\\d+\\.uploads\\.ru/[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
         }
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\"(http://s\\d+\\.uploads\\.ru/[^<>\"]*?)\"").getMatch(0);
-        }
-        if (DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        dllink = Encoding.htmlDecode(dllink);
+        String ext = dllink.substring(dllink.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;
@@ -91,10 +90,10 @@ public class UploadsRu extends PluginForHost {
             try {
                 if (isJDStable()) {
                     /* @since JD2 */
-                    con = br.openHeadConnection(DLLINK);
+                    con = br.openHeadConnection(dllink);
                 } else {
                     /* Not supported in old 0.9.581 Stable */
-                    con = br.openGetConnection(DLLINK);
+                    con = br.openGetConnection(dllink);
                 }
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -105,7 +104,7 @@ public class UploadsRu extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setProperty("directlink", DLLINK);
+            downloadLink.setProperty("directlink", dllink);
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -118,7 +117,7 @@ public class UploadsRu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
