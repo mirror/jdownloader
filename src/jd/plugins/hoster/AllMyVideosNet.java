@@ -20,6 +20,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.DownloadLink;
@@ -43,12 +44,40 @@ public class AllMyVideosNet extends PluginForHost {
         return "http://www.allmyvideos.net/tos.html";
     }
 
-    private static final String TYPE_OLD = "https?://(www\\.)?allmyvideos\\.net/v/v\\-[A-Za-z0-9]+";
+    private static final String  TYPE_OLD             = "https?://(www\\.)?allmyvideos\\.net/v/v\\-[A-Za-z0-9]+";
 
+    private static final boolean SUPPORTSHTTPS        = false;
+    private static final boolean SUPPORTSHTTPS_FORCED = false;
+
+    /* Linktypes */
+    private static final String  TYPE_NORMAL          = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
+    private static final String  TYPE_EMBED           = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
+
+    private static final String  COOKIE_HOST          = "http://allmyvideos.net";
+    private static final String  NICE_HOST            = COOKIE_HOST.replaceAll("(https://|http://)", "");
+
+    @SuppressWarnings("deprecation")
     @Override
-    public void correctDownloadLink(final DownloadLink downloadLink) {
-        // strip video hosting url's to reduce possible duped links.
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("/(vid)?embed-", "/"));
+    public void correctDownloadLink(final DownloadLink link) {
+        final String fuid = getFUIDFromURL(link);
+        final String protocol;
+        /* link cleanup, prefer https if possible */
+        if (SUPPORTSHTTPS || SUPPORTSHTTPS_FORCED) {
+            protocol = "https://";
+        } else {
+            protocol = "http://";
+        }
+        final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
+        if (link.getDownloadURL().matches(TYPE_EMBED)) {
+            final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
+            /* Make sure user gets the kind of content urls that he added to JD. */
+            try {
+                link.setContentUrl(url_embed);
+            } catch (final Throwable e) {
+                /* Not available in 0.9.581 Stable */
+            }
+        }
+        link.setUrlDownload(corrected_downloadurl);
     }
 
     /**
@@ -152,6 +181,11 @@ public class AllMyVideosNet extends PluginForHost {
             }
         }
         return null;
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getFUIDFromURL(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
     }
 
     public int getMaxSimultanFreeDownloadNum() {
