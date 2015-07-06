@@ -25,7 +25,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-//EmbedDecrypter 0.1
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videodisc.tv" }, urls = { "http://(www\\.)?videodisc\\.tv/video/\\d+/[a-z0-9]+/[^<>\"/]+/" }, flags = { 0 })
 public class VideoDiscTv extends PluginForDecrypt {
 

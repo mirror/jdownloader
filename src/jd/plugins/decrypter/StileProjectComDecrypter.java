@@ -24,7 +24,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-//EmbedDecrypter 0.1.3
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stileproject.com" }, urls = { "http://(www\\.)?stileproject\\.com/video/\\d+" }, flags = { 0 })
 public class StileProjectComDecrypter extends PornEmbedParser {
 

@@ -33,7 +33,6 @@ public class LbTubeCom extends PornEmbedParser {
 
     /* Using playerConfig script */
     /* Tags: playerConfig.php */
-    // EmbedDecrypter 0.1.9
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

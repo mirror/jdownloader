@@ -25,7 +25,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-//EmbedDecrypter 0.1.2
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornup.me" }, urls = { "http://(www\\.)?pornup\\.me/video/\\d+/[a-z0-9\\-]+" }, flags = { 0 })
 public class PornUpMeDecrypter extends PluginForDecrypt {
 

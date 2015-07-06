@@ -24,7 +24,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-//EmbedDecrypter 0.1.9
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tuberealm.com" }, urls = { "http://(www\\.)?tuberealm\\.com/tube\\-sex\\-movies/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class TubeRealmCom extends PornEmbedParser {
 
