@@ -1092,8 +1092,7 @@ public class MediafireCom extends PluginForHost {
             // 380 = claimed by a copyright holder through a valid DMCA request
             // 388 = identified as copyrighted work
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (eBr.getURL().matches(".+/error\\.php\\?errno=394.*?")) {
+        } else if (eBr.getURL().matches(".+/error\\.php\\?errno=394.*?")) {
             /*
              * The file you attempted to download is an archive that is encrypted or password protected. MediaFire does not support
              * unlimited downloads of encrypted or password protected archives and the limit for this file has been reached. MediaFire
@@ -1101,13 +1100,16 @@ public class MediafireCom extends PluginForHost {
              * have informed the owner that sharing of this file has been limited and how they can resolve this issue.
              */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible, retriction based on uploaders account");
-        }
-        if (eBr.getURL().contains("mediafire.com/error.php?errno=382")) {
+        } else if (eBr.getURL().contains("mediafire.com/error.php?errno=382")) {
             dl.getLinkStatus().setStatusText("File Belongs to Suspended Account.");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (eBr.containsHTML("class=\"error\\-title\">Temporarily Unavailable</p>")) {
+        } else if (eBr.containsHTML("class=\"error\\-title\">Temporarily Unavailable</p>")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is temporarily unavailable!", 30 * 60 * 1000l);
+        } else if (eBr.containsHTML("class=\"error-title\">This download is currently unavailable<")) {
+            // jdlog://7235652095341
+            final String time = eBr.getRegex("we will retry your download again in (\\d+) seconds\\.<").getMatch(0);
+            long t = ((time != null ? Long.parseLong(time) : 60) * 1000l) + 2;
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is temporarily unavailable!", t);
         }
     }
 
