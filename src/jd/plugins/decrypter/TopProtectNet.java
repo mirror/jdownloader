@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "top-protect.net" }, urls = { "http://(www\\.)?top\\-protect(ion)?\\.net/linkidwoc\\.php\\?linkid=[a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "top-protection.net" }, urls = { "http://(www\\.)?top\\-protect(ion)?\\.net/linkidwoc\\.php\\?linkid=[a-z]+" }, flags = { 0 })
 public class TopProtectNet extends PluginForDecrypt {
 
     public TopProtectNet(PluginWrapper wrapper) {
@@ -39,6 +39,8 @@ public class TopProtectNet extends PluginForDecrypt {
     // All similar: IleProtectCom, ExtremeProtectCom, TopProtectNet, ProtecteurNet
     /* DecrypterScript_linkid=_linkcheck.php */
     // top-protect and top-protection uids are not transferable. Keep script independent from domain.
+
+    // top-protect.net no dns record -raztoki 20150513
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -56,8 +58,11 @@ public class TopProtectNet extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleLink : links)
-            if (!new Regex(singleLink, "top-protect(ion)?\\.net/").matches()) decryptedLinks.add(createDownloadlink(singleLink));
+        for (String singleLink : links) {
+            if (!new Regex(singleLink, "top-protect(ion)?\\.net/").matches()) {
+                decryptedLinks.add(createDownloadlink(singleLink));
+            }
+        }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
