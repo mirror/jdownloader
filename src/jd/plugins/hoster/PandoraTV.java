@@ -27,6 +27,7 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -68,6 +69,35 @@ public class PandoraTV extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        setBrowserExclusive();
+        br.setCustomCharset("UTF-8");
+        br.setFollowRedirects(true);
+        final String fid = new Regex(downloadLink.getDownloadURL(), "prgid=(\\d+)").getMatch(0);
+        if (fid != null) {
+            downloadLink.setLinkID(fid);
+            /* Offline files should also have nice filenames */
+            downloadLink.setName(fid);
+        }
+        br.getPage(downloadLink.getDownloadURL());
+        String filename = br.getRegex("title\": \"(.*?)\",").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("\"title\":\"(.*?)\"").getMatch(0);
+        }
+        String filesize = br.getRegex("filesize\": \"(.*?)\",").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("\"filesize\":\"(.*?)\"").getMatch(0);
+        }
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        downloadLink.setName(decodeUnicode(filename.trim()) + ".flv");
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         br.setCookiesExclusive(true);
@@ -92,9 +122,13 @@ public class PandoraTV extends PluginForHost {
         final String keys = KEY_EncryptionCreate(keyOne, "encrypt");
         /* set country code, from session cookie */
         final String country = br.getCookie(this.getHost(), "ipCountry");
-        if (country == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (country == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getPage(DLPAGE + urlpath + keys + "&class=normal&country=" + country + "&method=differ");
-        if (br.containsHTML("error") || br.getRequest().getHttpConnection().getResponseCode() != 200) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (br.containsHTML("error") || br.getRequest().getHttpConnection().getResponseCode() != 200) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String dllink = br.getRegex("\"(.*?)\"").getMatch(0, 1);
         dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -121,26 +155,6 @@ public class PandoraTV extends PluginForHost {
             e.printStackTrace();
         }
         return (String) result;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        setBrowserExclusive();
-        br.setCustomCharset("UTF-8");
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("title\": \"(.*?)\",").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("\"title\":\"(.*?)\"").getMatch(0);
-        }
-        String filesize = br.getRegex("filesize\": \"(.*?)\",").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("\"filesize\":\"(.*?)\"").getMatch(0);
-        }
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        downloadLink.setName(decodeUnicode(filename.trim()) + ".flv");
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-        return AvailableStatus.TRUE;
     }
 
     @Override
