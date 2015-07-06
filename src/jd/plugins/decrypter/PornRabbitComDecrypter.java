@@ -24,7 +24,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-//EmbedDecrypter 0.1.1
 //Mods: removed pornrabbit decrypt, added youporn.com decrypt
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornrabbit.com" }, urls = { "http://(www\\.)?pornrabbit\\.com/(\\d+/[a-z0-9_\\-]+\\.html|video/\\d+/)" }, flags = { 0 })
 public class PornRabbitComDecrypter extends PornEmbedParser {

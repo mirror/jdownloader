@@ -31,7 +31,6 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.StringUtils;
 
-//EmbedDecrypter 0.1
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxbunker.com" }, urls = { "http://(www\\.)?xxxbunker\\.com/[a-z0-9_\\-]+" }, flags = { 0 })
 public class XxxBunkerCom extends PluginForDecrypt {
 

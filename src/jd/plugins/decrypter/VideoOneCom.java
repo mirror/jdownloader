@@ -25,7 +25,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-//EmbedDecrypter 0.1.1
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "video-one.com" }, urls = { "http://(www\\.)?video\\-one\\.com/video/[a-z0-9]+\\.html" }, flags = { 0 })
 public class VideoOneCom extends PornEmbedParser {
 

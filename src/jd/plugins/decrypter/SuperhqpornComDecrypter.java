@@ -24,7 +24,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-//EmbedDecrypter 0.2.8
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superhqporn.com" }, urls = { "http://www\\.superhqporn\\.com/\\?v=[A-Z0-9]+" }, flags = { 0 })
 public class SuperhqpornComDecrypter extends PornEmbedParser {
 
