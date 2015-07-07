@@ -35,12 +35,12 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
 
-names = { "image2you.ru", "picsee.net", "pichost.me", "imagecurl.com", "otofotki.pl", "bigimage.cz", "twitpic.com", "imgserve.net", "imgpizza.com", "pic4you.ru", "tuspics.net", "imgjug.com", "pic4free.org", "cocoimage.com", "imagetwist.com", "postimage.org", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "freeimagehosting.net", "pixhost.org", "sharenxs.com", "9gag.com" },
+names = { "image2you.ru", "picsee.net", "pichost.me", "imagecurl.com", "otofotki.pl", "bigimage.cz", "twitpic.com", "imgserve.net", "imgpizza.com", "pic4you.ru", "tuspics.net", "imgjug.com", "pic4free.org", "imagetwist.com", "postimage.org", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "freeimagehosting.net", "pixhost.org", "sharenxs.com", "9gag.com" },
 
-urls = { "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(www\\.)?pichost\\.me/\\d+", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "http://img\\d+\\.otofotki\\.pl/[A-Za-z0-9\\-_]+\\.jpg\\.html", "http://bigimage\\.cz/image/\\d+\\.html", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(www\\.)?imgserve\\.net/img\\-[a-z0-9]+\\.html", "http://(www\\.)?imgpizza\\.com/viewer\\.php\\?file=[^<>\"/]+", "http://(www\\.)?pic4you\\.ru/\\d+/\\d+/", "http://(www\\.)?tuspics\\.net/[a-z0-9]{12}", "http://(www\\.)?imgjug\\.com/(i/[A-Za-z0-9]+|\\?v=[A-Za-z0-9]+\\.jpg)", "http://(www\\.)?pic4free\\.org/\\?v=[^<>\"/]+", "http://(www\\.)?img\\d+\\.cocoimage\\.com/img\\.php\\?id=\\d+", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?postim(age|g)\\.org/image/[a-z0-9]+",
+urls = { "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(www\\.)?pichost\\.me/\\d+", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "http://img\\d+\\.otofotki\\.pl/[A-Za-z0-9\\-_]+\\.jpg\\.html", "http://bigimage\\.cz/image/\\d+\\.html", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(www\\.)?imgserve\\.net/img\\-[a-z0-9]+\\.html", "http://(www\\.)?imgpizza\\.com/viewer\\.php\\?file=[^<>\"/]+", "http://(www\\.)?pic4you\\.ru/\\d+/\\d+/", "http://(www\\.)?tuspics\\.net/[a-z0-9]{12}", "http://(www\\.)?imgjug\\.com/(i/[A-Za-z0-9]+|\\?v=[A-Za-z0-9]+\\.jpg)", "http://(www\\.)?pic4free\\.org/\\?v=[^<>\"/]+", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?postim(age|g)\\.org/image/[a-z0-9]+",
         "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?(img\\d+|serve)\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+", "http://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+", "https?://(www\\.)?9gag\\.com/gag/\\d+" },
 
-flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+        flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class ImageHosterDecrypter extends PluginForDecrypt {
 
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
@@ -264,9 +264,6 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             if (finallink == null) {
                 finallink = br.getRegex("<p><img src=\"(http://.*?)\"").getMatch(0);
             }
-        } else if (parameter.contains("cocoimage.com/")) {
-            br.getPage(parameter);
-            finallink = br.getRegex("\"(http://img\\d+\\.cocoimage\\.com/showimg\\.php\\?id=\\d+[^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("pic4free.org/")) {
             br.getPage(parameter);
             finallink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+/download\\.php\\?id=\\d+)\"").getMatch(0);

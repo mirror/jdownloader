@@ -47,7 +47,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecloud.io", "ifile.it" }, urls = { "https?://(www\\.)?decryptedfilecloud\\.io/[a-z0-9]+", "fhrfzjnerhfDELETEMEdhzrnfdgvfcas4378zhb" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecloud.io" }, urls = { "https?://(www\\.)?decryptedfilecloud\\.io/[a-z0-9]+" }, flags = { 2 })
 public class IFileIt extends antiDDoSForHost {
 
     /* Shutdown of filecloud.io is planned for end of 2015 */

@@ -52,7 +52,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn", "mega.1280.com" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)", "dgjediz65854twsdfbtzoi6UNUSED_REGEX" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" }, flags = { 2 })
 public class FShareVn extends PluginForHost {
 
     private final String         SERVERERROR = "Tài nguyên bạn yêu cầu không tìm thấy";
@@ -77,10 +77,8 @@ public class FShareVn extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("mega.1280.com".equals(getHost())) {
-            if (host == null || "mega.1280.com".equals(host)) {
-                return "fshare.vn";
-            }
+        if ("mega.1280.com".equals(host)) {
+            return "fshare.vn";
         }
         return super.rewriteHost(host);
     }

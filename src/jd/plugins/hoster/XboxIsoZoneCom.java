@@ -41,7 +41,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "theisozone.com", "xboxisozone.com" }, urls = { "(http://(www\\.)?theisozonedecrypted\\.com/dl\\-start/\\d+/(\\d+/)?|xboxisopremiumonly://.+)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "theisozone.com" }, urls = { "(http://(www\\.)?theisozonedecrypted\\.com/dl\\-start/\\d+/(\\d+/)?|xboxisopremiumonly://.+)" }, flags = { 2 })
 public class XboxIsoZoneCom extends PluginForHost {
 
     public XboxIsoZoneCom(PluginWrapper wrapper) {
@@ -62,17 +62,15 @@ public class XboxIsoZoneCom extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("xboxisozone.com".equals(getHost())) {
-            if (host == null || "xboxisozone.com".equals(host)) {
-                return "theisozone.com";
-            }
+        if ("xboxisozone.com".equals(host)) {
+            return "theisozone.com";
         }
         return super.rewriteHost(host);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://xboxisozone.com/faq.php";
+        return "http://theisozone.com/";
     }
 
     @Override

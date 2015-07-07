@@ -28,14 +28,12 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliccami.info", "mylink4u.info", "urlaxe.net", "cbuz.com", "shorten.ws" }, urls = { "http://[\\w\\.]*?cliccami\\.info/[0-9a-z]+", "http://[\\w\\.]*?mylink4u\\.info/[a-z0-9]+", "http://[\\w\\.]*?urlaxe\\.net/[0-9]+", "http://[\\w\\.]*?cbuz\\.com/[a-z0-9]+", "http://(www\\.)?shorten\\.ws/[a-z0-9-]+" }, flags = { 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cliccami.info", "mylink4u.info" }, urls = { "http://[\\w\\.]*?cliccami\\.info/[0-9a-z]+", "http://[\\w\\.]*?mylink4u\\.info/[a-z0-9]+" }, flags = { 0, 0 })
 public class PWProtectedRedirectorsDecrypter extends PluginForDecrypt {
 
     public PWProtectedRedirectorsDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
-
-    // TODO: Make a single handling for every site so it isn't such a mess
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -63,11 +61,7 @@ public class PWProtectedRedirectorsDecrypter extends PluginForDecrypt {
                         return null;
                     }
                     String passCode = getUserInput(null, param);
-                    if (parameter.contains("urlaxe.net")) {
-                        pwform.put("p", passCode);
-                    } else {
-                        pwform.put("pass", passCode);
-                    }
+                    pwform.put("pass", passCode);
                     br.submitForm(pwform);
                     if (br.containsHTML("(Wrong password|Not valid password|name=\"p\"|incorrecta|name=\"pass\"|name=\"pass\"|name=\"shortcut_password\"|name=\"urlpass\")")) {
                         continue;
