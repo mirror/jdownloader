@@ -40,7 +40,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sdilej.cz", "czshare.com" }, urls = { "https?://(www\\.)?sdilej\\.cz/\\d+/.{1}", "fhirtogjnrogjmrogowcertvntzjuilthbfrwefdDELETE_MErvrgjzjz7ef" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sdilej.cz" }, urls = { "https?://(www\\.)?sdilej\\.cz/\\d+/.{1}" }, flags = { 2 })
 public class CZShareCom extends PluginForHost {
 
     private static AtomicInteger SIMULTANEOUS_PREMIUM = new AtomicInteger(-1);
@@ -80,20 +80,14 @@ public class CZShareCom extends PluginForHost {
 
     @Override
     public String rewriteHost(String host) {
-        if ("czshare.com".equals(getHost())) {
-            if (host == null || "czshare.com".equals(host)) {
-                return "sdilej.cz";
-            }
+        if ("czshare.com".equals(host)) {
+            return "sdilej.cz";
         }
         return super.rewriteHost(host);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        /* Mark old links as offline */
-        if (downloadLink.getDownloadURL().contains("czshare.com/")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);

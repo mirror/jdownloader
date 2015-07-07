@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allmyvideos.net", "allmyvids.de" }, urls = { "https?://(www\\.)?allmyvideos\\.net/((?:embed-)?[a-z0-9]{12}|v/v\\-[A-Za-z0-9]+)", "et65iuz549tgfr4u89ztg5zht58g590jh40erh7UNUSEDREGEXeTGig5rik" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allmyvideos.net" }, urls = { "https?://(www\\.)?allmyvideos\\.net/((?:embed-)?[a-z0-9]{12}|v/v\\-[A-Za-z0-9]+)" }, flags = { 0 })
 public class AllMyVideosNet extends PluginForHost {
 
     public AllMyVideosNet(PluginWrapper wrapper) {
