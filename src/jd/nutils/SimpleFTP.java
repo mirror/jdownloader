@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-/* 
+/*
  Copyright Paul James Mutton, 2001-2004, http://www.jibble.org/
 
  This file is part of SimpleFTP.
@@ -52,7 +52,6 @@ import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.auth.AuthenticationController;
@@ -62,7 +61,7 @@ import org.jdownloader.logging.LogController;
 /**
  * SimpleFTP is a simple package that implements a Java FTP client. With SimpleFTP, you can connect to an FTP server and upload multiple
  * files.
- * 
+ *
  * Based on Work of Paul Mutton http://www.jibble.org/
  */
 public class SimpleFTP {
@@ -136,7 +135,7 @@ public class SimpleFTP {
 
     /**
      * returns current value of 'binarymode'.
-     * 
+     *
      * @since JD2
      * */
     public boolean isBinary() {
@@ -161,6 +160,15 @@ public class SimpleFTP {
         connect(host, port, "anonymous", "anonymous");
     }
 
+    private String[] getLines(String lines) {
+        final String[] ret = Regex.getLines(lines);
+        if (ret.length == 0) {
+            return new String[] { lines.trim() };
+        } else {
+            return ret;
+        }
+    }
+
     /**
      * Connects to an FTP server and logs in with the supplied username and password.
      */
@@ -176,8 +184,11 @@ public class SimpleFTP {
         String response = readLines(new int[] { 220 }, "SimpleFTP received an unknown response when connecting to the FTP server: ");
         sendLine("USER " + user);
         response = readLines(new int[] { 230, 331 }, "SimpleFTP received an unknown response after sending the user: ");
-        sendLine("PASS " + pass);
-        response = readLines(new int[] { 230 }, "SimpleFTP was unable to log in with the supplied password: ");
+        String[] lines = getLines(response);
+        if (lines[lines.length - 1].startsWith("331")) {
+            sendLine("PASS " + pass);
+            response = readLines(new int[] { 230 }, "SimpleFTP was unable to log in with the supplied password: ");
+        }
         sendLine("PWD");
         while ((response = readLine()).startsWith("230") || response.charAt(0) >= '9' || response.charAt(0) <= '0') {
 
@@ -485,7 +496,7 @@ public class SimpleFTP {
 
     /**
      * creates directories
-     * 
+     *
      * @param cw
      * @return
      * @throws IOException
@@ -671,7 +682,7 @@ public class SimpleFTP {
 
     /**
      * returns permissionmask, ?, user?, group?, size?, date, name
-     * 
+     *
      * @return
      * @throws IOException
      */
@@ -711,7 +722,7 @@ public class SimpleFTP {
 
     /**
      * permissionmask, ?, user?, group?, size?, date, name
-     * 
+     *
      * @param path
      * @return
      * @throws IOException
@@ -735,7 +746,7 @@ public class SimpleFTP {
 
     /**
      * COnnect to the url.does not change directory
-     * 
+     *
      * @param url
      * @throws IOException
      */
