@@ -53,7 +53,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedwon.info", "filedwon.net", "filedwon.com" }, urls = { "https?://(www\\.)?filedwon\\.(com|net|info)/[a-z0-9]{12}", "AJSfausdfasfasdflasdfaodfas", "589ut90j59ujktojhzDELETE_MErf56uj43zgfjz" }, flags = { 2, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filedwon.info", "filedwon.com" }, urls = { "https?://(www\\.)?filedwon\\.(com|net|info)/[a-z0-9]{12}", "589ut90j59ujktojhzDELETE_MErf56uj43zgfjz" }, flags = { 2, 0 })
 public class FileDwonCom extends PluginForHost {
 
     private String               correctedBR                  = "";
