@@ -32,12 +32,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.StringUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metalinker.org" }, urls = { "http://[\\d\\w\\.:\\-@]*/.*?\\.metalink" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metalinker.org" }, urls = { "http://[\\d\\w\\.:\\-@]*/.*?\\.(metalink|meta4)" }, flags = { 0 })
 public class MtLnk extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptedLinks;
@@ -70,20 +71,20 @@ public class MtLnk extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptString(String metalink) {
         decryptedLinks = new ArrayList<DownloadLink>();
-        DefaultHandler handler = new MetalinkSAXHandler();
+        final DefaultHandler handler = new MetalinkSAXHandler();
         // Use the default (non-validating) parser
-        SAXParserFactory factory = SAXParserFactory.newInstance();
+        final SAXParserFactory factory = SAXParserFactory.newInstance();
         try {
             // Parse the input
-            SAXParser saxParser = factory.newSAXParser();
-            StringReader input = new StringReader(metalink);
+            final SAXParser saxParser = factory.newSAXParser();
+            final StringReader input = new StringReader(metalink);
             saxParser.parse(new InputSource(input), handler);
         } catch (Throwable t) {
             logger.log(Level.SEVERE, t.getMessage(), t);
         }
 
         if (packageName != null) {
-            FilePackage pgk = FilePackage.getInstance();
+            final FilePackage pgk = FilePackage.getInstance();
             pgk.setName(packageName);
             if (publisherName != null && publisherURL != null) {
                 pgk.setComment(publisherName + " (" + publisherURL + ")");
@@ -98,10 +99,14 @@ public class MtLnk extends PluginForDecrypt {
     }
 
     public class MetalinkSAXHandler extends DefaultHandler {
-        private CharArrayWriter text  = new CharArrayWriter();
+        private CharArrayWriter text   = new CharArrayWriter();
         Attributes              atr;
-        String                  path  = "";
-        private DownloadLink    dLink = null;
+        String                  path   = "";
+        private DownloadLink    dLink  = null;
+
+        private String          md5    = null;
+        private String          sha1   = null;
+        private String          sha256 = null;
 
         public MetalinkSAXHandler() {
         }
@@ -109,7 +114,15 @@ public class MtLnk extends PluginForDecrypt {
         public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
             if (qName.equals("file")) {
                 /* new file begins */
+                md5 = null;
+                sha1 = null;
+                sha256 = null;
                 dLink = new DownloadLink(null, null, null, null, true);
+                final String fileName = attributes.getValue("name");
+                if (StringUtils.isNotEmpty(fileName)) {
+                    dLink.setFinalFileName(fileName);
+                    dLink.setForcedFileName(fileName);
+                }
             }
             path += "." + qName;
             this.atr = attributes;
@@ -122,26 +135,30 @@ public class MtLnk extends PluginForDecrypt {
                 publisherName = text.toString().trim();
             } else if (path.equalsIgnoreCase(".metalink.publisher.url")) {
                 publisherURL = text.toString().trim();
-            } else if (path.equalsIgnoreCase(".metalink.files.file.size")) {
-                dLink.setDownloadSize(Long.parseLong(text.toString().trim()));
-            } else if (path.equalsIgnoreCase(".metalink.files.file.verification.hash")) {
-                if (atr.getValue("type").equalsIgnoreCase("md5")) {
-                    dLink.setMD5Hash(text.toString().trim());
-                } else if (atr.getValue("type").equalsIgnoreCase("sha1")) {
-                    dLink.setSha1Hash(text.toString().trim());
+            } else if (path.equalsIgnoreCase(".metalink.files.file.size") || path.equalsIgnoreCase(".metalink.file.size")) {
+                /* V3 and V4 */
+                dLink.setVerifiedFileSize(Long.parseLong(text.toString().trim()));
+            } else if (path.equalsIgnoreCase(".metalink.files.file.verification.hash") || path.equalsIgnoreCase(".metalink.file.hash")) {
+                final String hashType = atr.getValue("type");
+                if ("md5".equalsIgnoreCase(hashType)) {
+                    md5 = text.toString().trim();
+                } else if ("sha1".equalsIgnoreCase(hashType)) {
+                    sha1 = text.toString().trim();
+                } else if ("sha-256".equalsIgnoreCase(hashType)) {
+                    sha256 = text.toString().trim();
                 }
-            } else if (path.equalsIgnoreCase(".metalink.files.file.resources.url")) {
-                DownloadLink downloadLink = createDownloadlink(text.toString().trim());
-                try {
-                    /* needed to avoid rename by plugin */
-                    downloadLink.setForcedFileName(dLink.getFinalFileName());
-                } catch (Throwable e) {
-                    /* forceFileName not available in 0.957 public */
-                }
+            } else if (path.equalsIgnoreCase(".metalink.files.file.resources.url") || path.equalsIgnoreCase(".metalink.file.url")) {
+                final DownloadLink downloadLink = createDownloadlink(text.toString().trim());
+                downloadLink.setForcedFileName(dLink.getForcedFileName());
                 downloadLink.setFinalFileName(dLink.getFinalFileName());
-                downloadLink.setDownloadSize(dLink.getDownloadSize());
-                downloadLink.setMD5Hash(dLink.getMD5Hash());
-                downloadLink.setSha1Hash(dLink.getSha1Hash());
+                downloadLink.setVerifiedFileSize(dLink.getVerifiedFileSize());
+                if (sha256 != null) {
+                    downloadLink.setSha256Hash(sha256);
+                } else if (sha1 != null) {
+                    downloadLink.setSha1Hash(sha1);
+                } else if (md5 != null) {
+                    downloadLink.setMD5Hash(md5);
+                }
                 decryptedLinks.add(downloadLink);
             }
             path = path.substring(0, path.length() - qName.length() - 1);
