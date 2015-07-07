@@ -105,6 +105,10 @@ public class ContainerPluginController {
                 continue;
             }
             String exs[] = new Regex(act.getSupportedLinks().pattern(), "\\.([a-zA-Z0-9]+)").getColumn(0);
+            if (exs.length == 0) {
+                final String exts = new Regex(act.getSupportedLinks().pattern(), "\\.\\((.+)\\)$").getMatch(0);
+                exs = new Regex(exts, "([a-zA-Z0-9]+)").getColumn(0);
+            }
             for (String ex : exs) {
                 if (sb.length() > 0) {
                     sb.append("|");
