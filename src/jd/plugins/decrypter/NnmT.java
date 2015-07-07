@@ -31,16 +31,16 @@ public class NnmT extends PluginForDecrypt {
 
     /**
      * Returns the annotations names array
-     * 
+     *
      * @return
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "anonym.to", "dereferer.info" };
+        return new String[] { "anonym.to" };
     }
 
     /**
      * returns the annotation pattern array
-     * 
+     *
      * @return
      */
     public static String[] getAnnotationUrls() {
@@ -56,7 +56,7 @@ public class NnmT extends PluginForDecrypt {
 
     /**
      * Returns the annotations flags array
-     * 
+     *
      * @return
      */
     public static int[] getAnnotationFlags() {
