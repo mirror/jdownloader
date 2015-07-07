@@ -130,6 +130,7 @@ public class PandoraTV extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String dllink = br.getRegex("\"(.*?)\"").getMatch(0, 1);
+        downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
         dl = BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
