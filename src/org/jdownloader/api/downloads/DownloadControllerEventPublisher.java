@@ -396,6 +396,11 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
                 dls.put("uuid", dl.getUniqueID().getID());
                 dls.put("reset", "true");
                 fire(BASIC_EVENT.LINK_UPDATE.name() + ".reset", dls, BASIC_EVENT.LINK_UPDATE.name() + ".reset." + dl.getUniqueID().getID());
+
+                dls = new HashMap<String, Object>();
+                dls.put("uuid", dl.getUniqueID().getID());
+                dls.put("reset", "true");
+                fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".reset", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".reset." + parent.getUniqueID().getID());
                 break;
             case RESUMABLE:
                 break;
@@ -449,16 +454,15 @@ public class DownloadControllerEventPublisher implements EventPublisher, Downloa
 
         // package
 
-        dls = new HashMap<String, Object>();
-        dls.put("uuid", dl.getUniqueID().getID());
-
         FilePackageView fpView = new FilePackageView(dl.getFilePackage());
         fpView.aggregate();
         FilePackageAPIStorableV2 dpss = RemoteAPIController.getInstance().getDownloadsAPIV2().setStatus(new FilePackageAPIStorableV2(), fpView);
+        dls = new HashMap<String, Object>();
+        dls.put("uuid", dl.getFilePackage().getUniqueID().getID());
         dls.put("statusIconKey", dpss.getStatusIconKey());
         dls.put("status", dpss.getStatus());
 
-        fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".status", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".status." + dl.getUniqueID().getID());
+        fire(BASIC_EVENT.PACKAGE_UPDATE.name() + ".status", dls, BASIC_EVENT.PACKAGE_UPDATE.name() + ".status." + dl.getFilePackage().getUniqueID().getID());
 
     }
 

@@ -1,11 +1,8 @@
 package org.jdownloader.api.downloads.v2;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.swing.Icon;
 
@@ -20,8 +17,6 @@ import jd.plugins.PluginProgress;
 import jd.plugins.PluginStateCollection;
 
 import org.appwork.remoteapi.exceptions.BadParameterException;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.utils.PackageControllerUtils;
@@ -30,7 +25,7 @@ import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
+import org.jdownloader.myjdownloader.client.bindings.CleanupActionOptions;
 import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
 import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsListInterface;
@@ -38,7 +33,6 @@ import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.settings.UrlDisplayType;
-import org.jdownloader.translate._JDT;
 
 public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
@@ -516,79 +510,12 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     @Override
     public void movetoNewPackage(long[] linkIds, long[] pkgIds, String newPkgName, String downloadPath) throws BadParameterException {
-        if (StringUtils.isEmpty(newPkgName)) {
-            throw new BadParameterException("empty package name");
-        }
-
-        final SelectionInfo<FilePackage, DownloadLink> selection = packageControllerUtils.getSelectionInfo(linkIds, pkgIds);
-        final FilePackage newPackage = FilePackage.getInstance();
-        newPackage.setName(newPkgName);
-        if (!StringUtils.isEmpty(downloadPath)) {
-            newPackage.setDownloadDirectory(downloadPath);
-        }
-        DownloadController.getInstance().moveOrAddAt(newPackage, selection.getChildren(), 0, -1);
+        packageControllerUtils.movetoNewPackage(linkIds, pkgIds, newPkgName, downloadPath);
     }
 
     @Override
     public void splitPackageByHoster(long[] linkIds, long[] pkgIds) {
-        final SelectionInfo<FilePackage, DownloadLink> selection = packageControllerUtils.getSelectionInfo(linkIds, pkgIds);
-        final HashMap<FilePackage, HashMap<String, ArrayList<DownloadLink>>> splitMap = new HashMap<FilePackage, HashMap<String, ArrayList<DownloadLink>>>();
-        int insertAt = -1;
-        for (AbstractNode child : selection.getChildren()) {
-            if (child instanceof DownloadLink) {
-                final DownloadLink cL = (DownloadLink) child;
-                final FilePackage parent = cL.getParentNode();
-                HashMap<String, ArrayList<DownloadLink>> parentMap = splitMap.get(parent);
-                if (parentMap == null) {
-                    parentMap = new HashMap<String, ArrayList<DownloadLink>>();
-                    splitMap.put(parent, parentMap);
-                }
-                final String host = cL.getDomainInfo().getTld();
-                ArrayList<DownloadLink> hostList = parentMap.get(host);
-                if (hostList == null) {
-                    hostList = new ArrayList<DownloadLink>();
-                    parentMap.put(host, hostList);
-                }
-                hostList.add(cL);
-            }
-        }
-
-        final String nameFactory = JsonConfig.create(LinkgrabberSettings.class).getSplitPackageNameFactoryPattern();
-        final Iterator<Entry<FilePackage, HashMap<String, ArrayList<DownloadLink>>>> it = splitMap.entrySet().iterator();
-        while (it.hasNext()) {
-            final Entry<FilePackage, HashMap<String, ArrayList<DownloadLink>>> next = it.next();
-            final FilePackage sourcePackage = next.getKey();
-            final HashMap<String, ArrayList<DownloadLink>> items = next.getValue();
-            final Iterator<Entry<String, ArrayList<DownloadLink>>> it2 = items.entrySet().iterator();
-            while (it2.hasNext()) {
-                final Entry<String, ArrayList<DownloadLink>> next2 = it2.next();
-                final String host = next2.getKey();
-                final String newPackageName = getNewPackageName(nameFactory, sourcePackage.getName(), host);
-                final FilePackage newPkg;
-                newPkg = FilePackage.getInstance();
-                sourcePackage.copyPropertiesTo(newPkg);
-
-                newPkg.setName(newPackageName);
-                DownloadController.getInstance().moveOrAddAt(newPkg, next2.getValue(), 0, insertAt);
-                insertAt++;
-            }
-        }
-    }
-
-    public String getNewPackageName(String nameFactory, String oldPackageName, String host) {
-        if (StringUtils.isEmpty(nameFactory)) {
-            if (!StringUtils.isEmpty(oldPackageName)) {
-                return oldPackageName;
-            }
-            return host;
-        }
-        if (!StringUtils.isEmpty(oldPackageName)) {
-            nameFactory = nameFactory.replaceAll("\\{PACKAGENAME\\}", oldPackageName);
-        } else {
-            nameFactory = nameFactory.replaceAll("\\{PACKAGENAME\\}", _JDT._.LinkCollector_addCrawledLink_variouspackage());
-        }
-        nameFactory = nameFactory.replaceAll("\\{HOSTNAME\\}", host);
-        return nameFactory;
+        packageControllerUtils.splitPackageByHoster(linkIds, pkgIds);
     }
 
     @Override
@@ -694,4 +621,8 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         return SelectionInfoUtils.getURLs(packageControllerUtils.getSelectionInfo(linkIds, packageIds), types);
     }
 
+    @Override
+    public void cleanup(final long[] linkIds, final long[] packageIds, final CleanupActionOptions.Action action, final CleanupActionOptions.Mode mode, final CleanupActionOptions.SelectionType selectionType) throws BadParameterException {
+        packageControllerUtils.cleanup(linkIds, packageIds, action, mode, selectionType);
+    }
 }

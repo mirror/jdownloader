@@ -6,6 +6,7 @@ import java.util.Map;
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 import org.appwork.remoteapi.exceptions.BadParameterException;
+import org.jdownloader.myjdownloader.client.bindings.CleanupActionOptions;
 import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
 import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 
@@ -102,5 +103,7 @@ public interface DownloadsAPIV2 extends RemoteAPIInterface {
     void movetoNewPackage(long[] linkIds, long[] pkgIds, String newPkgName, String downloadPath) throws BadParameterException;
 
     void splitPackageByHoster(long[] linkIds, long[] pkgIds);
+
+    void cleanup(final long[] linkIds, final long[] packageIds, final CleanupActionOptions.Action action, final CleanupActionOptions.Mode mode, final CleanupActionOptions.SelectionType selectionType) throws BadParameterException;
 
 }

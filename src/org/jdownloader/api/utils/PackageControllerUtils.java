@@ -3,18 +3,34 @@ package org.jdownloader.api.utils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.controlling.packagecontroller.PackageController;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
 
+import org.appwork.remoteapi.exceptions.BadParameterException;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
+import org.jdownloader.myjdownloader.client.bindings.CleanupActionOptions;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.translate._JDT;
+import org.jdownloader.utils.JDFileUtils;
 
 public class PackageControllerUtils<PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> {
 
@@ -50,6 +66,24 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
 
     public SelectionInfo<PackageType, ChildType> getSelectionInfo(long[] linkIds, long[] packageIds) {
         return new SelectionInfo<PackageType, ChildType>(null, getAbstractNodes(linkIds, packageIds));
+    }
+
+    public PackageType getPackageInstanceByChildrenType(ChildType ct) {
+        if (ct instanceof DownloadLink) {
+            return (PackageType) FilePackage.getInstance();
+        } else if (ct instanceof CrawledLink) {
+            return (PackageType) new CrawledPackage();
+        }
+        return null;
+    }
+
+    public PackageType getPackageInstance(PackageType ct) {
+        if (ct instanceof FilePackage) {
+            return (PackageType) FilePackage.getInstance();
+        } else if (ct instanceof CrawledPackage) {
+            return (PackageType) new CrawledPackage();
+        }
+        return null;
     }
 
     @SuppressWarnings("unchecked")
@@ -184,5 +218,201 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
             }
         }
         return result;
+    }
+
+    public void movetoNewPackage(long[] linkIds, long[] pkgIds, String newPkgName, String downloadPath) throws BadParameterException {
+        if (StringUtils.isEmpty(newPkgName)) {
+            throw new BadParameterException("empty package name");
+        }
+
+        final SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(linkIds, pkgIds);
+        if (selection.getChildren().size() > 0) {
+            final PackageType pt = getPackageInstanceByChildrenType(selection.getChildren().get(0));
+            setPackageName(pt, newPkgName);
+            if (!StringUtils.isEmpty(downloadPath)) {
+                setDirectory(pt, downloadPath);
+            }
+            if (pt != null) {
+                packageController.moveOrAddAt(pt, selection.getChildren(), 0, -1);
+            }
+        }
+    }
+
+    public PackageType setPackageName(PackageType pt, String pkgName) {
+        if (pt instanceof FilePackage) {
+            ((FilePackage) pt).setName(pkgName);
+        } else if (pt instanceof CrawledPackage) {
+            ((CrawledPackage) pt).setName(pkgName);
+        }
+        return pt;
+    }
+
+    public PackageType copyPropertiesTo(PackageType sourcePkg, PackageType destPkg) {
+        if (sourcePkg instanceof FilePackage && destPkg instanceof FilePackage) {
+            ((FilePackage) sourcePkg).copyPropertiesTo((FilePackage) destPkg);
+        } else if (sourcePkg instanceof CrawledPackage && destPkg instanceof CrawledPackage) {
+            ((CrawledPackage) sourcePkg).copyPropertiesTo((CrawledPackage) destPkg);
+        } else {
+            throw new IllegalArgumentException("source and destination package not the same types");
+        }
+        return destPkg;
+    }
+
+    public PackageType setDirectory(PackageType pt, String directory) {
+        if (pt instanceof FilePackage) {
+            ((FilePackage) pt).setDownloadDirectory(directory);
+        } else if (pt instanceof CrawledPackage) {
+            ((CrawledPackage) pt).setDownloadFolder(directory);
+        }
+        return pt;
+    }
+
+    public void splitPackageByHoster(long[] linkIds, long[] pkgIds) {
+        final SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(linkIds, pkgIds);
+        final HashMap<PackageType, HashMap<String, ArrayList<ChildType>>> splitMap = new HashMap<PackageType, HashMap<String, ArrayList<ChildType>>>();
+        int insertAt = -1;
+        for (AbstractNode child : selection.getChildren()) {
+            final ChildType cL = (ChildType) child;
+            final PackageType parent = cL.getParentNode();
+            HashMap<String, ArrayList<ChildType>> parentMap = splitMap.get(parent);
+            if (parentMap == null) {
+                parentMap = new HashMap<String, ArrayList<ChildType>>();
+                splitMap.put(parent, parentMap);
+            }
+            final String host = cL.getDomainInfo().getTld();
+            ArrayList<ChildType> hostList = parentMap.get(host);
+            if (hostList == null) {
+                hostList = new ArrayList<ChildType>();
+                parentMap.put(host, hostList);
+            }
+            hostList.add(cL);
+        }
+
+        final String nameFactory = JsonConfig.create(LinkgrabberSettings.class).getSplitPackageNameFactoryPattern();
+        final Iterator<Entry<PackageType, HashMap<String, ArrayList<ChildType>>>> it = splitMap.entrySet().iterator();
+        while (it.hasNext()) {
+            final Entry<PackageType, HashMap<String, ArrayList<ChildType>>> next = it.next();
+            final PackageType sourcePackage = next.getKey();
+            final HashMap<String, ArrayList<ChildType>> items = next.getValue();
+            final Iterator<Entry<String, ArrayList<ChildType>>> it2 = items.entrySet().iterator();
+            while (it2.hasNext()) {
+                final Entry<String, ArrayList<ChildType>> next2 = it2.next();
+                final String host = next2.getKey();
+                final String newPackageName = getNewPackageName(nameFactory, sourcePackage.getName(), host);
+                PackageType newPkg = getPackageInstanceByChildrenType(next2.getValue().get(0));
+                copyPropertiesTo(sourcePackage, newPkg);
+                setPackageName(newPkg, newPackageName);
+                packageController.moveOrAddAt(newPkg, next2.getValue(), 0, insertAt);
+                insertAt++;
+            }
+        }
+    }
+
+    public String getNewPackageName(String nameFactory, String oldPackageName, String host) {
+        if (StringUtils.isEmpty(nameFactory)) {
+            if (!StringUtils.isEmpty(oldPackageName)) {
+                return oldPackageName;
+            }
+            return host;
+        }
+        if (!StringUtils.isEmpty(oldPackageName)) {
+            nameFactory = nameFactory.replaceAll("\\{PACKAGENAME\\}", oldPackageName);
+        } else {
+            nameFactory = nameFactory.replaceAll("\\{PACKAGENAME\\}", _JDT._.LinkCollector_addCrawledLink_variouspackage());
+        }
+        nameFactory = nameFactory.replaceAll("\\{HOSTNAME\\}", host);
+        return nameFactory;
+    }
+
+    public boolean setDownloadDirectory(String directory, long[] packageIds) {
+        final SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(new long[] {}, packageIds);
+        if (selection.getPackage() != null) {
+            final PackageType pt = selection.getPackage();
+            if (pt instanceof FilePackage) {
+                ((FilePackage) pt).setDownloadDirectory(directory);
+                return true;
+            } else if (pt instanceof CrawledPackage) {
+                ((CrawledPackage) pt).setDownloadFolder(directory);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void cleanup(long[] linkIds, long[] pkgIds, CleanupActionOptions.Action action, CleanupActionOptions.Mode mode, CleanupActionOptions.SelectionType selectionType) throws BadParameterException {
+        SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(linkIds, pkgIds);
+        if (selection.isEmpty()) {
+            throw new BadParameterException("empty selection");
+        } else {
+            final List<ChildType> nodesToDelete = new ArrayList<ChildType>();
+            switch (selectionType) {
+            case SELECTED:
+            case ALL:
+                for (ChildType ct : selection.getChildren()) {
+                    if (shouldDeleteLink(action, ct)) {
+                        nodesToDelete.add(ct);
+                    }
+                }
+                break;
+            case UNSELECTED:
+                // TODO: implement after remote views were implemented
+                throw new BadParameterException("SelectionType UNSELECTED not yet supported");
+            case NONE:
+                return;
+            }
+            if (nodesToDelete.size() > 0) {
+                packageController.removeChildren(nodesToDelete);
+                if (nodesToDelete.get(0) instanceof DownloadLink) {
+                    final List<DownloadLink> links = (List<DownloadLink>) nodesToDelete;
+                    switch (mode) {
+                    case REMOVE_LINKS_ONLY:
+                        break;
+                    case REMOVE_LINKS_AND_DELETE_FILES:
+                        DownloadWatchDog.getInstance().delete(links, DeleteOption.NULL);
+                        break;
+                    case REMOVE_LINKS_AND_RECYCLE_FILES:
+                        DownloadWatchDog.getInstance().delete(links, JDFileUtils.isTrashSupported() ? DeleteOption.RECYCLE : DeleteOption.NULL);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    public boolean shouldDeleteLink(CleanupActionOptions.Action action, ChildType ct) {
+        switch (action) {
+        case DELETE_ALL:
+            return true;
+        case DELETE_DISABLED:
+            if (!ct.isEnabled()) {
+                return true;
+            }
+            break;
+        case DELETE_FAILED:
+            if (ct instanceof DownloadLink) {
+                return FinalLinkState.CheckFailed(((DownloadLink) ct).getFinalLinkState());
+            }
+            return false;
+        case DELETE_FINISHED:
+            if (ct instanceof DownloadLink) {
+                return FinalLinkState.CheckFinished(((DownloadLink) ct).getFinalLinkState());
+            }
+            return false;
+        case DELETE_OFFLINE:
+            if (ct instanceof DownloadLink) {
+                return ((DownloadLink) ct).getFinalLinkState() == FinalLinkState.OFFLINE;
+            } else if (ct instanceof CrawledLink) {
+                return ((CrawledLink) ct).getDownloadLink().isAvailabilityStatusChecked() && ((CrawledLink) ct).getDownloadLink().getAvailableStatus() == AvailableStatus.FALSE;
+            }
+            return false;
+        case DELETE_DUPE:
+            if (ct instanceof CrawledLink) {
+                return LinkCollector.getInstance().containsLinkId(((CrawledLink) ct).getLinkID());
+            }
+            return false;
+        default:
+            return false;
+        }
+        return false;
     }
 }

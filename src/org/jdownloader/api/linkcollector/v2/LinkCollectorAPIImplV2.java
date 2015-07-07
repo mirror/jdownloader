@@ -44,6 +44,7 @@ import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.myjdownloader.client.bindings.CleanupActionOptions;
 import org.jdownloader.myjdownloader.client.bindings.PriorityStorable;
 import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.LinkgrabberInterface;
@@ -600,5 +601,20 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
             }
         }
         return SelectionInfoUtils.getURLs(packageControllerUtils.getSelectionInfo(linkIds, packageIds), types);
+    }
+
+    @Override
+    public void movetoNewPackage(long[] linkIds, long[] pkgIds, String newPkgName, String downloadPath) throws BadParameterException {
+        packageControllerUtils.movetoNewPackage(linkIds, pkgIds, newPkgName, downloadPath);
+    }
+
+    @Override
+    public void splitPackageByHoster(long[] linkIds, long[] pkgIds) {
+        packageControllerUtils.splitPackageByHoster(linkIds, pkgIds);
+    }
+
+    @Override
+    public void cleanup(final long[] linkIds, final long[] packageIds, final CleanupActionOptions.Action action, final CleanupActionOptions.Mode mode, final CleanupActionOptions.SelectionType selectionType) throws BadParameterException {
+        packageControllerUtils.cleanup(linkIds, packageIds, action, mode, selectionType);
     }
 }
