@@ -228,7 +228,7 @@ public class DataFileCom extends PluginForHost {
         public void eval(String eval) throws ScriptException {
 
             engine.eval(eval);
-            Object value = engine.get("WcmpFN");
+
         }
 
         public String atob(String string) {
@@ -269,6 +269,9 @@ public class DataFileCom extends PluginForHost {
                         // cleanup
                         engine.eval("delete java;");
                         engine.eval("delete jd;");
+                        // load Env in Trusted Thread
+                        engine.eval("log('Java Env Loaded');");
+
                     }
 
                 });
