@@ -21,6 +21,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import jd.plugins.AddonPanel;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -33,7 +37,7 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.antistandby.translate.AntistandbyTranslation;
 import org.jdownloader.gui.translate._GUI;
 
-public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, AntistandbyTranslation> {
+public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, AntistandbyTranslation> implements ShutdownVetoListener {
 
     private final AtomicReference<Thread>              currentThread = new AtomicReference<Thread>(null);
     private ExtensionConfigPanel<AntiStandbyExtension> configPanel;
@@ -63,7 +67,7 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
 
     @Override
     protected void stop() throws StopException {
-        currentThread.set(null);
+        setThread(null);
     }
 
     protected boolean isAntiStandbyThread() {
@@ -79,6 +83,21 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
         return true;
     }
 
+    private void setThread(final Thread thread) {
+        if (thread != null) {
+            ShutdownController.getInstance().addShutdownVetoListener(this);
+        } else {
+            ShutdownController.getInstance().removeShutdownVetoListener(this);
+        }
+        final Thread old = currentThread.getAndSet(thread);
+        if (thread != null) {
+            thread.start();
+        }
+        if (old != null) {
+            old.interrupt();
+        }
+    }
+
     @Override
     protected void start() throws StartException {
         new Thread("AntiStandByLoader") {
@@ -86,15 +105,12 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
                 try {
                     if (CrossSystem.isWindows()) {
                         final Thread thread = new WindowsAntiStandby(AntiStandbyExtension.this);
-                        currentThread.set(thread);
-                        thread.start();
+                        setThread(thread);
                     } else if (CrossSystem.isMac()) {
                         final Thread thread = new MacAntiStandBy(AntiStandbyExtension.this);
-                        currentThread.set(thread);
-                        thread.start();
+                        setThread(thread);
                     }
                 } catch (Throwable e) {
-
                     ExceptionDialog d = new ExceptionDialog(UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_COUNTDOWN | UIOManager.BUTTONS_HIDE_OK, _GUI._.lit_error_occured(), _GUI._.special_char_lib_loading_problem(Application.getHome(), AntiStandbyExtension.this.getName()), e, null, _GUI._.lit_close()) {
                         @Override
                         public ModalityType getModalityType() {
@@ -102,14 +118,10 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
                         }
                     };
                     UIOManager.I().show(ExceptionDialogInterface.class, d);
-
                     logger.log(e);
                     try {
-
                         AntiStandbyExtension.this.setEnabled(false);
-
                     } catch (Throwable e1) {
-
                         logger.log(e1);
                     }
                 }
@@ -143,6 +155,24 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
     @Override
     public boolean isHeadlessRunnable() {
         return true;
+    }
+
+    @Override
+    public void onShutdown(ShutdownRequest request) {
+        setThread(null);
+    }
+
+    @Override
+    public void onShutdownVeto(ShutdownRequest request) {
+    }
+
+    @Override
+    public void onShutdownVetoRequest(ShutdownRequest request) throws ShutdownVetoException {
+    }
+
+    @Override
+    public long getShutdownVetoPriority() {
+        return 0;
     }
 
 }

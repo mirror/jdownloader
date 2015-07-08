@@ -1,7 +1,6 @@
 package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -12,7 +11,6 @@ import jd.plugins.FilePackageView;
 import org.appwork.utils.Application;
 import org.jdownloader.extensions.eventscripter.ScriptAPI;
 import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.plugins.FinalLinkState;
 
@@ -41,34 +39,18 @@ public class FilePackageSandBox {
             return null;
         }
 
-        final HashSet<String> ret = new HashSet<String>();
         final ArrayList<ArchiveSandbox> list = new ArrayList<ArchiveSandbox>();
 
         filePackage.getModifyLock().runReadLock(new Runnable() {
 
             @Override
             public void run() {
-                for (DownloadLink link : filePackage.getChildren()) {
-                    Archive archive = ArchiveValidator.EXTENSION.getArchiveByFactory(new DownloadLinkArchiveFactory(link));
-                    if (archive != null) {
-                        if (ret.add(archive.getArchiveID())) {
-                            list.add(new ArchiveSandbox(archive));
-                        }
-                        continue;
-                    }
-                    ArrayList<Object> list = new ArrayList<Object>();
-                    list.add(link);
-                    List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(list);
-
-                    archive = (archives == null || archives.size() == 0) ? null : archives.get(0);
-                    if (archive != null) {
-                        if (ret.add(archive.getArchiveID())) {
-                            list.add(new ArchiveSandbox(archive));
-                        }
-
+                final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(filePackage.getChildren());
+                if (archives != null) {
+                    for (final Archive archive : archives) {
+                        list.add(new ArchiveSandbox(archive));
                     }
                 }
-
             }
         });
 
