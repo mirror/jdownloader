@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 public class SparseFile {
-    // Bug in Windows 7....
+    // Bug in Windows 7...
     // https://support.microsoft.com/en-us/kb/2708811?wa=wsignin1.0
     public static boolean createSparseFile(File file) throws IOException {
         if (!file.exists()) {
