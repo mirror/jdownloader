@@ -27,9 +27,24 @@ public class CBHAccount {
         this.skipped = skipped;
     }
 
-    private int    requests;
-    private int    solved;
-    private int    skipped;
+    private String user;
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    private int  requests;
+    private int  solved;
+    private int  skipped;
+    private long createTime = System.currentTimeMillis();
+
+    public long getCreateTime() {
+        return createTime;
+    }
 
     private String error;
 

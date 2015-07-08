@@ -61,7 +61,11 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-        // TODO: ACCOUNT BASED EVAULATION OF CREDITS HERE
+        try {
+            checkForEnoughCredits();
+        } catch (SolverException e) {
+            return false;
+        }
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
@@ -87,20 +91,19 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
     private AtomicInteger counterSolved      = new AtomicInteger();
     private AtomicInteger counterInterrupted = new AtomicInteger();
     private AtomicInteger counter            = new AtomicInteger();
+    private CBHAccount    lastAccount        = null;
 
     @Override
     protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
+        checkForEnoughCredits();
         CBHAccount acc = loadAccount();
         if (StringUtils.isEmpty(acc.getError())) {
             accountStatusString = acc.getBalance() + " Credits";
         } else {
             accountStatusString = acc.getError();
         }
-        // no code to actually throw exception or when getError == true, in loadAccount?? why??
-        // can not start task under + 10 credits
-        if (acc.getBalance() < 10) {
-            throw new SolverException("Not Enough Credits for Task");
-        }
+
+        checkForEnoughCredits();
 
         BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
         String user = config.getUser();
@@ -162,11 +165,27 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
 
     }
 
+    private void checkForEnoughCredits() throws SolverException {
+        if (lastAccount != null) {
+            // valid cached account
+            if (StringUtils.equals(config.getUser(), lastAccount.getUser())) {
+                // user did not change
+                if ((System.currentTimeMillis() - lastAccount.getCreateTime()) < 5 * 60 * 1000l) {
+                    // cache is not older than 5 minutes
+                    if (lastAccount.getBalance() < 10) {
+                        throw new SolverException("Not Enough Credits for Task");
+                    }
+                }
+            }
+        }
+    }
+
     public CBHAccount loadAccount() {
         CBHAccount ret = new CBHAccount();
         ret.setRequests(counter.get());
         ret.setSkipped(counterInterrupted.get());
         ret.setSolved(counterSolved.get());
+        ret.setUser(config.getUser());
         try {
             Browser br = new Browser();
             br.setDebug(true);
@@ -182,6 +201,7 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
 
             ret.setError(e.getMessage());
         }
+        lastAccount = ret;
         return ret;
     }
 
