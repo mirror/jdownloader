@@ -29,9 +29,16 @@ import jd.plugins.PluginException;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.InputDialog;
+import org.jdownloader.dialogs.NewPasswordDialog;
+import org.jdownloader.dialogs.NewPasswordDialogInterface;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -45,6 +52,23 @@ public class GoogleHelper {
 
     public void setCacheEnabled(boolean cacheEnabled) {
         this.cacheEnabled = cacheEnabled;
+    }
+
+    LogSource logger = null;
+
+    public LogSource getLogger() {
+        return logger;
+    }
+
+    public void setLogger(LogSource logger) {
+        this.logger = logger;
+    }
+
+    private void log(String str) {
+        LogSource logger = getLogger();
+        if (logger != null) {
+            logger.info(str);
+        }
     }
 
     public GoogleHelper(Browser ytbr) {
@@ -88,6 +112,7 @@ public class GoogleHelper {
         br.setFollowRedirects(false);
         int wait = 0;
         try {
+            log("Google Login: POST " + url + " Data: " + post);
             br.postPage(url, post);
             url = null;
             if (br.getRedirectLocation() != null) {
@@ -127,7 +152,7 @@ public class GoogleHelper {
                 if (wait > 0) {
                     Thread.sleep(wait);
                 }
-
+                log("Google Login: GET " + url);
                 br.getPage(url);
                 url = null;
                 if (br.getRedirectLocation() != null) {
@@ -156,6 +181,7 @@ public class GoogleHelper {
     public boolean login(Account account) throws Exception {
 
         try {
+            br.setHeader("User-Agent", "JDownloader2");
             this.br.setDebug(true);
             this.br.setCookiesExclusive(true);
             // delete all cookies
@@ -213,25 +239,119 @@ public class GoogleHelper {
             post.put("rmShown", "1");
 
             postPageFollowRedirects(br, "https://accounts.google.com/ServiceLoginAuth", post);
+            main: while (true) {
+                Form[] forms = br.getForms();
+                String error = br.getRegex("<span color=\"red\">(.*?)</span>").getMatch(0);
+                if (StringUtils.isNotEmpty(error)) {
+                    UIOManager.I().showErrorMessage(_JDT._.google_error(error));
+                }
+                if (br.containsHTML("Please change your password")) {
+                    Form changePassword = br.getFormbyAction("https://accounts.google.com/ChangePassword");
+                    if (changePassword != null) {
+                        CrossSystem.openURLOrShowMessage("http://www.google.com/support/accounts/bin/answer.py?answer=46526");
+                        NewPasswordDialog d = new NewPasswordDialog(UIOManager.LOGIC_COUNTDOWN, _JDT._.google_password_change_title(), _JDT._.google_password_change_message(account.getUser()), null, _GUI._.lit_continue(), null);
+                        d.setTimeout(5 * 60 * 1000);
+                        NewPasswordDialogInterface handler = UIOManager.I().show(NewPasswordDialogInterface.class, d);
+                        try {
+                            handler.throwCloseExceptions();
 
-            Form form = br.getFormBySubmitvalue("Verify");
+                            changePassword.getInputField("Passwd").setValue(handler.getPassword());
+                            changePassword.getInputField("PasswdAgain").setValue(handler.getPasswordVerification());
 
-            if (form != null && "SecondFactor".equals(form.getAction())) {
-                handle2FactorAuthSms(form);
+                            submitForm(br, changePassword);
+                            if (!br.containsHTML("Please change your password")) {
+                                account.setPass(handler.getPassword());
+                            }
+                            continue;
+                        } catch (DialogNoAnswerException e) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Verify it's you: Email", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        }
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Password change required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
+                }
+
+                Form verifyItsYouByEmail = br.getFormByInputFieldKeyValue("challengetype", "RecoveryEmailChallenge");
+                if (verifyItsYouByEmail != null) {
+                    String example = br.getRegex("<label.*?id=\"RecoveryEmailChallengeLabel\">.*?<span.*?>([^<]+)</span>.*?</label>").getMatch(0);
+                    if (example == null) {
+                        CrossSystem.openURLOrShowMessage(br.getURL());
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Verify it's you: Email", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    } else {
+                        InputDialog d = new InputDialog(0, _JDT._.google_email_verification_title(), _JDT._.google_email_verification_message(example.trim()), null, null, _GUI._.lit_continue(), null) {
+                            @Override
+                            protected int getPreferredWidth() {
+                                return 400;
+                            }
+                        };
+                        InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
+                        try {
+                            handler.throwCloseExceptions();
+
+                            String email = handler.getText();
+                            verifyItsYouByEmail.getInputField("emailAnswer").setValue(email);
+
+                            submitForm(br, verifyItsYouByEmail);
+
+                            continue;
+                        } catch (DialogNoAnswerException e) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Verify it's you: Email", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        }
+                    }
+                }
+
+                if (br.containsHTML("privacyreminder")) {
+                    // google wants you to accept the new privacy policy
+                    CrossSystem.openURLOrShowMessage("https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
+
+                    if (!UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT._.google_helper_privacy_update_title(), _JDT._.google_helper_privacy_update_message(account.getUser()), null, _GUI._.lit_continue(), null)) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Privacy Reminder Required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
+
+                    while (true) {
+
+                        postPageFollowRedirects(br, "https://accounts.google.com/ServiceLoginAuth", post);
+                        if (br.containsHTML("privacyreminder")) {
+                            CrossSystem.openURLOrShowMessage("https://accounts.google.com/ServiceLogin?uilel=3&service=" + Encoding.urlEncode(getService().serviceName) + "&passive=true&continue=" + Encoding.urlEncode(getService().continueAfterServiceLogin) + "&hl=en_US&ltmpl=sso");
+
+                            if (!UIOManager.I().showConfirmDialog(UIOManager.BUTTONS_HIDE_CANCEL, _JDT._.google_helper_privacy_update_title(), _JDT._.google_helper_privacy_update_message_retry(account.getUser()), null, _GUI._.lit_continue(), null)) {
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Privacy Reminder Required", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                            }
+                        } else {
+                            continue main;
+                        }
+
+                    }
+                }
+
+                Form form = br.getFormBySubmitvalue("Verify");
+
+                if (form != null && "SecondFactor".equals(form.getAction())) {
+                    handle2FactorAuthSmsDeprecated(form);
+                    continue;
+                } else if (form != null && "/signin/challenge".equals(form.getAction())) {
+                    handle2FactorAuthSmsNew(form);
+                    continue;
+                }
+                if (StringUtils.isNotEmpty(error)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, error, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                }
+                break;
+
             }
+            // if (!br.getURL().matches("https?\\:\\/\\/accounts\\.google\\.com\\/CheckCookie\\?.*")) {
+            //
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            //
+            // }
 
-            if (!br.getURL().matches("https?\\:\\/\\/accounts\\.google\\.com\\/CheckCookie\\?.*")) {
-
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-
-            }
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies cYT = this.br.getCookies("google.com");
-            for (final Cookie c : cYT.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            account.setProperty(COOKIES2, cookies);
             if (validateSuccess()) {
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies cYT = this.br.getCookies("google.com");
+                for (final Cookie c : cYT.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty(COOKIES2, cookies);
                 validate(account);
                 return true;
             } else {
@@ -267,8 +387,37 @@ public class GoogleHelper {
         return 1 * 60 * 60 * 1000l;
     }
 
-    private void handle2FactorAuthSms(Form form) throws Exception {
+    private void handle2FactorAuthSmsDeprecated(Form form) throws Exception {
+
         // //*[@id="verifyText"]
+        if (br.containsHTML("idv-delivery-error-container")) {
+            // <div class="infobanner">
+            // <p class="error-msg infobanner-content"
+            // id="idv-delivery-error-container">
+            // You seem to be having trouble getting your verification code.
+            // Please try again later.
+            // </p>
+            // </div>
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "You seem to be having trouble getting your sms verification code.  Please try again later.");
+        }
+        String number = br.getRegex("<span\\s+class\\s*=\\s*\"twostepphone\".*?>(.*?)</span>").getMatch(0);
+        InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null);
+        InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
+        handler.throwCloseExceptions();
+        InputField smsUserPin = form.getInputFieldByName("smsUserPin");
+        smsUserPin.setValue(handler.getText());
+        InputField persistentCookie = form.getInputFieldByName("PersistentCookie");
+        persistentCookie.setValue("on");
+        form.remove("smsSend");
+        form.remove("retry");
+        submitForm(br, form);
+
+        handleIntersitial();
+    }
+
+    private void handle2FactorAuthSmsNew(Form form) throws Exception {
+        // //*[@id="verifyText"]
+        StatsManager.I().track("activecheck/googlehelper/handle2FactorAuthSmsNew");
         if (br.containsHTML("idv-delivery-error-container")) {
             // <div class="infobanner">
             // <p class="error-msg infobanner-content"
