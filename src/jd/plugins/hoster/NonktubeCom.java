@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
@@ -31,11 +32,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xxxbunker.com" }, urls = { "http://(www\\.)?xxxbunkerdecrypted\\.com/[a-z0-9_\\-]+" }, flags = { 0 })
-public class XxxBunkerCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nonktube.com" }, urls = { "http://(www\\.)?nonktube\\.com/video/\\d+/[a-z0-9\\-]+" }, flags = { 0 })
+public class NonktubeCom extends PluginForHost {
 
-    @SuppressWarnings("deprecation")
-    public XxxBunkerCom(PluginWrapper wrapper) {
+    public NonktubeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -56,64 +56,38 @@ public class XxxBunkerCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://xxxbunker.com/tos.php";
-    }
-
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("xxxbunkerdecrypted.com/", "xxxbunker.com/"));
+        return "http://www.nonktube.com/static/terms";
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        final String fid = new Regex(downloadLink.getDownloadURL(), "nonktube\\.com/video/(\\d+)/").getMatch(0);
         DLLINK = null;
         this.setBrowserExclusive();
+        downloadLink.setLinkID(fid);
         br.setFollowRedirects(true);
-        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:38.0) Gecko/20100101 Firefox/38.0");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (br.containsHTML(">FILE NOT FOUND<|>this video is no longer available")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getURL().equals("http://xxxbunker.com/")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(">your video is being loaded, please wait")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("<strong>SITE MAINTENANCE</strong>")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("class=vpVideoTitle><h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
-        }
-        if (filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "xxxbunker\\.com/(.+)").getMatch(0);
-        }
-        String externID_extern = br.getRegex("postbackurl(?:=|%3D)([^<>\"\\&]*?)%26amp%3B").getMatch(0);
-        String externID = br.getRegex("player\\.swf\\?config=(http%3A%2F%2Fxxxbunker\\.com%2FplayerConfig\\.php%3F[^<>\"]*?)\"").getMatch(0);
-        final String externID3 = br.getRegex("lvid=(\\d+)").getMatch(0);
-        if (externID_extern == null && externID == null && externID3 == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (externID_extern != null) {
-            /* E.g. http://xxxbunker.com/3568499 pornhub direct */
-            externID_extern = Encoding.htmlDecode(externID_extern);
-            externID_extern = Encoding.htmlDecode(externID_extern);
-            DLLINK = Encoding.Base64Decode(externID_extern);
-        } else if (externID != null) {
-            br.getPage(Encoding.htmlDecode(externID));
-            DLLINK = br.getRegex("<relayurl>([^<>\"]*?)</relayurl>").getMatch(0);
-            externID = br.getRegex("<file>(http[^<>\"]*?)</file>").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = externID;
+        String filename;
+        if (true) {
+            /* Faster way */
+            br.getPage("http://www.nonktube.com/media/nuevo/config.php?key=" + fid + "--");
+            if (br.containsHTML("Invalid video") || br.getHttpConnection().getResponseCode() == 404) {
+
             }
+            filename = br.getRegex("<title><\\!\\[CDATA\\[([^<>\"]*?)\\]\\]></title>").getMatch(0);
         } else {
-            br.getPage("http://xxxbunker.com/videoPlayer.php?videoid=" + externID3 + "&autoplay=true&ageconfirm=true&title=true&html5=false&hasflash=true&r=" + System.currentTimeMillis());
-            DLLINK = br.getRegex("\\&amp;file=(http[^<>\"]*?\\.(?:flv|mp4))").getMatch(0);
+            if (br.containsHTML("data-dismiss=\"alert\"") || br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = br.getRegex("<title>([^<>\"]*?) \\- NonkTube\\.com</title>").getMatch(0);
+            br.getPage("http://www.nonktube.com/media/nuevo/config.php?key=" + fid + "--");
         }
-        if (DLLINK == null) {
+        if (filename == null) {
+            filename = new Regex(downloadLink.getDownloadURL(), "nonktube\\.com/video/\\d+/([a-z0-9\\-]+)").getMatch(0);
+        }
+        DLLINK = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+        if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
@@ -129,16 +103,13 @@ public class XxxBunkerCom extends PluginForHost {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        this.br = new Browser();
-        br.getHeaders().put("Accept-Encoding", "identity");
+        final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
-        br.setFollowRedirects(true);
+        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br.openHeadConnection(DLLINK);
-                /* Very important! Get the FINAL url! */
-                DLLINK = con.getRequest().getUrl();
+                con = openConnection(br2, DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -177,7 +148,31 @@ public class XxxBunkerCom extends PluginForHost {
         dl.startDownload();
     }
 
-    /* Avoid chars which are not allowed in filenames under certain OS' */
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                con = openConnection(br2, dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return dllink;
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
     private static String encodeUnicode(final String input) {
         String output = input;
         output = output.replace(":", ";");
@@ -185,7 +180,7 @@ public class XxxBunkerCom extends PluginForHost {
         output = output.replace("<", "[");
         output = output.replace(">", "]");
         output = output.replace("/", "⁄");
-        output = output.replace("\\", "");
+        output = output.replace("\\", "∖");
         output = output.replace("*", "#");
         output = output.replace("?", "¿");
         output = output.replace("!", "¡");
@@ -196,6 +191,20 @@ public class XxxBunkerCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
+    }
+
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
+        } else {
+            con = br.openHeadConnection(directlink);
+        }
+        return con;
+    }
+
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

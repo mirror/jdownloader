@@ -67,8 +67,8 @@ public class AllMyVideosNet extends PluginForHost {
         } else {
             protocol = "http://";
         }
-        final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
         if (link.getDownloadURL().matches(TYPE_EMBED)) {
+            final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
             final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
             /* Make sure user gets the kind of content urls that he added to JD. */
             try {
@@ -76,8 +76,8 @@ public class AllMyVideosNet extends PluginForHost {
             } catch (final Throwable e) {
                 /* Not available in 0.9.581 Stable */
             }
+            link.setUrlDownload(corrected_downloadurl);
         }
-        link.setUrlDownload(corrected_downloadurl);
     }
 
     /**

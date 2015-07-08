@@ -1153,7 +1153,7 @@ public class InvitationfileCom extends PluginForHost {
                     // br.cloneBrowser().openGetConnection("/app/asset/image/logo.png");
                     // br.cloneBrowser().openGetConnection("/app/asset/image/header_button_register.png");
                     br.cloneBrowser().openGetConnection("/app/asset/stylesheet/style.css");
-                    br.cloneBrowser().openGetConnection("/app/asset/stylesheet/style.css");
+                    br.cloneBrowser().openGetConnection("/app/asset/javascript/jquery/jquery-1.7.1.min.js");
                     br.cloneBrowser().openGetConnection("/app/asset/javascript/common.js");
                 } catch (final Exception e) {
                 }

@@ -33,7 +33,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitter.com" }, urls = { "https?://(www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/(media|status/\\d+/photo/\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitter.com" }, urls = { "https?://(www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/(media|status/\\d+.*?)" }, flags = { 0 })
 public class TwitterCom extends PluginForDecrypt {
 
     public TwitterCom(PluginWrapper wrapper) {
@@ -41,13 +41,14 @@ public class TwitterCom extends PluginForDecrypt {
     }
 
     private static final String TYPE_USER_ALL  = "https?://(www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/media";
-    private static final String TYPE_USER_POST = "https?://(www\\.)?twitter\\.com/status/\\d+/photo/\\d+";
+    private static final String TYPE_USER_POST = "https?://(www\\.)?twitter\\.com/status/\\d+.*?";
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://");
         final String urlfilename = getUrlFname(parameter);
+        final String user = new Regex(parameter, "twitter\\.com/([A-Za-z0-9_\\-]+)/").getMatch(0);
         br.setFollowRedirects(true);
         /* Some profiles can only be accessed if they accepted others as followers --> Log in if the user has added his twitter account */
         if (getUserLogin(false)) {
@@ -74,7 +75,6 @@ public class TwitterCom extends PluginForDecrypt {
         }
         if (parameter.matches(TYPE_USER_ALL)) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final String user = new Regex(parameter, "twitter\\.com/([A-Za-z0-9_\\-]+)/").getMatch(0);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(user);
             int reloadNumber = 1;
@@ -97,10 +97,10 @@ public class TwitterCom extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 int addedlinks_all = 0;
-                final String[] embedurl_regexes = new String[] { "\"(https?://(www\\.)?(youtu\\.be/|youtube\\.com/embed/)[A-Za-z0-9\\-_]+)\"", "data\\-expanded\\-url=\"(https?://vine\\.co/v/[A-Za-z0-9]+)\"" };
+                final String[] embedurl_regexes = new String[] { "\"(https?://(?:www\\.)?(youtu\\.be/|youtube\\.com/embed/)[A-Za-z0-9\\-_]+)\"", "data\\-expanded\\-url=\"(https?://(?:www\\.)?vine\\.co/v/[A-Za-z0-9]+)\"" };
                 for (final String regex : embedurl_regexes) {
                     final String[] embed_links = br.getRegex(regex).getColumn(0);
-                    if (embed_links != null && embed_links.length != 0) {
+                    if (embed_links != null) {
                         for (final String single_embed_ink : embed_links) {
                             final DownloadLink dl = createDownloadlink(single_embed_ink);
                             fp.add(dl);
@@ -118,7 +118,7 @@ public class TwitterCom extends PluginForDecrypt {
                 final String[] directlink_regexes = new String[] { "data\\-url=\\&quot;(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?\\.(jpg|png|gif):large)\\&", "data\\-url=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"" };
                 for (final String regex : directlink_regexes) {
                     final String[] piclinks = br.getRegex(regex).getColumn(0);
-                    if (piclinks != null && piclinks.length != 0) {
+                    if (piclinks != null) {
                         for (String singleLink : piclinks) {
                             final String remove = new Regex(singleLink, "(:[a-z0-9]+)").getMatch(0);
                             if (remove != null) {
@@ -137,6 +137,25 @@ public class TwitterCom extends PluginForDecrypt {
                         }
                     }
                 }
+                final String[] stream_ids = br.getRegex("data\\-autoplay\\-src=\"/i/cards/tfw/v1/(\\d+)\\?cardname=__entity_video").getColumn(0);
+                if (stream_ids != null) {
+                    for (String stream_id : stream_ids) {
+                        final String content_url = "https://twitter.com/" + user + "/status/" + stream_id;
+                        final DownloadLink dl = createDownloadlink(createVideourl(stream_id));
+                        dl.setName(stream_id + ".webm");
+                        fp.add(dl);
+                        dl.setAvailable(true);
+                        try {
+                            distribute(dl);
+                        } catch (final Throwable e) {
+                            // Not available in 0.9.581
+                        }
+                        dl.setLinkID(stream_id);
+                        dl.setContentUrl(content_url);
+                        decryptedLinks.add(dl);
+                        addedlinks_all++;
+                    }
+                }
                 if (addedlinks_all == 0) {
                     break;
                 }
@@ -146,18 +165,33 @@ public class TwitterCom extends PluginForDecrypt {
             } while (br.containsHTML("\"has_more_items\":true"));
             fp.addLinks(decryptedLinks);
         } else {
-            final String status_id = new Regex(parameter, "/status/(\\d+)/").getMatch(0);
-            final String[] alllinks = br.getRegex("property=\"og:image\" content=\"(https?://[^<>\"]+/media/[A-Za-z0-9\\-_]+\\.(?:jpg|png|gif):large)\"").getColumn(0);
-            for (final String alink : alllinks) {
-                final Regex fin_al = new Regex(alink, "https?://[^<>\"]+/media/([A-Za-z0-9\\-_]+)\\.(jpg|png|gif):large");
-                final String servername = fin_al.getMatch(0);
-                final String ending = fin_al.getMatch(1);
-                final String final_filename = status_id + "_" + servername + "." + ending;
-                final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(alink.trim()));
-                dl.setAvailable(true);
-                dl.setProperty("decryptedfilename", final_filename);
-                dl.setName(final_filename);
+            final String status_id = new Regex(parameter, "/status/(\\d+)").getMatch(0);
+            if (br.containsHTML("data-autoplay-src=")) {
+                final String content_url = "https://twitter.com/" + user + "/status/" + status_id;
+                final DownloadLink dl = createDownloadlink(createVideourl(status_id));
+                /* Do not set it online as user added a single url - display filesize in linkgrabber! */
+                dl.setName(status_id + ".webm");
+                dl.setLinkID(status_id);
+                dl.setContentUrl(content_url);
                 decryptedLinks.add(dl);
+            } else {
+                final String[] regexes = { "property=\"og:image\" content=\"(https?://[^<>\"]+/media/[A-Za-z0-9\\-_]+\\.(?:jpg|png|gif):large)\"", "<source video\\-src=\"(https?://[^<>\"]*?)\"" };
+                for (final String regex : regexes) {
+                    final String[] alllinks = br.getRegex(regex).getColumn(0);
+                    if (alllinks != null && alllinks.length > 0) {
+                        for (final String alink : alllinks) {
+                            final Regex fin_al = new Regex(alink, "https?://[^<>\"]+/[^/]+/([A-Za-z0-9\\-_]+)\\.([a-z0-9]+)(?::large)?$");
+                            final String servername = fin_al.getMatch(0);
+                            final String ending = fin_al.getMatch(1);
+                            final String final_filename = status_id + "_" + servername + "." + ending;
+                            final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(alink.trim()));
+                            dl.setAvailable(true);
+                            dl.setProperty("decryptedfilename", final_filename);
+                            dl.setName(final_filename);
+                            decryptedLinks.add(dl);
+                        }
+                    }
+                }
             }
         }
         if (decryptedLinks.size() == 0) {
@@ -166,12 +200,16 @@ public class TwitterCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private String createVideourl(final String stream_id) {
+        return "http://twittervideo/" + stream_id;
+    }
+
     private String getUrlFname(final String parameter) {
         String urlfilename;
         if (parameter.matches(TYPE_USER_ALL)) {
             urlfilename = new Regex(parameter, "twitter\\.com/([A-Za-z0-9_\\-]+)/media").getMatch(0);
         } else {
-            urlfilename = new Regex(parameter, "twitter\\.com/status/\\d+/photo/(\\d+)").getMatch(0);
+            urlfilename = new Regex(parameter, "twitter\\.com/status/(\\d+)").getMatch(0);
         }
         return urlfilename;
     }
