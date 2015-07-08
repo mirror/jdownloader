@@ -89,6 +89,10 @@ public class FilePathSandbox {
         return file.getName();
     }
 
+    public String getExtension() {
+        return org.appwork.utils.Files.getExtension(file.getName());
+    }
+
     public long getSize() throws EnvironmentException {
         org.jdownloader.extensions.eventscripter.sandboxobjects.ScriptEnvironment.askForPermission("get the size of a file");
 
