@@ -670,12 +670,12 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     /**
      * *
-     *
+     * 
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     *
+     * 
      * @return
      * @throws IOException
      * @throws PluginException
@@ -1300,7 +1300,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     /**
      * this method calls an API which has been deprecated by youtube. TODO: Find new API!
-     *
+     * 
      * @deprecated
      * @param vid
      * @throws IOException
@@ -1451,6 +1451,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 }
 
             };
+            helper.setLogger(logger);
             helper.setCacheEnabled(false);
             if (helper.login(account)) {
 

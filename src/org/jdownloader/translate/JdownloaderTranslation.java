@@ -966,4 +966,34 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Google sent a verification code to you mobile phone.\r\nNumber: %s1\r\nPlease enter this code here..." })
     String Google_helper_2factor_sms_dialog_msg(String number);
 
+    @Default(lngs = { "en" }, values = { "Google wants you to accept new Privacy Policy." })
+    String google_helper_privacy_update_title();
+
+    @Default(lngs = { "en" }, values = { "Please login to your google account '%s1'. After the login, Google will ask you to accept the new privacy policy. Continue after you did this." })
+    String google_helper_privacy_update_message(String account);
+
+    @Default(lngs = { "en" }, values = { "Privacy reminder check failed.\r\nPlease login to your google account '%s1'. After the login, Google will ask you to accept the new privacy policy. Continue after you did this." })
+    String google_helper_privacy_update_message_retry(String user);
+
+    @Default(lngs = { "en" }, values = { "Google recovery Email verification" })
+    String google_email_verification_title();
+
+    @Default(lngs = { "en" }, values = { "Something seems a bit different about the way you're trying to sign in. To verify that it's you, please enter your recovery email address\r\n%s1" })
+    String google_email_verification_message(String example);
+
+    @Default(lngs = { "en" }, values = { "Google password change required" })
+    String google_password_change_title();
+
+    @Default(lngs = { "en" }, values = { "Google detected suspicious activity on your '%s1' Google Account.\r\nPlease choose a new password to finish signing in." })
+    String google_password_change_message(String acc);
+
+    @Default(lngs = { "en" }, values = { "New Password" })
+    String newpassworddialog_password();
+
+    @Default(lngs = { "en" }, values = { "Re-enter new Password" })
+    String newpassworddialog_password_verify();
+
+    @Default(lngs = { "en" }, values = { "A problem occured during the Google signup:\r\n%s1" })
+    String google_error(String error);
+
 }
