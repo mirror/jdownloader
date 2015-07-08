@@ -53,7 +53,7 @@ import org.appwork.storage.simplejson.JSonUtils;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?facebookdecrypted\\.com/(video\\.php\\?v=|photo\\.php\\?fbid=|download/)\\d+" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
 
-    public static String        Agent                 = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0";
+    public static String        USER_AGENT            = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0";
     private String              FACEBOOKMAINPAGE      = "http://www.facebook.com";
     private String              PREFERHD              = "PREFERHD";
     private static final String TYPE_SINGLE_PHOTO     = "https?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
@@ -361,11 +361,12 @@ public class FaceBookComVideos extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     public void login(final Account account, final boolean force, Browser br) throws Exception {
-        br.getHeaders().put("User-Agent", Agent);
+        br.getHeaders().put("User-Agent", USER_AGENT);
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getHeaders().put("Accept-Encoding", "gzip, deflate");
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+        br.setCookie("http://www.facebook.com", "locale", "en_GB");
         synchronized (LOCK) {
             // Load cookies
             br.setCookiesExclusive(true);
@@ -386,7 +387,9 @@ public class FaceBookComVideos extends PluginForHost {
                 }
             }
             br.setFollowRedirects(true);
-            final boolean prefer_mobile_login = true;
+
+            final boolean prefer_mobile_login = false;
+            // better use the website login. else the error handling below might be broken.
             if (prefer_mobile_login) {
                 /* Mobile login = no crypto crap */
                 br.getPage("https://m.facebook.com/");
@@ -397,6 +400,7 @@ public class FaceBookComVideos extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
+
                 }
                 loginForm.remove(null);
                 loginForm.put("email", Encoding.urlEncode(account.getUser()));
@@ -404,23 +408,37 @@ public class FaceBookComVideos extends PluginForHost {
                 br.submitForm(loginForm);
                 br.getPage("https://www.facebook.com/");
             } else {
-                /* Site login. Status 2015-07-08: BROKEN! */
                 br.getPage("https://www.facebook.com/login.php");
+                final String lang = System.getProperty("user.language");
+
                 final Form loginForm = br.getForm(0);
                 if (loginForm == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+
                 loginForm.remove("persistent");
                 loginForm.put("persistent", "1");
                 loginForm.remove(null);
+                loginForm.remove("login");
+                loginForm.remove("trynum");
+                loginForm.remove("profile_selector_ids");
+                loginForm.remove("legacy_return");
+                loginForm.remove("enable_profile_selector");
+                loginForm.remove("display");
+                String _js_datr = br.getRegex("\"_js_datr\"\\s*,\\s*\"([^\"]+)").getMatch(0);
+
+                br.setCookie("https://facebook.com", "_js_datr", _js_datr);
+                br.setCookie("https://facebook.com", "_js_reg_fb_ref", Encoding.urlEncode("https://www.facebook.com/login.php"));
+                br.setCookie("https://facebook.com", "_js_reg_fb_gate", Encoding.urlEncode("https://www.facebook.com/login.php"));
                 loginForm.put("email", Encoding.urlEncode(account.getUser()));
                 loginForm.put("pass", Encoding.urlEncode(account.getPass()));
                 br.submitForm(loginForm);
             }
+
             /**
              * Facebook thinks we're an unknown device, now we prove we're not ;)
              */

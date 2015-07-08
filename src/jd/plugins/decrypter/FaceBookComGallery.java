@@ -118,7 +118,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             decryptedLinks.add(fina);
             return decryptedLinks;
         }
-        br.getHeaders().put("User-Agent", jd.plugins.hoster.FaceBookComVideos.Agent);
+        br.getHeaders().put("User-Agent", jd.plugins.hoster.FaceBookComVideos.USER_AGENT);
         br.setFollowRedirects(false);
         try {
             if (parameter.matches(TYPE_FBSHORTLINK)) {

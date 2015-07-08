@@ -255,8 +255,8 @@ public class GoogleHelper {
                         try {
                             handler.throwCloseExceptions();
 
-                            changePassword.getInputField("Passwd").setValue(handler.getPassword());
-                            changePassword.getInputField("PasswdAgain").setValue(handler.getPasswordVerification());
+                            changePassword.getInputField("Passwd").setValue(Encoding.urlEncode(handler.getPassword()));
+                            changePassword.getInputField("PasswdAgain").setValue(Encoding.urlEncode(handler.getPasswordVerification()));
 
                             submitForm(br, changePassword);
                             if (!br.containsHTML("Please change your password")) {
@@ -289,7 +289,7 @@ public class GoogleHelper {
                             handler.throwCloseExceptions();
 
                             String email = handler.getText();
-                            verifyItsYouByEmail.getInputField("emailAnswer").setValue(email);
+                            verifyItsYouByEmail.getInputField("emailAnswer").setValue(Encoding.urlEncode(email));
 
                             submitForm(br, verifyItsYouByEmail);
 
@@ -405,9 +405,9 @@ public class GoogleHelper {
         InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
         handler.throwCloseExceptions();
         InputField smsUserPin = form.getInputFieldByName("smsUserPin");
-        smsUserPin.setValue(handler.getText());
+        smsUserPin.setValue(Encoding.urlEncode(handler.getText()));
         InputField persistentCookie = form.getInputFieldByName("PersistentCookie");
-        persistentCookie.setValue("on");
+        persistentCookie.setValue(Encoding.urlEncode("on"));
         form.remove("smsSend");
         form.remove("retry");
         submitForm(br, form);
@@ -433,9 +433,9 @@ public class GoogleHelper {
         InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
         handler.throwCloseExceptions();
         InputField smsUserPin = form.getInputFieldByName("smsUserPin");
-        smsUserPin.setValue(handler.getText());
+        smsUserPin.setValue(Encoding.urlEncode(handler.getText()));
         InputField persistentCookie = form.getInputFieldByName("PersistentCookie");
-        persistentCookie.setValue("on");
+        persistentCookie.setValue(Encoding.urlEncode("on"));
         form.remove("smsSend");
         form.remove("retry");
         submitForm(br, form);
