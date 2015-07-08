@@ -42,7 +42,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/.+|http://www\\.daserste\\.de/[^<>\"]+/videos/[a-z0-9\\-]+\\.html" }, flags = { 32 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de", "rbb-online.de" }, urls = { "http://(?:www\\.)?(?:ardmediathek|mediathek\\.daserste)\\.de/.+|http://www\\.daserste\\.de/[^<>\"]+/videos/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+" }, flags = { 32, 32 })
 public class RDMdthk extends PluginForDecrypt {
 
     /* Settings */
@@ -62,8 +62,9 @@ public class RDMdthk extends PluginForDecrypt {
     private static final String                 AGE_RESTRICTED        = "(Diese Sendung ist für Jugendliche unter \\d+ Jahren nicht geeignet\\. Der Clip ist deshalb nur von \\d+ bis \\d+ Uhr verfügbar\\.)";
     private static final String                 type_unsupported      = "http://(www\\.)?ardmediathek\\.de/(tv/live\\?kanal=\\d+|dossiers/.*)";
     private static final String                 type_invalid          = "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/(download|livestream).+";
-    private static final String                 type_mediathek        = "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/.+";
+    private static final String                 type_ard_mediathek    = "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/.+";
     private static final String                 type_ardvideo         = "http://www\\.daserste\\.de/[^<>\"]+/videos/[a-z0-9\\-]+\\.html";
+    private static final String                 type_rbb_mediathek    = "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+";
     private SubConfiguration                    cfg                   = null;
 
     /* Variables */
@@ -108,11 +109,11 @@ public class RDMdthk extends PluginForDecrypt {
             offline = true;
         }
         if (offline) {
-            decryptedLinks.add(getOffline(param.toString()));
+            decryptedLinks.add(getOffline(parameter));
             return decryptedLinks;
         }
         try {
-            if (br.getURL().matches(type_mediathek)) {
+            if (br.getURL().matches(type_ard_mediathek) || parameter.matches(type_rbb_mediathek)) {
                 fsk = br.getRegex(AGE_RESTRICTED).getMatch(0);
                 decryptMediathek();
             } else {
