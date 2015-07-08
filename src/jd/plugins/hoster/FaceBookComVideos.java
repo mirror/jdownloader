@@ -386,22 +386,41 @@ public class FaceBookComVideos extends PluginForHost {
                 }
             }
             br.setFollowRedirects(true);
-            br.getPage("https://www.facebook.com/login.php");
-            final String lang = System.getProperty("user.language");
-            final Form loginForm = br.getForm(0);
-            if (loginForm == null) {
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            final boolean prefer_mobile_login = true;
+            if (prefer_mobile_login) {
+                /* Mobile login = no crypto crap */
+                br.getPage("https://m.facebook.com/");
+                final Form loginForm = br.getForm(0);
+                if (loginForm == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
                 }
+                loginForm.remove(null);
+                loginForm.put("email", Encoding.urlEncode(account.getUser()));
+                loginForm.put("pass", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginForm);
+                br.getPage("https://www.facebook.com/");
+            } else {
+                /* Site login. Status 2015-07-08: BROKEN! */
+                br.getPage("https://www.facebook.com/login.php");
+                final Form loginForm = br.getForm(0);
+                if (loginForm == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                loginForm.remove("persistent");
+                loginForm.put("persistent", "1");
+                loginForm.remove(null);
+                loginForm.put("email", Encoding.urlEncode(account.getUser()));
+                loginForm.put("pass", Encoding.urlEncode(account.getPass()));
+                br.submitForm(loginForm);
             }
-            loginForm.remove("persistent");
-            loginForm.put("persistent", "1");
-            loginForm.remove(null);
-            loginForm.put("email", Encoding.urlEncode(account.getUser()));
-            loginForm.put("pass", Encoding.urlEncode(account.getPass()));
-            br.submitForm(loginForm);
             /**
              * Facebook thinks we're an unknown device, now we prove we're not ;)
              */
@@ -409,7 +428,7 @@ public class FaceBookComVideos extends PluginForHost {
                 final String nh = br.getRegex("name=\"nh\" value=\"([a-z0-9]+)\"").getMatch(0);
                 final String dstc = br.getRegex("name=\"fb_dtsg\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (nh == null || dstc == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_GERMAN, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_ENGLISH, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -421,7 +440,7 @@ public class FaceBookComVideos extends PluginForHost {
                 String achal = br.getRegex("name=\"achal\" value=\"([a-z0-9]+)\"").getMatch(0);
                 final String captchaPersistData = br.getRegex("name=\"captcha_persist_data\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (captchaPersistData == null || achal == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_GERMAN, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_ENGLISH, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -505,7 +524,7 @@ public class FaceBookComVideos extends PluginForHost {
                 final String postFormID = br.getRegex("name=\"post_form_id\" value=\"(.*?)\"").getMatch(0);
                 final String nh = br.getRegex("name=\"nh\" value=\"(.*?)\"").getMatch(0);
                 if (nh == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_GERMAN, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_ENGLISH, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -517,7 +536,7 @@ public class FaceBookComVideos extends PluginForHost {
                 br.postPage("https://www.facebook.com/checkpoint/", "post_form_id=" + postFormID + "&lsd=GT_Up&machine_name=&submit%5BDon%27t+Save%5D=Nicht+speichern&nh=" + nh);
             }
             if (br.getCookie(FACEBOOKMAINPAGE, "c_user") == null || br.getCookie(FACEBOOKMAINPAGE, "xs") == null) {
-                if ("de".equalsIgnoreCase(lang)) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_GERMAN, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_ENGLISH, PluginException.VALUE_ID_PREMIUM_DISABLE);

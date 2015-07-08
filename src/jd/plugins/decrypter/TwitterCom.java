@@ -29,17 +29,17 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitter.com" }, urls = { "https?://(www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/(media|status/\\d+.*?)" }, flags = { 0 })
-public class TwitterCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitter.com" }, urls = { "https?://(www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/(media|status/\\d+.*?)|https://twitter\\.com/i/cards/tfw/v1/\\d+" }, flags = { 0 })
+public class TwitterCom extends PornEmbedParser {
 
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static final String TYPE_VIDEO     = "https://twitter\\.com/i/cards/tfw/v1/\\d+";
     private static final String TYPE_USER_ALL  = "https?://(www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/media";
     private static final String TYPE_USER_POST = "https?://(www\\.)?twitter\\.com/status/\\d+.*?";
 
@@ -49,6 +49,8 @@ public class TwitterCom extends PluginForDecrypt {
         final String parameter = param.toString().replace("http://", "https://");
         final String urlfilename = getUrlFname(parameter);
         final String user = new Regex(parameter, "twitter\\.com/([A-Za-z0-9_\\-]+)/").getMatch(0);
+        String status_id = null;
+
         br.setFollowRedirects(true);
         /* Some profiles can only be accessed if they accepted others as followers --> Log in if the user has added his twitter account */
         if (getUserLogin(false)) {
@@ -73,7 +75,24 @@ public class TwitterCom extends PluginForDecrypt {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        if (parameter.matches(TYPE_USER_ALL)) {
+        if (parameter.matches(TYPE_VIDEO)) {
+            status_id = new Regex(parameter, "(\\d+)$").getMatch(0);
+            /* First check for external urls */
+            decryptedLinks.addAll(this.findEmbedUrls(null));
+            if (decryptedLinks.isEmpty()) {
+                String dllink = br.getRegex("playlist\\&quot;:\\[\\{\\&quot;source\\&quot;:\\&quot;(https[^<>\"]*?\\.webm)").getMatch(0);
+                if (dllink == null) {
+                    return null;
+                }
+                dllink = dllink.replace("\\", "");
+                final String filename = status_id + "_" + new Regex(dllink, "([^/]+\\.webm)$").getMatch(0);
+                final DownloadLink dl = this.createDownloadlink(dllink);
+                dl.setProperty("decryptedfilename", filename);
+                dl.setName(filename);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
+        } else if (parameter.matches(TYPE_USER_ALL)) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(user);
@@ -140,18 +159,7 @@ public class TwitterCom extends PluginForDecrypt {
                 final String[] stream_ids = br.getRegex("data\\-autoplay\\-src=\"/i/cards/tfw/v1/(\\d+)\\?cardname=__entity_video").getColumn(0);
                 if (stream_ids != null) {
                     for (String stream_id : stream_ids) {
-                        final String content_url = "https://twitter.com/" + user + "/status/" + stream_id;
                         final DownloadLink dl = createDownloadlink(createVideourl(stream_id));
-                        dl.setName(stream_id + ".webm");
-                        fp.add(dl);
-                        dl.setAvailable(true);
-                        try {
-                            distribute(dl);
-                        } catch (final Throwable e) {
-                            // Not available in 0.9.581
-                        }
-                        dl.setLinkID(stream_id);
-                        dl.setContentUrl(content_url);
                         decryptedLinks.add(dl);
                         addedlinks_all++;
                     }
@@ -165,14 +173,9 @@ public class TwitterCom extends PluginForDecrypt {
             } while (br.containsHTML("\"has_more_items\":true"));
             fp.addLinks(decryptedLinks);
         } else {
-            final String status_id = new Regex(parameter, "/status/(\\d+)").getMatch(0);
+            status_id = new Regex(parameter, "/status/(\\d+)").getMatch(0);
             if (br.containsHTML("data-autoplay-src=")) {
-                final String content_url = "https://twitter.com/" + user + "/status/" + status_id;
                 final DownloadLink dl = createDownloadlink(createVideourl(status_id));
-                /* Do not set it online as user added a single url - display filesize in linkgrabber! */
-                dl.setName(status_id + ".webm");
-                dl.setLinkID(status_id);
-                dl.setContentUrl(content_url);
                 decryptedLinks.add(dl);
             } else {
                 final String[] regexes = { "property=\"og:image\" content=\"(https?://[^<>\"]+/media/[A-Za-z0-9\\-_]+\\.(?:jpg|png|gif):large)\"", "<source video\\-src=\"(https?://[^<>\"]*?)\"" };
@@ -192,6 +195,12 @@ public class TwitterCom extends PluginForDecrypt {
                         }
                     }
                 }
+                if (decryptedLinks.size() == 0) {
+                    /* Probably Tweet does not contain any media */
+                    logger.info("Could not find any media in this Tweet");
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
             }
         }
         if (decryptedLinks.size() == 0) {
@@ -201,7 +210,7 @@ public class TwitterCom extends PluginForDecrypt {
     }
 
     private String createVideourl(final String stream_id) {
-        return "http://twittervideo/" + stream_id;
+        return "https://twitter.com/i/cards/tfw/v1/" + stream_id;
     }
 
     private String getUrlFname(final String parameter) {
