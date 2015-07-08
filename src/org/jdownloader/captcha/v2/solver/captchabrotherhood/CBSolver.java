@@ -61,6 +61,7 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
 
     @Override
     public boolean canHandle(Challenge<?> c) {
+        // TODO: ACCOUNT BASED EVAULATION OF CREDITS HERE
         return c instanceof BasicCaptchaChallenge && super.canHandle(c);
     }
 
@@ -95,6 +96,11 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
         } else {
             accountStatusString = acc.getError();
         }
+        // no code to actually throw exception or when getError == true, in loadAccount?? why??
+        // can not start task under + 10 credits
+        if (acc.getBalance() < 10) {
+            throw new SolverException("Not Enough Credits for Task");
+        }
 
         BasicCaptchaChallenge challenge = (BasicCaptchaChallenge) job.getChallenge();
         String user = config.getUser();
@@ -125,7 +131,6 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
             if (!ret.startsWith("OK-")) {
                 throw new SolverException(ret);
             }
-            // Error-No Credits
             String captchaID = ret.substring(3);
             data = null;
             Thread.sleep(6000);
