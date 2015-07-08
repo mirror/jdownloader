@@ -50,6 +50,7 @@ public class EroxiaCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("eroxiadecrypted.com/", "eroxia.com/"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -66,7 +67,10 @@ public class EroxiaCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // Try to find direct link first
-        DLLINK = br.getRegex("url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        DLLINK = br.getRegex("\\&file=(http[^<>\"]*?)\\&").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        }
         if (DLLINK == null) {
             // No direct link there -> 2nd way
             DLLINK = br.getRegex("(http://(www\\.)?eroxia\\.com/playerConfig\\.php\\?[^<>\"/\\&]*?)\"").getMatch(0);

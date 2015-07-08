@@ -39,15 +39,18 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 //http://en.channel.pandora.tv/channel/video.ptv?ch_userid=keigoo&prgid=36487732&categid=32224359&page=36
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pandora.tv" }, urls = { "http://(.+)?channel\\.pandora\\.tv/channel/video\\.ptv\\?.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pandora.tv" }, urls = { "http://(?:.+)?channel\\.pandora\\.tv/channel/video\\.ptv\\?.+|http://(?:www\\.)?pandora\\.tv/my\\.[^/]+/\\d+" }, flags = { 0 })
 public class PandoraTV extends PluginForHost {
-
-    private static final String MAINPAGE = "http://www.pandora.tv";
-    private static final String DLPAGE   = "http://trans-idx.pandora.tv/flvorgx.pandora.tv";
 
     public PandoraTV(final PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String TYPE1    = "http://(?:.+)?channel\\.pandora\\.tv/channel/video\\.ptv\\?.+";
+    private static final String TYPE2    = "http://(?:www\\.)?pandora\\.tv/my\\.[^/]+/\\d+";
+
+    private static final String MAINPAGE = "http://www.pandora.tv";
+    private static final String DLPAGE   = "http://trans-idx.pandora.tv/flvorgx.pandora.tv";
 
     private String decodeUnicode(final String s) {
         final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
@@ -67,6 +70,16 @@ public class PandoraTV extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        if (link.getDownloadURL().matches(TYPE2)) {
+            final Regex info = new Regex(link.getDownloadURL(), "http://(?:www\\.)?pandora\\.tv/my\\.([^/]+)/(\\d+)");
+            final String user = info.getMatch(0);
+            final String videoid = info.getMatch(1);
+            link.setUrlDownload("http://en.channel.pandora.tv/channel/video.ptv?ch_userid=" + user + "&prgid=" + videoid + "&ref=cate");
+        }
     }
 
     @SuppressWarnings("deprecation")

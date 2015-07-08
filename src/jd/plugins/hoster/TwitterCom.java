@@ -29,6 +29,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -39,7 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/.+|http://twittervideo/\\d+" }, flags = { 2 })
 public class TwitterCom extends PluginForHost {
 
     public TwitterCom(PluginWrapper wrapper) {
@@ -52,6 +53,9 @@ public class TwitterCom extends PluginForHost {
         return "https://twitter.com/tos";
     }
 
+    private static final String  TYPE_DIRECT               = "https?://[a-z0-9]+\\.twimg\\.com/.+";
+    private static final String  TYPE_VIDEO                = "http://twittervideo/\\d+";
+
     /* Connection stuff - don't allow chunks as we only download small pictures */
     private static final boolean FREE_RESUME               = true;
     private static final int     FREE_MAXCHUNKS            = 1;
@@ -63,22 +67,43 @@ public class TwitterCom extends PluginForHost {
     /* don't touch the following! */
     private static AtomicInteger maxPrem                   = new AtomicInteger(1);
 
+    private String               dllink                    = null;
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
+        dllink = null;
         URLConnectionAdapter con = null;
+        this.setBrowserExclusive();
         /* Most times twitter-imagelinks will come from the decrypter. */
+        String status_id = null;
         String filename = link.getStringProperty("decryptedfilename", null);
+        if (link.getDownloadURL().matches(TYPE_VIDEO)) {
+            status_id = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+            this.br.getPage("https://twitter.com/i/cards/tfw/v1/" + status_id);
+            this.br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
+            dllink = br.getRegex("playlist\\&quot;:\\[\\{\\&quot;source\\&quot;:\\&quot;(https[^<>\"]*?\\.webm)").getMatch(0);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            filename = status_id + "_" + new Regex(dllink, "([^/]+\\.webm)$").getMatch(0);
+        } else {
+            dllink = link.getDownloadURL();
+        }
         try {
             try {
                 if (isJDStable()) {
-                    con = br.openGetConnection(link.getDownloadURL());
+                    con = br.openGetConnection(dllink);
                 } else {
                     /* @since JD2 */
-                    con = br.openHeadConnection(link.getDownloadURL());
+                    con = br.openHeadConnection(dllink);
                 }
             } catch (final BrowserException e) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final long filesize = con.getLongContentLength();
+            if (filesize == 0) {
+                /* E.g. abused video */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!con.getContentType().contains("html")) {
@@ -86,7 +111,7 @@ public class TwitterCom extends PluginForHost {
                     filename = Encoding.htmlDecode(getFileNameFromHeader(con));
                 }
                 link.setFinalFileName(filename);
-                link.setDownloadSize(con.getLongContentLength());
+                link.setDownloadSize(filesize);
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -106,41 +131,13 @@ public class TwitterCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
-
-    // private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-    // String dllink = downloadLink.getStringProperty(property);
-    // if (dllink != null) {
-    // URLConnectionAdapter con = null;
-    // try {
-    // final Browser br2 = br.cloneBrowser();
-    // if (isJDStable()) {
-    // con = br2.openGetConnection(dllink);
-    // } else {
-    // con = br2.openHeadConnection(dllink);
-    // }
-    // if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // }
-    // } catch (final Exception e) {
-    // downloadLink.setProperty(property, Property.NULL);
-    // dllink = null;
-    // } finally {
-    // try {
-    // con.disconnect();
-    // } catch (final Throwable e) {
-    // }
-    // }
-    // }
-    // return dllink;
-    // }
 
     private boolean isJDStable() {
         return System.getProperty("jd.revision.jdownloaderrevision") == null;
@@ -213,6 +210,7 @@ public class TwitterCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -236,6 +234,7 @@ public class TwitterCom extends PluginForHost {
         return ai;
     }
 
+    /** TODO: Fix this */
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {

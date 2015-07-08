@@ -92,10 +92,9 @@ public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
         this.br.getPage(downloadLink.getDownloadURL());
-        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().contains("/404.php")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (downloadLink.getDownloadURL().matches(type_normal)) {
+        if (downloadLink.getDownloadURL().matches(type_only_numbers)) {
+            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        } else {
             filename = this.br.getRegex("class=\"block\\-title\">[\t\n\r ]*?<h\\d+>([^<>]*?)<").getMatch(0);
             if (filename == null) {
                 filename = this.br.getRegex("<h\\d+ class=\"block_header\">([^<>]*?)<").getMatch(0);
@@ -117,8 +116,19 @@ public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
                 /* Make it look a bit better by using spaces instead of '-' which is always used inside their URLs. */
                 filename = filename.replace("-", " ");
             }
-        } else {
-            filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        }
+        /* Offline links should also have nice filenames */
+        filename = Encoding.htmlDecode(filename);
+        filename = filename.trim();
+        filename = encodeUnicode(filename);
+        downloadLink.setName(filename);
+        if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().contains("/404.php")) {
+            /* Definitly offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (!this.br.containsHTML("license_code:") && !this.br.containsHTML("kt_player_[0-9\\.]+\\.swfx?")) {
+            /* No licence key present in html and/or no player --> No video --> Offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Most times this RegEx should do the job */
         DLLINK = this.br.getRegex("video_url[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
@@ -137,13 +147,10 @@ public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
         if (DLLINK == null) {
             DLLINK = this.br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
-        if (filename == null || DLLINK == null) {
+        if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        filename = encodeUnicode(filename);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {

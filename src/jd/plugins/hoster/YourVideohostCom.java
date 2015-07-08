@@ -201,6 +201,7 @@ public class YourVideohostCom extends PluginForHost {
 
     @SuppressWarnings("unused")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        checkErrors(downloadLink, false);
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
         /* First, bring up saved final links */
