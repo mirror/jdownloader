@@ -29,7 +29,6 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -40,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/.+|http://twittervideo/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitter.com" }, urls = { "https?://[a-z0-9]+\\.twimg\\.com/.+" }, flags = { 2 })
 public class TwitterCom extends PluginForHost {
 
     public TwitterCom(PluginWrapper wrapper) {
@@ -54,7 +53,6 @@ public class TwitterCom extends PluginForHost {
     }
 
     private static final String  TYPE_DIRECT               = "https?://[a-z0-9]+\\.twimg\\.com/.+";
-    private static final String  TYPE_VIDEO                = "http://twittervideo/\\d+";
 
     /* Connection stuff - don't allow chunks as we only download small pictures */
     private static final boolean FREE_RESUME               = true;
@@ -75,21 +73,9 @@ public class TwitterCom extends PluginForHost {
         dllink = null;
         URLConnectionAdapter con = null;
         this.setBrowserExclusive();
-        /* Most times twitter-imagelinks will come from the decrypter. */
-        String status_id = null;
+        /* Most times twitter-image/videolinks will come from the decrypter. */
         String filename = link.getStringProperty("decryptedfilename", null);
-        if (link.getDownloadURL().matches(TYPE_VIDEO)) {
-            status_id = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
-            this.br.getPage("https://twitter.com/i/cards/tfw/v1/" + status_id);
-            this.br.getRequest().setHtmlCode(this.br.toString().replace("\\", ""));
-            dllink = br.getRegex("playlist\\&quot;:\\[\\{\\&quot;source\\&quot;:\\&quot;(https[^<>\"]*?\\.webm)").getMatch(0);
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            filename = status_id + "_" + new Regex(dllink, "([^/]+\\.webm)$").getMatch(0);
-        } else {
-            dllink = link.getDownloadURL();
-        }
+        dllink = link.getDownloadURL();
         try {
             try {
                 if (isJDStable()) {
