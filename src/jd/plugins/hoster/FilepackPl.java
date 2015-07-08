@@ -199,7 +199,11 @@ public class FilepackPl extends PluginForHost {
         if (account.getBooleanProperty("free", false)) {
             dllink = this.checkDirectLink(link, "account_free_directlink");
             if (dllink == null) {
-                dllink = getDllink(account, link);
+                /*
+                 * TODO: Free account + API download needs to be fixed serversaide - at the moment we're just downloading without account
+                 * instead of via free account here.
+                 */
+                dllink = getDllink(null, link);
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
