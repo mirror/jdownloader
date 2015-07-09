@@ -42,7 +42,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de", "rbb-online.de" }, urls = { "http://(?:www\\.)?(?:ardmediathek|mediathek\\.daserste)\\.de/.+|http://www\\.daserste\\.de/[^<>\"]+/videos/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+" }, flags = { 32, 32 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de", "rbb-online.de" }, urls = { "http://(?:www\\.)?(?:ardmediathek|mediathek\\.daserste)\\.de/.+|http://www\\.daserste\\.de/[^<>\"]+/(videos|videosextern)/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+" }, flags = { 32, 32 })
 public class RDMdthk extends PluginForDecrypt {
 
     /* Settings */
@@ -63,7 +63,7 @@ public class RDMdthk extends PluginForDecrypt {
     private static final String                 type_unsupported      = "http://(www\\.)?ardmediathek\\.de/(tv/live\\?kanal=\\d+|dossiers/.*)";
     private static final String                 type_invalid          = "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/(download|livestream).+";
     private static final String                 type_ard_mediathek    = "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/.+";
-    private static final String                 type_ardvideo         = "http://www\\.daserste\\.de/[^<>\"]+/videos/[a-z0-9\\-]+\\.html";
+    private static final String                 type_ardvideo         = "http://www\\.daserste\\.de/.+";
     private static final String                 type_rbb_mediathek    = "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+";
     private SubConfiguration                    cfg                   = null;
 
@@ -75,6 +75,7 @@ public class RDMdthk extends PluginForDecrypt {
     private String                              parameter             = null;
     private String                              title                 = null;
     private String                              date                  = null;
+    private String                              date_formatted        = null;
     ArrayList<DownloadLink>                     decryptedLinks        = new ArrayList<DownloadLink>();
 
     public RDMdthk(final PluginWrapper wrapper) {
@@ -191,7 +192,8 @@ public class RDMdthk extends PluginForDecrypt {
             title = show + " - " + title;
         }
         if (this.date != null) {
-            title = formatDate(this.date) + "_ard_" + title;
+            this.date_formatted = formatDateArdMediathek(this.date);
+            title = this.date_formatted + "_ard_" + title;
         }
         final Browser br = new Browser();
         setBrowserExclusive();
@@ -334,9 +336,15 @@ public class RDMdthk extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().equals("application/xml")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
+        this.date = getXML("broadcastDate");
         title = getXML("shareTitle");
+        if (this.title == null || this.date == null) {
+            throw new DecrypterException("Decrypter broken");
+        }
         title = Encoding.htmlDecode(title).trim();
         title = encodeUnicode(title);
+        this.date_formatted = formatDateDasErste(this.date);
+        title = this.date_formatted + "_daserste_" + title;
         /* TODO: Implement this */
         subtitleLink = null;
         int t = 0;
@@ -632,8 +640,25 @@ public class RDMdthk extends PluginForDecrypt {
         return false;
     }
 
-    private String formatDate(final String input) {
+    private String formatDateArdMediathek(final String input) {
         final long date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy", Locale.GERMAN);
+        String formattedDate = null;
+        final String targetFormat = "yyyy-MM-dd";
+        Date theDate = new Date(date);
+        try {
+            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+            formattedDate = formatter.format(theDate);
+        } catch (Exception e) {
+            /* prevent input error killing plugin */
+            formattedDate = input;
+        }
+        return formattedDate;
+    }
+
+    private String formatDateDasErste(String input) {
+        /* 2015-06-23T20:15:00.000+02:00 --> 2015-06-23T20:15:00.000+0200 */
+        input = input.substring(0, input.lastIndexOf(":")) + "00";
+        final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.GERMAN);
         String formattedDate = null;
         final String targetFormat = "yyyy-MM-dd";
         Date theDate = new Date(date);
