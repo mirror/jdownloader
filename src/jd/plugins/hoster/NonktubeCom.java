@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nonktube.com" }, urls = { "http://(www\\.)?nonktube\\.com/video/\\d+/[a-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nonktube.com" }, urls = { "http://(www\\.)?nonktube\\.com/(?:porn/)?video/\\d+/[a-z0-9\\-]+" }, flags = { 0 })
 public class NonktubeCom extends PluginForHost {
 
     public NonktubeCom(PluginWrapper wrapper) {
@@ -62,7 +62,7 @@ public class NonktubeCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        final String fid = new Regex(downloadLink.getDownloadURL(), "nonktube\\.com/video/(\\d+)/").getMatch(0);
+        final String fid = new Regex(downloadLink.getDownloadURL(), "/video/(\\d+)/").getMatch(0);
         DLLINK = null;
         this.setBrowserExclusive();
         downloadLink.setLinkID(fid);

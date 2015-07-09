@@ -68,6 +68,8 @@ public class CloudyVideosCom extends PluginForHost {
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = false;
     private static final boolean SUPPORTSHTTPS_FORCED         = false;
+    /* Workaround for serverside MESS! */
+    private static final boolean SPECIAL_HANDLING             = true;
     // Connection stuff
     private static final boolean FREE_RESUME                  = true;
     private static final int     FREE_MAXCHUNKS               = -2;
@@ -88,7 +90,7 @@ public class CloudyVideosCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.4.4
-    // mods:
+    // mods: heavily modified, do NOT upgrade!
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -152,32 +154,44 @@ public class CloudyVideosCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
         prepBrowser(br);
         setFUID(link);
-        getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) {
-            link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
-            return AvailableStatus.UNCHECKABLE;
-        }
-        if (br.getURL().contains("/?op=login&redirect=")) {
-            link.getLinkStatus().setStatusText(PREMIUMONLY2);
-            return AvailableStatus.UNCHECKABLE;
-        }
         final String[] fileInfo = new String[3];
-        scanInfo(fileInfo);
-        if (fileInfo[0] == null || fileInfo[0].equals("")) {
-            if (correctedBR.contains("You have reached the download(\\-| )limit")) {
-                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+        if (SPECIAL_HANDLING) {
+            getPage("http://cloudyvideos.com/embed-" + this.fuid + ".html");
+            fileInfo[0] = new Regex(correctedBR, "size:14px;font-family:arial;\"><b>(?!watch)([^<>\"]*?)</b></p>").getMatch(0);
+            if (fileInfo[0] == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (fileInfo[0].equals("")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } else {
+            getPage(link.getDownloadURL());
+            if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (new Regex(correctedBR, MAINTENANCE).matches()) {
+                link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
                 return AvailableStatus.UNCHECKABLE;
             }
-            logger.warning("filename equals null, throwing \"plugin defect\"");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.getURL().contains("/?op=login&redirect=")) {
+                link.getLinkStatus().setStatusText(PREMIUMONLY2);
+                return AvailableStatus.UNCHECKABLE;
+            }
+            scanInfo(fileInfo);
+            if (fileInfo[0] == null || fileInfo[0].equals("")) {
+                if (correctedBR.contains("You have reached the download(\\-| )limit")) {
+                    logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                    return AvailableStatus.UNCHECKABLE;
+                }
+                logger.warning("filename equals null, throwing \"plugin defect\"");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         if (fileInfo[2] != null && !fileInfo[2].equals("")) {
             link.setMD5Hash(fileInfo[2].trim());
@@ -245,6 +259,35 @@ public class CloudyVideosCom extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // Second, check for streaming links on the first page
         if (dllink == null) {
+            dllink = getDllink();
+        }
+        if (SPECIAL_HANDLING) {
+            final Form dlForm = this.br.getForm(0);
+            if (dlForm == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (correctedBR.contains("solvemedia.com/papi/")) {
+                logger.info("Detected captcha method \"solvemedia\" for this host");
+                final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                File cf = null;
+                try {
+                    cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                } catch (final Exception e) {
+                    if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                    }
+                    throw e;
+                }
+                final String code = getCaptchaCode(cf, downloadLink);
+                final String chid = sm.getChallenge(code);
+                dlForm.put("adcopy_challenge", chid);
+                dlForm.put("adcopy_response", "manual_challenge");
+                sendForm(dlForm);
+                if (correctedBR.contains("solvemedia.com/papi/")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+            }
             dllink = getDllink();
         }
         // Third, do they provide video hosting?
