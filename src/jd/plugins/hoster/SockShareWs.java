@@ -47,7 +47,7 @@ public class SockShareWs extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if ((br.getRequest().getHttpConnection().getResponseCode() == 404) || (br.containsHTML("<h1><strong>")) || (!br.containsHTML("name=\"hash\""))) {
+        if ((br.getRequest().getHttpConnection().getResponseCode() == 404) || (br.containsHTML("<h1><strong>|Error - 404 Not Found")) || (!br.containsHTML("name=\"hash\""))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex finfo = br.getRegex("<h1>([^<>\"]*)<strong>\\( ([^<>\"]*?) \\)</strong></h1>");
