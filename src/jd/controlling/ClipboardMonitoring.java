@@ -26,6 +26,7 @@ import jd.controlling.linkcollector.LinkOrigin;
 import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.parser.html.HTMLParser;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
@@ -239,7 +240,7 @@ public class ClipboardMonitoring {
                                                 if (htmlFlavorAllowed) {
                                                     handleThisRound = handleThisRound + "\r\n" + htmlContent;
                                                 }
-                                                lastBrowserUrl = getCurrentBrowserURL(currentContent);
+                                                lastBrowserUrl = getCurrentBrowserURL(currentContent, htmlContent);
                                             } else {
                                                 oldHTMLContent = null;
                                             }
@@ -263,7 +264,7 @@ public class ClipboardMonitoring {
                                                     if (htmlFlavorAllowed) {
                                                         handleThisRound = newStringContent + "\r\n" + htmlContent;
                                                     }
-                                                    lastBrowserUrl = getCurrentBrowserURL(currentContent);
+                                                    lastBrowserUrl = getCurrentBrowserURL(currentContent, htmlContent);
                                                 }
                                             } else {
                                                 oldHTMLContent = null;
@@ -335,20 +336,24 @@ public class ClipboardMonitoring {
                     /* lets fetch fresh HTML Content if available */
                     htmlContent = getHTMLTransferData(currentContent);
                     if (htmlContent != null) {
-                        browserUrl = getCurrentBrowserURL(currentContent);
+                        browserUrl = getCurrentBrowserURL(currentContent, htmlContent);
                     }
                 } catch (final Throwable e) {
                     e.printStackTrace();
                 }
                 final StringBuilder sb = new StringBuilder();
                 if (stringContent != null) {
+                    sb.append("<");
                     sb.append(stringContent);
-                }
-                if (sb.length() > 0) {
-                    sb.append("\r\n");
+                    sb.append(">");
                 }
                 if (isHtmlFlavorAllowed() && htmlContent != null) {
+                    if (sb.length() > 0) {
+                        sb.append("\r\n");
+                    }
+                    sb.append("<");
                     sb.append(htmlContent);
+                    sb.append(">");
                 }
                 return new ClipboardContent(sb.toString(), browserUrl);
             }
@@ -543,7 +548,7 @@ public class ClipboardMonitoring {
             }
             final String browserUrl;
             if (StringUtils.isNotEmpty(htmlContent)) {
-                browserUrl = getCurrentBrowserURL(transferable);
+                browserUrl = getCurrentBrowserURL(transferable, htmlContent);
             } else {
                 browserUrl = null;
             }
@@ -699,14 +704,27 @@ public class ClipboardMonitoring {
     }
 
     public static String getCurrentBrowserURL(final Transferable transferable) throws UnsupportedFlavorException, IOException {
-        String ret = null;
+        return getCurrentBrowserURL(transferable, null);
+    }
+
+    public static String getCurrentBrowserURL(final Transferable transferable, final String htmlFlavor) throws UnsupportedFlavorException, IOException {
         if (ClipboardMonitoring.getINSTANCE().CLIPBOARDHACK != null) {
-            ret = ClipboardMonitoring.getINSTANCE().CLIPBOARDHACK.getURLFromCF_HTML();
+            final String ret = ClipboardMonitoring.getINSTANCE().CLIPBOARDHACK.getURLFromCF_HTML();
+            if (!StringUtils.isEmpty(ret) && HTMLParser.getProtocol(ret) != null) {
+                return ret;
+            }
         }
-        if (!StringUtils.isEmpty(ret)) {
+        final String ret = getBrowserMime("x-moz-url-priv", transferable);
+        if (!StringUtils.isEmpty(ret) && HTMLParser.getProtocol(ret) != null) {
             return ret;
         }
-        return getBrowserMime("x-moz-url-priv", transferable);
+        if (htmlFlavor != null) {
+            final String viewSource = new Regex(htmlFlavor, "<a href=\"view-source:(https?://.*?)\"").getMatch(0);
+            if (!StringUtils.isEmpty(viewSource) && HTMLParser.getProtocol(viewSource) != null) {
+                return viewSource;
+            }
+        }
+        return null;
     }
 
     public static String getBrowserMime(final String mime, final Transferable transferable) throws UnsupportedFlavorException, IOException {
