@@ -727,7 +727,8 @@ public class RapidGatorNet extends PluginForHost {
                  * eg subscriptions
                  */
                 this.br.getPage("http://rapidgator.net/Payment/Payment");
-                expireDate = this.br.getRegex("style=\"width:100px;\">\\d+</td><td>([^<>\"]*?)</td>").getMatch(0);
+                // expireDate = this.br.getRegex("style=\"width:60px;\">\\d+</td><td>([^<>\"]*?)</td>").getMatch(0);
+                expireDate = this.br.getRegex("style=\"width.*?style=\"width.*?style=\"width.*?>([^<>\"]*?)<").getMatch(0);
             }
             if (expireDate == null) {
                 this.logger.warning("Could not find expire date!");
@@ -1145,9 +1146,9 @@ public class RapidGatorNet extends PluginForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             *
+             * 
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             *
+             * 
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
