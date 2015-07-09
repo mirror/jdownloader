@@ -61,12 +61,15 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
 
     @Override
     public boolean canHandle(Challenge<?> c) {
-        try {
-            checkForEnoughCredits();
-        } catch (SolverException e) {
-            return false;
+        if (c instanceof BasicCaptchaChallenge && super.canHandle(c)) {
+            try {
+                checkForEnoughCredits();
+            } catch (SolverException e) {
+                return false;
+            }
+            return true;
         }
-        return c instanceof BasicCaptchaChallenge && super.canHandle(c);
+        return false;
     }
 
     @Override
@@ -88,10 +91,10 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
         return true;
     }
 
-    private AtomicInteger counterSolved      = new AtomicInteger();
-    private AtomicInteger counterInterrupted = new AtomicInteger();
-    private AtomicInteger counter            = new AtomicInteger();
-    private CBHAccount    lastAccount        = null;
+    private AtomicInteger       counterSolved      = new AtomicInteger();
+    private AtomicInteger       counterInterrupted = new AtomicInteger();
+    private AtomicInteger       counter            = new AtomicInteger();
+    private volatile CBHAccount lastAccount        = null;
 
     @Override
     protected void solveCES(CESSolverJob<String> job) throws InterruptedException, SolverException {
@@ -166,14 +169,18 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
     }
 
     private void checkForEnoughCredits() throws SolverException {
-        if (lastAccount != null) {
+        final CBHAccount lLastAccount = lastAccount;
+        if (lLastAccount != null) {
             // valid cached account
-            if (StringUtils.equals(config.getUser(), lastAccount.getUser())) {
+            if (StringUtils.equals(config.getUser(), lLastAccount.getUser())) {
                 // user did not change
-                if ((System.currentTimeMillis() - lastAccount.getCreateTime()) < 5 * 60 * 1000l) {
+                if ((System.currentTimeMillis() - lLastAccount.getCreateTime()) < 5 * 60 * 1000l) {
                     // cache is not older than 5 minutes
-                    if (lastAccount.getBalance() < 10) {
+                    if (lLastAccount.getBalance() < 10) {
                         throw new SolverException("Not Enough Credits for Task");
+                    }
+                    if (lLastAccount.getError() != null) {
+                        throw new SolverException("CBH: " + lLastAccount.getError());
                     }
                 }
             }
@@ -181,24 +188,22 @@ public class CBSolver extends CESChallengeSolver<String> implements ChallengeRes
     }
 
     public CBHAccount loadAccount() {
-        CBHAccount ret = new CBHAccount();
+        final CBHAccount ret = new CBHAccount();
         ret.setRequests(counter.get());
         ret.setSkipped(counterInterrupted.get());
         ret.setSolved(counterSolved.get());
         ret.setUser(config.getUser());
         try {
-            Browser br = new Browser();
+            final Browser br = new Browser();
             br.setDebug(true);
             br.setVerbose(true);
             String result = br.postPage("http://www.captchabrotherhood.com/askCredits.aspx?username=" + Encoding.urlEncode(config.getUser()) + "&password=" + Encoding.urlEncode(config.getPass()) + "&version=1.1.8", "");
-
             if (result.startsWith("OK-")) {
                 ret.setBalance(Integer.parseInt(result.substring(3)));
             } else {
                 ret.setError(result);
             }
         } catch (Exception e) {
-
             ret.setError(e.getMessage());
         }
         lastAccount = ret;
