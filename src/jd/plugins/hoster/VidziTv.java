@@ -88,7 +88,7 @@ public class VidziTv extends PluginForHost {
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.5.8
-    // mods: getDllink, scanInfo, requestFileInformation
+    // mods: heavily modified, do NOT upgrade!!
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -268,6 +268,7 @@ public class VidziTv extends PluginForHost {
                     }
                 }
                 /* end of backward compatibility */
+                waitTime(System.currentTimeMillis(), downloadLink);
                 sendForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();

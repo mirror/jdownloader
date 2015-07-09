@@ -274,8 +274,10 @@ public class BytewhaleCom extends PluginForHost {
             }
         }
         if (fileInfo[0] == null) {
-            /* Link of the box without filesize */
             fileInfo[0] = new Regex(correctedBR, "<b>Download:</b> ([^<>\"]*?)<span>").getMatch(0);
+        }
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "<div id=\"fnsd(?:2|\\d+)\">([^<>\"]*?)<span>").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
@@ -752,6 +754,9 @@ public class BytewhaleCom extends PluginForHost {
         }
         if (ttt == null) {
             ttt = new Regex(correctedBR, "class=\"seconds\" style=\"[^<>\"]+\">(\\d+)</span>").getMatch(0);
+        }
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, "class=\"seconds\">(\\d+)</span>").getMatch(0);
         }
         if (ttt != null) {
             wait = Integer.parseInt(ttt);
