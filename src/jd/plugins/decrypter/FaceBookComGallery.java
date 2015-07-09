@@ -30,6 +30,7 @@ import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -70,6 +71,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String     TYPE_GROUPS_PHOTOS              = "https?://(www\\.)?facebook\\.com/groups/\\d+/photos/";
     private static final String     TYPE_GROUPS_FILES               = "https?://(www\\.)?facebook\\.com/groups/\\d+/files/";
     private static final String     TYPE_PROFILE_PHOTOS             = "https?://(www\\.)?facebook\\.com/profile\\.php\\?id=\\d+\\&sk=photos\\&collection_token=[A-Z0-9%]+";
+    private static final String     TYPE_NOTES                      = "https?://(www\\.)?facebook\\.com/(notes/|note\\.php\\?note_id=).+";
 
     private static final int        MAX_LOOPS_GENERAL               = 150;
     private static final int        MAX_PICS_DEFAULT                = 5000;
@@ -169,6 +171,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 decryptVideoSet();
             } else if (parameter.matches(TYPE_GROUPS_PHOTOS)) {
                 decryptGroupsPhotos();
+            } else if (parameter.matches(TYPE_NOTES)) {
+                decryptNotes();
             } else {
                 // Should never happen
                 logger.info("Unsupported linktype: " + PARAMETER);
@@ -868,6 +872,17 @@ public class FaceBookComGallery extends PluginForDecrypt {
             logger.info("facebook.com: -> Even though it seems like we don't have all images, that's all ;)");
         }
 
+    }
+
+    private void decryptNotes() throws Exception {
+        final String html = br.getRegex("<div class=\"_4-u3 _5cla\">(.*?)class=\"commentable_item\"").getMatch(0);
+        if (html == null) {
+            throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
+        }
+        final String[] urls = HTMLParser.getHttpLinks(html, null);
+        for (final String url : urls) {
+            this.decryptedLinks.add(this.createDownloadlink(url));
+        }
     }
 
     // TODO: Use this everywhere as it should work universal
