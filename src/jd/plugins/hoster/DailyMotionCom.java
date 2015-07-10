@@ -202,15 +202,18 @@ public class DailyMotionCom extends PluginForHost {
     private String findFreshDirectlink(final DownloadLink dl) throws IOException {
         try {
             dllink = null;
+            /* Remove old cookies/Referer */
+            this.br = new Browser();
+            final String mainlink = dl.getStringProperty("mainlink", null);
 
             br.setFollowRedirects(true);
-            br.getPage(dl.getStringProperty("mainlink", null));
+            br.getPage(mainlink);
             br.setFollowRedirects(false);
             final String videosource = getVideosource(this.br);
             if (videosource == null) {
                 return null;
             }
-            LinkedHashMap<String, String[]> foundqualities = findVideoQualities(this.br, dl.getStringProperty("mainlink", null), videosource);
+            LinkedHashMap<String, String[]> foundqualities = findVideoQualities(this.br, mainlink, videosource);
             final String qualityvalue = dl.getStringProperty("qualityvalue", null);
             final String directlinkinfo[] = foundqualities.get(qualityvalue);
             dllink = Encoding.htmlDecode(directlinkinfo[0]);
@@ -355,7 +358,7 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     private void prepBrowser() {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:28.0) Gecko/20100101 Firefox/28.0");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
         br.getHeaders().put("Accept-Encoding", "gzip");

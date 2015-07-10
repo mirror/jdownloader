@@ -472,7 +472,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 dl.setProperty("plain_videoid", VIDEOID);
                 dl.setProperty("plain_channel", CHANNELNAME);
                 dl.setProperty("plain_date", Long.toString(DATE));
-                dl.setProperty("LINKDUPEID", "dailymotioncom" + VIDEOID + "_" + qualityname);
+                dl.setLinkID("dailymotioncom" + VIDEOID + "_" + qualityname);
                 final String formattedFilename = jd.plugins.hoster.DailyMotionCom.getFormattedFilename(dl);
                 dl.setName(formattedFilename);
                 fpSub.add(dl);
@@ -660,7 +660,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             dl.setProperty("plain_videoid", VIDEOID);
             dl.setProperty("plain_channel", CHANNELNAME);
             dl.setProperty("plain_date", Long.toString(DATE));
-            dl.setProperty("LINKDUPEID", "dailymotioncom" + VIDEOID + "_" + qualityName);
+            dl.setLinkID("dailymotioncom" + VIDEOID + "_" + qualityName);
             final String formattedFilename = jd.plugins.hoster.DailyMotionCom.getFormattedFilename(dl);
             dl.setName(formattedFilename);
             try {

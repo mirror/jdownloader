@@ -65,11 +65,19 @@ public class OneFichierCom extends PluginForHost {
     private DownloadLink         currDownloadLink             = null;
 
     /* Max total connections for premium = 50 (RE: admin) */
+    private static final boolean resume_account_premium       = true;
     private static final int     maxchunks_account_premium    = -4;
     private static final int     maxdownloads_account_premium = 12;
-
+    /* 2015-07-10: According to admin, resume is free mode is not possible anymore. On attempt this will lead to 404 server error! */
     private static final int     maxchunks_free               = 1;
+    private static final boolean resume_free                  = false;
     private static final int     maxdownloads_free            = 1;
+    /*
+     * Settings for hotlinks - basically such links are created by premium users so free users can download them without limits (same limits
+     * as premium users).
+     */
+    private static final boolean resume_free_hotlink          = true;
+    private static final int     maxchunks_free_hotlink       = maxdownloads_account_premium;
 
     public OneFichierCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -233,10 +241,12 @@ public class OneFichierCom extends PluginForHost {
         /* The following code will cover saved directlinks and hotlinked-links. */
         String dllink = downloadLink.getStringProperty(PROPERTY_FREELINK, this.getDownloadlinkNEW(downloadLink));
         br.setFollowRedirects(true);
-        // at times the second chunk creates 404 errors!
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks_free);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free_hotlink, maxchunks_free_hotlink);
         if (dl.getConnection().getContentType().contains("html")) {
-            /* could not resume, fetch new link */
+            /*
+             * could not resume, fetch new link, either saved link was free and chunks are not supported or somehow a premium link failed -
+             * either way it should work below then!
+             */
             br.followConnection();
             downloadLink.setProperty(PROPERTY_FREELINK, Property.NULL);
             dllink = null;
@@ -315,7 +325,7 @@ public class OneFichierCom extends PluginForHost {
             }
         }
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, maxchunks_free);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume_free, maxchunks_free);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -659,7 +669,7 @@ public class OneFichierCom extends PluginForHost {
             br.setFollowRedirects(true);
             try {
                 logger.info("Connecting to " + dllink);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxchunks_account_premium);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume_account_premium, maxchunks_account_premium);
             } catch (final ConnectException c) {
                 logger.info("Download failed because connection timed out, NOT a JD issue!");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Connection timed out", 60 * 60 * 1000l);
