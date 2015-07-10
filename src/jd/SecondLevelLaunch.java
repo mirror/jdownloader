@@ -1097,8 +1097,8 @@ public class SecondLevelLaunch {
 
                         for (SecuritySoftwareInfo s : sw) {
                             names.add(s.getName());
-                            signedReportingExe.add(s.get("pathToSignedReportingExe"));
-                            signedProductExe.add(s.get("pathToSignedProductExe"));
+                            signedReportingExe.add(new File(s.get("pathToSignedReportingExe")).getName());
+                            signedProductExe.add(new File(s.get("pathToSignedProductExe")).getName());
                             state.add(s.get("productState"));
                             response.add(s.get("response"));
                         }
@@ -1106,10 +1106,10 @@ public class SecondLevelLaunch {
                         HashMap<String, String> infos = new HashMap<String, String>();
 
                         infos.put("names", JSonStorage.serializeToJson(names));
-                        infos.put("reporting", JSonStorage.serializeToJson(names));
-                        infos.put("product", JSonStorage.serializeToJson(names));
-                        infos.put("states", JSonStorage.serializeToJson(names));
-                        infos.put("responses", JSonStorage.serializeToJson(names));
+                        infos.put("reporting", JSonStorage.serializeToJson(signedReportingExe));
+                        infos.put("product", JSonStorage.serializeToJson(signedProductExe));
+                        infos.put("states", JSonStorage.serializeToJson(state));
+                        infos.put("responses", JSonStorage.serializeToJson(response));
 
                         StatsManager.I().track(100, "secur", "sec/av", infos);
                     } catch (UnsupportedOperationException e) {
@@ -1139,8 +1139,8 @@ public class SecondLevelLaunch {
 
                         for (SecuritySoftwareInfo s : sw) {
                             names.add(s.getName());
-                            signedReportingExe.add(s.get("pathToSignedReportingExe"));
-                            signedProductExe.add(s.get("pathToSignedProductExe"));
+                            signedReportingExe.add(new File(s.get("pathToSignedReportingExe")).getName());
+                            signedProductExe.add(new File(s.get("pathToSignedProductExe")).getName());
                             state.add(s.get("productState"));
                             response.add(s.get("response"));
                         }
@@ -1148,10 +1148,10 @@ public class SecondLevelLaunch {
                         HashMap<String, String> infos = new HashMap<String, String>();
 
                         infos.put("names", JSonStorage.serializeToJson(names));
-                        infos.put("reporting", JSonStorage.serializeToJson(names));
-                        infos.put("product", JSonStorage.serializeToJson(names));
-                        infos.put("states", JSonStorage.serializeToJson(names));
-                        infos.put("responses", JSonStorage.serializeToJson(names));
+                        infos.put("reporting", JSonStorage.serializeToJson(signedReportingExe));
+                        infos.put("product", JSonStorage.serializeToJson(signedProductExe));
+                        infos.put("states", JSonStorage.serializeToJson(state));
+                        infos.put("responses", JSonStorage.serializeToJson(response));
                         StatsManager.I().track(100, "secur", "sec/fw", infos);
                     } catch (UnsupportedOperationException e) {
                     } catch (SecuritySoftwareException e) {
@@ -1180,8 +1180,8 @@ public class SecondLevelLaunch {
 
                         for (SecuritySoftwareInfo s : sw) {
                             names.add(s.getName());
-                            signedReportingExe.add(s.get("pathToSignedReportingExe"));
-                            signedProductExe.add(s.get("pathToSignedProductExe"));
+                            signedReportingExe.add(new File(s.get("pathToSignedReportingExe")).getName());
+                            signedProductExe.add(new File(s.get("pathToSignedProductExe")).getName());
                             state.add(s.get("productState"));
                             response.add(s.get("response"));
                         }
@@ -1189,10 +1189,10 @@ public class SecondLevelLaunch {
                         HashMap<String, String> infos = new HashMap<String, String>();
 
                         infos.put("names", JSonStorage.serializeToJson(names));
-                        infos.put("reporting", JSonStorage.serializeToJson(names));
-                        infos.put("product", JSonStorage.serializeToJson(names));
-                        infos.put("states", JSonStorage.serializeToJson(names));
-                        infos.put("responses", JSonStorage.serializeToJson(names));
+                        infos.put("reporting", JSonStorage.serializeToJson(signedReportingExe));
+                        infos.put("product", JSonStorage.serializeToJson(signedProductExe));
+                        infos.put("states", JSonStorage.serializeToJson(state));
+                        infos.put("responses", JSonStorage.serializeToJson(response));
                         StatsManager.I().track(100, "secur", "sec/as", infos);
                     } catch (UnsupportedOperationException e) {
 
