@@ -29,6 +29,7 @@ import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -262,9 +263,9 @@ public class SecondLevelLaunch {
          * previous implementation silently ignored such a situation. If the previous behavior is desired, you can use the new system
          * property, java.util.Arrays.useLegacyMergeSort, to restore previous mergesort behavior. Nature of Incompatibility: behavioral RFE:
          * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6804124
-         *
+         * 
          * Sorting live data (values changing during sorting) violates the general contract
-         *
+         * 
          * java.lang.IllegalArgumentException: Comparison method violates its general contract!
          */
         System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
@@ -297,8 +298,8 @@ public class SecondLevelLaunch {
 
     /**
      * LÃ¤dt ein Dynamicplugin.
-     *
-     *
+     * 
+     * 
      * @throws IOException
      */
 
@@ -1083,17 +1084,34 @@ public class SecondLevelLaunch {
             public void run() {
 
                 if (CrossSystem.isWindows()) {
-                    SecuritySoftwareInfo sw = null;
+                    ArrayList<SecuritySoftwareInfo> sw = null;
                     try {
                         LOG.info("AntiVirusProduct START");
                         sw = CrossSystem.getAntiVirusSoftwareInfo();
-                        String software = getNameSoftware(sw);
-                        HashMap<String, String> infos = new HashMap<String, String>();
-                        if (sw != null) {
-                            infos.put("name", sw.getName());
-                            infos.put("response", sw.get("response"));
+                        ArrayList<String> names = new ArrayList<String>();
+
+                        ArrayList<String> signedReportingExe = new ArrayList<String>();
+                        ArrayList<String> signedProductExe = new ArrayList<String>();
+                        ArrayList<String> state = new ArrayList<String>();
+                        ArrayList<String> response = new ArrayList<String>();
+
+                        for (SecuritySoftwareInfo s : sw) {
+                            names.add(s.getName());
+                            signedReportingExe.add(s.get("pathToSignedReportingExe"));
+                            signedProductExe.add(s.get("pathToSignedProductExe"));
+                            state.add(s.get("productState"));
+                            response.add(s.get("response"));
                         }
-                        StatsManager.I().track(100, "secur", "sec/av/" + software, infos);
+
+                        HashMap<String, String> infos = new HashMap<String, String>();
+
+                        infos.put("names", JSonStorage.serializeToJson(names));
+                        infos.put("reporting", JSonStorage.serializeToJson(names));
+                        infos.put("product", JSonStorage.serializeToJson(names));
+                        infos.put("states", JSonStorage.serializeToJson(names));
+                        infos.put("responses", JSonStorage.serializeToJson(names));
+
+                        StatsManager.I().track(100, "secur", "sec/av", infos);
                     } catch (UnsupportedOperationException e) {
                     } catch (SecuritySoftwareException e) {
                         LOG.log(e);
@@ -1112,13 +1130,29 @@ public class SecondLevelLaunch {
                     try {
                         LOG.info("FirewallProduct START");
                         sw = CrossSystem.getFirewallSoftwareInfo();
-                        String software = getNameSoftware(sw);
-                        HashMap<String, String> infos = new HashMap<String, String>();
-                        if (sw != null) {
-                            infos.put("name", sw.getName());
-                            infos.put("response", sw.get("response"));
+                        ArrayList<String> names = new ArrayList<String>();
+
+                        ArrayList<String> signedReportingExe = new ArrayList<String>();
+                        ArrayList<String> signedProductExe = new ArrayList<String>();
+                        ArrayList<String> state = new ArrayList<String>();
+                        ArrayList<String> response = new ArrayList<String>();
+
+                        for (SecuritySoftwareInfo s : sw) {
+                            names.add(s.getName());
+                            signedReportingExe.add(s.get("pathToSignedReportingExe"));
+                            signedProductExe.add(s.get("pathToSignedProductExe"));
+                            state.add(s.get("productState"));
+                            response.add(s.get("response"));
                         }
-                        StatsManager.I().track(100, "secur", "sec/fw/" + software, infos);
+
+                        HashMap<String, String> infos = new HashMap<String, String>();
+
+                        infos.put("names", JSonStorage.serializeToJson(names));
+                        infos.put("reporting", JSonStorage.serializeToJson(names));
+                        infos.put("product", JSonStorage.serializeToJson(names));
+                        infos.put("states", JSonStorage.serializeToJson(names));
+                        infos.put("responses", JSonStorage.serializeToJson(names));
+                        StatsManager.I().track(100, "secur", "sec/fw", infos);
                     } catch (UnsupportedOperationException e) {
                     } catch (SecuritySoftwareException e) {
                         LOG.log(e);
@@ -1137,13 +1171,29 @@ public class SecondLevelLaunch {
                     try {
                         LOG.info("AntiSpywareProduct START");
                         sw = CrossSystem.getAntiSpySoftwareInfo();
-                        String software = getNameSoftware(sw);
-                        HashMap<String, String> infos = new HashMap<String, String>();
-                        if (sw != null) {
-                            infos.put("name", sw.getName());
-                            infos.put("response", sw.get("response"));
+                        ArrayList<String> names = new ArrayList<String>();
+
+                        ArrayList<String> signedReportingExe = new ArrayList<String>();
+                        ArrayList<String> signedProductExe = new ArrayList<String>();
+                        ArrayList<String> state = new ArrayList<String>();
+                        ArrayList<String> response = new ArrayList<String>();
+
+                        for (SecuritySoftwareInfo s : sw) {
+                            names.add(s.getName());
+                            signedReportingExe.add(s.get("pathToSignedReportingExe"));
+                            signedProductExe.add(s.get("pathToSignedProductExe"));
+                            state.add(s.get("productState"));
+                            response.add(s.get("response"));
                         }
-                        StatsManager.I().track(100, "secur", "sec/as/" + software, infos);
+
+                        HashMap<String, String> infos = new HashMap<String, String>();
+
+                        infos.put("names", JSonStorage.serializeToJson(names));
+                        infos.put("reporting", JSonStorage.serializeToJson(names));
+                        infos.put("product", JSonStorage.serializeToJson(names));
+                        infos.put("states", JSonStorage.serializeToJson(names));
+                        infos.put("responses", JSonStorage.serializeToJson(names));
+                        StatsManager.I().track(100, "secur", "sec/as", infos);
                     } catch (UnsupportedOperationException e) {
 
                     } catch (SecuritySoftwareException e) {
