@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -36,7 +37,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(www\\.)?filesmonster\\.com/(download\\.php\\?id=[A-Za-z0-9_-]+|dl/.*?/free/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(www\\.)?filesmonster\\.com/(download\\.php\\?id=[A-Za-z0-9_-]+|dl/.*?/free/(?:[^\\s<>/]*/)*)" }, flags = { 0 })
 public class FilesMonsterDecrypter extends PluginForDecrypt {
 
     public FilesMonsterDecrypter(PluginWrapper wrapper) {
@@ -48,7 +49,8 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
     private static final String ADDLINKSACCOUNTDEPENDANT = "ADDLINKSACCOUNTDEPENDANT";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br = new Browser();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String FAILED = null;
         final boolean onlyAddNeededLinks = SubConfiguration.getConfig("filesmonster.com").getBooleanProperty(ADDLINKSACCOUNTDEPENDANT, false);
         boolean addFree = true;
@@ -89,13 +91,9 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         }
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(false);
-        String parameter = param.toString();
+        final String parameter = param.toString();
         String protocol = new Regex(parameter, "(https?)://").getMatch(0);
-        String fid = new Regex(parameter, "filesmonster\\.com/dl/(.*?)/free/").getMatch(0);
-        if (fid != null) {
-            parameter = protocol + "://filesmonster.com/download.php?id=" + fid;
-            param.setCryptedUrl(parameter);
-        }
+        br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         br.getPage(parameter);
         // Link offline
         if (br.containsHTML(">File was deleted by owner or it was deleted for violation of copyrights<|>File not found<|>The link could not be decoded<")) {
