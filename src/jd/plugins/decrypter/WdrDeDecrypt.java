@@ -37,7 +37,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wdr.de" }, urls = { "http://([a-z0-9]+\\.)?wdr\\.de/([a-z0-9\\-_/]+/sendungen/[a-z0-9\\-_/]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)" }, flags = { 32 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wdr.de" }, urls = { "http://([a-z0-9]+\\.)?wdr\\.de/([^<>\"]+\\.html|tv/rockpalast/extra/videos/\\d+/\\d+/\\w+\\.jsp)" }, flags = { 32 })
 public class WdrDeDecrypt extends PluginForDecrypt {
 
     private static final String Q_LOW           = "Q_LOW";
@@ -83,17 +83,19 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             offline = true;
         }
         /* fernsehen/.* links |mediathek/.* links */
-        final boolean page_contains_video = br.containsHTML("class=\"videoButton play\"|class=\"moContainer\"");
+        final boolean page_contains_video = br.containsHTML("class=\"videoButton play\"|class=\"moContainer\"") || br.containsHTML("class=\"mediaLink\"");
         if (offline || parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38 || !page_contains_video) {
             /* Add offline link so user can see it */
-            final DownloadLink dl = createDownloadlink("http://wdrdecrypted.de/?format=mp4&quality=1x1&hash=" + JDHash.getMD5(parameter));
+            final DownloadLink dl = this.createDownloadlink(parameter);
             dl.setAvailable(false);
-            dl.setProperty("offline", true);
+            dl.setProperty("OFFLINE", true);
             dl.setFinalFileName(new Regex(parameter, "wdr\\.de/(.+)").getMatch(0));
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
 
+        final Regex inforegex = br.getRegex("(\\d{2}\\.\\d{2}\\.\\d{4}) \\| ([^<>]*?) \\| Das Erste</p>");
+        String date = inforegex.getMatch(0);
         String sendung = br.getRegex("<strong>([^<>]*?)<span class=\"hidden\">:</span></strong>[\t\n\r ]+Die Sendungen im Überblick[\t\n\r ]+<span>\\[mehr\\]</span>").getMatch(0);
         if (sendung == null) {
             sendung = br.getRegex(">Sendungen</a></li>[\t\n\r ]+<li>([^<>]*?)<span class=\"hover\">").getMatch(0);
@@ -107,9 +109,15 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         if (sendung == null) {
             sendung = br.getRegex("<title>([^<>]*?)\\- WDR Fernsehen</title>").getMatch(0);
         }
+        if (sendung == null) {
+            sendung = inforegex.getMatch(1);
+        }
         String episode_name = br.getRegex("</li><li>[^<>\"/]+: ([^<>]*?)<span class=\"hover\"").getMatch(0);
         if (episode_name == null) {
             episode_name = br.getRegex("class=\"hover\">:([^<>]*?)</span>").getMatch(0);
+        }
+        if (episode_name == null) {
+            episode_name = br.getRegex("class=\"siteHeadline hidden\">([^<>]*?)<").getMatch(0);
         }
         if (sendung == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -127,6 +135,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
 
         /* Check for audio stream */
         if (br.containsHTML("<div class=\"audioContainer\">")) {
+            /* TODO: Check if that still works / is still required */
             final String finallink = br.getRegex("dslSrc: \\'dslSrc=(http://[^<>\"]*?)\\&amp;mediaDuration=\\d+\\'").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -143,7 +152,10 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             final SubConfiguration cfg = SubConfiguration.getConfig("wdr.de");
             final boolean grab_subtitle = cfg.getBooleanProperty(Q_SUBTITLES, false);
 
-            String player_link = br.getRegex("class=\"videoLink\" >[\t\n\r ]+<a href=\"(/[^<>\"]*?)\"").getMatch(0);
+            String player_link = br.getRegex("\\&#039;mcUrl\\&#039;:\\&#039;(/[^<>\"]*?\\.json)").getMatch(0);
+            if (player_link == null) {
+                player_link = br.getRegex("class=\"videoLink\" >[\t\n\r ]+<a href=\"(/[^<>\"]*?)\"").getMatch(0);
+            }
             if (player_link == null) {
                 player_link = br.getRegex("\"(/[^<>\"]*?)\" rel=\"nofollow\" class=\"videoButton play\"").getMatch(0);
             }
@@ -152,9 +164,14 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 return null;
             }
             br.getPage("http://www1.wdr.de" + player_link);
-            final String date = br.getRegex("name=\"DC\\.Date\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (date == null) {
+                date = br.getRegex("name=\"DC\\.Date\" content=\"([^<>\"]*?)\"").getMatch(0);
+            }
             String flashvars = br.getRegex("name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
-            if (flashvars == null || date == null) {
+            if (flashvars == null) {
+                flashvars = this.br.toString();
+            }
+            if (date == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
@@ -164,7 +181,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             if (subtitle_url != null) {
                 subtitle_url = Encoding.htmlDecode(subtitle_url);
             }
-            /* We know how their http links look - this way we can avoid HDS */
+            /* We know how their http links look - this way we can avoid HDS/HLS/RTMP */
             final Regex hds_convert = new Regex(flashvars, "adaptiv\\.wdr\\.de/[a-z0-9]+/medstdp/([a-z]{2})/(fsk\\d+/\\d+/\\d+)/,([a-z0-9_,]+),\\.mp4\\.csmil/");
             String region = hds_convert.getMatch(0);
             final String fsk_url = hds_convert.getMatch(1);
@@ -296,9 +313,14 @@ public class WdrDeDecrypt extends PluginForDecrypt {
     }
 
     private String formatDate(String input) {
-        /* 2015-06-23T20:15+02:00 --> 2015-06-23T20:15:00+0200 */
-        input = input.substring(0, input.lastIndexOf(":")) + "00";
-        final long date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd'T'HH:mmZZ", Locale.GERMAN);
+        final long date;
+        if (input.matches("\\d{2}\\.\\d{2}\\.\\d{4}")) {
+            date = TimeFormatter.getMilliSeconds(input, "dd.MM.yyyy", Locale.GERMAN);
+        } else {
+            /* 2015-06-23T20:15+02:00 --> 2015-06-23T20:15:00+0200 */
+            input = input.substring(0, input.lastIndexOf(":")) + "00";
+            date = TimeFormatter.getMilliSeconds(input, "yyyy-MM-dd'T'HH:mmZZ", Locale.GERMAN);
+        }
         String formattedDate = null;
         final String targetFormat = "yyyy-MM-dd";
         Date theDate = new Date(date);

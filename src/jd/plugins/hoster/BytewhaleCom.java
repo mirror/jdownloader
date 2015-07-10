@@ -113,7 +113,7 @@ public class BytewhaleCom extends PluginForHost {
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.8.7
     // Tags: Script, template
-    // mods: scanInfo[Added other filename RegEx], waitTime[Added other wait RegEx], heavily modified do NOT upgrade!
+    // mods: heavily modified do NOT upgrade!
     // limit-info:
     // protocol: no https
     // captchatype: null
@@ -278,6 +278,10 @@ public class BytewhaleCom extends PluginForHost {
         }
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "<div id=\"fnsd(?:2|\\d+)\">([^<>\"]*?)<span>").getMatch(0);
+        }
+        if (fileInfo[0] == null) {
+            /* For premiumonly files */
+            fileInfo[0] = new Regex(correctedBR, "<b>File:</b>([^<>\"]*?)<").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
@@ -914,9 +918,9 @@ public class BytewhaleCom extends PluginForHost {
             }
         }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
+        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait|>Error: Please wait)").matches()) {
             /* adjust this regex to catch the wait time string for COOKIE_HOST */
-            String WAIT = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
+            String WAIT = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait|>Error: Please wait)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) {
                 tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
@@ -960,7 +964,7 @@ public class BytewhaleCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         }
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download (?:larger|bigger) files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
+        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download (?:larger|bigger) files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();

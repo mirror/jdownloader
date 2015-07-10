@@ -110,10 +110,15 @@ public class FetishBoxCom extends PluginForHost {
             if (app == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (downloadLink.getFinalFileName().endsWith(".mp4")) {
+            if (playpath.endsWith(".mp4")) {
+                /* e.g. http://www.fetishbox.com/videos/blonde-bitchy-bratty-barbie--35044.html */
                 playpath = "mp4:" + playpath;
+                /* Correct filename */
+                downloadLink.setFinalFileName(downloadLink.getName().replace(".flv", ".mp4"));
             } else {
                 playpath = "flv:" + playpath;
+                /* Correct filename */
+                downloadLink.setFinalFileName(downloadLink.getName().replace(".mp4", ".flv"));
             }
             try {
                 dl = new RTMPDownload(this, downloadLink, rtmpurl);
@@ -126,7 +131,7 @@ public class FetishBoxCom extends PluginForHost {
             rtmp.setUrl(rtmpurl);
             rtmp.setPlayPath(playpath);
             rtmp.setApp(app);
-            rtmp.setFlashVer("WIN 16,0,0,287");
+            rtmp.setFlashVer("WIN 18,0,0,203");
             rtmp.setSwfVfy(swfvfy);
             rtmp.setResume(false);
             ((RTMPDownload) dl).startDownload();
