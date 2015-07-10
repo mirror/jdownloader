@@ -86,6 +86,7 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.appwork.utils.os.SecuritySoftwareException;
 import org.appwork.utils.os.SecuritySoftwareInfo;
 import org.appwork.utils.processes.ProcessBuilderFactory;
@@ -1088,29 +1089,7 @@ public class SecondLevelLaunch {
                     try {
                         LOG.info("AntiVirusProduct START");
                         sw = CrossSystem.getAntiVirusSoftwareInfo();
-                        ArrayList<String> names = new ArrayList<String>();
-
-                        ArrayList<String> signedReportingExe = new ArrayList<String>();
-                        ArrayList<String> signedProductExe = new ArrayList<String>();
-                        ArrayList<String> state = new ArrayList<String>();
-                        ArrayList<String> response = new ArrayList<String>();
-
-                        for (SecuritySoftwareInfo s : sw) {
-                            names.add(s.getName());
-                            signedReportingExe.add(new File(s.get("pathToSignedReportingExe")).getName());
-                            signedProductExe.add(new File(s.get("pathToSignedProductExe")).getName());
-                            state.add(s.get("productState"));
-                            response.add(s.get("response"));
-                        }
-
-                        HashMap<String, String> infos = new HashMap<String, String>();
-
-                        infos.put("names", JSonStorage.serializeToJson(names));
-                        infos.put("reporting", JSonStorage.serializeToJson(signedReportingExe));
-                        infos.put("product", JSonStorage.serializeToJson(signedProductExe));
-                        infos.put("states", JSonStorage.serializeToJson(state));
-                        infos.put("responses", JSonStorage.serializeToJson(response));
-
+                        HashMap<String, String> infos = createInfoMap(sw);
                         StatsManager.I().track(100, "secur", "sec/av", infos);
                     } catch (UnsupportedOperationException e) {
                     } catch (SecuritySoftwareException e) {
@@ -1130,28 +1109,7 @@ public class SecondLevelLaunch {
                     try {
                         LOG.info("FirewallProduct START");
                         sw = CrossSystem.getFirewallSoftwareInfo();
-                        ArrayList<String> names = new ArrayList<String>();
-
-                        ArrayList<String> signedReportingExe = new ArrayList<String>();
-                        ArrayList<String> signedProductExe = new ArrayList<String>();
-                        ArrayList<String> state = new ArrayList<String>();
-                        ArrayList<String> response = new ArrayList<String>();
-
-                        for (SecuritySoftwareInfo s : sw) {
-                            names.add(s.getName());
-                            signedReportingExe.add(new File(s.get("pathToSignedReportingExe")).getName());
-                            signedProductExe.add(new File(s.get("pathToSignedProductExe")).getName());
-                            state.add(s.get("productState"));
-                            response.add(s.get("response"));
-                        }
-
-                        HashMap<String, String> infos = new HashMap<String, String>();
-
-                        infos.put("names", JSonStorage.serializeToJson(names));
-                        infos.put("reporting", JSonStorage.serializeToJson(signedReportingExe));
-                        infos.put("product", JSonStorage.serializeToJson(signedProductExe));
-                        infos.put("states", JSonStorage.serializeToJson(state));
-                        infos.put("responses", JSonStorage.serializeToJson(response));
+                        HashMap<String, String> infos = createInfoMap(sw);
                         StatsManager.I().track(100, "secur", "sec/fw", infos);
                     } catch (UnsupportedOperationException e) {
                     } catch (SecuritySoftwareException e) {
@@ -1171,28 +1129,7 @@ public class SecondLevelLaunch {
                     try {
                         LOG.info("AntiSpywareProduct START");
                         sw = CrossSystem.getAntiSpySoftwareInfo();
-                        ArrayList<String> names = new ArrayList<String>();
-
-                        ArrayList<String> signedReportingExe = new ArrayList<String>();
-                        ArrayList<String> signedProductExe = new ArrayList<String>();
-                        ArrayList<String> state = new ArrayList<String>();
-                        ArrayList<String> response = new ArrayList<String>();
-
-                        for (SecuritySoftwareInfo s : sw) {
-                            names.add(s.getName());
-                            signedReportingExe.add(new File(s.get("pathToSignedReportingExe")).getName());
-                            signedProductExe.add(new File(s.get("pathToSignedProductExe")).getName());
-                            state.add(s.get("productState"));
-                            response.add(s.get("response"));
-                        }
-
-                        HashMap<String, String> infos = new HashMap<String, String>();
-
-                        infos.put("names", JSonStorage.serializeToJson(names));
-                        infos.put("reporting", JSonStorage.serializeToJson(signedReportingExe));
-                        infos.put("product", JSonStorage.serializeToJson(signedProductExe));
-                        infos.put("states", JSonStorage.serializeToJson(state));
-                        infos.put("responses", JSonStorage.serializeToJson(response));
+                        HashMap<String, String> infos = createInfoMap(sw);
                         StatsManager.I().track(100, "secur", "sec/as", infos);
                     } catch (UnsupportedOperationException e) {
 
@@ -1212,6 +1149,38 @@ public class SecondLevelLaunch {
 
                 }
 
+            }
+
+            private HashMap<String, String> createInfoMap(ArrayList<SecuritySoftwareInfo> sw) {
+                ArrayList<String> names = new ArrayList<String>();
+
+                ArrayList<String> signedReportingExe = new ArrayList<String>();
+                ArrayList<String> signedProductExe = new ArrayList<String>();
+                ArrayList<String> state = new ArrayList<String>();
+                ArrayList<String> response = new ArrayList<String>();
+
+                for (SecuritySoftwareInfo s : sw) {
+                    names.add(s.getName());
+                    if (OperatingSystem.WINDOWS_XP == CrossSystem.getOS()) {
+                        signedProductExe.add(new File(s.get("pathToEnableOnAccessUI")).getName());
+                        signedReportingExe.add(new File(s.get("pathToUpdateUI")).getName());
+
+                    } else {
+                        signedReportingExe.add(new File(s.get("pathToSignedReportingExe")).getName());
+                        signedProductExe.add(new File(s.get("pathToSignedProductExe")).getName());
+                    }
+                    state.add(s.get("productState"));
+                    response.add(s.get("response"));
+                }
+
+                HashMap<String, String> infos = new HashMap<String, String>();
+
+                infos.put("names", JSonStorage.serializeToJson(names));
+                infos.put("reporting", JSonStorage.serializeToJson(signedReportingExe));
+                infos.put("product", JSonStorage.serializeToJson(signedProductExe));
+                infos.put("states", JSonStorage.serializeToJson(state));
+                infos.put("responses", JSonStorage.serializeToJson(response));
+                return infos;
             };
         }.start();
 
