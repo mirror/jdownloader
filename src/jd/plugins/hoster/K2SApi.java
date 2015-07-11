@@ -1934,7 +1934,7 @@ public abstract class K2SApi extends PluginForHost {
                 // javascript doesn't always encase keyname with quotation
                 result = new Regex(source, Pattern.quote(key) + "[ \t]*:[ \t]*(![01]|-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
                 if (result == null) {
-                    result = new Regex(source, Pattern.quote(key) + "[ \t]*:[ \t]*([^\"]*)\"").getMatch(0);
+                    result = new Regex(source, Pattern.quote(key) + "[ \t]*:[ \t]*\"([^\"]*)\"").getMatch(0);
                     if (result != null) {
                         // some rudimentary detection if we have braked at the wrong place.
                         while (result.endsWith("\\")) {
