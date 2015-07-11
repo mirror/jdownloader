@@ -59,7 +59,9 @@ public class CloudStorEs extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Error 404: Page Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Error 404: Page Not Found<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML(veryBusy)) {
             // could be a temp issue??
             return AvailableStatus.UNCHECKABLE;
@@ -71,7 +73,9 @@ public class CloudStorEs extends PluginForHost {
         final Regex fInfo = br.getRegex("<h1>([^<>\"]*?)</h1>[^<>\"]*? \\| (\\d+(\\.\\d+)? [A-Za-z]{1,5})[ ]+</div>");
         final String filename = fInfo.getMatch(0);
         final String filesize = fInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -86,7 +90,9 @@ public class CloudStorEs extends PluginForHost {
         }
         if (br.containsHTML("Free Download Limit Reached")) {
             final String minutes = br.getRegex("for lightning fast, unlimited downloading or wait another <strong>(\\d+) minutes\\.</strong>").getMatch(0);
-            if (minutes != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(minutes) * 60 * 1001l);
+            if (minutes != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(minutes) * 60 * 1001l);
+            }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -94,24 +100,39 @@ public class CloudStorEs extends PluginForHost {
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         if (br.containsHTML("\\'/submit/_dl_isozone\\.php\\'")) {
             final Regex dlInfo = br.getRegex("id: \\'(\\d+)\\', part: \\'(\\d+)\\', token: \\'([a-z0-9]+)\\'");
-            if (dlInfo.getMatches().length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dlInfo.getMatches().length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.postPage("http://cloudstor.es/submit/_dl_isozone.php", "id=" + dlInfo.getMatch(0) + "&part=" + dlInfo.getMatch(1) + "&token=" + dlInfo.getMatch(2));
         } else {
             final String postLink = br.getRegex("url: \\'(/submit/[A-Za-z0-9\\-_]+\\.php)\\'").getMatch(0);
-            if (postLink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (postLink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final Regex dlInfo = br.getRegex("hash: \\'([A-Za-z0-9_]+)\\', token: \\'([a-z0-9]+)\\'");
-            if (dlInfo.getMatches().length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dlInfo.getMatches().length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.postPage("http://cloudstor.es" + postLink, "hash=" + dlInfo.getMatch(0) + "&token=" + dlInfo.getMatch(1));
         }
         br.getHeaders().put("Content-Type", null);
         String dllink = br.toString();
-        if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) dllink = br.getRegex("(http://[^\r\n]+)").getMatch(0);
-        if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
+            dllink = br.getRegex("(http://[^\r\n]+)").getMatch(0);
+        }
+        if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
+            if (dllink != null && dllink.startsWith("Unathorised Access")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "You are blocked from downloading from this IP address");
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.replaceAll("%0D%0A", "").trim();
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.getURL().equals("http://cloudstor.es/503.php")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultaneous downloads, wait till you can start another download...", 5 * 60 * 1000l);
+            if (br.getURL().equals("http://cloudstor.es/503.php")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultaneous downloads, wait till you can start another download...", 5 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -128,7 +149,9 @@ public class CloudStorEs extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -142,7 +165,9 @@ public class CloudStorEs extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 br.postPage("http://cloudstor.es/authlogin/", "remember=on&button=Submit&frmLogin=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "cloudstores_pass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(MAINPAGE, "cloudstores_pass") == null) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
