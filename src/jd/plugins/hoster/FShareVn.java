@@ -305,6 +305,9 @@ public class FShareVn extends PluginForHost {
                 dllink = br.getRedirectLocation();
             }
             if (dllink == null) {
+                if (br.containsHTML(">\\s*Fshare suspect this account has been stolen or is being used by other people\\.|Please press “confirm” to get a verification code, it’s sent to your email address\\.<")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account determined as stolen or shared...", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 dllink = br.getRegex("\"(http://[a-z0-9]+\\.fshare\\.vn/vip/[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
                     dllink = getDllink();
