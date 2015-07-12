@@ -151,7 +151,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             }
             if (PARAMETER.matches(TYPE_PLAYLIST)) {
                 decryptPlaylist();
-            } else if (PARAMETER.matches(TYPE_USER) || br.containsHTML("class=\"user\\-screenname font")) {
+            } else if (PARAMETER.matches(TYPE_USER) || br.containsHTML("class=\"user_header__details\"")) {
                 decryptUser();
             } else {
                 decryptSingleVideo(decryptedLinks);
@@ -183,7 +183,10 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             fpName = username;
         }
         fpName = Encoding.htmlDecode(fpName.trim());
-        final String videosNum = br.getRegex(Pattern.compile("<span class=\"font\\-xl mrg\\-end\\-xs\">(\\d+(,\\d+)?)</span>[\t\n\r ]+Videos?[\t\n\r ]+</div>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String videosNum = br.getRegex(Pattern.compile("<span class=\"font\\-xl mrg\\-end\\-xs\">(\\d+(,\\d+)?)</span>[\t\n\r ]+Videos?[\t\n\r ]+</div>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (videosNum == null) {
+            videosNum = br.getRegex("class=\"font-xl mrg-end-xs\">(\\d+)</span> Videos").getMatch(0);
+        }
         if (videosNum == null) {
             logger.warning("dailymotion.com: decrypter failed: " + PARAMETER);
             decryptedLinks = null;

@@ -1005,12 +1005,16 @@ public class VKontakteRu extends PluginForDecrypt {
     private LinkedHashMap<String, String> findAvailableVideoQualities() {
         /** Find needed information */
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-        final String[][] qualities = { { "url720", "720p" }, { "url480", "480p" }, { "url360", "360p" }, { "url240", "240p" } };
+        /* Use cachexxx as workaround e.g. for special videos that need groups permission. */
+        final String[][] qualities = { { "cache720", "url720", "720p" }, { "cache480", "url480", "480p" }, { "cache360", "url360", "360p" }, { "cache240", "url240", "240p" } };
         final LinkedHashMap<String, String> foundQualities = new LinkedHashMap<String, String>();
         for (final String[] qualityInfo : qualities) {
-            final String finallink = getJson(qualityInfo[0]);
+            String finallink = getJson(qualityInfo[0]);
+            if (finallink == null) {
+                finallink = getJson(qualityInfo[1]);
+            }
             if (finallink != null) {
-                foundQualities.put(qualityInfo[1], finallink);
+                foundQualities.put(qualityInfo[2], finallink);
             }
         }
         return foundQualities;

@@ -20,8 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -102,6 +100,7 @@ public class XxxBunkerCom extends PluginForHost {
             externID_extern = Encoding.htmlDecode(externID_extern);
             externID_extern = Encoding.htmlDecode(externID_extern);
             DLLINK = Encoding.Base64Decode(externID_extern);
+            // this.sleep(3000, downloadLink);
         } else if (externID != null) {
             br.getPage(Encoding.htmlDecode(externID));
             DLLINK = br.getRegex("<relayurl>([^<>\"]*?)</relayurl>").getMatch(0);
@@ -131,30 +130,31 @@ public class XxxBunkerCom extends PluginForHost {
         downloadLink.setFinalFileName(filename);
         this.br = new Browser();
         br.getHeaders().put("Accept-Encoding", "identity");
-        // In case the link redirects to the finallink
-        br.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            try {
-                con = br.openHeadConnection(DLLINK);
-                /* Very important! Get the FINAL url! */
-                DLLINK = con.getRequest().getUrl();
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", DLLINK);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
+        return AvailableStatus.TRUE;
+        // // In case the link redirects to the finallink
+        // br.setFollowRedirects(true);
+        // URLConnectionAdapter con = null;
+        // try {
+        // try {
+        // con = br.openHeadConnection(DLLINK);
+        // /* Very important! Get the FINAL url! */
+        // DLLINK = con.getRequest().getUrl();
+        // } catch (final BrowserException e) {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
+        // if (!con.getContentType().contains("html")) {
+        // downloadLink.setDownloadSize(con.getLongContentLength());
+        // } else {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
+        // downloadLink.setProperty("directlink", DLLINK);
+        // return AvailableStatus.TRUE;
+        // } finally {
+        // try {
+        // con.disconnect();
+        // } catch (final Throwable e) {
+        // }
+        // }
     }
 
     @Override
@@ -171,6 +171,9 @@ public class XxxBunkerCom extends PluginForHost {
             try {
                 dl.getConnection().disconnect();
             } catch (final Throwable e) {
+            }
+            if (this.br.containsHTML(">SITE MAINTENANCE<")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Site maintenance'", 5 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

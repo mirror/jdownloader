@@ -58,8 +58,9 @@ public class DeviantClipCom extends PluginForHost {
     /* Tags: crakpass network, dagfs.com, bestgonzo.com, kinkyfrenchies.com */
     public String dllink = null;
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String thelink = downloadLink.getDownloadURL();
