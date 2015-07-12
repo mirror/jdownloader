@@ -73,7 +73,7 @@ public class DownloadCo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // final Regex finfo = br.getRegex("times\">([^<>\"]*?)<strong>([^<>\"]*?)</strong>");
-        final Regex finfo = br.getRegex("File:</h2>\\s+<p>([^<>\"]*?)<strong>([^<>\"]*?)</strong>");
+        final Regex finfo = br.getRegex("File:</h2>\\s+<p>([^<>\"]*?), <strong>([^<>\"]*?)</strong>");
         String filename = finfo.getMatch(0);
         String filesize = finfo.getMatch(1);
         if (filename == null || filesize == null) {
