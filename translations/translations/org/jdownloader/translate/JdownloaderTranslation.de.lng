@@ -284,6 +284,7 @@ lit_hide=Verstecken
 lit_please_wait=Bitte warten...
 literally_offline=Offline
 literally_yes=Ja
+newpassworddialog_password=Neues Passwort
 other_files_description=Alle Dateien außer Audio-, Archiv-, Video- und Bilddateien
 pattern_password=пароль|пасс|pa?s?w|Passwort|password|passw?|pw
 plugin_for_host_reason_for_ffmpeg_demux=um Details vom Videostream zu erhalten und den Audio- vom Videostream zu trennen
