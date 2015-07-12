@@ -111,7 +111,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private String                         fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.8.7
+    // XfileSharingProBasic Version 2.6.8.8
     // Tags: Script, template
     // mods:
     // limit-info:
@@ -186,7 +186,6 @@ public class XFileSharingProBasic extends PluginForHost {
                 if (br.containsHTML(">No such file<")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                fileInfo[0] = altbr.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
                 if (SUPPORTS_ALT_AVAILABLECHECK) {
                     altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
                     fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);

@@ -635,6 +635,14 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         if (videosource == null) {
             videosource = br.getRegex("name=\"flashvars\" value=\"(.*?)\"/></object>").getMatch(0);
         }
+        if (videosource == null) {
+            /*
+             * This source is unsupported however we only need to have it here so the handling later will eventually fail and jump into
+             * embed-fallback mode. See here (some users seem to get another/new videoplayer):
+             * https://board.jdownloader.org/showthread.php?t=64943&page=2
+             */
+            videosource = br.getRegex("window\\.playerV5 = dmp\\.create\\(document\\.getElementById\\(\\'player\\'\\), (\\{.*?\\})\\);").getMatch(0);
+        }
         if (videosource != null) {
             videosource = Encoding.htmlDecode(videosource).replace("\\", "");
         }

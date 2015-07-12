@@ -73,6 +73,7 @@ public class BytewhaleCom extends PluginForHost {
     private static final String            TYPE_NORMAL                  = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
     private static final String            TYPE_EMBED                   = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final long              MAINTENANCE_ERRORRESPONSE    = 500;
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
     private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
@@ -84,7 +85,7 @@ public class BytewhaleCom extends PluginForHost {
 
     private static final boolean           SUPPORTSHTTPS                = false;
     private static final boolean           SUPPORTSHTTPS_FORCED         = false;
-    private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = false;
+    private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
     private final boolean                  ENABLE_RANDOM_UA             = false;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
     /* Waittime stuff */
@@ -118,7 +119,6 @@ public class BytewhaleCom extends PluginForHost {
     // protocol: no https
     // captchatype: null
     // other: reCaptcha + waittime NOT skippable!
-    // TODO: Add case maintenance + alternative filesize check
 
     @SuppressWarnings("deprecation")
     @Override
@@ -178,15 +178,16 @@ public class BytewhaleCom extends PluginForHost {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.UNCHECKABLE;
         }
-        if (br.getURL().contains("/?op=login&redirect=")) {
-            logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
-            link.getLinkStatus().setStatusText(PREMIUMONLY2);
+        if (br.getURL().contains("/?op=login&redirect=") || this.br.getHttpConnection().getResponseCode() == MAINTENANCE_ERRORRESPONSE) {
+            logger.info("Linkcheck alternative handling: Trying alternative linkcheck");
+            if (br.getURL().contains("/?op=login&redirect=")) {
+                link.getLinkStatus().setStatusText(PREMIUMONLY2);
+            }
             try {
                 fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
                 if (br.containsHTML(">No such file<")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                fileInfo[0] = altbr.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
                 if (SUPPORTS_ALT_AVAILABLECHECK) {
                     altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
                     fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
@@ -312,7 +313,11 @@ public class BytewhaleCom extends PluginForHost {
 
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws IOException, PluginException {
         br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
-        return br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+        String fname = br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+        if (fname == null) {
+            fname = br.getRegex("<b>Filename</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+        }
+        return fname;
     }
 
     @Override
@@ -632,6 +637,7 @@ public class BytewhaleCom extends PluginForHost {
             }
             br.getHeaders().put("User-Agent", agent.get());
         }
+        br.setAllowedResponseCodes(500);
     }
 
     /**
@@ -999,7 +1005,7 @@ public class BytewhaleCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
         }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) {
+        if (new Regex(correctedBR, MAINTENANCE).matches() || this.br.getHttpConnection().getResponseCode() == MAINTENANCE_ERRORRESPONSE) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
         }
     }
