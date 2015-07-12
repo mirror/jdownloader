@@ -28,7 +28,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vine.co" }, urls = { "https?://(?:www\\.)?vine\\.co/(?!v/)[^/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vine.co" }, urls = { "https?://(?:www\\.)?vine\\.co/(?!v/)[^\\s]+" }, flags = { 0 })
 public class VineCoDecrypter extends PluginForDecrypt {
 
     public VineCoDecrypter(PluginWrapper wrapper) {
