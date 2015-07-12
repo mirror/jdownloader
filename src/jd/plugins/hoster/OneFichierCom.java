@@ -67,7 +67,7 @@ public class OneFichierCom extends PluginForHost {
     /* Max total connections for premium = 50 (RE: admin) */
     private static final boolean resume_account_premium       = true;
     private static final int     maxchunks_account_premium    = -4;
-    private static final int     maxdownloads_account_premium = 12;
+    private static final int     maxdownloads_account_premium = -12;
     /* 2015-07-10: According to admin, resume is free mode is not possible anymore. On attempt this will lead to 404 server error! */
     private static final int     maxchunks_free               = 1;
     private static final boolean resume_free                  = false;
