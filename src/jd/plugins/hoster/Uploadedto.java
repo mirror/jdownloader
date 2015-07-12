@@ -1646,7 +1646,8 @@ public class Uploadedto extends PluginForHost {
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                Browser cookieBR = null;
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
@@ -1654,43 +1655,60 @@ public class Uploadedto extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(CURRENT_DOMAIN, key, value);
                         }
-                        return;
+                        if (!force) {
+                            /* No additional check needed. */
+                            return;
+                        }
+                        this.br.getPage(CURRENT_DOMAIN);
+                        if (this.br.containsHTML("href=\"logout\">Logout</a>")) {
+                            cookieBR = this.br;
+                        }
                     }
                 }
-                boolean loginIssues = false;
-                int counter = 0;
-                do {
-                    logger.info("Login attempt " + counter + " of 2");
-                    if (counter > 0) {
-                        Thread.sleep(3000l);
-                    }
-                    /* Use a fresh browser every time */
-                    this.br = new Browser();
-                    prepBrowser();
-                    this.br.getPage("http://uploaded.net/");
-                    this.br.getHeaders().put("X-Prototype-Version", "1.6.1");
-                    this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                    /* login method always returns empty body */
-                    postPage(this.br, getProtocol() + "uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
-                    if (this.br.containsHTML("User and password do not match")) {
-                        final AccountInfo ai = account.getAccountInfo();
-                        if (ai != null) {
-                            ai.setStatus("User and password do not match");
+                try {
+                    boolean loginIssues = false;
+                    int counter = 0;
+                    do {
+                        logger.info("Login attempt " + counter + " of 2");
+                        if (counter > 0) {
+                            Thread.sleep(3000l);
                         }
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        /* Use a fresh browser every time */
+                        this.br = new Browser();
+                        prepBrowser();
+                        this.br.getPage("http://uploaded.net/");
+                        this.br.getHeaders().put("X-Prototype-Version", "1.6.1");
+                        this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                        /* login method always returns empty body */
+                        postPage(this.br, getProtocol() + "uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
+                        if (this.br.containsHTML("User and password do not match")) {
+                            final AccountInfo ai = account.getAccountInfo();
+                            if (ai != null) {
+                                ai.setStatus("User and password do not match");
+                            }
+                            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            } else {
+                                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                            }
                         }
+                        loginIssues = this.br.getCookie("http://uploaded.net", "auth") == null && this.br.getCookie("https://uploaded.net", "auth") == null;
+                        counter++;
+                    } while (counter <= 5 && loginIssues);
+                    checkGeneralErrors();
+                    if (loginIssues) {
+                        logger.warning("Account check failed because of login/server issues");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin issues", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
-                    loginIssues = this.br.getCookie("http://uploaded.net", "auth") == null && this.br.getCookie("https://uploaded.net", "auth") == null;
-                    counter++;
-                } while (counter <= 5 && loginIssues);
-                checkGeneralErrors();
-                if (loginIssues) {
-                    logger.warning("Account check failed because of login/server issues");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nLogin issues", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } catch (final Throwable eloginError) {
+                    if (cookieBR != null) {
+                        /* Saved cookies were checked and okay - whatever happened, we know that this account must be valid! */
+                        this.br = cookieBR;
+                    } else {
+                        /* We either have no saved cookies or they were not valid --> Throw Exception. */
+                        throw eloginError;
+                    }
                 }
                 changeToEnglish(this.br);
                 /* Save cookies */

@@ -48,7 +48,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keepshare.net" }, urls = { "https?://(www\\.)?keepshare\\.net/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keepshare.net" }, urls = { "https?://(www\\.)?keepshare\\.net/(embed\\-)?[A-Za-z0-9]+" }, flags = { 0 })
 public class KeepShareNet extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -61,7 +61,7 @@ public class KeepShareNet extends PluginForHost {
     /* domain names used within download links */
     private static final String            DOMAINS                      = "(keepshare\\.net)";
     /* Linktypes */
-    private static final String            TYPE_NORMAL                  = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
+    private static final String            TYPE_NORMAL                  = "https?://[A-Za-z0-9\\-\\.]+/[A-Za-z0-9]+";
     private static final String            TYPE_EMBED                   = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
@@ -388,6 +388,9 @@ public class KeepShareNet extends PluginForHost {
                     }
                 }
                 /* end of backward compatibility */
+                if (download1.hasInputFieldByName("method_free") && download1.getInputFieldByName("method_free").getValue() == null) {
+                    download1.put("method_free", "Free Download >>");
+                }
                 submitForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();
@@ -860,7 +863,7 @@ public class KeepShareNet extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private String getFUIDFromURL(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
     private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {

@@ -83,10 +83,10 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             offline = true;
         }
         /* fernsehen/.* links |mediathek/.* links */
-        final boolean page_contains_video = br.containsHTML("class=\"videoButton play\"|class=\"moContainer\"") || br.containsHTML("class=\"mediaLink\"");
+        final boolean page_contains_video = br.containsHTML("class=\"videoButton play\"") || br.containsHTML("class=\"mediaLink\"");
         if (offline || parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38 || !page_contains_video) {
             /* Add offline link so user can see it */
-            final DownloadLink dl = this.createDownloadlink(parameter);
+            final DownloadLink dl = this.createOfflinelink(parameter);
             dl.setAvailable(false);
             dl.setProperty("OFFLINE", true);
             dl.setFinalFileName(new Regex(parameter, "wdr\\.de/(.+)").getMatch(0));

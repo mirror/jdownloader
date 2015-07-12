@@ -111,6 +111,7 @@ public class DownloadCo extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }

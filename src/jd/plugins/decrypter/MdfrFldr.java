@@ -117,8 +117,12 @@ public class MdfrFldr extends PluginForDecrypt {
                 logger.warning("Unhandled case for link: " + parameter);
                 return null;
             }
-            for (final String ID : linkIDs) {
-                decryptedLinks.add(createSingleDownloadlink(ID));
+            for (final String key : linkIDs) {
+                if (key.matches("[A-Za-z0-9]{13}")) {
+                    decryptedLinks.add(this.createDownloadlink("https://www.mediafire.com/folder/" + key));
+                } else {
+                    decryptedLinks.add(createSingleDownloadlink(key));
+                }
             }
             return decryptedLinks;
         } else {

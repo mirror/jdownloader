@@ -24,8 +24,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -82,6 +84,7 @@ public class PeekVidsCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        String ext = null;
         final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
         DLLINK = null;
         this.setBrowserExclusive();
@@ -109,20 +112,29 @@ public class PeekVidsCom extends PluginForHost {
         }
         flashvars = Encoding.htmlDecode(flashvars);
 
+        int counter = 0;
         for (final String quality : qualities) {
             DLLINK = new Regex(flashvars, "\\[" + quality + "\\]=(http[^<>\"]*?)\\&").getMatch(0);
             if (DLLINK != null) {
-                break;
+                counter++;
+                if (checkDirectLink(DLLINK)) {
+                    break;
+                }
             }
         }
-        if (filename == null || DLLINK == null) {
+        if ((filename == null || DLLINK == null) && counter == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (DLLINK == null) {
+            /* Download not possible at this moment. */
+            downloadLink.setName(filename + ".mp4");
+            return AvailableStatus.TRUE;
+        }
+        DLLINK = Encoding.htmlDecode(DLLINK);
+        ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;
@@ -135,6 +147,27 @@ public class PeekVidsCom extends PluginForHost {
         /* Don't check filesize here as this can lead to server errors */
     }
 
+    private boolean checkDirectLink(final String directlink) {
+        if (directlink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                con = br2.openHeadConnection(directlink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    return false;
+                }
+            } catch (final Exception e) {
+                return false;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return true;
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -142,6 +175,10 @@ public class PeekVidsCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (DLLINK == null) {
+            /* Very rare case! */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
