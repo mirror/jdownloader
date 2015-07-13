@@ -187,7 +187,10 @@ public class FilepackPl extends PluginForHost {
             ai.setTrafficLeft(Long.parseLong(trafficleft));
             ai.setStatus("Premium account");
         }
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+        if (expire != null && !expire.equals("null")) {
+            /* Some free accounts have expire dates, some not, all premium accounts have expire dates */
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+        }
         account.setValid(true);
         return ai;
     }

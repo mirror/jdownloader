@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streambit.tv", "uploads.xxx" }, urls = { "https?://(www\\.)?(?:uploads\\.xxx|streambit\\.tv)/video/[A-Za-z0-9\\-_]+/", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "storbit.net", "streambit.tv", "uploads.xxx" }, urls = { "https?://(www\\.)?(?:uploads\\.xxx|streambit\\.tv|storbit\\.net)/video/[A-Za-z0-9\\-_]+/", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 0, 0, 0 })
 public class UploadsXxx extends PluginForHost {
 
     @SuppressWarnings("deprecation")
@@ -50,14 +50,14 @@ public class UploadsXxx extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("uploads.xxx/", "streambit.tv/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(uploads\\.xxx|streambit\\.tv)/", "storbit.net/"));
     }
 
     @Override
     public String rewriteHost(String host) {
-        if ("uploads.xxx".equals(getHost())) {
-            if (host == null || "uploads.xxx".equals(host)) {
-                return "streambit.tv";
+        if ("uploads.xxx".equals(getHost()) || "streambit.tv".equals(getHost())) {
+            if (host == null || "uploads.xxx".equals(host) || "streambit.tv".equals(host)) {
+                return "storbit.net";
             }
         }
         return super.rewriteHost(host);

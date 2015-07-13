@@ -329,6 +329,10 @@ public class HellShareCom extends PluginForHost {
                 logger.info("You are exceeding the limitations on this download");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
             }
+            if (this.br.toString().length() < 30) {
+                /* E.g. empty page */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // downloadLink.setProperty("free_directlink", dllink);
@@ -402,6 +406,10 @@ public class HellShareCom extends PluginForHost {
                     if (br.containsHTML("HellShare not allowed to share the login information to the accounts\\.")) {
                         UserIO.getInstance().requestMessageDialog(0, "Hellshare.com Premium Error", "HellShare not allowed to share the login information to the accounts!");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
+                    if (this.br.toString().length() < 30) {
+                        /* E.g. empty page */
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
                     }
                     logger.warning("dllink (premium) is null...");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
