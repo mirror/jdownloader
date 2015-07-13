@@ -164,6 +164,16 @@ public class TwitterCom extends PornEmbedParser {
                         addedlinks_all++;
                     }
                 }
+                final String[] vinfos = br.getRegex("(<video data-media-id=\"[0-9]+\".*?<source video-src=\"[^\"]+\")").getColumn(0);
+                for (String vinfo : vinfos) {
+                    logger.info("vinfo: " + vinfo);
+                    String vid = new Regex(vinfo, "<video data-media-id=\"([0-9]+)\".*?<source video-src=\"([^\"]+)\"").getMatch(0);
+                    String vsrc = new Regex(vinfo, "<video data-media-id=\"([0-9]+)\".*?<source video-src=\"([^\"]+)\"").getMatch(1);
+                    DownloadLink dl = createDownloadlink(vsrc);
+                    dl.setContentUrl(vsrc);
+                    dl.setFinalFileName(vid);
+                    decryptedLinks.add(dl);
+                }
                 if (addedlinks_all == 0) {
                     break;
                 }
