@@ -90,6 +90,11 @@ public class OverThumbsCom extends PluginForHost {
                 DLLINK = "http://" + server + ".staticvalley.com/mp4/" + server + "/" + evelse + ".mp4";
             }
         }
+        if (DLLINK.contains("|")) {
+            /* 2 urls given - get highest quality! */
+            final String[] dllinks = DLLINK.split("\\|");
+            DLLINK = dllinks[dllinks.length - 1];
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");

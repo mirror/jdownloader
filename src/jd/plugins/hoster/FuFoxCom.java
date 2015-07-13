@@ -182,7 +182,7 @@ public class FuFoxCom extends PluginForHost {
                 br.setFollowRedirects(false);
                 br.setHeader("X-Requested-With", "XMLHttpRequest");
                 br.setHeader("Accept", "application/json, text/javascript, */*; q=0.01");
-                br.postPage("http://www.fufox.net/php/ajax/ajax_login.php", "auto=1&hashkey=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://www.fufox.net/php/ajax/ajax_login.php", "auto=1&hashkey=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(br.getHost(), "hash") == null && br.getCookie(br.getHost(), "hash_key_crypted") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
