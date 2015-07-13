@@ -123,11 +123,7 @@ public class TwitterCom extends PornEmbedParser {
                         for (final String single_embed_ink : embed_links) {
                             final DownloadLink dl = createDownloadlink(single_embed_ink);
                             fp.add(dl);
-                            try {
-                                distribute(dl);
-                            } catch (final Throwable e) {
-                                // Not available in 0.9.581
-                            }
+                            distribute(dl);
                             decryptedLinks.add(dl);
                             addedlinks_all++;
                         }
@@ -146,11 +142,7 @@ public class TwitterCom extends PornEmbedParser {
                             final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(singleLink.trim()));
                             fp.add(dl);
                             dl.setAvailable(true);
-                            try {
-                                distribute(dl);
-                            } catch (final Throwable e) {
-                                // Not available in 0.9.581
-                            }
+                            distribute(dl);
                             decryptedLinks.add(dl);
                             addedlinks_all++;
                         }
@@ -160,19 +152,24 @@ public class TwitterCom extends PornEmbedParser {
                 if (stream_ids != null) {
                     for (String stream_id : stream_ids) {
                         final DownloadLink dl = createDownloadlink(createVideourl(stream_id));
+                        distribute(dl);
                         decryptedLinks.add(dl);
                         addedlinks_all++;
                     }
                 }
-                final String[] vinfos = br.getRegex("(<video data-media-id=\"[0-9]+\".*?<source video-src=\"[^\"]+\")").getColumn(0);
+                final String[] vinfos = br.getRegex("(video data-media-id=\"[0-9]+\".*?source video-src=\"[^\"]+\")").getColumn(0);
                 for (String vinfo : vinfos) {
                     logger.info("vinfo: " + vinfo);
-                    String vid = new Regex(vinfo, "<video data-media-id=\"([0-9]+)\".*?<source video-src=\"([^\"]+)\"").getMatch(0);
-                    String vsrc = new Regex(vinfo, "<video data-media-id=\"([0-9]+)\".*?<source video-src=\"([^\"]+)\"").getMatch(1);
-                    DownloadLink dl = createDownloadlink(vsrc);
+                    String vid = new Regex(vinfo, "video data-media-id=\"([0-9]+)\".*?source video-src=\"([^\"]+)\"").getMatch(0);
+                    String vsrc = new Regex(vinfo, "video data-media-id=\"([0-9]+)\".*?source video-src=\"([^\"]+)\"").getMatch(1);
+                    final DownloadLink dl = createDownloadlink(vsrc);
                     dl.setContentUrl(vsrc);
-                    dl.setFinalFileName(vid);
+                    dl.setLinkID(vid);
+                    dl.setName(vid + ".mp4");
+                    dl.setAvailable(true);
+                    distribute(dl);
                     decryptedLinks.add(dl);
+                    addedlinks_all++;
                 }
                 if (addedlinks_all == 0) {
                     break;
