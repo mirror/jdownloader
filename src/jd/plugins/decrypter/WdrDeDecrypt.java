@@ -61,12 +61,7 @@ public class WdrDeDecrypt extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        /* Remove unneeded url part */
-        final String player_part = new Regex(parameter, "(\\-videoplayer(_size\\-[A-Z])?\\.html)").getMatch(0);
-        if (player_part != null) {
-            parameter = parameter.replace(player_part, ".html");
-        }
+        final String parameter = fixVideourl(param.toString());
         boolean offline = false;
         br.setFollowRedirects(true);
 
@@ -82,8 +77,16 @@ public class WdrDeDecrypt extends PluginForDecrypt {
         } catch (final BrowserException e) {
             offline = true;
         }
+
+        /* Are we on a video-infor/overview page? We have to access the url which contains the player! */
+        String videourl_forward = br.getRegex("class=\"videoLink\" >[\t\n\r ]+<a href=\"(/[^<>\"]*?)\"").getMatch(0);
+        if (videourl_forward != null) {
+            videourl_forward = fixVideourl(videourl_forward);
+            this.br.getPage(videourl_forward);
+        }
+
         /* fernsehen/.* links |mediathek/.* links */
-        final boolean page_contains_video = br.containsHTML("class=\"videoButton play\"") || br.containsHTML("class=\"mediaLink\"");
+        final boolean page_contains_video = br.containsHTML("class=\"videoButton play\"") || br.containsHTML("class=\"moVideoIcon\"") || br.containsHTML("class=\"mediaLink\"");
         if (offline || parameter.matches(TYPE_INVALID) || parameter.contains("filterseite-") || br.getURL().contains("/fehler.xml") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().length() < 38 || !page_contains_video) {
             /* Add offline link so user can see it */
             final DownloadLink dl = this.createOfflinelink(parameter);
@@ -283,8 +286,17 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             fp.setName(date_formatted + "_wdr_" + plain_name);
             fp.addLinks(decryptedLinks);
         }
-
         return decryptedLinks;
+    }
+
+    private String fixVideourl(final String input) {
+        String output = input;
+        /* Remove unneeded url part */
+        final String player_part = new Regex(input, "(\\-videoplayer(_size\\-[A-Z])?\\.html)").getMatch(0);
+        if (player_part != null) {
+            output = input.replace(player_part, ".html");
+        }
+        return output;
     }
 
     public static final String correctRegionString(final String input) {
