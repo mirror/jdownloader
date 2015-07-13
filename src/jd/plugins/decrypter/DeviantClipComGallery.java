@@ -50,14 +50,14 @@ public class DeviantClipComGallery extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(parameter.replace(currentdomain_full, decrypterdomain)));
             return decryptedLinks;
         }
-        if (br.containsHTML(">PICTURE GALLERY<")) {
+        if (br.containsHTML("id=\"gallery\"")) {
             String fpName = getfpName();
             if (fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             fpName = Encoding.htmlDecode(fpName.trim());
-            final String[] picLinks = br.getRegex("\"(/watch/[a-z0-9\\-]+\\?fileid=[A-Za-z0-9]+)\"").getColumn(0);
+            final String[] picLinks = br.getRegex("id=\"pic_\\d+\" src=\"(http[^<>\"]*?)\"").getColumn(0);
             if (picLinks == null || picLinks.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -65,7 +65,7 @@ public class DeviantClipComGallery extends PluginForDecrypt {
             int counter = 1;
             final DecimalFormat df = new DecimalFormat("0000");
             for (final String picLink : picLinks) {
-                final DownloadLink dl = createDownloadlink("http://" + decrypterdomain + picLink);
+                final DownloadLink dl = createDownloadlink("directhttp://" + picLink);
                 dl.setName(fpName + "_" + df.format(counter));
                 decryptedLinks.add(dl);
                 counter++;
