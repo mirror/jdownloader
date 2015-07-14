@@ -530,6 +530,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         GREEN_DREAM("de.javasoft.plaf.synthetica.SyntheticaGreenDreamLookAndFeel"),
         MAUVE_METALLIC("de.javasoft.plaf.synthetica.SyntheticaMauveMetallicLookAndFeel"),
         ORANGE_METALLIC("de.javasoft.plaf.synthetica.SyntheticaOrangeMetallicLookAndFeel"),
+        PLAIN("de.javasoft.plaf.synthetica.SyntheticaPlainLookAndFeel"),
         SILVER_MOON("de.javasoft.plaf.synthetica.SyntheticaSilverMoonLookAndFeel"),
         SIMPLE_2D("de.javasoft.plaf.synthetica.SyntheticaSimple2DLookAndFeel"),
         SKY_METALLIC("de.javasoft.plaf.synthetica.SyntheticaSkyMetallicLookAndFeel"),
