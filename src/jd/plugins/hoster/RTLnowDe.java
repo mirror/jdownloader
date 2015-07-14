@@ -221,15 +221,6 @@ public class RTLnowDe extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // this.br.getHeaders().put("Accept", "application/json, text/plain, */*");
-        // this.br.getHeaders().put("X-CLIENT-VERSION", "719");
-        // this.br.getHeaders().put("Content-Type", "application/json;charset=utf-8");
-        // this.br.getHeaders().put("Referer", "http://www.nowtv.de/rtl/adam-sucht-eva/folge-1/player");
-        // this.br.getHeaders().put("Origin", "http://www.nowtv.de");
-        // this.br.getHeaders().put("", "");
-        // this.br.getHeaders().put("", "");
-        // this.br.getHeaders().put("", "");
-        // br.postPageRaw("https://api.nowtv.de/v3/movies/view", "{\"id\":167487}");
         entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         format = (LinkedHashMap<String, Object>) entries.get("format");
         if (br.containsHTML("<\\!\\-\\- Payment\\-Teaser \\-\\->")) {
