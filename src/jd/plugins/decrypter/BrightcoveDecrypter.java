@@ -140,7 +140,7 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
 
     /** Finds the highest video quality based on the max filesize. */
     @SuppressWarnings("unchecked")
-    public static BrightcoveClipData findBestVideoByFilesize(final Browser br) {
+    public static BrightcoveClipData findBestVideoHttpByFilesize(final Browser br) {
         final String json = getSourceJson(br);
         if (json == null) {
             return null;
