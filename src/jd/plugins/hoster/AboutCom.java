@@ -71,7 +71,7 @@ public class AboutCom extends PluginForHost {
 
         final String brightcove_URL = "http://c.brightcove.com/services/viewer/htmlFederated?&width=340&height=192&flashID=&includeAPI=true&templateLoadHandler=templateLoaded&templateReadyHandler=playerReady&bgcolor=%23FFFFFF&htmlFallback=true&playerID=" + playerId + "&publisherID=" + publisherID + "&playerKey=" + Encoding.urlEncode(playerKey) + "&isVid=true&isUI=true&dynamicStreaming=true&optimizedContentLoad=true&wmode=transparent&%40videoPlayer=" + videoPlayer + "&allowScriptAccess=always";
         this.br.getPage(brightcove_URL);
-        final BrightcoveClipData bestBrightcoveVersion = jd.plugins.decrypter.BrightcoveDecrypter.findBestVideoByFilesize(this.br);
+        final BrightcoveClipData bestBrightcoveVersion = jd.plugins.decrypter.BrightcoveDecrypter.findBestVideoHttpByFilesize(this.br);
         if (bestBrightcoveVersion == null || bestBrightcoveVersion.creationDate == -1 || filename == null || bestBrightcoveVersion.downloadurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
