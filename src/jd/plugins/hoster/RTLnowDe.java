@@ -62,34 +62,41 @@ public class RTLnowDe extends PluginForHost {
     }
 
     /* Settings */
-    private final String                  DEFAULTTIMEOUT       = "DEFAULTTIMEOUT";
-    private final String                  MINIMUM_FILESIZE     = "MINIMUM_FILESIZE";
+    private final String                  DEFAULTTIMEOUT               = "DEFAULTTIMEOUT";
+    private final String                  MINIMUM_FILESIZE             = "MINIMUM_FILESIZE";
 
-    /* Tags: rtl-interactive.de, RTL, rtlnow, rtl-now */
-    /* General information: The "filmID" is a number which is usually in the html as "film_id" or in the XML 'generate' URL as "para1" */
-    /* https?://(www\\.)?<host>/hds/videos/<filmID>/manifest\\-hds\\.f4m */
-    private final String                  HDSTYPE_NEW_MANIFEST = "https?://(www\\.)?[a-z0-0\\-\\.]+/hds/videos/\\d+/manifest\\-hds\\.f4m";
-    /*
-     * http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/abr/videos/<seriesID (same for all episodes of one series>/<videoIUD(same for all
-     * qualities/versions of a video)>/V_\\d+[A-Za-z0-9\\-_]+abr\\-<bitrate - usually 550, 1000 or 1500)>_[a-f0-9]{30}\\.mp4\\.f4m\\?cb=\\d+
-     */
-    private final String                  HDSTYPE_NEW_DETAILED = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/abr/videos/\\d+/\\d+/V_\\d+[A-Za-z0-9\\-_]+_abr\\-\\d+_[a-f0-9]{25,}\\.mp4\\.f4m\\?cb=\\d+";
     /*
      * http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/<seriesID (same for all episodes of one
      * series>/V_\\d+_[A-Z0-9]+_E\\d+_\\d+_h264-mq_<[a-f0-9] usually {30,}>\\.f4v\\.f4m\\?ts=\\d+
      */
-    private static final String           HDSTYPE_OLD          = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/\\d+/V_\\d+_[A-Z0-9]+_E\\d+_\\d+_h264-mq_[a-f0-9]+\\.f4v\\.f4m\\?ts=\\d+";
+    private static final String           HDSTYPE_OLD_DETAILED         = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/\\d+/V_\\d+_[A-Z0-9]+_E\\d+_\\d+_h264-mq_[a-f0-9]+\\.f4v\\.f4m\\?ts=\\d+";
+    /* Tags: rtl-interactive.de, RTL, rtlnow, rtl-now */
+    /* General information: The "filmID" is a number which is usually in the html as "film_id" or in the XML 'generate' URL as "para1" */
+    /* https?://(www\\.)?<host>/hds/videos/<filmID>/manifest\\-hds\\.f4m */
+    private final String                  HDSTYPE_NEW_MANIFEST         = "https?://(www\\.)?[a-z0-0\\-\\.]+/hds/videos/\\d+/manifest\\-hds\\.f4m";
+    /*
+     * http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/abr/videos/<seriesID (same for all episodes of one series>/<videoIUD(same for all
+     * qualities/versions of a video)>/V_\\d+[A-Za-z0-9\\-_]+abr\\-<bitrate - usually 550, 1000 or 1500)>_[a-f0-9]{30}\\.mp4\\.f4m\\?cb=\\d+
+     */
+    private final String                  HDSTYPE_NEW_DETAILED         = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/abr/videos/\\d+/\\d+/V_\\d+[A-Za-z0-9\\-_]+_abr\\-\\d+_[a-f0-9]{25,}\\.mp4\\.f4m\\?cb=\\d+";
+    /*
+     * e.g.
+     * http://hds.fra.rtlnow.de/hds-vod-enc/rtlnow/videos/7793/V_569415_CP2I_E92565_108119_h264-hq_9b676645211eaf4364629d0ff6c7b4.f4v.f4m
+     */
+    private final String                  HDSTYPE_NEW_DETAILED_2       = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/\\d+/V_\\d+[A-Za-z0-9\\-_]+_h264\\-(?:m|h)q_[a-f0-9]{25,}\\.f4v\\.f4m";
 
-    private static final String           RTMPTYPE_VERY_OLD    = "^\\d+/.+\\.flv$";
-    private static final String           RTMPTYPE_NEW         = "^\\d+/.+\\.f4v$";
+    private static final String           RTMPTYPE_h264                = "^(?!abr/).+_h264\\-(?:m|h)q.+\\.f4v$";
+    private static final String           RTMPTYPE_VERY_OLD            = "^\\d+/.+\\.flv$";
+    private static final String           RTMPTYPE_NEW                 = "^\\d+/.+\\.f4v$";
 
     private Document                      doc;
-    private static final boolean          ALLOW_HLS            = true;
-    private static final boolean          ALLOW_RTMP           = true;
-    private Account                       currAcc              = null;
-    private DownloadLink                  currDownloadLink     = null;
-    private LinkedHashMap<String, Object> entries              = null;
-    private LinkedHashMap<String, Object> format               = null;
+    private static final boolean          ALLOW_RTMP_TO_HDS_WORKAROUND = true;
+    private static final boolean          ALLOW_HLS                    = true;
+    private static final boolean          ALLOW_RTMP                   = true;
+    private Account                       currAcc                      = null;
+    private DownloadLink                  currDownloadLink             = null;
+    private LinkedHashMap<String, Object> entries                      = null;
+    private LinkedHashMap<String, Object> format                       = null;
 
     /* Thx https://github.com/bromix/plugin.video.rtl-now.de/blob/master/resources/lib/rtlinteractive/client.py */
     // private String apiUrl = null;
@@ -214,6 +221,15 @@ public class RTLnowDe extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        // this.br.getHeaders().put("Accept", "application/json, text/plain, */*");
+        // this.br.getHeaders().put("X-CLIENT-VERSION", "719");
+        // this.br.getHeaders().put("Content-Type", "application/json;charset=utf-8");
+        // this.br.getHeaders().put("Referer", "http://www.nowtv.de/rtl/adam-sucht-eva/folge-1/player");
+        // this.br.getHeaders().put("Origin", "http://www.nowtv.de");
+        // this.br.getHeaders().put("", "");
+        // this.br.getHeaders().put("", "");
+        // this.br.getHeaders().put("", "");
+        // br.postPageRaw("https://api.nowtv.de/v3/movies/view", "{\"id\":167487}");
         entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         format = (LinkedHashMap<String, Object>) entries.get("format");
         if (br.containsHTML("<\\!\\-\\- Payment\\-Teaser \\-\\->")) {
@@ -309,6 +325,7 @@ public class RTLnowDe extends PluginForHost {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            // url_hds = "http://hds.fra.rtlnow.de/hds-vod-enc";
         } else {
             /* check if rtmp is possible */
             final String apiurl = "https://api.nowtv.de/v3/movies/" + getURLPart(downloadLink) + "?fields=files";
@@ -324,19 +341,25 @@ public class RTLnowDe extends PluginForHost {
             for (final Object quality_o : ressourcelist) {
                 entries_rtmp = (LinkedHashMap<String, Object>) quality_o;
                 bitrate_temp = DummyScriptEnginePlugin.toLong(entries_rtmp.get("bitrate"), -1);
-                url_rtmp = (String) entries_rtmp.get("path");
-                if (bitrate_temp > bitrate_max && !url_rtmp.startsWith("/abr/")) {
+                if (bitrate_temp > bitrate_max) {
                     bitrate_max = bitrate_temp;
+                    url_rtmp = (String) entries_rtmp.get("path");
                 }
             }
             if (url_rtmp == null) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            /* Check possible rtmp --> hds (later then --> hls) workaround */
+            if (url_rtmp.matches(RTMPTYPE_h264) && ALLOW_RTMP_TO_HDS_WORKAROUND) {
+                final String rtmp_app = getRTMPApp(url_rtmp);
+                final String rtmp_playpath_part = getRTMPPlaypathPart(url_rtmp);
+                url_hds = "http://hds.fra.rtlnow.de/hds-vod-enc/" + rtmp_app + "/videos/" + rtmp_playpath_part + ".f4m";
+            }
 
         }
 
-        if (ALLOW_HLS && url_hds != null && url_hds.matches(this.HDSTYPE_NEW_DETAILED)) {
+        if (ALLOW_HLS && url_hds != null && (url_hds.matches(this.HDSTYPE_NEW_DETAILED) || url_hds.matches(HDSTYPE_NEW_DETAILED_2))) {
             /* Now we're sure that our .mp4 availablecheck-filename is correct */
             downloadLink.setFinalFileName(downloadLink.getName());
             url_hls = url_hds.replace("hds", "hls");
@@ -354,22 +377,17 @@ public class RTLnowDe extends PluginForHost {
             logger.info("Calculated filesize: " + calculated_filesize);
             logger.info("Minimum filesize: " + calculated_filesize_minimum);
 
-            final Regex urlregex = new Regex(url_rtmp, "/([^/]+)/(\\d+/.+)");
             /*
              * Either we already got rtmp urls or we can try to build them via the playpath-part of our HDS manifest url (see code BEFORE
              * rev 30393)
              */
-            String app = urlregex.getMatch(0);
-            if (app == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            app = convertAppToRealApp(app);
+            final String rtmp_app = getRTMPApp(url_rtmp);
+            final String rtmp_playpath_part = getRTMPPlaypathPart(url_rtmp);
             /*
              * We don't need the exact url of the video, especially because we do not even always have it. An url of the "old" mainpage is
              * enough!
              */
-            final String pageURL = convertAppToMainpage(app);
-            final String rtmp_playpath_part = urlregex.getMatch(1);
+            final String pageURL = convertAppToMainpage(rtmp_app);
             final String rtmp_playpath;
             if (rtmp_playpath_part.matches(RTMPTYPE_VERY_OLD)) {
                 /*
@@ -388,7 +406,7 @@ public class RTLnowDe extends PluginForHost {
                 downloadLink.setFinalFileName(downloadLink.getName());
             }
             /* Either use fms-fra[1-32].rtl.de or just fms.rtl.de */
-            final String rtmpurl = "rtmpe://fms.rtl.de/" + app + "/";
+            final String rtmpurl = "rtmpe://fms.rtl.de/" + rtmp_app + "/";
 
             downloadLink.setProperty("FLVFIXER", true);
             dl = new RTMPDownload(this, downloadLink, rtmpurl);
@@ -398,7 +416,7 @@ public class RTLnowDe extends PluginForHost {
             rtmp.setPageUrl(pageURL);
             rtmp.setSwfVfy("http://cdn.static-fra.de/now/vodplayer.swf");
             rtmp.setFlashVer("WIN 14,0,0,145");
-            rtmp.setApp(app);
+            rtmp.setApp(rtmp_app);
             rtmp.setUrl(rtmpurl);
             rtmp.setResume(true);
             rtmp.setRealTime();
@@ -448,6 +466,25 @@ public class RTLnowDe extends PluginForHost {
             dl.startDownload();
 
         }
+    }
+
+    private String getRTMPApp(final String url_rtmp) throws PluginException {
+        final Regex urlregex = new Regex(url_rtmp, "/([^/]+)/(\\d+/.+)");
+        String app = urlregex.getMatch(0);
+        if (app == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        app = convertAppToRealApp(app);
+        return app;
+    }
+
+    private String getRTMPPlaypathPart(final String url_rtmp) throws PluginException {
+        final Regex urlregex = new Regex(url_rtmp, "/([^/]+)/(\\d+/.+)");
+        final String rtmp_playpath_part = urlregex.getMatch(1);
+        if (rtmp_playpath_part == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return rtmp_playpath_part;
     }
 
     @SuppressWarnings("deprecation")

@@ -155,7 +155,10 @@ public class ProSevenDe extends PluginForHost {
 
         br.setFollowRedirects(false);
         /* Let's find the downloadlink */
-        final String clipID = getJson(json, "clip_id");
+        String clipID = getJson(json, "clip_id");
+        if (clipID == null || clipID.equals("")) {
+            clipID = br.getRegex("legacyVideoData[\t\n\r ]*?=[\t\n\r ]*?\\{\"(\\d+)\"").getMatch(0);
+        }
         if (clipID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
