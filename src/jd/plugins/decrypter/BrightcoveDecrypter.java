@@ -30,7 +30,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.BrightcoveClipData;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "brightcove.com" }, urls = { "https?://c\\.brightcove\\.com/services/viewer/htmlFederated\\?.+" }, flags = { 0 })
@@ -221,6 +220,51 @@ public class BrightcoveDecrypter extends PluginForDecrypt {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    public static class BrightcoveClipData {
+
+        public String ext = ".mp4";
+        public String displayName;
+        public String shortDescription;
+        public String publisherName;
+        public String videoCodec;
+        public String downloadurl;
+        public long   width;
+        public long   height;
+        public long   length;
+        public long   creationDate;
+        public long   encodingRate;
+        public long   size;
+        public long   mediaDeliveryType;
+
+        public BrightcoveClipData() {
+            //
+        }
+
+        @Override
+        public String toString() {
+            return displayName + "_" + width + "x" + height;
+        }
+
+        public String getStandardFilename() {
+            return formatDate(creationDate) + "_" + encodeUnicode(publisherName) + "_" + encodeUnicode(displayName) + "_" + width + "x" + height + "_" + videoCodec + ext;
+        }
+
+        private String formatDate(final long date) {
+            String formattedDate = null;
+            final String targetFormat = "yyyy-MM-dd";
+            Date theDate = new Date(date);
+            try {
+                final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
+                formattedDate = formatter.format(theDate);
+            } catch (Exception e) {
+                /* prevent input error killing plugin */
+                formattedDate = Long.toString(date);
+            }
+            return formattedDate;
+        }
+
     }
 
 }
