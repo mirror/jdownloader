@@ -390,11 +390,11 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         VIDEOID = new Regex(PARAMETER, "dailymotion\\.com/video/([a-z0-9]+)").getMatch(0);
         CHANNELNAME = br.getRegex("\"owner\":\"([^<>\"]*?)\"").getMatch(0);
         String strdate = br.getRegex("property=\"video:release_date\" content=\"([^<>\"]*?)\"").getMatch(0);
-        VIDEOSOURCE = getVideosource(this.br);
         FILENAME = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (FILENAME == null) {
             FILENAME = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         }
+        VIDEOSOURCE = getVideosource(this.br);
         if (VIDEOSOURCE == null || FILENAME == null || VIDEOID == null || CHANNELNAME == null || strdate == null) {
             logger.warning("Dailymotion.com decrypter failed: " + PARAMETER);
             final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis());
@@ -641,7 +641,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
              * embed-fallback mode. See here (some users seem to get another/new videoplayer):
              * https://board.jdownloader.org/showthread.php?t=64943&page=2
              */
-            videosource = br.getRegex("window\\.playerV5 = dmp\\.create\\(document\\.getElementById\\(\\'player\\'\\), (\\{.*?\\})\\);").getMatch(0);
+            videosource = br.getRegex("window\\.playerV5 = dmp\\.create\\(document\\.getElementById\\(\\'player\\'\\), (\\{.*?\\}\\})\\);").getMatch(0);
         }
         if (videosource != null) {
             videosource = Encoding.htmlDecode(videosource).replace("\\", "");
