@@ -16,15 +16,10 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -32,8 +27,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.BrightcoveClipData;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "handelsblatt.com" }, urls = { "http://(www\\.)?handelsblatt\\.com/video/[^<>\"]*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "handelsblatt.com" }, urls = { "http://(www\\.)?handelsblatt\\.com/[^<>\"]*?\\.html" }, flags = { 0 })
 public class HandelsblattCom extends PluginForHost {
 
     public HandelsblattCom(PluginWrapper wrapper) {
@@ -59,7 +55,7 @@ public class HandelsblattCom extends PluginForHost {
         return "http://www.handelsblatt.com/impressum/nutzungshinweise/";
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
+    @SuppressWarnings({ "deprecation" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         DLLINK = null;
@@ -86,40 +82,19 @@ public class HandelsblattCom extends PluginForHost {
         }
         final String videoID = br.getRegex("name=\"@videoPlayer\" value=\"(\\d+)\"").getMatch(0);
         if (flashID == null || videoID == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
-        String filename = null;
         final String brightcove_URL = "http://c.brightcove.com/services/viewer/htmlFederated?&width=340&height=192&flashID=" + flashID + "&includeAPI=true&templateLoadHandler=templateLoaded&templateReadyHandler=playerReady&bgcolor=%23FFFFFF&htmlFallback=true&playerID=" + playerID + "&publisherID=" + publisherID + "&playerKey=" + Encoding.urlEncode(playerKey) + "&isVid=true&isUI=true&dynamicStreaming=true&optimizedContentLoad=true&wmode=transparent&%40videoPlayer=" + videoID + "&allowScriptAccess=always";
         this.br.getPage(brightcove_URL);
+        final BrightcoveClipData bestBrightcoveVersion = jd.plugins.decrypter.BrightcoveDecrypter.findBestVideoByFilesize(this.br);
 
-        final String json = this.br.getRegex("var experienceJSON = (\\{.*?);\r").getMatch(0);
-        if (json == null) {
+        String filename = bestBrightcoveVersion.displayName;
+        if (bestBrightcoveVersion == null || bestBrightcoveVersion.creationDate == -1 || filename == null || bestBrightcoveVersion.downloadurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.jsonToJavaObject(json);
-        final ArrayList<Object> resource_data_list = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "data/programmedContent/videoPlayer/mediaDTO/renditions");
-        filename = (String) DummyScriptEnginePlugin.walkJson(entries, "data/programmedContent/videoPlayer/mediaDTO/displayName");
-        final long date = DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(entries, "data/programmedContent/videoPlayer/mediaDTO/creationDate"), -1);
-        long filesize = 0;
-        for (final Object o : resource_data_list) {
-            entries = (LinkedHashMap<String, Object>) o;
-            final boolean audioOnly = ((Boolean) entries.get("audioOnly")).booleanValue();
-            if (audioOnly) {
-                continue;
-            }
-            final long size_temp = DummyScriptEnginePlugin.toLong(entries.get("size"), -1);
-            if (size_temp > filesize) {
-                filesize = size_temp;
-                DLLINK = (String) entries.get("defaultURL");
-            }
-        }
-        if (date == -1 || filename == null || DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String date_formatted = formatDate(date);
-        DLLINK = Encoding.htmlDecode(DLLINK);
+        DLLINK = bestBrightcoveVersion.downloadurl;
+        final String date_formatted = formatDate(bestBrightcoveVersion.creationDate);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
@@ -133,7 +108,7 @@ public class HandelsblattCom extends PluginForHost {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        downloadLink.setDownloadSize(filesize);
+        downloadLink.setDownloadSize(bestBrightcoveVersion.size);
         return AvailableStatus.TRUE;
     }
 
@@ -190,16 +165,6 @@ public class HandelsblattCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
     }
 
     private boolean isJDStable() {
