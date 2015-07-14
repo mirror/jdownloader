@@ -56,7 +56,7 @@ public class JD1Import extends PluginsC {
                 try {
                     in = new ObjectInputStream(new HexInputStream(new CipherInputStream(fis, cipher)));
                 } catch (Throwable e) {
-                    logger.severe("PW wrong?!");
+                    logger.severe("PW wrong?");
                     throw e;
                 }
                 packages = (ArrayList<FilePackage>) in.readObject();
