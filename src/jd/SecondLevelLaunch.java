@@ -1170,7 +1170,9 @@ public class SecondLevelLaunch {
                         signedProductExe.add(new File(s.get("pathToSignedProductExe")).getName());
                     }
                     state.add(s.get("productState"));
-                    response.add(s.get("response"));
+                    if (response.size() == 0) {
+                        response.add(s.get("response"));
+                    }
                 }
 
                 HashMap<String, String> infos = new HashMap<String, String>();
