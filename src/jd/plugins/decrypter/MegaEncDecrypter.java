@@ -20,7 +20,7 @@ import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mega.enc" }, urls = { "mega://f?enc\\?[a-zA-Z0-9-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mega.enc" }, urls = { "mega://f?enc\\d*\\?[a-zA-Z0-9-_]+" }, flags = { 0 })
 public class MegaEncDecrypter extends PluginForDecrypt {
 
     public MegaEncDecrypter(PluginWrapper wrapper) {
@@ -28,22 +28,32 @@ public class MegaEncDecrypter extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         String MEGAENC_KEY = null;
         String MEGAENC_IV = null;
         try {
             String className = new String(HexFormatter.hexToByteArray("6F72672E6A646F776E6C6F616465722E636F6E7461696E65722E436F6E666967"), "UTF-8");
             Class s = getClass().forName(className);
-            MEGAENC_KEY = (String) s.getField("MEGAENC_KEY").get(null);
+            if (parameter.matches("mega://f?enc2\\?.+")) {
+                if (true) {
+                    return decryptedLinks;
+                }
+                // MEGAENC_KEY = (String) s.getField("MEGAENC2_KEY").get(null);
+            } else {
+                MEGAENC_KEY = (String) s.getField("MEGAENC_KEY").get(null);
+            }
             MEGAENC_IV = (String) s.getField("MEGAENC_IV").get(null);
         } catch (Throwable e) {
             LogSource.exception(logger, e);
             return decryptedLinks;
         }
-        boolean isFolder = parameter.toString().contains("/fenc");
-        String enc = new Regex(parameter.toString(), "enc\\?(.+)").getMatch(0);
-        if (enc == null) return null;
+        boolean isFolder = parameter.contains("/fenc");
+        String enc = new Regex(parameter, "enc\\d*\\?(.+)").getMatch(0);
+        if (enc == null) {
+            return null;
+        }
         enc = enc.replaceAll("_", "/").replaceAll("-", "+");
         if (enc.length() % 4 != 0) {
             int max = 4 - enc.length() % 4;
@@ -71,13 +81,19 @@ public class MegaEncDecrypter extends PluginForDecrypt {
     }
 
     private byte[] cipherData(PaddedBufferedBlockCipher cipher, byte[] data) throws Exception {
-        int minSize = cipher.getOutputSize(data.length);
-        byte[] outBuf = new byte[minSize];
-        int length1 = cipher.processBytes(data, 0, data.length, outBuf, 0);
-        int length2 = cipher.doFinal(outBuf, length1);
-        int actualLength = length1 + length2;
-        byte[] result = new byte[actualLength];
-        System.arraycopy(outBuf, 0, result, 0, result.length);
+        byte[] result = null;
+        try {
+            int minSize = cipher.getOutputSize(data.length);
+            byte[] outBuf = new byte[minSize];
+            int length1 = cipher.processBytes(data, 0, data.length, outBuf, 0);
+            int length2 = cipher.doFinal(outBuf, length1);
+            int actualLength = length1 + length2;
+            result = new byte[actualLength];
+            System.arraycopy(outBuf, 0, result, 0, result.length);
+        } catch (Exception e) {
+            // try catch used for breakpointing.
+            throw e;
+        }
         return result;
     }
 }
