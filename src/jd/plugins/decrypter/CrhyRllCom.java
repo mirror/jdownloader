@@ -111,33 +111,29 @@ public class CrhyRllCom extends PluginForDecrypt {
             cryptedLink.setCryptedUrl(cryptedLink.getCryptedUrl().replace("crunchyroll.com.br/", "crunchyroll.com/"));
             getPage(cryptedLink.getCryptedUrl());
             if (br.getURL().equals("http://www.crunchyroll.com/") || br.containsHTML("Sorry, this video is not available in your region due to licensing restrictions")) {
-                logger.info("Link offline: " + cryptedLink.getCryptedUrl());
-                final DownloadLink offline = createDownloadlink("directhttp://" + cryptedLink.getCryptedUrl());
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
+                decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Regioned Blocked"));
                 return decryptedLinks;
             }
             if (br.containsHTML("\"Note: This video requires a")) {
                 logger.info("Video only available for premium users (in the current region): " + cryptedLink.getCryptedUrl());
+                decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Only available for Premium Account holders"));
                 return decryptedLinks;
             }
 
             // Determine if the video exists
             if (this.br.containsHTML("(<title>Crunchyroll \\- Page Not Found</title>|<p>But we were unable to find the page you were looking for\\. Sorry\\.</p>)")) {
                 // not available == offline, no need to show error message
-                final DownloadLink offline = createDownloadlink("directhttp://" + cryptedLink.getCryptedUrl());
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
+                decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl()));
                 return decryptedLinks;
             }
             if (br.getURL().contains("crunchyroll.com/showmedia_wall?next=")) {
                 logger.info("Link can only be decrypted if you own and add a crunchyroll.com account: " + cryptedLink.getCryptedUrl());
+                decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Only available for Account Holders"));
                 return decryptedLinks;
             }
             if (br.containsHTML("This video has not been released yet")) {
                 logger.info("Video is not released yet -> Cannot decrypt link: " + cryptedLink.getCryptedUrl());
+                decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Content not released yet!"));
                 return decryptedLinks;
             }
 
@@ -147,10 +143,7 @@ public class CrhyRllCom extends PluginForDecrypt {
                 title = new Regex(cryptedLink.getCryptedUrl(), "/([^<>\"/]+)$").getMatch(0);
             }
             if (title == null) {
-                final DownloadLink offline = createDownloadlink("directhttp://" + cryptedLink.getCryptedUrl());
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
+                decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Plugin Error: Title could not be found."));
                 return decryptedLinks;
             }
 
@@ -164,6 +157,7 @@ public class CrhyRllCom extends PluginForDecrypt {
             final String configErrorHandling = new Regex(configUrlDecode, "pop_out_disable_message=([^&\\?]+)").getMatch(0);
             if (configErrorHandling != null && configErrorHandling.equals("Only+Premium+and+Premium%2B+Members+can+pop+out+this+video.+Get+your+membership+today%21")) {
                 logger.info("Link can only be decrypted if you own and add a crunchyroll.com account! Crunchyroll Error Message: " + Encoding.htmlDecode(configErrorHandling.replace("+", " ")) + " :: " + cryptedLink.getCryptedUrl());
+                decryptedLinks.add(createOfflinelink(cryptedLink.getCryptedUrl(), "Only available for Premium Account holders"));
                 return decryptedLinks;
             }
             final Regex configUrl = new Regex(configUrlDecode, CrhyRllCom.CONFIG_URL);
