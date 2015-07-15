@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spinrilla.com" }, urls = { "https?://(www\\.)?spinrilla.com/mixtapes/[a-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spinrilla.com" }, urls = { "https?://(www\\.)?spinrilla\\.com/mixtapes/[a-z0-9\\-]+" }, flags = { 0 })
 public class SpinrillaCom extends PluginForHost {
 
     public SpinrillaCom(PluginWrapper wrapper) {

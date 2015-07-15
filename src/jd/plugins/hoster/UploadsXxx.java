@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "storbit.net", "streambit.tv", "uploads.xxx" }, urls = { "https?://(www\\.)?(?:uploads\\.xxx|streambit\\.tv|storbit\\.net)/video/[A-Za-z0-9\\-_]+/", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "storbit.net", "streambit.tv", "uploads.xxx" }, urls = { "https?://(www\\.)?(?:uploads\\.xxx|streambit\\.tv|storbit\\.net)/(?:video|file)/[A-Za-z0-9\\-_]+/", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 0, 0, 0 })
 public class UploadsXxx extends PluginForHost {
 
     @SuppressWarnings("deprecation")
@@ -50,7 +50,7 @@ public class UploadsXxx extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(uploads\\.xxx|streambit\\.tv)/", "storbit.net/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(uploads\\.xxx|streambit\\.tv)/(?:video|file)/", "storbit.net/file/"));
     }
 
     @Override
@@ -81,22 +81,31 @@ public class UploadsXxx extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        /* Correct old urls */
+        correctDownloadLink(link);
         this.setBrowserExclusive();
         this.br.setCookie(this.getHost(), "xxx_lang", "en");
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 - File not found|>Sorry, but the specified file may have been deleted")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String format = br.getRegex(">Format: <b>([^<>\"]*?)</b>").getMatch(0);
-        String filename = br.getRegex("class=\"title\">[\t\n\r ]+<h\\d+ title=\"([^<>\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("h1 title=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) {
+            String format = br.getRegex(">Format: <b>([^<>\"]*?)</b>").getMatch(0);
+            filename = br.getRegex("class=\"title\">[\t\n\r ]+<h\\d+ title=\"([^<>\"]*?)\"").getMatch(0);
+            if (filename == null || format == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            filename += "." + format;
+        }
         String filesize = br.getRegex(">Size: <b>([^<>\"]+)<").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("class=\"size\">([^<>\"]*?)<").getMatch(0);
+        }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (format == null) {
-            format = "MP4";
-        }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + "." + format);
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -128,7 +137,7 @@ public class UploadsXxx extends PluginForHost {
                 }
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.setId("6LeoCwgTAAAAAAPLPxb3DTQw3HbM0c5MsgsdO6Uu");
+                rc.setId("6Lc4YwgTAAAAAPoZXXByh65cUKulPwDN31HlV1Wp");
                 rc.load();
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode("recaptcha", cf, downloadLink);

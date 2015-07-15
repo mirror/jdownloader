@@ -41,6 +41,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
@@ -551,6 +552,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static LinkedHashMap<String, String[]> findVideoQualities(final Browser br, final String parameter, String videosource) throws IOException {
         LinkedHashMap<String, String[]> QUALITIES = new LinkedHashMap<String, String[]>();
         final String[][] qualities = { { "hd1080URL", "1" }, { "hd720URL", "2" }, { "hqURL", "3" }, { "sdURL", "4" }, { "ldURL", "5" }, { "video_url", "5" } };
@@ -565,6 +567,30 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 dlinfo[2] = qualityName;
                 dlinfo[3] = qualityNumber;
                 QUALITIES.put(qualityNumber, dlinfo);
+            }
+        }
+        if (QUALITIES.isEmpty() && videosource.startsWith("{\"context\"")) {
+            /* "New" player July 2015 */
+            try {
+                LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(videosource);
+                entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "metadata/qualities");
+                /* TODO: Maybe all HLS support in case it gives us more/other formats/qualities */
+                final String[][] qualities_2 = { { "1080", "1" }, { "720", "2" }, { "480", "3" }, { "380", "4" }, { "240", "5" } };
+                for (final String quality[] : qualities_2) {
+                    final String qualityName = quality[0];
+                    final String qualityNumber = quality[1];
+                    final Object jsono = entries.get(qualityName);
+                    final String currentQualityUrl = (String) DummyScriptEnginePlugin.walkJson(jsono, "{0}/url");
+                    if (currentQualityUrl != null) {
+                        final String[] dlinfo = new String[4];
+                        dlinfo[0] = currentQualityUrl;
+                        dlinfo[1] = null;
+                        dlinfo[2] = qualityName;
+                        dlinfo[3] = qualityNumber;
+                        QUALITIES.put(qualityNumber, dlinfo);
+                    }
+                }
+            } catch (final Throwable e) {
             }
         }
         // List empty or only 1 link found -> Check for (more) links
