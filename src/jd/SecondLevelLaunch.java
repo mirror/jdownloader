@@ -264,9 +264,9 @@ public class SecondLevelLaunch {
          * previous implementation silently ignored such a situation. If the previous behavior is desired, you can use the new system
          * property, java.util.Arrays.useLegacyMergeSort, to restore previous mergesort behavior. Nature of Incompatibility: behavioral RFE:
          * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6804124
-         * 
+         *
          * Sorting live data (values changing during sorting) violates the general contract
-         * 
+         *
          * java.lang.IllegalArgumentException: Comparison method violates its general contract!
          */
         System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
@@ -299,8 +299,8 @@ public class SecondLevelLaunch {
 
     /**
      * LÃ¤dt ein Dynamicplugin.
-     * 
-     * 
+     *
+     *
      * @throws IOException
      */
 
@@ -1096,12 +1096,12 @@ public class SecondLevelLaunch {
                         LOG.log(e);
                         HashMap<String, String> infos = new HashMap<String, String>();
 
-                        infos.put("response", e.getMessage());
+                        infos.put("error", e.getMessage());
 
-                        StatsManager.I().track(100, "secur", "sec/as/error/" + e.getMessage(), null);
+                        StatsManager.I().track(100, "secur", "sec/as/error", null);
                     } catch (Throwable e1) {
                         LOG.log(e1);
-                        StatsManager.I().track(100, "secur", "sec/av/error/" + e1.getMessage(), null);
+                        StatsManager.I().track(100, "secur", "sec/av/error", null);
                     } finally {
                         LOG.info("AntiVirusProduct END");
                     }
@@ -1116,12 +1116,12 @@ public class SecondLevelLaunch {
                         LOG.log(e);
                         HashMap<String, String> infos = new HashMap<String, String>();
 
-                        infos.put("response", e.getMessage());
+                        infos.put("error", e.getMessage());
 
-                        StatsManager.I().track(100, "secur", "sec/as/error/" + e.getMessage(), null);
+                        StatsManager.I().track(100, "secur", "sec/fw/error", null);
                     } catch (Throwable e1) {
                         LOG.log(e1);
-                        StatsManager.I().track(100, "secur", "sec/fw/error/" + e1.getMessage(), null);
+                        StatsManager.I().track(100, "secur", "sec/fw/error", null);
                     } finally {
                         LOG.info("FirewallProduct END");
                     }
@@ -1137,12 +1137,12 @@ public class SecondLevelLaunch {
                         LOG.log(e);
                         HashMap<String, String> infos = new HashMap<String, String>();
 
-                        infos.put("response", e.getMessage());
+                        infos.put("error", e.getMessage());
 
-                        StatsManager.I().track(100, "secur", "sec/as/error/" + e.getMessage(), null);
+                        StatsManager.I().track(100, "secur", "sec/as/error", null);
                     } catch (Throwable e1) {
                         LOG.log(e1);
-                        StatsManager.I().track(100, "secur", "sec/as/error/" + e1.getMessage(), null);
+                        StatsManager.I().track(100, "secur", "sec/as/error", null);
                     } finally {
                         LOG.info("AntiSpywareProduct END");
                     }
