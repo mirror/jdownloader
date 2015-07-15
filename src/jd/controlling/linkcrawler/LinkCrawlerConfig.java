@@ -18,6 +18,7 @@ public interface LinkCrawlerConfig extends ConfigInterface {
     @AboutConfig
     @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("max. number of linkcrawler threads")
+    @SpinnerValidator(min = 1, max = 128)
     int getMaxThreads();
 
     void setMaxThreads(int i);

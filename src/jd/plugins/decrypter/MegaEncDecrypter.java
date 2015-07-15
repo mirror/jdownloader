@@ -31,39 +31,36 @@ public class MegaEncDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        String MEGAENC_KEY = null;
-        String MEGAENC_IV = null;
+        final String MEGAENC_KEY;
+        final String MEGAENC_IV;
         try {
             String className = new String(HexFormatter.hexToByteArray("6F72672E6A646F776E6C6F616465722E636F6E7461696E65722E436F6E666967"), "UTF-8");
-            Class s = getClass().forName(className);
+            final Class s = getClass().forName(className);
+            MEGAENC_IV = (String) s.getField("MEGAENC_IV").get(null);
             if (parameter.matches("mega://f?enc2\\?.+")) {
-                if (true) {
-                    return decryptedLinks;
-                }
-                // MEGAENC_KEY = (String) s.getField("MEGAENC2_KEY").get(null);
+                MEGAENC_KEY = (String) s.getField("MEGAENC_KEY2").get(null);
             } else {
                 MEGAENC_KEY = (String) s.getField("MEGAENC_KEY").get(null);
             }
-            MEGAENC_IV = (String) s.getField("MEGAENC_IV").get(null);
         } catch (Throwable e) {
             LogSource.exception(logger, e);
             return decryptedLinks;
         }
-        boolean isFolder = parameter.contains("/fenc");
+        final boolean isFolder = parameter.contains("/fenc");
         String enc = new Regex(parameter, "enc\\d*\\?(.+)").getMatch(0);
         if (enc == null) {
             return null;
         }
         enc = enc.replaceAll("_", "/").replaceAll("-", "+");
         if (enc.length() % 4 != 0) {
-            int max = 4 - enc.length() % 4;
+            final int max = 4 - enc.length() % 4;
             for (int i = 0; i < max; i++) {
                 enc += "=";
             }
         }
-        byte[] decrypted = decrypt(Base64.decode(enc), HexFormatter.hexToByteArray(MEGAENC_KEY), HexFormatter.hexToByteArray(MEGAENC_IV));
+        final byte[] decrypted = decrypt(Base64.decode(enc), HexFormatter.hexToByteArray(MEGAENC_KEY), HexFormatter.hexToByteArray(MEGAENC_IV));
 
-        DownloadLink link = null;
+        final DownloadLink link;
         if (isFolder) {
             link = this.createDownloadlink("http://mega.co.nz/#F" + new String(decrypted, "UTF-8"));
         } else {
