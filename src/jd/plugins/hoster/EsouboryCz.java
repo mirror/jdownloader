@@ -200,7 +200,7 @@ public class EsouboryCz extends PluginForHost {
         String hostsSup = br.getRegex("\"list\":\"(.*?)\"").getMatch(0);
         if (hostsSup != null) {
             hostsSup = hostsSup.replace("\\", "");
-            hostsSup = hostsSup.replaceFirst("https?://(www\\.)?", "");
+            hostsSup = hostsSup.replaceAll("https?://(www\\.)?", "");
             final String[] hosts = hostsSup.split(";");
             final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
             ai.setMultiHostSupport(this, supportedHosts);

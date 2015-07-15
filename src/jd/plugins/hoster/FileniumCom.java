@@ -236,7 +236,7 @@ public class FileniumCom extends PluginForHost {
         } else {
             final int responseCode = dl.getConnection().getResponseCode();
             if (liveLink == false && responseCode == 404) {
-                handleErrorRetries("error_response_404", 10, 60 * 60 * 1000l);
+                handleErrorRetries("error_response_404", 10, 5 * 60 * 1000l);
             }
             if (responseCode == 416) {
                 logger.info("Resume impossible, disabling it for the next try");
@@ -269,7 +269,7 @@ public class FileniumCom extends PluginForHost {
         }
 
         /* temp disabled the host */
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        handleErrorRetries("error_unknown_download_error", 10, 10 * 60 * 1000l);
     }
 
     /** no override to keep plugin compatible to old stable */
@@ -308,7 +308,7 @@ public class FileniumCom extends PluginForHost {
         // This can either mean that it's a temporary error or that the hoster
         // should be deactivated
         if (br.containsHTML(DLFAILED)) {
-            handleErrorRetries("error_no_access", 5, 60 * 60 * 1000l);
+            handleErrorRetries("error_no_access", 5, 5 * 60 * 1000l);
         }
     }
 
@@ -397,7 +397,12 @@ public class FileniumCom extends PluginForHost {
      * @param maxRetries
      *            : Max retries before out of date error is thrown
      */
+    @SuppressWarnings("deprecation")
     private void handleErrorRetries(final String error, final int maxRetries, final long disableTime) throws PluginException {
+        /* Special handling for their own direct urls */
+        if (this.currDownloadLink.getDownloadURL().matches(".+filenium\\.com/.+")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, error, disableTime);
+        }
         int timesFailed = this.currDownloadLink.getIntegerProperty(NICE_HOSTproperty + "failedtimes_" + error, 0);
         this.currDownloadLink.getLinkStatus().setRetryCount(0);
         if (timesFailed <= maxRetries) {

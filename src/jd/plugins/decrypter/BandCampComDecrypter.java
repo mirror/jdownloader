@@ -61,7 +61,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
         final Regex inforegex = br.getRegex("<title>(.*?) \\| (.*?)</title>");
         final String[][] links = br.getRegex("\"(/track/[a-z0-9\\-]+)\" itemprop=\"url\"><span itemprop=\"name\">([^<>\"]*?)</span>").getMatches();
-        String artist = inforegex.getMatch(1);
+        String artist = br.getRegex("artist: \"([^<>\"]*?)\"").getMatch(0);
         String album = inforegex.getMatch(0);
         final String date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
         if (links == null || links.length == 0 || artist == null || album == null || date == null) {

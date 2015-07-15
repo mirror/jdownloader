@@ -144,8 +144,11 @@ public class BandCampCom extends PluginForHost {
                 }
             }
             final Regex inforegex = br.getRegex("<title>(.*?) \\| (.*?)</title>");
-            final String artist = inforegex.getMatch(1);
+            String artist = br.getRegex("artist: \"([^<>\"]*?)\"").getMatch(0);
             final String albumname = inforegex.getMatch(0);
+            if (artist == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             downloadLink.setProperty("fromdecrypter", true);
             downloadLink.setProperty("directdate", Encoding.htmlDecode(date.trim()));
             downloadLink.setProperty("directartist", Encoding.htmlDecode(artist.trim()));

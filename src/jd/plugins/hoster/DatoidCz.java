@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -28,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -50,6 +52,7 @@ public class DatoidCz extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("datoid.sk/", "datoid.cz/"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -60,16 +63,18 @@ public class DatoidCz extends PluginForHost {
             logger.info("Password protected links are not yet supported (via API)!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = getJson("filename");
+        String filename = getJson("filename");
         final String filesize = getJson("filesize_bytes");
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        filename = unescape(filename);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(Long.parseLong(filesize));
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -175,6 +180,16 @@ public class DatoidCz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
+
+    private String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (!yt_loaded.getAndSet(true)) {
+            JDUtilities.getPluginForHost("youtube.com");
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     @Override
