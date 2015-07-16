@@ -78,6 +78,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.IOErrorHandler;
 import org.appwork.utils.Regex;
@@ -1081,7 +1082,7 @@ public class SecondLevelLaunch {
                             infos.put("response", ((SecuritySoftwareException) e).getResponse());
                         }
                         infos.put("error", e.getMessage());
-                        infos.put("exception", e.getClass().getName());
+                        infos.put("exception", Exceptions.getStackTrace(e));
                         StatsManager.I().track(100, "secur", "sec/av/error", infos);
                     } finally {
                         LOG.info("AntiVirusProduct END");
@@ -1100,7 +1101,7 @@ public class SecondLevelLaunch {
                             infos.put("response", ((SecuritySoftwareException) e).getResponse());
                         }
                         infos.put("error", e.getMessage());
-                        infos.put("exception", e.getClass().getName());
+                        infos.put("exception", Exceptions.getStackTrace(e));
                         StatsManager.I().track(100, "secur", "sec/fw/error", infos);
                     } finally {
                         LOG.info("FirewallProduct END");
@@ -1124,7 +1125,7 @@ public class SecondLevelLaunch {
                             HashMap<String, String> infos = new HashMap<String, String>();
 
                             infos.put("error", e.getMessage());
-                            infos.put("exception", e.getClass().getName());
+                            infos.put("exception", Exceptions.getStackTrace(e));
                             if (e instanceof SecuritySoftwareException) {
                                 infos.put("response", ((SecuritySoftwareException) e).getResponse());
                             }
