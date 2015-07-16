@@ -51,9 +51,9 @@ public class MetaLink extends PluginsC {
             cs.setStatus(ContainerStatus.STATUS_FAILED);
             return cs;
         }
-        ArrayList<CrawledLink> retLinks = new ArrayList<CrawledLink>(links.size());
-        for (DownloadLink link : links) {
-            retLinks.add(new CrawledLink(link));
+        final ArrayList<CrawledLink> retLinks = new ArrayList<CrawledLink>(links.size());
+        for (final DownloadLink link : links) {
+            retLinks.add(decrypter.convert(link));
         }
         cls = retLinks;
         cs.setStatus(ContainerStatus.STATUS_FINISHED);
