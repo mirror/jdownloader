@@ -234,6 +234,10 @@ public abstract class PluginForDecrypt extends Plugin {
         return false;
     }
 
+    public CrawledLink convert(DownloadLink link) {
+        return new CrawledLink(link);
+    }
+
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen
      * Vector<String> mit den decoded Links setzen
