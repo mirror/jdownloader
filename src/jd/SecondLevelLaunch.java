@@ -89,6 +89,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.appwork.utils.os.SecuritySoftwareException;
 import org.appwork.utils.os.SecuritySoftwareInfo;
+import org.appwork.utils.os.SecuritySoftwareResponse;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.SlowEDTDetector;
@@ -1062,30 +1063,10 @@ public class SecondLevelLaunch {
         StatsManager.I();
         new Thread("Print Sec Infos") {
 
-            private String getNameSoftware(SecuritySoftwareInfo software) {
-                String antiVirus = null;
-                if (software != null) {
-
-                    if (StringUtils.isEmpty(antiVirus)) {
-                        String path = software.get("pathToSignedProductExe");
-                        if (path != null) {
-                            antiVirus = new File(path).getName();
-                        }
-                    }
-                    if (StringUtils.isEmpty(antiVirus)) {
-                        String path = software.get("pathToSignedReportingExe");
-                        if (path != null) {
-                            antiVirus = new File(path).getName();
-                        }
-                    }
-                }
-                return antiVirus;
-            }
-
             public void run() {
 
                 if (CrossSystem.isWindows()) {
-                    ArrayList<SecuritySoftwareInfo> sw = null;
+                    SecuritySoftwareResponse sw = null;
                     try {
                         LOG.info("AntiVirusProduct START");
                         sw = CrossSystem.getAntiVirusSoftwareInfo();
@@ -1158,13 +1139,12 @@ public class SecondLevelLaunch {
 
             }
 
-            private HashMap<String, String> createInfoMap(ArrayList<SecuritySoftwareInfo> sw) {
+            private HashMap<String, String> createInfoMap(SecuritySoftwareResponse sw) {
                 ArrayList<String> names = new ArrayList<String>();
 
                 ArrayList<String> signedReportingExe = new ArrayList<String>();
                 ArrayList<String> signedProductExe = new ArrayList<String>();
                 ArrayList<String> state = new ArrayList<String>();
-                ArrayList<String> response = new ArrayList<String>();
 
                 for (SecuritySoftwareInfo s : sw) {
                     names.add(s.getName());
@@ -1177,9 +1157,7 @@ public class SecondLevelLaunch {
                         signedProductExe.add(new File(s.get("pathToSignedProductExe")).getName());
                     }
                     state.add(s.get("productState"));
-                    if (response.size() == 0) {
-                        response.add(s.get("response"));
-                    }
+
                 }
 
                 HashMap<String, String> infos = new HashMap<String, String>();
@@ -1188,7 +1166,7 @@ public class SecondLevelLaunch {
                 infos.put("reporting", JSonStorage.serializeToJson(signedReportingExe));
                 infos.put("product", JSonStorage.serializeToJson(signedProductExe));
                 infos.put("states", JSonStorage.serializeToJson(state));
-                infos.put("responses", JSonStorage.serializeToJson(response));
+                infos.put("response", sw.getResponse());
                 return infos;
             };
         }.start();
