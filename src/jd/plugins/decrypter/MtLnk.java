@@ -26,6 +26,9 @@ import javax.xml.parsers.SAXParserFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.UnknownCrawledLinkHandler;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -41,14 +44,16 @@ import org.xml.sax.helpers.DefaultHandler;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "metalinker.org" }, urls = { "http://[\\d\\w\\.:\\-@]*/.*?\\.(metalink|meta4)" }, flags = { 0 })
 public class MtLnk extends PluginForDecrypt {
 
-    private ArrayList<DownloadLink> decryptedLinks;
+    private ArrayList<DownloadLink>            decryptedLinks;
 
     /* we use identity as package name if available */
-    private String                  packageName   = null;
+    private String                             packageName   = null;
 
-    private String                  publisherName = null;
+    private String                             publisherName = null;
 
-    private String                  publisherURL  = null;
+    private String                             publisherURL  = null;
+
+    private volatile UnknownCrawledLinkHandler handler;
 
     public MtLnk(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,6 +66,13 @@ public class MtLnk extends PluginForDecrypt {
         return decryptString(metalink);
     }
 
+    @Override
+    public CrawledLink convert(DownloadLink link) {
+        final CrawledLink ret = new CrawledLink(link);
+        ret.setUnknownHandler(handler);
+        return ret;
+    }
+
     public boolean pluginAPI(String method, Object input, Object output) throws Exception {
         if ("decryptString".equalsIgnoreCase(method)) {
             ((ArrayList<DownloadLink>) output).addAll(decryptString((String) input));
@@ -70,6 +82,16 @@ public class MtLnk extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptString(String metalink) {
+        handler = new UnknownCrawledLinkHandler() {
+
+            @Override
+            public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
+                final DownloadLink dlLink = link.getDownloadLink();
+                if (dlLink != null && StringUtils.startsWithCaseInsensitive(dlLink.getPluginPatternMatcher(), "directhttp://")) {
+                    dlLink.setPluginPatternMatcher("directhttp://" + dlLink.getPluginPatternMatcher());
+                }
+            }
+        };
         decryptedLinks = new ArrayList<DownloadLink>();
         final DefaultHandler handler = new MetalinkSAXHandler();
         // Use the default (non-validating) parser

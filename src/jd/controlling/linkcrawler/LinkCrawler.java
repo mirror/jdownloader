@@ -2142,7 +2142,7 @@ public class LinkCrawler {
                                             }
                                         }
                                     }
-                                    final CrawledLink crawledLink = new CrawledLink(link);
+                                    final CrawledLink crawledLink = wplg.convert(link);
                                     forwardCrawledLinkInfos(cryptedLink, crawledLink, parentLinkModifier, sourceURLs, !distributeMultipleLinks);
                                     possibleCryptedLinks.add(crawledLink);
                                 }
