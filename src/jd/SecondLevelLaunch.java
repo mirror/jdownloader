@@ -1092,16 +1092,16 @@ public class SecondLevelLaunch {
                         HashMap<String, String> infos = createInfoMap(sw);
                         StatsManager.I().track(100, "secur", "sec/av", infos);
                     } catch (UnsupportedOperationException e) {
-                    } catch (SecuritySoftwareException e) {
+
+                    } catch (Throwable e) {
                         LOG.log(e);
                         HashMap<String, String> infos = new HashMap<String, String>();
-
+                        if (e instanceof SecuritySoftwareException) {
+                            infos.put("response", ((SecuritySoftwareException) e).getResponse());
+                        }
                         infos.put("error", e.getMessage());
-
-                        StatsManager.I().track(100, "secur", "sec/as/error", null);
-                    } catch (Throwable e1) {
-                        LOG.log(e1);
-                        StatsManager.I().track(100, "secur", "sec/av/error", null);
+                        infos.put("exception", e.getClass().getName());
+                        StatsManager.I().track(100, "secur", "sec/av/error", infos);
                     } finally {
                         LOG.info("AntiVirusProduct END");
                     }
@@ -1112,39 +1112,46 @@ public class SecondLevelLaunch {
                         HashMap<String, String> infos = createInfoMap(sw);
                         StatsManager.I().track(100, "secur", "sec/fw", infos);
                     } catch (UnsupportedOperationException e) {
-                    } catch (SecuritySoftwareException e) {
+                    } catch (Throwable e) {
                         LOG.log(e);
                         HashMap<String, String> infos = new HashMap<String, String>();
-
+                        if (e instanceof SecuritySoftwareException) {
+                            infos.put("response", ((SecuritySoftwareException) e).getResponse());
+                        }
                         infos.put("error", e.getMessage());
-
-                        StatsManager.I().track(100, "secur", "sec/fw/error", null);
-                    } catch (Throwable e1) {
-                        LOG.log(e1);
-                        StatsManager.I().track(100, "secur", "sec/fw/error", null);
+                        infos.put("exception", e.getClass().getName());
+                        StatsManager.I().track(100, "secur", "sec/fw/error", infos);
                     } finally {
                         LOG.info("FirewallProduct END");
                     }
 
-                    try {
-                        LOG.info("AntiSpywareProduct START");
-                        sw = CrossSystem.getAntiSpySoftwareInfo();
-                        HashMap<String, String> infos = createInfoMap(sw);
-                        StatsManager.I().track(100, "secur", "sec/as", infos);
-                    } catch (UnsupportedOperationException e) {
+                    switch (CrossSystem.getOS()) {
+                    case WINDOWS_10:
+                    case WINDOWS_7:
+                    case WINDOWS_VISTA:
+                    case WINDOWS_8:
 
-                    } catch (SecuritySoftwareException e) {
-                        LOG.log(e);
-                        HashMap<String, String> infos = new HashMap<String, String>();
+                        try {
+                            LOG.info("AntiSpywareProduct START");
+                            sw = CrossSystem.getAntiSpySoftwareInfo();
+                            HashMap<String, String> infos = createInfoMap(sw);
+                            StatsManager.I().track(100, "secur", "sec/as", infos);
+                        } catch (UnsupportedOperationException e) {
 
-                        infos.put("error", e.getMessage());
+                        } catch (Throwable e) {
+                            LOG.log(e);
+                            HashMap<String, String> infos = new HashMap<String, String>();
 
-                        StatsManager.I().track(100, "secur", "sec/as/error", null);
-                    } catch (Throwable e1) {
-                        LOG.log(e1);
-                        StatsManager.I().track(100, "secur", "sec/as/error", null);
-                    } finally {
-                        LOG.info("AntiSpywareProduct END");
+                            infos.put("error", e.getMessage());
+                            infos.put("exception", e.getClass().getName());
+                            if (e instanceof SecuritySoftwareException) {
+                                infos.put("response", ((SecuritySoftwareException) e).getResponse());
+                            }
+                            StatsManager.I().track(100, "secur", "sec/as/error", infos);
+
+                        } finally {
+                            LOG.info("AntiSpywareProduct END");
+                        }
                     }
 
                 }
