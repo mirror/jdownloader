@@ -272,6 +272,12 @@ public class SuperLoadCz extends antiDDoSForHost {
                 } else if (StringUtils.equalsIgnoreCase(error, "Lack of credits")) {
                     logger.info("Superload.cz says 'Lack of credits', temporarily disabling account.");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else if (StringUtils.equalsIgnoreCase(error, "no credits")) {
+                    logger.info("No credits");
+                    final AccountInfo ai = account.getAccountInfo();
+                    ai.setTrafficLeft(0);
+                    account.setAccountInfo(ai);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else if (StringUtils.containsIgnoreCase(error, "Unable to download the file")) {
                     handleErrorRetries(null, link, "Unable to download file", 10, 15 * 60 * 1000l);
                 } else if (dllink == null) {
