@@ -122,6 +122,7 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_SILENTMODE;
 import org.jdownloader.statistics.StatsManager;
+import org.jdownloader.statistics.StatsManager.CollectionName;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.RestartController;
@@ -1072,7 +1073,7 @@ public class SecondLevelLaunch {
                         LOG.info("AntiVirusProduct START");
                         sw = CrossSystem.getAntiVirusSoftwareInfo();
                         HashMap<String, String> infos = createInfoMap(sw);
-                        StatsManager.I().track(100, "secur", "sec/av", infos);
+                        StatsManager.I().track(100, "secur", "av", infos, CollectionName.SECURITY);
                     } catch (UnsupportedOperationException e) {
 
                     } catch (Throwable e) {
@@ -1083,7 +1084,7 @@ public class SecondLevelLaunch {
                         }
                         infos.put("error", e.getMessage());
                         infos.put("exception", Exceptions.getStackTrace(e));
-                        StatsManager.I().track(100, "secur", "sec/av/error", infos);
+                        StatsManager.I().track(100, "secur", "av/error", infos, CollectionName.SECURITY);
                     } finally {
                         LOG.info("AntiVirusProduct END");
                     }
@@ -1092,7 +1093,7 @@ public class SecondLevelLaunch {
                         LOG.info("FirewallProduct START");
                         sw = CrossSystem.getFirewallSoftwareInfo();
                         HashMap<String, String> infos = createInfoMap(sw);
-                        StatsManager.I().track(100, "secur", "sec/fw", infos);
+                        StatsManager.I().track(100, "secur", "fw", infos, CollectionName.SECURITY);
                     } catch (UnsupportedOperationException e) {
                     } catch (Throwable e) {
                         LOG.log(e);
@@ -1102,7 +1103,7 @@ public class SecondLevelLaunch {
                         }
                         infos.put("error", e.getMessage());
                         infos.put("exception", Exceptions.getStackTrace(e));
-                        StatsManager.I().track(100, "secur", "sec/fw/error", infos);
+                        StatsManager.I().track(100, "secur", "fw/error", infos, CollectionName.SECURITY);
                     } finally {
                         LOG.info("FirewallProduct END");
                     }
@@ -1117,7 +1118,7 @@ public class SecondLevelLaunch {
                             LOG.info("AntiSpywareProduct START");
                             sw = CrossSystem.getAntiSpySoftwareInfo();
                             HashMap<String, String> infos = createInfoMap(sw);
-                            StatsManager.I().track(100, "secur", "sec/as", infos);
+                            StatsManager.I().track(100, "secur", "as", infos, CollectionName.SECURITY);
                         } catch (UnsupportedOperationException e) {
 
                         } catch (Throwable e) {
@@ -1129,7 +1130,7 @@ public class SecondLevelLaunch {
                             if (e instanceof SecuritySoftwareException) {
                                 infos.put("response", ((SecuritySoftwareException) e).getResponse());
                             }
-                            StatsManager.I().track(100, "secur", "sec/as/error", infos);
+                            StatsManager.I().track(100, "secur", "as/error", infos, CollectionName.SECURITY);
 
                         } finally {
                             LOG.info("AntiSpywareProduct END");

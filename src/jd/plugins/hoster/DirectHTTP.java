@@ -60,6 +60,7 @@ import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.jdownloader.statistics.StatsManager;
+import org.jdownloader.statistics.StatsManager.CollectionName;
 
 /**
  * TODO: Remove after next big update of core to use the public static methods!
@@ -85,7 +86,7 @@ public class DirectHTTP extends PluginForHost {
         public Recaptcha(final Browser br) {
             this.br = br;
             sourceHost = br.getHost();
-            track("captcha/rc/challenge/");
+            track("challenge/");
         }
 
         public File downloadCaptcha(final File captchaFile) throws IOException, PluginException {
@@ -99,17 +100,17 @@ public class DirectHTTP extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
 
-                track("captcha/rc/download/" + helperID);
+                track("download/" + helperID);
                 Browser.download(captchaFile, con = this.rcBr.openGetConnection(this.captchaAddress));
 
                 FileInputStream is = null;
                 try {
                     is = new FileInputStream(captchaFile);
                     RecaptchaType type = RecaptchaTypeTester.getType(captchaFile);
-                    track("captcha/rc/imagetype/" + type + "/" + helperID);
+                    track("imagetype/" + type + "/" + helperID);
 
                 } catch (IOException e) {
-                    track("captcha/rc/imagetype/" + e.getMessage() + "/" + helperID);
+                    track("imagetype/" + e.getMessage() + "/" + helperID);
                 } finally {
                     if (is != null) {
                         try {
@@ -287,7 +288,7 @@ public class DirectHTTP extends PluginForHost {
         private void track(String string) {
             HashMap<String, String> info = new HashMap<String, String>();
             info.put("host", sourceHost);
-            StatsManager.I().track(100, "rc_track", string, info);
+            StatsManager.I().track(100, "rc_track", string, info, CollectionName.RECAPTCHA);
         }
 
         public void parse() throws IOException, PluginException {
