@@ -126,7 +126,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * get the only existing instance of StatsManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static StatsManager I() {
@@ -371,7 +371,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         final HashMap<String, String> cvar = new HashMap<String, String>();
 
         cvar.put(REGISTERED_TIME, "0");
-        if (!track(1000, null, "ping", cvar)) {
+        if (!track(1000, null, "ping", cvar, CollectionName.BASIC)) {
             return;
         }
         new Thread("Pinger") {
@@ -389,7 +389,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         return;
                     }
                     cvar.put(REGISTERED_TIME, (System.currentTimeMillis() - started) + "");
-                    if (!track(1000, null, "ping", cvar)) {
+                    if (!track(1000, null, "ping", cvar, CollectionName.BASIC)) {
                         return;
                     }
 
@@ -605,7 +605,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * this setter does not set the config flag. Can be used to disable the logger for THIS session.
-     * 
+     *
      * @param b
      */
     public void setEnabled(boolean b) {
@@ -1541,7 +1541,13 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     }
 
-    public boolean track(final int reducer, String reducerID, final String id, final Map<String, String> infos) {
+    public static enum CollectionName {
+        BASIC,
+        RECAPTCHA,
+        SECURITY
+    }
+
+    public boolean track(final int reducer, String reducerID, final String id, final Map<String, String> infos, final CollectionName col) {
         final String reducerKey;
 
         if (reducer > 1) {
@@ -1602,7 +1608,14 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     }
                     final Browser browser = new Browser();
                     try {
-                        final URLConnectionAdapter con = browser.openGetConnection("http://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar)));
+                        URLConnectionAdapter con = null;
+
+                        if (col == null || col == CollectionName.BASIC) {
+                            con = browser.openGetConnection("http://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar)));
+                        } else {
+                            con = browser.openGetConnection("http://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar) + "&null&" + col.name()));
+
+                        }
                         con.disconnect();
                     } finally {
                         try {
@@ -1621,20 +1634,24 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
 
     /**
      * use the reducer if you want to limit the tracker. 1000 means that only one out of 1000 calls will be accepted
-     * 
+     *
      * @param reducer
      * @param path
      */
     public void track(final int reducer, String path2) {
-        track(reducer, null, path2, null);
+        track(reducer, null, path2, null, CollectionName.BASIC);
     }
 
     public void track(final String path) {
-        track(1, null, path, null);
+        track(1, null, path, null, CollectionName.BASIC);
+    }
+
+    public void track(final String path, CollectionName col) {
+        track(1, null, path, null, col);
     }
 
     public void track(final String path, final Map<String, String> infos) {
-        track(1, null, path, infos);
+        track(1, null, path, infos, CollectionName.BASIC);
     }
 
     public void logDownloadException(DownloadLink link, PluginForHost plugin, Throwable e) {
