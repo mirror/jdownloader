@@ -23,7 +23,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
      *
      */
     private static final long serialVersionUID = -2808142012367413057L;
-    private RuleMatcher       rule;
+    private final RuleMatcher rule;
 
     public PackagizerSingleTestTableModel(RuleMatcher rule) {
         super("PackagizerSingleTestTableModel");
@@ -51,7 +51,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             protected Icon getIcon(CrawledLink value) {
-                if (Boolean.TRUE.equals(rule.getMatches())) {
+                if (rule.matches(value)) {
                     return NewTheme.I().getIcon("true", 16);
                 } else {
                     return NewTheme.I().getIcon("false", 16);

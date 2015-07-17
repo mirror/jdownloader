@@ -8,6 +8,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import javax.swing.AbstractAction;
 import javax.swing.ButtonGroup;
@@ -110,30 +111,30 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     }
 
     public static class RuleMatcher {
-        private Boolean        matches = null;
-        private PackagizerRule rule;
+        private final HashSet<CrawledLink> matches = new HashSet<CrawledLink>();
+        private final PackagizerRule       rule;
 
-        public RuleMatcher(PackagizerRule rule) {
+        public RuleMatcher(final PackagizerRule rule) {
             this.rule = rule;
         }
 
         /**
          * @return the matches
          */
-        public Boolean getMatches() {
-            return matches;
+        public boolean matches(final CrawledLink link) {
+            synchronized (matches) {
+                return matches.contains(link);
+            }
         }
 
         public PackagizerRule getRule() {
             return rule;
         }
 
-        /**
-         * @param matches
-         *            the matches to set
-         */
-        public void setMatches(boolean matches) {
-            this.matches = matches;
+        public void setMatches(final CrawledLink link, final PackagizerRuleWrapper lgr) {
+            synchronized (matches) {
+                matches.add(link);
+            }
         }
     }
 
@@ -795,7 +796,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
                 @Override
                 protected void set(CrawledLink link, PackagizerRuleWrapper lgr) {
-                    matcher.setMatches(true);
+                    matcher.setMatches(link, lgr);
                     super.set(link, lgr);
                 }
 
