@@ -43,7 +43,7 @@ public class MotherLessCom extends PluginForHost {
     public static final String html_contentSubscriberImage = "Here's another image instead\\.";
     public static final String html_contentFriendsOnly     = ">\\s*The content you are trying to view is for friends only\\.\\s*<";
     // offline can contain text which is displayed in contentScriber pages
-    public static final String html_OFFLINE                     = "Violated Site Terms of Use|The page you're looking for cannot be found|You will be redirected to";
+    public static final String html_OFFLINE                = "Violated Site Terms of Use|The page you're looking for cannot be found|You will be redirected to";
     public static final String html_notOnlineYet           = "(This video is being processed and will be available shortly|This video will be available in (less than a minute|[0-9]+ minutes))";
     public static final String ua                          = RandomUserAgent.generate();
     private String             DLLINK                      = null;
@@ -75,8 +75,12 @@ public class MotherLessCom extends PluginForHost {
         String betterName = null;
         if ("offline".equals(parameter.getStringProperty("dltype", null))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if ("video".equals(parameter.getStringProperty("dltype", null))) {
-            br.getPage(parameter.getDownloadURL());
+        }
+        br.getPage(parameter.getDownloadURL());
+        if (br.containsHTML(">The member has deleted the upload<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if ("video".equals(parameter.getStringProperty("dltype", null))) {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -107,7 +111,6 @@ public class MotherLessCom extends PluginForHost {
                 }
             }
         } else if ("image".equals(parameter.getStringProperty("dltype", null))) {
-            br.getPage(parameter.getDownloadURL());
             // links can go offline between the time of adding && download, also decrypter doesn't check found content, will happen here..
             if (br.containsHTML(html_OFFLINE) || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<img src=\"/images/icons.*/exclamation\\.png\" style=\"margin-top: -5px;\" />[\t\n\r ]+404")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
