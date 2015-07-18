@@ -41,12 +41,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vipfile.in" }, urls = { "https?://(www\\.)?vipfile\\.in/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vipfile.in" }, urls = { "https?://(www\\.)?vipfile\\.in/[A-Za-z0-9]+" }, flags = { 2 })
 public class VipfileIn extends PluginForHost {
 
     public VipfileIn(PluginWrapper wrapper) {
@@ -435,14 +436,23 @@ public class VipfileIn extends PluginForHost {
                         }
                     }
                 }
-                if (!br.getURL().contains("/upgrade")) {
-                    br.getPage(loginstart + this.getHost() + "/upgrade." + type);
-                }
-                final String type = br.getRegex("Account Type:[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)<").getMatch(0);
-                if (type == null || !type.contains("Paid")) {
+                // on /index.html it can show trial accounts..
+                /*
+                 * account information Account Expired
+                 */
+                // it will also show that the user account is premium, on /upgrade and never expires to free... o_O
+                if (br.getURL().endsWith("/index.html") && br.containsHTML("<h2>Account Information</h2>\\s*<p style=\"color:red;\">Account Expired</p>")) {
                     account.setProperty("free", true);
                 } else {
-                    account.setProperty("free", false);
+                    if (!br.getURL().contains("/upgrade")) {
+                        br.getPage(loginstart + this.getHost() + "/upgrade." + type);
+                    }
+                    final String type = br.getRegex("Account Type:[\t\n\r ]+</td>[\t\n\r ]+<td>([^<>\"]*?)<").getMatch(0);
+                    if (type == null || !type.contains("Paid")) {
+                        account.setProperty("free", true);
+                    } else {
+                        account.setProperty("free", false);
+                    }
                 }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -472,18 +482,14 @@ public class VipfileIn extends PluginForHost {
             throw e;
         }
         if (account.getBooleanProperty("free", false)) {
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
             MAXPREM.set(account_FREE_MAXDOWNLOADS);
-            ai.setStatus("Registered (free) user");
+            ai.setStatus("Free Account");
         } else {
             br.getPage("http://" + this.getHost() + "/index." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
-            final String expire = br.getRegex(">Account is pre(im|mi)um until : ([^<>\"]*?)</p>").getMatch(1);
+            final String expire = br.getRegex(">Account is pre(?:im|mi)um until : ([^<>\"]*?)</p>").getMatch(0);
             if (expire == null) {
                 account.setValid(false);
                 return ai;
@@ -492,24 +498,16 @@ public class VipfileIn extends PluginForHost {
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
             if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
                 account.setProperty("free", true);
-                try {
-                    account.setType(AccountType.FREE);
-                    account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
+                account.setType(AccountType.FREE);
+                account.setMaxSimultanDownloads(account_FREE_MAXDOWNLOADS);
                 MAXPREM.set(account_FREE_MAXDOWNLOADS);
-                ai.setStatus("Registered (free) user");
+                ai.setStatus("Free Account");
             } else {
                 ai.setValidUntil(expire_milliseconds);
-                try {
-                    account.setType(AccountType.PREMIUM);
-                    account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(account_PREMIUM_MAXDOWNLOADS);
                 MAXPREM.set(account_PREMIUM_MAXDOWNLOADS);
-                ai.setStatus("Premium User");
+                ai.setStatus("Premium Account");
             }
         }
         account.setValid(true);
@@ -562,6 +560,11 @@ public class VipfileIn extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public SiteTemplate siteTemplate() {
+        return SiteTemplate.YetiShare;
     }
 
 }
