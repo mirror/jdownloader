@@ -75,7 +75,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         // define custom browser headers and language settings.
         // required for native cloudflare support, without the need to repeat requests.
         try {
-            prepBr.addAllowedResponseCodes(new int[] { 429, 503, 520, 521, 522 });
+            prepBr.addAllowedResponseCodes(new int[] { 429, 503, 520, 521, 522, 525 });
         } catch (final Throwable t) {
         }
         synchronized (antiDDoSCookies) {
@@ -349,8 +349,8 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
             if (ibr.getRequest().isKeepByteArray() || ibr.isKeepResponseContentBytes()) {
                 ibr.getRequest().setKeepByteArray(true);
                 ibr.getRequest().setResponseBytes(t.getBytes(encoding == null ? "UTF-8" : encoding));
+            }
         }
-    }
     }
 
     /**
@@ -472,16 +472,22 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                         ibr.getPage(ibr.getRedirectLocation());
                     }
                 } else if (responseCode == 521) {
-                    // HTTP/1.1 521 Origin Down
-                    // <title>api.share-online.biz | 521: Web server is down</title>
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Webserver is Down: " + ibr.getHost(), 5 * 60 * 1000l);
-                } else if (responseCode == 520 || responseCode == 522) {
+                    // this basically indicates that the site is down, no need to retry.
+                    // HTTP/1.1 521 Origin Down || <title>api.share-online.biz | 521: Web server is down</title>
+                    responseCode52x++;
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare says \"Origin Sever\" is down!", 5 * 60 * 1000l);
+                } else if (responseCode == 520 || responseCode == 522 || responseCode == 525) {
+                    // these warrant retry instantly, as it could be just slave issue? most hosts have 2 DNS response to load balance.
+                    // additional request could work via additional IP
                     // HTTP/1.1 520 Origin Error
                     // HTTP/1.1 522 Origin Connection Time-out
+                    // HTTP/1.1 525 Origin SSL Handshake Error || >CloudFlare is unable to establish an SSL connection to the origin
+                    // server.<
                     // cache system with possible origin dependency... we will wait and retry
                     if (responseCode52x == 4) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare can not contact \"Origin Server\"", 5 * 60 * 1000l);
                     }
+                    responseCode52x++;
                     // this html based cookie, set by <meta (for responseCode 522)
                     // <meta http-equiv="set-cookie" content="cf_use_ob=0; expires=Sat, 14-Jun-14 14:35:38 GMT; path=/">
                     String[] metaCookies = ibr.getRegex("<meta http-equiv=\"set-cookie\" content=\"(.*?; expries=.*?; path=.*?\";?(?: domain=.*?;?)?)\"").getColumn(0);
@@ -505,7 +511,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     try {
                         sendRequest(ibr, ibr.getRequest().cloneRequest());
                     } catch (final Throwable t) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare related issue", 5 * 60 * 1000l);
                     }
                     // new sendRequest saves.
                     return;
