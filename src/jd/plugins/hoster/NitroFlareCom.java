@@ -31,6 +31,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -94,6 +95,16 @@ public class NitroFlareCom extends antiDDoSForHost {
             directlinkproperty = "freelink";
             logger.finer("setConstants = Guest Download :: isFree = " + isFree + ", upperChunks = " + chunks + ", Resumes = " + resumes);
         }
+    }
+
+    private boolean freedl = false;
+
+    @Override
+    protected boolean useRUA() {
+        if (freedl) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -209,27 +220,28 @@ public class NitroFlareCom extends antiDDoSForHost {
             filename = br.getRegex("alt=\"\" /><span title=\"([^<>\"]*?)\">").getMatch(0);
         }
         final String filesize = br.getRegex("dir=\"ltr\" style=\"text-align: left;\">([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (link.getBooleanProperty("apiInfo", Boolean.FALSE) == Boolean.FALSE) {
             /* no apiInfos available, set unverified name/size here */
             link.setName(Encoding.htmlDecode(filename.trim()));
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        if (useAPI.get()) {
+        if (useAPI.get() && false) {
             handleDownload_API(downloadLink, null);
         } else {
+            freedl = true;
             setConstants(null);
             this.setBrowserExclusive();
             br.setFollowRedirects(true);
-            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:30.0) Gecko/20100101 Firefox/30.0");
-            br.setCookie("http://nitroflare.com/", "lang", "en");
             requestFileInformation(downloadLink);
             if (downloadLink.getBooleanProperty("premiumRequired", false)) {
                 throwPremiumRequiredException(downloadLink);
@@ -239,30 +251,22 @@ public class NitroFlareCom extends antiDDoSForHost {
                 if (br.getURL() == null) {
                     requestFile(downloadLink);
                 }
-                final Browser br2 = br.cloneBrowser();
+                handleErrors(br, false);
+                // some random hash bullshit here
+                ajaxPost(br, "/ajax/randHash.php", "randHash=" + JDHash.getMD5(downloadLink.getDownloadURL() + System.currentTimeMillis()));
+                ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(downloadLink));
+                // first post registers time value
                 postPage(br.getURL(), "goToFreePage=");
+                ajaxPost(br, "/ajax/freeDownload.php", "method=startTimer&fileId=" + getFUID(downloadLink));
+                handleErrors(ajax, false);
+                final long t = System.currentTimeMillis();
+                final String waittime = br.getRegex("<div id=\"CountDownTimer\" data-timer=\"(\\d+)\"").getMatch(0);
+                // register wait i guess, it should return 1
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                 rc.findID();
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                postPage("/ajax/freeDownload.php", "method=startTimer&fileId=" + getFUID(downloadLink));
-                if (br.containsHTML("This file is available with premium key only|﻿This file is available with Premium only")) {
-                    throwPremiumRequiredException(downloadLink);
-                } else if (br.containsHTML("﻿Downloading is not possible") || br.containsHTML("downloading is not possible")) {
-                    final String waitminutes = br.getRegex("You have to wait (\\d+) minutes to download").getMatch(0);
-                    if (waitminutes != null) {
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitminutes) * 60 * 1001l);
-                    }
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-                }
-                getPage(br2, "/js/downloadFree.js?v=1.0.1");
-                final String waittime = br2.getRegex("var time = (\\d+);").getMatch(0);
-                int wait = 30;
-                if (waittime != null) {
-                    wait = Integer.parseInt(waittime);
-                }
-                this.sleep(wait * 1001l, downloadLink);
-                for (int i = 1; i <= 5; i++) {
+                final int repeat = 5;
+                for (int i = 1; i <= repeat; i++) {
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode("recaptcha", cf, downloadLink);
@@ -270,29 +274,29 @@ public class NitroFlareCom extends antiDDoSForHost {
                         // fixes timeout issues or client refresh, we have no idea at this stage
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                    postPage("/ajax/freeDownload.php", "method=fetchDownload&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                    if (br.containsHTML("The captcha wasn't entered correctly|You have to fill the captcha")) {
+                    if (i == 1) {
+                        long wait = 60;
+                        if (waittime != null) {
+                            // remove one second from past, to prevent returning too quickly.
+                            final long passedTime = ((System.currentTimeMillis() - t) / 1000) - 1;
+                            wait = Long.parseLong(waittime) - passedTime;
+                        }
+                        if (wait > 0) {
+                            sleep(wait * 1000l, downloadLink);
+                        }
+                    }
+                    ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                    if (ajax.containsHTML("The captcha wasn't entered correctly|You have to fill the captcha")) {
+                        if (i + 1 == repeat) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
                         continue;
                     }
                     break;
                 }
-                if (br.containsHTML("The captcha wasn't entered correctly|You have to fill the captcha")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                if (br.containsHTML("File doesn't exist")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (br.containsHTML("This file is available with premium key only|﻿This file is available with Premium only")) {
-                    throwPremiumRequiredException(downloadLink);
-                } else if (br.containsHTML("﻿Downloading is not possible") || br.containsHTML("downloading is not possible")) {
-                    final String waitminutes = br.getRegex("You have to wait (\\d+) minutes to download").getMatch(0);
-                    if (waitminutes != null) {
-                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitminutes) * 60 * 1001l);
-                    }
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-                }
-                dllink = br.getRegex("\"(https?://[a-z0-9\\-_]+\\.nitroflare\\.com/[^<>\"]*?)\"").getMatch(0);
+                dllink = ajax.getRegex("\"(https?://[a-z0-9\\-_]+\\.nitroflare\\.com/[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
+                    handleErrors(ajax, true);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
@@ -306,6 +310,37 @@ public class NitroFlareCom extends antiDDoSForHost {
             }
             dl.startDownload();
         }
+    }
+
+    private void handleErrors(final Browser br, final boolean postCaptcha) throws PluginException {
+        if (postCaptcha) {
+            if (br.containsHTML("You don't have an entry ticket\\. Please refresh the page to get a new one")) {
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            if (br.containsHTML("File doesn't exist")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
+        if (br.containsHTML("This file is available with premium key only|﻿This file is available with Premium only")) {
+            throwPremiumRequiredException(this.getDownloadLink());
+        }
+        if (br.containsHTML("﻿Downloading is not possible") || br.containsHTML("downloading is not possible")) {
+            // ﻿Free downloading is not possible. You have to wait 178 minutes to download your next file.
+            final String waitminutes = br.getRegex("You have to wait (\\d+) minutes to download").getMatch(0);
+            if (waitminutes != null) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitminutes) * 60 * 1001l);
+            }
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        }
+    }
+
+    private Browser ajax = null;
+
+    private void ajaxPost(final Browser br, final String url, final String post) throws IOException {
+        ajax = br.cloneBrowser();
+        ajax.getHeaders().put("Accept", "*/*");
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        ajax.postPage(url, post);
     }
 
     protected static Object LOCK = new Object();
