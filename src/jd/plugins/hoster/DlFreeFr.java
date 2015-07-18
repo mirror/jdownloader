@@ -243,7 +243,6 @@ public class DlFreeFr extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "dl\\.free\\.fr/(.+)").getMatch(0));
         this.setBrowserExclusive();
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
