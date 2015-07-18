@@ -50,8 +50,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://[\\w\\.\\d]*?filesmonsterdecrypted\\.com/(download.php\\?id=|dl/.*?/free/2/).+" }, flags = { 2 })
 public class FilesMonsterCom extends PluginForHost {
 
-    private static final String POSTTHATREGEX            = "\"(https?://filesmonster\\.com/dl/.*?/free/.*?)\"";
-    private static final String POSTTHATREGEX2           = "(https?://(www\\.)?filesmonster\\.com/dl/.*?/free/.+)";
+    private static final String POSTTHATREGEX            = "\"((?:https?://(?:www\\.)?filesmonster\\.com)?/dl/.*?/free/.*?)\"";
+    private static final String POSTTHATREGEX2           = "((?:https?://(?:www\\.)?filesmonster\\.com)?/dl/.*?/free/.+)";
     private static final String TEMPORARYUNAVAILABLE     = "Download not available at the moment";
     private static final String REDIRECTFNF              = "DL_FileNotFound";
     private static final String PREMIUMONLYUSERTEXT      = "Only downloadable via premium";
@@ -163,6 +163,9 @@ public class FilesMonsterCom extends PluginForHost {
     }
 
     private String getNewTemporaryLink(final String mainlink, final String originalfilename) throws IOException, PluginException {
+        // TODO: FIX THIS. doesn't work see https://svn.jdownloader.org/issues/64192 && log Link; 1465673179241.log; 8306380;
+        // jdlog://1465673179241
+
         // Find a new temporary link
         String mainlinkpart = new Regex(mainlink, "filesmonster\\.com/download\\.php\\?id=(.+)").getMatch(0);
         String temporaryLink = null;
