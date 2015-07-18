@@ -197,7 +197,7 @@ public class PornHubCom extends PluginForHost {
                 }
                 if (Integer.parseInt(quality) > q) {
                     q = Integer.parseInt(quality);
-                    dlUrl = (String) values.get("quality_" + q + "p");
+                    dlUrl = (String) next.getValue();
                 }
             }
         }
