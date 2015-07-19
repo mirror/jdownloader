@@ -35,24 +35,24 @@ btnExampleScripts=スクリプト例
 classes=/* ===== classes ===== */
 deny=拒否
 description=JDownloaderの内部イベントを監視し、独自スクリプト(JavaScript)の実行を許可します
-downloadLink=// ダウンロードリンク
+downloadLink=// DownloadLink
 edit_script=スクリプト編集
 editor_autoformat=自動整形
 editor_showhelp=ヘルプ表示/非表示
 editor_testcompile=ﾃｽﾄｺﾝﾊﾟｲﾙ
 editor_testrun=試行
-emptyScript=// ここに独自のスクリプトを記述します。APIのプロパティやメソッドを自由に利用可能です
+emptyScript=//Add your script here. Feel free to use the available api properties and methods
 event_trigger=引金(トリガー)
 example_infoFile=ダウンロードフォルダに詳細情報をinfoファイルとして記録する
 example_play_sound=WAVファイルを再生する
 example_script_name=例
-filepackage=// ファイルパッケージ
+filepackage=// Filepackage
 interval_settings=呼出し間隔(㍉秒)
 loading_editor_title=エディタを読込中...
-none_trigger=// このイベントは絶対にトリガーになりません
+none_trigger=// This Event will never be triggered.
 permission_msg=イベントスクリプト"%s1"がトリガー"%s2"用の許可を要求しています\nこのスクリプトは以下を試行しています:\n%s3\nこのスクリプトを許可しますか?\n挙動がよく分らない場合はスクリプトの内容を確認して下さい!
 permission_title=イベントスクリプトが許可を必要としています!
-properties_for_eventtrigger=// ========= イベントトリガ %s1 用プロパティ  =========
+properties_for_eventtrigger=// ========= Properties for the EventTrigger '%s1'  =========
 reset_link_on_low_speed=低速時にダウンロードをリセット
 script_editor_title=スクリプトエディタ: %s1
 securityLoading=%s1からJavaScriptを読み込み、実行しようとしています。このスクリプトが現在の環境プロパティや関数への完全なアクセス権を持つ事に注意して下さい。絶対に信頼できるコードだけを読み込むようにして下さい! 我々開発者一同は、独自に作成したローカルなJavaScriptだけを読み込む事を推奨します。
