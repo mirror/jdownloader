@@ -81,12 +81,12 @@ public class TubeRampantTv extends PluginForHost {
                 downloadLink.setName(filename + default_Extension);
                 return AvailableStatus.TRUE;
             }
-            final String playerConfigUrl = br.getRegex("(https?://(www\\.)?tube\\.rampant\\.tv/playerConfig\\.php\\?[a-z0-9]+\\.mp4)").getMatch(0);
+            final String playerConfigUrl = br.getRegex("(https?://(www\\.)?tube\\.rampant\\.tv/playerConfig\\.php\\?[a-z0-9]+\\.(mp4|flv))").getMatch(0);
             if (playerConfigUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getPage(playerConfigUrl);
-            DLLINK = br.getRegex("defaultVideo:(http://[^<>\"]*?);").getMatch(0);
+            DLLINK = br.getRegex("defaultVideo:(https?://[^<>\"]*?);").getMatch(0);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
