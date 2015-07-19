@@ -245,8 +245,8 @@ public class BaixarPremiumNet extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 br.getPage("http://baixarpremium.net/logar/");
-                String postData = "method=pag&login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass());
-                if (br.containsHTML("/captcha\\.php")) {
+                String postData = "login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass());
+                if (br.containsHTML("/captcha\\.php") && !br.containsHTML("<span style=\"display:none\"><input type=\"text\" id=\"confirmacao\"")) {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", "baixarpremium.net", "http://baixarpremium.net", true);
                     final String code = getCaptchaCode("http://baixarpremium.net/acoes/captcha.php", dummyLink);
                     postData += "&confirmacao=" + Encoding.urlEncode(code);
