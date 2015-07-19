@@ -284,7 +284,11 @@ public class ShareHostEu extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, MAXCHUNKSFORFREE);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("<ul><li>Brak wolnych slotów do pobrania tego pliku. Zarejestruj się, aby pobrać plik.</li></ul>")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("NO_FREE_SLOTS"), 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
     }
@@ -449,6 +453,7 @@ public class ShareHostEu extends PluginForHost {
                                                       put("NO_TRAFFIC", "No traffic left");
                                                       put("DOWNLOAD_LIMIT", "You can only download 1 file per 15 minutes");
                                                       put("CAPTCHA_ERROR", "Wrong Captcha code in 3 trials!");
+                                                      put("NO_FREE_SLOTS", "No free slots for downloading this file");
                                                   }
                                               };
 
@@ -463,6 +468,7 @@ public class ShareHostEu extends PluginForHost {
                                                       put("NO_TRAFFIC", "Brak dostępnego transferu");
                                                       put("DOWNLOAD_LIMIT", "Można pobrać maksymalnie 1 plik na 15 minut");
                                                       put("CAPTCHA_ERROR", "Wprowadzono 3-krotnie nieprawiłowy kod Captcha!");
+                                                      put("NO_FREE_SLOTS", "Brak wolnych slotów do pobrania tego pliku");
 
                                                   }
                                               };
@@ -470,7 +476,7 @@ public class ShareHostEu extends PluginForHost {
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
      * English.
-     * 
+     *
      * @param key
      * @return
      */
