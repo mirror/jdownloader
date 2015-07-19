@@ -163,6 +163,7 @@ public class TwitterCom extends PornEmbedParser {
                     String vid = new Regex(vinfo, "video data-media-id=\"([0-9]+)\".*?source video-src=\"([^\"]+)\"").getMatch(0);
                     String vsrc = new Regex(vinfo, "video data-media-id=\"([0-9]+)\".*?source video-src=\"([^\"]+)\"").getMatch(1);
                     final DownloadLink dl = createDownloadlink(vsrc);
+                    fp.add(dl);
                     dl.setContentUrl(vsrc);
                     dl.setLinkID(vid);
                     dl.setName(vid + ".mp4");
