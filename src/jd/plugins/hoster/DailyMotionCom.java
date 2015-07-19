@@ -326,7 +326,7 @@ public class DailyMotionCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("X-Prototype-Version", "1.6.1");
-        br.postPage("http://www.dailymotion.com/pageitem/login", "form_name=dm_pageitem_login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&login_submit=Login");
+        br.postPage("http://www.dailymotion.com/signin", "form_name=dm_pageitem_login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&login_submit=Login");
         if (br.getCookie(MAINPAGE, "sid") == null || br.getCookie(MAINPAGE, "sdx") == null) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
