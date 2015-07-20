@@ -1606,6 +1606,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                     cvar.put("source", "jd2");
                     cvar.put("os", CrossSystem.getOS().name());
                     cvar.put("rev", revision.toString());
+                    cvar.put("c", System.getProperty("user.country"));
+                    cvar.put("l", System.getProperty("user.language"));
+
                     if (infos != null) {
                         cvar.putAll(infos);
                     }
