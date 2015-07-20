@@ -126,12 +126,12 @@ public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
             /* Definitly offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (!this.br.containsHTML("license_code:") && !this.br.containsHTML("kt_player_[0-9\\.]+\\.swfx?")) {
-            /* No licence key present in html and/or no player --> No video --> Offline */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         /* Most times this RegEx should do the job */
         DLLINK = this.br.getRegex("video_url[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (DLLINK == null && downloadLink.getDownloadURL().contains("xfig.net/")) {
+            /* Small workaround */
+            DLLINK = this.br.getRegex("var videoFile=\"(http[^<>\"]*?)/\"").getMatch(0);
+        }
         if (DLLINK == null) {
             DLLINK = this.br.getRegex("(http://[A-Za-z0-9\\.\\-]+/get_file/[^<>\"\\&]*?)(?:\\&|\\'|\")").getMatch(0);
         }
@@ -148,6 +148,10 @@ public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
             DLLINK = this.br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
         }
         if (DLLINK == null) {
+            if (!this.br.containsHTML("license_code:") && !this.br.containsHTML("kt_player_[0-9\\.]+\\.swfx?")) {
+                /* No licence key present in html and/or no player --> No video --> Offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
