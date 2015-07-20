@@ -369,9 +369,9 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     public void trackR() {
         final long started = (int) System.currentTimeMillis();
         final HashMap<String, String> cvar = new HashMap<String, String>();
-
+        cvar.put("j", Long.toString(Application.getJavaVersion()));
         cvar.put(REGISTERED_TIME, "0");
-        if (!track(1000, null, "ping", cvar, CollectionName.BASIC)) {
+        if (!track(1000, null, "ping", cvar, CollectionName.PING)) {
             return;
         }
         new Thread("Pinger") {
@@ -389,7 +389,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         return;
                     }
                     cvar.put(REGISTERED_TIME, (System.currentTimeMillis() - started) + "");
-                    if (!track(1000, null, "ping", cvar, CollectionName.BASIC)) {
+                    if (!track(1000, null, "ping", cvar, CollectionName.PING)) {
                         return;
                     }
 
@@ -1544,7 +1544,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
     public static enum CollectionName {
         BASIC,
         RECAPTCHA,
-        SECURITY
+        SECURITY,
+        PING
     }
 
     public boolean track(final int reducer, String reducerID, final String id, final Map<String, String> infos, final CollectionName col) {
