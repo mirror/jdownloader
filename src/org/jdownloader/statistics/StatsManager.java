@@ -1558,7 +1558,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
             }
 
             synchronized (reducerRandomMap) {
-                final Integer randomValue = reducerRandomMap.get(reducerKey);
+                Integer randomValue = reducerRandomMap.get(reducerKey);
+
                 if (randomValue != null) {
                     if (randomValue.intValue() != 0) {
                         return false;
@@ -1579,6 +1580,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         path = id + "_in" + reducer;
                         synchronized (reducerRandomMap) {
                             Integer randomValue = reducerRandomMap.get(reducerKey);
+
                             if (randomValue == null) {
                                 final Random random = new Random(System.currentTimeMillis());
                                 randomValue = random.nextInt(reducer);
@@ -1613,7 +1615,7 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
                         if (col == null || col == CollectionName.BASIC) {
                             con = browser.openGetConnection("http://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar)));
                         } else {
-                            con = browser.openGetConnection("http://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar) + "&null&" + col.name()));
+                            con = browser.openGetConnection("http://stats.appwork.org/jcgi/event/track?" + Encoding.urlEncode(path) + "&" + Encoding.urlEncode(JSonStorage.serializeToJson(cvar)) + "&null&" + col.name());
 
                         }
                         con.disconnect();
