@@ -152,6 +152,7 @@ public class TwitterCom extends PornEmbedParser {
                 if (stream_ids != null) {
                     for (String stream_id : stream_ids) {
                         final DownloadLink dl = createDownloadlink(createVideourl(stream_id));
+                        fp.add(dl);
                         distribute(dl);
                         decryptedLinks.add(dl);
                         addedlinks_all++;
