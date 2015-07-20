@@ -22,6 +22,7 @@ import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JOptionPane;
@@ -255,8 +256,21 @@ public class NitroFlareCom extends antiDDoSForHost {
                 // some random hash bullshit here
                 ajaxPost(br, "/ajax/randHash.php", "randHash=" + JDHash.getMD5(downloadLink.getDownloadURL() + System.currentTimeMillis()));
                 ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(downloadLink));
-                // first post registers time value
-                postPage(br.getURL(), "goToFreePage=");
+                {
+                    int i = 0;
+                    while (!br.getURL().endsWith("/free")) {
+                        if (++i > 3) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        // lets add some randomisation between submitting gotofreepage
+                        sleep((new Random().nextInt(5) + 8) * 1000l, downloadLink);
+                        // first post registers time value
+                        postPage(br.getURL(), "goToFreePage=");
+                        // repeat the random hash bullshit here
+                        ajaxPost(br, "/ajax/randHash.php", "randHash=" + JDHash.getMD5(downloadLink.getDownloadURL() + System.currentTimeMillis()));
+                        ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(downloadLink));
+                    }
+                }
                 ajaxPost(br, "/ajax/freeDownload.php", "method=startTimer&fileId=" + getFUID(downloadLink));
                 handleErrors(ajax, false);
                 final long t = System.currentTimeMillis();
