@@ -59,6 +59,8 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.jdownloader.statistics.StatsManager;
+import org.jdownloader.statistics.StatsManager.CollectionName;
 
 /**
  * TODO: Remove after next big update of core to use the public static methods!
@@ -286,7 +288,7 @@ public class DirectHTTP extends PluginForHost {
         private void track(String string) {
             HashMap<String, String> info = new HashMap<String, String>();
             info.put("host", sourceHost);
-            // StatsManager.I().track(100, "rc_track", string, info, CollectionName.RECAPTCHA);
+            StatsManager.I().track(100, "rc_track", string, info, CollectionName.RECAPTCHA);
         }
 
         public void parse() throws IOException, PluginException {
@@ -747,9 +749,9 @@ public class DirectHTTP extends PluginForHost {
                     } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
                         urlConnection = br.openHeadConnection(getDownloadURL(downloadLink));
                         if (urlConnection.getResponseCode() == 404 /*
-                                                                    * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
-                                                                    * "must-revalidate") && urlConnection.getHeaderField("Via") != null
-                                                                    */) {
+                         * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
+                         * "must-revalidate") && urlConnection.getHeaderField("Via") != null
+                         */) {
                             urlConnection.disconnect();
                             urlConnection = br.openGetConnection(getDownloadURL(downloadLink));
                         } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
