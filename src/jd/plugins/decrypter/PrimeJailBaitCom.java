@@ -86,7 +86,7 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
                     dl.setAvailable(true);
                     if (ID != null) {
                         dl.setContentUrl("https://www.primejailbait.com/id/" + ID);
-                        dl.setFinalFileName(ID + "_" + extractFileNameFromURL(thumb_url));
+                        dl.setFinalFileName(ID + thumb_url.substring(thumb_url.lastIndexOf(".")));
                     }
                     decryptedLinks.add(dl);
                     distribute(dl);
@@ -108,7 +108,7 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
             link.setAvailableStatus(AvailableStatus.TRUE);
             if (ID != null) {
                 link.setContentUrl("https://www.primejailbait.com/id/" + ID);
-                link.setFinalFileName(ID + "_" + extractFileNameFromURL(finallink));
+                link.setFinalFileName(ID + finallink.substring(finallink.lastIndexOf(".")));
             }
             decryptedLinks.add(link);
         }
