@@ -158,7 +158,7 @@ public class PornHubCom extends PluginForHost {
             getVideoLinkFree(downloadLink.getDownloadURL());
         }
 
-        if (dlUrl == null) {
+        if (dlUrl == null) { // getVideoLink fails
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setFinalFileName(file_name);
@@ -166,7 +166,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     private void getVideoLinkAccount() {
-        dlUrl = this.br.getRegex("class=\"downloadBtn greyButton\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+        dlUrl = this.br.getRegex("class=\"downloadBtn greyButton\" (target=\"_blank\")? href=\"(http[^<>\"]*?)\"").getMatch(1);
     }
 
     @SuppressWarnings("unchecked")
@@ -363,7 +363,7 @@ public class PornHubCom extends PluginForHost {
 
     /**
      * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
-     *
+     * 
      * @see <a
      *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
      */
