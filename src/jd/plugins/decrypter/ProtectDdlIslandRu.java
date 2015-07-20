@@ -33,7 +33,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect.ddl-island.ru", "protect.emule-island.ru" }, urls = { "http://(?:www\\.)?protect\\.ddl\\-island\\.ru/(?:other\\?id=)?([A-Za-z0-9]+)", "http://(?:www\\.)?protect\\.emule-island\\.ru/(?:other\\?id=)?([A-Za-z0-9]+)" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "protect.ddl-island.ru", "protect.emule-island.ru" }, urls = { "http://(?:www\\.)?protect\\.ddl\\-island\\.(?:ru|su)/(?:other\\?id=)?([A-Za-z0-9]+)", "http://(?:www\\.)?protect\\.emule-island\\.ru/(?:other\\?id=)?([A-Za-z0-9]+)" }, flags = { 0, 0 })
 public class ProtectDdlIslandRu extends PluginForDecrypt {
 
     public ProtectDdlIslandRu(PluginWrapper wrapper) {
