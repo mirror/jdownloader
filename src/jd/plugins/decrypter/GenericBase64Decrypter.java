@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -43,7 +44,7 @@ import jd.plugins.PluginForDecrypt;
 urls = { "https?://(?:\\w+\\.)?free\\.downloader\\.my/gateway\\.php\\?q=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:\\w+\\.)?saylicadebrid\\.tk/mali\\.php\\?reklamlar=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:\\w+\\.)?binbox\\.io/o/([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?tinymoviez\\.info/download\\.php\\?link=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?re-direcciona\\.me/(?:I|r)/([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?asianspankee\\.com/.*\\?goto=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?mediaboom\\.org/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?bookgn\\.com/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?vip-files\\.net/download\\.php\\?e=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://www\\.url4u\\.org/([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?tunesies\\.com/go/([a-zA-Z0-9_/\\+\\=\\-%]+)",
         "https?://(?:www\\.)?xtragfx\\.com/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?psdkeys\\.com/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)" },
 
-        flags = { 0 })
+flags = { 0 })
 public class GenericBase64Decrypter extends PluginForDecrypt {
 
     public GenericBase64Decrypter(final PluginWrapper wrapper) {
@@ -58,8 +59,17 @@ public class GenericBase64Decrypter extends PluginForDecrypt {
         if (b64 == null) {
             return null;
         }
-        int i = 0;
+        final HashSet<String> results = handleBase64Decode(b64);
+        for (final String result : results) {
+            decryptedLinks.add(createDownloadlink(result));
+        }
+        return decryptedLinks;
+    }
+
+    public final static HashSet<String> handleBase64Decode(final String b64) {
+        final HashSet<String> results = new HashSet<String>();
         String finallink = b64;
+        int i = 0;
         // this covers nested encoding.
         while (i < 20 && finallink != null && !finallink.matches("(?:ftp|https?)://.+")) {
             i++;
@@ -73,13 +83,13 @@ public class GenericBase64Decrypter extends PluginForDecrypt {
             final String[] links = HTMLParser.getHttpLinks(finallink, "");
             if (links != null) {
                 for (final String link : links) {
-                    decryptedLinks.add(createDownloadlink(link));
+                    results.add(link);
                 }
             }
         } else {
-            decryptedLinks.add(createDownloadlink(finallink));
+            results.add(finallink);
         }
-        return decryptedLinks;
+        return results;
     }
 
     /* NO OVERRIDE!! */
