@@ -77,11 +77,15 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        final String date = getXML("broadcastStartDate");
+        String date = getXML("broadcastStartDate");
+        if (date == null) {
+            /* E.g. for http://www.mdr.de/sachsenspiegel/video284422-avCustom.xml */
+            date = getXML("webTime");
+        }
         final String subtitle_url = br.getRegex("<videoSubtitleUrl>(http://[^<>\"]*?\\.xml)</videoSubtitleUrl>").getMatch(0);
 
         /* Decrypt start */
-        String title = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        String title = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
         if (title == null || date == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

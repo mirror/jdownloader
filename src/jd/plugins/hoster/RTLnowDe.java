@@ -84,8 +84,11 @@ public class RTLnowDe extends PluginForHost {
      * http://hds.fra.rtlnow.de/hds-vod-enc/rtlnow/videos/7793/V_569415_CP2I_E92565_108119_h264-hq_9b676645211eaf4364629d0ff6c7b4.f4v.f4m
      */
     private final String                  HDSTYPE_NEW_DETAILED_2       = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/\\d+/V_\\d+[A-Za-z0-9\\-_]+_h264\\-(?:m|h)q_[a-f0-9]{25,}\\.f4v\\.f4m";
+    // http://hds.fra.rtlnow.de/hds-vod-enc/abr/videos/1668/62899/V_804172_MCIG_05-50001000000089_62899_abr-1500_86d8ee67d82c9e561c1bdd58bcefb6fa.mp4.f4m
+    private final String                  HDSTYPE_NEW_DETAILED_3       = "http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/abr/videos/\\d+/\\d+/V_\\d+[A-Za-z0-9\\-_]+_abr\\-\\d+_[a-f0-9]{25,}\\.mp4\\.f4m";
 
     private static final String           RTMPTYPE_h264                = "^(?!abr/).+_h264\\-(?:m|h)q.+\\.f4v$";
+    private static final String           RTMPTYPE_abr                 = "^/abr/.+_abr\\-\\d+_.+\\.mp4$";
     private static final String           RTMPTYPE_VERY_OLD            = "^\\d+/.+\\.flv$";
     private static final String           RTMPTYPE_NEW                 = "^\\d+/.+\\.f4v$";
 
@@ -342,7 +345,7 @@ public class RTLnowDe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* Check possible rtmp --> hds (later then --> hls) workaround */
-            if (url_rtmp.matches(RTMPTYPE_h264) && ALLOW_RTMP_TO_HDS_WORKAROUND) {
+            if ((url_rtmp.matches(RTMPTYPE_h264) || url_rtmp.matches(RTMPTYPE_abr)) && ALLOW_RTMP_TO_HDS_WORKAROUND) {
                 final String rtmp_app = getRTMPApp(url_rtmp);
                 final String rtmp_playpath_part = getRTMPPlaypathPart(url_rtmp);
                 url_hds = "http://hds.fra.rtlnow.de/hds-vod-enc/" + rtmp_app + "/videos/" + rtmp_playpath_part + ".f4m";
@@ -350,7 +353,7 @@ public class RTLnowDe extends PluginForHost {
 
         }
 
-        if (ALLOW_HLS && url_hds != null && (url_hds.matches(this.HDSTYPE_NEW_DETAILED) || url_hds.matches(HDSTYPE_NEW_DETAILED_2))) {
+        if (ALLOW_HLS && url_hds != null && (url_hds.matches(this.HDSTYPE_NEW_DETAILED) || url_hds.matches(HDSTYPE_NEW_DETAILED_2) || url_hds.matches(HDSTYPE_NEW_DETAILED_3))) {
             /* Now we're sure that our .mp4 availablecheck-filename is correct */
             downloadLink.setFinalFileName(downloadLink.getName());
             url_hls = url_hds.replace("hds", "hls");
@@ -361,7 +364,7 @@ public class RTLnowDe extends PluginForHost {
         } else if (url_rtmp != null && ALLOW_RTMP) {
             if (url_rtmp.startsWith("/abr/") || !(url_rtmp.endsWith(".f4v") || url_rtmp.endsWith(".flv"))) {
                 /* Invalid rtmp url --> this should never happen */
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich (muss gekauft werden)");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich [Kein gültiger Downloadlink gefunden]");
             }
             final long calculated_filesize = ((bitrate_max * 1000) / 8) * duration;
             final long calculated_filesize_minimum = (long) (calculated_filesize * 0.9);
@@ -460,12 +463,17 @@ public class RTLnowDe extends PluginForHost {
     }
 
     private String getRTMPApp(final String url_rtmp) throws PluginException {
-        final Regex urlregex = new Regex(url_rtmp, "/([^/]+)/(\\d+/.+)");
-        String app = urlregex.getMatch(0);
-        if (app == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String app = null;
+        if (url_rtmp.matches(RTMPTYPE_abr)) {
+            app = "abr";
+        } else {
+            final Regex urlregex = new Regex(url_rtmp, "/([^/]+)/(\\d+/.+)");
+            app = urlregex.getMatch(0);
+            if (app == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            app = convertAppToRealApp(app);
         }
-        app = convertAppToRealApp(app);
         return app;
     }
 

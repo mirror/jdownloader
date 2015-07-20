@@ -24,6 +24,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -33,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spinrilla.com" }, urls = { "https?://(www\\.)?spinrilla\\.com/mixtapes/[a-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spinrilla.com" }, urls = { "https?://(www\\.)?spinrilla\\.com/(?:mixtapes|songs)/[a-z0-9\\-]+" }, flags = { 0 })
 public class SpinrillaCom extends PluginForHost {
 
     public SpinrillaCom(PluginWrapper wrapper) {
@@ -45,7 +46,10 @@ public class SpinrillaCom extends PluginForHost {
         return "https://spinrilla.com/dmca";
     }
 
-    private boolean skipCaptcha = true;
+    private static final String TYPE_MIXTAPES = "https?://(www\\.)?spinrilla\\.com/mixtapes/[a-z0-9\\-]+";
+    private static final String TYPE_SONGS    = "https?://(www\\.)?spinrilla\\.com/songs/[a-z0-9\\-]+";
+
+    private boolean             skipCaptcha   = true;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -53,65 +57,87 @@ public class SpinrillaCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("id=\"released\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?) \\| Spinrilla</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("content=\\'([^<>\"]*?)\\' name=\\'twitter:title\\'").getMatch(0);
+        }
         if (filename == null) {
             filename = link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/"));
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(Encoding.htmlDecode(filename.trim()) + ".zip");
+        filename = Encoding.htmlDecode(filename.trim());
+        if (link.getDownloadURL().matches(TYPE_SONGS)) {
+            link.setFinalFileName(filename + ".mp3");
+        } else {
+            if (!br.containsHTML("id=\"released\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            link.setFinalFileName(filename + ".zip");
+        }
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            final String releaseDateTimestampStr = br.getRegex("var dropDate = new Date\\((\\d+)\\);").getMatch(0);
-            if (releaseDateTimestampStr != null || br.containsHTML("Download Soon</button>")) {
-                /* Download/Content not yet available */
-                long timeUntilRelease = 0;
-                long releaseDateTimestamp = 0;
-                if (releaseDateTimestampStr != null) {
-                    releaseDateTimestamp = Long.parseLong(releaseDateTimestampStr);
-                    timeUntilRelease = releaseDateTimestamp - System.currentTimeMillis();
-                }
-                if (timeUntilRelease <= 0) {
-                    /* Wrong date or no date given? Okay but we have to wait anyways! */
-                    timeUntilRelease = 1 * 60 * 60 * 1000l;
-                }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This mixtape is not yet released", timeUntilRelease);
-
-            }
-            br.setFollowRedirects(false);
-            final String baseurl = br.getURL();
-            br.getPage(baseurl + "/download_prompt");
-            if (!skipCaptcha) {
-                final Form dlForm = br.getForm(0);
-                if (dlForm == null) {
+            if (downloadLink.getDownloadURL().matches(TYPE_SONGS)) {
+                this.br.setFollowRedirects(false);
+                final String linkid = new Regex(downloadLink.getDownloadURL(), "spinrilla\\.com/songs/(\\d+)").getMatch(0);
+                if (linkid == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.findID();
-                rc.load();
-                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode("recaptcha", cf, downloadLink);
-                dlForm.put("recaptcha_challenge_field", rc.getChallenge());
-                dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
-                br.submitForm(dlForm);
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                this.br.getPage("https://spinrilla.com/tracks/" + linkid + "/download");
+                dllink = br.getRedirectLocation();
+            } else {
+                final String releaseDateTimestampStr = br.getRegex("var dropDate = new Date\\((\\d+)\\);").getMatch(0);
+                if (releaseDateTimestampStr != null || br.containsHTML("Download Soon</button>")) {
+                    /* Download/Content not yet available */
+                    long timeUntilRelease = 0;
+                    long releaseDateTimestamp = 0;
+                    if (releaseDateTimestampStr != null) {
+                        releaseDateTimestamp = Long.parseLong(releaseDateTimestampStr);
+                        timeUntilRelease = releaseDateTimestamp - System.currentTimeMillis();
+                    }
+                    if (timeUntilRelease <= 0) {
+                        /* Wrong date or no date given? Okay but we have to wait anyways! */
+                        timeUntilRelease = 1 * 60 * 60 * 1000l;
+                    }
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This mixtape is not yet released", timeUntilRelease);
+
                 }
+                br.setFollowRedirects(false);
+                final String baseurl = br.getURL();
+                br.getPage(baseurl + "/download_prompt");
+                if (!skipCaptcha) {
+                    final Form dlForm = br.getForm(0);
+                    if (dlForm == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.findID();
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                    dlForm.put("recaptcha_challenge_field", rc.getChallenge());
+                    dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
+                    br.submitForm(dlForm);
+                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                }
+                br.getPage(baseurl + "/download_final");
+                br.getPage(baseurl + "/download");
+                dllink = br.getRedirectLocation();
             }
-            br.getPage(baseurl + "/download_final");
-            br.getPage(baseurl + "/download");
-            dllink = br.getRedirectLocation();
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
