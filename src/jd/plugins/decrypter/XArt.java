@@ -143,7 +143,7 @@ public class XArt extends PluginForDecrypt {
             }
         }
         ret.addAll(dlinks);
-        String title = br.getRegex("<h1>([a-zA-Z0-9\\_\\-\\ ]*)<\\/h1>").getMatch(0);
+        String title = br.getRegex("<div class=\"small-12 medium-12 large-12 columns\">\\s*<h1>([a-zA-Z0-9\\_\\-\\ ]*)<\\/h1>").getMatch(0);
         if (title != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(title);

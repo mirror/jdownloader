@@ -224,7 +224,7 @@ public class XArtCom extends PluginForHost {
                 loginform.put("pwd", Encoding.urlEncode(account.getPass()));
 
                 lbr.submitForm(loginform);
-                if (lbr.getCookie(this.getHost(), "sd_session_id") == null) {
+                if (!lbr.containsHTML(">Logout</a>")) {
                     String lang = System.getProperty("user.language");
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -288,8 +288,8 @@ public class XArtCom extends PluginForHost {
 
     private void doThis(Browser dbr) {
         ArrayList<String> grabThis = new ArrayList<String>();
-        grabThis.add("/css/login_new.css");
-        grabThis.add("/js/login_new.js");
+        grabThis.add("/css/zurb/common?v=2.1 ");
+        grabThis.add("/js/zurb/common-login?v=2.1");
         grabThis.add("/cptcha.jpg");
         for (String url : grabThis) {
             Browser br2 = dbr.cloneBrowser();
