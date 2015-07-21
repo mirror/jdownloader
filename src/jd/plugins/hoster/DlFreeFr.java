@@ -268,8 +268,8 @@ public class DlFreeFr extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        String filename = br.getRegex(Pattern.compile("Fichier:</td>.*?<td.*?>(.*?)</td>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)</td>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        final String filename = br.getRegex(Pattern.compile("Fichier:</td>.*?<td.*?>(.*?)</td>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        final String filesize = br.getRegex(Pattern.compile("Taille:</td>.*?<td.*?>(.*?)</td>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
