@@ -275,7 +275,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             parameter = newparameter;
         } else if (parameter.matches(TYPE_API_PLAYLIST)) {
             final Regex info = new Regex(parameter, "api\\.soundcloud\\.com/playlists/(\\d+)\\?secret_token=([A-Za-z0-9\\-_]+)");
-            br.getPage("https://api.sndcdn.com/playlists/" + info.getMatch(0) + "/?representation=compact&secret_token=" + info.getMatch(1) + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&format=json");
+            br.getPage("https://api.soundcloud.com/playlists/" + info.getMatch(0) + "/?representation=compact&secret_token=" + info.getMatch(1) + "&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID + "&format=json");
             String newparameter = br.getRegex("\"permalink_url\":\"(http://(www\\.)?soundcloud\\.com/[^<>\"/]*?/sets/[^<>\"]*?)\"").getMatch(0);
             if (newparameter == null) {
                 logger.warning("Decrypter failed on redirect link: " + parameter);
@@ -461,7 +461,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     }
 
     private void decryptLikes() throws Exception {
-        br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(parameter.replace("/likes", "")) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
+        br.getPage("https://api.soundcloud.com/resolve?url=" + Encoding.urlEncode(parameter.replace("/likes", "")) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
         Map<String, Object> data = DummyScriptEnginePlugin.jsonToJavaMap(br.toString());
         String user_id = getString(data, "id");
         final long items_count = ((Number) data.get("likes_count")).intValue();
@@ -720,7 +720,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         } else {
             resolveurl = "https://soundcloud.com/" + url_username;
         }
-        br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(resolveurl) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
+        br.getPage("https://api.soundcloud.com/resolve?url=" + Encoding.urlEncode(resolveurl) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + jd.plugins.hoster.SoundcloudCom.CLIENTID);
         if (br.containsHTML("\"404 \\- Not Found\"")) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
