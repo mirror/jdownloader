@@ -72,6 +72,7 @@ public class FreeDiscPl extends PluginForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = false;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final String  KNOWN_EXTENSIONS             = "asf|avi|flv|m4u|m4v|mov|mkv|mp4|mpeg4?|mpg|ogm|vob|wmv|webm";
 
     /* don't touch the following! */
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
@@ -118,7 +119,14 @@ public class FreeDiscPl extends PluginForHost {
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        final String storedfileName = link.getName();
+        String storedExt = "";
+        if (storedfileName != null) {
+            storedExt = storedfileName.substring(storedfileName.lastIndexOf(".") + 1);
+        }
+        if (link.getName() == null || (storedExt != null && !storedExt.matches(KNOWN_EXTENSIONS))) {
+            link.setName(Encoding.htmlDecode(filename.trim()));
+        }
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
