@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -55,6 +56,7 @@ import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.LoginDialog;
 import org.appwork.utils.swing.dialog.LoginDialogInterface;
@@ -1241,14 +1243,19 @@ public class LinkCrawler {
                             /* lets retry this crawledLink */
                             continue mainloopretry;
                         }
-                        final Boolean ret = distributeDeeperOrFollowRedirect(generation, url, possibleCryptedLink);
-                        if (Boolean.FALSE.equals(ret)) {
+                        final Boolean deeperOrFollow = distributeDeeperOrFollowRedirect(generation, url, possibleCryptedLink);
+                        if (Boolean.FALSE.equals(deeperOrFollow)) {
                             return;
-                        } else if (Boolean.TRUE.equals(ret)) {
+                        } else if (Boolean.TRUE.equals(deeperOrFollow)) {
                             continue mainloop;
-                        } else {
-                            break mainloopretry;
                         }
+                        final Boolean embedded = distributeEmbeddedLink(generation, url, possibleCryptedLink);
+                        if (Boolean.FALSE.equals(embedded)) {
+                            return;
+                        } else if (Boolean.TRUE.equals(embedded)) {
+                            continue mainloop;
+                        }
+                        break mainloopretry;
                     }
                     handleUnhandledCryptedLink(possibleCryptedLink);
                 }
@@ -1256,6 +1263,49 @@ public class LinkCrawler {
                 checkFinishNotify();
             }
         }
+    }
+
+    protected Boolean distributeEmbeddedLink(final int generation, final String url, final CrawledLink source) {
+        try {
+            final String queryString = new Regex(source.getURL(), "\\?(.+)$").getMatch(0);
+            if (StringUtils.isNotEmpty(queryString)) {
+                final String[] parameters = queryString.split("\\&(?!#)", -1);
+                final ArrayList<CrawledLink> embeddedLinks = new ArrayList<CrawledLink>();
+                for (final String parameter : parameters) {
+                    try {
+                        final String params[] = parameter.split("=", 2);
+                        final String checkParam;
+                        if (params.length == 1) {
+                            checkParam = URLDecoder.decode(params[0], "UTF-8");
+                        } else {
+                            checkParam = URLDecoder.decode(params[1], "UTF-8");
+                        }
+                        if (checkParam.startsWith("aHR0c") || checkParam.startsWith("ZnRwOi")) {
+                            /* base64 http and ftp */
+                            final String possibleURL = new String(Base64.decode(checkParam), "UTF-8");
+                            embeddedLinks.add(crawledLinkFactorybyURL(possibleURL));
+                        }
+                    } catch (final Throwable e) {
+                        LogController.CL().log(e);
+                    }
+                    if (embeddedLinks.size() > 0) {
+                        final boolean singleDest = embeddedLinks.size() == 1;
+                        final String[] sourceURLs = getAndClearSourceURLs(source);
+                        final CrawledLinkModifier sourceLinkModifier = source.getCustomCrawledLinkModifier();
+                        source.setCustomCrawledLinkModifier(null);
+                        source.setBrokenCrawlerHandler(null);
+                        for (final CrawledLink embeddedLink : embeddedLinks) {
+                            forwardCrawledLinkInfos(source, embeddedLink, sourceLinkModifier, sourceURLs, singleDest);
+                        }
+                        crawl(generation, embeddedLinks);
+                        return true;
+                    }
+                }
+            }
+        } catch (final Throwable e) {
+            LogController.CL().log(e);
+        }
+        return null;
     }
 
     protected LinkCrawlerRule matchesDirectHTTPRule(CrawledLink link, String url) {
