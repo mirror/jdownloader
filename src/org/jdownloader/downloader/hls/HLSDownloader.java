@@ -63,9 +63,9 @@ public class HLSDownloader extends DownloadInterface {
 
     private long                              bytesWritten = 0l;
     private DownloadLinkDownloadable          downloadable;
-    private DownloadLink                      link;
+    private final DownloadLink                link;
     private long                              startTimeStamp;
-    private LogSource                         logger;
+    private final LogSource                   logger;
     private URLConnectionAdapter              currentConnection;
     private ManagedThrottledConnectionHandler connectionHandler;
     private File                              outputCompleteFile;
@@ -73,11 +73,11 @@ public class HLSDownloader extends DownloadInterface {
     private File                              outputPartFile;
 
     private PluginException                   caughtPluginException;
-    private String                            m3uUrl;
+    private final String                      m3uUrl;
     private HttpServer                        server;
-    private Browser                           br;
-    private Browser                           obr;
-    private int                               port;
+
+    private final Browser                     obr;
+
     protected long                            duration;
     protected int                             bitrate      = 0;
     private long                              processID;
@@ -114,11 +114,8 @@ public class HLSDownloader extends DownloadInterface {
         try {
             FFprobe ffmpeg = new FFprobe();
             this.processID = new UniqueAlltimeID().getID();
-
-            return ffmpeg.getStreamInfo("http://127.0.0.1:" + port + "/m3u8?id=" + processID + "&url=" + Encoding.urlEncode(Request.getLocation(m3uUrl, obr.getRequest())));
-
+            return ffmpeg.getStreamInfo("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID + "&url=" + Encoding.urlEncode(Request.getLocation(m3uUrl, obr.getRequest())));
         } finally {
-
             server.stop();
         }
     }
@@ -215,7 +212,7 @@ public class HLSDownloader extends DownloadInterface {
             ArrayList<String> l = new ArrayList<String>();
             l.add(ffmpeg.getFullPath());
             l.add("-i");
-            l.add("http://127.0.0.1:" + port + "/m3u8?id=" + processID + "&url=" + Encoding.urlEncode(m3uUrl));
+            l.add("http://127.0.0.1:" + server.getPort() + "/m3u8?id=" + processID + "&url=" + Encoding.urlEncode(m3uUrl));
             // l.add(m3uUrl);
             // 2.1 aac_adtstoasc
             // Convert MPEG-2/4 AAC ADTS to MPEG-4 Audio Specific Configuration bitstream filter.
@@ -236,7 +233,7 @@ public class HLSDownloader extends DownloadInterface {
             l.add(outputPartFile.getAbsolutePath());
             l.add("-y");
             l.add("-progress");
-            l.add("http://127.0.0.1:" + port + "/progress?id=" + processID);
+            l.add("http://127.0.0.1:" + server.getPort() + "/progress?id=" + processID);
             ffmpeg.runCommand(set, l);
 
         } catch (InterruptedException e) {
@@ -255,21 +252,11 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     private void initPipe() throws IOException {
-        int port = 9667;
-        while (port < 65000) {
-            try {
-
-                server = new HttpServer(port);
-                server.setLocalhostOnly(true);
-                server.start();
-                this.port = port;
-                break;
-            } catch (java.net.BindException e) {
-                port++;
-                // try next port
-            }
-        }
-        server.registerRequestHandler(new HttpRequestHandler() {
+        server = new HttpServer(0);
+        server.setLocalhostOnly(true);
+        final HttpServer finalServer = server;
+        server.start();
+        finalServer.registerRequestHandler(new HttpRequestHandler() {
 
             @Override
             public boolean onPostRequest(PostRequest request, HttpResponse response) {
@@ -282,7 +269,6 @@ public class HLSDownloader extends DownloadInterface {
                     }
 
                     if ("/progress".equals(request.getRequestedPath())) {
-
                         BufferedReader f = new BufferedReader(new InputStreamReader(request.getInputStream(), "UTF-8"));
                         final StringBuilder ret = new StringBuilder();
                         final String sep = System.getProperty("line.separator");
@@ -331,6 +317,7 @@ public class HLSDownloader extends DownloadInterface {
                     if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
                         return false;
                     }
+
                     if ("/m3u8".equals(request.getRequestedPath())) {
                         String url = request.getParameterbyKey("url");
                         if (url == null) {
@@ -338,30 +325,29 @@ public class HLSDownloader extends DownloadInterface {
                             return false;
                         }
                         if (StringUtils.equals(m3uUrl, url)) {
-                            {
-                                br = obr.cloneBrowser();
-                                // work around for longggggg m3u pages
-                                final int was = obr.getLoadLimit();
-                                // lets set the connection limit to our required request
-                                br.setLoadLimit(Integer.MAX_VALUE);
-                                try {
-                                    br.getPage(m3uUrl);
-                                } finally {
-                                    // set it back!
-                                    br.setLoadLimit(was);
-                                }
+
+                            final Browser br = obr.cloneBrowser();
+                            // work around for longggggg m3u pages
+                            final int was = obr.getLoadLimit();
+                            // lets set the connection limit to our required request
+                            br.setLoadLimit(Integer.MAX_VALUE);
+                            final String playlist;
+                            try {
+                                playlist = br.getPage(m3uUrl);
+                            } finally {
+                                // set it back!
+                                br.setLoadLimit(was);
                             }
                             response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
-                            String playlist = br.toString();
-                            StringBuilder sb = new StringBuilder();
+                            final StringBuilder sb = new StringBuilder();
                             for (String s : Regex.getLines(playlist)) {
                                 if (sb.length() > 0) {
                                     sb.append("\r\n");
                                 }
                                 if (s.matches("^https?://.+")) {
-                                    sb.append("http://127.0.0.1:" + HLSDownloader.this.port + "/download?id=" + processID + "&url=" + Encoding.urlEncode(s));
+                                    sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(s));
                                 } else if (!s.trim().startsWith("#")) {
-                                    sb.append("http://127.0.0.1:" + HLSDownloader.this.port + "/download?id=" + processID + "&url=" + Encoding.urlEncode(br.getBaseURL() + s));
+                                    sb.append("http://127.0.0.1:" + finalServer.getPort() + "/download?id=" + processID + "&url=" + Encoding.urlEncode(br.getBaseURL() + s));
                                 } else {
                                     sb.append(s);
                                 }
@@ -375,58 +361,49 @@ public class HLSDownloader extends DownloadInterface {
                         }
                         return false;
                     } else if ("/download".equals(request.getRequestedPath())) {
-
                         String url = request.getParameterbyKey("url");
                         if (url == null) {
                             return false;
                         }
-
-                        br = obr.cloneBrowser();
-                        URLConnectionAdapter connection = br.openGetConnection(url);
+                        final Browser br = obr.cloneBrowser();
+                        URLConnectionAdapter connection = null;
+                        try {
+                            connection = br.openGetConnection(url);
+                        } catch (IOException e) {
+                            /* connect timeout, try again */
+                            connection = br.openGetConnection(url);
+                        }
                         try {
                             response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
-                            long length = connection.getCompleteContentLength();
+                            final long length = connection.getCompleteContentLength();
                             if (length > 0) {
-                                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, length + ""));
+                                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, Long.toString(length)));
                             }
                             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, connection.getContentType()));
-
                             OutputStream out = response.getOutputStream(true);
-
                             if (meteredThrottledInputStream == null) {
                                 meteredThrottledInputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10));
                                 if (connectionHandler != null) {
                                     connectionHandler.addThrottledConnection(meteredThrottledInputStream);
                                 }
-
                             } else {
                                 meteredThrottledInputStream.setInputStream(connection.getInputStream());
                             }
-
-                            try {
-
-                                byte[] buffer = new byte[32 * 1024];
-
-                                int len;
-
-                                while ((len = meteredThrottledInputStream.read(buffer)) != -1) {
-                                    if (len > 0) {
-
-                                        out.write(buffer, 0, len);
-
-                                    }
+                            byte[] buffer = new byte[32 * 1024];
+                            int len;
+                            while ((len = meteredThrottledInputStream.read(buffer)) != -1) {
+                                if (len > 0) {
+                                    out.write(buffer, 0, len);
+                                } else {
+                                    out.flush();
                                 }
-                            } finally {
-
                             }
                             out.flush();
                             out.close();
                             return true;
                         } finally {
                             connection.disconnect();
-
                         }
-
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -641,8 +618,8 @@ public class HLSDownloader extends DownloadInterface {
         }
     }
 
-    private AtomicBoolean abort      = new AtomicBoolean(false);
-    private AtomicBoolean terminated = new AtomicBoolean(false);
+    private final AtomicBoolean abort      = new AtomicBoolean(false);
+    private final AtomicBoolean terminated = new AtomicBoolean(false);
 
     @Override
     public boolean externalDownloadStop() {
