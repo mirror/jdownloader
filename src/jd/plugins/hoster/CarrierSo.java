@@ -50,7 +50,7 @@ public class CarrierSo extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://ForDevsToPlayWith.com";
+    private final String         COOKIE_HOST                  = "http://carrier.so";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -657,4 +657,5 @@ public class CarrierSo extends PluginForHost {
         }
         return false;
     }
+
 }

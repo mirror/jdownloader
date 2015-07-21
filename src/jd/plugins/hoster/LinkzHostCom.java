@@ -39,7 +39,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkzhost.com" }, urls = { "http://[\\w\\.]*?linkzhost\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class LinkzHostCom extends PluginForHost {
 
-    private static final String COOKIE_HOST = "http://ForDevsToPlayWith.com";
+    private static final String COOKIE_HOST = "http://linkzhost.com";
 
     public boolean              nopremium   = false;
 
