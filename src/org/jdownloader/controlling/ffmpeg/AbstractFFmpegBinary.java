@@ -99,8 +99,12 @@ public class AbstractFFmpegBinary {
             f = new BufferedReader(new InputStreamReader(fis, "UTF8"));
             String line;
             final String sep = System.getProperty("line.separator");
+            final boolean isInstantFlush = logger.isInstantFlush();
             while ((line = f.readLine()) != null) {
                 if (ret != null) {
+                    if (isInstantFlush) {
+                        logger.info(b + ":" + line);
+                    }
                     synchronized (ret) {
                         if (ret.length() > 0) {
                             ret.append(sep);
@@ -217,13 +221,10 @@ public class AbstractFFmpegBinary {
     }
 
     public String runCommand(FFMpegProgress progress, ArrayList<String> commandLine) throws IOException, InterruptedException, FFMpegException {
-
         final ProcessBuilder pb = ProcessBuilderFactory.create(commandLine);
-
-        final StringBuilder errorStream = new StringBuilder();
-        final StringBuilder sdtStream = new StringBuilder();
         final Process process = pb.start();
         try {
+            final StringBuilder sdtStream = new StringBuilder();
             final Thread reader1 = new Thread("ffmpegReader") {
                 public void run() {
                     try {
@@ -233,7 +234,7 @@ public class AbstractFFmpegBinary {
                     }
                 }
             };
-
+            final StringBuilder errorStream = new StringBuilder();
             final Thread reader2 = new Thread("ffmpegReader") {
                 public void run() {
                     try {
@@ -250,39 +251,39 @@ public class AbstractFFmpegBinary {
             reader1.start();
             reader2.start();
             long lastUpdate = System.currentTimeMillis();
-            long lastLength = 0;
+            long lastDuration = -1;
             while (true) {
-                final String string;
+                final String errorStreamString;
                 synchronized (errorStream) {
-                    string = errorStream.toString();
+                    errorStreamString = errorStream.toString();
+                    errorStream.setLength(0);
                 }
-                parse(errorStream, sdtStream);
-                String duration = new Regex(string, "Duration\\: (.*?).?\\d*?\\, start").getMatch(0);
-
+                if (StringUtils.isNotEmpty(errorStreamString)) {
+                    lastUpdate = System.currentTimeMillis();
+                }
+                final String duration = new Regex(errorStreamString, "Duration\\: (.*?).?\\d*?\\, start").getMatch(0);
                 if (duration != null) {
-                    long ms = formatStringToMilliseconds(duration);
-                    String[] times = new Regex(string, "time=(.*?).?\\d*? ").getColumn(0);
+                    lastDuration = formatStringToMilliseconds(duration);
+                }
+                if (lastDuration > 0) {
+                    final String[] times = new Regex(errorStreamString, "time=(.*?).?\\d*? ").getColumn(0);
                     if (times != null && times.length > 0) {
-                        long msDone = formatStringToMilliseconds(times[times.length - 1]);
-                        System.out.println(msDone + "/" + ms);
+                        final long msDone = formatStringToMilliseconds(times[times.length - 1]);
+                        System.out.println(msDone + "/" + lastDuration);
                         if (progress != null) {
-                            progress.updateValues(msDone, ms);
+                            progress.updateValues(msDone, lastDuration);
                         }
                     }
                 }
-                if (lastLength != string.length()) {
-                    lastUpdate = System.currentTimeMillis();
-                    lastLength = string.length();
-                }
                 try {
-                    int exitCode = process.exitValue();
+                    final int exitCode = process.exitValue();
                     reader2.join();
-
-                    logger.info(errorStream.toString());
-                    logger.info(sdtStream.toString());
-                    boolean ret = exitCode == 0;
-                    if (!ret) {
-                        throw new FFMpegException("FFmpeg Failed", sdtStream.toString(), errorStream.toString());
+                    logger.info("LastErrorStream:" + errorStreamString);
+                    logger.info("LastStdStream:" + sdtStream.toString());
+                    logger.info("ExitCode:" + exitCode);
+                    final boolean okay = exitCode == 0;
+                    if (!okay) {
+                        throw new FFMpegException("FFmpeg Failed", sdtStream.toString(), errorStreamString);
                     } else {
                         return sdtStream.toString();
                     }
@@ -303,9 +304,6 @@ public class AbstractFFmpegBinary {
                 process.destroy();
             }
         }
-    }
-
-    protected void parse(StringBuilder errorStream, StringBuilder sdtStream) {
     }
 
     public static long formatStringToMilliseconds(final String text) {
