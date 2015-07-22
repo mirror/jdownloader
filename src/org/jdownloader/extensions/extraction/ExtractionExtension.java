@@ -505,7 +505,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         final List<IExtraction> remove = new ArrayList<IExtraction>();
         while (it.hasNext()) {
             IExtraction extractor = it.next();
-            if (!extractor.isAvailable()) {
+            if (!extractor.isAvailable(this)) {
                 logger.severe("Extractor " + extractor.getClass().getName() + " plugin could not be initialized");
                 remove.add(extractor);
             }

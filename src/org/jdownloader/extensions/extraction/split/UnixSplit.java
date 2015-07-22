@@ -24,6 +24,7 @@ import org.jdownloader.extensions.extraction.DummyArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.ExtractionControllerException;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.IExtraction;
 import org.jdownloader.extensions.extraction.MissingArchiveFile;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
@@ -65,7 +66,7 @@ public class UnixSplit extends IExtraction {
         }
     }
 
-    public boolean isAvailable() {
+    public boolean isAvailable(ExtractionExtension extractionExtension) {
         return true;
     }
 
