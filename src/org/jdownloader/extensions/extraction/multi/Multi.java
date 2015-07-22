@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
@@ -60,6 +61,7 @@ import org.jdownloader.extensions.extraction.DummyArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.ExtractionException;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.FileSignatures;
 import org.jdownloader.extensions.extraction.IExtraction;
 import org.jdownloader.extensions.extraction.Item;
@@ -270,10 +272,16 @@ public class Multi extends IExtraction {
     }
 
     @Override
-    public boolean isAvailable() {
+    public boolean isAvailable(ExtractionExtension extractionExtension) {
         final String customLibID = System.getProperty("sevenzipLibID");
         if (StringUtils.isNotEmpty(customLibID)) {
-            return initLibrary(customLibID);
+            if (initLibrary(customLibID)) {
+                if (CrossSystem.isLinux() && ARCHFamily.ARM.equals(CrossSystem.getARCHFamily())) {
+                    extractionExtension.getSettings().setLastWorkingLibID(customLibID);
+                }
+                return true;
+            }
+            return false;
         }
         switch (CrossSystem.OS.getFamily()) {
         case BSD:
@@ -281,15 +289,24 @@ public class Multi extends IExtraction {
         case LINUX:
             switch (CrossSystem.getARCHFamily()) {
             case ARM:
-                final ArrayList<String> libIDs = new ArrayList<String>();
+                final LinkedHashSet<String> libIDs = new LinkedHashSet<String>();
+                final String lastWorkingLibID = extractionExtension.getSettings().getLastWorkingLibID();
+                if (StringUtils.isNotEmpty(lastWorkingLibID)) {
+                    libIDs.add(lastWorkingLibID);
+                    extractionExtension.getSettings().setLastWorkingLibID(null);
+                    extractionExtension.getSettings()._getStorageHandler().write();
+                }
                 if (useARMPiLibrary()) {
                     libIDs.add("Linux-armpi");
+                    libIDs.add("Linux-armpi2");
                 } else {
                     libIDs.add("Linux-arm2");
                     libIDs.add("Linux-arm");
+                    libIDs.add("Linux-arm3");
                 }
-                for (String libID : libIDs) {
+                for (final String libID : libIDs) {
                     if (initLibrary(libID)) {
+                        extractionExtension.getSettings().setLastWorkingLibID(libID);
                         return true;
                     }
                 }

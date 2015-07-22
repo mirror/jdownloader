@@ -128,7 +128,7 @@ public abstract class IExtraction {
      *
      * @return True if all works.
      */
-    public abstract boolean isAvailable();
+    public abstract boolean isAvailable(ExtractionExtension extractionExtension);
 
     /**
      * Returns the percent of the tested passowords.

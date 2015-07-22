@@ -233,4 +233,10 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     int getAskForPasswordDialogTimeoutInMS();
 
     void setAskForPasswordDialogTimeoutInMS(int ms);
+
+    @AboutConfig
+    String getLastWorkingLibID();
+
+    public void setLastWorkingLibID(String libID);
+
 }

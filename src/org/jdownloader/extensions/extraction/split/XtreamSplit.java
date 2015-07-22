@@ -47,6 +47,7 @@ import org.jdownloader.extensions.extraction.DummyArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
 import org.jdownloader.extensions.extraction.ExtractionControllerException;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.IExtraction;
 import org.jdownloader.extensions.extraction.Item;
 import org.jdownloader.extensions.extraction.MissingArchiveFile;
@@ -289,7 +290,7 @@ public class XtreamSplit extends IExtraction {
     }
 
     @Override
-    public boolean isAvailable() {
+    public boolean isAvailable(ExtractionExtension extractionExtension) {
         return true;
     }
 
