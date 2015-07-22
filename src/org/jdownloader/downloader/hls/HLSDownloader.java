@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
@@ -61,7 +62,7 @@ import org.jdownloader.translate._JDT;
 //http://tools.ietf.org/html/draft-pantos-http-live-streaming-13
 public class HLSDownloader extends DownloadInterface {
 
-    private long                              bytesWritten = 0l;
+    private long                              bytesWritten   = 0l;
     private DownloadLinkDownloadable          downloadable;
     private final DownloadLink                link;
     private long                              startTimeStamp;
@@ -79,9 +80,10 @@ public class HLSDownloader extends DownloadInterface {
     private final Browser                     obr;
 
     protected long                            duration;
-    protected int                             bitrate      = 0;
+    protected int                             bitrate        = 0;
     private long                              processID;
     protected MeteredThrottledInputStream     meteredThrottledInputStream;
+    protected final AtomicReference<byte[]>   instanceBuffer = new AtomicReference<byte[]>();
 
     public HLSDownloader(final DownloadLink link, Browser br2, String m3uUrl) {
         this.m3uUrl = m3uUrl;
@@ -256,6 +258,7 @@ public class HLSDownloader extends DownloadInterface {
         server.setLocalhostOnly(true);
         final HttpServer finalServer = server;
         server.start();
+        instanceBuffer.set(new byte[512 * 1024]);
         finalServer.registerRequestHandler(new HttpRequestHandler() {
 
             @Override
@@ -373,6 +376,14 @@ public class HLSDownloader extends DownloadInterface {
                             /* connect timeout, try again */
                             connection = br.openGetConnection(url);
                         }
+                        byte[] readWriteBuffer = HLSDownloader.this.instanceBuffer.getAndSet(null);
+                        final boolean instanceBuffer;
+                        if (readWriteBuffer != null) {
+                            instanceBuffer = true;
+                        } else {
+                            instanceBuffer = false;
+                            readWriteBuffer = new byte[32 * 1024];
+                        }
                         try {
                             response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
                             final long length = connection.getCompleteContentLength();
@@ -389,11 +400,10 @@ public class HLSDownloader extends DownloadInterface {
                             } else {
                                 meteredThrottledInputStream.setInputStream(connection.getInputStream());
                             }
-                            byte[] buffer = new byte[32 * 1024];
                             int len;
-                            while ((len = meteredThrottledInputStream.read(buffer)) != -1) {
+                            while ((len = meteredThrottledInputStream.read(readWriteBuffer)) != -1) {
                                 if (len > 0) {
-                                    out.write(buffer, 0, len);
+                                    out.write(readWriteBuffer, 0, len);
                                 } else {
                                     out.flush();
                                 }
@@ -402,6 +412,9 @@ public class HLSDownloader extends DownloadInterface {
                             out.close();
                             return true;
                         } finally {
+                            if (instanceBuffer) {
+                                HLSDownloader.this.instanceBuffer.compareAndSet(null, readWriteBuffer);
+                            }
                             connection.disconnect();
                         }
                     }
