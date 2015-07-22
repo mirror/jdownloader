@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://(www\\.)?(uloz\\.to|ulozto\\.sk|ulozto\\.cz|(pornfile\\.)?ulozto\\.net)/[a-zA-Z0-9]+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to", "pornfile.cz" }, urls = { "http://(?:www\\.)?(?:uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[a-zA-Z0-9]+/.+", "http://(?:www\\.)?pornfile\\.(?:cz|ulozto\\.net)/[a-zA-Z0-9]+/.+" }, flags = { 2, 2 })
 public class UlozTo extends PluginForHost {
 
     private static final String  REPEAT_CAPTCHA               = "REPEAT_CAPTCHA";
@@ -112,6 +112,9 @@ public class UlozTo extends PluginForHost {
         if (ageFormToken != null) {
             br.postPage(br.getURL(), "agree=Confirm&do=askAgeForm-submit&_token_=" + Encoding.urlEncode(ageFormToken));
             handleRedirect(downloadLink);
+        } else if (this.br.containsHTML("value=\"pornDisclaimer-submit\"")) {
+            final String currenturlpart = this.br.getURL().substring(this.br.getURL().lastIndexOf("/"));
+            this.br.postPage("/porn-disclaimer/?back=" + Encoding.urlEncode(currenturlpart), "agree=Souhlas%C3%ADm&do=pornDisclaimer-submit");
         }
         // Wrong links show the mainpage so here we check if we got the mainpage
         // or not
@@ -130,11 +133,17 @@ public class UlozTo extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("This link is password protected");
         } else {
             String filename = br.getRegex("<title>(.*?) \\|").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>(.*?) \\|").getMatch(0);
+            }
             // For video links
             String filesize = br.getRegex("<span id=\"fileSize\">(\\d{2}:\\d{2}(:\\d{2})? \\| )?(\\d+(\\.\\d{2})? [A-Za-z]{1,5})</span>").getMatch(2);
             // For file links
             if (filesize == null) {
                 filesize = br.getRegex("<span id=\"fileSize\">([^<>\"]*?)</span>").getMatch(0);
+            }
+            if (filesize == null) {
+                filesize = br.getRegex("class=\"fileSize\">\\d+:\\d+ \\| ([^<>\"]*?)</span>").getMatch(0);
             }
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
