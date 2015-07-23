@@ -166,4 +166,9 @@ public class LibGen extends PluginForDecrypt {
         return false;
     }
 
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "libgen.org", "gen.lib.rus.ec", "libgen.in" };
+    }
+
 }

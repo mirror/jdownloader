@@ -588,4 +588,8 @@ public class ArteMediathekDecrypterExtern extends PluginForDecrypt {
         return false;
     }
 
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "creative.arte.tv" };
+    }
 }

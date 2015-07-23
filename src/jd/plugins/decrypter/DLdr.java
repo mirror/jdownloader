@@ -63,7 +63,9 @@ public class DLdr extends PluginForDecrypt {
                 format = ".rsdf";
                 url = new Regex(parameter.getCryptedUrl(), Pattern.compile("rsdf://(.+)", Pattern.CASE_INSENSITIVE)).getMatch(0);
             }
-            if (format == null) throw new DecrypterException("Unknown Container prefix");
+            if (format == null) {
+                throw new DecrypterException("Unknown Container prefix");
+            }
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + format);
             Browser.download(container, br.cloneBrowser().openGetConnection("http://" + url));
             ArrayList<DownloadLink> links = JDUtilities.getController().getContainerLinks(container);
@@ -80,6 +82,11 @@ public class DLdr extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
     }
 
 }

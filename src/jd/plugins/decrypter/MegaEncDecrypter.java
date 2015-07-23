@@ -93,4 +93,10 @@ public class MegaEncDecrypter extends PluginForDecrypt {
         }
         return result;
     }
+
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
+    }
+
 }

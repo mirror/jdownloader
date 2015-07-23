@@ -28,7 +28,7 @@ import jd.plugins.PluginForDecrypt;
 public class DirectHttpCreatorDecrypter extends PluginForDecrypt {
     /**
      * Returns the annotations names array
-     * 
+     *
      * @return
      */
     /*
@@ -41,7 +41,7 @@ public class DirectHttpCreatorDecrypter extends PluginForDecrypt {
 
     /**
      * returns the annotation pattern array
-     * 
+     *
      * @return
      */
     public static String[] getAnnotationUrls() {
@@ -61,7 +61,7 @@ public class DirectHttpCreatorDecrypter extends PluginForDecrypt {
 
     /**
      * Returns the annotations flags array
-     * 
+     *
      * @return
      */
     public static int[] getAnnotationFlags() {
@@ -83,6 +83,11 @@ public class DirectHttpCreatorDecrypter extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
     }
 
 }

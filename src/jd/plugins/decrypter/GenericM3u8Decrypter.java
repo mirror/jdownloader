@@ -28,7 +28,7 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.Regex;
 
 //Decrypts embedded videos from dailymotion
-@DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 26321 $", interfaceVersion = 3, names = { "m3u8" }, urls = { "https?://.+\\.m3u8[^\\s<>\"']*" }, flags = { 0 })
 public class GenericM3u8Decrypter extends PluginForDecrypt {
 
     public GenericM3u8Decrypter(PluginWrapper wrapper) {
@@ -39,6 +39,10 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404) {
+            // invalid link
+            return ret;
+        }
         if (br.containsHTML("#EXT-X-STREAM-INF")) {
             for (String line : Regex.getLines(br.toString())) {
                 if (!line.startsWith("#")) {
@@ -62,5 +66,10 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
         }
 
         return ret;
+    }
+
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
     }
 }

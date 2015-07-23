@@ -133,7 +133,11 @@ public class CNL extends PluginForDecrypt {
         }
         for (final DownloadLink l : links) {
             if (source != null) {
-               try{/*JD2 only*/l.setContentUrl(source);}catch(Throwable e){/*Stable*/ l.setBrowserUrl(source);}
+                try {/* JD2 only */
+                    l.setContentUrl(source);
+                } catch (Throwable e) {/* Stable */
+                    l.setBrowserUrl(source);
+                }
             }
         }
         return links;
@@ -142,6 +146,11 @@ public class CNL extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
     }
 
 }

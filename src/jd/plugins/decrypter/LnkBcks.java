@@ -27,6 +27,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+//import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 // DEV NOTES:
@@ -47,7 +48,7 @@ public class LnkBcks extends antiDDoSForDecrypt {
      * @return
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "tnabucks.com", "cash4files.com", "megaline.co", "qqc.co", "theseblogs.com", "theseforums.com", "ultrafiles.net", "urlbeat.net", "whackyvidz.com", "yyv.co", "amy.gs", "deb.gs", "drstickyfingers.com", "fapoff.com", "freean.us", "freegaysitepass.com", "galleries.bz", "hornywood.tv", "picbucks.com", "poontown.net", "rqq.co", "sexpalace.gs", "youfap.me", "zff.co", "tubeviral.com", "whackyvidz.com", "linkbabes.com", "dyo.gs", "filesonthe.net", "cash4files.com", "seriousdeals.net", "any.gs", "goneviral.com", "ultrafiles.net", "miniurls.co", "tinylinks.co", "yyv.co", "allanalpass.com", "linkbucks.com" };
+        return new String[] { "tnabucks.com", "cash4files.com", "megaline.co", "qqc.co", "theseblogs.com", "theseforums.com", "ultrafiles.net", "urlbeat.net", "whackyvidz.com", "yyv.co", "amy.gs", "deb.gs", "drstickyfingers.com", "fapoff.com", "freean.us", "freegaysitepass.com", "galleries.bz", "hornywood.tv", "picbucks.com", "poontown.net", "rqq.co", "sexpalace.gs", "youfap.me", "zff.co", "tubeviral.com", "whackyvidz.com", "linkbabes.com", "dyo.gs", "filesonthe.net", "cash4files.com", "seriousdeals.net", "any.gs", "goneviral.com", "ultrafiles.net", "tinylinks.co", "yyv.co", "allanalpass.com", "linkbucks.com" };
     }
 
     /**
@@ -200,6 +201,7 @@ public class LnkBcks extends antiDDoSForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        System.out.println(link);
         decryptedLinks.add(createDownloadlink(link));
 
         return decryptedLinks;
@@ -283,5 +285,7 @@ public class LnkBcks extends antiDDoSForDecrypt {
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
+
+//s*@Overrides*//public SiteTemplate siteTemplateType() {s*//return SiteTemplate.(Linkbucks_Linkbucks);s*//}
 
 }

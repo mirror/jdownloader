@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.comFolder" }, urls = { "https?://(www\\.)?filesmonster\\.com/folders\\.php\\?fid=([0-9a-zA-Z_-]{22}|\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(www\\.)?filesmonster\\.com/folders\\.php\\?fid=([0-9a-zA-Z_-]{22}|\\d+)" }, flags = { 0 })
 public class FilesMonsterComFolder extends PluginForDecrypt {
 
     // DEV NOTES:
@@ -82,11 +82,16 @@ public class FilesMonsterComFolder extends PluginForDecrypt {
 
         String[] links = br.getRegex("<a class=\"green\" href=\"(https?://[\\w\\.\\d]*?filesmonster\\.com/(download|folders)\\.php.*?)\">").getColumn(0);
 
-        if (links == null || links.length == 0) return;
+        if (links == null || links.length == 0) {
+            return;
+        }
         if (links != null && links.length != 0) {
-            for (String dl : links)
+            for (String dl : links) {
                 // prevent regex from finding itself, this is incase they change layout and creates infinite loop.
-                if (!dl.contains("fid=" + uid)) ret.add(createDownloadlink(dl.replaceFirst("https?", protocol)));
+                if (!dl.contains("fid=" + uid)) {
+                    ret.add(createDownloadlink(dl.replaceFirst("https?", protocol)));
+                }
+            }
         }
 
         if (lastPage != null && !br.getURL().endsWith(lastPage)) {

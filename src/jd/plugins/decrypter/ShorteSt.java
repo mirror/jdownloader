@@ -26,27 +26,21 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.K2SApi.JSonUtils;
-import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shorte.st" }, urls = { "http://(www\\.)?sh\\.st/[^<>\r\n\t]+" }, flags = { 0 })
-public class ShorteSt extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "shorte.st" }, urls = { "http://(www\\.)?sh\\.st/[^<>\r\n\t]+" }, flags = { 0 })
+public class ShorteSt extends antiDDoSForDecrypt {
 
     public ShorteSt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+\\;url=(.*?)\" \\/>").getMatch(0);
+        final String redirect = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+\\;url=(.*?)\" \\/>").getMatch(0);
         if (redirect != null && redirect.contains("sh.st/login")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         } else if (redirect != null) {
             parameter = redirect;
@@ -54,12 +48,13 @@ public class ShorteSt extends PluginForDecrypt {
         }
         if (br.containsHTML(">page not found<")) {
             logger.info("Link offline: " + parameter);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
 
-        final String timer = getJs(br, "seconds");
-        final String cb = getJs(br, "callbackUrl");
-        final String sid = getJs(br, "sessionId");
+        final String timer = getJson("seconds");
+        final String cb = getJson("callbackUrl");
+        final String sid = getJson("sessionId");
         if (cb == null || sid == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -69,40 +64,21 @@ public class ShorteSt extends PluginForDecrypt {
             t = Integer.parseInt(timer);
         }
         sleep(t * 1001, param);
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("Accept", "application/json, text/javascript");
         br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br2.postPage(cb, "adSessionId=" + sid + "&callback=reqwest_" + new Regex(String.valueOf(new Random().nextLong()), "(\\d{10})$").getMatch(0));
-        String finallink = getJs(br2, "destinationUrl");
+        final String finallink = getJson(br2, "destinationUrl");
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        // unicode
-        finallink = unescape(finallink);
         decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
     }
 
-    private String getJs(Browser ibr, String s) {
-        // js string
-        String test = ibr.getRegex(s + ":\\s*(\"|')(.*?)\\1").getMatch(1);
-        // int/long/boolean
-        if (test == null) {
-            test = ibr.getRegex(s + ":\\s*(\\d+|true|false)").getMatch(0);
-        }
-        // json(finallink)
-        if (test == null) {
-            test = JSonUtils.getJson(ibr, s);
-        }
-        return test;
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return false;
     }
-
-    private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        JDUtilities.getPluginForHost("youtube.com");
-        return jd.plugins.hoster.Youtube.unescape(s);
-    }
-
 }

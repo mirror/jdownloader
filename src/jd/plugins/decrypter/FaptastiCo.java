@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "faptasti.com" }, urls = { "https://(www\\.)?faptasti\\.co/gallery/\\d+/[^/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "faptasti.co" }, urls = { "https://(www\\.)?faptasti\\.co/gallery/\\d+/[^/]+" }, flags = { 0 })
 public class FaptastiCo extends PluginForDecrypt {
 
     public FaptastiCo(PluginWrapper wrapper) {

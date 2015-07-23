@@ -19,7 +19,6 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,7 +33,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net", "chili-warez.net" }, urls = { "http://(www\\.)?mov-world\\.net/(\\?id=\\d+|.*?/.*?\\d+\\.html|[a-z]{2}-[a-zA-Z0-9]+/)", "http://(www\\.)?xxx-4-free\\.net/.*?/.*?\\.html", "http://(www\\.)?chili-warez\\.net/[^<>\"]+\\d+\\.html" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mov-world.net", "xxx-4-free.net", "chili-warez.net" }, urls = { "http://(www\\.)?mov-world\\.net/(\\?id=\\d+|.*?/.*?\\d+\\.html|[a-z]{2}-[a-zA-Z0-9]+/)", "http://(www\\.)?xxx-4-free\\.net/.*?/.*?\\.html", "http://(www\\.)?chili-warez\\.net/[^<>\"]+\\d+\\.html" }, flags = { 0, 0, 0 })
 public class MvWrldNt extends PluginForDecrypt {
 
     public MvWrldNt(final PluginWrapper wrapper) {
@@ -52,11 +51,7 @@ public class MvWrldNt extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().toLowerCase();
         if (parameter.matches(UNSUPPORTEDLINKS) || parameter.matches(SPECIALUNSUPPORTEDLINKS) || parameter.matches(SPECIALUNSUPPORTEDLINKS2)) {
-            logger.info("Invalid link: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         // redirect links
@@ -73,33 +68,11 @@ public class MvWrldNt extends PluginForDecrypt {
         try {
             br.getPage(parameter);
         } catch (final BrowserException e) {
-            logger.info("Link offline (server error): " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter, "Server Error"));
             return decryptedLinks;
         }
-        if (br.containsHTML("<h1>Dieses Release ist nur noch bei <a")) {
-            logger.info("Link offline (offline): " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        } else if (br.getURL().contains("mov-world.net/error.html?error=404") || br.containsHTML(">404 Not Found<")) {
-            logger.info("Link offline (error 404): " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        } else if (br.getURL().equals("http://mov-world.net/")) {
-            logger.info("Link offline: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+        if (br.containsHTML("<h1>Dieses Release ist nur noch bei <a") || br.getURL().contains("mov-world.net/error.html?error=404") || br.containsHTML(">404 Not Found<") || br.getURL().equals("http://mov-world.net/")) {
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
 
@@ -108,10 +81,7 @@ public class MvWrldNt extends PluginForDecrypt {
             if (externID != null) {
                 br.getPage(externID);
                 if (br.containsHTML("<link_url>N/A</link_url>") || br.containsHTML("No htmlCode read") || br.containsHTML(">404 Not Found<") || br.getHttpConnection().getResponseCode() == 404) {
-                    final DownloadLink offline = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=7684385859" + new Random().nextInt(10000000));
-                    offline.setName(externID);
-                    offline.setAvailable(false);
-                    decryptedLinks.add(offline);
+                    decryptedLinks.add(createOfflinelink(parameter));
                     return decryptedLinks;
                 }
                 externID = br.getRegex("<link_url>(http://[^<>\"]*?)</link_url>").getMatch(0);
@@ -174,10 +144,7 @@ public class MvWrldNt extends PluginForDecrypt {
         if (links == null || links.length == 0) {
             logger.warning("mov-world.net: The content of this link is completly offline");
             logger.warning("mov-world.net: Please confirm via browser, and report any bugs to developement team. :" + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         boolean toManyLinks = false;

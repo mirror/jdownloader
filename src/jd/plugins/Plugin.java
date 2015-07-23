@@ -519,4 +519,63 @@ public abstract class Plugin implements ActionListener {
         return true;
     }
 
+    /**
+     * used to disable site testing, for instance names reference is invalid domain (just a place holder). dummyplugins etc.
+     *
+     * @since JD2
+     * @author raztoki
+     * @return
+     */
+    public Boolean siteTesterDisabled() {
+        return null;
+    }
+
+    /**
+     * So plugins can override when one partular site changes away from template defaults. one needs to override.
+     *
+     * @since JD2
+     * @author raztoki
+     * @param siteTemplate
+     * @param plugin
+     * @param br
+     * @return
+     */
+    // public Boolean siteTester(final SiteTemplate siteTemplate, final Plugin plugin, final Browser br) {
+    // return SiteType.siteTester(siteTemplate, plugin, br);
+    // }
+
+    /**
+     * sets the SiteTemplate defination.
+     *
+     * @since JD2
+     * @author raztoki
+     * @return
+     */
+    // public SiteTemplate siteTemplateType() {
+    // return null;
+    // }
+
+    /**
+     * Used when names url entry contains multiple (sub\.)?domains within URLs. This allows us to return all supported domains.
+     *
+     * @since JD2
+     * @author raztoki
+     * @return
+     */
+    public String[] siteSupportedNames() {
+        return null;
+    }
+
+    /**
+     * extends siteSuportedNames, but allows you to set path, so that siteTemplateConfirmation test is done on the correct URL. Useful when
+     * site runs many services on a single domain, but have different base paths for each.
+     *
+     * @since JD2
+     * @author raztoki
+     * @return
+     */
+    public String siteSupportedPath() {
+        return null;
+    }
+
 }

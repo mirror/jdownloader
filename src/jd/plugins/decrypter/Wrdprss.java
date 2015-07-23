@@ -56,7 +56,7 @@ public class Wrdprss extends antiDDoSForDecrypt {
         for (String pattern : listType1) {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\d{4}/\\d{2}/\\d{2}/.+)");
         }
-        String[] listType2 = { "hoerbuch.in", "serien-blog.com" };
+        String[] listType2 = { "hoerbuch.in" };
         for (String pattern : listType2) {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/blog\\.php\\?id=[\\d]+)");
         }
@@ -160,6 +160,11 @@ public class Wrdprss extends antiDDoSForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "cinetopia.ws", "hd-area.org", "movie-blog.org", "doku.cc", "hoerbuch.in", "hd-area.org", "hi10anime.com", "watchseries-online.ch", "solarmovie.ws", "scene-rls.com" };
     }
 
 }
