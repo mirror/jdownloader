@@ -542,7 +542,7 @@ public abstract class Plugin implements ActionListener {
      * @return
      */
     public Boolean siteTester(final SiteTemplate siteTemplate, final Plugin plugin, final Browser br) {
-        return SiteType.siteTester(siteTemplate, plugin, br);
+        return SiteTester.siteTester(siteTemplate, plugin, br);
     }
 
     /**
