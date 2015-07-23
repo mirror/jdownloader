@@ -664,6 +664,7 @@ public class DirectHTTP extends PluginForHost {
         } else {
             downloadLink.setProperty("ServerComaptibleForByteRangeRequest", Property.NULL);
         }
+        final long downloadCurrentRaw = downloadLink.getDownloadCurrentRaw();
         if (downloadLink.getStringProperty("post", null) != null) {
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getDownloadURL(downloadLink), downloadLink.getStringProperty("post", null), resume, chunks);
         } else {
@@ -687,21 +688,40 @@ public class DirectHTTP extends PluginForHost {
                 throw e;
             } else if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || this.dl.getConnection().getResponseCode() == 400 && this.br.getRequest().getHttpConnection().getHeaderField("server").matches("HFS.+")) {
                 if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
+                    /* clear chunkProgress and disable resume(ranges) and retry */
                     downloadLink.setChunksProgress(null);
-                    downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.valueOf(true));
+                    downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.TRUE);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             } else if (downloadLink.getLinkStatus().hasStatus(1 << 13)) {
                 return;
             } else {
-                /* unknown error, we disable multiple chunks */
                 if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(DirectHTTP.NOCHUNKS, Boolean.valueOf(true));
+                    /* disable multiple chunks => use only 1 chunk and retry */
+                    downloadLink.setProperty(DirectHTTP.NOCHUNKS, Boolean.TRUE);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 } else if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
-                    downloadLink.setChunksProgress(null);
-                    downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                    boolean disableRanges = false;
+                    final long[] progress = downloadLink.getChunksProgress();
+                    if (progress != null) {
+                        if (progress.length > 1) {
+                            /* reset chunkProgress to first chunk and retry */
+                            downloadLink.setChunksProgress(new long[] { progress[0] });
+                            throw new PluginException(LinkStatus.ERROR_RETRY);
+                        } else {
+                            if (downloadLink.getDownloadCurrent() == downloadCurrentRaw) {
+                                disableRanges = true;
+                            }
+                        }
+                    } else {
+                        disableRanges = true;
+                    }
+                    if (disableRanges) {
+                        /* clear chunkProgress and disable resume(ranges) and retry */
+                        downloadLink.setChunksProgress(null);
+                        downloadLink.setProperty(DirectHTTP.NORESUME, Boolean.valueOf(true));
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
                 }
             }
             throw e;

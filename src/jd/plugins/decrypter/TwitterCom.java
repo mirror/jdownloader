@@ -130,7 +130,7 @@ public class TwitterCom extends PornEmbedParser {
                     }
                 }
 
-                final String[] directlink_regexes = new String[] { "data\\-url=\\&quot;(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?\\.(jpg|png|gif):large)\\&", "data\\-url=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"" };
+                final String[] directlink_regexes = new String[] { "data-url=(?:\\&quot;|\")(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?\\.(jpg|png|gif):large)", "data-url=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"", "data-img-src=\"(https?://[a-z0-9]+\\.twimg\\.com/[^<>\"]*?)\"" };
                 for (final String regex : directlink_regexes) {
                     final String[] piclinks = br.getRegex(regex).getColumn(0);
                     if (piclinks != null) {
@@ -180,7 +180,7 @@ public class TwitterCom extends PornEmbedParser {
                 br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 reloadNumber++;
             } while (br.containsHTML("\"has_more_items\":true"));
-            fp.addLinks(decryptedLinks);
+            System.out.println(reloadNumber);
         } else {
             status_id = new Regex(parameter, "/status/(\\d+)").getMatch(0);
             if (br.containsHTML("data-autoplay-src=")) {

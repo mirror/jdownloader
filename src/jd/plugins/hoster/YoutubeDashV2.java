@@ -1030,7 +1030,7 @@ public class YoutubeDashV2 extends PluginForHost {
         final LinkStatus videoLinkStatus = new LinkStatus(dashLink);
         Downloadable dashDownloadable = new DownloadLinkDownloadable(dashLink) {
 
-            long[] chunkProgress = null;
+            volatile long[] chunkProgress = null;
             {
                 Object ret = downloadLink.getProperty(dashChunksProperty, null);
                 if (ret != null && ret instanceof long[]) {
@@ -1051,6 +1051,21 @@ public class YoutubeDashV2 extends PluginForHost {
             @Override
             public void setResumeable(boolean value) {
                 downloadLink.setResumeable(value);
+            }
+
+            @Override
+            public long[] getChunksProgress() {
+                return chunkProgress;
+            }
+
+            @Override
+            public void setChunksProgress(long[] ls) {
+                chunkProgress = ls;
+                if (ls == null) {
+                    downloadLink.setProperty(dashChunksProperty, Property.NULL);
+                } else {
+                    downloadLink.setProperty(dashChunksProperty, ls);
+                }
             }
 
             @Override
