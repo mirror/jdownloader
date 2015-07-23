@@ -45,13 +45,14 @@ public class MdrDe extends PluginForHost {
     /** Settings stuff */
     private static final String ALLOW_SUBTITLES      = "ALLOW_SUBTITLES";
     private static final String ALLOW_BEST           = "ALLOW_BEST";
-    private static final String ALLOW_720x576        = "ALLOW_720x576";
-    private static final String ALLOW_960x544        = "ALLOW_960x544";
-    private static final String ALLOW_640x360        = "ALLOW_640x360";
-    private static final String ALLOW_512x288        = "ALLOW_512x288";
-    private static final String ALLOW_480x272_higher = "ALLOW_480x272_higher";
-    private static final String ALLOW_480x272_lower  = "ALLOW_480x272_lower";
-    private static final String ALLOW_256x144        = "ALLOW_256x144";
+    private static final String ALLOW_1280x720       = "ALLOW_1280x7";
+    private static final String ALLOW_720x576        = "ALLOW_720x5";
+    private static final String ALLOW_960x544        = "ALLOW_960x5";
+    private static final String ALLOW_640x360        = "ALLOW_640x3";
+    private static final String ALLOW_512x288        = "ALLOW_512x2";
+    private static final String ALLOW_480x272_higher = "ALLOW_480x2_higher";
+    private static final String ALLOW_480x272_lower  = "ALLOW_480x2_lower";
+    private static final String ALLOW_256x144        = "ALLOW_256x1";
 
     public MdrDe(final PluginWrapper wrapper) {
         super(wrapper);
@@ -265,8 +266,9 @@ public class MdrDe extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.MdrDe.best", "Load best version ONLY")).setDefaultValue(false);
         getConfig().addEntry(bestonly);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1280x720, JDL.L("plugins.hoster.MdrDe.load1280x720", "Load 1280x720")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720x576, JDL.L("plugins.hoster.MdrDe.load256x144", "Load 720x576")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_960x544, JDL.L("plugins.hoster.MdrDe.load960x544", "Load 960x544")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_960x544, JDL.L("plugins.hoster.MdrDe.load960x544", "Load 960x5XX")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_640x360, JDL.L("plugins.hoster.MdrDe.load640x360", "Load 640x360")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_512x288, JDL.L("plugins.hoster.MdrDe.load512x288", "Load 512x288")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480x272_higher, JDL.L("plugins.hoster.MdrDe.load480x272_higher", "Load 480x272 higher")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));

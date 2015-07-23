@@ -50,13 +50,14 @@ public class MdrDeDecrypter extends PluginForDecrypt {
     /** Settings stuff */
     private static final String                 ALLOW_SUBTITLES      = "ALLOW_SUBTITLES";
     private static final String                 ALLOW_BEST           = "ALLOW_BEST";
-    private static final String                 ALLOW_720x576        = "ALLOW_720x576";
-    private static final String                 ALLOW_960x544        = "ALLOW_960x544";
-    private static final String                 ALLOW_640x360        = "ALLOW_640x360";
-    private static final String                 ALLOW_512x288        = "ALLOW_512x288";
-    private static final String                 ALLOW_480x272_higher = "ALLOW_480x272_higher";
-    private static final String                 ALLOW_480x272_lower  = "ALLOW_480x272_lower";
-    private static final String                 ALLOW_256x144        = "ALLOW_256x144";
+    private static final String                 ALLOW_1280x720       = "ALLOW_1280x7";
+    private static final String                 ALLOW_720x576        = "ALLOW_720x5";
+    private static final String                 ALLOW_960x544        = "ALLOW_960x5";
+    private static final String                 ALLOW_640x360        = "ALLOW_640x3";
+    private static final String                 ALLOW_512x288        = "ALLOW_512x2";
+    private static final String                 ALLOW_480x272_higher = "ALLOW_480x2_higher";
+    private static final String                 ALLOW_480x272_lower  = "ALLOW_480x2_lower";
+    private static final String                 ALLOW_256x144        = "ALLOW_256x1";
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -112,11 +113,16 @@ public class MdrDeDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            final String sizeheight_cut = sizeheight.substring(0, 1);
+            String qualityString_full;
             String qualityString;
             if (sizewidth.equals("480")) {
-                qualityString = sizewidth + "x" + sizeheight + "x" + bitrateVideo;
+                /* Workaround for two different 480p videobitrates */
+                qualityString = sizewidth + "x" + sizeheight_cut + "x" + bitrateVideo;
+                qualityString_full = sizewidth + "x" + sizeheight + "x" + bitrateVideo;
             } else {
-                qualityString = sizewidth + "x" + sizeheight;
+                qualityString = sizewidth + "x" + sizeheight_cut;
+                qualityString_full = sizewidth + "x" + sizeheight;
             }
             String filename = date_formatted + "_mdr_" + title;
             final String ext = ".mp4";
@@ -130,7 +136,7 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             fina.setProperty("mainlink", parameter);
             fina.setProperty("plain_filename", filename);
             fina.setProperty("plain_filesize", fsize);
-            fina.setProperty("plain_qualityString", qualityString);
+            fina.setProperty("plain_qualityString", qualityString_full);
             try {
                 fina.setContentUrl(parameter);
                 fina.setLinkID(linkdupeid);
@@ -158,6 +164,7 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             }
         } else {
             /** User selected nothing -> Decrypt everything */
+            boolean q1280x720 = cfg.getBooleanProperty(ALLOW_1280x720, false);
             boolean q720x576 = cfg.getBooleanProperty(ALLOW_720x576, false);
             boolean q960x544 = cfg.getBooleanProperty(ALLOW_960x544, false);
             boolean q640x360 = cfg.getBooleanProperty(ALLOW_640x360, false);
@@ -165,7 +172,8 @@ public class MdrDeDecrypter extends PluginForDecrypt {
             boolean q480x272_higher = cfg.getBooleanProperty(ALLOW_480x272_higher, false);
             boolean q480x272_lower = cfg.getBooleanProperty(ALLOW_480x272_lower, false);
             boolean q256x144 = cfg.getBooleanProperty(ALLOW_256x144, false);
-            if (q720x576 == false && q960x544 == false && q640x360 == false && q512x288 == false && q480x272_higher == false && q480x272_lower == false && q256x144 == false) {
+            if (q1280x720 == false && q720x576 == false && q960x544 == false && q640x360 == false && q512x288 == false && q480x272_higher == false && q480x272_lower == false && q256x144 == false) {
+                q1280x720 = true;
                 q720x576 = true;
                 q960x544 = true;
                 q640x360 = true;
@@ -175,26 +183,29 @@ public class MdrDeDecrypter extends PluginForDecrypt {
                 q256x144 = true;
             }
 
+            if (q1280x720) {
+                selectedQualities.add("1280x7");
+            }
             if (q720x576) {
-                selectedQualities.add("720x576");
+                selectedQualities.add("720x5");
             }
             if (q960x544) {
-                selectedQualities.add("960x544");
+                selectedQualities.add("960x5");
             }
             if (q640x360) {
-                selectedQualities.add("640x360");
+                selectedQualities.add("640x3");
             }
             if (q512x288) {
-                selectedQualities.add("512x288");
+                selectedQualities.add("512x2");
             }
             if (q480x272_higher) {
-                selectedQualities.add("480x272x384000");
+                selectedQualities.add("480x2x384000");
             }
             if (q480x272_lower) {
-                selectedQualities.add("480x272x240000");
+                selectedQualities.add("480x2x240000");
             }
             if (q256x144) {
-                selectedQualities.add("256x144");
+                selectedQualities.add("256x1");
             }
         }
         for (final String selectedQualityValue : selectedQualities) {
