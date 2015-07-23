@@ -35,6 +35,7 @@ import javax.xml.xpath.XPathFactory;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -282,11 +283,13 @@ public class RTLnowDe extends PluginForHost {
         final boolean isDRM = ((Boolean) entries.get("isDrm")).booleanValue();
         String url_hds = null;
         String url_hls = null;
-        String url_rtmp = null;
+        String url_rtmp_highest = null;
+        String url_rtmp_highest_valid = null;
         boolean isHDS = (DummyScriptEnginePlugin.toLong(format.get("flashHds"), -1) == 1);
         long bitrate_max = 0;
         long bitrate_temp = 0;
         final String movieID = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("id"), -1));
+        boolean hls_version_available = false;
 
         if (movieID.equals("-1")) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -332,22 +335,16 @@ public class RTLnowDe extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            for (final Object quality_o : ressourcelist) {
-                entries_rtmp = (LinkedHashMap<String, Object>) quality_o;
-                bitrate_temp = DummyScriptEnginePlugin.toLong(entries_rtmp.get("bitrate"), -1);
-                if (bitrate_temp > bitrate_max) {
-                    bitrate_max = bitrate_temp;
-                    url_rtmp = (String) entries_rtmp.get("path");
-                }
-            }
-            if (url_rtmp == null) {
+            url_rtmp_highest = findHighestRTMPQuality(ressourcelist);
+            url_rtmp_highest_valid = findHighestValidRTMPQuality(ressourcelist);
+            if (url_rtmp_highest == null && url_rtmp_highest_valid == null) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* Check possible rtmp --> hds (later then --> hls) workaround */
-            if ((url_rtmp.matches(RTMPTYPE_h264) || url_rtmp.matches(RTMPTYPE_abr)) && ALLOW_RTMP_TO_HDS_WORKAROUND) {
-                final String rtmp_app = getRTMPApp(url_rtmp);
-                final String rtmp_playpath_part = getRTMPPlaypathPart(url_rtmp);
+            if ((url_rtmp_highest.matches(RTMPTYPE_h264) || url_rtmp_highest.matches(RTMPTYPE_abr)) && ALLOW_RTMP_TO_HDS_WORKAROUND) {
+                final String rtmp_app = getRTMPApp(url_rtmp_highest);
+                final String rtmp_playpath_part = getRTMPPlaypathPart(url_rtmp_highest);
                 url_hds = "http://hds.fra.rtlnow.de/hds-vod-enc/" + rtmp_app + "/videos/" + rtmp_playpath_part + ".f4m";
             }
 
@@ -358,13 +355,28 @@ public class RTLnowDe extends PluginForHost {
             downloadLink.setFinalFileName(downloadLink.getName());
             url_hls = url_hds.replace("hds", "hls");
             url_hls = url_hls.replace(".f4m", ".m3u8");
+            URLConnectionAdapter con = null;
+            try {
+                con = this.br.openHeadConnection(url_hls);
+                if (con.getResponseCode() == 200) {
+                    hls_version_available = true;
+                }
+            } catch (final Throwable e) {
+            } finally {
+                con.disconnect();
+            }
+        }
+        if (hls_version_available) {
             checkFFmpeg(downloadLink, "Download a HLS Stream");
             dl = new HLSDownloader(downloadLink, br, url_hls);
             dl.startDownload();
-        } else if (url_rtmp != null && ALLOW_RTMP) {
-            if (url_rtmp.startsWith("/abr/") || !(url_rtmp.endsWith(".f4v") || url_rtmp.endsWith(".flv"))) {
+        } else if (url_rtmp_highest != null && ALLOW_RTMP) {
+            if (!isValidRTMPUrl(url_rtmp_highest) && url_rtmp_highest_valid == null) {
                 /* Invalid rtmp url --> this should never happen */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich [Kein gültiger Downloadlink gefunden]");
+            } else if (!isValidRTMPUrl(url_rtmp_highest)) {
+                /* Fallback to lower quality that is available via rtmp */
+                url_rtmp_highest = url_rtmp_highest_valid;
             }
             final long calculated_filesize = ((bitrate_max * 1000) / 8) * duration;
             final long calculated_filesize_minimum = (long) (calculated_filesize * 0.9);
@@ -375,8 +387,8 @@ public class RTLnowDe extends PluginForHost {
              * Either we already got rtmp urls or we can try to build them via the playpath-part of our HDS manifest url (see code BEFORE
              * rev 30393)
              */
-            final String rtmp_app = getRTMPApp(url_rtmp);
-            final String rtmp_playpath_part = getRTMPPlaypathPart(url_rtmp);
+            final String rtmp_app = getRTMPApp(url_rtmp_highest);
+            final String rtmp_playpath_part = getRTMPPlaypathPart(url_rtmp_highest);
             /*
              * We don't need the exact url of the video, especially because we do not even always have it. An url of the "old" mainpage is
              * enough!
@@ -460,6 +472,50 @@ public class RTLnowDe extends PluginForHost {
             dl.startDownload();
 
         }
+    }
+
+    private boolean isValidRTMPUrl(final String url_rtmp) {
+        if (url_rtmp.startsWith("/abr/") || !(url_rtmp.endsWith(".f4v") || url_rtmp.endsWith(".flv"))) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private String findHighestRTMPQuality(final ArrayList<Object> ressourcelist) {
+        long bitrate_temp = 0;
+        long bitrate_max = 0;
+        String url_rtmp_highest = null;
+        LinkedHashMap<String, Object> entries_rtmp = null;
+        for (final Object quality_o : ressourcelist) {
+            entries_rtmp = (LinkedHashMap<String, Object>) quality_o;
+            bitrate_temp = DummyScriptEnginePlugin.toLong(entries_rtmp.get("bitrate"), -1);
+            if (bitrate_temp > bitrate_max) {
+                bitrate_max = bitrate_temp;
+                url_rtmp_highest = (String) entries_rtmp.get("path");
+            }
+        }
+        return url_rtmp_highest;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String findHighestValidRTMPQuality(final ArrayList<Object> ressourcelist) {
+        long bitrate_temp = 0;
+        long bitrate_max = 0;
+        String url_rtmp_temp = null;
+        String url_rtmp_highest = null;
+        LinkedHashMap<String, Object> entries_rtmp = null;
+        for (final Object quality_o : ressourcelist) {
+            entries_rtmp = (LinkedHashMap<String, Object>) quality_o;
+            bitrate_temp = DummyScriptEnginePlugin.toLong(entries_rtmp.get("bitrate"), -1);
+            url_rtmp_temp = (String) entries_rtmp.get("path");
+            if (bitrate_temp > bitrate_max && this.isValidRTMPUrl(url_rtmp_temp)) {
+                bitrate_max = bitrate_temp;
+                url_rtmp_highest = url_rtmp_temp;
+            }
+        }
+        return url_rtmp_highest;
     }
 
     private String getRTMPApp(final String url_rtmp) throws PluginException {
