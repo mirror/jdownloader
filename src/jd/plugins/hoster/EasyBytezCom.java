@@ -100,7 +100,7 @@ public class EasyBytezCom extends PluginForHost {
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(5);
 
     // DEV NOTES
     // XfileShare Version 3.0.8.5
@@ -821,11 +821,11 @@ public class EasyBytezCom extends PluginForHost {
             ai.setValidUntil(-1);
             account.setProperty("free", true);
             ai.setStatus("Free Account");
-            account.setProperty("totalMaxSim", 20);
+            account.setProperty("totalMaxSim", 5);
         } else {
             account.setProperty("free", false);
             ai.setStatus("Premium Account");
-            account.setProperty("totalMaxSim", 20);
+            account.setProperty("totalMaxSim", 5);
         }
     }
 
@@ -1640,7 +1640,7 @@ public class EasyBytezCom extends PluginForHost {
                 logger.info("maxFree was = " + was + " && maxFree now = " + maxFree.get());
             } else {
                 int was = maxPrem.get();
-                maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), account.getIntegerProperty("totalMaxSim", 20)));
+                maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), account.getIntegerProperty("totalMaxSim", 5)));
                 logger.info("maxPrem was = " + was + " && maxPrem now = " + maxPrem.get());
             }
         }
@@ -2100,5 +2100,10 @@ public class EasyBytezCom extends PluginForHost {
     public void setBrowser(final Browser ibr) {
         this.br = ibr;
     }
+
+    // @Override
+    // public SiteTemplate siteTemplateType() {
+    // return SiteTemplate.SibSoft_XFileShare;
+    // }
 
 }
