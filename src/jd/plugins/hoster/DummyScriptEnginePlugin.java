@@ -1338,4 +1338,10 @@ public class DummyScriptEnginePlugin extends PluginForHost {
             JSPermissionRestricter.TRUSTED_THREAD.remove(Thread.currentThread());
         }
     }
+
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
+    }
+
 }

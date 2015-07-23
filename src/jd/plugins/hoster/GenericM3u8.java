@@ -33,14 +33,14 @@ import org.jdownloader.controlling.ffmpeg.json.Stream;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
+/**
+ * @author raztoki
+ */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+?\\.m3u8" }, flags = { 0 })
 public class GenericM3u8 extends PluginForHost {
 
     private String customFavIconHost = null;
 
-    /**
-     * @author raztoki
-     */
     public GenericM3u8(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -86,7 +86,7 @@ public class GenericM3u8 extends PluginForHost {
         this.setBrowserExclusive();
 
         // first get
-        // br.getPage(downloadLink.getDownloadURL());
+        br.getPage(downloadLink.getDownloadURL());
 
         HLSDownloader downloader = new HLSDownloader(downloadLink, br, downloadLink.getDownloadURL());
         StreamInfo streamInfo = downloader.getProbe();
@@ -174,5 +174,10 @@ public class GenericM3u8 extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
     }
 }

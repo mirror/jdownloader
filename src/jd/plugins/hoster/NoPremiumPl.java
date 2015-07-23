@@ -16,12 +16,8 @@
 
 package jd.plugins.hoster;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,7 +33,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nopremium.pl" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class NoPremiumPl extends PluginForHost {
@@ -221,37 +216,6 @@ public class NoPremiumPl extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    private static void showApiDisabledDialog() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = " API deaktiviert";
-                            message = "Du hast free-way API deaktiviert. Diese wird jedoch zum Downloaden benötigt.\r\n" + "Möchtest Du diese aktivieren?";
-                        } else {
-                            title = "API disabled";
-                            message = "The free-way API seems to be disabled. To use jdownloader you need to enable it.";
-                        }
-                        if (CrossSystem.isOpenBrowserSupported()) {
-                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
-                            if (JOptionPane.OK_OPTION == result) {
-                                CrossSystem.openURL(new URL("https://www.free-way.me/account?api_enable"));
-                            }
-                        }
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
-        }
     }
 
 }
