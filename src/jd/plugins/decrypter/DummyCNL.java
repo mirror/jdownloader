@@ -25,6 +25,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -89,14 +90,9 @@ public class DummyCNL extends PluginForDecrypt {
 
         for (String s : Regex.getLines(decrypted)) {
             final DownloadLink dl = createDownloadlink(s);
-            // respect cryptedLink origins
-            if (getCurrentLink().getSourceLink().getSourceUrls() != null) {
-                // if link origin comes from decrypter, and we don't set a BrowserUrl, it will be set to it's set to param.toString() and
-                // not getOriginLink().getURL().
-                // try{/*JD2 only*/dl.setContentUrl(getCurrentLink().getSourceLink().getOriginLink().getURL());}catch(Throwable
-                // e){/*Stable*/ dl.setBrowserUrl(getCurrentLink().getSourceLink().getOriginLink().getURL());}
-            } else if (source != null) {
-                dl.setContainerUrl(source);
+            // respect the source url as container url assuming another plugin hasn't set this field.
+            if (source != null && dl.getContainerUrl() == null) {
+                dl.setReferrerUrl(Encoding.urlDecode(source, false));
             }
             if (fp != null) {
                 fp.add(dl);
@@ -172,6 +168,11 @@ public class DummyCNL extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
     }
 
 }

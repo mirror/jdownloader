@@ -107,4 +107,12 @@ public class ProtectDdlIslandRu extends PluginForDecrypt {
         return pass;
     }
 
+    @Override
+    public String[] siteSupportedNames() {
+        if ("protect.ddl-island.ru".equalsIgnoreCase(this.getHost())) {
+            return new String[] { "protect.ddl-island.ru", "protect.ddl-island.su" };
+        }
+        return new String[] { getHost() };
+    }
+
 }

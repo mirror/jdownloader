@@ -58,4 +58,9 @@ public class FilecloudEzfile extends PluginForDecrypt {
         return false;
     }
 
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
+    }
+
 }

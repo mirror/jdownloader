@@ -48,7 +48,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 // http://tvthek,orf.at/live/... --> HDS
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orfmediathek.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/(programs?|topic)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tvthek.orf.at" }, urls = { "http://(www\\.)?tvthek\\.orf\\.at/(programs?|topic)/.+" }, flags = { 0 })
 public class ORFMediathekDecrypter extends PluginForDecrypt {
 
     private static final String Q_SUBTITLES   = "Q_SUBTITLES";

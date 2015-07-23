@@ -30,6 +30,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+//import jd.plugins.SiteType.SiteTemplate;
 
 import org.appwork.utils.StringUtils;
 
@@ -115,9 +116,14 @@ public class GemPixelPremiumURLShortener extends antiDDoSForDecrypt {
         return false;
     }
 
-    // @Override
-    // public SiteTemplate siteTemplateType() {
-    // return SiteTemplate.GemPixel_PremiumURLShortener;
-    // }
+//s*@Overrides*//public SiteTemplate siteTemplateType() {s*//return SiteTemplate.(GemPixel_PremiumURLShortener);s*//}
+
+    @Override
+    public String siteSupportedPath() {
+        if ("gempixel.com".equalsIgnoreCase(getHost())) {
+            return "/host";
+        }
+        return super.siteSupportedPath();
+    }
 
 }
