@@ -58,7 +58,7 @@ public class KeezMoviesCom extends PluginForHost {
 
     /*
      * IMPORTANT: If this plugin fails and we have problems with the encryption there are 2 ways around: 1. Add account support --> Download
-     * button is available then AND 2. Use a mobile User-Agent so we can get uncrypted finallinks. Keep in mind that we might get lower
+     * button is available then AND 2. Use a mobile User-Agent so we can get non encrypted final links. Keep in mind that we might get lower
      * quality then - last tested 29.01.15, quality was the same as via normal stream (480p) though not sure if 720p or higher is also
      * available for mobile. Also, it might happen that not all videos are also available for mobile devices!
      */
@@ -68,6 +68,7 @@ public class KeezMoviesCom extends PluginForHost {
         // DEV NOTE: you can get the DLLINK from the embed page without need for crypto!
         setBrowserExclusive();
         br.setFollowRedirects(false);
+        br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         /* Offline links should also get nice filenames. */
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([\\w\\-]+)$").getMatch(0));
         String filename = null;

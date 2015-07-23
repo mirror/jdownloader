@@ -107,4 +107,9 @@ public class JdLog extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
+    }
+
 }

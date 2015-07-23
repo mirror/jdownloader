@@ -210,4 +210,9 @@ public class LibGenInfo extends PluginForHost {
         return false;
     }
 
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "libgen.info", "libgen.net", "libgen.in" };
+    }
+
 }

@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vplay.tv" }, urls = { "http://((www\\.)?vplay\\.ro/watch/[a-z0-9]+|i\\.vplay\\.ro/f/embed\\.swf\\?key=[a-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vplay.ro" }, urls = { "http://((www\\.)?vplay\\.ro/watch/[a-z0-9]+|i\\.vplay\\.ro/f/embed\\.swf\\?key=[a-z0-9]+)" }, flags = { 0 })
 public class VplayRo extends PluginForHost {
 
     public VplayRo(PluginWrapper wrapper) {

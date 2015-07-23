@@ -37,7 +37,7 @@ import jd.plugins.download.SimpleFTPDownloadInterface;
 // DEV NOTES:
 // - ftp filenames can contain & characters!
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?(?<!(hdmekani))\\.[a-zA-Z0-9]{2,}(:\\d+)?/[^\"\r\n ]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?\\.[a-zA-Z0-9]{2,}(:\\d+)?/[^\"\r\n ]+" }, flags = { 0 })
 public class Ftp extends PluginForHost {
 
     public Ftp(PluginWrapper wrapper) {
@@ -233,5 +233,10 @@ public class Ftp extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
     }
 }

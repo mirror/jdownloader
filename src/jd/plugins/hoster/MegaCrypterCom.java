@@ -487,4 +487,8 @@ public class MegaCrypterCom extends antiDDoSForHost {
     public void resetDownloadlink(final DownloadLink link) {
     }
 
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "encrypterme.ga", "megacrypter.noestasinvitado.com", "youpaste.co", "linkcrypter.net", "megacrypter.linkcrypter.net" };
+    }
 }
