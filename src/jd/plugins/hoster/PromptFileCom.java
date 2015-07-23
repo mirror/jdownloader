@@ -105,7 +105,8 @@ public class PromptFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.postPage(br.getURL(), "chash=" + cHash);
-            dllink = br.getRegex("clip: \\{\\s+url: \\'(http://(www\\.)?promptfile\\.com/file/[A-Za-z0-9=]+)(\\'|\")").getMatch(0);
+            // dllink = br.getRegex("clip: \\{\\s+url: \\'(http://(www\\.)?promptfile\\.com/file/[A-Za-z0-9=]+)(\\'|\")").getMatch(0);
+            dllink = br.getRegex("download below</p>\\s+<a href=\"(http://(www\\.)?promptfile\\.com/file/[A-Za-z0-9=]+)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex(">Download<.+\\s+.+\\s+<a href=\"(http://www\\.promptfile\\.com[^<>\"]+)\"").getMatch(0);
                 logger.info("dllink = " + dllink);
