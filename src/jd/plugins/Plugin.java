@@ -39,6 +39,7 @@ import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -540,9 +541,9 @@ public abstract class Plugin implements ActionListener {
      * @param br
      * @return
      */
-    // public Boolean siteTester(final SiteTemplate siteTemplate, final Plugin plugin, final Browser br) {
-    // return SiteType.siteTester(siteTemplate, plugin, br);
-    // }
+    public Boolean siteTester(final SiteTemplate siteTemplate, final Plugin plugin, final Browser br) {
+        return SiteType.siteTester(siteTemplate, plugin, br);
+    }
 
     /**
      * sets the SiteTemplate defination.
@@ -551,9 +552,9 @@ public abstract class Plugin implements ActionListener {
      * @author raztoki
      * @return
      */
-    // public SiteTemplate siteTemplateType() {
-    // return null;
-    // }
+    public SiteTemplate siteTemplateType() {
+        return null;
+    }
 
     /**
      * Used when names url entry contains multiple (sub\.)?domains within URLs. This allows us to return all supported domains.
