@@ -73,12 +73,17 @@ public class PureVidCom extends PluginForHost {
         return "http://www.videobug.net/";
     }
 
+    public void correctDownloadLink(DownloadLink downloadLink) {
+        String fid = getFID(downloadLink);
+        downloadLink.setUrlDownload("http://www.purevid.com/v/" + fid + "/");
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("id=\"error\"|error/errorbg\\.png") || br.containsHTML("Impossible de trouver info sur volume")) {
+        if (br.containsHTML("404 - Not Found|id=\"error\"|error/errorbg\\.png|Impossible de trouver info sur volume")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Browser fl = br.cloneBrowser();
@@ -95,9 +100,9 @@ public class PureVidCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = dllink.replaceAll("\\\\/", "/");
-        dllink += "?token=&uid=&id=" + getFID(downloadLink) + "&sas=&sid=" + sid;
         final String ext = dllink.substring(dllink.lastIndexOf("."));
         downloadLink.setFinalFileName(filename + ext);
+        dllink += "?token=&uid=&id=" + getFID(downloadLink) + "&sas=&sid=" + sid;
         br.getPage("/?m=statuscheck&token=&uid=&id=" + getFID(downloadLink) + "&sas=&sid=" + sid + "&cc=");
         if (br.containsHTML("\\?m=upgrade")) {
             downloadLink.getLinkStatus().setStatusText("Only downloadable for registered/premium users");
