@@ -769,9 +769,9 @@ public class DirectHTTP extends PluginForHost {
                     } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
                         urlConnection = br.openHeadConnection(getDownloadURL(downloadLink));
                         if (urlConnection.getResponseCode() == 404 /*
-                                                                    * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
-                                                                    * "must-revalidate") && urlConnection.getHeaderField("Via") != null
-                                                                    */) {
+                         * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
+                         * "must-revalidate") && urlConnection.getHeaderField("Via") != null
+                         */) {
                             urlConnection.disconnect();
                             urlConnection = br.openGetConnection(getDownloadURL(downloadLink));
                         } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
@@ -971,9 +971,6 @@ public class DirectHTTP extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     /* search urls */
-                    /*
-                     * TODO: change to org.appwork.utils.parser.HTMLParser.findUrls with next major-update
-                     */
                     final ArrayList<String> embeddedLinks = DirectHTTP.findUrls(pageContent);
 
                     String embeddedLink = null;
