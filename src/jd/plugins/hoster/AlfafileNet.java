@@ -103,6 +103,9 @@ public class AlfafileNet extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        if (checkShowFreeDialog(getHost())) {
+            showFreeDialog(getHost());
+        }
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             final String fid = getFileID(downloadLink);
