@@ -27,7 +27,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-//import jd.plugins.SiteType.SiteTemplate;
+import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 // DEV NOTES:
@@ -159,6 +159,10 @@ public class LnkBcks extends antiDDoSForDecrypt {
                 }
             }
             if (js == null) {
+                // not always an error.. see http://www.linkbucks.com/Cdx4H
+                if (br.getHttpConnection().getContentLength() < 1024) {
+                    return decryptedLinks;
+                }
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
@@ -286,6 +290,9 @@ public class LnkBcks extends antiDDoSForDecrypt {
         return false;
     }
 
-//s*@Overrides*//public SiteTemplate siteTemplateType() {s*//return SiteTemplate.(Linkbucks_Linkbucks);s*//}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.Linkbucks_Linkbucks;
+    }
 
 }
