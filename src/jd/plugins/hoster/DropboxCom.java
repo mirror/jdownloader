@@ -15,10 +15,12 @@ import javax.crypto.spec.SecretKeySpec;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -31,7 +33,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" }, flags = { 2 })
 public class DropboxCom extends PluginForHost {
 
     public DropboxCom(PluginWrapper wrapper) {
@@ -46,27 +48,60 @@ public class DropboxCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("#", "%23"));
     }
 
-    private static Object                   LOCK            = new Object();
-    private static HashMap<String, Cookies> accountMap      = new HashMap<String, Cookies>();
-    private boolean                         TEMPUNAVAILABLE = false;
-    private String                          DLLINK          = null;
-    private static final String             DOWNLOAD_ZIP    = "DOWNLOAD_ZIP";
+    private static final String             TYPE_S            = "https?://(www\\.)?dropbox\\.com/s/.+";
+    private static Object                   LOCK              = new Object();
+    private static HashMap<String, Cookies> accountMap        = new HashMap<String, Cookies>();
+    private boolean                         TEMPUNAVAILABLE   = false;
+    private boolean                         PASSWORDPROTECTED = false;
+    private String                          DLLINK            = null;
+    private static final String             DOWNLOAD_ZIP      = "DOWNLOAD_ZIP";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (link.getBooleanProperty("decrypted")) {
             if (link.getBooleanProperty("offline", false)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            URLConnectionAdapter con = null;
+            try {
+                if (link.getDownloadURL().matches(TYPE_S)) {
+                    this.br.setFollowRedirects(true);
+                    DLLINK = link.getDownloadURL().replace("https://", "https://dl.");
+                    con = this.br.openHeadConnection(DLLINK);
+                    if (!con.getContentType().contains("html")) {
+                        link.setProperty("directlink", con.getURL().toString());
+                        link.setDownloadSize(con.getLongContentLength());
+                        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
+                        return AvailableStatus.TRUE;
+                    }
+                    DLLINK = null;
+                    /* Either offline or password protected */
+                    this.br.getPage(link.getDownloadURL());
+                    if (!this.br.getURL().contains("/password")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    PASSWORDPROTECTED = true;
+                    return AvailableStatus.TRUE;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+
             DLLINK = link.getStringProperty("directlink", null);
             if (DLLINK == null) {
                 DLLINK = link.getDownloadURL();
+                if (con.getContentType().contains("html")) {
+                    this.br.followConnection();
+                }
             }
-            br.setCookie("http://dropbox.com", "locale", "en");
-            br.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
+            this.br.setCookie("http://dropbox.com", "locale", "en");
+            this.br.setFollowRedirects(true);
             try {
-                con = br.openGetConnection(DLLINK);
+                con = br.openHeadConnection(DLLINK);
                 if (con.getResponseCode() == 509) {
                     link.getLinkStatus().setStatusText("Temporarily unavailable");
                     TEMPUNAVAILABLE = true;
@@ -78,7 +113,7 @@ public class DropboxCom extends PluginForHost {
                     link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
                     return AvailableStatus.TRUE;
                 }
-                br.followConnection();
+                this.br.followConnection();
             } finally {
                 try {
                     con.disconnect();
@@ -86,7 +121,7 @@ public class DropboxCom extends PluginForHost {
                 }
             }
 
-            if (br.containsHTML("(>Error \\(404\\)<|>Dropbox \\- 404<|>We can\\'t find the page you\\'re looking for|>The file you're looking for has been)")) {
+            if (this.br.containsHTML("(>Error \\(404\\)<|>Dropbox \\- 404<|>We can\\'t find the page you\\'re looking for|>The file you're looking for has been)") || this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filename = br.getRegex("content=\"([^<>/]*?)\" property=\"og:title\"").getMatch(0);
@@ -103,6 +138,7 @@ public class DropboxCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -142,8 +178,10 @@ public class DropboxCom extends PluginForHost {
     // TODO: Move into Utilities (It's here for a hack)
     // public class OAuth {
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
+        String passCode = link.getStringProperty("pass", null);
         if (link.getDownloadURL().endsWith("?dl=0") || link.getDownloadURL().endsWith("?dl=1")) {
             link.setUrlDownload(link.getDownloadURL().substring(0, link.getDownloadURL().length() - 5));
         }
@@ -156,6 +194,24 @@ public class DropboxCom extends PluginForHost {
             requestFileInformation(link);
             if (TEMPUNAVAILABLE) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
+            } else if (this.PASSWORDPROTECTED) {
+                final Form pwform = this.br.getFormbyProperty("id", "password-form");
+                if (pwform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                pwform.setAction("https://www.dropbox.com/sm/auth");
+                if (passCode == null) {
+                    passCode = getUserInput("Password?", link);
+                }
+                pwform.put("password", passCode);
+                this.br.submitForm(pwform);
+                if (this.br.getURL().contains("/password") || getJson("error") != null) {
+                    link.setProperty("pass", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                }
+                this.br.getPage(link.getDownloadURL());
+                link.setProperty("pass", passCode);
+                DLLINK = this.br.getURL() + "?dl=1";
             }
             if (link.getStringProperty("directlink", null) == null) {
                 DLLINK = link.getDownloadURL() + "?dl=1";

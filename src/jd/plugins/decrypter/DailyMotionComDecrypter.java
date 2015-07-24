@@ -174,6 +174,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         br.getPage("http://www.dailymotion.com/" + username);
         if (br.containsHTML("class=\"dmco_text nothing_to_see\"")) {
             final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis());
+            dl.setContentUrl(PARAMETER);
             dl.setFinalFileName(username);
             dl.setProperty("offline", true);
             decryptedLinks.add(dl);
@@ -199,6 +200,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         if (videoCount == 0) {
             /* User has 0 videos */
             final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis());
+            dl.setContentUrl(PARAMETER);
             dl.setFinalFileName(username);
             dl.setProperty("offline", true);
             decryptedLinks.add(dl);
@@ -281,6 +283,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             /* Empty playlist site */
             if (!br.containsHTML("\"watchlaterAdd\"")) {
                 final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
+                dl.setContentUrl(PARAMETER);
                 dl.setFinalFileName(fpName);
                 dl.setProperty("offline", true);
                 decryptedLinks.add(dl);
@@ -413,6 +416,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         FILENAME = Encoding.htmlDecode(FILENAME.trim()).replace(":", " - ").replaceAll("/|<|>", "");
         if (new Regex(VIDEOSOURCE, "(Dein Land nicht abrufbar|this content is not available for your country|This video has not been made available in your country by the owner|\"Video not available due to geo\\-restriction)").matches()) {
             final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
+            dl.setContentUrl(PARAMETER);
             dl.setFinalFileName("Geo restricted video - " + FILENAME + ".mp4");
             dl.setProperty("countryblock", true);
             dl.setAvailable(true);
@@ -420,12 +424,14 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             return;
         } else if (new Regex(VIDEOSOURCE, "\"title\":\"Video geo\\-restricted by the owner").matches()) {
             final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
+            dl.setContentUrl(PARAMETER);
             dl.setFinalFileName("Geo-Restricted by owner - " + FILENAME + ".mp4");
             dl.setProperty("offline", true);
             dl.setAvailable(false);
             decryptedLinks.add(dl);
         } else if (new Regex(VIDEOSOURCE, "(his content as suitable for mature audiences only|You must be logged in, over 18 years old, and set your family filter OFF, in order to watch it)").matches() && !acc_in_use) {
             final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
+            dl.setContentUrl(PARAMETER);
             dl.setFinalFileName(FILENAME + ".mp4");
             dl.setProperty("registeredonly", true);
             dl.setAvailable(true);
@@ -433,6 +439,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             return;
         } else if (new Regex(VIDEOSOURCE, "\"message\":\"Publication of this video is in progress").matches()) {
             final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
+            dl.setContentUrl(PARAMETER);
             dl.setFinalFileName("Publication of this video is in progress - " + FILENAME + ".mp4");
             dl.setProperty("offline", true);
             dl.setAvailable(false);
@@ -440,6 +447,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             return;
         } else if (new Regex(VIDEOSOURCE, "\"encodingMessage\":\"Encoding in progress\\.\\.\\.\"").matches()) {
             final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
+            dl.setContentUrl(PARAMETER);
             dl.setFinalFileName("Encoding in progress - " + FILENAME + ".mp4");
             dl.setProperty("offline", true);
             dl.setAvailable(false);
@@ -447,6 +455,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             return;
         } else if (new Regex(VIDEOSOURCE, "\"title\":\"Channel offline\\.\"").matches()) {
             final DownloadLink dl = createDownloadlink("directhttp://" + PARAMETER);
+            dl.setContentUrl(PARAMETER);
             dl.setFinalFileName("Channel offline - " + FILENAME + ".mp4");
             dl.setProperty("offline", true);
             dl.setAvailable(false);
@@ -462,6 +471,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             fpSub.setName(FILENAME + "_Subtitles");
             for (final String subtitle : subtitles) {
                 final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new Random().nextInt(10000));
+                dl.setContentUrl(PARAMETER);
                 final String language = new Regex(subtitle, ".*?\\d+:subtitle_(.{1,4}).srt.*?").getMatch(0);
                 String qualityname = "subtitle";
                 if (language != null) {
@@ -540,10 +550,12 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         }
         for (final String selectedQualityValue : selectedQualities) {
             final DownloadLink dl = getVideoDownloadlink(this.br, FOUNDQUALITIES, selectedQualityValue);
-            if (dl != null) {
-                fp.add(dl);
-                decryptedLinks.add(dl);
+            if (dl == null) {
+                continue;
             }
+            dl.setContentUrl(PARAMETER);
+            fp.add(dl);
+            decryptedLinks.add(dl);
         }
         /** Pick qualities, selected by the user END */
         if (decryptedLinks.size() == 0) {
@@ -675,6 +687,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         return videosource;
     }
 
+    @SuppressWarnings("deprecation")
     private DownloadLink getVideoDownloadlink(final Browser br, final LinkedHashMap<String, String[]> foundqualities, final String qualityValue) throws ParseException {
         String directlinkinfo[] = foundqualities.get(qualityValue);
         if (directlinkinfo != null) {
