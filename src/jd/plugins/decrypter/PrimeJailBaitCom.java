@@ -41,7 +41,7 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://");
-        Browser.setRequestIntervalLimitGlobal("primejailbait.com", 500, 2, 20000);
+        Browser.setRequestIntervalLimitGlobal("primejailbait.com", 50, 15, 1000);
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("images/404\\.png\"") || br.getURL().equals("http://primejailbait.com/404/") || br.getHttpConnection().getResponseCode() == 404) {
