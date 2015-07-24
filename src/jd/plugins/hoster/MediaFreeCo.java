@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -49,6 +48,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -56,44 +56,43 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafree.co" }, urls = { "https?://(www\\.)?mediafree\\.co/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class MediaFreeCo extends PluginForHost {
+public class MediaFreeCo extends antiDDoSForHost {
 
-    private String                         correctedBR                  = "";
-    private String                         passCode                     = null;
-    private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private String               correctedBR                  = "";
+    private String               passCode                     = null;
+    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://mediafree.co";
-    private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String  COOKIE_HOST                  = "http://mediafree.co";
+    private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(mediafree\\.co)";
-    private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
-    private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean           VIDEOHOSTER                  = false;
-    private static final boolean           VIDEOHOSTER_2                = false;
-    private static final boolean           SUPPORTSHTTPS                = false;
-    private final boolean                  ENABLE_RANDOM_UA             = false;
-    private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
+    private static final String  DOMAINS                      = "(mediafree\\.co)";
+    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
+    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean VIDEOHOSTER                  = false;
+    private static final boolean VIDEOHOSTER_2                = false;
+    private static final boolean SUPPORTSHTTPS                = false;
+
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = -2;
-    private static final int               FREE_MAXDOWNLOADS            = 1;
-    private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = -2;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = -2;
+    private static final int     FREE_MAXDOWNLOADS            = 1;
+    private static final boolean ACCOUNT_FREE_RESUME          = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = -2;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
-    private static AtomicInteger           maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
-    private static Object                  LOCK                         = new Object();
-    private String                         fuid                         = null;
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private static Object        LOCK                         = new Object();
+    private String               fuid                         = null;
 
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.6.1
@@ -126,7 +125,6 @@ public class MediaFreeCo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
-        prepBrowser(br);
         setFUID(link);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|The file you were looking for could not be found)").matches()) {
@@ -270,7 +268,7 @@ public class MediaFreeCo extends PluginForHost {
                     }
                 }
                 /* end of backward compatibility */
-                sendForm(download1);
+                submitForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();
             }
@@ -394,7 +392,7 @@ public class MediaFreeCo extends PluginForHost {
                 if (!skipWaittime) {
                     waitTime(timeBefore, downloadLink);
                 }
-                sendForm(dlForm);
+                submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
                 dllink = getDllink();
@@ -465,18 +463,12 @@ public class MediaFreeCo extends PluginForHost {
         return false;
     }
 
-    private void prepBrowser(final Browser br) {
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
         /* define custom browser headers and language settings */
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        if (ENABLE_RANDOM_UA) {
-            if (agent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-            }
-            br.getHeaders().put("User-Agent", agent.get());
-        }
+        super.prepBrowser(prepBr, host);
+        prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        return prepBr;
     }
 
     /**
@@ -589,18 +581,21 @@ public class MediaFreeCo extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(final String page) throws Exception {
-        br.getPage(page);
+    @Override
+    protected void getPage(final String page) throws Exception {
+        super.getPage(page);
         correctBR();
     }
 
-    private void postPage(final String page, final String postdata) throws Exception {
-        br.postPage(page, postdata);
+    @Override
+    protected void postPage(final String page, final String postdata) throws Exception {
+        super.postPage(page, postdata);
         correctBR();
     }
 
-    private void sendForm(final Form form) throws Exception {
-        br.submitForm(form);
+    @Override
+    protected void submitForm(final Form form) throws Exception {
+        super.submitForm(form);
         correctBR();
     }
 
@@ -648,22 +643,6 @@ public class MediaFreeCo extends PluginForHost {
             }
         }
         return null;
-    }
-
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     /**
@@ -951,7 +930,6 @@ public class MediaFreeCo extends PluginForHost {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
-                prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -982,7 +960,7 @@ public class MediaFreeCo extends PluginForHost {
                 }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                sendForm(loginform);
+                submitForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -1040,7 +1018,7 @@ public class MediaFreeCo extends PluginForHost {
                     if (dlform == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    sendForm(dlform);
+                    submitForm(dlform);
                     checkErrors(downloadLink, true);
                     dllink = getDllink();
                 }
@@ -1079,6 +1057,11 @@ public class MediaFreeCo extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    // @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
     }
 
 }
