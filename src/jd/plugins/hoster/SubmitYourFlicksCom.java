@@ -70,11 +70,14 @@ public class SubmitYourFlicksCom extends PluginForHost {
         }
         String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>SubmitYourFlicks \\- (.*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>(.*?) - SubmitYourFlicks</title>").getMatch(0);
         }
         DLLINK = br.getRegex("addVariable\\(\"file\", \"(http.*?)\"").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("name=\"FlashVars\" value=\"file=(http.*?)http://(www\\.)?submityourflicks\\.com").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("contentUrl\" content=\"(http://videos\\.cdn\\.submityourflicks\\.com/[^\"]+)\"").getMatch(0);
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
