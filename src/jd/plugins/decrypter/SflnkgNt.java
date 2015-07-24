@@ -25,6 +25,7 @@ import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.SiteType.SiteTemplate;
 
 //Similar to SafeUrlMe (safeurl.me)
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {}, flags = {})
@@ -36,8 +37,8 @@ public class SflnkgNt extends abstractSafeLinking {
      * @return
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "3download.safelinking.net", "7pz.com", "blacklistlink.com", "bidasse.com", "chigontech.com", "anonlink.ml", "deni1743-safelink.tk", "cryptit.so", "animetal-tux.com", "download.isogator.eu", "ceelanka.org", "earningsguide.tk", "ekoice.info", "fastgo.cu.cc", "farrel82protectlink.tk", "ignore.jp", "hydelink.in", "hosmy.com", "i-share.ws", "i7q.com", "hidemylinks.net", "kenggames.tk", "jessica.suyalynx.com", "gol.li", "link.rolex1494.net", "link.spyluv.com", "link.hentailinkz.com", "linkler.us", "hdclub.eu", "link.yify.info", "links.aniapps.net", "links.bulkseries.com", "links.crv.nu", "links.index-paw.net", "links.quartx.tk", "links.sceper.ws", "links.loadby.us", "lulusafe.tk", "linkshield.org", "matthy.tk", "mtsafelinking.org", "moesubs.tk", "monkwarez.tk", "mylinkz.tk", "nexushd2urlprotector.tytung.com", "ninjasecure.cf", "mway.tk",
-                "nsad.xcarlos.safelinking.net", "oxyl.me", "links.rlsarc.tk", "r4dm.com", "protect.mmportal.info", "rgf.me", "safe.linkninja.net", "safe.dlinks.info", "safe.linksjunk.com", "safelinking.net", "safelinking.com", "safelinking.biz", "safelinker.ga", "safelinknsn.net", "safemylink.com", "safelink.strike-up.net", "roricon.com", "savelinks.net", "safelinking.mobi", "safetater.com", "seclinks.tk", "shorten.ardiansyah.me", "serv021.esy.es", "sflux.tk", "sf.anime4u.ir", "sl.0xxx.in", "shotimedl.tk", "sflnk.tk", "slinx.tk", "trollbridge.org", "sl.unspeakable.org", "switchitonagain.net", "vault.vhsclub.com", "url-shortener.info", "upload.morto.org", "url.4-update.com", "url.bajak.in", "vepeliculasonline.com", "verificar.tk", "t9c.de", "vrrr.in", "yls.re", "sflk.in" };
+        return new String[] { "3download.safelinking.net", "bidasse.com", "anonlink.ml", "deni1743-safelink.tk", "cryptit.so", "fastgo.cu.cc", "hydelink.in", "hosmy.com", "i7q.com", "jessica.suyalynx.com", "link.hentailinkz.com", "linkler.us", "link.yify.info", "links.aniapps.net", "links.bulkseries.com", "links.crv.nu", "links.index-paw.net", "links.sceper.ws", "links.loadby.us", "linkshield.org", "mtsafelinking.org", "mylinkz.tk", "nexushd2urlprotector.tytung.com", "ninjasecure.cf", "nsad.xcarlos.safelinking.net", "oxyl.me", "links.rlsarc.tk", "r4dm.com", "protect.mmportal.info", "rgf.me", "safe.linkninja.net", "safe.dlinks.info", "safe.linksjunk.com", "safelinking.net", "safelinking.com", "safelinker.ga", "safelinknsn.net", "safelink.strike-up.net", "savelinks.net", "safelinking.mobi", "safetater.com", "sf.anime4u.ir", "sl.0xxx.in", "shotimedl.tk", "sflnk.tk", "slinx.tk",
+                "trollbridge.org", "sl.unspeakable.org", "vault.vhsclub.com", "url-shortener.info", "url.bajak.in", "vrrr.in", "yls.re", "sflk.in" };
         // add new domains at the beginning of the array, not the END
     }
 
@@ -118,6 +119,11 @@ public class SflnkgNt extends abstractSafeLinking {
     @Override
     protected String getShortHost() {
         return "sflk.in";
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SafeLinking_SafeLinking;
     }
 
 }
