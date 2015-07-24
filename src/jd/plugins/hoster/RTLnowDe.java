@@ -378,6 +378,7 @@ public class RTLnowDe extends PluginForHost {
                 /* Fallback to lower quality that is available via rtmp */
                 url_rtmp_highest = url_rtmp_highest_valid;
             }
+            /* TODO: Fix- or remove all of the bitrate stuff as it is usually not needed plus it is broken atm. */
             final long calculated_filesize = ((bitrate_max * 1000) / 8) * duration;
             final long calculated_filesize_minimum = (long) (calculated_filesize * 0.9);
             logger.info("Calculated filesize: " + calculated_filesize);
@@ -474,6 +475,7 @@ public class RTLnowDe extends PluginForHost {
         }
     }
 
+    /** Checks wether we know that rtmp url and can download it or not. */
     private boolean isValidRTMPUrl(final String url_rtmp) {
         if (url_rtmp.startsWith("/abr/") || !(url_rtmp.endsWith(".f4v") || url_rtmp.endsWith(".flv"))) {
             return false;
@@ -482,6 +484,7 @@ public class RTLnowDe extends PluginForHost {
         }
     }
 
+    /** Finds the highest quality rtmp url regardless if its valid or not. */
     @SuppressWarnings("unchecked")
     private String findHighestRTMPQuality(final ArrayList<Object> ressourcelist) {
         long bitrate_temp = 0;
@@ -499,6 +502,7 @@ public class RTLnowDe extends PluginForHost {
         return url_rtmp_highest;
     }
 
+    /** Finds the highest quality rtmp url that is valid. */
     @SuppressWarnings("unchecked")
     private String findHighestValidRTMPQuality(final ArrayList<Object> ressourcelist) {
         long bitrate_temp = 0;
