@@ -958,7 +958,7 @@ public class DirectHTTP extends PluginForHost {
                     br.followConnection();
                     return this.requestFileInformation(downloadLink);
                 } else {
-                    this.br.followConnection();
+                    final String pageContent = this.br.followConnection();
                     if (StringUtils.endsWithCaseInsensitive(br.getURL(), "mp4")) {
                         final String videoURL = br.getRegex("source type=\"video/mp4\"\\s*src=\"(https?://.*)\"").getMatch(0);
                         if (videoURL != null && !hasCustomDownloadURL()) {
@@ -967,20 +967,35 @@ public class DirectHTTP extends PluginForHost {
                             // return this.requestFileInformation(downloadLink);
                         }
                     }
-
+                    if (hasCustomDownloadURL()) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                     /* search urls */
                     /*
                      * TODO: change to org.appwork.utils.parser.HTMLParser.findUrls with next major-update
                      */
-                    final ArrayList<String> follow = DirectHTTP.findUrls(this.br.toString());
-                    /*
-                     * if we already tried htmlRedirect or not exactly one link found, throw File not available
-                     */
-                    if (follow.size() != 1 || hasCustomDownloadURL()) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    final ArrayList<String> embeddedLinks = DirectHTTP.findUrls(pageContent);
+
+                    String embeddedLink = null;
+                    if (embeddedLinks.size() == 1) {
+                        embeddedLink = embeddedLinks.get(0);
+                    } else {
+                        final String extension = Files.getExtension(getDownloadURL(downloadLink));
+                        for (final String check : embeddedLinks) {
+                            if (StringUtils.endsWithCaseInsensitive(check, extension)) {
+                                if (embeddedLink == null) {
+                                    embeddedLink = check;
+                                } else {
+                                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                                }
+                            }
+                        }
+                        if (embeddedLink == null) {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
                     }
                     /* found one valid url */
-                    setDownloadURL(follow.get(0).trim(), downloadLink);
+                    setDownloadURL(embeddedLink, downloadLink);
                     return this.requestFileInformation(downloadLink);
                 }
             } else {
