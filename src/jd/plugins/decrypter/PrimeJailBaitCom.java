@@ -92,7 +92,7 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
                     distribute(dl);
                 }
                 currentPage++;
-            } while (thumbinfo.length >= pics_per_page);
+            } while (true);
         } else {
             final String ID = new Regex(parameter, "/id/(\\d+)").getMatch(0);
             String finallink = br.getRegex("<div id=\"bigwall\" class=\"right\">[\t\n\r ]+<img border=0 src=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
