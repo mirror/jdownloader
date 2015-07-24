@@ -837,12 +837,7 @@ public class FileFactory extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 dlUrl = null;
-                try {
-                    // @since JD2
-                    con = br.openHeadConnection(downloadLink.getDownloadURL());
-                } catch (final Throwable t) {
-                    con = br.openGetConnection(downloadLink.getDownloadURL());
-                }
+                con = br.openGetConnection(downloadLink.getDownloadURL());
                 if (con.isContentDisposition()) {
                     downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(con));
                     downloadLink.setDownloadSize(con.getLongContentLength());
@@ -1202,12 +1197,7 @@ public class FileFactory extends PluginForHost {
                 url = urls.get(urls.size() - 1);
             }
             try {
-                try {
-                    // @since JD2
-                    con = br.openHeadConnection(url);
-                } catch (final Throwable t) {
-                    con = br.openGetConnection(url);
-                }
+                con = br.openGetConnection(url);
                 if (!con.isContentDisposition() && br.getRedirectLocation() != null) {
                     // redirect, we want to store and continue down the rabbit hole!
                     final String redirect = br.getRedirectLocation();
