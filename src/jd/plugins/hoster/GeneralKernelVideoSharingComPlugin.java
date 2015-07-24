@@ -48,19 +48,19 @@ public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
     // other #3: Plugins with "high security" removed 2015-07-02: BravoTubeNet, BravoTeensCom REMAINING ONES: TubeWolfCom, AlphaPornoCom
     /**
      * specifications that have to be met for hosts to be added here:
-     *
+     * 
      * -404 error response on file not found
-     *
+     * 
      * -Possible filename inside URL
-     *
+     * 
      * -No serverside downloadlimits
-     *
+     * 
      * -No account support
-     *
+     * 
      * -Final downloadlink that fits the RegExes
-     *
+     * 
      * -Website should NOT link to external sources (needs decrypter)
-     *
+     * 
      * */
 
     /* Extension which will be used if no correct extension is found */
@@ -180,6 +180,11 @@ public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
             }
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
+                final String redirect_url = this.br.getHttpConnection().getRequest().getUrl();
+                if (redirect_url != null) {
+                    DLLINK = redirect_url;
+                    logger.info("DLLINK: " + DLLINK);
+                }
                 downloadLink.setProperty("directlink", DLLINK);
             }
             return AvailableStatus.TRUE;
