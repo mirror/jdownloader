@@ -123,7 +123,7 @@ public class JBbergCom extends PluginForDecrypt {
                 br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br2.getHeaders().put("Accept", "*/*");
                 br2.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                br2.postPage("http://jheberg.net/get/link/", "slug=" + slug + "&hoster=" + currenthoster);
+                br2.postPage("http://www.jheberg.net/get/link/", "slug=" + slug + "&hoster=" + currenthoster);
                 finallink = br2.getRegex("\"url\": \"(http[^<>\"]*?)\"").getMatch(0);
             }
             // not sure of best action here, but seems some are either down or require account?. Continue with the results
