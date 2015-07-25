@@ -287,6 +287,11 @@ public class LeechMyLink extends antiDDoSForHost {
                 } else if (StringUtils.startsWithCaseInsensitive(msg, "Link is not recognized")) {
                     // {"status":"error","msg":"Link is not recognized","link":"urlremoved","isVideo":false}
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, 30 * 60 * 1000l);
+                } else if (StringUtils.endsWithCaseInsensitive(msg, "You are not logged in")) {
+                    // {"status":"error","msg":"You are not logged in","link":"http:\/\/www.share-online.biz\/dl\/....","isVideo":false}
+                    // dump cookies
+                    dumpAccountSessionInfo();
+                    handleErrorRetries(msg, 2, 10 * 60 * 1000l);
                 }
             }
             if (inValidate(dllink)) {
