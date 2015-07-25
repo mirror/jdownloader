@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitter.com" }, urls = { "https?://(www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/(media|status/\\d+.*?)|https://twitter\\.com/i/cards/tfw/v1/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitter.com", "t.co" }, urls = { "https?://(www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/(media|status/\\d+.*?)|https://twitter\\.com/i/cards/tfw/v1/\\d+", "https?://t\\.co/[a-zA-Z0-9]+" }, flags = { 0, 0 })
 public class TwitterCom extends PornEmbedParser {
 
     public TwitterCom(PluginWrapper wrapper) {
@@ -42,6 +42,7 @@ public class TwitterCom extends PornEmbedParser {
     private static final String TYPE_VIDEO     = "https://twitter\\.com/i/cards/tfw/v1/\\d+";
     private static final String TYPE_USER_ALL  = "https?://(www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/media";
     private static final String TYPE_USER_POST = "https?://(www\\.)?twitter\\.com/status/\\d+.*?";
+    private static final String TYPE_REDIRECT  = "https?://t\\.co/[a-zA-Z0-9]+";
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -51,6 +52,20 @@ public class TwitterCom extends PornEmbedParser {
         final String user = new Regex(parameter, "twitter\\.com/([A-Za-z0-9_\\-]+)/").getMatch(0);
         String status_id = null;
 
+        if (parameter.matches(TYPE_REDIRECT)) {
+            this.br.setFollowRedirects(false);
+            br.getPage(parameter);
+            String finallink = this.br.getRedirectLocation();
+            if (finallink == null) {
+                finallink = this.br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+;URL=(http[^<>\"]*?)\"").getMatch(0);
+            }
+            if (finallink == null) {
+                return null;
+            }
+            decryptedLinks.add(this.createDownloadlink(finallink));
+            return decryptedLinks;
+        }
+
         br.setFollowRedirects(true);
         /* Some profiles can only be accessed if they accepted others as followers --> Log in if the user has added his twitter account */
         if (getUserLogin(false)) {
@@ -59,7 +74,7 @@ public class TwitterCom extends PornEmbedParser {
             logger.info("No account available or login failed");
         }
         br.getPage(parameter);
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+        if (br.getRequest().getHttpConnection().getResponseCode() == 403 || br.getRequest().getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setFinalFileName(urlfilename);
             offline.setAvailable(false);
@@ -79,6 +94,11 @@ public class TwitterCom extends PornEmbedParser {
             status_id = new Regex(parameter, "(\\d+)$").getMatch(0);
             /* First check for external urls */
             decryptedLinks.addAll(this.findEmbedUrls(null));
+            String externID = this.br.getRegex("u\\-linkClean js\\-openLink\" href=\"(https?://t\\.co/[^<>\"]*?)\"").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(this.createDownloadlink(externID));
+                return decryptedLinks;
+            }
             if (decryptedLinks.isEmpty()) {
                 String dllink = br.getRegex("playlist\\&quot;:\\[\\{\\&quot;source\\&quot;:\\&quot;(https[^<>\"]*?\\.webm)").getMatch(0);
                 if (dllink == null) {

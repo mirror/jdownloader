@@ -53,7 +53,7 @@ public class DropVideoCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         br.getPage("/embed/" + getFUID(link));
-        if (br.containsHTML("video_notfound2\\.png\"")) {
+        if (br.containsHTML("video_notfound2\\.png\"|/imgs/video_inactivity\\d+\\.png")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("var vtitle = \"([^<>\"]*?)\";").getMatch(0);
@@ -78,6 +78,17 @@ public class DropVideoCom extends PluginForHost {
             dllink = br.getRegex("\"(http://fs\\d+\\.dropvideo\\.com/v/[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
+            final String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+            if (cryptedScripts != null && cryptedScripts.length != 0) {
+                for (String crypted : cryptedScripts) {
+                    dllink = decodeDownloadLink(crypted);
+                    if (dllink != null) {
+                        break;
+                    }
+                }
+            }
+        }
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
@@ -86,6 +97,36 @@ public class DropVideoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String decodeDownloadLink(final String s) {
+        String decoded = null;
+
+        try {
+            Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
+
+            String p = params.getMatch(0).replaceAll("\\\\", "");
+            int a = Integer.parseInt(params.getMatch(1));
+            int c = Integer.parseInt(params.getMatch(2));
+            String[] k = params.getMatch(3).split("\\|");
+
+            while (c != 0) {
+                c--;
+                if (k[c].length() != 0) {
+                    p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                }
+            }
+
+            decoded = p;
+        } catch (Exception e) {
+        }
+
+        String finallink = null;
+        if (decoded != null) {
+            /* Open regex is possible because in the unpacked JS there are usually only 1 links */
+            finallink = new Regex(decoded, "(\"|\\')(https?://[^<>\"\\']*?\\.(avi|flv|mkv|mp4))(\"|\\')").getMatch(1);
+        }
+        return finallink;
     }
 
     private String getFUID(final DownloadLink dl) {

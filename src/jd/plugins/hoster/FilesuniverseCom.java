@@ -84,9 +84,9 @@ public class FilesuniverseCom extends PluginForHost {
     private static final int               WAITSECONDSMAX               = 100;
     private static final int               WAITSECONDSFORCED            = 5;
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = false;
-    private static final int               FREE_MAXCHUNKS               = 1;
-    private static final int               FREE_MAXDOWNLOADS            = 1;
+    private static final boolean           FREE_RESUME                  = true;
+    private static final int               FREE_MAXCHUNKS               = 0;
+    private static final int               FREE_MAXDOWNLOADS            = 20;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
     private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
     private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
@@ -108,7 +108,7 @@ public class FilesuniverseCom extends PluginForHost {
     // limit-info:
     // protocol: no https
     // captchatype: solvemedia
-    // other:
+    // other: solvemedia https
     // TODO: Add case maintenance + alternative filesize check
 
     @SuppressWarnings("deprecation")
@@ -217,6 +217,7 @@ public class FilesuniverseCom extends PluginForHost {
             link.setMD5Hash(fileInfo[2].trim());
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+        fileInfo[0] = Encoding.htmlDecode(fileInfo[0]);
         link.setName(fileInfo[0].trim());
         if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
             /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
@@ -468,6 +469,7 @@ public class FilesuniverseCom extends PluginForHost {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                     final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                    sm.setSecure(true);
                     File cf = null;
                     try {
                         cf = sm.downloadCaptcha(getLocalCaptchaFile());

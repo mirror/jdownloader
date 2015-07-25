@@ -64,7 +64,6 @@ public class RTLnowDe extends PluginForHost {
 
     /* Settings */
     private final String                  DEFAULTTIMEOUT               = "DEFAULTTIMEOUT";
-    private final String                  MINIMUM_FILESIZE             = "MINIMUM_FILESIZE";
 
     /*
      * http://hds\\.fra\\.[^/]+/hds\\-vod\\-enc/[^/]+/videos/<seriesID (same for all episodes of one
@@ -331,6 +330,10 @@ public class RTLnowDe extends PluginForHost {
             final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries_rtmp, "files/items");
             if (ressourcelist == null || ressourcelist.size() == 0) {
                 if (!isFree) {
+                    /*
+                     * We found no downloadurls plus the video is not viewable for free --> Paid content. TODO: Maybe check if it is
+                     * downloadable once a user bought it.
+                     */
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich (muss gekauft werden)");
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -375,14 +378,9 @@ public class RTLnowDe extends PluginForHost {
                 /* Invalid rtmp url --> this should never happen */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich [Kein gültiger Downloadlink gefunden]");
             } else if (!isValidRTMPUrl(url_rtmp_highest)) {
-                /* Fallback to lower quality that is available via rtmp */
+                /* Fallback to lower bitrate that is available via rtmp. */
                 url_rtmp_highest = url_rtmp_highest_valid;
             }
-            /* TODO: Fix- or remove all of the bitrate stuff as it is usually not needed plus it is broken atm. */
-            final long calculated_filesize = ((bitrate_max * 1000) / 8) * duration;
-            final long calculated_filesize_minimum = (long) (calculated_filesize * 0.9);
-            logger.info("Calculated filesize: " + calculated_filesize);
-            logger.info("Minimum filesize: " + calculated_filesize_minimum);
 
             /*
              * Either we already got rtmp urls or we can try to build them via the playpath-part of our HDS manifest url (see code BEFORE
@@ -431,19 +429,7 @@ public class RTLnowDe extends PluginForHost {
                 rtmp.setTimeOut(-1);
             }
 
-            final boolean downloadSuccessful = ((RTMPDownload) dl).startDownload();
-
-            if (this.getPluginConfig().getBooleanProperty(MINIMUM_FILESIZE, false) && downloadLink.getDownloadCurrent() < calculated_filesize_minimum && downloadSuccessful) {
-                /*
-                 * Maybe the downloaded file is too small - some rtmp servers tend to just stop after a short time even though the download
-                 * is by far not complete --> Reset progress and try again later! This should be a very rare errorcase!
-                 */
-                try {
-                    downloadLink.setChunksProgress(null);
-                } catch (final Throwable e) {
-                }
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Downloaded file is too small", 5 * 60 * 1000l);
-            }
+            ((RTMPDownload) dl).startDownload();
 
         } else {
             /* Now we're sure that our .mp4 availablecheck-filename is correct */
@@ -725,7 +711,6 @@ public class RTLnowDe extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DEFAULTTIMEOUT, JDL.L("plugins.hoster.rtlnowde.enabledefaulttimeout", "Enable default timeout?")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), MINIMUM_FILESIZE, JDL.L("plugins.hoster.rtlnowde.enable_minimum_filesize", "Enable minimum filesize to try to prevent too small/crippled files?")).setDefaultValue(false));
     }
 
 }

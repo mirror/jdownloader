@@ -58,6 +58,7 @@ public class TubeRampantTv extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        String ext = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -88,39 +89,47 @@ public class TubeRampantTv extends PluginForHost {
             br.getPage(playerConfigUrl);
             DLLINK = br.getRegex("defaultVideo:(https?://[^<>\"]*?);").getMatch(0);
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
+        if (DLLINK != null) {
+            DLLINK = Encoding.htmlDecode(DLLINK);
+            ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            /* Make sure that we get a correct extension */
+            if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
+                ext = default_Extension;
+            }
+            if (!filename.endsWith(ext)) {
+                filename += ext;
+            }
+            downloadLink.setFinalFileName(filename);
+            final Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                try {
+                    con = openConnection(br2, DLLINK);
+                } catch (final BrowserException e) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                downloadLink.setProperty("directlink", DLLINK);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        } else {
+            ext = ".mp4";
         }
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
         downloadLink.setFinalFileName(filename);
-        final Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            try {
-                con = openConnection(br2, DLLINK);
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", DLLINK);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -135,16 +144,36 @@ public class TubeRampantTv extends PluginForHost {
                 }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        } else if (DLLINK == null) {
+            /* RTMP */
+            final String rtmp_path = br.getRegex("flvMask:([^<>\"]*?);").getMatch(0);
+            final String rtmp_host = br.getRegex("conn:(rtmp://[^<>\"]*?);").getMatch(0);
+            if (rtmp_path == null || rtmp_host == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = new RTMPDownload(this, downloadLink, rtmp_host);
+            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+
+            rtmp.setPlayPath("mp4:" + rtmp_path);
+            rtmp.setPageUrl(this.br.getURL());
+            rtmp.setSwfVfy("https://static.rampant.tv/swf/player.swf");
+            rtmp.setApp("tubevideo/");
+            rtmp.setUrl(rtmp_host);
+            rtmp.setResume(true);
+
+            ((RTMPDownload) dl).startDownload();
+        } else {
+            /* HTTP */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                }
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
     }

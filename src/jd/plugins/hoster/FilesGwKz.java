@@ -115,8 +115,9 @@ public class FilesGwKz extends PluginForHost {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setCookie("http://files.gw.kz", "gw_lang", "en");
+        this.br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Запрашиваемый вами файл не найден")) {
+        if (br.containsHTML(">Запрашиваемый вами файл не найден") || !this.br.getURL().contains("files.gw.kz")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(HTML_MAINTENANCE)) {
             return AvailableStatus.TRUE;
