@@ -62,6 +62,15 @@ public class FileSharkPl extends PluginForHost {
 
     private static final String DAILY_LIMIT = "30 GB";
     private static final String POLAND_ONLY = ">Strona jest dostępna wyłącznie dla użytkowników znajdujących się na terenie Polski<";
+    private Account             currentAccount;
+
+    public Account getCurrentAccount() {
+        return currentAccount;
+    }
+
+    public void setCurrentAccount(Account currentAccount) {
+        this.currentAccount = currentAccount;
+    }
 
     private long checkForErrors() throws PluginException {
         if (br.containsHTML("Osiągnięto maksymalną liczbę sciąganych jednocześnie plików.")) {
@@ -111,10 +120,16 @@ public class FileSharkPl extends PluginForHost {
 
         // for Premium only ! Read description above!
         final PluginForHost hosterPlugin = JDUtilities.getPluginForHost("fileshark.pl");
-        final Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
+        Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
+        // if called from handlePremium then
+        // use the same account which is chosen by account usage rules
+        Account curAccount = getCurrentAccount();
+        if ((curAccount != null) && (!aa.equals(curAccount))) {
+            aa = curAccount;
+        }
         if (aa != null) {
             try {
-                login(aa, false);
+                login(aa, true);
             } catch (Exception e) {
 
             }
@@ -343,7 +358,8 @@ public class FileSharkPl extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        login(account, false);
+        login(account, true);
+        setCurrentAccount(account);
         requestFileInformation(downloadLink);
         String downloadURL = downloadLink.getDownloadURL();
         br.getPage(downloadURL);
