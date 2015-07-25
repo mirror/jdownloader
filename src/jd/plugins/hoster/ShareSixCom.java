@@ -735,7 +735,7 @@ public class ShareSixCom extends PluginForHost {
             expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
         }
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
-            ai.setProperty("free", true);
+            account.setProperty("free", true);
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             try {
                 account.setType(AccountType.FREE);
@@ -746,7 +746,7 @@ public class ShareSixCom extends PluginForHost {
             }
             ai.setStatus("Registered (free) account");
         } else {
-            ai.setProperty("free", false);
+            account.setProperty("free", false);
             ai.setValidUntil(expire_milliseconds);
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             try {
@@ -796,11 +796,6 @@ public class ShareSixCom extends PluginForHost {
                 if (!br.getURL().contains("/myaccount")) {
                     getPage("/myaccount");
                 }
-                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<|>Premium account expire)").matches()) {
-                    account.setProperty("free", true);
-                } else {
-                    account.setProperty("free", false);
-                }
                 /* Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);
@@ -830,12 +825,16 @@ public class ShareSixCom extends PluginForHost {
             if (dllink == null) {
                 br.getPage(downloadLink.getDownloadURL());
                 this.specialWayPost();
-                dllink = new Regex(correctedBR, "\"(/f/download/[A-Za-z0-9]+)\"").getMatch(0);
+                dllink = new Regex(correctedBR, "\"(/f/(?:download/)?[A-Za-z0-9]+[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 dllink = COOKIE_HOST + dllink;
+            }
+            if (!dllink.contains("download/")) {
+                final String download_id = new Regex(dllink, "/f/([A-Za-z0-9]+)").getMatch(0);
+                dllink = COOKIE_HOST + "/f/download/" + download_id;
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);

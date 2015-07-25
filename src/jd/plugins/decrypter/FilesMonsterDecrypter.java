@@ -48,6 +48,10 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
     public static final String  FILESIZEREGEX            = "\">File size:</td>[\t\n\r ]+<[^<>]+>(.*?)</td>";
     private static final String ADDLINKSACCOUNTDEPENDANT = "ADDLINKSACCOUNTDEPENDANT";
 
+    /**
+     * TODO: Seems like some urls only have a free download option available if a certain Referer is present e.g.
+     * https://board.jdownloader.org/showpost.php?p=343469&postcount=6
+     */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

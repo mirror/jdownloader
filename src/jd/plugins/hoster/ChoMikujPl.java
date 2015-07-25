@@ -366,19 +366,35 @@ public class ChoMikujPl extends PluginForHost {
                 }
                 postPage(br, "http://chomikuj.pl/action/License/DownloadWarningAccept", "FileId=" + fid + "&SerializedUserSelection=" + Encoding.urlEncode(serializedUserSelection) + "&SerializedOrgFile=" + Encoding.urlEncode(serializedOrgFile) + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken));
             }
-            // this can happen also
             if (cbr.containsHTML("/action/License/acceptLargeTransfer")) {
+                // this can happen also
                 // problem is.. general cleanup is wrong, response is = Content-Type: application/json; charset=utf-8
                 cleanupBrowser(cbr, JSonUtils.unescape(br.toString()));
                 // so we can get output in logger for debug purposes.
                 logger.info(cbr.toString());
                 final Form f = cbr.getFormbyAction("/action/License/acceptLargeTransfer");
-                if (f != null) {
-                    submitForm(br, f);
-                } else {
-                    // so statserv will pickup
+                if (f == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                submitForm(br, f);
+            } else if (cbr.containsHTML("/action/License/AcceptOwnTransfer")) {
+                /*
+                 * Some files on chomikuj hoster are available to download using transfer from file owner. When there's no owner transfer
+                 * left then transfer is reduced from downloader account (downloader is asked if he wants to use his own transfer). We have
+                 * to confirm this here.
+                 */
+                // problem is.. general cleanup is wrong, response is = Content-Type: application/json; charset=utf-8
+                cleanupBrowser(cbr, JSonUtils.unescape(br.toString()));
+                // so we can get output in logger for debug purposes.
+                logger.info(cbr.toString());
+                final Form f = cbr.getFormbyAction("/action/License/AcceptOwnTransfer");
+                if (f == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                f.remove(null);
+                f.remove(null);
+                f.put("__RequestVerificationToken", Encoding.urlEncode(requestVerificationToken));
+                submitForm(br, f);
             }
 
             DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);

@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "x-art.com" }, urls = { "^https?://(www\\.)?x-art\\.com/(members/)?.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "x-art.com" }, urls = { "^https?://(www\\.)?x-art\\.com/(members/)?.+" }, flags = { 0 })
 public class XArt extends PluginForDecrypt {
 
     public XArt(PluginWrapper wrapper) {
@@ -44,12 +44,10 @@ public class XArt extends PluginForDecrypt {
 
     @Override
     protected DownloadLink createDownloadlink(String link) {
+        final String original_url = link;
         link = link.replaceFirst("x-art\\.com", "x-artdecrypted.com");
-        DownloadLink ret = super.createDownloadlink(link);
-        try {
-            ret.setContentUrl(link);
-        } catch (Throwable e) {
-        }
+        final DownloadLink ret = super.createDownloadlink(link);
+        ret.setContentUrl(original_url);
         return ret;
     }
 
