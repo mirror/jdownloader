@@ -153,7 +153,7 @@ public class PlayVidCom extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("https://accounts.playvid.com/login/playvid", "remember_me=on&back_url=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://accounts.playvid.com/de/login/playvid", "remember_me=on&back_url=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 final String lang = System.getProperty("user.language");
                 if (br.containsHTML("\"status\":\"error\"")) {
                     if ("de".equalsIgnoreCase(lang)) {
