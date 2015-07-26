@@ -222,7 +222,7 @@ public class PeekVidsCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("https://accounts.playvid.com/login/peekvids", "remember_me=on&back_url=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://accounts.playvid.com/de/login/peekvids", "remember_me=on&back_url=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 final String status = getJson("status");
                 final String redirect = getJson("redirect");
                 if (!"ok".equals(status)) {
@@ -308,7 +308,7 @@ public class PeekVidsCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
