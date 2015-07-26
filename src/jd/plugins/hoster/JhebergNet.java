@@ -50,6 +50,7 @@ public class JhebergNet extends PluginForHost {
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
 
     private static final String                            DOMAIN                       = "http://jheberg.net/";
+    private static final String                            HOST                         = "http://WWW.jheberg.net/";
     private static final String                            NICE_HOST                    = "jheberg.net";
     private int                                            STATUSCODE                   = 0;
     private static final String                            NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
@@ -195,7 +196,7 @@ public class JhebergNet extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     *
+     * 
      * @param error
      *            : The name of the error
      * @param maxRetries
@@ -288,7 +289,7 @@ public class JhebergNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                accessAPISafe(DOMAIN + "login/");
+                accessAPISafe(HOST + "login/");
                 final String token = getToken();
                 if (token == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -297,7 +298,7 @@ public class JhebergNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                this.postAPISafe(DOMAIN + "login/", "csrfmiddlewaretoken=" + token + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=on");
+                this.postAPISafe(HOST + "login/", "csrfmiddlewaretoken=" + token + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=on");
                 if (!br.containsHTML(" <a href=\"/logout/\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -387,7 +388,7 @@ public class JhebergNet extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      * */
     private String getJson(final String key) {
