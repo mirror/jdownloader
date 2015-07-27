@@ -1540,10 +1540,11 @@ public class LinkCrawler {
                                 sourcePackage = null;
                             }
                         }
-                        long startTime = System.currentTimeMillis();
-                        List<DownloadLink> hosterLinks = null;
+                        final long startTime = System.currentTimeMillis();
+                        final List<CrawledLink> crawledLinks = new ArrayList<CrawledLink>();
                         try {
-                            hosterLinks = wplg.getDownloadLinks(url, sourcePackage);
+                            wplg.setCurrentLink(possibleCryptedLink);
+                            final List<DownloadLink> hosterLinks = wplg.getDownloadLinks(url, sourcePackage);
                             if (hosterLinks != null) {
                                 final UrlProtection protection = wplg.getUrlProtection(hosterLinks);
                                 if (protection != null && protection != UrlProtection.UNSET) {
@@ -1553,24 +1554,27 @@ public class LinkCrawler {
                                         }
                                     }
                                 }
+                                for (final DownloadLink hosterLink : hosterLinks) {
+                                    crawledLinks.add(wplg.convert(hosterLink));
+                                }
                             }
                             /* in case the function returned without exceptions, we can clear log */
                             logger.clear();
                         } finally {
+                            wplg.setCurrentLink(null);
                             long endTime = System.currentTimeMillis() - startTime;
                             wplg.getLazyP().updateParseRuntime(endTime);
                             /* close the logger */
                             logger.close();
                         }
-                        if (hosterLinks != null) {
-                            final boolean singleDest = hosterLinks.size() == 1;
-                            for (final DownloadLink hosterLink : hosterLinks) {
-                                final CrawledLink link = new CrawledLink(hosterLink);
+                        if (crawledLinks.size() > 0) {
+                            final boolean singleDest = crawledLinks.size() == 1;
+                            for (final CrawledLink crawledLink : crawledLinks) {
                                 /*
                                  * forward important data to new ones
                                  */
-                                forwardCrawledLinkInfos(possibleCryptedLink, link, parentLinkModifier, sourceURLs, singleDest);
-                                handleFinalCrawledLink(link);
+                                forwardCrawledLinkInfos(possibleCryptedLink, crawledLink, parentLinkModifier, sourceURLs, singleDest);
+                                handleFinalCrawledLink(crawledLink);
                             }
                         }
                     } finally {
@@ -1620,18 +1624,18 @@ public class LinkCrawler {
 
     public String getReferrerUrl(final CrawledLink link) {
         if (link != null) {
-            LinkCollectingJob job = link.getSourceJob();
+            final LinkCollectingJob job = link.getSourceJob();
             if (job != null) {
                 final String customSourceUrl = job.getCustomSourceUrl();
                 if (customSourceUrl != null) {
                     return customSourceUrl;
                 }
             }
-            if (this instanceof JobLinkCrawler) {
-                job = ((JobLinkCrawler) this).getJob();
-                if (job != null) {
-                    return job.getCustomSourceUrl();
-                }
+        }
+        if (this instanceof JobLinkCrawler) {
+            final LinkCollectingJob job = ((JobLinkCrawler) this).getJob();
+            if (job != null) {
+                return job.getCustomSourceUrl();
             }
         }
         return null;
@@ -2252,17 +2256,21 @@ public class LinkCrawler {
                         wplg.setCrawler(this);
                         wplg.setLinkCrawlerAbort(new LinkCrawlerAbort(generation, this));
                         decryptedPossibleLinks = wplg.decryptLink(cryptedLink);
+                        if (decryptedPossibleLinks != null) {
+                            dist.distribute(decryptedPossibleLinks.toArray(new DownloadLink[decryptedPossibleLinks.size()]));
+                        }
                         /* in case we return normally, clear the logger */
                         logger.clear();
                     } finally {
                         /* close the logger */
-                        logger.close();
                         wplg.setLinkCrawlerAbort(null);
                         distributeLinksDelayer.setDelayerEnabled(false);
                         /* make sure we dont have any unprocessed delayed Links */
                         distributeLinksDelayer.delayedrun();
+                        wplg.setCurrentLink(null);
                         long endTime = System.currentTimeMillis() - startTime;
                         lazyC.updateCrawlRuntime(endTime);
+                        logger.close();
                     }
                 } finally {
                     if (lct != null) {
@@ -2276,9 +2284,7 @@ public class LinkCrawler {
                     /* remove distributer from plugin */
                     wplg.setDistributer(null);
                 }
-                if (decryptedPossibleLinks != null) {
-                    dist.distribute(decryptedPossibleLinks.toArray(new DownloadLink[decryptedPossibleLinks.size()]));
-                } else {
+                if (decryptedPossibleLinks == null) {
                     this.handleBrokenCrawledLink(cryptedLink);
                 }
                 if (brokenCrawler != null) {

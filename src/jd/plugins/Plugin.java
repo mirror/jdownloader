@@ -34,6 +34,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
 import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
@@ -81,6 +82,7 @@ public abstract class Plugin implements ActionListener {
 
     protected final CopyOnWriteArrayList<File>                    cleanUpCaptchaFiles = new CopyOnWriteArrayList<File>();
     private static final HashMap<String, HashMap<String, Object>> CACHE               = new HashMap<String, HashMap<String, Object>>();
+    private CrawledLink                                           currentLink         = null;
 
     public void setLogger(Logger logger) {
         if (logger == null) {
@@ -90,8 +92,35 @@ public abstract class Plugin implements ActionListener {
         this.logger = logger;
     }
 
+    protected String getBrowserReferrer() {
+        final LinkCrawler crawler = getCrawler();
+        if (crawler != null) {
+            return crawler.getReferrerUrl(getCurrentLink());
+        }
+        return null;
+    }
+
+    public CrawledLink getCurrentLink() {
+        return currentLink;
+    }
+
+    public void setCurrentLink(CrawledLink currentLink) {
+        this.currentLink = currentLink;
+    }
+
     public Logger getLogger() {
         return logger;
+    }
+
+    protected LinkCrawler getCrawler() {
+        if (Thread.currentThread() instanceof LinkCrawlerThread) {
+            /* not sure why we have this here? */
+            final LinkCrawler ret = ((LinkCrawlerThread) Thread.currentThread()).getCurrentLinkCrawler();
+            if (ret != null) {
+                return ret;
+            }
+        }
+        return null;
     }
 
     public PluginCache getCache() {
@@ -385,6 +414,10 @@ public abstract class Plugin implements ActionListener {
         for (File clean : cleanUpCaptchaFiles) {
             clean.delete();
         }
+    }
+
+    public CrawledLink convert(DownloadLink link) {
+        return new CrawledLink(link);
     }
 
     /**
