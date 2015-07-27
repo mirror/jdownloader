@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 30002 $", interfaceVersion = 2, names = { "pxhst.co" }, urls = { "http://(www\\.)?(pixhst\\.com|pxhst\\.co)/pictures/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 30002 $", interfaceVersion = 3, names = { "pxhst.co" }, urls = { "http://(www\\.)?(pixhst\\.com|pxhst\\.co)/pictures/\\d+" }, flags = { 0 })
 public class PixhstCom extends PluginForHost {
 
     public PixhstCom(PluginWrapper wrapper) {
@@ -40,6 +40,10 @@ public class PixhstCom extends PluginForHost {
     }
 
     // note: pixhst.com is parked.
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("pixhst.com/", "pxhst.co/"));
+    }
 
     /* Extension which will be used if no correct extension is found */
     private static final String default_Extension = ".jpeg";
