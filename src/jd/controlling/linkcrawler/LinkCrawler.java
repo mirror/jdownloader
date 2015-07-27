@@ -1618,16 +1618,19 @@ public class LinkCrawler {
         return sources.toArray(new String[] {});
     }
 
-    private String getReferrerUrl(final CrawledLink link) {
+    public String getReferrerUrl(final CrawledLink link) {
         if (link != null) {
-            if (link.getSourceJob() != null) {
-                final String customSourceUrl = link.getSourceJob().getCustomSourceUrl();
-                return customSourceUrl;
-            } else if (this instanceof JobLinkCrawler) {
-                final LinkCollectingJob job = ((JobLinkCrawler) this).getJob();
-                if (job != null) {
-                    final String customSourceUrl = job.getCustomSourceUrl();
+            LinkCollectingJob job = link.getSourceJob();
+            if (job != null) {
+                final String customSourceUrl = job.getCustomSourceUrl();
+                if (customSourceUrl != null) {
                     return customSourceUrl;
+                }
+            }
+            if (this instanceof JobLinkCrawler) {
+                job = ((JobLinkCrawler) this).getJob();
+                if (job != null) {
+                    return job.getCustomSourceUrl();
                 }
             }
         }

@@ -97,6 +97,10 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(false);
         final String parameter = param.toString();
         String protocol = new Regex(parameter, "(https?)://").getMatch(0);
+        final String browserReferrer = getBrowserReferrer();
+        if (browserReferrer != null) {
+            br.setCurrentURL(browserReferrer);
+        }
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         br.getPage(parameter);
         // Link offline
