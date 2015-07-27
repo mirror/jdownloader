@@ -302,6 +302,9 @@ public class DropboxCom extends PluginForHost {
         synchronized (LOCK) {
             setBrowserExclusive();
             br.setFollowRedirects(true);
+            this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0");
+            // this.br.setCookie("dropbox.com", "puc", "");
+            this.br.setCookie("dropbox.com", "goregular", "");
             if (refresh == false) {
                 Cookies accCookies = accountMap.get(account.getUser());
                 if (accCookies != null) {
@@ -312,7 +315,10 @@ public class DropboxCom extends PluginForHost {
             try {
                 br.getPage("https://www.dropbox.com/login");
                 final String lang = System.getProperty("user.language");
-                final String t = br.getRegex("type=\"hidden\" name=\"t\" value=\"([^<>\"]*?)\"").getMatch(0);
+                String t = br.getRegex("type=\"hidden\" name=\"t\" value=\"([^<>\"]*?)\"").getMatch(0);
+                if (t == null) {
+                    t = this.br.getCookie("dropbox.com", "t");
+                }
                 if (t == null) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -321,8 +327,14 @@ public class DropboxCom extends PluginForHost {
                     }
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("/sso_state", "is_xhr=true&t=" + t + "&email=" + Encoding.urlEncode(account.getUser()));
-                br.postPage("/ajax_login", "recaptcha_response_field=&recaptcha_public_key=6LeAbPQSAAAAAB_-BzhpAZbgz51jHD2pGIKsM6L0&remember_me=True&is_xhr=true&t=" + t + "&cont=%2F&require_role=&signup_data=&signup_tag=&login_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
+                br.getHeaders().put("Accept", "text/plain, */*; q=0.01");
+                br.getHeaders().put("Accept-Language", "en-US;q=0.7,en;q=0.3");
+                br.postPage("/needs_captcha", "is_xhr=true&t=" + t + "&email=" + Encoding.urlEncode(account.getUser()));
+                // br.postPage("/sso_state", "is_xhr=true&t=" + t + "&email=" + Encoding.urlEncode(account.getUser()));
+                String postdata = "is_xhr=true&t=" + t + "&cont=%2F&require_role=&signup_data=&third_party_auth_experiment=CONTROL&signup_tag=&login_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=True";
+                postdata += "&login_sd=";
+                postdata += "";
+                br.postPage("/ajax_login", postdata);
                 if (br.getCookie("https://www.dropbox.com", "jar") == null || !"OK".equals(getJson("status"))) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);

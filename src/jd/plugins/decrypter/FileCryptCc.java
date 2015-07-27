@@ -169,6 +169,24 @@ public class FileCryptCc extends PluginForDecrypt {
                 captchaForm.put("adcopy_response", Encoding.urlEncode(code));
                 captchaForm.put("adcopy_challenge", chid);
                 submitForm(captchaForm);
+            } else if (captchaForm != null && captchaForm.containsHTML("capcode")) {
+                final DownloadLink dummie = createDownloadlink(parameter);
+                String result = null;
+                final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                try {
+                    final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
+                    result = kc.handleKeyCaptcha(parameter, dummie);
+                } catch (final Throwable e) {
+                    result = null;
+                }
+                if (result == null) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                if ("CANCEL".equals(result)) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL);
+                }
+                captchaForm.put("capcode", result);
+                submitForm(captchaForm);
             } else if (captcha != null) {
                 // they use recaptcha response field key for non recaptcha.. math sum and text =
                 // http://filecrypt.cc/captcha/captcha.php?namespace=container

@@ -61,13 +61,13 @@ public class HardSexTubeCom extends PluginForHost {
         link.setUrlDownload("http://www.hardsextube.com/video/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/");
     }
 
-    private static final String  NORESUME                           = "NORESUME";
-    private boolean              only_downloadable_via_free_account = false;
-    private static final boolean enable_site                        = false;
-    private static final boolean enable_embed                       = false;
-    private static final boolean enable_embed_2                     = false;
-    private static final boolean enable_mobile                      = true;
-    private String               dllink                             = null;
+    private static final String NORESUME                           = "NORESUME";
+    private boolean             only_downloadable_via_free_account = false;
+    private final boolean       enable_site                        = false;
+    private final boolean       enable_embed                       = false;
+    private final boolean       enable_embed_2                     = false;
+    private final boolean       enable_mobile                      = true;
+    private String              dllink                             = null;
 
     /*
      * TODO: If we cannot avoid the crypto stuff anymore at some point, simply add account support, then we can use:
@@ -102,8 +102,8 @@ public class HardSexTubeCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename.trim());
         downloadLink.setProperty("plain_title", filename);
         if (enable_site) {
-            final String name = br.getRegex("\\&flvserver=(http://[^<>\"]*?)\\&").getMatch(0);
-            final String path = br.getRegex("\\&flv=(/content[^<>\"]*?)\\&").getMatch(0);
+            final String name = br.getRegex("\\&flvserver=(http[^<>\"]*?)\\&").getMatch(0);
+            final String path = br.getRegex("\\&flv=((?:/|%2F)content[^<>\"]*?)\\&").getMatch(0);
             if (name == null || path == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
