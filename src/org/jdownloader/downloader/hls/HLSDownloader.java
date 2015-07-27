@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -28,6 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
+import jd.plugins.download.raf.FileBytesMap;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -305,6 +307,7 @@ public class HLSDownloader extends DownloadInterface {
 
             @Override
             public boolean onGetRequest(GetRequest request, HttpResponse response) {
+                boolean requestOkay = false;
                 try {
                     if (logger != null) {
                         logger.info("START " + request.getRequestedURL());
@@ -320,11 +323,9 @@ public class HLSDownloader extends DownloadInterface {
                     if (processID != Long.parseLong(request.getParameterbyKey("id"))) {
                         return false;
                     }
-
                     if ("/m3u8".equals(request.getRequestedPath())) {
                         String url = request.getParameterbyKey("url");
                         if (url == null) {
-
                             return false;
                         }
                         if (StringUtils.equals(m3uUrl, url)) {
@@ -359,8 +360,8 @@ public class HLSDownloader extends DownloadInterface {
                             OutputStream out = response.getOutputStream(true);
                             out.write(sb.toString().getBytes("UTF-8"));
                             out.flush();
+                            requestOkay = true;
                             return true;
-
                         }
                         return false;
                     } else if ("/download".equals(request.getRequestedPath())) {
@@ -368,64 +369,98 @@ public class HLSDownloader extends DownloadInterface {
                         if (url == null) {
                             return false;
                         }
-                        final Browser br = obr.cloneBrowser();
-                        URLConnectionAdapter connection = null;
-                        try {
-                            connection = br.openGetConnection(url);
-                        } catch (IOException e) {
-                            /* connect timeout, try again */
-                            connection = br.openGetConnection(url);
-                        }
-                        byte[] readWriteBuffer = HLSDownloader.this.instanceBuffer.getAndSet(null);
-                        final boolean instanceBuffer;
-                        if (readWriteBuffer != null) {
-                            instanceBuffer = true;
-                        } else {
-                            instanceBuffer = false;
-                            readWriteBuffer = new byte[32 * 1024];
-                        }
-                        try {
-                            response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
-                            final long length = connection.getCompleteContentLength();
-                            if (length > 0) {
-                                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, Long.toString(length)));
-                            }
-                            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, connection.getContentType()));
-                            OutputStream out = response.getOutputStream(true);
-                            if (meteredThrottledInputStream == null) {
-                                meteredThrottledInputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10));
-                                if (connectionHandler != null) {
-                                    connectionHandler.addThrottledConnection(meteredThrottledInputStream);
+                        OutputStream outputStream = null;
+                        final FileBytesMap fileBytesMap = new FileBytesMap();
+                        retryLoop: for (int retry = 0; retry < 10; retry++) {
+                            final Browser br = obr.cloneBrowser();
+                            final jd.http.requests.GetRequest getRequest = new jd.http.requests.GetRequest(url);
+                            if (fileBytesMap.getFinalSize() > 0) {
+                                if (logger != null) {
+                                    logger.info("Resume(" + retry + "): " + fileBytesMap.toString());
                                 }
+                                final List<Long[]> unMarkedAreas = fileBytesMap.getUnMarkedAreas();
+                                getRequest.getHeaders().put(HTTPConstants.HEADER_REQUEST_RANGE, "bytes=" + unMarkedAreas.get(0)[0] + "-" + unMarkedAreas.get(0)[1]);
+                            }
+                            final URLConnectionAdapter connection;
+                            try {
+                                connection = br.openRequestConnection(getRequest);
+                            } catch (IOException e) {
+                                Thread.sleep(250);
+                                continue retryLoop;
+                            }
+                            byte[] readWriteBuffer = HLSDownloader.this.instanceBuffer.getAndSet(null);
+                            final boolean instanceBuffer;
+                            if (readWriteBuffer != null) {
+                                instanceBuffer = true;
                             } else {
-                                meteredThrottledInputStream.setInputStream(connection.getInputStream());
+                                instanceBuffer = false;
+                                readWriteBuffer = new byte[32 * 1024];
                             }
-                            int len;
-                            while ((len = meteredThrottledInputStream.read(readWriteBuffer)) != -1) {
-                                if (len > 0) {
-                                    out.write(readWriteBuffer, 0, len);
-                                } else {
-                                    out.flush();
+                            try {
+                                if (outputStream == null) {
+                                    response.setResponseCode(HTTPConstants.ResponseCode.get(br.getRequest().getHttpConnection().getResponseCode()));
+                                    final long length = connection.getCompleteContentLength();
+                                    if (length > 0) {
+                                        fileBytesMap.setFinalSize(length);
+                                        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, Long.toString(length)));
+                                    }
+                                    response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, connection.getContentType()));
+                                    outputStream = response.getOutputStream(true);
                                 }
+                                if (meteredThrottledInputStream == null) {
+                                    meteredThrottledInputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10));
+                                    if (connectionHandler != null) {
+                                        connectionHandler.addThrottledConnection(meteredThrottledInputStream);
+                                    }
+                                } else {
+                                    meteredThrottledInputStream.setInputStream(connection.getInputStream());
+                                }
+                                long position = fileBytesMap.getMarkedBytes();
+                                while (true) {
+                                    int len = -1;
+                                    try {
+                                        len = meteredThrottledInputStream.read(readWriteBuffer);
+                                    } catch (IOException e) {
+                                        if (fileBytesMap.getFinalSize() > 0) {
+                                            Thread.sleep(250);
+                                            continue retryLoop;
+                                        } else {
+                                            throw e;
+                                        }
+                                    }
+                                    if (len > 0) {
+                                        outputStream.write(readWriteBuffer, 0, len);
+                                        fileBytesMap.mark(position, len);
+                                        position += len;
+                                    } else if (len == -1) {
+                                        break;
+                                    }
+                                }
+                                outputStream.flush();
+                                outputStream.close();
+                                if (fileBytesMap.getSize() > 0) {
+                                    requestOkay = fileBytesMap.getUnMarkedBytes() == 0;
+                                } else {
+                                    requestOkay = true;
+                                }
+                                return true;
+                            } finally {
+                                if (instanceBuffer) {
+                                    HLSDownloader.this.instanceBuffer.compareAndSet(null, readWriteBuffer);
+                                }
+                                connection.disconnect();
                             }
-                            out.flush();
-                            out.close();
-                            return true;
-                        } finally {
-                            if (instanceBuffer) {
-                                HLSDownloader.this.instanceBuffer.compareAndSet(null, readWriteBuffer);
-                            }
-                            connection.disconnect();
                         }
                     }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
                     if (logger != null) {
-                        logger.info("END " + request.getRequestedURL());
+                        logger.info("END:" + requestOkay + ">" + request.getRequestedURL());
                     }
                 }
-
                 return true;
             }
         });
