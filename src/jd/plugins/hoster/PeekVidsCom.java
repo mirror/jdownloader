@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -157,6 +158,11 @@ public class PeekVidsCom extends PluginForHost {
                     return false;
                 }
             } catch (final Exception e) {
+                if (e instanceof BrowserException) {
+                    if (e.getCause() != null && e.getCause().toString().contains("Could not generate DH keypair")) {
+                        return checkDirectLink(directlink.replace("https://", "http://"));
+                    }
+                }
                 return false;
             } finally {
                 try {
@@ -308,7 +314,7 @@ public class PeekVidsCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
