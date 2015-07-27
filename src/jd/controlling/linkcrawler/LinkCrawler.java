@@ -1562,7 +1562,7 @@ public class LinkCrawler {
                             logger.clear();
                         } finally {
                             wplg.setCurrentLink(null);
-                            long endTime = System.currentTimeMillis() - startTime;
+                            final long endTime = System.currentTimeMillis() - startTime;
                             wplg.getLazyP().updateParseRuntime(endTime);
                             /* close the logger */
                             logger.close();
@@ -2251,7 +2251,7 @@ public class LinkCrawler {
                         lct.setVerbose(true);
                         lct.setDebug(true);
                     }
-                    long startTime = System.currentTimeMillis();
+                    final long startTime = System.currentTimeMillis();
                     try {
                         wplg.setCrawler(this);
                         wplg.setLinkCrawlerAbort(new LinkCrawlerAbort(generation, this));
@@ -2268,7 +2268,7 @@ public class LinkCrawler {
                         /* make sure we dont have any unprocessed delayed Links */
                         distributeLinksDelayer.delayedrun();
                         wplg.setCurrentLink(null);
-                        long endTime = System.currentTimeMillis() - startTime;
+                        final long endTime = System.currentTimeMillis() - startTime;
                         lazyC.updateCrawlRuntime(endTime);
                         logger.close();
                     }
