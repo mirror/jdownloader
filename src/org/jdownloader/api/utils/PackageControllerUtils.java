@@ -24,8 +24,10 @@ import jd.plugins.FilePackage;
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
 import org.jdownloader.myjdownloader.client.bindings.CleanupActionOptions;
 import org.jdownloader.plugins.FinalLinkState;
@@ -324,17 +326,24 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
         return nameFactory;
     }
 
-    public boolean setDownloadDirectory(String directory, long[] packageIds) {
+    public boolean setDownloadDirectory(final String directory, long[] packageIds) {
         final SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(new long[] {}, packageIds);
-        if (selection.getPackage() != null) {
-            final PackageType pt = selection.getPackage();
-            if (pt instanceof FilePackage) {
-                ((FilePackage) pt).setDownloadDirectory(directory);
-                return true;
-            } else if (pt instanceof CrawledPackage) {
-                ((CrawledPackage) pt).setDownloadFolder(directory);
-                return true;
+        for (PackageView<PackageType, ChildType> pkg : selection.getPackageViews()) {
+            if (pkg.isPackageSelected()) {
+                final PackageType pt = pkg.getPackage();
+                if (pt instanceof FilePackage) {
+                    DownloadWatchDog.getInstance().setDownloadDirectory((FilePackage) pt, directory);
+                } else if (pt instanceof CrawledPackage) {
+                    pt.getControlledBy().getQueue().add(new QueueAction<Void, RuntimeException>() {
+                        @Override
+                        protected Void run() throws RuntimeException {
+                            ((CrawledPackage) pt).setDownloadFolder(directory);
+                            return null;
+                        }
+                    });
+                }
             }
+            return true;
         }
         return false;
     }

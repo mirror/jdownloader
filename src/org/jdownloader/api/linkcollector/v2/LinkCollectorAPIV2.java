@@ -62,4 +62,6 @@ public interface LinkCollectorAPIV2 extends RemoteAPIInterface {
 
     void cleanup(long[] linkIds, long[] packageIds, Action action, Mode mode, SelectionType selectionType) throws BadParameterException;
 
+    void setDownloadDirectory(String directory, long[] packageIds) throws BadParameterException;
+
 }

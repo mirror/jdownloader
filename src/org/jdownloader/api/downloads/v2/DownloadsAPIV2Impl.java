@@ -595,11 +595,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     @Override
     public void setDownloadDirectory(String directory, long[] packageIds) {
-        final DownloadWatchDog dwd = DownloadWatchDog.getInstance();
-        final List<FilePackage> pkgs = packageControllerUtils.getPackages(packageIds);
-        for (FilePackage pkg : pkgs) {
-            dwd.setDownloadDirectory(pkg, directory);
-        }
+        packageControllerUtils.setDownloadDirectory(directory, packageIds);
     }
 
     @Override
