@@ -380,7 +380,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     @Override
     public void moveToDownloadlist(final long[] linkIds, final long[] packageIds) throws BadParameterException {
         SelectionInfo<CrawledPackage, CrawledLink> selectionInfo = packageControllerUtils.getSelectionInfo(linkIds, packageIds);
-        LinkCollector.getInstance().moveLinksToDownloadList(new MoveLinksSettings(MoveLinksMode.MANUAL, null, null, null), selectionInfo);
+        LinkCollector.getInstance().moveLinksToDownloadList(new MoveLinksSettings(MoveLinksMode.MANUAL, true, null, null), selectionInfo);
     }
 
     @Override
@@ -606,6 +606,14 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     @Override
     public void movetoNewPackage(long[] linkIds, long[] pkgIds, String newPkgName, String downloadPath) throws BadParameterException {
         packageControllerUtils.movetoNewPackage(linkIds, pkgIds, newPkgName, downloadPath);
+    }
+
+    @Override
+    public void setDownloadDirectory(String directory, long[] packageIds) throws BadParameterException {
+        if (StringUtils.isEmpty(directory)) {
+            throw new BadParameterException("invalid dir");
+        }
+        packageControllerUtils.setDownloadDirectory(directory, packageIds);
     }
 
     @Override
