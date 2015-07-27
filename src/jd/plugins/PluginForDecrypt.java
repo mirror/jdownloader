@@ -86,6 +86,14 @@ public abstract class PluginForDecrypt extends Plugin {
         return SubConfiguration.getConfig(lazyC.getDisplayName());
     }
 
+    protected String getBrowserReferrer() {
+        final LinkCrawler crawler = getCrawler();
+        if (crawler != null) {
+            return crawler.getReferrerUrl(getCurrentLink());
+        }
+        return null;
+    }
+
     public Browser getBrowser() {
         return br;
     }
