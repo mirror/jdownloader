@@ -47,13 +47,15 @@ public class BandCampComDecrypter extends PluginForDecrypt {
     private SubConfiguration CFG        = null;
     private PluginForHost    hostPlugin = null;
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         CFG = SubConfiguration.getConfig("bandcamp.com");
         br.getPage(parameter);
-        if (br.containsHTML(">Sorry, that something isn\\'t here\\.<")) {
+        if (br.containsHTML(">Sorry, that something isn\\'t here\\.<|trackinfo[\t\n\r ]*?:[\t\n\r ]*?\\[\\],") || this.br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         if (br.getRedirectLocation() != null) {

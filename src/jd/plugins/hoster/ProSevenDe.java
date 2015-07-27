@@ -178,6 +178,16 @@ public class ProSevenDe extends PluginForHost {
         this.br = new Browser();
         /* User-Agent not necessarily needed */
         br.getHeaders().put("User-Agent", agent_hbbtv.get());
+        /*
+         * TODO: Improve this so that it grabs the better version - sometimes, 2 are available:
+         * http://www.kabeleins.de/tv/achtung-kontrolle/
+         * videos/2015111-freitag-vollziehungsbeamtin-jeanette-schmidt-das-spezial-1-ganze-folge
+         */
+        /*
+         * E.g. HQ:
+         * http://anonymz.com/?http://vod-level3-psd-progressive.p7s1digital.de/clips/07/87/3868276-f6dfsa-tp11.mp4?token=00~3b0674~
+         * 3b0674~55b60112~15180~0-e99fe8b23f79db4d9f4731aa9&ts=1437991186
+         */
         br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clipID + "&app=hbbtv&type=1&method=1&callback=video" + clipID);
         getDllink();
         if (json == null) {

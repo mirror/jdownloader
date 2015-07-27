@@ -95,6 +95,9 @@ public class TwitterCom extends PornEmbedParser {
             /* First check for external urls */
             decryptedLinks.addAll(this.findEmbedUrls(null));
             String externID = this.br.getRegex("u\\-linkClean js\\-openLink\" href=\"(https?://t\\.co/[^<>\"]*?)\"").getMatch(0);
+            if (externID == null) {
+                externID = this.br.getRegex("\"card_url\"[\t\n\r ]*?:[\t\n\r ]*?\"(https[^<>\"]*?)\"").getMatch(0);
+            }
             if (externID != null) {
                 decryptedLinks.add(this.createDownloadlink(externID));
                 return decryptedLinks;

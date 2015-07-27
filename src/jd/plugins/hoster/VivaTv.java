@@ -508,9 +508,19 @@ public class VivaTv extends PluginForHost {
             mgid = getMGIDOutOfEmbedURL(browser_url);
             /* Special: Set the mediagen url here already */
             this.mediagen_url = this.getMEDIAGENurl("logotv.com");
-            br.getPage(main_url);
-            if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("MTVN\\.Player\\.")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            this.feed_url = this.getFEEDurl("logotv.com");
+            if (main_url != null) {
+                br.getPage(main_url);
+                if (br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("MTVN\\.Player\\.")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } else {
+                /* Cheap workaround */
+                br.getPage(this.feed_url);
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                filename = feedGetTitle();
             }
             ext = default_ext;
         }

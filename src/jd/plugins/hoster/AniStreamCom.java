@@ -424,7 +424,7 @@ public class AniStreamCom extends PluginForHost {
                     dlForm.put("adcopy_challenge", chid);
                     dlForm.put("adcopy_response", "manual_challenge");
                 } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
-                    logger.info("Detected captcha method \"keycaptca\"");
+                    logger.info("Detected captcha method \"keycaptcha\"");
                     String result = null;
                     final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                     try {
