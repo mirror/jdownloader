@@ -26,9 +26,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.SiteType.SiteTemplate;
 
 //When adding new domains here also add them to the hosterplugin (TurboBitNet)
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(www\\.)?(wayupload\\.com|maxisoc\\.ru|turo\\-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|speed-file\\.ru|turbobit\\.pl|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|file\\.krut-warez\\.ru|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|letitshare\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbo-bit\\.ru|turbobit\\.net|upload\\.mskvn\\.by|vipbit\\.ru|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.dwmedia\\.ru|upload\\.uz|xrfiles\\.ru|e-flash\\.com\\.ua|turbobax\\.net|download\\.uzhgorod\\.name|trium-club\\.ru|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|files\\.uz\\-translations\\.uz|fo\\.letitbook\\.ru|freefo\\.ru|bayrakweb\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|vipgfx\\.net|turbovit\\.com\\.ua|turboot\\.ru|filez\\.ninja|kilofile\\.com)/download/folder/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(www\\.)?(wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbobit\\.net|upload\\.mskvn\\.by|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.uz|xrfiles\\.ru|turbobax\\.net|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|freefo\\.ru|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|vipgfx\\.net|turbovit\\.com\\.ua|turboot\\.ru|filez\\.ninja|kilofile\\.com)/download/folder/\\d+" }, flags = { 0 })
 public class TurboBitNetFolder extends PluginForDecrypt {
 
     public TurboBitNetFolder(PluginWrapper wrapper) {
@@ -73,6 +74,16 @@ public class TurboBitNetFolder extends PluginForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.Turbobit_Turbobit;
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "wayupload.com", "turo-bit.net", "depositfiles.com.ua", "dlbit.net", "filesmail.ru", "hotshare.biz", "bluetooths.pp.ru", "dz-files.ru", "file.alexforum.ws", "file.grad.by", "files.best-trainings.org.ua", "files.wzor.ws", "gdefile.ru", "mnogofiles.com", "share.uz", "sibit.net", "turbobit.net", "upload.mskvn.by", "files.prime-speed.ru", "filestore.net.ru", "turbobit.ru", "upload.uz", "xrfiles.ru", "turbobax.net", "alfa-files.com", "turbabit.net", "filedeluxe.com", "freefo.ru", "savebit.net", "filemaster.ru", "файлообменник.рф", "vipgfx.net", "turbovit.com.ua", "turboot.ru", "filez.ninja", "kilofile.com" };
     }
 
 }
