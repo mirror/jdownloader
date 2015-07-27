@@ -61,11 +61,18 @@ public class FileCryptCc extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br = new Browser();
         JDUtilities.getPluginForHost("mediafire.com");
-        br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+        String agent = "";
+        while (!agent.contains(" Chrome/")) {
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent);
+        br.getHeaders().put("Accept-Encoding", "gzip, deflate, sdch");
+        br.getHeaders().put("Accept-Language", "en");
+
         br.setFollowRedirects(true);
         final String uid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         // not all captcha types are skipable (recaptchav2 isn't). I tried with new response value - raztoki
