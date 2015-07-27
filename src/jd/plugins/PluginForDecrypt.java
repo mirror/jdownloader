@@ -67,7 +67,7 @@ public abstract class PluginForDecrypt extends Plugin {
     private LinkCrawlerDistributer          distributer             = null;
 
     private LazyCrawlerPlugin               lazyC                   = null;
-    private CrawledLink                     currentLink             = null;
+
     private LinkCrawlerAbort                linkCrawlerAbort;
 
     private LinkCrawler                     crawler;
@@ -84,14 +84,6 @@ public abstract class PluginForDecrypt extends Plugin {
     @Override
     public SubConfiguration getPluginConfig() {
         return SubConfiguration.getConfig(lazyC.getDisplayName());
-    }
-
-    protected String getBrowserReferrer() {
-        final LinkCrawler crawler = getCrawler();
-        if (crawler != null) {
-            return crawler.getReferrerUrl(getCurrentLink());
-        }
-        return null;
     }
 
     public Browser getBrowser() {
@@ -242,10 +234,6 @@ public abstract class PluginForDecrypt extends Plugin {
         return false;
     }
 
-    public CrawledLink convert(DownloadLink link) {
-        return new CrawledLink(link);
-    }
-
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden durchlaufen. Der letzte step muss als parameter einen
      * Vector<String> mit den decoded Links setzen
@@ -266,7 +254,7 @@ public abstract class PluginForDecrypt extends Plugin {
         boolean captchafailed = false;
         try {
             lastSolverJob = null;
-            this.currentLink = source;
+            setCurrentLink(source);
             /*
              * we now lets log into plugin specific loggers with all verbose/debug on
              */
@@ -305,7 +293,6 @@ public abstract class PluginForDecrypt extends Plugin {
         } finally {
             clean();
             lastSolverJob = null;
-            this.currentLink = null;
         }
         if ((tmpLinks == null || throwable != null) && !isAbort() && !pwfailed && !captchafailed) {
             /*
@@ -347,10 +334,6 @@ public abstract class PluginForDecrypt extends Plugin {
         } finally {
             errlogger.close();
         }
-    }
-
-    public CrawledLink getCurrentLink() {
-        return currentLink;
     }
 
     /**
@@ -644,14 +627,10 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     public LinkCrawler getCrawler() {
-        if (Thread.currentThread() instanceof LinkCrawlerThread) {
-            /* not sure why we have this here? */
-            LinkCrawler ret = ((LinkCrawlerThread) Thread.currentThread()).getCurrentLinkCrawler();
-            if (ret != null) {
-                return ret;
-            }
+        if (crawler != null) {
+            return crawler;
         }
-        return crawler;
+        return super.getCrawler();
     }
 
 }
