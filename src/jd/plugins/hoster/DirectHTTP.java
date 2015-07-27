@@ -665,10 +665,23 @@ public class DirectHTTP extends PluginForHost {
             downloadLink.setProperty("ServerComaptibleForByteRangeRequest", Property.NULL);
         }
         final long downloadCurrentRaw = downloadLink.getDownloadCurrentRaw();
-        if (downloadLink.getStringProperty("post", null) != null) {
-            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getDownloadURL(downloadLink), downloadLink.getStringProperty("post", null), resume, chunks);
-        } else {
-            this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getDownloadURL(downloadLink), resume, chunks);
+        try {
+            if (downloadLink.getStringProperty("post", null) != null) {
+                this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getDownloadURL(downloadLink), downloadLink.getStringProperty("post", null), resume, chunks);
+            } else {
+                this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, getDownloadURL(downloadLink), resume, chunks);
+            }
+        } catch (final IllegalStateException e) {
+            if (StringUtils.containsIgnoreCase(e.getMessage(), "Range Error. Requested bytes=0- Got range: bytes 0-")) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e2) {
+                }
+                logger.info("Workaround for Cloudflare-Cache transparent image compression!");
+                downloadLink.setVerifiedFileSize(-1);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            throw e;
         }
         if (this.dl.getConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l);
@@ -769,9 +782,9 @@ public class DirectHTTP extends PluginForHost {
                     } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
                         urlConnection = br.openHeadConnection(getDownloadURL(downloadLink));
                         if (urlConnection.getResponseCode() == 404 /*
-                         * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
-                         * "must-revalidate") && urlConnection.getHeaderField("Via") != null
-                         */) {
+                                                                    * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
+                                                                    * "must-revalidate") && urlConnection.getHeaderField("Via") != null
+                                                                    */) {
                             urlConnection.disconnect();
                             urlConnection = br.openGetConnection(getDownloadURL(downloadLink));
                         } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
