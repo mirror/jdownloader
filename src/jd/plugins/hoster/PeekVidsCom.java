@@ -68,7 +68,7 @@ public class PeekVidsCom extends PluginForHost {
     /* don't touch the following! */
     private static AtomicInteger maxPrem                   = new AtomicInteger(1);
 
-    private String               DLLINK                    = null;
+    private String               dllink                    = null;
 
     @Override
     public String getAGBLink() {
@@ -87,7 +87,7 @@ public class PeekVidsCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         String ext = null;
         final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
-        DLLINK = null;
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
@@ -115,27 +115,27 @@ public class PeekVidsCom extends PluginForHost {
 
         int counter = 0;
         for (final String quality : qualities) {
-            DLLINK = new Regex(flashvars, "\\[" + quality + "\\]=(http[^<>\"]*?)\\&").getMatch(0);
-            if (DLLINK != null) {
+            dllink = new Regex(flashvars, "\\[" + quality + "\\]=(http[^<>\"]*?)\\&").getMatch(0);
+            if (dllink != null) {
                 counter++;
-                if (checkDirectLink(DLLINK)) {
+                if (checkDirectLink()) {
                     break;
                 }
             }
         }
-        if ((filename == null || DLLINK == null) && counter == 0) {
+        if ((filename == null || dllink == null) && counter == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        if (DLLINK == null) {
+        if (dllink == null) {
             /* Download not possible at this moment. */
             downloadLink.setName(filename + ".mp4");
             return AvailableStatus.TRUE;
         }
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        dllink = Encoding.htmlDecode(dllink);
+        ext = dllink.substring(dllink.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;
@@ -148,19 +148,20 @@ public class PeekVidsCom extends PluginForHost {
         /* Don't check filesize here as this can lead to server errors */
     }
 
-    private boolean checkDirectLink(final String directlink) {
-        if (directlink != null) {
+    private boolean checkDirectLink() {
+        if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = br2.openHeadConnection(directlink);
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     return false;
                 }
             } catch (final Exception e) {
                 if (e instanceof BrowserException) {
                     if (e.getCause() != null && e.getCause().toString().contains("Could not generate DH keypair")) {
-                        return checkDirectLink(directlink.replace("https://", "http://"));
+                        dllink = dllink.replace("https://", "http://");
+                        return checkDirectLink();
                     }
                 }
                 return false;
@@ -181,11 +182,11 @@ public class PeekVidsCom extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (DLLINK == null) {
+        if (dllink == null) {
             /* Very rare case! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
