@@ -42,7 +42,9 @@ public class PixhstCom extends PluginForHost {
     // note: pixhst.com is parked.
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("pixhst.com/", "pxhst.co/"));
+        final String l = link.getPluginPatternMatcher().replace("pixhst.com/", "pxhst.co/");
+        link.setPluginPatternMatcher(l);
+        link.setContentUrl(l);
     }
 
     /* Extension which will be used if no correct extension is found */
