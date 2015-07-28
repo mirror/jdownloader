@@ -816,22 +816,34 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                     infos.put("host", br.getHost());
                     infos.put("type", type.name());
                     StatsManager.I().track("KeyCaptcha/type");
-                    BufferedImage img = ImageIO.read(rcBr.openGetConnection(categoriesUrl).getInputStream());
-                    if (img == null) {
-                        Dialog.getInstance().showConfirmDialog(UIOManager.LOGIC_COUNTDOWN, "Category", categoriesUrl, null, null, null);
-                    } else {
-                        Dialog.getInstance().showConfirmDialog(UIOManager.LOGIC_COUNTDOWN, "Category", categoriesUrl, new ImageIcon(img), null, null);
+                    final Browser dlpic = new Browser();
+                    KeyCaptcha.prepareBrowser(dlpic, "image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5");
+                    ArrayList<Image> imagesList = new ArrayList<Image>();
+                    ArrayList<String> requests = new ArrayList<String>();
+                    BufferedImage img = ImageIO.read(dlpic.openGetConnection(categoriesUrl).getInputStream());
+                    if (img != null) {
+
+                        imagesList.add(img);
+                        requests.add(dlpic.getRequest() + "");
                     }
 
                     images = new Regex(categoryImagesList, "'(http[^']+)").getColumn(0);
                     for (String im : images) {
-                        img = ImageIO.read(rcBr.openGetConnection(im).getInputStream());
-                        if (img == null) {
-                            Dialog.getInstance().showConfirmDialog(UIOManager.LOGIC_COUNTDOWN, "", im, null, null, null);
-                        } else {
-                            Dialog.getInstance().showConfirmDialog(UIOManager.LOGIC_COUNTDOWN, "", im, new ImageIcon(img), null, null);
+
+                        KeyCaptcha.prepareBrowser(dlpic, "image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5");
+                        img = ImageIO.read(dlpic.openGetConnection(categoriesUrl).getInputStream());
+
+                        if (img != null) {
+
+                            imagesList.add(img);
+                            requests.add(dlpic.getRequest() + "");
                         }
 
+                    }
+
+                    for (int i = 0; i < imagesList.size(); i++) {
+
+                        Dialog.getInstance().showConfirmDialog(UIOManager.LOGIC_COUNTDOWN, "", requests.get(i), new ImageIcon(imagesList.get(i)), null, null);
                     }
                     throw new Exception("KeyCaptcha Module fails: Category Type not supported");
                 } else {
@@ -1433,10 +1445,10 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                 private Point loc;
 
                 private Timer mArrayTimer = new Timer(1000, new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        marray(loc);
-                    }
-                });
+                                              public void actionPerformed(ActionEvent e) {
+                                                  marray(loc);
+                                              }
+                                          });
 
                 @Override
                 public void mouseDragged(final MouseEvent e) {
@@ -2987,23 +2999,23 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
          */
         Comparator<Integer> isElementColor = new Comparator<Integer>() {
 
-            public int compare(Integer o1, Integer o2) {
-                int c = o1;
-                int c2 = o2;
-                if (isBackground(o1) || isBackground(o2)) {
-                    return 0;
-                }
-                if (c == 0x000000 || c2 == 0x000000) {
-                    return c == c2 ? 1 : 0;
-                }
-                int[] hsvC = Colors.rgb2hsv(c);
-                int[] hsvC2 = Colors.rgb2hsv(c2);
-                // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
-                        // Is it a typo? Was a different comparison meant in the second place?
-                                return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
-            }
+                                               public int compare(Integer o1, Integer o2) {
+                                                   int c = o1;
+                                                   int c2 = o2;
+                                                   if (isBackground(o1) || isBackground(o2)) {
+                                                       return 0;
+                                                   }
+                                                   if (c == 0x000000 || c2 == 0x000000) {
+                                                       return c == c2 ? 1 : 0;
+                                                   }
+                                                   int[] hsvC = Colors.rgb2hsv(c);
+                                                   int[] hsvC2 = Colors.rgb2hsv(c2);
+                                                   // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
+                                                   // Is it a typo? Was a different comparison meant in the second place?
+                                                   return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
+                                               }
 
-        };
+                                           };
 
         private boolean equalElements(int c, int c2) {
             return isElementColor.compare(c, c2) == 1;
