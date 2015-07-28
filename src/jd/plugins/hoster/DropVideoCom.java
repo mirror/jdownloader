@@ -17,6 +17,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.logging.Level;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -100,33 +104,19 @@ public class DropVideoCom extends PluginForHost {
     }
 
     private String decodeDownloadLink(final String s) {
-        String decoded = null;
-
+        final String js = br.getRegex("eval\\((function\\(p,a,c,k,e,d\\).*?\\{\\}\\))\\)").getMatch(0);
+        final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        String result = null;
         try {
-            Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
-            String p = params.getMatch(0).replaceAll("\\\\", "");
-            int a = Integer.parseInt(params.getMatch(1));
-            int c = Integer.parseInt(params.getMatch(2));
-            String[] k = params.getMatch(3).split("\\|");
-
-            while (c != 0) {
-                c--;
-                if (k[c].length() != 0) {
-                    p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
-                }
-            }
-
-            decoded = p;
-        } catch (Exception e) {
+            engine.eval("var res = " + js);
+            result = (String) engine.get("res");
+        } catch (final Exception e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return null;
         }
-
-        String finallink = null;
-        if (decoded != null) {
-            /* Open regex is possible because in the unpacked JS there are usually only 1 links */
-            finallink = new Regex(decoded, "(\"|\\')(https?://[^<>\"\\']*?\\.(avi|flv|mkv|mp4))(\"|\\')").getMatch(1);
-        }
-        return finallink;
+        final String dllink = new Regex(result, "(\"|')(https?://\\w+\\.dropvideo\\.com/v/[a-f0-9]{32}\\.mp4.*?)\\1").getMatch(1);
+        return dllink;
     }
 
     private String getFUID(final DownloadLink dl) {
