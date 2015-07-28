@@ -361,6 +361,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         }, 1, 1, TimeUnit.SECONDS);
                         extractor.extract(this);
                     } finally {
+                        extractor.close();
                         crashLog.write("Extractor Returned");
                         if (timer != null) {
                             timer.cancel(false);
@@ -368,7 +369,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         if (scheduler != null) {
                             scheduler.shutdown();
                         }
-                        extractor.close();
                         if (extractor.getLastAccessedArchiveFile() != null) {
                             crashLog.write("Last used File: " + extractor.getLastAccessedArchiveFile());
                         }
@@ -460,18 +460,18 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             crashLog.write("Failed");
             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
         } finally {
-            crashLog.close();
-            if (!CFG_EXTRACTION.CFG.isWriteExtractionLogEnabled()) {
-                crashLog.delete();
-            }
             try {
-                if (gotKilled()) {
-                    logger.info("ExtractionController has been killed");
-                    logger.clear();
-                }
                 try {
                     extractor.close();
                 } catch (final Throwable e) {
+                }
+                crashLog.close();
+                if (!CFG_EXTRACTION.CFG.isWriteExtractionLogEnabled()) {
+                    crashLog.delete();
+                }
+                if (gotKilled()) {
+                    logger.info("ExtractionController has been killed");
+                    logger.clear();
                 }
                 fireEvent(ExtractionEvent.Type.CLEANUP);
                 archive.onCleanUp();
