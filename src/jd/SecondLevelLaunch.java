@@ -951,8 +951,8 @@ public class SecondLevelLaunch {
                                                                 final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.Main_run_autostart_(), _JDT._.Main_run_autostart_msg(), NewTheme.I().getIcon("start", 32), _JDT._.Mainstart_now(), null);
                                                                 d.setTimeout(generalSettings.getAutoStartCountdownSeconds() * 1000);
                                                                 try {
-                                                                    UIOManager.I().show(ConfirmDialogInterface.class, d);
-                                                                    d.throwCloseExceptions();
+                                                                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, d);
+                                                                    ret.throwCloseExceptions();
                                                                 } catch (DialogNoAnswerException e) {
                                                                     if (!e.isCausedByTimeout()) {
                                                                         return;
