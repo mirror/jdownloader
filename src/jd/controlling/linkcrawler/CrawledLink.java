@@ -214,7 +214,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         passwordForward(dlLink);
     }
 
-    private void passwordForward(DownloadLink dlLink) {
+    protected void passwordForward(DownloadLink dlLink) {
         if (dlLink == null) {
             return;
         }
