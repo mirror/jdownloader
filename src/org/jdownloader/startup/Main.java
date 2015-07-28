@@ -24,6 +24,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Enumeration;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -145,55 +146,46 @@ public class Main {
 
         }
         IO.setErrorHandler(new IOErrorHandler() {
-            private boolean reported;
-
-            {
-                reported = false;
-
-            }
+            private final AtomicBoolean reported = new AtomicBoolean(Application.isHeadless());
 
             @Override
             public void onWriteException(final Throwable e, final File file, final byte[] data) {
                 LogController.getInstance().getLogger("GlobalIOErrors").severe("An error occured while writing " + data.length + " bytes to " + file);
                 LogController.getInstance().getLogger("GlobalIOErrors").log(e);
-                if (reported) {
-                    return;
-                }
-                reported = true;
-                new Thread() {
-                    public void run() {
-                        Dialog.getInstance().showExceptionDialog("Write Error occured", "An error occured while writing " + data.length + " bytes to " + file, e);
-                        try {
-                            Thread.sleep(2000);
-                        } catch (InterruptedException e1) {
-                            e1.printStackTrace();
+                if (reported.compareAndSet(false, true)) {
+                    new Thread() {
+                        public void run() {
+                            Dialog.getInstance().showExceptionDialog("Write Error occured", "An error occured while writing " + data.length + " bytes to " + file, e);
+                            try {
+                                Thread.sleep(2000);
+                            } catch (InterruptedException e1) {
+                                e1.printStackTrace();
+                            }
+                            LogAction la = new LogAction();
+                            la.actionPerformed(null);
                         }
-                        LogAction la = new LogAction();
-                        la.actionPerformed(null);
-                    }
-                }.start();
+                    }.start();
+                }
 
             }
 
             @Override
             public void onReadStreamException(final Throwable e, final java.io.InputStream fis) {
                 LogController.getInstance().getLogger("GlobalIOErrors").log(e);
-                if (reported) {
-                    return;
-                }
-                reported = true;
-                new Thread() {
-                    public void run() {
-                        Dialog.getInstance().showExceptionDialog("Read Error occured", "An error occured while reading data", e);
-                        try {
-                            Thread.sleep(2000);
-                        } catch (InterruptedException e1) {
-                            e1.printStackTrace();
+                if (reported.compareAndSet(false, true)) {
+                    new Thread() {
+                        public void run() {
+                            Dialog.getInstance().showExceptionDialog("Read Error occured", "An error occured while reading data", e);
+                            try {
+                                Thread.sleep(2000);
+                            } catch (InterruptedException e1) {
+                                e1.printStackTrace();
+                            }
+                            LogAction la = new LogAction();
+                            la.actionPerformed(null);
                         }
-                        LogAction la = new LogAction();
-                        la.actionPerformed(null);
-                    }
-                }.start();
+                    }.start();
+                }
             }
 
             @Override

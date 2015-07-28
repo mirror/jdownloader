@@ -22,6 +22,7 @@ import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.Onl
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.editdialog.OnlineStatusFilter.OnlineStatusMatchtype;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
@@ -69,7 +70,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     private static final PackagizerController     INSTANCE       = new PackagizerController(false);
     public static final String                    ORGPACKAGENAME = "orgpackagename";
     private HashMap<String, PackagizerReplacer>   replacers      = new HashMap<String, PackagizerReplacer>();
-    private boolean                               testInstance   = false;
+    private final boolean                         testInstance;
 
     public static PackagizerController getInstance() {
         return INSTANCE;
@@ -354,8 +355,9 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     }
                 }
                 if (StringUtils.isEmpty(packagename)) {
-                    return "";
+                    packagename = "";
                 }
+                packagename = CrossSystem.alleviatePathParts(packagename);
                 if (StringUtils.isNotEmpty(modifiers)) {
                     Pattern patt = lgr.getPackageNameRule().getPattern();
                     String[] matches = new Regex(packagename, patt).getRow(0);
@@ -805,19 +807,57 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     public void onNewFile(Object caller, File[] fileList) {
-        if (!org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) {
-            return;
-        }
-        if (caller instanceof ExtractionController && caller != this) {
-            if (((ExtractionController) caller).getArchive() instanceof DownloadLinkArchive) {
-                for (ArchiveFile af : ((ExtractionController) caller).getArchive().getArchiveFiles()) {
-                    if (af instanceof DownloadLinkArchiveFile) {
-                        for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
-                            for (File f : fileList) {
-                                if (f.exists()) {
-                                    CrawledLink cl = new CrawledLink(link);
-                                    cl.setName(f.getName());
-                                    runAfterExtraction(f, cl);
+        if (org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) {
+            if (caller instanceof ExtractionController && caller != this) {
+                if (((ExtractionController) caller).getArchive() instanceof DownloadLinkArchive) {
+                    CrawledPackage crawledPackage = null;
+                    for (final ArchiveFile af : ((ExtractionController) caller).getArchive().getArchiveFiles()) {
+                        if (af instanceof DownloadLinkArchiveFile) {
+                            for (final DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
+                                for (final File file : fileList) {
+                                    if (file.exists()) {
+                                        final CrawledLink cl = new CrawledLink(link) {
+                                            @Override
+                                            protected void passwordForward(DownloadLink dlLink) {
+                                                /* not needed and used in constructor */
+                                            }
+                                        };
+                                        cl.setName(file.getName());
+                                        final ArrayList<String> sourceURLs = new ArrayList<String>();
+                                        String url = link.getOriginUrl();
+                                        if (url != null) {
+                                            sourceURLs.add(url);
+                                        }
+                                        url = link.getReferrerUrl();
+                                        if (url != null) {
+                                            sourceURLs.add(url);
+                                        }
+                                        url = link.getContainerUrl();
+                                        if (url != null) {
+                                            sourceURLs.add(url);
+                                        }
+                                        url = link.getContentUrl();
+                                        if (url != null) {
+                                            sourceURLs.add(url);
+                                        }
+                                        url = link.getCustomUrl();
+                                        if (url != null) {
+                                            sourceURLs.add(url);
+                                        }
+                                        if (sourceURLs.size() > 0) {
+                                            cl.setSourceUrls(sourceURLs.toArray(new String[0]));
+                                        }
+                                        final FilePackage filePackage = link.getLastValidFilePackage();
+                                        if (filePackage != null) {
+                                            crawledPackage = new CrawledPackage();
+                                            crawledPackage.setName(filePackage.getName());
+                                            crawledPackage.setDownloadFolder(filePackage.getDownloadDirectory());
+                                            cl.setParentNode(crawledPackage);
+                                        } else {
+                                            cl.setParentNode(crawledPackage);
+                                        }
+                                        runAfterExtraction(file, cl);
+                                    }
                                 }
                             }
                         }
@@ -827,90 +867,93 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
     }
 
-    private void runAfterExtraction(File f, CrawledLink link) {
-        java.util.List<PackagizerRuleWrapper> lfileFilter = fileFilter;
-        String originalFolder = f.getParent();
+    private final static String ORGPACKAGETAG = "<jd:" + PackagizerController.ORGPACKAGENAME + ">";
+
+    private void runAfterExtraction(File file, CrawledLink dummyLink) {
+        final java.util.List<PackagizerRuleWrapper> lfileFilter = fileFilter;
+        final String originalFolder = file.getParent();
         String moveToFolder = originalFolder;
-        String originalFileName = link.getName();
+        final String originalFileName = dummyLink.getName();
         for (PackagizerRuleWrapper lgr : lfileFilter) {
-            if (!StringUtils.isEmpty(lgr.getRule().getRename()) || !StringUtils.isEmpty(lgr.getRule().getMoveto())) {
+            String renameRule = lgr.getRule().getRename();
+            String moveRule = lgr.getRule().getMoveto();
+            if (!StringUtils.isEmpty(renameRule) || !StringUtils.isEmpty(moveRule)) {
                 if (lgr.getAlwaysFilter() == null || !lgr.getAlwaysFilter().isEnabled()) {
                     try {
-                        if (!lgr.checkHoster(link)) {
+                        if (!lgr.checkHoster(dummyLink)) {
                             continue;
                         }
                     } catch (NoDownloadLinkException e) {
                         throw new WTFException();
                     }
                     try {
-                        if (!lgr.checkPluginStatus(link)) {
+                        if (!lgr.checkPluginStatus(dummyLink)) {
                             continue;
                         }
                     } catch (NoDownloadLinkException e) {
                         throw new WTFException();
                     }
-                    if (!lgr.checkOrigin(link)) {
+                    if (!lgr.checkOrigin(dummyLink)) {
                         continue;
                     }
-                    if (!lgr.checkConditions(link)) {
+                    if (!lgr.checkConditions(dummyLink)) {
                         continue;
                     }
-                    if (!lgr.checkSource(link)) {
+                    if (!lgr.checkSource(dummyLink)) {
                         continue;
                     }
-                    if (!lgr.checkPackageName(link)) {
+                    if (!lgr.checkPackageName(dummyLink)) {
                         continue;
                     }
                     if (lgr.isRequiresLinkcheck()) {
-                        if (!lgr.checkOnlineStatus(link)) {
+                        if (!lgr.checkOnlineStatus(dummyLink)) {
                             continue;
                         }
-                        if (!lgr.checkFileName(link)) {
+                        if (!lgr.checkFileName(dummyLink)) {
                             continue;
                         }
 
-                        if (!lgr.checkFileSize(link)) {
+                        if (!lgr.checkFileSize(dummyLink)) {
                             continue;
                         }
-                        if (!lgr.checkFileType(link)) {
+                        if (!lgr.checkFileType(dummyLink)) {
                             continue;
                         }
                     }
                 }
-                if (!StringUtils.isEmpty(lgr.getRule().getRename())) {
-                    /* rename */
-                    link.setName(replaceVariables(lgr.getRule().getRename(), link, lgr));
+                if (!StringUtils.isEmpty(renameRule)) {
+                    renameRule = renameRule.replace(PACKAGETAG, ORGPACKAGETAG);
+                    dummyLink.setName(replaceVariables(renameRule, dummyLink, lgr));
                 }
-                if (!StringUtils.isEmpty(lgr.getRule().getMoveto())) {
-                    /* move */
-                    moveToFolder = replaceVariables(lgr.getRule().getMoveto(), link, lgr);
+                if (!StringUtils.isEmpty(moveRule)) {
+                    moveRule = moveRule.replace(PACKAGETAG, ORGPACKAGETAG);
+                    moveToFolder = replaceVariables(moveRule, dummyLink, lgr);
                 }
             }
         }
-        if (!originalFolder.equals(moveToFolder) || !originalFileName.equals(link.getName())) {
-            File newFile = new File(moveToFolder, link.getName());
+        if (!originalFolder.equals(moveToFolder) || !originalFileName.equals(dummyLink.getName())) {
+            final File newFile = new File(moveToFolder, dummyLink.getName());
             if (newFile.getParentFile().exists() == false && FileCreationManager.getInstance().mkdir(newFile.getParentFile()) == false) {
                 Log.L.warning("Packagizer could not create " + newFile.getParentFile());
                 return;
             }
             boolean successful = false;
-            if ((successful = f.renameTo(newFile)) == false) {
-                Log.L.warning("Packagizer rename failed " + f + " to" + newFile);
+            if ((successful = file.renameTo(newFile)) == false) {
+                Log.L.warning("Packagizer rename failed " + file + " to" + newFile);
                 try {
-                    Log.L.warning("Packagizer try copy " + f + " to" + newFile);
-                    IO.copyFile(f, newFile);
-                    FileCreationManager.getInstance().delete(f, null);
+                    Log.L.warning("Packagizer try copy " + file + " to" + newFile);
+                    IO.copyFile(file, newFile);
+                    FileCreationManager.getInstance().delete(file, null);
                     successful = true;
                 } catch (final Throwable e) {
                     FileCreationManager.getInstance().delete(newFile, null);
-                    Log.L.warning("Packagizer could not move/rename " + f + " to" + newFile);
+                    Log.L.warning("Packagizer could not move/rename " + file + " to" + newFile);
                 }
             }
             if (successful) {
-                Log.L.info("Packagizer moved/renamed " + f + " to " + newFile);
+                Log.L.info("Packagizer moved/renamed " + file + " to " + newFile);
                 FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(PackagizerController.this, FileCreationEvent.Type.NEW_FILES, new File[] { newFile }));
             }
         }
     }
-
 }
