@@ -2093,58 +2093,63 @@ public class LinkCrawler {
                 }
                 Object owner = null;
                 LinkCrawlerDistributer dist = null;
-                DelayedRunnable distributeLinksDelayer = null;
                 LinkCrawler previousCrawler = null;
                 List<DownloadLink> decryptedPossibleLinks = null;
                 try {
-                    final List<CrawledLink> distributedLinks = new ArrayList<CrawledLink>();
                     final boolean useDelay = wplg.getDistributeDelayerMinimum() > 0;
-                    int minimumDelay = Math.max(10, wplg.getDistributeDelayerMinimum());
-                    int maximumDelay = wplg.getDistributeDelayerMaximum();
-                    if (maximumDelay == 0) {
-                        maximumDelay = -1;
-                    }
-                    distributeLinksDelayer = new DelayedRunnable(TIMINGQUEUE, minimumDelay, maximumDelay) {
-
-                        @Override
-                        public String getID() {
-                            return "LinkCrawler";
+                    final DelayedRunnable finalLinkCrawlerDistributerDelayer;
+                    final List<CrawledLink> distributedLinks;
+                    if (useDelay) {
+                        distributedLinks = new ArrayList<CrawledLink>();
+                        final int minimumDelay = Math.max(10, wplg.getDistributeDelayerMinimum());
+                        int maximumDelay = wplg.getDistributeDelayerMaximum();
+                        if (maximumDelay == 0) {
+                            maximumDelay = -1;
                         }
+                        finalLinkCrawlerDistributerDelayer = new DelayedRunnable(TIMINGQUEUE, minimumDelay, maximumDelay) {
 
-                        @Override
-                        public void delayedrun() {
-                            /* we are now in IOEQ, thats why we create copy and then push work back into LinkCrawler */
-                            final List<CrawledLink> linksToDistribute;
-                            synchronized (distributedLinks) {
-                                if (distributedLinks.size() == 0) {
-                                    return;
+                            @Override
+                            public String getID() {
+                                return "LinkCrawler";
+                            }
+
+                            @Override
+                            public void delayedrun() {
+                                /* we are now in IOEQ, thats why we create copy and then push work back into LinkCrawler */
+                                final List<CrawledLink> linksToDistribute;
+                                synchronized (distributedLinks) {
+                                    if (distributedLinks.size() == 0) {
+                                        return;
+                                    }
+                                    linksToDistribute = new ArrayList<CrawledLink>(distributedLinks);
+                                    distributedLinks.clear();
                                 }
-                                linksToDistribute = new ArrayList<CrawledLink>(distributedLinks);
-                                distributedLinks.clear();
-                            }
-                            final List<CrawledLink> linksToDistributeFinal = linksToDistribute;
-                            if (checkStartNotify(generation)) {
-                                /* enqueue distributing of the links */
-                                threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
-                                    @Override
-                                    public long getAverageRuntime() {
-                                        final Long ret = getDefaultAverageRuntime();
-                                        if (ret != null) {
-                                            return ret;
+                                final List<CrawledLink> linksToDistributeFinal = linksToDistribute;
+                                if (checkStartNotify(generation)) {
+                                    /* enqueue distributing of the links */
+                                    threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+                                        @Override
+                                        public long getAverageRuntime() {
+                                            final Long ret = getDefaultAverageRuntime();
+                                            if (ret != null) {
+                                                return ret;
+                                            }
+                                            return super.getAverageRuntime();
                                         }
-                                        return super.getAverageRuntime();
-                                    }
 
-                                    @Override
-                                    void crawling() {
-                                        final List<CrawledLink> distributeThis = new ArrayList<CrawledLink>(linksToDistributeFinal);
-                                        LinkCrawler.this.distribute(getGeneration(), distributeThis);
-                                    }
-                                });
+                                        @Override
+                                        void crawling() {
+                                            final List<CrawledLink> distributeThis = new ArrayList<CrawledLink>(linksToDistributeFinal);
+                                            LinkCrawler.this.distribute(getGeneration(), distributeThis);
+                                        }
+                                    });
+                                }
                             }
-                        }
-                    };
-                    final DelayedRunnable distributeLinksDelayerFinal = distributeLinksDelayer;
+                        };
+                    } else {
+                        finalLinkCrawlerDistributerDelayer = null;
+                        distributedLinks = null;
+                    }
                     /*
                      * set LinkCrawlerDistributer in case the plugin wants to add links in realtime
                      */
@@ -2212,7 +2217,7 @@ public class LinkCrawler {
                                     distributedLinks.addAll(possibleCryptedLinks);
                                 }
                                 /* restart delayer to distribute links */
-                                distributeLinksDelayerFinal.run();
+                                finalLinkCrawlerDistributerDelayer.run();
                             } else {
                                 /* we do not delay the distribute */
                                 if (checkStartNotify(generation)) {
@@ -2256,7 +2261,15 @@ public class LinkCrawler {
                         wplg.setCrawler(this);
                         wplg.setLinkCrawlerAbort(new LinkCrawlerAbort(generation, this));
                         decryptedPossibleLinks = wplg.decryptLink(cryptedLink);
+                        /* remove distributer from plugin to process remaining/returned links */
+                        wplg.setDistributer(null);
+                        if (finalLinkCrawlerDistributerDelayer != null) {
+                            finalLinkCrawlerDistributerDelayer.setDelayerEnabled(false);
+                            /* make sure we dont have any unprocessed delayed Links */
+                            finalLinkCrawlerDistributerDelayer.delayedrun();
+                        }
                         if (decryptedPossibleLinks != null) {
+                            /* distribute remaining/returned links */
                             dist.distribute(decryptedPossibleLinks.toArray(new DownloadLink[decryptedPossibleLinks.size()]));
                         }
                         /* in case we return normally, clear the logger */
@@ -2264,9 +2277,6 @@ public class LinkCrawler {
                     } finally {
                         /* close the logger */
                         wplg.setLinkCrawlerAbort(null);
-                        distributeLinksDelayer.setDelayerEnabled(false);
-                        /* make sure we dont have any unprocessed delayed Links */
-                        distributeLinksDelayer.delayedrun();
                         wplg.setCurrentLink(null);
                         final long endTime = System.currentTimeMillis() - startTime;
                         lazyC.updateCrawlRuntime(endTime);
@@ -2281,8 +2291,6 @@ public class LinkCrawler {
                         lct.setVerbose(oldVerbose);
                         lct.setDebug(oldDebug);
                     }
-                    /* remove distributer from plugin */
-                    wplg.setDistributer(null);
                 }
                 if (decryptedPossibleLinks == null) {
                     this.handleBrokenCrawledLink(cryptedLink);
