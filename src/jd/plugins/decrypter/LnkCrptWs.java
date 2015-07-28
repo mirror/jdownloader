@@ -55,6 +55,7 @@ import javax.script.ScriptEngineManager;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -103,13 +104,13 @@ import net.miginfocom.swing.MigLayout;
 import org.appwork.storage.JSonStorage;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.seamless.util.io.IO;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
 public class LnkCrptWs extends antiDDoSForDecrypt {
@@ -672,6 +673,11 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
     }
 
     public static class KeyCaptcha {
+        public static enum KeyCaptchaType {
+            PUZZLE,
+            CATEGORY;
+        }
+
         private static Object LOCK = new Object();
 
         public static void prepareBrowser(final Browser kc, final String a) {
@@ -694,6 +700,9 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
         private String[]                     stImgs;
         private String[]                     sscStc;
         private LinkedHashMap<String, int[]> fmsImg;
+        private KeyCaptchaType               type;
+        private String[]                     images;
+        private String                       categoriesUrl;
 
         public KeyCaptcha(final Browser br) {
             this.br = br;
@@ -794,8 +803,36 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                 rcBr.getHeaders().put("Referer", DLURL);
                 SERVERSTRING = SERVERSTRING + Encoding.urlEncode(getGjsParameter() + additionalQuery) + "&r=" + Math.random() + "&sr=1920.1080";
                 rcBr.getPage(SERVERSTRING);
+                // rcBr.getRequest().setHtmlCode(IO.readURLToString(getClass().getResource("LnkCrptWs.java.js")));
                 additionalQuery = additionalQuery.substring(0, additionalQuery.lastIndexOf("|"));
                 PARAMS.put("s_s_c_web_server_sign3", rcBr.getRegex("s_s_c_setnewws\\(\"(.*?)\",").getMatch(0));
+
+                String categoryImagesList = rcBr.getRegex("var imgs=new Array\\((.+?)\\)").getMatch(0);
+                if (categoryImagesList != null) {
+                    type = KeyCaptchaType.CATEGORY;
+                    categoriesUrl = rcBr.getRegex("src\\s*=\\s*\"(http.+?\\.png)\".*?\\/>';s_s_c_back2").getMatch(0);
+
+                    BufferedImage img = ImageIO.read(rcBr.openGetConnection(categoriesUrl).getInputStream());
+                    if (img == null) {
+                        Dialog.getInstance().showConfirmDialog(0, "Category", categoriesUrl, null, null, null);
+                    } else {
+                        Dialog.getInstance().showConfirmDialog(0, "Category", categoriesUrl, new ImageIcon(img), null, null);
+                    }
+
+                    images = new Regex(categoryImagesList, "'(http[^']+)").getColumn(0);
+                    for (String im : images) {
+                        img = ImageIO.read(rcBr.openGetConnection(im).getInputStream());
+                        if (img == null) {
+                            Dialog.getInstance().showConfirmDialog(0, "", im, null, null, null);
+                        } else {
+                            Dialog.getInstance().showConfirmDialog(0, "", im, new ImageIcon(img), null, null);
+                        }
+
+                    }
+                    throw new Exception("KeyCaptcha Module fails: Category Type not supported");
+                } else {
+                    type = KeyCaptchaType.PUZZLE;
+                }
                 stImgs = rcBr.getRegex("\\(\'([0-9a-f]+)\',\'(http.*?\\.png)\',(.*?),(true|false)\\)").getRow(0);
                 sscStc = rcBr.getRegex("\\(\'([0-9a-f]+)\',\'(http.*?\\.png)\',(.*?),(true|false)\\)").getRow(1);
 
@@ -1381,10 +1418,10 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                 private Point loc;
 
                 private Timer mArrayTimer = new Timer(1000, new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        marray(loc);
-                    }
-                });
+                                              public void actionPerformed(ActionEvent e) {
+                                                  marray(loc);
+                                              }
+                                          });
 
                 @Override
                 public void mouseDragged(final MouseEvent e) {
@@ -2222,7 +2259,7 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                                 br.cloneBrowser().getDownload(file, url);
                                 // remove black bars
                                 Point p = null;
-                                final byte[] bytes = IO.readBytes(file);
+                                final byte[] bytes = IO.readFile(file);
                                 if (br.containsHTML("CaptX") && attempts < 2) {
                                     // try autosolve
                                     p = CaptXSolver.solveCaptXCaptcha(bytes);
@@ -2935,23 +2972,23 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
          */
         Comparator<Integer> isElementColor = new Comparator<Integer>() {
 
-            public int compare(Integer o1, Integer o2) {
-                int c = o1;
-                int c2 = o2;
-                if (isBackground(o1) || isBackground(o2)) {
-                    return 0;
-                }
-                if (c == 0x000000 || c2 == 0x000000) {
-                    return c == c2 ? 1 : 0;
-                }
-                int[] hsvC = Colors.rgb2hsv(c);
-                int[] hsvC2 = Colors.rgb2hsv(c2);
-                // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
-                        // Is it a typo? Was a different comparison meant in the second place?
-                                return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
-            }
+                                               public int compare(Integer o1, Integer o2) {
+                                                   int c = o1;
+                                                   int c2 = o2;
+                                                   if (isBackground(o1) || isBackground(o2)) {
+                                                       return 0;
+                                                   }
+                                                   if (c == 0x000000 || c2 == 0x000000) {
+                                                       return c == c2 ? 1 : 0;
+                                                   }
+                                                   int[] hsvC = Colors.rgb2hsv(c);
+                                                   int[] hsvC2 = Colors.rgb2hsv(c2);
+                                                   // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
+                                                   // Is it a typo? Was a different comparison meant in the second place?
+                                                   return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
+                                               }
 
-        };
+                                           };
 
         private boolean equalElements(int c, int c2) {
             return isElementColor.compare(c, c2) == 1;
