@@ -816,27 +816,27 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                     infos.put("host", br.getHost());
                     infos.put("type", type.name());
                     StatsManager.I().track("KeyCaptcha/type");
-                    final Browser dlpic = new Browser();
-                    KeyCaptcha.prepareBrowser(dlpic, "image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5");
+
+                    KeyCaptcha.prepareBrowser(rcBr, "image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5");
                     ArrayList<Image> imagesList = new ArrayList<Image>();
                     ArrayList<String> requests = new ArrayList<String>();
-                    BufferedImage img = ImageIO.read(dlpic.openGetConnection(categoriesUrl).getInputStream());
+                    BufferedImage img = ImageIO.read(rcBr.openGetConnection(categoriesUrl).getInputStream());
                     if (img != null) {
 
                         imagesList.add(img);
-                        requests.add(dlpic.getRequest() + "");
+                        requests.add(rcBr.getRequest() + "");
                     }
 
                     images = new Regex(categoryImagesList, "'(http[^']+)").getColumn(0);
                     for (String im : images) {
 
-                        KeyCaptcha.prepareBrowser(dlpic, "image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5");
-                        img = ImageIO.read(dlpic.openGetConnection(categoriesUrl).getInputStream());
+                        KeyCaptcha.prepareBrowser(rcBr, "image/png,image/svg+xml,image/*;q=0.8,*/*;q=0.5");
+                        img = ImageIO.read(rcBr.openGetConnection(im).getInputStream());
 
                         if (img != null) {
 
                             imagesList.add(img);
-                            requests.add(dlpic.getRequest() + "");
+                            requests.add(rcBr.getRequest() + "");
                         }
 
                     }
