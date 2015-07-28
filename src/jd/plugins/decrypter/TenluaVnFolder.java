@@ -28,68 +28,56 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tenlua.vn" }, urls = { "https?://(www\\.)?tenlua\\.vn/[^<>\"]+" }, flags = { 0 })
-public class TenluaVnFolder extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tenlua.vn" }, urls = { "https?://(www\\.)?tenlua\\.vn/[^<>\"]+" }, flags = { 0 })
+public class TenluaVnFolder extends antiDDoSForDecrypt {
 
     public TenluaVnFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private long    req_num      = 0;
-    private boolean pluginloaded = false;
+    private long req_num = 0;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://");
-        br.getPage(parameter);
-        final String fid = new Regex(parameter, "(#|/)download/?([a-z0-9]+)").getMatch(1);
+        final String fid = new Regex(parameter, "(?:(?:#|/)download|/folder)/?([a-z0-9]+)").getMatch(0);
         if (fid == null) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
+        br.getPage(parameter);
         postPageRaw("http://api2.tenlua.vn/", "[{\"a\":\"filemanager_builddownload_getinfo\",\"n\":\"" + fid + "\",\"r\":0." + System.currentTimeMillis() + "}]");
-        final String type = getJson("type", br.toString());
+        final String type = getJson("type");
         if ("none".equals(type)) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + parameter);
-            dl.setAvailable(false);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         } else if ("folder".equals(type)) {
-            final String fpName = getJson("folder_name", br.toString());
+            final String fpName = getJson("folder_name");
 
             /* Check for empty folder */
-            if ("0".equals(getJson("totalfile", br.toString()))) {
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setFinalFileName(fpName);
-                offline.setAvailable(false);
-                decryptedLinks.add(offline);
+            if ("0".equals(getJson("totalfile"))) {
+                decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
 
-            final String jsonArray = br.getRegex("\"content\":\\[(.*?)\\]\\}").getMatch(0);
-            final String[] links = jsonArray.split("\\},\\{");
+            final String jsonArray = getJsonArray("content");
+            final String[] links = getJsonResultsFromArray(jsonArray);
 
             for (final String singleinfo : links) {
-                String name = getJson("name", singleinfo);
+                String name = getJson(singleinfo, "name");
                 if (name == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                name = unescape(Encoding.htmlDecode(name.trim()));
+                name = Encoding.htmlDecode(name.trim());
                 final DownloadLink dl = createDownloadlink("http://tenluadecrypted.vn/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                final String filesize = getJson("real_size", singleinfo);
-                String url = getJson("link", singleinfo);
+                final String filesize = getJson(singleinfo, "real_size");
+                String url = getJson(singleinfo, "link");
                 if (filesize == null || url == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                url = url.replace("\\", "");
                 dl.setDownloadSize(Long.parseLong(filesize));
                 dl.setFinalFileName(name);
                 dl.setProperty("plain_name", name);
@@ -107,16 +95,16 @@ public class TenluaVnFolder extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
         } else {
-            String name = getJson("n", br.toString());
+            String name = getJson("n");
             final DownloadLink dl = createDownloadlink("http://tenluadecrypted.vn/" + System.currentTimeMillis() + new Random().nextInt(100000));
-            final String filesize = getJson("real_size", br.toString());
+            final String filesize = getJson("real_size");
             /* Mainlink = single link */
             final String url = parameter;
             if (filesize == null || url == null || name == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            name = unescape(Encoding.htmlDecode(name.trim()));
+            name = Encoding.htmlDecode(name.trim());
             dl.setDownloadSize(Long.parseLong(filesize));
             dl.setFinalFileName(name);
             dl.setProperty("plain_name", name);
@@ -139,26 +127,6 @@ public class TenluaVnFolder extends PluginForDecrypt {
             req_num++;
         }
         br.postPageRaw(url + req_num, postData);
-    }
-
-    private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (pluginloaded == false) {
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) {
-                throw new IllegalStateException("youtube plugin not found!");
-            }
-            pluginloaded = true;
-        }
-        return jd.plugins.hoster.Youtube.unescape(s);
-    }
-
-    private String getJson(final String parameter, final String source) {
-        String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
-        if (result == null) {
-            result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?\"([^<>\"]*?)\"").getMatch(1);
-        }
-        return result;
     }
 
 }
