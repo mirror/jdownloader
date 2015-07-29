@@ -37,7 +37,7 @@ import jd.utils.JDUtilities;
  *
  * @author raztoki
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkshrink.net" }, urls = { "https?://(www\\.)?linkshrink\\.net/[A-Za-z0-9]{6}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkshrink.net" }, urls = { "https?://(www\\.)?linkshrink\\.net/[A-Za-z0-9]{6}" }, flags = { 0 })
 public class LnkShnkNt extends PluginForDecrypt {
 
     public LnkShnkNt(PluginWrapper wrapper) {
@@ -47,24 +47,16 @@ public class LnkShnkNt extends PluginForDecrypt {
     private static final String type_invalid = "https?://(www\\.)?linkshrink\\.net/(report|login)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         if (parameter.matches(type_invalid)) {
-            logger.warning("Invalid Link!");
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404 || (br.getRedirectLocation() != null && br.getRedirectLocation().matches(type_invalid))) {
-            logger.warning("Invalid Link!");
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         String link = br.getRedirectLocation();
@@ -99,7 +91,7 @@ public class LnkShnkNt extends PluginForDecrypt {
                     throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
             }
-            final String continu = br.getRegex("href=\"([^\"]+)\">Continue").getMatch(0);
+            final String continu = br.getRegex("href=(\"|')([^\r\n]+)\\1>Continue").getMatch(1);
             if (continu == null) {
                 return null;
             }
