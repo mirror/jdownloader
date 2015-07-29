@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -28,12 +29,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upfile.vn" }, urls = { "http://(www\\.)?upfile\\.vn/(?!faq|register|login|terms|report_file)[a-z0-9]+" }, flags = { 0 })
-public class UpFileVn extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upfile.vn" }, urls = { "http://(www\\.)?upfile\\.vn/(?!faq|register|login|terms|report_file)[a-z0-9~]+(?:/.*?\\.html)?" }, flags = { 0 })
+public class UpFileVn extends antiDDoSForHost {
 
     public UpFileVn(PluginWrapper wrapper) {
         super(wrapper);
@@ -65,7 +67,7 @@ public class UpFileVn extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE) || !br.containsHTML("class=\"downloadPageTable(V2)?\"")) {
+        if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE) || !br.containsHTML("class=\"downloadPageTable(V2)?\"|<div class='Download'>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.getURL().contains(SIMULTANDLSLIMIT)) {
@@ -77,14 +79,22 @@ public class UpFileVn extends PluginForHost {
             link.getLinkStatus().setStatusText(SERVERERRORUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        final Regex fInfo = br.getRegex("<th class=\"descr\"([^<>]*?)?>[\t\n\r ]+<h1>([^<>\"]*?) \\((\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))\\)<br/>");
-        final String filename = fInfo.getMatch(1);
-        final String filesize = fInfo.getMatch(2);
-        if (filename == null || filesize == null) {
+        // Regex fInfo =
+        // br.getRegex("<th class=\"descr\"([^<>]*?)?>[\t\n\r ]+<h1>([^<>\"]*?) \\((\\d+(,\\d+)?(\\.\\d+)? (KB|MB|GB))\\)<br/>");
+        // String filename = fInfo.getMatch(1);
+        // String filesize = fInfo.getMatch(2);
+        // if (filename == null) {
+        final Regex fInfo = br.getRegex("<h1>(.*?) \\((\\d+([\\.,]\\d+)?\\s*(KB|MB|GB))\\)</h1>");
+        final String filename = fInfo.getMatch(0);
+        final String filesize = fInfo.getMatch(1);
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -97,12 +107,13 @@ public class UpFileVn extends PluginForHost {
         } else if (br.getURL().contains(SERVERERROR)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, SERVERERRORUSERTEXT, 5 * 60 * 1000l);
         }
-        final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
-        br.postPage("http://upfile.vn/set_se.html", "from_mail=test");
-        if (waittime != null) {
-            sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "?d=1", RESUME, MAXCHUNKS);
+        final String uid = new Regex(downloadLink.getDownloadURL(), "upfile\\.vn/([^/]+)").getMatch(0);
+        final String hash = JDHash.getSHA256(uid + 7891).toUpperCase();
+        br.postPage(br.getURL(), "Token=" + hash);
+        final String dllink = getJson("Link");
+        // 3 sec wait
+        sleep(4 * 1001l, downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, RESUME, MAXCHUNKS);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.getURL().contains(SERVERERROR)) {
@@ -153,9 +164,14 @@ public class UpFileVn extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
 
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-return true;
-}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MFScripts_YetiShare;
+    }
+
 }
