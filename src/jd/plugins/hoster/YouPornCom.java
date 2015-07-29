@@ -91,7 +91,7 @@ public class YouPornCom extends PluginForHost {
             br.getPage(br.getRedirectLocation());
         }
         // Offline link
-        if (br.containsHTML("<div id=\"video\\-not\\-found\\-related\"")) {
+        if (br.containsHTML("<div id=\"video\\-not\\-found\\-related\"|watchRemoved\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Invalid link
