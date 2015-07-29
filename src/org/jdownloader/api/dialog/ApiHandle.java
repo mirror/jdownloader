@@ -1,16 +1,17 @@
 package org.jdownloader.api.dialog;
 
 import org.appwork.uio.UserIODefinition;
+import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class ApiHandle {
 
-    private final long                        id;
-    private final long                        created  = System.currentTimeMillis();
-    private volatile boolean                  disposed = false;
-    private final UserIODefinition            impl;
-    private final Thread                      thread;
-    private Class<? extends UserIODefinition> iface;
-    private volatile UserIODefinition         answer;
+    private final UniqueAlltimeID                   id       = new UniqueAlltimeID();
+    private final long                              created  = System.currentTimeMillis();
+    private volatile boolean                        disposed = false;
+    private final UserIODefinition                  impl;
+    private final Thread                            thread;
+    private final Class<? extends UserIODefinition> iface;
+    private volatile UserIODefinition               answer;
 
     public UserIODefinition getAnswer() {
         return answer;
@@ -24,13 +25,12 @@ public class ApiHandle {
         return created;
     }
 
-    public long getId() {
+    public UniqueAlltimeID getUniqueAlltimeID() {
         return id;
     }
 
-    public ApiHandle(Class<? extends UserIODefinition> iface, UserIODefinition impl, long id, Thread thread) {
+    public ApiHandle(Class<? extends UserIODefinition> iface, UserIODefinition impl, Thread thread) {
         this.thread = thread;
-        this.id = id;
         this.impl = impl;
         this.iface = iface;
     }
