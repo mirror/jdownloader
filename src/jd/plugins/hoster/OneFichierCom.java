@@ -70,7 +70,7 @@ public class OneFichierCom extends PluginForHost {
     private static final int     maxdownloads_account_premium = -12;
     /* 2015-07-10: According to admin, resume is free mode is not possible anymore. On attempt this will lead to 404 server error! */
     private static final int     maxchunks_free               = 1;
-    private static final boolean resume_free                  = false;
+    private static final boolean resume_free                  = true;
     private static final int     maxdownloads_free            = 1;
     /*
      * Settings for hotlinks - basically such links are created by premium users so free users can download them without limits (same limits
