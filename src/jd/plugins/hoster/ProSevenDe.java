@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -47,6 +48,7 @@ public class ProSevenDe extends PluginForHost {
     private static AtomicReference<String> agent_hbbtv      = new AtomicReference<String>(null);
     private static AtomicReference<String> agent_normal     = new AtomicReference<String>(null);
     private String                         json             = null;
+    private static final String[][]        bitrate_info     = { { "tp12", "" }, { "tp11", "2628" }, { "tp10", "2328" }, { "tp09", "1896" }, { "tp08", "" }, { "tp07", "" }, { "tp06", "1296" }, { "tp05", "664" }, { "tp04", "" }, { "tp03", "" }, { "tp02", "" }, { "tp01", "" } };
 
     public ProSevenDe(final PluginWrapper wrapper) {
         super(wrapper);
@@ -83,6 +85,15 @@ public class ProSevenDe extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
+            /* Page offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (this.br.containsHTML(">Das Video ist nicht mehr verfügbar|Leider ist das Video nicht mehr verfügbar")) {
+            /* Video offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (!this.br.containsHTML("SIMAD\\.ContentType\\.VIDEO")) {
+            /* Content is not a (downloadable) video */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Possible API (needs video-ID) http://hbbtv.sat1.de/video_center?action=action.get.clip&clip_id=<videoid>&category_id=123&order=1 */
@@ -178,17 +189,8 @@ public class ProSevenDe extends PluginForHost {
         this.br = new Browser();
         /* User-Agent not necessarily needed */
         br.getHeaders().put("User-Agent", agent_hbbtv.get());
-        /*
-         * TODO: Improve this so that it grabs the better version - sometimes, 2 are available:
-         * http://www.kabeleins.de/tv/achtung-kontrolle/
-         * videos/2015111-freitag-vollziehungsbeamtin-jeanette-schmidt-das-spezial-1-ganze-folge
-         */
-        /*
-         * E.g. HQ:
-         * http://anonymz.com/?http://vod-level3-psd-progressive.p7s1digital.de/clips/07/87/3868276-f6dfsa-tp11.mp4?token=00~3b0674~
-         * 3b0674~55b60112~15180~0-e99fe8b23f79db4d9f4731aa9&ts=1437991186
-         */
-        br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clipID + "&app=hbbtv&type=1&method=1&callback=video" + clipID);
+        /* method=6 needed so that the Highest quality-trick works see 'getDllink' method */
+        br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clipID + "&app=hbbtv&type=1&method=6&callback=video" + clipID);
         getDllink();
         if (json == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -217,6 +219,19 @@ public class ProSevenDe extends PluginForHost {
             if (json.contains(URLTEXT_NO_FLASH)) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol rtmpe:// not supported");
             }
+            String dllink_temp = null;
+            for (final String[] single_bitrate_info : bitrate_info) {
+                /* Highest quality-trick */
+                final String quality_current = new Regex(json, "(tp\\d{2}\\.mp4\\?token=)").getMatch(0);
+                final String quality_highest = single_bitrate_info[0] + ".mp4?token=";
+                if (quality_current != null) {
+                    dllink_temp = json.replace(quality_current, quality_highest);
+                    if (checkDirectLink(dllink_temp)) {
+                        json = dllink_temp;
+                        break;
+                    }
+                }
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, json, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 403) {
@@ -230,6 +245,26 @@ public class ProSevenDe extends PluginForHost {
             }
             dl.startDownload();
         }
+    }
+
+    private boolean checkDirectLink(final String directurl) {
+        if (directurl != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                con = br2.openHeadConnection(directurl);
+                if (!con.getContentType().contains("html") && con.getResponseCode() == 200) {
+                    return true;
+                }
+            } catch (final Exception e) {
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return false;
     }
 
     /* Return string not needed but maybe useful for the future */
@@ -260,16 +295,6 @@ public class ProSevenDe extends PluginForHost {
      * */
     private String getJson(final String source, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     private String formatDate(String input) {

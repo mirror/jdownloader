@@ -113,6 +113,7 @@ public class DeviantArtCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        prepBR(this.br);
         if (link.getDownloadURL().matches(INVALIDLINKS)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -557,6 +558,11 @@ public class DeviantArtCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    public static void prepBR(final Browser br) {
+        /* Needed to view mature content */
+        br.setCookie("deviantart.com", "agegate_state", "1");
     }
 
     @Override

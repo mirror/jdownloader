@@ -35,6 +35,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?!art/|status/)[^<>\"]+" }, flags = { 0 })
 public class DevArtCm extends PluginForDecrypt {
@@ -83,6 +84,8 @@ public class DevArtCm extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        JDUtilities.getPluginForHost("deviantart.com");
+        jd.plugins.hoster.DeviantArtCom.prepBR(this.br);
         FASTLINKCHECK = SubConfiguration.getConfig("deviantart.com").getBooleanProperty(FASTLINKCHECK_2, false);
         synchronized (LOCK) {
             // checkFeatureDialog();
