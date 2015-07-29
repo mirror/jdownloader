@@ -35,7 +35,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.com", "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.\\-]*?\\.)?((daoifolder|yapapka|rusfolder|ifolder)\\.(net|ru|com)|files\\.metalarea\\.org)/(files/)?\\d+", "IFOLDERISNOWRUSFOLDER", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.com", "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.\\-]*?\\.)?((daoifolder|yapapka|rusfolder|ifolder)\\.(com|net|ru|su)|files\\.metalarea\\.org)/(files/)?\\d+", "IFOLDERISNOWRUSFOLDER", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0, 0 })
 public class IfolderRu extends PluginForHost {
 
     private String       ua          = null;
@@ -47,7 +47,7 @@ public class IfolderRu extends PluginForHost {
 
     /**
      * sets primary domain to be used throughout JDownloader!
-     *
+     * 
      * @author raztoki
      */
     private final String primaryHost = "rusfolder.com";
