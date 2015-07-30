@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -76,7 +77,6 @@ public class BaixarPremiumNet extends PluginForHost {
         final AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
-        ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
         if (!login(account, true)) {
             final String lang = System.getProperty("user.language");
@@ -91,7 +91,7 @@ public class BaixarPremiumNet extends PluginForHost {
         final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
         final ArrayList<String> supportedHosts = new ArrayList<String>();
 
-        br.getPage("/contas-ativas/");
+        br.getPage("http://baixarpremium.net/contas-ativas/");
         final String hoststext = br.getRegex("premium aos servidores <span style=\"[^\"]+\">(.*?)<").getMatch(0);
         final String[] crippledHosts = hoststext.split(", ");
         for (String crippledhost : crippledHosts) {
@@ -150,7 +150,7 @@ public class BaixarPremiumNet extends PluginForHost {
         login(account, false);
         final String keypass = br.getCookie(MAINPAGE, "utmhb");
         // final String dllink = "http://srv3.baixarpremium.net/?link=" + b16encode(link.getDownloadURL()) + "&pass=&keypass=" + keypass;
-        String dllink = br.getPage("http://baixarpremium.net/api/index.php?link=" + b16encode(link.getDownloadURL()) + "&keypass=" + keypass);
+        String dllink = br.getPage("http://baixarpremium.net/api/index.php?link=" + Encoding.base16Encode(link.getDownloadURL()) + "&keypass=" + keypass);
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -195,19 +195,6 @@ public class BaixarPremiumNet extends PluginForHost {
         }
     }
 
-    private final static char[] HEX = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-
-    public static String b16encode(final String input) {
-        final byte[] byteArray = input.getBytes();
-        StringBuffer hexBuffer = new StringBuffer(byteArray.length * 2);
-        for (int i = 0; i < byteArray.length; i++) {
-            for (int j = 1; j >= 0; j--) {
-                hexBuffer.append(HEX[(byteArray[i] >> (j * 4)) & 0xF]);
-            }
-        }
-        return hexBuffer.toString();
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         return AvailableStatus.UNCHECKABLE;
@@ -234,9 +221,11 @@ public class BaixarPremiumNet extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             br.setCookie(MAINPAGE, key, value);
                         }
+                        final Browser test = br.cloneBrowser();
+                        test.setFollowRedirects(true);
                         /* Avoid login captchas whenever possible! */
-                        br.getPage("http://baixarpremium.net/contas-ativas/");
-                        if (br.getURL().contains("contas-ativas")) {
+                        test.getPage("http://baixarpremium.net/contas-ativas/");
+                        if (test.getURL().endsWith("/contas-ativas/")) {
                             return true;
                         }
                         br.clearCookies(MAINPAGE);
@@ -253,7 +242,7 @@ public class BaixarPremiumNet extends PluginForHost {
                 }
                 br.getHeaders().put("Accept", "*/*");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("http://baixarpremium.net/acoes/deslogado/logar.php", postData);
+                br.postPage("/acoes/deslogado/logar.php", postData);
                 if (br.getCookie(MAINPAGE, "utmhb") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder login Captcha!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
