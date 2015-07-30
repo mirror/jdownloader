@@ -330,7 +330,7 @@ public class DropboxCom extends PluginForHost {
                 br.getHeaders().put("Accept", "text/plain, */*; q=0.01");
                 br.getHeaders().put("Accept-Language", "en-US;q=0.7,en;q=0.3");
                 br.postPage("/needs_captcha", "is_xhr=true&t=" + t + "&email=" + Encoding.urlEncode(account.getUser()));
-                // br.postPage("/sso_state", "is_xhr=true&t=" + t + "&email=" + Encoding.urlEncode(account.getUser()));
+                br.postPage("/sso_state", "is_xhr=true&t=" + t + "&email=" + Encoding.urlEncode(account.getUser()));
                 String postdata = "is_xhr=true&t=" + t + "&cont=%2F&require_role=&signup_data=&third_party_auth_experiment=CONTROL&signup_tag=&login_email=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=True";
                 postdata += "&login_sd=";
                 postdata += "";
