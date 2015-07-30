@@ -1114,7 +1114,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     final List<DownloadLink> noVetos = DownloadController.getInstance().askForRemoveVetos(asker, fp);
                     DownloadController.getInstance().removeChildren(noVetos);
                 } else {
-                    logger.info("Package is not finised");
+                    logger.info("Package is not finished");
                 }
                 return null;
             }

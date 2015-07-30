@@ -99,9 +99,9 @@ public class BandCampCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(downloadLink.getDownloadURL());
-            if (!con.getContentType().contains("html")) {
+            if (con.getResponseCode() == 200 && !con.getContentType().contains("html")) {
                 DLLINK = downloadLink.getDownloadURL();
-                downloadLink.setDownloadSize(con.getLongContentLength());
+                downloadLink.setVerifiedFileSize(con.getLongContentLength());
                 downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 return AvailableStatus.TRUE;
             } else {
@@ -163,8 +163,8 @@ public class BandCampCom extends PluginForHost {
         br2.setFollowRedirects(true);
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
+            if (con.getResponseCode() == 200 && !con.getContentType().contains("html")) {
+                downloadLink.setVerifiedFileSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

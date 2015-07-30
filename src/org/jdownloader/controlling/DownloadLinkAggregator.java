@@ -2,14 +2,13 @@ package org.jdownloader.controlling;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map.Entry;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.plugins.FinalLinkState;
 
@@ -33,7 +32,7 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
     }
 
     public int getOnlineStatusUnkownCount() {
-        return onlineStatusUnkownCount;
+        return getTotalCount() - getOnlineStatusOfflineCount() - getOnlineStatusOfflineCount();
     }
 
     public int getEnabledCount() {
@@ -41,7 +40,7 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
     }
 
     public int getDisabledCount() {
-        return disabledCount;
+        return getTotalCount() - getEnabledCount();
     }
 
     public long getTotalBytes() {
@@ -56,9 +55,7 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
         return finishedCount;
     }
 
-    private int     onlineStatusUnkownCount;
     private int     enabledCount;
-    private int     disabledCount;
     private long    totalBytes;
     private long    bytesLoaded;
     private int     finishedCount;
@@ -84,9 +81,8 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
     }
 
     public DownloadLinkAggregator(FilePackage fp) {
-        boolean readL = fp.getModifyLock().readLock();
+        final boolean readL = fp.getModifyLock().readLock();
         try {
-
             update(fp.getChildren());
         } finally {
             fp.getModifyLock().readUnlock(readL);
@@ -100,118 +96,128 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
         update(si.getChildren());
     }
 
-    public void update(List<DownloadLink> children) {
-        int total = 0;
+    public void update(final List<DownloadLink> children) {
         int enabled = 0;
-        int disabled = 0;
         int offline = 0;
         int online = 0;
-        int unknownOnlineStatus = 0;
-        long totalBytes = 0;
+        long totalBytes = -1;
         long bytesLoaded = 0;
         long bytesToDo = 0;
         int finished = 0;
         long speed = 0;
         int localFileCount = 0;
-        final HashMap<String, MirrorPackage> dupeSet = new HashMap<String, MirrorPackage>();
-        MirrorPackage list;
-        for (DownloadLink link : children) {
-            if (isMirrorHandlingEnabled()) {
+        final int total;
+        final boolean isLocalFileMode = isLocalFileUsageEnabled();
+        if (isMirrorHandlingEnabled()) {
+            final HashMap<String, MirrorPackage> mirrorPackages = new HashMap<String, MirrorPackage>();
+            for (final DownloadLink link : children) {
                 String mirrorID = createDupeID(link);
-                // TODO:Check if this can result in an endless loop
+                final HashSet<String> idDupes = new HashSet<String>();
+                idDupes.add(mirrorID);
                 while (mirrorID != null) {
-                    list = dupeSet.get(mirrorID);
-                    if (list == null) {
-                        dupeSet.put(mirrorID, list = new MirrorPackage(mirrorID, this));
+                    MirrorPackage mirrorPackage = mirrorPackages.get(mirrorID);
+                    if (mirrorPackage == null) {
+                        mirrorPackages.put(mirrorID, mirrorPackage = new MirrorPackage(mirrorID, this));
                     }
-                    final String newID = list.add(link);
-                    if (newID == null || StringUtils.equals(mirrorID, newID)) {
+                    final String newID = mirrorPackage.add(link);
+                    if (newID == null || idDupes.add(newID) == false) {
                         break;
                     } else {
                         mirrorID = newID;
                     }
                 }
-            } else {
-                speed += link.getView().getSpeedBps();
-                totalBytes += link.getView().getBytesTotal();
-                if (isLocalFileUsageEnabled()) {
+            }
+            total = mirrorPackages.values().size();
+            boolean fileSizeKnown = false;
+            for (final MirrorPackage mirrorPackage : mirrorPackages.values()) {
+                final long fileSize = mirrorPackage.getTotalBytes();
+                final long loaded = mirrorPackage.getBytesLoaded();
+                if (fileSize >= 0) {
+                    fileSizeKnown = true;
+                    totalBytes += fileSize;
+                }
+
+                if (isLocalFileMode && loaded > 0) {
+                    localFileCount++;
+                }
+
+                bytesLoaded += loaded;
+                bytesToDo += Math.max(0, fileSize - loaded);
+
+                if (mirrorPackage.isFinished()) {
+                    finished++;
+                }
+                if (mirrorPackage.isEnabled()) {
+                    enabled++;
+                    speed += mirrorPackage.getSpeed();
+                }
+                if (mirrorPackage.isOnline()) {
+                    online++;
+                } else if (mirrorPackage.isOffline()) {
+                    offline++;
+                }
+            }
+            if (fileSizeKnown) {
+                totalBytes += 1;
+            }
+        } else {
+            boolean fileSizeKnown = false;
+            total = children.size();
+            for (final DownloadLink link : children) {
+                final DownloadLinkView view = link.getView();
+                final long fileSize = view.getBytesTotal();
+                if (fileSize >= 0) {
+                    fileSizeKnown = true;
+                    totalBytes += fileSize;
+                }
+                final boolean isFinished = FinalLinkState.CheckFinished(link.getFinalLinkState());
+                if (isFinished) {
+                    finished++;
+                }
+                long loaded = 0;
+                if (isLocalFileMode) {
                     final String fileOutput = link.getFileOutput();
                     if (StringUtils.isNotEmpty(fileOutput)) {
-                        File a = new File(fileOutput + ".part");
-                        if (a.exists()) {
-                            bytesLoaded += a.length();
-                            localFileCount++;
+                        final File checkFile;
+                        if (isFinished) {
+                            checkFile = new File(fileOutput);
                         } else {
-                            a = new File(fileOutput);
-                            if (a.exists()) {
-                                bytesLoaded += a.length();
-                                localFileCount++;
-                            }
+                            checkFile = new File(fileOutput + ".part");
+                        }
+                        if (checkFile.exists()) {
+                            loaded = checkFile.length();
+                            localFileCount++;
                         }
                     }
                 } else {
-                    bytesLoaded += link.getView().getBytesLoaded();
+                    loaded = view.getBytesLoaded();
                 }
-                bytesToDo += Math.max(0, link.getView().getBytesTotal() - link.getView().getBytesTotalEstimated());
-                total++;
-                if (FinalLinkState.CheckFinished(link.getFinalLinkState()) && (link.getExtractionStatus() == ExtractionStatus.SUCCESSFUL || new File(link.getFileOutput()).exists())) {
-                    finished++;
-                }
+                bytesLoaded += loaded;
+                bytesToDo += Math.max(0, fileSize - loaded);
                 if (link.isEnabled()) {
                     enabled++;
-                } else {
-                    disabled++;
+                    if (!isFinished && link.getDownloadLinkController() != null) {
+                        speed += view.getSpeedBps();
+                    }
                 }
                 switch (link.getAvailableStatus()) {
-                case FALSE:
-                    offline++;
-                    break;
                 case TRUE:
                     online++;
                     break;
-                default:
-                    unknownOnlineStatus++;
-                }
-            }
-
-        }
-        if (mirrorHandlingEnabled) {
-            for (Entry<String, MirrorPackage> e : dupeSet.entrySet()) {
-                list = e.getValue();
-                totalBytes += list.getTotalBytes();
-                bytesLoaded += list.getBytesLoaded();
-                if (list.getBytesLoaded() > 0 && isLocalFileUsageEnabled()) {
-                    localFileCount++;
-                }
-                bytesToDo += Math.max(0, list.getTotalBytes() - list.getBytesLoaded());
-                speed += list.getSpeed();
-                total++;
-                if (list.isFinished()) {
-                    finished++;
-                }
-                if (list.isEnabled()) {
-                    enabled++;
-                } else {
-                    disabled++;
-                }
-                if (list.isOffline()) {
+                case FALSE:
                     offline++;
-                } else if (list.isOnline()) {
-                    online++;
-                } else if (list.isUnknownOnlineStatus()) {
-                    unknownOnlineStatus++;
+                    break;
                 }
-
             }
-
+            if (fileSizeKnown) {
+                totalBytes += 1;
+            }
         }
         this.localFileCount = localFileCount;
         this.totalCount = total;
         this.onlineStatusOfflineCount = offline;
         this.onlineStatusOnlineCount = online;
-        this.onlineStatusUnkownCount = unknownOnlineStatus;
         this.enabledCount = enabled;
-        this.disabledCount = disabled;
         this.totalBytes = totalBytes;
         this.bytesLoaded = bytesLoaded;
         this.finishedCount = finished;
