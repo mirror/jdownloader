@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "firedrop.com" }, urls = { "https?://(www\\.)?firedrop\\.com/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "firedrop.com" }, urls = { "https?://(www\\.)?firedrop\\.com/[A-Za-z0-9]+" }, flags = { 0 })
 public class FiredropCom extends PluginForHost {
 
     public FiredropCom(PluginWrapper wrapper) {
