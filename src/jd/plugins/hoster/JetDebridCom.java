@@ -294,7 +294,7 @@ public class JetDebridCom extends PluginForHost {
 
         this.login(account, true);
 
-        this.getAPISafe(DOMAIN + "user_dashboard.php");
+        this.getAPISafe("/user_dashboard.php");
 
         final String accounttype = br.getRegex(">Status</td>.*?value=([^<>\"]*?)>").getMatch(0);
         final String validuntil = br.getRegex(">Expire Date</td>.*?value=([^<>\"]*?)>").getMatch(0);
@@ -304,11 +304,11 @@ public class JetDebridCom extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
             }
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium account");
+            ai.setStatus("Premium Account");
             ai.setUnlimitedTraffic();
         } else {
             account.setType(AccountType.FREE);
-            ai.setStatus("Registered (free) account");
+            ai.setStatus("Free Account");
             /* It's impossible to download anything with free accounts of this service. */
             ai.setTrafficLeft(0);
         }
@@ -347,7 +347,7 @@ public class JetDebridCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                this.postAPISafe(DOMAIN + "user_login_session.php", "B1=Login&user_name1=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                this.postAPISafe(DOMAIN + "user_login_session.php", "B1=Login&user_name2=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (this.br.getCookie(DOMAIN, "secureid") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
