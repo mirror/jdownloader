@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -41,13 +40,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "weshare.me" }, urls = { "https?://(www\\.)?weshare\\.me/[A-Za-z0-9]+" }, flags = { 2 })
-public class WeShareMe extends PluginForHost {
+public class WeShareMe extends antiDDoSForHost {
 
     public WeShareMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -114,13 +114,13 @@ public class WeShareMe extends PluginForHost {
         }
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename;
         String filesize;
         if (available_CHECK_OVER_INFO_PAGE) {
-            br.getPage(link.getDownloadURL() + "~i");
+            getPage(link.getDownloadURL() + "~i");
             if (!br.getURL().contains("~i")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -131,7 +131,7 @@ public class WeShareMe extends PluginForHost {
             }
             filesize = br.getRegex("(Filesize|File Size):([\t\n\r ]+)?</td>[\t\n\r ]+<td([^<>]+)?>([^<>\"]*?)<").getMatch(3);
         } else {
-            br.getPage(link.getDownloadURL());
+            getPage(link.getDownloadURL());
             handleErrors();
             if (br.getURL().contains(url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT)) {
                 link.setName(getFID(link));
@@ -186,7 +186,7 @@ public class WeShareMe extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, resume, maxchunks);
         } else {
             if (available_CHECK_OVER_INFO_PAGE) {
-                br.getPage(downloadLink.getDownloadURL());
+                getPage(downloadLink.getDownloadURL());
             }
             if (br.getURL().contains(url_ERROR_SIMULTANDLSLIMIT)) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errortext_ERROR_SIMULTANDLSLIMIT, 1 * 60 * 1000l);
@@ -353,22 +353,6 @@ public class WeShareMe extends PluginForHost {
         return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
-    /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_MAXDOWNLOADS;
@@ -399,12 +383,12 @@ public class WeShareMe extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage(this.getProtocol() + "www." + this.getHost() + "/login." + type);
+                getPage(this.getProtocol() + "www." + this.getHost() + "/login." + type);
                 final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
                 final String loginpostpage = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                br.postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                postPage(loginpostpage, "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 final String lang = System.getProperty("user.language");
                 if (!br.containsHTML("\"login_status\":\"success\"")) {
                     if ("de".equalsIgnoreCase(lang)) {
@@ -413,7 +397,7 @@ public class WeShareMe extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.getPage(loginstart + this.getHost() + "/account_home." + type);
+                getPage(loginstart + this.getHost() + "/account_home." + type);
                 if (!br.containsHTML("class=\"badge badge\\-success\">PAID USER</span>")) {
                     account.setProperty("free", true);
                 } else {
@@ -456,7 +440,7 @@ public class WeShareMe extends PluginForHost {
             MAXPREM.set(account_FREE_MAXDOWNLOADS);
             ai.setStatus("Registered (free) user");
         } else {
-            br.getPage(getProtocol() + "www." + this.getHost() + "/upgrade." + type);
+            getPage(getProtocol() + "www." + this.getHost() + "/upgrade." + type);
             /* If the premium account is expired we'll simply accept it as a free account. */
             final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
@@ -498,7 +482,7 @@ public class WeShareMe extends PluginForHost {
         login(account, false);
         if (account.getBooleanProperty("free", false)) {
             if (!available_CHECK_OVER_INFO_PAGE) {
-                br.getPage(link.getDownloadURL());
+                getPage(link.getDownloadURL());
             }
             doFree(link, account_FREE_RESUME, account_FREE_MAXCHUNKS, "free_acc_directlink");
         } else {
@@ -545,6 +529,11 @@ public class WeShareMe extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MFScripts_YetiShare;
     }
 
 }
