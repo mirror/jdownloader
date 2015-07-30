@@ -226,7 +226,6 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
         if (StringUtils.isEmpty(newPkgName)) {
             throw new BadParameterException("empty package name");
         }
-
         final SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(linkIds, pkgIds);
         if (selection.getChildren().size() > 0) {
             final PackageType pt = getPackageInstanceByChildrenType(selection.getChildren().get(0));

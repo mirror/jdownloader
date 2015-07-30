@@ -1001,6 +1001,13 @@ public class DirectHTTP extends PluginForHost {
                             }
                         }
                         if (embeddedLink == null) {
+                            final String urlParams = downloadLink.getStringProperty(DirectHTTP.POSSIBLE_URLPARAM, null);
+                            if (urlParams != null) {
+                                downloadLink.setProperty(DirectHTTP.POSSIBLE_URLPARAM, Property.NULL);
+                                final String newURL = getDownloadURL(downloadLink) + urlParams;
+                                setDownloadURL(newURL, downloadLink);
+                                return this.requestFileInformation(downloadLink);
+                            }
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                     }

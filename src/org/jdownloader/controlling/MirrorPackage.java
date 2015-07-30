@@ -8,14 +8,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.extensions.extraction.ExtractionStatus;
 import org.jdownloader.plugins.FinalLinkState;
 
 public class MirrorPackage {
 
-    private String                  id;
-    private ArrayList<DownloadLink> list;
-    private boolean                 finished = false;
+    private final String                  id;
+    private final ArrayList<DownloadLink> list     = new ArrayList<DownloadLink>();
+    private boolean                       finished = false;
 
     public boolean isFinished() {
         return finished;
@@ -25,16 +24,16 @@ public class MirrorPackage {
         return bytesLoaded;
     }
 
-    private long               bytesLoaded = 0;
-    private long               bytesTotal  = -1;
-    private boolean            online      = false;
-    private boolean            offline     = true;
-    private boolean            enabled     = false;
-    private String             md5         = null;
-    private String             sha1        = null;
-    private String             sha256      = null;
-    private long               speed;
-    private MirrorPackageSetup setup;
+    private long                     bytesLoaded = 0;
+    private long                     bytesTotal  = -1;
+    private boolean                  online      = false;
+    private boolean                  offline     = true;
+    private boolean                  enabled     = false;
+    private String                   md5         = null;
+    private String                   sha1        = null;
+    private String                   sha256      = null;
+    private long                     speed;
+    private final MirrorPackageSetup setup;
 
     public boolean isOffline() {
         return offline;
@@ -51,69 +50,78 @@ public class MirrorPackage {
     public MirrorPackage(String mirrorID, MirrorPackageSetup setup) {
         id = mirrorID;
         this.setup = setup;
-        list = new ArrayList<DownloadLink>();
     }
 
     public String add(DownloadLink link) {
-        if (bytesTotal > 0 && link.getView().getBytesTotal() > 0 && link.getView().getBytesTotal() != bytesTotal) {
+        final DownloadLinkView view = link.getView();
+        final long linkBytesTotal = view.getBytesTotal();
+        if (bytesTotal > 0 && linkBytesTotal > 0 && linkBytesTotal != bytesTotal) {
             // size mismatch
-            return id + "/" + link.getView().getBytesTotal();
+            return id + "/" + linkBytesTotal;
         }
-        if (StringUtils.isNotEmpty(md5) && StringUtils.isNotEmpty(link.getMD5Hash()) && !link.getMD5Hash().toLowerCase(Locale.ENGLISH).equals(md5)) {
+        final String linkMD5 = link.getMD5Hash();
+        if (StringUtils.isNotEmpty(md5) && StringUtils.isNotEmpty(linkMD5) && !StringUtils.equalsIgnoreCase(md5, linkMD5)) {
             // hash mismatch
-            return id + "/" + link.getMD5Hash().toLowerCase(Locale.ENGLISH);
+            return id + "/" + linkMD5.toLowerCase(Locale.ENGLISH);
         }
-        if (StringUtils.isNotEmpty(sha1) && StringUtils.isNotEmpty(link.getSha1Hash()) && !link.getSha1Hash().toLowerCase(Locale.ENGLISH).equals(sha1)) {
+        final String linkSHA1 = link.getSha1Hash();
+        if (StringUtils.isNotEmpty(sha1) && StringUtils.isNotEmpty(linkSHA1) && !StringUtils.equalsIgnoreCase(sha1, linkSHA1)) {
             // hash mismatch
-            return id + "/" + link.getSha1Hash().toLowerCase(Locale.ENGLISH);
+            return id + "/" + linkSHA1.toLowerCase(Locale.ENGLISH);
         }
-        if (StringUtils.isNotEmpty(sha256) && StringUtils.isNotEmpty(link.getSha256Hash()) && !link.getSha256Hash().toLowerCase(Locale.ENGLISH).equals(sha256)) {
+        final String linkSHA256 = link.getSha256Hash();
+        if (StringUtils.isNotEmpty(sha256) && StringUtils.isNotEmpty(linkSHA256) && !StringUtils.equalsIgnoreCase(sha256, linkSHA256)) {
             // hash mismatch
-            return id + "/" + link.getSha256Hash().toLowerCase(Locale.ENGLISH);
+            return id + "/" + linkSHA256.toLowerCase(Locale.ENGLISH);
+        }
+        if (StringUtils.isEmpty(md5)) {
+            md5 = linkMD5;
+        }
+        if (StringUtils.isEmpty(sha1)) {
+            sha1 = linkSHA1;
+        }
+        if (StringUtils.isEmpty(sha256)) {
+            sha256 = linkSHA256;
         }
 
-        finished |= FinalLinkState.CheckFinished(link.getFinalLinkState()) && (link.getExtractionStatus() == ExtractionStatus.SUCCESSFUL || new File(getFileOutput(link)).exists());
-
+        final boolean isFinished = FinalLinkState.CheckFinished(link.getFinalLinkState());
+        if (isFinished) {
+            finished = true;
+        }
         if (setup.isLocalFileUsageEnabled()) {
-            File a = new File(getFileOutput(link) + ".part");
-            if (a.exists()) {
-                bytesLoaded = Math.max(bytesLoaded, a.length());
-            } else {
-                a = new File(getFileOutput(link));
-                if (a.exists()) {
-
-                    bytesLoaded = Math.max(bytesLoaded, a.length());
+            final String fileOutput = link.getFileOutput();
+            if (StringUtils.isNotEmpty(fileOutput)) {
+                final File checkFile;
+                if (isFinished) {
+                    checkFile = new File(fileOutput);
+                } else {
+                    checkFile = new File(fileOutput + ".part");
+                }
+                if (checkFile.exists()) {
+                    bytesLoaded = Math.max(bytesLoaded, checkFile.length());
                 }
             }
-
         } else {
+            bytesLoaded = Math.max(bytesLoaded, view.getBytesLoaded());
+        }
+        bytesTotal = Math.max(bytesTotal, view.getBytesTotal());
 
-            bytesLoaded = Math.max(bytesLoaded, link.getView().getBytesLoaded());
+        if (link.getAvailableStatus() == AvailableStatus.TRUE) {
+            online = true;
+        } else {
+            offline &= link.getAvailableStatus() == AvailableStatus.FALSE;
         }
-        if (StringUtils.isEmpty(md5) && StringUtils.isNotEmpty(link.getMD5Hash())) {
-            md5 = link.getMD5Hash().toLowerCase(Locale.ENGLISH);
+        if (link.isEnabled()) {
+            enabled = true;
+            if (!isFinished && link.getDownloadLinkController() != null) {
+                speed = Math.max(speed, view.getSpeedBps());
+            }
         }
-        if (StringUtils.isEmpty(sha1) && StringUtils.isNotEmpty(link.getSha1Hash())) {
-            sha1 = link.getSha1Hash().toLowerCase(Locale.ENGLISH);
-        }
-        if (StringUtils.isEmpty(sha256) && StringUtils.isNotEmpty(link.getSha256Hash())) {
-            sha256 = link.getSha256Hash().toLowerCase(Locale.ENGLISH);
-        }
-
-        if (bytesTotal < 0) {
-            bytesTotal = link.getView().getBytesTotal();
-        }
-
-        online |= link.getAvailableStatus() == AvailableStatus.TRUE;
-        offline &= link.getAvailableStatus() == AvailableStatus.FALSE;
-        enabled |= link.isEnabled();
-        speed = Math.max(speed, link.getView().getSpeedBps());
         list.add(link);
         return null;
     }
 
     private String getFileOutput(DownloadLink link) {
-
         return link.getFileOutput();
     }
 
