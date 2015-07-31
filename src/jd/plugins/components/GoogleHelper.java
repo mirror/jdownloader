@@ -400,18 +400,37 @@ public class GoogleHelper {
             // </div>
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "You seem to be having trouble getting your sms verification code.  Please try again later.");
         }
-        String number = br.getRegex("<span\\s+class\\s*=\\s*\"twostepphone\".*?>(.*?)</span>").getMatch(0);
-        InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null);
-        InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
-        handler.throwCloseExceptions();
-        InputField smsUserPin = form.getInputFieldByName("smsUserPin");
-        smsUserPin.setValue(Encoding.urlEncode(handler.getText()));
-        InputField persistentCookie = form.getInputFieldByName("PersistentCookie");
-        persistentCookie.setValue(Encoding.urlEncode("on"));
-        form.remove("smsSend");
-        form.remove("retry");
-        submitForm(br, form);
 
+        String number = br.getRegex("<span\\s+class\\s*=\\s*\"twostepphone\".*?>(.*?)</span>").getMatch(0);
+        if (number != null) {
+            StatsManager.I().track("google/twofactor/1");
+            InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null);
+            InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
+            handler.throwCloseExceptions();
+            InputField smsUserPin = form.getInputFieldByName("smsUserPin");
+            smsUserPin.setValue(Encoding.urlEncode(handler.getText()));
+            InputField persistentCookie = form.getInputFieldByName("PersistentCookie");
+            persistentCookie.setValue(Encoding.urlEncode("on"));
+            form.remove("smsSend");
+            form.remove("retry");
+            submitForm(br, form);
+
+        } else {
+            // new version implemented on 31th july 2015
+            StatsManager.I().track("google/twofactor/2");
+            number = br.getRegex("<span\\s+class\\s*=\\s*\"twostepphone\".*?>(.*?)</span>").getMatch(0);
+            InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null);
+            InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
+            handler.throwCloseExceptions();
+            InputField smsUserPin = form.getInputFieldByName("smsUserPin");
+            smsUserPin.setValue(Encoding.urlEncode(handler.getText()));
+            InputField persistentCookie = form.getInputFieldByName("PersistentCookie");
+            persistentCookie.setValue(Encoding.urlEncode("on"));
+            form.remove("smsSend");
+            form.remove("retry");
+            submitForm(br, form);
+
+        }
         handleIntersitial();
     }
 
@@ -428,13 +447,13 @@ public class GoogleHelper {
             // </div>
             throw new PluginException(LinkStatus.ERROR_PREMIUM, "You seem to be having trouble getting your sms verification code.  Please try again later.");
         }
-        String number = br.getRegex("<span\\s+class\\s*=\\s*\"twostepphone\".*?>(.*?)</span>").getMatch(0);
+        String number = br.getRegex("<b dir=\"ltr\">(.*?)</b>").getMatch(0);
         InputDialog d = new InputDialog(0, _JDT._.Google_helper_2factor_sms_dialog_title(), _JDT._.Google_helper_2factor_sms_dialog_msg(number.trim()), null, new AbstractIcon(IconKey.ICON_TEXT, 32), null, null);
         InputDialogInterface handler = UIOManager.I().show(InputDialogInterface.class, d);
         handler.throwCloseExceptions();
-        InputField smsUserPin = form.getInputFieldByName("smsUserPin");
+        InputField smsUserPin = form.getInputFieldByName("Pin");
         smsUserPin.setValue(Encoding.urlEncode(handler.getText()));
-        InputField persistentCookie = form.getInputFieldByName("PersistentCookie");
+        InputField persistentCookie = form.getInputFieldByName("TrustDevice");
         persistentCookie.setValue(Encoding.urlEncode("on"));
         form.remove("smsSend");
         form.remove("retry");
