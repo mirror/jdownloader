@@ -1947,6 +1947,24 @@ public abstract class K2SApi extends PluginForHost {
                         }
                     }
                 }
+                // javascript also doesn't always use "
+                // js with '
+                result = new Regex(source, "'" + Pattern.quote(key) + "'[ \t]*:[ \t]*(![01]|-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
+                if (result == null) {
+                    result = new Regex(source, "'" + Pattern.quote(key) + "'[ \t]*:[ \t]*'([^']*)'").getMatch(0);
+                    if (result != null) {
+                        // some rudimentary detection if we have braked at the wrong place.
+                        while (result.endsWith("'")) {
+                            String xtraResult = new Regex(source, "\"" + Pattern.quote(key) + "\"[ \t]*:[ \t]*'(" + Pattern.quote(result) + "'[^']*'?)'").getMatch(0);
+                            if (xtraResult != null) {
+                                result = xtraResult;
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                }
+
             }
 
             result = validateResultForArrays(source, result);
@@ -1999,7 +2017,7 @@ public abstract class K2SApi extends PluginForHost {
             }
             String[] result = null;
             // two types of actions can happen here. it could be series of [{"blah":"blah1"},{"blah":"blah2"}] or series of ["blah","blah2"]
-            if (source.startsWith("[{")) {
+            if (new Regex(source, "^\\s*\\[\\s*\\{.+$").matches()) {
                 result = new Regex(source, "\\s*(?:\\[|,)\\s*(\\{.*?\\})\\s*").getColumn(0);
             } else {
                 result = new Regex(source, "\\s*(?:\\[|,)\\s*\"([^\"]+)\"\\s*").getColumn(0);
