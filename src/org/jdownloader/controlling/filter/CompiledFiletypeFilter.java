@@ -248,7 +248,9 @@ public class CompiledFiletypeFilter {
         XZ,
         TGZ,
         LZH,
-        LHA;
+        LHA,
+        PAR2("(vol\\d+\\.par2|vol\\d+\\+\\d+\\.par2|par2)"),
+        PAR("(p\\d+|par)");
 
         private final Pattern  pattern;
         private static Pattern allPattern;
