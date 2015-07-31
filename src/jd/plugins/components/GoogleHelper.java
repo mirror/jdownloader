@@ -185,8 +185,8 @@ public class GoogleHelper {
             this.br.setDebug(true);
             this.br.setCookiesExclusive(true);
             // delete all cookies
-            this.br.clearCookies(null);
-
+            this.br.clearCookies("google.com");
+            this.br.clearCookies("youtube.com");
             br.setCookie("http://google.com", "PREF", "hl=en-GB");
 
             if (isCacheEnabled() && account.getProperty(COOKIES2) != null) {
