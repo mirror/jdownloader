@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.swing.Icon;
+
 import jd.controlling.faviconcontroller.FavIcons;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
@@ -18,7 +20,7 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 public class QuickFilterHosterTable extends FilterTable {
 
     /**
-     * 
+     *
      */
     private static final long       serialVersionUID = 658947589171018284L;
     private HashMap<String, Filter> filterMapping    = new HashMap<String, Filter>();
@@ -107,14 +109,18 @@ public class QuickFilterHosterTable extends FilterTable {
         final DomainInfo info = link.getDomainInfo();
         final String ID;
         final String HOST;
+        final Icon favIcon;
         if (link.isDirectHTTP()) {
             HOST = Browser.getHost(link.getURL());
-            ID = "http_" + HOST;
+            ID = "http_".concat(HOST);
+            favIcon = null;
         } else if (link.isFTP()) {
             HOST = Browser.getHost(link.getURL());
-            ID = "ftp_" + HOST;
+            ID = "ftp_".concat(HOST);
+            favIcon = null;
         } else {
             HOST = info.getTld();
+            favIcon = info.getFavIcon();
             ID = HOST;
         }
         Filter ret = filterMapping.get(ID);
@@ -136,7 +142,11 @@ public class QuickFilterHosterTable extends FilterTable {
                 }
 
             };
-            ret.setIcon(FavIcons.getFavIcon(HOST, ret));
+            if (favIcon != null) {
+                ret.setIcon(favIcon);
+            } else {
+                ret.setIcon(FavIcons.getFavIcon(HOST, ret));
+            }
             filterMapping.put(ID, ret);
             if (!ret.isEnabled()) {
                 newDisabledFilters.set(true);
