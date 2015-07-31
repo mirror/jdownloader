@@ -90,9 +90,11 @@ public class BaixarPremiumNet extends PluginForHost {
         // now let's get a list of all supported hosts:
         final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-
         br.getPage("http://baixarpremium.net/contas-ativas/");
-        final String hoststext = br.getRegex("premium aos servidores <span style=\"[^\"]+\">(.*?)<").getMatch(0);
+        String hoststext = br.getRegex("premium aos servidores <span style=\"[^\"]+\">(.*?)<").getMatch(0);
+        if (hoststext == null) {
+            hoststext = br.getRegex("CONTENT=\"BaixarPremium, baixar premium, (.*?)k2s premium").getMatch(0);
+        }
         final String[] crippledHosts = hoststext.split(", ");
         for (String crippledhost : crippledHosts) {
             crippledhost = crippledhost.trim();
@@ -286,7 +288,7 @@ public class BaixarPremiumNet extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     *
+     * 
      * @param error
      *            : The name of the error
      * @param maxRetries
