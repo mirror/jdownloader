@@ -271,8 +271,11 @@ public class NitroFlareCom extends antiDDoSForHost {
                         ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(downloadLink));
                     }
                 }
+                getLogger().info("Cookies7: " + br.getCookies("nitroflare.com"));
                 ajaxPost(br, "/ajax/freeDownload.php", "method=startTimer&fileId=" + getFUID(downloadLink));
+                getLogger().info("Cookies6: " + br.getCookies("nitroflare.com"));
                 handleErrors(ajax, false);
+                getLogger().info("Cookies5: " + br.getCookies("nitroflare.com"));
                 final long t = System.currentTimeMillis();
                 final String waittime = br.getRegex("<div id=\"CountDownTimer\" data-timer=\"(\\d+)\"").getMatch(0);
                 // register wait i guess, it should return 1
@@ -281,6 +284,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 rc.findID();
                 final int repeat = 5;
                 for (int i = 1; i <= repeat; i++) {
+                    getLogger().info("Cookies4: " + br.getCookies("nitroflare.com"));
                     rc.load();
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode("recaptcha", cf, downloadLink);
@@ -288,6 +292,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                         // fixes timeout issues or client refresh, we have no idea at this stage
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
+                    getLogger().info("Cookies3: " + br.getCookies("nitroflare.com"));
                     if (i == 1) {
                         long wait = 60;
                         if (waittime != null) {
@@ -295,10 +300,12 @@ public class NitroFlareCom extends antiDDoSForHost {
                             final long passedTime = ((System.currentTimeMillis() - t) / 1000) - 1;
                             wait = Long.parseLong(waittime) - passedTime;
                         }
+                        getLogger().info("Cookies2: " + br.getCookies("nitroflare.com"));
                         if (wait > 0) {
                             sleep(wait * 1000l, downloadLink);
                         }
                     }
+                    getLogger().info("Cookies1: " + br.getCookies("nitroflare.com"));
                     ajaxPost(br, "/ajax/freeDownload.php", "method=fetchDownload&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                     if (ajax.containsHTML("The captcha wasn't entered correctly|You have to fill the captcha")) {
                         if (i + 1 == repeat) {
