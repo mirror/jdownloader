@@ -88,7 +88,6 @@ public class NZB extends PluginsC {
 
     public class NZBSAXHandler extends DefaultHandler {
         private CharArrayWriter                 text                = new CharArrayWriter();
-        private Attributes                      attributes;
         private String                          path                = "";
         private DownloadLink                    currentDownloadLink = null;
         private final ArrayList<NZBFileSegment> segments            = new ArrayList<NZBFileSegment>();
@@ -161,7 +160,6 @@ public class NZB extends PluginsC {
                     }
                 }
                 final String usenetURL = "usenet://" + name + "|" + numberOfSegments + "|" + date;
-                System.out.println(name + " " + date);
                 currentDownloadLink = new DownloadLink(null, name, "usenet", usenetURL, true);
                 currentDownloadLink.setUrlProtection(UrlProtection.PROTECTED_CONTAINER);
             }
@@ -170,17 +168,12 @@ public class NZB extends PluginsC {
                 segmentBytes = attributes.getValue("bytes");
             }
             path += "." + qName;
-            this.attributes = attributes;
         }
 
         public void endElement(String uri, String localName, String qName) throws SAXException {
             if ("segment".equalsIgnoreCase(qName)) {
                 final String messageID = text.toString().trim();
-                try {
-                    segments.add(new NZBFileSegment(Integer.parseInt(segmentNumber), Long.parseLong(segmentBytes), messageID));
-                } catch (final Exception e) {
-                    e.printStackTrace();
-                }
+                segments.add(new NZBFileSegment(Integer.parseInt(segmentNumber), Long.parseLong(segmentBytes), messageID));
             }
             path = path.substring(0, path.length() - qName.length() - 1);
             text.reset();
