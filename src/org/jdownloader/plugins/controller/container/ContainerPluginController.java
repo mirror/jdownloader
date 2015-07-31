@@ -31,6 +31,11 @@ public class ContainerPluginController {
             Log.exception(e);
         }
         try {
+            plugins.add(new org.jdownloader.container.NZB());
+        } catch (final Throwable e) {
+            Log.exception(e);
+        }
+        try {
             plugins.add(new org.jdownloader.container.AMZ());
         } catch (final Throwable e) {
             Log.exception(e);
