@@ -80,7 +80,7 @@ public class NitroFlareCom extends antiDDoSForHost {
 
     private void setConstants(final Account account) {
         if (account != null) {
-            if (account.getBooleanProperty("free", false)) {
+            if (account.getType() == AccountType.FREE) {
                 // free account
                 chunks = 1;
                 resumes = false;
@@ -124,7 +124,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
         if (downloadLink != null) {
-            if (account == null || account.getBooleanProperty("free", false)) {
+            if (account == null || account.getType() == AccountType.FREE) {
                 return !(downloadLink.getBooleanProperty("premiumRequired", false));
             }
         }
@@ -504,13 +504,13 @@ public class NitroFlareCom extends antiDDoSForHost {
                 }
             } else if ("expired".equalsIgnoreCase(status) || "inactive".equalsIgnoreCase(status) || ai.isExpired()) {
                 // expired(free)? account
-                account.setProperty("free", true);
+                account.setType(AccountType.FREE);
                 // dont support free account?
                 ai.setStatus("Free Account");
                 ai.setExpired(true);
             } else if ("active".equalsIgnoreCase(status)) {
                 // premium account
-                account.setProperty("free", false);
+                account.setType(AccountType.PREMIUM);
                 ai.setStatus("Premium Account");
                 account.setValid(true);
             }
@@ -697,6 +697,8 @@ public class NitroFlareCom extends antiDDoSForHost {
             return;
         }
         // not directlink
+        randomHash(downloadLink);
+        ajaxPost(br, "/ajax/setCookie.php", "fileId=" + getFUID(downloadLink));
         handleDownloadErrors(account, downloadLink, false);
         dllink = br.getRegex("<a id=\"download\" href=\"([^\"]+)\"").getMatch(0);
         if (dllink == null) {
@@ -963,7 +965,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (acc.getType() == AccountType.FREE) {
             /* free accounts also have captchas */
             return true;
         }
