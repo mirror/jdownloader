@@ -82,7 +82,11 @@ public class DownloadCo extends PluginForHost {
             // they have some type of null filename with 100meg
             // <h2>Your File is almost ready</h2>
             // <p> <strong>100.0 MB</strong> | <img src="/img/dl.png"> 41</p>
-            if (br.containsHTML("<h2>Your File is almost ready</h2>\\s*<p>\\s*<strong>100\\.0 MB</strong>")) {
+            final String[] alt = br.getRegex("<h2>(Your File is almost ready)</h2>\\s*<p>\\s*<strong>(\\d+\\.\\d+ [KMGT]B)</strong>").getRow(0);
+            if (alt != null) {
+                if (alt[1] != null) {
+                    link.setDownloadSize(SizeFormatter.getSize(alt[1].replace(",", ".")));
+                }
                 // they now mask all filenames
                 return AvailableStatus.TRUE;
             }
