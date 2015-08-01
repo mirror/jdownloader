@@ -76,6 +76,7 @@ public class FaceBookComVideos extends PluginForHost {
         setConfigElements();
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("facebookdecrypted.com/", "facebook.com/"));
         String thislink = link.getDownloadURL().replace("https://", "http://");
