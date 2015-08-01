@@ -784,7 +784,7 @@ public class NitroFlareCom extends antiDDoSForHost {
         if (br.containsHTML(err1)) {
             // I don't see why this would happening logs contain no proxy!
             throw new PluginException(LinkStatus.ERROR_FATAL, err1);
-        } else if (account != null && br.getHttpConnection() != null && br.toString().equals("Your premium has reached the maximum volume for today")) {
+        } else if (account != null && br.getHttpConnection() != null && (br.toString().equals("Your premium has reached the maximum volume for today") || br.containsHTML("<p id=\"error\"[^>]+>Your premium has reached the maximum volume for today"))) {
             synchronized (LOCK) {
                 final AccountInfo ai = account.getAccountInfo();
                 ai.setTrafficLeft(0);
