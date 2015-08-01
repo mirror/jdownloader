@@ -25,12 +25,13 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -48,6 +49,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -58,14 +60,14 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nitroflare.com" }, urls = { "https?://(www\\.)?nitroflare\\.com/(?:view|watch)/[A-Z0-9]+" }, flags = { 2 })
 public class NitroFlareCom extends antiDDoSForHost {
 
-    private final String               language = System.getProperty("user.language");
-    private final String               baseURL  = "https://nitroflare.com";
-    private final String               apiURL   = "http://nitroflare.com/api/v2";
-    private final static AtomicBoolean useAPI   = new AtomicBoolean(false);
+    private final String language = System.getProperty("user.language");
+    private final String baseURL  = "https://nitroflare.com";
+    private final String apiURL   = "http://nitroflare.com/api/v2";
 
     public NitroFlareCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(baseURL + "/payment");
+        setConfigElement();
     }
 
     @Override
@@ -217,7 +219,7 @@ public class NitroFlareCom extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        if (useAPI.get()) {
+        if (useAPI()) {
             return requestFileInformationApi(link);
         } else {
             return requestFileInformationWeb(link);
@@ -251,7 +253,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         setConstants(null);
-        if (useAPI.get() && false) {
+        if (useAPI() && false) {
             handleDownload_API(downloadLink, null);
         } else {
             this.setBrowserExclusive();
@@ -447,12 +449,29 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
     }
 
+    private static String  preferAPI        = "preferAPI";
+    private static boolean preferAPIdefault = false;
+
+    private void setConfigElement() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), preferAPI, JDL.L("plugins.hoster.Keep2ShareCc.useAPI", "Use API for Premium Accounts (API = lots of recaptcahv1, WEB = recaptchav2 once.)")).setDefaultValue(preferAPIdefault));
+    }
+
+    /**
+     * useAPI frame work? <br />
+     * Override this when incorrect
+     *
+     * @return
+     */
+    private boolean useAPI() {
+        return getPluginConfig().getBooleanProperty(preferAPI, preferAPIdefault);
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (!useAPI.get()) {
-            return fetchAccountInfoWeb(account, false, true);
-        } else {
+        if (useAPI()) {
             return fetchAccountInfoApi(account);
+        } else {
+            return fetchAccountInfoWeb(account, false, true);
         }
     }
 
@@ -664,7 +683,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         setConstants(account);
-        if (useAPI.get()) {
+        if (useAPI()) {
             handleDownload_API(downloadLink, account);
             return;
         }
