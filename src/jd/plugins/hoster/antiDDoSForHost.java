@@ -411,6 +411,15 @@ public abstract class antiDDoSForHost extends PluginForHost {
                             ibr.getPage(ibr.getRedirectLocation());
                         }
                     }
+                } else if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]+" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]+" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
+                    // website address could be www. or what ever prefixes, need to make sure
+                    // eg. within 403 response code,
+                    // <p>The owner of this website (www.premiumax.net) has banned your IP address (x.x.x.x).</p>
+                    // also common when proxies are used?? see keep2share.cc jdlog://5562413173041
+                    String ip = ibr.getRegex("your IP address \\((.*?)\\)\\.</p>").getMatch(0);
+                    String message = ibr.getHost() + " has banned your IP Address" + (inValidate(ip) ? "!" : "! " + ip);
+                    logger.warning(message);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, message);
                 } else if (responseCode == 503 && cloudflare != null) {
                     // 503 response code with javascript math section && with 5 second pause
                     final String[] line1 = ibr.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
@@ -497,12 +506,6 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     // //]]>
                     // </script>
 
-                } else if (ibr.containsHTML("<p>The owner of this website \\(" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| " + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
-                    // common when proxies are used?? see keep2share.cc jdlog://5562413173041
-                    String ip = ibr.getRegex("your IP address \\((.*?)\\)\\.</p>").getMatch(0);
-                    String message = ibr.getHost() + " has banned your IP Address" + (inValidate(ip) ? "!" : "! " + ip);
-                    logger.warning(message);
-                    throw new PluginException(LinkStatus.ERROR_FATAL, message);
                 } else {
                     // nothing wrong, or something wrong (unsupported format)....
                     // commenting out return prevents caching of cookies per request
