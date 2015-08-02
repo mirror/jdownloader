@@ -582,7 +582,11 @@ public class NitroFlareCom extends antiDDoSForHost {
                         } else {
                             fullLogin = true;
                         }
+                    } else {
+                        fullLogin = true;
                     }
+                } else {
+                    fullLogin = true;
                 }
 
                 if (fullLogin) {
@@ -629,9 +633,10 @@ public class NitroFlareCom extends antiDDoSForHost {
                     }
                 }
                 // do we have traffic?
-                final String[] traffic = br.getRegex("<label>Daily Limit</label><strong>(\\d+(?:\\.\\d+)?\\s*[KMGT]{0,1}B) / (\\d+(?:\\.\\d+)?\\s*[KMGT]{0,1}B)</strong>").getRow(0);
+                final String[] traffic = br.getRegex("<label>Daily Limit</label><strong>(\\d+(?:\\.\\d+)?(?:\\s*[KMGT]{0,1}B)?) / (\\d+(?:\\.\\d+)?\\s*[KMGT]{0,1}B)</strong>").getRow(0);
                 if (traffic != null) {
-                    ai.setTrafficLeft(traffic[0]);
+                    // first value is traffic used, not remaining
+                    ai.setTrafficLeft(SizeFormatter.getSize(traffic[1]) - SizeFormatter.getSize(traffic[0]));
                     ai.setTrafficMax(traffic[1]);
                 }
                 // expire time
