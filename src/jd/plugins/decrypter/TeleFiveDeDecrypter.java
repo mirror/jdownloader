@@ -190,6 +190,11 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             for (final String videosource : videosinfo) {
                 HashMap<String, DownloadLink> foundLinks = getURLsFromMedianac(br, decryptedhost, videosource, formats);
 
+                if (foundLinks.isEmpty()) {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
+                }
+
                 /* Now add the links the user wants. */
                 final Iterator<Entry<String, DownloadLink>> it = foundLinks.entrySet().iterator();
                 while (it.hasNext()) {
@@ -311,6 +316,10 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         getData += "&ignoreNull=1";
         final String getpage = "http://api.medianac.com//api_v3/index.php" + getData;
         br2.getPage(getpage);
+        if (br2.toString().length() < 50) {
+            /* Server error, offline or not available at users current location. */
+            return foundLinks;
+        }
         Document doc = JDUtilities.parseXmlString(br2.toString(), false);
 
         /* xml data --> HashMap */
