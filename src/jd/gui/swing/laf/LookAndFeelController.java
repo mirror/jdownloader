@@ -61,7 +61,7 @@ public class LookAndFeelController implements LAFManagerInterface {
 
     /**
      * get the only existing instance of LookAndFeelController. This is a singleton
-     * 
+     *
      * @return
      */
     public static LookAndFeelController getInstance() {
@@ -200,7 +200,7 @@ public class LookAndFeelController implements LAFManagerInterface {
                         File db = new File(bin.getParent(), ".svn/wc.db");
                         if (db.exists()) {
                             String str = IO.readFileToString(db);
-                            if (str.contains("svn://svn.jdownloader.org/jdownloader")) {
+                            if (str.contains("svn://svn.jdownloader.org/jdownloader") || str.contains("SQLite format")) {
                                 str = null;
                                 if (Application.getResource("JDownloader.jar").exists()) {
                                     JarFile jf = null;
