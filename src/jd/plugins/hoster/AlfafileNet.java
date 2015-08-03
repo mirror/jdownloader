@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -79,26 +80,57 @@ public class AlfafileNet extends PluginForHost {
 
     /*
      * TODO: Use API for linkchecking whenever an account is added to JD. This will ensure that the plugin will always work, at least for
-     * premium users.
+     * premium users. Status 2015-08-03: Filecheck API does not seem to work --> Disabled it - reported API issues to jiaz.
      */
-    private static final boolean prefer_api_linkcheck         = true;
+    private static final boolean prefer_api_linkcheck         = false;
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepBR();
-        br.getPage(link.getDownloadURL());
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = null;
+        String filesize = null;
+        String md5 = null;
+        boolean api_works = false;
+        Account aa = AccountController.getInstance().getValidAccount(this);
+        String api_token = null;
+        if (aa != null) {
+            api_token = getLoginToken(aa);
         }
-        String filename = br.getRegex("id=\"st_file_name\" title=\"([^<>\"]*?)\"").getMatch(0);
-        String filesize = br.getRegex("<span class=\"size\">([^<>\"]*?)</span>").getMatch(0);
+        if (api_token != null && prefer_api_linkcheck) {
+            this.br.getPage("https://alfafile.net/api/v1/file/info?file_id=" + getFileID(link) + "&token=" + api_token);
+            final String status = getJson("status");
+            if (!"401".equals(status)) {
+                api_works = true;
+            }
+        }
+
+        if (api_works) {
+            final String status = getJson("status");
+            if (!"200".equals(status)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = getJson("name");
+            filesize = getJson("size");
+            md5 = getJson("hash");
+        } else {
+            br.getPage(link.getDownloadURL());
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = br.getRegex("id=\"st_file_name\" title=\"([^<>\"]*?)\"").getMatch(0);
+            filesize = br.getRegex("<span class=\"size\">([^<>\"]*?)</span>").getMatch(0);
+        }
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (md5 != null) {
+            /* TODO: Check if their API actually returns valid md5 hashes */
+            link.setMD5Hash(md5);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -136,15 +168,21 @@ public class AlfafileNet extends PluginForHost {
             if (wait_str != null) {
                 wait = Integer.parseInt(wait_str);
             }
+            String redirect_url = getJson("redirect_url");
+            if (redirect_url == null) {
+                redirect_url = "/file/" + fid + "/captcha";
+            }
             this.sleep(wait * 1001l, downloadLink);
-            this.br.getPage("/file/" + fid + "/captcha");
+            this.br.getPage(redirect_url);
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
             }
+            this.br.setFollowRedirects(true);
             boolean success = false;
             for (int i = 0; i <= 3; i++) {
                 final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                 final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                sm.setSecure(true);
                 File cf = null;
                 try {
                     cf = sm.downloadCaptcha(getLocalCaptchaFile());
