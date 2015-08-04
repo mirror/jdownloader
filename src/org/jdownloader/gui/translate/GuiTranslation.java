@@ -5971,4 +5971,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "To continue with %s1, it is required to assign each picture to the correct category." })
     String KeyCaptchaCategoryDialog_explain(String tld);
 
+    @Default(lngs = { "en" }, values = { "My.JDownloader" })
+    String MyJDownloaderView_title();
+
+    @Default(lngs = { "en" }, values = { "Use a My.JDownloader.org account to access advanced JDownloader features and full remote control." })
+    String MyJDownloaderView_tooltip();
+
 }

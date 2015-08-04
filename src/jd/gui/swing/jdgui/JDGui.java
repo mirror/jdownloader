@@ -67,6 +67,7 @@ import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.JDMenuBar;
+import jd.gui.swing.jdgui.views.myjd.MyJDownloaderView;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.nutils.Screen;
@@ -164,7 +165,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     /**
      * An Abstract panelrepresentation used in requestPanel(Panels.*,Parameter
-     * 
+     *
      * @author Coalado
      */
     public static enum Panels {
@@ -185,7 +186,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     /**
      * Factorymethode. Erzeugt eine INstanc der Gui oder gibt eine bereits existierende zurück
-     * 
+     *
      * @return
      */
     public static JDGui getInstance() {
@@ -424,7 +425,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     /**
      * Returns the gui's mainjframe
-     * 
+     *
      * @return
      */
     public JFrame getMainFrame() {
@@ -551,6 +552,10 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         }
                         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isLogViewVisible()) {
                             // this.mainTabbedPane.addTab(LogView.getInstance());
+                        }
+
+                        if (!Application.isJared(null) && JsonConfig.create(GraphicalUserInterfaceSettings.class).isMyJDownloaderViewVisible()) {
+                            mainTabbedPane.addTab(MyJDownloaderView.getInstance());
                         }
                         long maxHeap = -1;
                         try {
@@ -954,7 +959,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     /**
      * under Linux EDT and XAWT can cause deadlock when we call getDefaultConfiguration() inside EDT, so I moved this to work outside EDT
      * and only put the mainframe stuff into EDT
-     * 
+     *
      * restores the dimension and location to the window
      */
     private void internalInitLocationAndDimension() {
@@ -1405,11 +1410,11 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     /**
      * requests a special view from the gui. example:
-     * 
+     *
      * JDUtilities.getGUI().requestPanel(Panels.*,parameter);
-     * 
+     *
      * asks the gui backend to display the downloadlist. IT depends on the guibackend which requests are fullfilled and which not.
-     * 
+     *
      * @param panelID
      *            {@link Panels}
      * @param parameter
@@ -1652,7 +1657,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
     /**
      * Sets the window to tray or restores it. This method contains a lot of workarounds for individual system problems... Take care to
      * avoid sideeffects when changing anything
-     * 
+     *
      * @param minimize
      */
     public void setWindowToTray(final boolean minimize) {
@@ -1724,7 +1729,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     /**
      * Converts a {@link ConfigContainer} to a {@link AddonConfig} and displays it
-     * 
+     *
      * @param container
      */
     protected void showConfigPanel(final ConfigContainer container) {
@@ -1869,7 +1874,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
     /**
      * Returns true if we should bug the user with a are you sure dialog at the requesting level
-     * 
+     *
      * @param requestedLevel
      * @return
      */
