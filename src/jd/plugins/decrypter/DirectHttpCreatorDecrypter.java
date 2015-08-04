@@ -55,7 +55,7 @@ public class DirectHttpCreatorDecrypter extends PluginForDecrypt {
             }
             completePattern.append(pattern);
         }
-        System.out.println(("Directhttp: " + list.length + " pattern added!"));
+        // System.out.println(("Directhttp: " + list.length + " pattern added!"));
         return new String[] { completePattern.toString() };
     }
 
