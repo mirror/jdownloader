@@ -55,7 +55,7 @@ public class OpenDirectoryAction extends CustomizableTableContextAppAction<FileP
     public boolean isEnabled() {
         final File lDirectory = directory;
         final File lFile = file;
-        return CrossSystem.isOpenFileSupported() && (lDirectory != null && lDirectory.exists() || lFile != null && lFile.exists());
+        return CrossSystem.isOpenFileSupported() && ((lDirectory != null && lDirectory.exists()) || (lFile != null && lFile.exists()));
     }
 
 }

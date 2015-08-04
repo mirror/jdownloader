@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
+import java.util.Comparator;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -17,7 +19,10 @@ import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.PluginsC;
+import jd.plugins.components.UsenetFile;
+import jd.plugins.components.UsenetFileSegment;
 
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.controlling.UrlProtection;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -61,41 +66,25 @@ public class NZB extends PluginsC {
         }
     }
 
-    private class NZBFileSegment {
-        private final int number;
-
-        private int getNumber() {
-            return number;
-        }
-
-        private long getBytes() {
-            return bytes;
-        }
-
-        private String getMessageID() {
-            return messageID;
-        }
-
-        private final long   bytes;
-        private final String messageID;
-
-        private NZBFileSegment(final int number, final long bytes, final String messageID) {
-            this.number = number;
-            this.bytes = bytes;
-            this.messageID = messageID;
-        }
-    }
-
     public class NZBSAXHandler extends DefaultHandler {
-        private CharArrayWriter                 text                = new CharArrayWriter();
-        private String                          path                = "";
-        private DownloadLink                    currentDownloadLink = null;
-        private final ArrayList<NZBFileSegment> segments            = new ArrayList<NZBFileSegment>();
-        private int                             numberOfSegments    = -1;
-        private final ArrayList<DownloadLink>   downloadLinks;
-        private String                          segmentNumber       = null;
-        private String                          segmentBytes        = null;
-        private boolean                         isyEnc              = false;
+        private final CharArrayWriter               text              = new CharArrayWriter();
+        private String                              path              = "";
+        private UsenetFile                          currentFile       = null;
+        private UsenetFileSegment                   currentSegment    = null;
+        private final ArrayList<DownloadLink>       downloadLinks;
+        private String                              date;
+        private boolean                             isyEnc            = false;
+        private final Comparator<UsenetFileSegment> segmentComparator = new Comparator<UsenetFileSegment>() {
+
+                                                                          public int compare(int x, int y) {
+                                                                              return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                                                                          }
+
+                                                                          @Override
+                                                                          public int compare(UsenetFileSegment o1, UsenetFileSegment o2) {
+                                                                              return compare(o1.getIndex(), o2.getIndex());
+                                                                          }
+                                                                      };
 
         private NZBSAXHandler(ArrayList<DownloadLink> downloadLinks) {
             this.downloadLinks = downloadLinks;
@@ -103,69 +92,128 @@ public class NZB extends PluginsC {
 
         @Override
         public InputSource resolveEntity(String publicId, String systemId) throws IOException, SAXException {
+            // avoid parser to read external entities
             return new InputSource(new StringReader(""));
         }
 
         public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
             if ("file".equalsIgnoreCase(qName)) {
-                if (currentDownloadLink != null) {
-                    long estimatedFileSize = 0;
+                if (currentFile != null) {
+                    final ArrayList<UsenetFileSegment> segments = currentFile.getSegments();
+                    Collections.sort(segments, segmentComparator);
                     final BitSet segmentSet = new BitSet();
-                    for (final NZBFileSegment segment : segments) {
-                        final int index = segment.getNumber();
+                    long estimatedFileSize = 0;
+                    for (final UsenetFileSegment segment : segments) {
+                        final int index = segment.getIndex();
                         if (!segmentSet.get(index)) {
                             segmentSet.set(index);
-                            estimatedFileSize += segment.getBytes();
+                            estimatedFileSize += Math.max(0, segment.getSize());
                         }
                     }
-                    if (numberOfSegments > 0) {
-                        for (int i = 1; i <= numberOfSegments; i++) {
-                            if (!segmentSet.get(i)) {
-                                currentDownloadLink.setProperty("incomplete", Boolean.TRUE);
-                                currentDownloadLink.setAvailableStatus(AvailableStatus.FALSE);
-                                break;
+                    if (isyEnc) {
+                        segmentSet.clear();
+                        final int numOfSegments = segmentSet.length();
+                        final long estimatedFileSizeTemp = estimatedFileSize;
+                        estimatedFileSize = 0;
+                        long processedSize = 0;
+                        for (final UsenetFileSegment segment : segments) {
+                            final int index = segment.getIndex();
+                            if (!segmentSet.get(index)) {
+                                segmentSet.set(index);
+                                long estimatedSegmentSize = segment.getSize();
+                                estimatedSegmentSize -= ("=ybegin part=" + index + " total=" + numOfSegments + " line=... size=" + estimatedFileSizeTemp + " name=" + currentFile.getName() + "\r\n").length();
+                                if (index == numOfSegments) {
+                                    estimatedSegmentSize -= ("=yend size=" + estimatedSegmentSize + " part=" + index + " pcrc32=........ crc32=........\r\n").length();
+                                } else {
+                                    estimatedSegmentSize -= ("=yend size=" + estimatedSegmentSize + " part=" + index + " pcrc32=........\r\n").length();
+                                }
+                                estimatedSegmentSize -= ("=ypart begin=" + processedSize + " end=" + processedSize + estimatedSegmentSize + "\r\n").length();
+                                estimatedSegmentSize -= (estimatedSegmentSize / 128) * 2;// CRLF for each line
+                                estimatedSegmentSize = (long) (estimatedSegmentSize / 1.015f); // ~ 1.5% overhead because of yEnc
+                                processedSize += estimatedSegmentSize;
                             }
                         }
+                        estimatedFileSize = processedSize;
                     }
-                    if (estimatedFileSize < currentDownloadLink.getVerifiedFileSize()) {
-                        currentDownloadLink.setVerifiedFileSize(-1);
+                    if (currentFile.getSize() != -1) {
+                        estimatedFileSize = Math.min(estimatedFileSize, currentFile.getSize());
+                        if (estimatedFileSize != currentFile.getSize()) {
+                            currentFile.setSize(-1);
+                        }
                     }
-                    currentDownloadLink.setDownloadSize(estimatedFileSize);
-                    downloadLinks.add(currentDownloadLink);
+                    final String usenetURL = "usenet://" + currentFile.getName() + "|" + currentFile.getNumSegments() + "|" + date;
+                    final DownloadLink downloadLink = new DownloadLink(null, currentFile.getName(), "usenet", usenetURL, true);
+                    downloadLink.setUrlProtection(UrlProtection.PROTECTED_CONTAINER);
+                    if (estimatedFileSize > 0) {
+                        downloadLink.setDownloadSize(estimatedFileSize);
+                    }
+                    // check for missing segments
+                    final int maxSegments = Math.max(currentFile.getNumSegments(), segmentSet.length() - 1);
+                    for (int i = 1; i <= maxSegments; i++) {
+                        if (!segmentSet.get(i)) {
+                            logger.info(currentFile.getName() + " is missing segment " + i);
+                            downloadLink.setProperty("incomplete", Boolean.TRUE);
+                            downloadLink.setAvailableStatus(AvailableStatus.FALSE);
+                            break;
+                        }
+                    }
+                    try {
+                        // compress the jsonString with gzip and encode as base64
+                        currentFile._write(downloadLink);
+                    } catch (final IOException e) {
+                        logger.info("Exception for " + currentFile.getName());
+                        logger.log(e);
+                        downloadLink.setProperty("incomplete", Boolean.TRUE);
+                        downloadLink.setAvailableStatus(AvailableStatus.FALSE);
+                    }
+                    downloadLinks.add(downloadLink);
                 }
-                segments.clear();
-                numberOfSegments = -1;
-                final String date = attributes.getValue("date");
+                currentFile = new UsenetFile();
+                date = attributes.getValue("date");
                 final String subject = attributes.getValue("subject");
-                isyEnc = subject.contains("yEnc");
-                String name = new Regex(subject, "(^| )\"(.*?)\" ").getMatch(1);
-                if (name == null) {
-                    name = "Unsupported Subject:" + subject;
+                // XXXXX - "Filename.jpg" [XX/XX] 52,44 MB yEnc (1/41)
+                String nameBySubject = new Regex(subject, "( |^)\"(.*?)\" ").getMatch(1);
+                if (nameBySubject == null) {
+                    // XXX - NNNNNNNN - XXX XXX - NNNNNN - [0001 of 0100] - XX - 100.52 Kb - Filename.jpg (1/1)
+                    nameBySubject = new Regex(subject, "(.+ |^)(.*?) \\(1/\\d+").getMatch(1);
                 }
-                if (isyEnc) {
-                    final String parts = new Regex(subject, "\"\\s*?yEnc\\s*?\\(1/(\\d+)\\)$").getMatch(0);
+                if (nameBySubject == null) {
+                    nameBySubject = "Unsupported Subject:" + subject;
+                }
+                currentFile.setName(nameBySubject);
+                if (subject.contains(" yEnc ")) {
+                    isyEnc = true;
+                    final String parts = new Regex(subject, "\\s*?yEnc\\s*?\\(1/(\\d+)\\)$").getMatch(0);
                     if (parts != null) {
-                        numberOfSegments = Integer.parseInt(parts);
+                        currentFile.setNumSegments(Integer.parseInt(parts));
                     }
-                    if (numberOfSegments != -1) {
-                        final String fileSize = new Regex(subject, "\"\\s*yEnc\\s*\\(1/\\d+\\)\\s*?\\[(\\d+)").getMatch(0);
-                        if (fileSize != null) {
-                            currentDownloadLink.setVerifiedFileSize(Long.parseLong(fileSize));
-                        }
+                    String fileSize = new Regex(subject, "\\s*yEnc\\s*\\(1/\\d+\\)\\s*?\\[([0-9\\.,]+\\s*?(kb|mb|gb|b))").getMatch(0);
+                    if (fileSize != null) {
+                        currentFile.setSize(SizeFormatter.getSize(fileSize));
                     } else {
-                        String fileSize = new Regex(subject, "\"\\s*(\\d+)\\s*yEnc\\s*bytes").getMatch(0);
+                        fileSize = new Regex(subject, "\\s*([0-9\\.,]+\\s*?(kb|mb|gb|b))\\s*yEnc").getMatch(0);
                         if (fileSize != null) {
-                            currentDownloadLink.setVerifiedFileSize(Long.parseLong(fileSize));
+                            currentFile.setSize(SizeFormatter.getSize(fileSize));
                         }
+                    }
+                } else {
+                    isyEnc = false;
+                    String fileSize = new Regex(subject, "([0-9\\.,]+\\s*?(kb|mb|gb|b))").getMatch(0);
+                    if (fileSize != null) {
+                        currentFile.setSize(SizeFormatter.getSize(fileSize));
                     }
                 }
-                final String usenetURL = "usenet://" + name + "|" + numberOfSegments + "|" + date;
-                currentDownloadLink = new DownloadLink(null, name, "usenet", usenetURL, true);
-                currentDownloadLink.setUrlProtection(UrlProtection.PROTECTED_CONTAINER);
             }
             if ("segment".equalsIgnoreCase(qName)) {
-                segmentNumber = attributes.getValue("number");
-                segmentBytes = attributes.getValue("bytes");
+                currentSegment = new UsenetFileSegment();
+                final String number = attributes.getValue("number");
+                if (number != null) {
+                    currentSegment.setIndex(Integer.parseInt(number));
+                }
+                final String bytes = attributes.getValue("bytes");
+                if (bytes != null) {
+                    currentSegment.setSize(Long.parseLong(bytes));
+                }
             }
             path += "." + qName;
         }
@@ -173,7 +221,9 @@ public class NZB extends PluginsC {
         public void endElement(String uri, String localName, String qName) throws SAXException {
             if ("segment".equalsIgnoreCase(qName)) {
                 final String messageID = text.toString().trim();
-                segments.add(new NZBFileSegment(Integer.parseInt(segmentNumber), Long.parseLong(segmentBytes), messageID));
+                currentSegment.setMessageID(messageID);
+                currentFile.getSegments().add(currentSegment);
+                currentSegment = null;
             }
             path = path.substring(0, path.length() - qName.length() - 1);
             text.reset();
@@ -189,9 +239,6 @@ public class NZB extends PluginsC {
         return null;
     }
 
-    /*
-     * we dont have to hide metalink container links
-     */
     @Override
     public boolean hideLinks() {
         return false;

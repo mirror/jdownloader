@@ -780,8 +780,15 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             rc.load();
             long last = -1;
             int imax = 15;
-            long sessionTimeout = startWait + 300 * 1000l;
-            while (imax-- > 0 && System.currentTimeMillis() < sessionTimeout) {
+            final long sessionTimeout = startWait + 300 * 1000l;
+            while (true) {
+                if (imax-- == 0 || System.currentTimeMillis() > sessionTimeout) {
+                    /*
+                     * must be handled correctly! reload in loop and then abort loop (timeout/imax) is not handled at all, falls through
+                     * till uknown error
+                     */
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 getLogger().info("Captcha Try " + (20 - imax));
                 if (System.currentTimeMillis() - last < 2000) {
                     // antiddos

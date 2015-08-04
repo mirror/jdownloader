@@ -51,8 +51,10 @@ public class UseNet extends PluginForHost {
     @Override
     public DomainInfo getDomainInfo(DownloadLink link) {
         final DomainInfo ret = super.getDomainInfo(link);
-        if (NZBICON.compareAndSet(false, true)) {
-            ret.setFavIcon(NewTheme.I().getIcon("nzb", -1));
+        synchronized (NZBICON) {
+            if (NZBICON.compareAndSet(false, true)) {
+                ret.setFavIcon(NewTheme.I().getIcon("nzb", -1));
+            }
         }
         return ret;
     }
