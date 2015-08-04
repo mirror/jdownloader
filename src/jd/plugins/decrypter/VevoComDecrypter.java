@@ -274,7 +274,6 @@ public class VevoComDecrypter extends PluginForDecrypt {
                         fina.setProperty("mainlink", parameter);
                         fina.setProperty("plain_filename", final_filename);
                         fina.setProperty("sourcetype", sourceType);
-                        dupeid = fid + "_" + type_string + videoBitrate;
                         int videobitrateint = Integer.parseInt(videoBitrate);
                         dupeid = fid + "_" + type_string + videoBitrate;
                         try {
