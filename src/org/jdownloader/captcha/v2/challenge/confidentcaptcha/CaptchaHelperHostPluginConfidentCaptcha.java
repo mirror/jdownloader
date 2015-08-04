@@ -5,7 +5,6 @@ import java.awt.Rectangle;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
@@ -14,12 +13,10 @@ import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
@@ -28,9 +25,7 @@ import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByHost;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
 import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
-import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
@@ -71,36 +66,6 @@ public class CaptchaHelperHostPluginConfidentCaptcha extends AbstractCaptchaHelp
             link.addPluginProgress(progress);
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
             final ConfidentCaptchaChallenge c = new ConfidentCaptchaChallenge(plugin, sitekey) {
-
-                @Override
-                public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
-                    if (insideAccountChecker) {
-                        /* we don't want to skip login captcha inside fetchAccountInfo(Thread is AccountCheckerThread) */
-                        return false;
-                    }
-                    final Plugin challengePlugin = Challenge.getPlugin(challenge);
-                    if (challengePlugin != null && !(challengePlugin instanceof PluginForHost)) {
-                        /* we only want block PluginForHost captcha here */
-                        return false;
-                    }
-                    switch (skipRequest) {
-                    case BLOCK_ALL_CAPTCHAS:
-                        /* user wants to block all captchas (current session) */
-                        return true;
-                    case BLOCK_HOSTER:
-                        /* user wants to block captchas from specific hoster */
-                        return StringUtils.equals(link.getHost(), Challenge.getHost(challenge));
-                    case BLOCK_PACKAGE:
-                        /* user wants to block captchas from current FilePackage */
-                        final DownloadLink lLink = Challenge.getDownloadLink(challenge);
-                        if (lLink == null || lLink.getDefaultPlugin() == null) {
-                            return false;
-                        }
-                        return link.getFilePackage() == lLink.getFilePackage();
-                    default:
-                        return false;
-                    }
-                }
 
                 @Override
                 public BrowserViewport getBrowserViewport(BrowserWindow screenResource, Rectangle elementBounds) {

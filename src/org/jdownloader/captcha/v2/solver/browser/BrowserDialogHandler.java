@@ -1,6 +1,5 @@
 package org.jdownloader.captcha.v2.solver.browser;
 
-import java.awt.Image;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
@@ -21,7 +20,6 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.InternDialog;
 import org.appwork.utils.swing.windowmanager.WindowManager;
 import org.appwork.utils.swing.windowmanager.WindowManager.FrameState;
-import org.jdownloader.captcha.v2.Challenge;
 
 public class BrowserDialogHandler extends ChallengeDialogHandler<AbstractBrowserChallenge> {
 
@@ -32,12 +30,12 @@ public class BrowserDialogHandler extends ChallengeDialogHandler<AbstractBrowser
     private String               responseString;
 
     public BrowserDialogHandler(AbstractBrowserChallenge captchaChallenge) {
-        super(Challenge.getDomainInfo(captchaChallenge), captchaChallenge);
+        super(captchaChallenge.getDomainInfo(), captchaChallenge);
 
     }
 
     @Override
-    protected void showDialog(DialogType dialogType, int flag, Image[] images) throws DialogClosedException, DialogCanceledException, HideCaptchasByHostException, HideCaptchasByPackageException, StopCurrentActionException, HideAllCaptchasException, RefreshException {
+    protected void showDialog(DialogType dialogType, int flag) throws DialogClosedException, DialogCanceledException, HideCaptchasByHostException, HideCaptchasByPackageException, StopCurrentActionException, HideAllCaptchasException, RefreshException {
 
         BrowserCaptchaDialog d = new BrowserCaptchaDialog(flag, dialogType, getHost(), captchaChallenge) {
             public void dispose() {

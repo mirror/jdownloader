@@ -77,7 +77,7 @@ public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAre
                         /* we don't want to skip login captcha inside fetchAccountInfo(Thread is AccountCheckerThread) */
                         return false;
                     }
-                    final Plugin challengePlugin = Challenge.getPlugin(challenge);
+                    final Plugin challengePlugin = challenge.getPlugin();
                     if (challengePlugin != null && !(challengePlugin instanceof PluginForHost)) {
                         /* we only want block PluginForHost captcha here */
                         return false;
@@ -88,10 +88,10 @@ public class CaptchaHelperHostPluginAreYouHuman extends AbstractCaptchaHelperAre
                         return true;
                     case BLOCK_HOSTER:
                         /* user wants to block captchas from specific hoster */
-                        return StringUtils.equals(link.getHost(), Challenge.getHost(challenge));
+                        return StringUtils.equals(link.getHost(), challenge.getHost());
                     case BLOCK_PACKAGE:
                         /* user wants to block captchas from current FilePackage */
-                        final DownloadLink lLink = Challenge.getDownloadLink(challenge);
+                        final DownloadLink lLink = challenge.getDownloadLink();
                         if (lLink == null || lLink.getDefaultPlugin() == null) {
                             return false;
                         }

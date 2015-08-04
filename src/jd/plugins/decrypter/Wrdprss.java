@@ -22,8 +22,9 @@ import java.util.HashSet;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
-import jd.http.Request;
+import jd.http.Browser;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -64,7 +65,6 @@ public class Wrdprss extends antiDDoSForDecrypt {
         completePattern.append("|watchseries-online\\.ch/episode/.+");
         completePattern.append("|solarmovie\\.ws/watch-[\\w-]+\\.html");
         completePattern.append("|scene-rls\\.com/[\\w-]+/?$");
-        completePattern.append("|urbanmusicdaily\\.me/(?:videos/[\\w\\-]+/)");
         completePattern.append(")");
         // System.out.println(("Wrdprss: " + (10 + listType1.length + listType2.length) + " Pattern added!"));
         return new String[] { completePattern.toString() };
@@ -92,18 +92,16 @@ public class Wrdprss extends antiDDoSForDecrypt {
         defaultPasswords.put("cinetopia.ws", new String[] { "cinetopia.ws" });
     }
 
-    private String parameter = null;
-
     // @Override
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        parameter = param.toString();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
 
         getPage(parameter);
 
         /* Defaultpasswörter der Seite setzen */
-        final ArrayList<String> link_passwds = new ArrayList<String>();
+        ArrayList<String> link_passwds = new ArrayList<String>();
         for (String host : defaultPasswords.keySet()) {
             if (br.getHost().toLowerCase().contains(host)) {
                 for (String password : defaultPasswords.get(host)) {
@@ -112,30 +110,38 @@ public class Wrdprss extends antiDDoSForDecrypt {
                 break;
             }
         }
-        final ArrayList<String[]> customHeaders = new ArrayList<String[]>();
+        ArrayList<String[]> customHeaders = new ArrayList<String[]>();
         if (parameter.matches(".+hi10anime\\.com.+")) {
             customHeaders.add(new String[] { "Referer", br.getURL() });
         }
         /* Passwort suchen */
-        final String password = br.getRegex(Pattern.compile("<.*?>Passwor(?:t|d)[<|:].*?[>|:]\\s*(.*?)[\\||<]", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String password = br.getRegex(Pattern.compile("<.*?>Passwor(?:t|d)[<|:].*?[>|:]\\s*(.*?)[\\||<]", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (password != null) {
             link_passwds.add(password.trim());
         }
         /* Alle Parts suchen */
-        final String[] links = br.getRegex(Pattern.compile("href=.*?((?:(?:https?|ftp):)?//[^\"']{2,}|(&#x[a-f0-9]{2};)+)", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        String[] links = br.getRegex(Pattern.compile("href=.*?((?:(?:https?|ftp):)?//[^\"']{2,}|(&#x[a-f0-9]{2};)+)", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.setRange(links.length);
+        final String protocol = new Regex(br.getURL(), "^https?:").getMatch(-1);
         final HashSet<String> dupe = new HashSet<String>();
         for (String link : links) {
             if (link.matches("(&#x[a-f0-9]{2};)+")) {
                 // decode
                 link = HTMLEntities.unhtmlentities(link);
             }
-            link = Request.getLocation(link, br.getRequest());
             if (!dupe.add(link)) {
                 progress.increase(1);
                 continue;
             }
-            if (kanHandle(link)) {
+            // respect current protocol under RFC
+            if (link.matches("^//.+")) {
+                link = protocol + link;
+            }
+            // this will construct basic relative path
+            else if (link.matches("^/.+")) {
+                link = protocol + "//" + Browser.getHost(br.getURL(), true) + link;
+            }
+            if (!canHandle(link) && DistributeData.hasPluginFor(link, true) && !link.matches(".+\\.(css|xml)(.*)?|.+://img\\.hd-area\\.org/.+")) {
                 final DownloadLink dLink = createDownloadlink(link);
                 if (link_passwds != null && link_passwds.size() > 0) {
                     dLink.setSourcePluginPasswordList(link_passwds);
@@ -147,45 +153,8 @@ public class Wrdprss extends antiDDoSForDecrypt {
             }
             progress.increase(1);
         }
-        if (parameter.contains("urbanmusicdaily.me/")) {
-            // lets look for embeded types
-            String[] embed = br.getRegex("file\\s*:\\s*(\"|')(https?://.*?)\\1").getColumn(1);
-            if (embed != null) {
-                for (final String link : embed) {
-                    if (kanHandle(link)) {
-                        decryptedLinks.add(createDownloadlink(link));
-                    }
-                }
-            }
-            embed = br.getRegex("<iframe[^>]*>.*?</iframe>").getColumn(-1);
-            if (embed != null) {
-                for (final String link : embed) {
-                    String l = new Regex(link, "src=(\"|')(.*?)\\1").getMatch(1);
-                    if (inValidate(l)) {
-                        l = new Regex(link, "src=([^\\s]*)").getMatch(0);
-                    }
-                    if (l != null && kanHandle(link)) {
-                        decryptedLinks.add(createDownloadlink(l));
-                    }
-                }
-            }
-        }
 
         return decryptedLinks;
-    }
-
-    public boolean kanHandle(final String link) {
-        final boolean ch = !canHandle(link);
-        if (!ch) {
-            return ch;
-        }
-        if (parameter.contains("hd-area.org/")) {
-            return !link.matches(".+\\.(css|xml)(.*)?|.+://img\\.hd-area\\.org/.+");
-        }
-        if (parameter.contains("urbanmusicdaily.me/")) {
-            return !link.contains("urbanmusicdaily.me") && !link.matches(".+(\\.|/)(css|xml|jpe?g|png|gif|ico).*");
-        }
-        return !link.matches(".+\\.(css|xml)(.*)?");
     }
 
     /* NO OVERRIDE!! */
@@ -195,7 +164,7 @@ public class Wrdprss extends antiDDoSForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "urbanmusicdaily.me", "cinetopia.ws", "hd-area.org", "movie-blog.org", "doku.cc", "hoerbuch.in", "hd-area.org", "hi10anime.com", "watchseries-online.ch", "solarmovie.ws", "scene-rls.com" };
+        return new String[] { "cinetopia.ws", "hd-area.org", "movie-blog.org", "doku.cc", "hoerbuch.in", "hd-area.org", "hi10anime.com", "watchseries-online.ch", "solarmovie.ws", "scene-rls.com" };
     }
 
 }

@@ -42,7 +42,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 
-import jd.gui.swing.dialog.AbstractCaptchaDialog;
+import jd.gui.swing.dialog.AbstractImageCaptchaDialog;
 import jd.gui.swing.dialog.DialogType;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
@@ -139,7 +139,7 @@ public class BrowserCaptchaDialog extends AbstractDialog<String> {
     public void onSetVisible(boolean b) {
         super.onSetVisible(b);
         if (b) {
-            AbstractCaptchaDialog.playCaptchaSound();
+            AbstractImageCaptchaDialog.playCaptchaSound();
         }
     }
 

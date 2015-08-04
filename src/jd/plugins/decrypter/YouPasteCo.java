@@ -32,12 +32,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
 /**
  * notes: using cloudflare
@@ -66,14 +65,8 @@ public class YouPasteCo extends antiDDoSForDecrypt {
             // using dummie DownloadLink for auto retry code within handleKeyCaptcha
             final DownloadLink dummie = createDownloadlink(parameter);
             for (int i = 0; i < repeat; i++) {
-                String result = null;
-                final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                try {
-                    final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
-                    result = kc.handleKeyCaptcha(parameter, dummie);
-                } catch (final Throwable e) {
-                    result = null;
-                }
+
+                String result = handleCaptchaChallenge(new KeyCaptcha(this, br, dummie).createChallenge(this));
                 if ("CANCEL".equals(result)) {
                     return decryptedLinks;
                 }

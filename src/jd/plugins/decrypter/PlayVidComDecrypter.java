@@ -36,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "playvid.com" }, urls = { "https?://(www\\.)?playvids?.com/(?:watch(?:\\?v=|/)|embed/|v/)[A-Za-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "playvid.com" }, urls = { "http://(www\\.)?playvid.com/(?:watch(?:\\?v=|/)|embed/)[A-Za-z0-9\\-]+" }, flags = { 0 })
 public class PlayVidComDecrypter extends PluginForDecrypt {
 
     public PlayVidComDecrypter(PluginWrapper wrapper) {
@@ -57,7 +57,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
     @SuppressWarnings({ "static-access", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        PARAMETER = new Regex(param.toString(), "https?://").getMatch(-1) + "playvid.com/watch/" + new Regex(param.toString(), "([A-Za-z0-9\\-]+)$").getMatch(0);
+        PARAMETER = "http://www.playvid.com/watch/" + new Regex(param.toString(), "([A-Za-z0-9\\-]+)$").getMatch(0);
         br.setFollowRedirects(true);
         // Log in if possible to get 720p quality
         getUserLogin(false);

@@ -39,7 +39,7 @@ import org.jdownloader.captcha.v2.solver.browser.BrowserViewport;
 import org.jdownloader.captcha.v2.solver.browser.BrowserWindow;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
 
-public abstract class RecaptchaV2Challenge extends AbstractBrowserChallenge {
+public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
     public static final class Recaptcha2FallbackChallenge extends BasicCaptchaChallenge {
         private RecaptchaV2Challenge          owner;

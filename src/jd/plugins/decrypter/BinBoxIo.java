@@ -41,6 +41,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "binbox.io" }, urls = { "https?://(www\\.)?binbox\\.io/\\w+#\\w+" }, flags = { 0 })
 public class BinBoxIo extends PluginForDecrypt {
 
@@ -66,13 +68,13 @@ public class BinBoxIo extends PluginForDecrypt {
             Form captcha = br.getFormbyProperty("id", "captchaForm");
             if (captcha != null && captcha.containsHTML("solvemedia\\.com/papi/")) {
                 for (int i = 1; i <= 3; i++) {
-                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                   
+                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     File cf = null;
                     try {
                         cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     } catch (final Exception e) {
-                        if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                        if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
                             throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
                         }
                         throw e;
@@ -136,8 +138,8 @@ public class BinBoxIo extends PluginForDecrypt {
                     logger.info("Link offline: " + parameter);
                 }
             } else if (br.containsHTML(/* DCMA */"<div id=\"paste-deleted\"" +
-            /* suspended or deactivated account */"|This link is unavailable because |" +
-            /* content deleted */"The content you have requested has been deleted\\.")) {
+                    /* suspended or deactivated account */"|This link is unavailable because |" +
+                    /* content deleted */"The content you have requested has been deleted\\.")) {
                 try {
                     decryptedLinks.add(createOfflinelink(parameter, fpName != null ? Encoding.htmlDecode(fpName.trim()) : null, null));
                 } catch (final Throwable t) {

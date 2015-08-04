@@ -1,13 +1,9 @@
-package jd.gui.swing.dialog;
+package org.jdownloader.captcha.v2;
 
-import java.awt.AlphaComposite;
-import java.awt.Color;
-import java.awt.Composite;
 import java.awt.Cursor;
 import java.awt.Dialog.ModalityType;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Window;
@@ -15,18 +11,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
-import java.awt.image.IndexColorModel;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -45,9 +33,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.KeyStroke;
-import javax.swing.Timer;
 
-import jd.captcha.utils.GifDecoder;
+import jd.gui.swing.dialog.DialogType;
 import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -60,8 +47,6 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.images.IconIO;
-import org.appwork.utils.images.Interpolation;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -87,244 +72,17 @@ import org.jdownloader.settings.SoundSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
+public abstract class AbstractCaptchaDialog<T> extends AbstractDialog<T> {
 
-    public static Image[] getGifImages(InputStream openStream) {
-
-        try {
-            GifDecoder decoder = new GifDecoder();
-            decoder.read(openStream);
-            BufferedImage[] ret = new BufferedImage[decoder.getFrameCount()];
-            for (int i = 0; i < decoder.getFrameCount(); i++) {
-                ret[i] = decoder.getFrame(i);
-                // ImageIO.write(ret[i], "png", Application.getResource("img_" +
-                // i + ".png"));
-            }
-            return ret;
-
-        } finally {
-            try {
-                openStream.close();
-            } catch (final Throwable e) {
-            }
-        }
-
-    }
-
-    public static FrameState getWindowState() {
-        for (Window w : Window.getWindows()) {
-            if (WindowManager.getInstance().hasFocus(w)) {
-                return FrameState.TO_FRONT_FOCUSED;
-            }
-        }
-
-        FrameState ret = (FrameState) CFG_GUI.NEW_DIALOG_FRAME_STATE.getValue();
-        if (ret == null) {
-            ret = FrameState.TO_FRONT;
-        }
-        switch (ret) {
-        case OS_DEFAULT:
-        case TO_BACK:
-            JDGui.getInstance().flashTaskbar();
-        }
-
-        return ret;
-
-    }
+    private LocationStorage config;
+    protected boolean       hideCaptchasForHost = false;
 
     @Override
     protected FrameState getWindowStateOnVisible() {
-        return getWindowState();
+        return AbstractCaptchaDialog.getWindowState();
     }
 
-    @Override
-    public void onSetVisible(boolean b) {
-        super.onSetVisible(b);
-        if (b) {
-            playCaptchaSound();
-        }
-    }
-
-    @Override
-    public ModalityType getModalityType() {
-        return ModalityType.MODELESS;
-    }
-
-    /**
-     * @param url
-     * @return
-     */
-    public static Image[] getGifImages(URL url) {
-        InputStream stream = null;
-        try {
-            return getGifImages(stream = url.openStream());
-        } catch (IOException e) {
-            Log.exception(e);
-        } finally {
-            try {
-                stream.close();
-            } catch (final Throwable e) {
-            }
-        }
-        return null;
-    }
-
-    private LocationStorage config;
-
-    protected boolean       hideCaptchasForHost    = false;
-
-    protected boolean       hideCaptchasForPackage = false;
-
-    private final String    explain;
-
-    private int             fps;
-
-    private int             frame                  = 0;
-    private boolean         hideAllCaptchas;
-
-    public boolean isHideAllCaptchas() {
-        return hideAllCaptchas;
-    }
-
-    private DomainInfo hosterInfo;
-    protected JPanel   iconPanel;
-
-    private Image[]    images;
-
-    protected Point    offset;
-
-    private Timer      paintTimer;
-
-    private Plugin     plugin;
-    protected double   scaleFaktor;
-
-    protected boolean  stopDownloads = false;
-
-    private DialogType type;
-
-    protected boolean  refresh;
-
-    protected boolean  stopCrawling;
-
-    protected boolean  stopShowingCrawlerCaptchas;
-
-    public AbstractCaptchaDialog(int flags, String title, DialogType type, DomainInfo domainInfo, String explain, Image... images) {
-        super(flags, title, null, _GUI._.AbstractCaptchaDialog_AbstractCaptchaDialog_continue(), type == DialogType.CRAWLER ? _GUI._.lit_cancel() : _GUI._.AbstractCaptchaDialog_AbstractCaptchaDialog_cancel());
-        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogUniquePositionByHosterEnabled()) {
-            setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog_" + domainInfo.getTld()));
-        } else {
-            setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog"));
-        }
-        // if we have gif images, but read them as non indexed images, we try to fix this here.
-        java.util.List<Image> ret = new ArrayList<Image>();
-        for (int i = 0; i < images.length; i++) {
-            if (images[i] instanceof BufferedImage) {
-                if (((BufferedImage) images[i]).getColorModel() instanceof IndexColorModel) {
-                    ByteArrayOutputStream os = new ByteArrayOutputStream();
-                    try {
-                        ImageIO.write((BufferedImage) images[i], "gif", os);
-
-                        InputStream is = new ByteArrayInputStream(os.toByteArray());
-                        Image[] subImages = getGifImages(is);
-                        for (Image ii : subImages) {
-                            ret.add(ii);
-                        }
-                        continue;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-
-            }
-            ret.add(images[i]);
-        }
-
-        this.images = ret.toArray(new Image[] {});
-        fps = 24;
-        this.explain = explain;
-
-        this.hosterInfo = domainInfo;
-        this.type = type;
-    }
-
-    public static void playCaptchaSound() {
-        URL soundUrl = null;
-        if (JsonConfig.create(SoundSettings.class).isCaptchaSoundEnabled() && (soundUrl = NewTheme.I().getURL("sounds/", "captcha", ".wav")) != null) {
-            final URL finalSoundUrl = soundUrl;
-            new Thread("Captcha Sound") {
-                public void run() {
-                    AudioInputStream stream = null;
-                    Clip clip = null;
-                    try {
-                        stream = AudioSystem.getAudioInputStream(finalSoundUrl);
-                        final AudioFormat format = stream.getFormat();
-                        final DataLine.Info info = new DataLine.Info(Clip.class, format);
-                        if (AudioSystem.isLineSupported(info)) {
-                            clip = (Clip) AudioSystem.getLine(info);
-                            clip.open(stream);
-                            try {
-                                final FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
-
-                                float db = (20f * (float) Math.log(JsonConfig.create(SoundSettings.class).getCaptchaSoundVolume() / 100f));
-
-                                gainControl.setValue(Math.max(-80f, db));
-                                BooleanControl muteControl = (BooleanControl) clip.getControl(BooleanControl.Type.MUTE);
-                                muteControl.setValue(true);
-
-                                muteControl.setValue(false);
-                            } catch (Exception e) {
-                                Log.exception(e);
-                            }
-                            final AtomicBoolean runningFlag = new AtomicBoolean(true);
-                            clip.addLineListener(new LineListener() {
-
-                                @Override
-                                public void update(LineEvent event) {
-                                    if (event.getType() == Type.STOP) {
-                                        runningFlag.set(false);
-                                    }
-                                }
-                            });
-                            clip.start();
-                            Thread.sleep(1000);
-                            while (clip.isRunning() && runningFlag.get()) {
-                                Thread.sleep(100);
-                            }
-                        }
-                    } catch (Exception e) {
-                        Log.exception(e);
-                    } finally {
-                        try {
-                            if (clip != null) {
-                                final Clip finalClip = clip;
-                                Thread thread = new Thread() {
-                                    public void run() {
-                                        finalClip.close();
-                                    };
-                                };
-                                thread.setName("AudioStop");
-                                thread.setDaemon(true);
-                                thread.start();
-                                thread.join(2000);
-                            }
-                        } catch (Throwable e) {
-                        }
-                        try {
-                            if (stream != null) {
-                                stream.close();
-                            }
-                        } catch (Throwable e) {
-                        }
-                    }
-                }
-            }.start();
-        }
-    }
-
-    abstract protected JComponent createInputComponent();
-
-    private void createPopup() {
+    void createPopup() {
         final JPopupMenu popup = new JPopupMenu();
         JMenuItem mi;
         if (getType() == DialogType.HOSTER) {
@@ -448,18 +206,151 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         popup.show(cancelButton, +insets[1] - pref.width + cancelButton.getWidth() + 8 + 5, +cancelButton.getHeight());
     }
 
+    @Override
+    public void onSetVisible(boolean b) {
+        super.onSetVisible(b);
+        if (b) {
+            playCaptchaSound();
+        }
+    }
+
+    @Override
+    public ModalityType getModalityType() {
+        return ModalityType.MODELESS;
+    }
+
+    protected boolean      hideCaptchasForPackage = false;
+    protected final String explain;
+
+    protected boolean      hideAllCaptchas;
+    protected DomainInfo   hosterInfo;
+    protected JPanel       iconPanel;
+
+    public boolean isHideAllCaptchas() {
+        return hideAllCaptchas;
+    }
+
+    protected Plugin     plugin;
+    protected boolean    stopDownloads = false;
+    protected DialogType type;
+    protected boolean    refresh;
+    protected boolean    stopCrawling;
+    protected boolean    stopShowingCrawlerCaptchas;
+
+    public AbstractCaptchaDialog(int flags, String title, DialogType type, DomainInfo domainInfo, String explain) {
+
+        super(flags, title, null, _GUI._.AbstractCaptchaDialog_AbstractCaptchaDialog_continue(), type == DialogType.CRAWLER ? _GUI._.lit_cancel() : _GUI._.AbstractCaptchaDialog_AbstractCaptchaDialog_cancel());
+        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogUniquePositionByHosterEnabled()) {
+            setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog_" + domainInfo.getTld()));
+        } else {
+            setLocator(new RememberAbsoluteDialogLocator("CaptchaDialog"));
+        }
+        this.explain = explain;
+        this.hosterInfo = domainInfo;
+        this.type = type;
+    }
+
+    public static FrameState getWindowState() {
+        for (Window w : Window.getWindows()) {
+            if (WindowManager.getInstance().hasFocus(w)) {
+                return FrameState.TO_FRONT_FOCUSED;
+            }
+        }
+
+        FrameState ret = (FrameState) CFG_GUI.NEW_DIALOG_FRAME_STATE.getValue();
+        if (ret == null) {
+            ret = FrameState.TO_FRONT;
+        }
+        switch (ret) {
+        case OS_DEFAULT:
+        case TO_BACK:
+            JDGui.getInstance().flashTaskbar();
+        }
+
+        return ret;
+
+    }
+
+    public static void playCaptchaSound() {
+        URL soundUrl = null;
+        if (JsonConfig.create(SoundSettings.class).isCaptchaSoundEnabled() && (soundUrl = NewTheme.I().getURL("sounds/", "captcha", ".wav")) != null) {
+            final URL finalSoundUrl = soundUrl;
+            new Thread("Captcha Sound") {
+                public void run() {
+                    AudioInputStream stream = null;
+                    Clip clip = null;
+                    try {
+                        stream = AudioSystem.getAudioInputStream(finalSoundUrl);
+                        final AudioFormat format = stream.getFormat();
+                        final DataLine.Info info = new DataLine.Info(Clip.class, format);
+                        if (AudioSystem.isLineSupported(info)) {
+                            clip = (Clip) AudioSystem.getLine(info);
+                            clip.open(stream);
+                            try {
+                                final FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+
+                                float db = (20f * (float) Math.log(JsonConfig.create(SoundSettings.class).getCaptchaSoundVolume() / 100f));
+
+                                gainControl.setValue(Math.max(-80f, db));
+                                BooleanControl muteControl = (BooleanControl) clip.getControl(BooleanControl.Type.MUTE);
+                                muteControl.setValue(true);
+
+                                muteControl.setValue(false);
+                            } catch (Exception e) {
+                                Log.exception(e);
+                            }
+                            final AtomicBoolean runningFlag = new AtomicBoolean(true);
+                            clip.addLineListener(new LineListener() {
+
+                                @Override
+                                public void update(LineEvent event) {
+                                    if (event.getType() == Type.STOP) {
+                                        runningFlag.set(false);
+                                    }
+                                }
+                            });
+                            clip.start();
+                            Thread.sleep(1000);
+                            while (clip.isRunning() && runningFlag.get()) {
+                                Thread.sleep(100);
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.exception(e);
+                    } finally {
+                        try {
+                            if (clip != null) {
+                                final Clip finalClip = clip;
+                                Thread thread = new Thread() {
+                                    public void run() {
+                                        finalClip.close();
+                                    };
+                                };
+                                thread.setName("AudioStop");
+                                thread.setDaemon(true);
+                                thread.start();
+                                thread.join(2000);
+                            }
+                        } catch (Throwable e) {
+                        }
+                        try {
+                            if (stream != null) {
+                                stream.close();
+                            }
+                        } catch (Throwable e) {
+                        }
+                    }
+                }
+            }.start();
+        }
+    }
+
     public boolean isStopCrawling() {
         return stopCrawling;
     }
 
     public boolean isStopShowingCrawlerCaptchas() {
         return stopShowingCrawlerCaptchas;
-    }
-
-    @Override
-    protected String createReturnValue() {
-
-        return null;
     }
 
     public void dispose() {
@@ -472,9 +363,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             config.setY(getDialog().getHeight());
         }
         super.dispose();
-        if (paintTimer != null) {
-            paintTimer.stop();
-        }
+
     }
 
     public String getCrawlerStatus() {
@@ -591,20 +480,6 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         return hosterInfo;
     }
 
-    public String getFilename() {
-        if (!JsonConfig.create(GeneralSettings.class).isShowFileNameInCaptchaDialogEnabled()) {
-            return null;
-        }
-        switch (type) {
-        case HOSTER:
-            if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) {
-                return null;
-            }
-            return ((PluginForHost) plugin).getDownloadLink().getView().getDisplayName();
-        }
-        return null;
-    }
-
     public long getFilesize() {
         switch (type) {
         case HOSTER:
@@ -628,14 +503,6 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             return ((PluginForDecrypt) plugin).getHost();
         }
         return null;
-    }
-
-    public Image[] getImages() {
-        return images;
-    }
-
-    public Point getOffset() {
-        return offset;
     }
 
     protected String getPackageName() {
@@ -667,10 +534,6 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         return config.getX();
     }
 
-    public double getScaleFaktor() {
-        return scaleFaktor;
-    }
-
     public DialogType getType() {
         return type;
     }
@@ -683,13 +546,22 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         return hideCaptchasForPackage;
     }
 
-    @Override
-    protected boolean isResizable() {
-        return true;
-    }
-
     public boolean isStopDownloads() {
         return stopDownloads;
+    }
+
+    public String getFilename() {
+        if (!JsonConfig.create(GeneralSettings.class).isShowFileNameInCaptchaDialogEnabled()) {
+            return null;
+        }
+        switch (type) {
+        case HOSTER:
+            if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) {
+                return null;
+            }
+            return ((PluginForHost) plugin).getDownloadLink().getView().getDisplayName();
+        }
+        return null;
     }
 
     @Override
@@ -701,9 +573,9 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
         // field.setOpaque(false);
         getDialog().setMinimumSize(new Dimension(0, 0));
         // getDialog().setIconImage(hosterInfo.getFavIcon().getImage());
-        final JPanel panel = new JPanel(new MigLayout("ins 0,wrap 1", "[fill,grow]", "[grow,fill]10[]"));
+        final JPanel panel = new JPanel(getDialogLayout());
         SwingUtils.setOpaque(panel, false);
-        LAFOptions.getInstance().applyBackground(lafOptions.getColorForPanelBackground(), field);
+        LAFOptions.applyBackground(lafOptions.getColorForPanelBackground(), field);
 
         MigPanel headerPanel = null;
         if (type == DialogType.HOSTER) {
@@ -858,39 +730,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
 
         HeaderScrollPane sp;
 
-        iconPanel = new JPanel(new MigLayout("ins 0", "[grow]", "[grow]")) {
-
-            /**
-             *
-             */
-            private static final long serialVersionUID = 1L;
-            private Color             col              = (lafOptions.getColorForPanelBackground());
-
-            protected void paintChildren(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g;
-                Composite comp = g2.getComposite();
-                try {
-                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.85f));
-                    super.paintChildren(g);
-
-                } finally {
-                    g2.setComposite(comp);
-                }
-            }
-
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                int insets = CFG_GUI.CFG.isCaptchaDialogBorderAroundImageEnabled() ? 10 : 0;
-                BufferedImage scaled = IconIO.getScaledInstance(images[frame], getWidth() - insets, getHeight() - insets, Interpolation.BICUBIC, true);
-                g.drawImage(scaled, (getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2, col, null);
-                scaleFaktor = images[frame].getWidth(null) / (double) scaled.getWidth();
-                offset = new Point((getWidth() - scaled.getWidth()) / 2, (getHeight() - scaled.getHeight()) / 2);
-
-            }
-
-        };
-
+        iconPanel = createCaptchaPanel();
         SwingUtils.setOpaque(iconPanel, false);
 
         // iconPanel.add(refreshBtn, "alignx right,aligny bottom");
@@ -901,18 +741,9 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
                 cancel();
             }
         });
-
-        final int size = org.jdownloader.settings.staticreferences.CFG_GUI.CAPTCHA_SCALE_FACTOR.getValue();
-        if (size != 100) {
-
-            iconPanel.setPreferredSize(new Dimension((int) (images[0].getWidth(null) * size / 100.0f), (int) (images[0].getHeight(null) * size / 100.0f)));
-        } else {
-            iconPanel.setPreferredSize(new Dimension(images[0].getWidth(null), images[0].getHeight(null)));
-        }
-
         field.add(iconPanel);
 
-        sp = new HeaderScrollPane(field);
+        sp = createHeaderScrollPane(field);
         if (!CFG_GUI.CFG.isCaptchaDialogBorderAroundImageEnabled()) {
             sp.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
             SwingUtils.setOpaque(field, false);
@@ -925,31 +756,25 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
             // sp.setMinimumSize(new Dimension(Math.max(images[0].getWidth(null) + 10, headerPanel.getPreferredSize().width + 10),
             // images[0].getHeight(null) + headerPanel.getPreferredSize().height));
         }
-        JComponent b = createInputComponent();
-        if (b != null) {
-            panel.add(b);
-        }
 
         // if (config.isValid()) {
         //
         // getDialog().setSize(new Dimension(Math.max(config.getX(), images[0].getWidth(null)), Math.max(config.getY(),
         // images[0].getHeight(null))));
         // }
-        if (images.length > 1) {
-            paintTimer = new Timer(1000 / fps, new ActionListener() {
 
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    frame = (frame + 1) % images.length;
-                    iconPanel.repaint();
-                }
-            });
-            paintTimer.setRepeats(true);
-            paintTimer.start();
-
-        }
         return panel;
     }
+
+    protected HeaderScrollPane createHeaderScrollPane(MigPanel field) {
+        return new HeaderScrollPane(field);
+    }
+
+    protected MigLayout getDialogLayout() {
+        return new MigLayout("ins 0,wrap 1", "[fill,grow]", "[grow,fill]");
+    }
+
+    protected abstract JPanel createCaptchaPanel();
 
     public boolean isRefresh() {
         return refresh;
@@ -996,4 +821,5 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> {
     public void setPlugin(Plugin plugin) {
         this.plugin = plugin;
     }
+
 }

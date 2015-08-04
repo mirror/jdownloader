@@ -25,7 +25,6 @@ import jd.captcha.easy.load.LoadImage;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -40,7 +39,6 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
 import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
@@ -49,7 +47,6 @@ import org.jdownloader.captcha.blacklist.BlockCrawlerCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1CaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
@@ -446,9 +443,7 @@ public abstract class PluginForDecrypt extends Plugin {
      * @throws DecrypterException
      */
     protected String getCaptchaCode(String method, File file, int flag, final CryptedLink link, String defaultValue, String explain) throws Exception {
-        if (Thread.currentThread() instanceof SingleDownloadController) {
-            logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");
-        }
+
         File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
         copy.deleteOnExit();
         copy.getParentFile().mkdirs();
@@ -458,6 +453,14 @@ public abstract class PluginForDecrypt extends Plugin {
         final LinkCrawler currentCrawler = getCrawler();
         final CrawledLink currentOrigin = getCurrentLink().getOriginLink();
         BasicCaptchaChallenge c = createChallenge(method, file, flag, defaultValue, explain, currentCrawler, currentOrigin);
+        return handleCaptchaChallenge(c);
+
+    }
+
+    public <ReturnType> ReturnType handleCaptchaChallenge(Challenge<ReturnType> c) throws CaptchaException, InterruptedException, DecrypterException {
+        if (Thread.currentThread() instanceof SingleDownloadController) {
+            logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");
+        }
         int ct = getCaptchaTimeout();
         c.setTimeout(ct);
         invalidateLastChallengeResponse();
@@ -485,7 +488,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 break;
             case REFRESH:
                 // refresh is not supported from the pluginsystem right now.
-                return "";
+                return c.getRefreshTrigger();
             case STOP_CURRENT_ACTION:
                 if (Thread.currentThread() instanceof LinkCrawlerThread) {
                     LinkCollector.getInstance().abort();
@@ -502,74 +505,15 @@ public abstract class PluginForDecrypt extends Plugin {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
         return c.getResult().getValue();
-
     }
 
     protected BasicCaptchaChallenge createChallenge(String method, File file, int flag, String defaultValue, String explain, final LinkCrawler currentCrawler, final CrawledLink currentOrigin) {
         if ("recaptcha".equalsIgnoreCase(method)) {
-            return new RecaptchaV1CaptchaChallenge(file, defaultValue, explain, this, flag) {
-                @Override
-                public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
-                    Plugin challengePlugin = Challenge.getPlugin(challenge);
-                    if (challengePlugin != null && !(challengePlugin instanceof PluginForDecrypt)) {
-                        /* we only want block PluginForDecrypt captcha here */
-                        return false;
-                    }
-                    PluginForDecrypt decrypt = (PluginForDecrypt) challengePlugin;
-                    if (currentCrawler != decrypt.getCrawler()) {
-                        /* we have a different crawler source */
-                        return false;
-                    }
-                    switch (skipRequest) {
-                    case STOP_CURRENT_ACTION:
-                        /* user wants to stop current action (eg crawling) */
-                        return true;
-                    case BLOCK_ALL_CAPTCHAS:
-                        /* user wants to block all captchas (current session) */
-                        return true;
-                    case BLOCK_HOSTER:
-                        /* user wants to block captchas from specific hoster */
-                        return StringUtils.equals(PluginForDecrypt.this.getHost(), Challenge.getHost(challenge));
-                    case BLOCK_PACKAGE:
-                        CrawledLink crawledLink = decrypt.getCurrentLink();
-                        return crawledLink != null && crawledLink.getOriginLink() == currentOrigin;
-                    default:
-                        return false;
-                    }
-                }
-            };
+            return new RecaptchaV1CaptchaChallenge(file, defaultValue, explain, this, flag);
+
         }
-        BasicCaptchaChallenge c = new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag) {
-            @Override
-            public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
-                Plugin challengePlugin = Challenge.getPlugin(challenge);
-                if (challengePlugin != null && !(challengePlugin instanceof PluginForDecrypt)) {
-                    /* we only want block PluginForDecrypt captcha here */
-                    return false;
-                }
-                PluginForDecrypt decrypt = (PluginForDecrypt) challengePlugin;
-                if (currentCrawler != decrypt.getCrawler()) {
-                    /* we have a different crawler source */
-                    return false;
-                }
-                switch (skipRequest) {
-                case STOP_CURRENT_ACTION:
-                    /* user wants to stop current action (eg crawling) */
-                    return true;
-                case BLOCK_ALL_CAPTCHAS:
-                    /* user wants to block all captchas (current session) */
-                    return true;
-                case BLOCK_HOSTER:
-                    /* user wants to block captchas from specific hoster */
-                    return StringUtils.equals(PluginForDecrypt.this.getHost(), Challenge.getHost(challenge));
-                case BLOCK_PACKAGE:
-                    CrawledLink crawledLink = decrypt.getCurrentLink();
-                    return crawledLink != null && crawledLink.getOriginLink() == currentOrigin;
-                default:
-                    return false;
-                }
-            }
-        };
+        BasicCaptchaChallenge c = new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag);
+        ;
         return c;
     }
 

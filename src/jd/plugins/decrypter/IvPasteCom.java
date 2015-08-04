@@ -34,6 +34,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ivpaste.com" }, urls = { "http://(www\\.)?ivpaste\\.com/(v/|view\\.php\\?id=)[A-Za-z0-9]+" }, flags = { 0 })
 public class IvPasteCom extends PluginForDecrypt {
 
@@ -102,18 +105,14 @@ public class IvPasteCom extends PluginForDecrypt {
                 if (i >= 5) {
                     throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
-                final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
+
                 String result = null;
                 if (auto < 3) {
                     auto++;
-                    result = kc.autoSolve(parameter);
+                    result = handleCaptchaChallenge(new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(this));
+
                 } else {
-                    try {
-                        result = kc.showDialog(parameter);
-                    } catch (final Throwable e) {
-                        result = null;
-                    }
+                    result = handleCaptchaChallenge(new KeyCaptcha(this, br, createDownloadlink(parameter)).createChallenge(true, this));
                 }
                 if (result == null || "CANCEL".equals(result)) {
                     throw new DecrypterException(DecrypterException.CAPTCHA);
@@ -124,8 +123,8 @@ public class IvPasteCom extends PluginForDecrypt {
                     throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
                 Form form = br.getForm(0);
-                PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+              
+                org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                 File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                 String code = "";
                 String chid = sm.getChallenge();

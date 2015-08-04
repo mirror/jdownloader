@@ -30,6 +30,8 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -218,7 +220,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
             try {
                 // Decrypt -> http stream
                 /* TODO: change me after 0.9xx public --> jd.crypt.RC4 */
-                LnkCrptWs.KeyCaptchaShowDialogTwo arkfour = new LnkCrptWs.KeyCaptchaShowDialogTwo();
+                KeyCaptchaShowDialogTwo arkfour = new KeyCaptchaShowDialogTwo();
                 /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
                 byte[] compressedPlainData = arkfour.D(Encoding.Base64Decode(KEY).getBytes(), enc);
 

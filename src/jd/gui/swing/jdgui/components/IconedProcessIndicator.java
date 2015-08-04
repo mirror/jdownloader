@@ -22,8 +22,8 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 public class IconedProcessIndicator extends CircledProgressBar implements MouseListener {
 
     /**
-	 * 
-	 */
+     *
+     */
     private static final long serialVersionUID = 1627427388265904122L;
     private boolean           active;
 

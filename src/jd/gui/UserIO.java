@@ -25,7 +25,6 @@ import javax.swing.ListCellRenderer;
 import javax.swing.filechooser.FileFilter;
 
 import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.nutils.JDFlags;
@@ -56,9 +55,7 @@ import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.captcha.blacklist.BlacklistEntry;
 import org.jdownloader.captcha.blacklist.BlockAllCrawlerCaptchasEntry;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
-import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -294,27 +291,7 @@ public class UserIO {
                 title = title + " - " + explain;
             }
 
-            ClickCaptchaChallenge c = new ClickCaptchaChallenge(imagefile, title, plugin) {
-                @Override
-                public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
-                    switch (skipRequest) {
-                    case STOP_CURRENT_ACTION:
-                        /* user wants to stop current action (eg crawling) */
-                        return true;
-                    case BLOCK_ALL_CAPTCHAS:
-                        /* user wants to block all captchas (current session) */
-                        return true;
-                    case BLOCK_HOSTER:
-                        /* user wants to block captchas from specific hoster */
-                        return plugin.getHost().equals(Challenge.getHost(challenge));
-                    case REFRESH:
-                    case SINGLE:
-                    default:
-                        return false;
-                    }
-                }
-
-            };
+            ClickCaptchaChallenge c = new ClickCaptchaChallenge(imagefile, title, plugin);
             c.setTimeout(plugin.getCaptchaTimeout());
             plugin.invalidateLastChallengeResponse();
             final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);

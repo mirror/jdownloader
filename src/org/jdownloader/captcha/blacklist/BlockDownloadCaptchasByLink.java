@@ -29,7 +29,7 @@ public class BlockDownloadCaptchasByLink implements SessionBlackListEntry<Object
     public boolean matches(Challenge<Object> c) {
         DownloadLink link = getDownloadLink();
         if (link != null) {
-            return link == Challenge.getDownloadLink(c);
+            return link == c.getDownloadLink();
         }
         return false;
     }

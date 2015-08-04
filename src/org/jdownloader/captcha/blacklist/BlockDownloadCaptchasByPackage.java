@@ -28,7 +28,7 @@ public class BlockDownloadCaptchasByPackage implements SessionBlackListEntry<Obj
     public boolean matches(Challenge<Object> c) {
         FilePackage filePackage = getFilePackage();
         if (filePackage != null) {
-            DownloadLink link = Challenge.getDownloadLink(c);
+            DownloadLink link = c.getDownloadLink();
             if (link == null) {
                 return false;
             }

@@ -195,7 +195,7 @@ public abstract class ChallengeSolver<T> {
 
     protected boolean validateBlackWhite(Challenge<?> c) {
         if (getService().getConfig().isBlackWhiteListingEnabled()) {
-            String host = Challenge.getHost(c);
+            String host = c.getHost();
             ArrayList<String> whitelist = getService().getConfig().getWhitelistEntries();
             if (whitelist != null) {
                 for (String s : whitelist) {

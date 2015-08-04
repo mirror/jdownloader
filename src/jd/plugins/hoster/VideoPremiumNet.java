@@ -55,6 +55,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videopremium.tv", "videopremium.net" }, urls = { "https?://(www\\.)?videopremium\\.(net|tv|me)/(embed\\-)?[a-z0-9]{12}", "r489e0zu0564hjzrt50p9jhgtpiohkDELETE_MEdsngiurhz958hchswinefihighr" }, flags = { 2, 0 })
 public class VideoPremiumNet extends PluginForHost {
@@ -724,8 +725,8 @@ public class VideoPremiumNet extends PluginForHost {
                 // Handle stupid login captcha
                 if (br.containsHTML("solvemedia\\.com/papi/")) {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", "videopremium.tv", "http://videopremium.tv", true);
-                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                   
+                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     final String code = getCaptchaCode(cf, dummyLink);
                     loginform.put("adcopy_response", code);

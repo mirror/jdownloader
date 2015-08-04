@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -13,11 +14,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -34,6 +38,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.os.CrossSystem;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.ScriptableObject;
@@ -54,7 +59,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
         return false;
     }
 
-    protected static final String                 cfRequiredCookies = "__cfduid|cf_clearance";
+    protected static final String                 cfRequiredCookies = "cfduid|cf_clearance";
     protected static HashMap<String, Cookies>     antiDDoSCookies   = new HashMap<String, Cookies>();
     protected final WeakHashMap<Browser, Boolean> browserPrepped    = new WeakHashMap<Browser, Boolean>();
     protected static AtomicReference<String>      userAgent         = new AtomicReference<String>(null);
@@ -144,6 +149,10 @@ public abstract class antiDDoSForHost extends PluginForHost {
         // use existing browser session to determine host
         final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(page);
         prepBrowser(ibr, host);
+        // stable sucks
+        if (isJava7nJDStable() && page.startsWith("https")) {
+            page = page.replaceFirst("^https://", "http://");
+        }
         ibr.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         URLConnectionAdapter con = null;
         try {
@@ -178,6 +187,10 @@ public abstract class antiDDoSForHost extends PluginForHost {
         // use existing browser session to determine host
         final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(page);
         prepBrowser(ibr, host);
+        // stable sucks
+        if (isJava7nJDStable() && page.startsWith("https")) {
+            page = page.replaceFirst("^https://", "http://");
+        }
         ibr.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         URLConnectionAdapter con = null;
         try {
@@ -212,10 +225,35 @@ public abstract class antiDDoSForHost extends PluginForHost {
         // use existing browser session to determine host
         final String host = ibr.getURL() != null ? Browser.getHost(ibr.getURL()) : Browser.getHost(form.getAction());
         prepBrowser(ibr, host);
+        // stable sucks && lame to the max, lets try and send a form outside of desired protocol. (works with oteupload)
         if (Form.MethodType.POST.equals(form.getMethod())) {
             // if the form doesn't contain an action lets set one based on current br.getURL().
             if (form.getAction() == null || form.getAction().equals("")) {
                 form.setAction(ibr.getURL());
+            }
+            if (isJava7nJDStable() && (form.getAction().contains("https://") || /* relative path */(!form.getAction().startsWith("http")))) {
+                if (!form.getAction().startsWith("http") && ibr.getURL().contains("https://")) {
+                    // change relative path into full path, with protocol correction
+                    String basepath = new Regex(ibr.getURL(), "(https?://.+)/[^/]+$").getMatch(0);
+                    String basedomain = new Regex(ibr.getURL(), "(https?://[^/]+)").getMatch(0);
+                    String path = form.getAction();
+                    String finalpath = null;
+                    if (path.startsWith("/")) {
+                        finalpath = basedomain.replaceFirst("https://", "http://") + path;
+                    } else if (!path.startsWith(".")) {
+                        finalpath = basepath.replaceFirst("https://", "http://") + path;
+                    } else {
+                        // lacking builder for ../relative paths. this will do for now.
+                        logger.info("Missing relative path builder. Must abort now... Try upgrading to JDownloader 2");
+                        throw new PluginException(LinkStatus.ERROR_FATAL);
+                    }
+                    form.setAction(finalpath);
+                } else {
+                    form.setAction(form.getAction().replaceFirst("https?://", "http://"));
+                }
+                if (!stableSucks.get()) {
+                    showSSLWarning(this.getHost());
+                }
             }
             ibr.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         }
@@ -411,15 +449,6 @@ public abstract class antiDDoSForHost extends PluginForHost {
                             ibr.getPage(ibr.getRedirectLocation());
                         }
                     }
-                } else if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]+" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]+" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
-                    // website address could be www. or what ever prefixes, need to make sure
-                    // eg. within 403 response code,
-                    // <p>The owner of this website (www.premiumax.net) has banned your IP address (x.x.x.x).</p>
-                    // also common when proxies are used?? see keep2share.cc jdlog://5562413173041
-                    String ip = ibr.getRegex("your IP address \\((.*?)\\)\\.</p>").getMatch(0);
-                    String message = ibr.getHost() + " has banned your IP Address" + (inValidate(ip) ? "!" : "! " + ip);
-                    logger.warning(message);
-                    throw new PluginException(LinkStatus.ERROR_FATAL, message);
                 } else if (responseCode == 503 && cloudflare != null) {
                     // 503 response code with javascript math section && with 5 second pause
                     final String[] line1 = ibr.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
@@ -506,6 +535,12 @@ public abstract class antiDDoSForHost extends PluginForHost {
                     // //]]>
                     // </script>
 
+                } else if (ibr.containsHTML("<p>The owner of this website \\(" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| " + Pattern.quote(br.getHost()) + " used CloudFlare to restrict access</title>")) {
+                    // common when proxies are used?? see keep2share.cc jdlog://5562413173041
+                    String ip = ibr.getRegex("your IP address \\((.*?)\\)\\.</p>").getMatch(0);
+                    String message = ibr.getHost() + " has banned your IP Address" + (inValidate(ip) ? "!" : "! " + ip);
+                    logger.warning(message);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, message);
                 } else {
                     // nothing wrong, or something wrong (unsupported format)....
                     // commenting out return prevents caching of cookies per request
@@ -558,6 +593,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
     }
 
     // stable browser is shite.
+
     private boolean isJava7nJDStable() {
         if (!isNewJD() && System.getProperty("java.version").matches("1\\.[7-9].+")) {
             return true;
@@ -596,6 +632,83 @@ public abstract class antiDDoSForHost extends PluginForHost {
             }
         }
         return cookies;
+    }
+
+    private static Object        DIALOGLOCK  = new Object();
+
+    private static AtomicBoolean stableSucks = new AtomicBoolean(false);
+
+    public void showSSLWarning(final String domain) {
+        synchronized (DIALOGLOCK) {
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        try {
+                            String message = null;
+                            String title = null;
+                            boolean xSystem = CrossSystem.isOpenBrowserSupported();
+                            if ("de".equalsIgnoreCase(lng)) {
+                                title = domain + " :: Java 7+ && HTTPS Post Requests.";
+                                message = "Wegen einem Bug in in Java 7+ in dieser JDownloader version koennen wir keine HTTPS Post Requests ausfuehren.\r\n";
+                                message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
+                                message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
+                                message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
+                                if (xSystem) {
+                                    message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
+                                } else {
+                                    message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                                }
+                            } else if ("es".equalsIgnoreCase(lng)) {
+                                title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
+                                message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
+                                message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
+                                message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
+                                message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
+                                if (xSystem) {
+                                    message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
+                                } else {
+                                    message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación, enlace :\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                                }
+                            } else {
+                                title = domain + " :: Java 7+ && HTTPS Post Requests.";
+                                message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
+                                message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
+                                message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
+                                message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
+                                if (xSystem) {
+                                    message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
+                                } else {
+                                    message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
+                                }
+                            }
+                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
+                            if (xSystem && JOptionPane.OK_OPTION == result) {
+                                CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
+                            }
+                            stableSucks.set(true);
+                        } catch (Throwable e) {
+                        }
+                    }
+                });
+            } catch (Throwable e) {
+            }
+        }
+    }
+
+    private String lng = getLanguage();
+
+    private String getLanguage() {
+        try {
+            if (System.getProperty("jd.revision.jdownloaderrevision") != null) {
+                return org.appwork.txtresource.TranslationFactory.getDesiredLocale().getLanguage().toLowerCase(Locale.ENGLISH);
+            } else {
+                return System.getProperty("user.language");
+            }
+        } catch (final Throwable ignore) {
+            return System.getProperty("user.language");
+        }
     }
 
     /**

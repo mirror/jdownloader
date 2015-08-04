@@ -6,7 +6,7 @@ import jd.plugins.Plugin;
 
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 
-public abstract class ClickCaptchaChallenge extends ImageCaptchaChallenge<ClickedPoint> {
+public class ClickCaptchaChallenge extends ImageCaptchaChallenge<ClickedPoint> {
 
     public ClickCaptchaChallenge(File imagefile, String explain, Plugin plugin) {
         super(imagefile, plugin.getHost(), explain, plugin);

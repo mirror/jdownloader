@@ -46,7 +46,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alfafile.net" }, urls = { "https?://(www\\.)?alfafile\\.net/file/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alfafile.net" }, urls = { "https?://(www\\.)?alfafile\\.net/file/[A-Za-z0-9]+" }, flags = { 2 })
 public class AlfafileNet extends PluginForHost {
 
     public AlfafileNet(PluginWrapper wrapper) {
@@ -82,7 +82,7 @@ public class AlfafileNet extends PluginForHost {
      * TODO: Use API for linkchecking whenever an account is added to JD. This will ensure that the plugin will always work, at least for
      * premium users. Status 2015-08-03: Filecheck API does not seem to work --> Disabled it - reported API issues to jiaz.
      */
-    private static final boolean prefer_api_linkcheck         = false;
+    private static final boolean PREFER_API_LINKCHECK         = false;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -98,7 +98,7 @@ public class AlfafileNet extends PluginForHost {
         if (aa != null) {
             api_token = getLoginToken(aa);
         }
-        if (api_token != null && prefer_api_linkcheck) {
+        if (api_token != null && PREFER_API_LINKCHECK) {
             this.br.getPage("https://alfafile.net/api/v1/file/info?file_id=" + getFileID(link) + "&token=" + api_token);
             final String status = getJson("status");
             if (!"401".equals(status)) {
@@ -181,13 +181,13 @@ public class AlfafileNet extends PluginForHost {
             boolean success = false;
             for (int i = 0; i <= 3; i++) {
                 final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                 sm.setSecure(true);
                 File cf = null;
                 try {
                     cf = sm.downloadCaptcha(getLocalCaptchaFile());
                 } catch (final Exception e) {
-                    if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                    if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
                         throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
                     }
                     throw e;
@@ -338,16 +338,24 @@ public class AlfafileNet extends PluginForHost {
             final String expire = getJson("premium_end_time");
             ai.setValidUntil(Long.parseLong(expire) * 1000);
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(true);
+            try {
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
             ai.setStatus("Premium account");
         } else {
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            account.setType(AccountType.FREE);
-            /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(maxPrem.get());
-            account.setConcurrentUsePossible(false);
+            try {
+                account.setType(AccountType.FREE);
+                /* free accounts can still have captcha */
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+                /* not available in old Stable 0.9.581 */
+            }
             ai.setStatus("Registered (free) user");
         }
         ai.setTrafficLeft(traffic_left);
@@ -362,7 +370,7 @@ public class AlfafileNet extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        if (account.getType() == AccountType.FREE) {
+        if (account.getBooleanProperty("free", false)) {
             /*
              * No API --> We're actually not downloading via free account but it doesnt matter as there are no known free account advantages
              * compared to unregistered mode.
@@ -374,7 +382,6 @@ public class AlfafileNet extends PluginForHost {
             if (dllink == null) {
                 final String fid = getFileID(link);
                 this.br.getPage("/api/v1/file/download?file_id=" + fid + "&token=" + getLoginToken(account));
-                handleErrorsGeneral();
                 dllink = getJson("download_url");
                 if (dllink == null) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -394,31 +401,6 @@ public class AlfafileNet extends PluginForHost {
             }
             link.setProperty("premium_directlink", dllink);
             dl.startDownload();
-        }
-    }
-
-    private void handleErrorsGeneral() throws PluginException {
-        final String errorcode = getJson("status");
-        final String errormessage = getJson("details");
-        if (errorcode != null) {
-            if (errorcode.equals("409")) {
-                /*
-                 * E.g. detailed errormessages:
-                 *
-                 * Conflict. Delay between downloads must be not less than 60 minutes. Try again in 51 minutes.
-                 *
-                 * Conflict. DOWNLOAD::ERROR::You can't download not more than 1 file at a time in free mode.
-                 */
-                String minutes_regexed = null;
-                int minutes = 60;
-                if (errormessage != null) {
-                    minutes_regexed = new Regex(errormessage, "again in (\\d+) minutes?").getMatch(0);
-                    if (minutes_regexed != null) {
-                        minutes = Integer.parseInt(minutes_regexed);
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, minutes * 60 * 1001l);
-            }
         }
     }
 

@@ -30,12 +30,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.adscaptcha.AdsCaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigasize.com" }, urls = { "https?://(www\\.)?gigasize\\.com/get/[a-z0-9]+" }, flags = { 2 })
 public class GigaSizeCom extends PluginForHost {
@@ -145,8 +144,8 @@ public class GigaSizeCom extends PluginForHost {
 
         Form captchaForm = br.getFormbyProperty("id", "downloadForm");
         if (br.containsHTML("//api\\.adscaptcha\\.com/")) {
-            final PluginForDecrypt adsplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-            final jd.plugins.decrypter.LnkCrptWs.AdsCaptcha ac = ((jd.plugins.decrypter.LnkCrptWs) adsplug).getAdsCaptcha(br);
+
+            final org.jdownloader.captcha.v2.challenge.adscaptcha.AdsCaptcha ac = new AdsCaptcha(br);
             captchaForm = ac.getResult();
             if (captchaForm == null) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "User abort ...");

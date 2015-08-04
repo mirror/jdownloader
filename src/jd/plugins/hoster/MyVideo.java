@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -218,7 +220,7 @@ public class MyVideo extends PluginForHost {
         byte[] ciphertext = JDHexUtils.getByteArray(cipher);
         // plugin should be loaded first,
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-        jd.plugins.decrypter.LnkCrptWs.KeyCaptchaShowDialogTwo arkfour = new jd.plugins.decrypter.LnkCrptWs.KeyCaptchaShowDialogTwo();
+        org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo arkfour = new org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo();
         /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
         byte[] plain = arkfour.D(key.getBytes(), ciphertext);
         /* CHECK: we should always use new String (bytes,charset) to avoid issues with system charset and utf-8 */

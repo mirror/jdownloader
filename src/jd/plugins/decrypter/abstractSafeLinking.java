@@ -162,8 +162,8 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                         // refresh/toggle
                         switch (0) { // Integer.parseInt(captchaType)) {
                         case 0: {
-                            PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                            jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                          
+                            org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                             sm.setChallengeKey(br.getHost().equalsIgnoreCase("safelinking.net") ? "OZ987i6xTzNs9lw5.MA-2Vxbc-UxFrLu" : "t62EJ1oSPvEIEl.tnmC0la5sdfLHDPsl");
                             File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                             String code = getCaptchaCode(cf, param);
@@ -546,8 +546,8 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                         protectedForm.put("adcopy_response", "");
                         break;
                     } else {
-                        PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                        jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                      
+                        org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                         File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                         String code = getCaptchaCode(cf, param);
                         String chid = sm.getChallenge(code);

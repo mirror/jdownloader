@@ -33,7 +33,7 @@ public class BlockCrawlerCaptchasByPackage implements BlacklistEntry {
     public boolean matches(Challenge c) {
         LinkCrawler lcrawler = getCrawler();
         if (lcrawler != null && lcrawler.isRunning()) {
-            Plugin plugin = Challenge.getPlugin(c);
+            Plugin plugin = c.getPlugin();
             if (plugin instanceof PluginForDecrypt) {
                 PluginForDecrypt decrypt = (PluginForDecrypt) plugin;
                 CrawledLink link = decrypt.getCurrentLink();
