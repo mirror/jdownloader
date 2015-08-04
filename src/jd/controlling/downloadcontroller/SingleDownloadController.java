@@ -366,13 +366,28 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                         if (defaultPlugin != null) {
                             defaultPlugin.preHandle(downloadLink, account, handlePlugin);
                         }
+                        final PluginForHost finalHandlePlugin = handlePlugin;
                         watchDog.localFileCheck(this, new ExceptionRunnable() {
 
                             @Override
                             public void run() throws Exception {
-                                final List<DownloadLinkCandidate> candidates = new ArrayList<DownloadLinkCandidate>();
-                                candidates.add(getDownloadLinkCandidate());
-                                final DISKSPACERESERVATIONRESULT result = watchDog.validateDiskFree(candidates);
+                                final File partFile = new File(downloadLink.getFileOutput() + ".part");
+                                final long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), downloadLink.getView().getBytesLoaded());
+                                final long remainingSize = downloadLink.getView().getBytesTotal() - Math.max(0, doneSize);
+                                final DiskSpaceReservation reservation = new DiskSpaceReservation() {
+
+                                    @Override
+                                    public File getDestination() {
+                                        return partFile;
+                                    }
+
+                                    @Override
+                                    public long getSize() {
+                                        return remainingSize + finalHandlePlugin.calculateAdditionalRequiredDiskSpace(downloadLink);
+                                    }
+
+                                };
+                                final DISKSPACERESERVATIONRESULT result = watchDog.validateDiskFree(reservation);
                                 switch (result) {
                                 case FAILED:
                                     throw new SkipReasonException(SkipReason.DISK_FULL);
