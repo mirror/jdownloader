@@ -114,19 +114,19 @@ public class DebridLinkFr extends PluginForHost {
         ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] hostitems = getHostItems(this.br.toString());
         for (final String hostitem : hostitems) {
-            final String name = getJson(hostitem, "name");
+            // final String name = getJson(hostitem, "name");
             final boolean isFreeHost = Boolean.parseBoolean(this.getJson(hostitem, "free_host"));
             final String status = getJson(hostitem, "status");
             /* Don't add hosts if they are down or disabled, */
             if ("-1".equals(status) || "0".equals(status)) {
-                logger.info("NOT adding host " + name + " to host array because it is down or disabled");
+                // logger.info("NOT adding host " + name + " to host array because it is down or disabled");
                 continue;
             } else if (isFree && !isFreeHost) {
                 /* Don't add hosts which are not supported via the current account type - important for free accounts. */
-                logger.info("NOT adding host " + name + " to host array because user has a free account and this is not a free host");
+                // logger.info("NOT adding host " + name + " to host array because user has a free account and this is not a free host");
                 continue;
             } else {
-                logger.info("ADDING host " + name + " to host array");
+                // logger.info("ADDING host " + name + " to host array");
                 final String jsonarray = this.getJsonArray(hostitem, "hosts");
                 final String[] domains = this.getJsonResultsFromArray(jsonarray);
                 for (final String domain : domains) {

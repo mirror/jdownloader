@@ -241,18 +241,18 @@ public class UlabsDe extends PluginForHost {
         long trafficmax = 0;
         final String[] traffics = br.getRegex("\"freeTraffic\":[\t\n\r ]+(\\d+)").getColumn(0);
         final String[] traffics_max = br.getRegex("\"totalTraffic\":[\t\n\r ]+(\\d+)").getColumn(0);
-        for (int i = 0; i < traffics.length; i++) {
-            final String trafficstr = traffics[i];
-            final String host_traffic_maxstr = traffics_max[i];
-            final long trafficlong = Long.parseLong(trafficstr) * 1024 * 1024;
-            final long host_traffic_max = Long.parseLong(host_traffic_maxstr) * 1024 * 1024;
-            trafficavailable += trafficlong;
-            trafficmax += host_traffic_max;
-            final String host = hosts[i].toLowerCase();
-            synchronized (hostTrafficleftMap) {
+        synchronized (hostTrafficleftMap) {
+            for (int i = 0; i < traffics.length; i++) {
+                final String trafficstr = traffics[i];
+                final String host_traffic_maxstr = traffics_max[i];
+                final long trafficlong = Long.parseLong(trafficstr) * 1024 * 1024;
+                final long host_traffic_max = Long.parseLong(host_traffic_maxstr) * 1024 * 1024;
+                trafficavailable += trafficlong;
+                trafficmax += host_traffic_max;
+                final String host = hosts[i].toLowerCase();
                 hostTrafficleftMap.put(host, trafficlong);
+                supportedHosts.add(host);
             }
-            supportedHosts.add(host);
         }
         ac.setTrafficLeft(trafficavailable);
         ac.setTrafficMax(trafficmax);

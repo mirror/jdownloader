@@ -253,8 +253,8 @@ public class OneFichierCom extends PluginForHost {
             br.setFollowRedirects(false);
         } else {
             /* resume download */
-            dl.startDownload();
             downloadLink.setProperty(PROPERTY_FREELINK, dllink);
+            dl.startDownload();
             return;
         }
         // use the English page, less support required

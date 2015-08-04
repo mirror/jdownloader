@@ -31,7 +31,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-//import jd.plugins.SiteType.SiteTemplate;
+import jd.plugins.SiteType.SiteTemplate;
 
 import org.appwork.utils.StringUtils;
 
@@ -135,7 +135,10 @@ public class MFS_ShortUrlScript extends antiDDoSForDecrypt {
         return hasCaptcha;
     }
 
-//s*@Overrides*//public SiteTemplate siteTemplateType() {s*//return SiteTemplate.(MFScripts_Wurlie);s*//}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MFScripts_Wurlie;
+    }
 
     @Override
     public Boolean siteTesterDisabled() {

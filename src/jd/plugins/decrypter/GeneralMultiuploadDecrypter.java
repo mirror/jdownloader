@@ -29,7 +29,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-//import jd.plugins.SiteType.SiteTemplate;
+import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
@@ -37,7 +37,7 @@ import jd.utils.JDUtilities;
 names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "maxmirror.com", "indirbindir.biz", "exoshare.com", "go4up.com", "uploadonall.com", "directmirror.com", "nextdown.net", "qooy.com", "uploader.ro", "uploadmirrors.com", "megaupper.com", "shrta.com", "1filesharing.com" },
 
 urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multfile\\.com/files/[0-9A-Za-z]{1,15}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?indirbindir\\.biz/files/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}",
-        "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}" },
+"http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}" },
 
 flags = { 0 })
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
@@ -303,6 +303,9 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         return false;
     }
 
-//s*@Overrides*//public SiteTemplate siteTemplateType() {s*//return SiteTemplate.(Qooy_Mirrors);s*//}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.Qooy_Mirrors;
+    }
 
 }
