@@ -505,10 +505,14 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         final ArrayList<String> selectedQualities = new ArrayList<String>();
         final SubConfiguration cfg = SubConfiguration.getConfig("dailymotion.com");
         if (cfg.getBooleanProperty("ALLOW_BEST", false)) {
-            ArrayList<String> list = new ArrayList<String>(FOUNDQUALITIES.keySet());
-            final String highestAvailableQualityValue = list.get(list.size() - 1);
-            selectedQualities.add(highestAvailableQualityValue);
-        } else {
+            for (final String quality : new String[] { "1", "2", "7", "6", "3", "4", "5" }) {
+                if (FOUNDQUALITIES.containsKey(quality)) {
+                    selectedQualities.add(quality);
+                    break;
+                }
+            }
+        }
+        if (cfg.getBooleanProperty("ALLOW_BEST", false) == false || selectedQualities.size() == 0) {
             boolean qld = cfg.getBooleanProperty(ALLOW_LQ, false);
             boolean qsd = cfg.getBooleanProperty(ALLOW_SD, false);
             boolean qhq = cfg.getBooleanProperty(ALLOW_HQ, false);
