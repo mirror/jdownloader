@@ -35,13 +35,14 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultimbox.com" }, urls = { "https?://(www\\.)?ultimbox\\.com/mega/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultimbox.com" }, urls = { "https?://(www\\.)?ultimbox\\.com/mega/(?!index\\.[a-z]+)[A-Za-z0-9]+" }, flags = { 0 })
 public class UltimboxCom extends PluginForHost {
 
     public UltimboxCom(PluginWrapper wrapper) {
@@ -624,6 +625,11 @@ public class UltimboxCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MFScripts_YetiShare;
     }
 
 }

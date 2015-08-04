@@ -28,6 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -221,7 +222,7 @@ public class UploadLwCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -248,9 +249,14 @@ public class UploadLwCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return true;
+    }
 
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-return true;
-}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MFScripts_YetiShare;
+    }
+
 }

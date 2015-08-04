@@ -66,6 +66,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -1537,9 +1538,7 @@ public class FilePlanetaCom extends PluginForHost {
             logger.info("Detected captcha method \"Key Captcha\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
-           
             String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, captcha, getDownloadLink()).createChallenge(form.hasInputFieldByName("login") && form.hasInputFieldByName("password"), this));
-
             if (result == null || "CANCEL".equals(result)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
@@ -2109,5 +2108,10 @@ public class FilePlanetaCom extends PluginForHost {
         } catch (Throwable e) {
         }
     }
+
+	@Override
+	public SiteTemplate siteTemplateType() {
+		return SiteTemplate.SibSoft_XFileShare;
+	}
 
 }

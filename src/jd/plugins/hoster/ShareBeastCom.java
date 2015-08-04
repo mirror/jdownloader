@@ -46,6 +46,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -789,5 +790,10 @@ public class ShareBeastCom extends PluginForHost {
             }
         }
     }
+
+	@Override
+	public SiteTemplate siteTemplateType() {
+		return SiteTemplate.SibSoft_XFileShare;
+	}
 
 }

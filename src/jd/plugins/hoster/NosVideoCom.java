@@ -36,6 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -597,4 +598,9 @@ public class NosVideoCom extends PluginForHost {
         }
         return false;
     }
+	@Override
+	public SiteTemplate siteTemplateType() {
+		return SiteTemplate.SibSoft_XFileShare;
+	}
+
 }

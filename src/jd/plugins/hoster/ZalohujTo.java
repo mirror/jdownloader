@@ -32,11 +32,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zalohuj.to " }, urls = { "https?://(www\\.)?zalohuj\\.to/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zalohuj.to" }, urls = { "https?://(www\\.)?zalohuj\\.to/[A-Za-z0-9]+" }, flags = { 0 })
 public class ZalohujTo extends PluginForHost {
 
     public ZalohujTo(PluginWrapper wrapper) {
@@ -332,6 +333,11 @@ public class ZalohujTo extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MFScripts_YetiShare;
     }
 
 }

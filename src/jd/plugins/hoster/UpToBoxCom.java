@@ -52,6 +52,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -927,5 +928,10 @@ public class UpToBoxCom extends antiDDoSForHost {
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.UpToBox.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
+
+	@Override
+	public SiteTemplate siteTemplateType() {
+		return SiteTemplate.SibSoft_XFileShare;
+	}
 
 }
