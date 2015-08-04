@@ -28,6 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -250,4 +251,10 @@ public class UploadManCom extends PluginForHost {
 public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
 return true;
 }
+	@Override
+	public SiteTemplate siteTemplateType() {
+		return SiteTemplate.MFScripts_YetiShare;
+	}
+
+
 }
