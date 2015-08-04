@@ -39,8 +39,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -349,8 +347,8 @@ public class CrunchyRollCom extends antiDDoSForHost {
         } else {
             account.setType(AccountType.FREE);
             ai.setStatus("Free Account");
+            ai.setValidUntil(-1);
         }
-        ai.setValidUntil(-1);
         account.setValid(true);
         return ai;
     }
@@ -427,10 +425,8 @@ public class CrunchyRollCom extends antiDDoSForHost {
                             // Save cookies to the browser
                             for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                                 final String key = cookieEntry.getKey();
-                                if (!key.matches(cfRequiredCookies)) {
-                                    final String value = cookieEntry.getValue();
-                                    br.setCookie("crunchyroll.com", key, value);
-                                }
+                                final String value = cookieEntry.getValue();
+                                br.setCookie("crunchyroll.com", key, value);
                             }
                             return;
                         }
@@ -440,7 +436,7 @@ public class CrunchyRollCom extends antiDDoSForHost {
                 // Set the POST parameters to log in
                 final LinkedHashMap<String, String> post = new LinkedHashMap<String, String>();
                 post.put("formname", "RpcApiUser_Login");
-                post.put("next_url", Encoding.urlEncode("http://www.crunchyroll.com/acct/?action=status"));
+                post.put("next_url", Encoding.urlEncode("http://www.crunchyroll.com/acct/membership/"));
                 post.put("fail_url", Encoding.urlEncode("http://www.crunchyroll.com/login"));
                 post.put("name", Encoding.urlEncode(account.getUser()));
                 post.put("password", Encoding.urlEncode(account.getPass()));
@@ -470,17 +466,8 @@ public class CrunchyRollCom extends antiDDoSForHost {
                     }
                 }
 
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-
-                // Get the cookies saved into the browser
-                final Cookies cYT = br.getCookies("crunchyroll.com");
-                for (final Cookie c : cYT.getCookies()) {
-                    if (!c.getKey().matches(cfRequiredCookies)) {
-                        cookies.put(c.getKey(), c.getValue());
-                    }
-                }
                 // Save the cookies to the cache
-                CrunchyRollCom.loginCookies.put(account, cookies);
+                CrunchyRollCom.loginCookies.put(account, fetchCookies("crunchyroll.com"));
             } catch (final PluginException e) {
                 CrunchyRollCom.loginCookies.remove(account);
                 throw e;
@@ -645,23 +632,23 @@ public class CrunchyRollCom extends antiDDoSForHost {
         final int magic1 = (int) Math.floor(Math.sqrt(6.9) * Math.pow(2, 25));
         final long magic2 = id ^ magic1 ^ (id ^ magic1) >>> 3 ^ (magic1 ^ id) * 32l;
 
-        magicStr += magic2;
+                    magicStr += magic2;
 
-        // Calculate the hash using SHA-1
-        final MessageDigest md = MessageDigest.getInstance("SHA-1");
-        /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
-        final byte[] magicBytes = magicStr.getBytes();
-        md.update(magicBytes, 0, magicBytes.length);
-        final byte[] hashBytes = md.digest();
+                    // Calculate the hash using SHA-1
+                    final MessageDigest md = MessageDigest.getInstance("SHA-1");
+                    /* CHECK: we should always use getBytes("UTF-8") or with wanted charset, never system charset! */
+                    final byte[] magicBytes = magicStr.getBytes();
+                    md.update(magicBytes, 0, magicBytes.length);
+                    final byte[] hashBytes = md.digest();
 
-        // Create the key using the given length
-        final byte[] key = new byte[size];
-        Arrays.fill(key, (byte) 0);
+                    // Create the key using the given length
+                    final byte[] key = new byte[size];
+                    Arrays.fill(key, (byte) 0);
 
-        for (int i = 0; i < key.length && i < hashBytes.length; i++) {
-            key[i] = hashBytes[i];
-        }
-        return key;
+                    for (int i = 0; i < key.length && i < hashBytes.length; i++) {
+                        key[i] = hashBytes[i];
+                    }
+                    return key;
     }
 
     /**

@@ -71,6 +71,7 @@ public class DownloadCo extends PluginForHost {
         final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         link.setLinkID(fid);
         link.setName(fid);
+        br.setReadTimeout(2 * 60 * 1000);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<strong>ERROR") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -79,11 +80,24 @@ public class DownloadCo extends PluginForHost {
         final Regex finfo = br.getRegex("File:</h2>\\s+<p>([^<>\"]*?), <strong>([^<>\"]*?)</strong>");
         String filename = finfo.getMatch(0);
         String filesize = finfo.getMatch(1);
-        if (filename == null || filesize == null) {
+        if (filename == null) {
+            // they have some type of null filename with 100meg
+            // <h2>Your File is almost ready</h2>
+            // <p> <strong>100.0 MB</strong> | <img src="/img/dl.png"> 41</p>
+            final String[] alt = br.getRegex("<h2>(Your File is almost ready)</h2>\\s*<p>\\s*<strong>(\\d+\\.\\d+ [KMGT]B)</strong>").getRow(0);
+            if (alt != null) {
+                if (alt[1] != null) {
+                    link.setDownloadSize(SizeFormatter.getSize(alt[1].replace(",", ".")));
+                }
+                // they now mask all filenames
+                return AvailableStatus.TRUE;
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -94,10 +108,8 @@ public class DownloadCo extends PluginForHost {
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        final String lid = downloadLink.getLinkID();
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-
             final String getPostURL = getPostUrl();
             final Browser br2 = br.cloneBrowser();
             br2.postPage(getPostURL, "action=getLink&vfid=" + downloadLink.getLinkID());
@@ -109,10 +121,7 @@ public class DownloadCo extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, f, resumable, maxchunks);
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-
         }
-        this.br.getHeaders().put("Referer", "http://downlod.co/file/" + lid);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
