@@ -48,7 +48,7 @@ public class AmazonCloud extends PluginForHost {
         final String mainlink = link.getStringProperty("mainlink", null);
         final String url = (mainlink != null && mainlink.contains("/gp/drive/share") ? mainlink : "https://www.amazon.com/clouddrive/share?s=" + link.getStringProperty("plain_folder_id"));
         br.getPage(url);
-        if (br.containsHTML("id=\"error_page\"")) {
+        if (br.containsHTML("=\"error_page\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("fileName = \"([^<>\"]+)\"").getMatch(0);
