@@ -134,11 +134,6 @@ public class DailyMotionComV2 extends DailyMotionCom {
     }
 
     @Override
-    public ConfigEntry addConfigElementBestOnly() {
-        return null;
-    }
-
-    @Override
     public void addConfigElementHDS(ConfigEntry hq) {
 
     }
