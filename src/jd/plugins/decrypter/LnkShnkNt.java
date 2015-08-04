@@ -68,13 +68,13 @@ public class LnkShnkNt extends PluginForDecrypt {
             if (br.containsHTML("api\\.solvemedia\\.com/papi")) {
                 /* This part was coded blindly! */
                 for (int i = 0; i <= 3; i++) {
-                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                   
+                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     File cf = null;
                     try {
                         cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     } catch (final Exception e) {
-                        if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                        if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
                             throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
                         }
                         throw e;

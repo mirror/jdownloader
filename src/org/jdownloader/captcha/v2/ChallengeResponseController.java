@@ -18,6 +18,8 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
 import org.jdownloader.captcha.event.ChallengeResponseEvent;
 import org.jdownloader.captcha.event.ChallengeResponseEventSender;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaDialogSolver;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.jac.KeyCaptchaJACSolver;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
 import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolver;
 import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolver;
@@ -40,7 +42,7 @@ public class ChallengeResponseController {
 
     /**
      * get the only existing instance of ChallengeResponseController. This is a singleton
-     * 
+     *
      * @return
      */
     public static ChallengeResponseController getInstance() {
@@ -88,6 +90,12 @@ public class ChallengeResponseController {
             }
             if (!Application.isHeadless()) {
                 addSolver(BrowserSolver.getInstance());
+            }
+
+            addSolver(KeyCaptchaJACSolver.getInstance());
+            if (!Application.isHeadless()) {
+                addSolver(KeyCaptchaDialogSolver.getInstance());
+
             }
             addSolver(CaptchaAPISolver.getInstance());
         }
@@ -151,7 +159,7 @@ public class ChallengeResponseController {
     /**
      * When one job gets a skiprequest, we have to check all pending jobs if this skiprequest affects them as well. if so, we have to skip
      * them as well.
-     * 
+     *
      * @param skipRequest
      * @param solver
      * @param challenge
@@ -183,7 +191,7 @@ public class ChallengeResponseController {
         }
         final SolverJob<T> job = new SolverJob<T>(this, c, solver);
         job.setLogger(logger);
-        final Plugin plugin = Challenge.getPlugin(c);
+        final Plugin plugin = c.getPlugin();
         if (plugin != null) {
             if (plugin instanceof PluginForHost) {
                 ((PluginForHost) plugin).setLastSolverJob(job);

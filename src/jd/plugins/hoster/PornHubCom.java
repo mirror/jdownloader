@@ -202,8 +202,8 @@ public class PornHubCom extends PluginForHost {
             }
         }
 
-        final Boolean encrypted = values.get("encrypted") == null ? null : ((Boolean) values.get("encrypted")).booleanValue();
-        if (encrypted == Boolean.TRUE) {
+        final boolean encrypted = ((Boolean) values.get("encrypted")).booleanValue();
+        if (encrypted) {
             String key = (String) values.get("video_title");
             try {
                 dlUrl = new BouncyCastleAESCounterModeDecrypt().decrypt(dlUrl, key, 256);
@@ -215,21 +215,6 @@ public class PornHubCom extends PluginForHost {
                 logger.warning("pornhub.com: " + dlUrl);
                 dlUrl = null;
             }
-        }
-        if (dlUrl == null) {
-            final String[] quals = new String[] { "1080", "720", "480", "360", "240" };
-            // seems they have seperated into multiple vars
-            final String[][] var_player_quality_dp = br.getRegex("var player_quality_(1080|720|480|360|240)p\\s*=\\s*('|\")(https?://.*?)\\2\\s*;").getMatches();
-            for (final String q : quals) {
-                for (final String[] var : var_player_quality_dp) {
-                    // so far any of these links will work.
-                    if (var[0].equals(q)) {
-                        dlUrl = var[2];
-                        return;
-                    }
-                }
-            }
-
         }
     }
 
@@ -378,7 +363,7 @@ public class PornHubCom extends PluginForHost {
 
     /**
      * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
-     *
+     * 
      * @see <a
      *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
      */

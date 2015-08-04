@@ -35,7 +35,7 @@ import org.jdownloader.gui.translate._GUI;
 /**
  * This Dialog is used to display a Inputdialog for the captchas
  */
-public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListener, MouseListener {
+public class CaptchaDialog extends AbstractImageCaptchaDialog implements ActionListener, MouseListener {
 
     private ExtTextField textField;
     private String       suggest;

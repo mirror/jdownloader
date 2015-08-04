@@ -34,7 +34,7 @@ import org.jdownloader.gui.translate._GUI;
 /**
  * This Dialog is used to display a Inputdialog for the captchas
  */
-public class ClickCaptchaDialog extends AbstractCaptchaDialog {
+public class ClickCaptchaDialog extends AbstractImageCaptchaDialog {
 
     private Point resultPoint = null;
 

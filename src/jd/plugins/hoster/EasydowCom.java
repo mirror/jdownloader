@@ -52,6 +52,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easydow.com" }, urls = { "https?://(www\\.)?easydow\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class EasydowCom extends PluginForHost {
@@ -393,7 +394,7 @@ public class EasydowCom extends PluginForHost {
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     final String code = getCaptchaCode(cf, downloadLink);
                     final String chid = sm.getChallenge(code);
@@ -401,9 +402,7 @@ public class EasydowCom extends PluginForHost {
                     dlForm.put("adcopy_response", "manual_challenge");
                 } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
                     logger.info("Detected captcha method \"keycaptca\"");
-                    PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
-                    final String result = kc.handleKeyCaptcha(downloadLink.getDownloadURL(), downloadLink);
+                    String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
                     if (result != null && "CANCEL".equals(result)) {
                         throw new PluginException(LinkStatus.ERROR_FATAL);
                     }
@@ -466,13 +465,13 @@ public class EasydowCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
@@ -611,7 +610,7 @@ public class EasydowCom extends PluginForHost {
     // String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      * @param value
      * @return

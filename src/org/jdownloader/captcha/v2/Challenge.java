@@ -3,17 +3,19 @@ package org.jdownloader.captcha.v2;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
+import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.SkipRequest;
 import jd.controlling.downloadcontroller.PrePluginCheckDummyChallenge;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
-import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
-import org.jdownloader.captcha.v2.solver.browser.AbstractBrowserChallenge;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.controlling.UniqueAlltimeID;
 
@@ -23,6 +25,87 @@ public abstract class Challenge<T> {
     private long                  created;
     private int                   timeout;
     private boolean               accountLogin = false;
+    private boolean               createdInsideAccountChecker;
+
+    public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
+
+        Plugin plg = getPlugin();
+        if (plg == null) {
+            return false;
+        }
+
+        if (plg instanceof PluginForHost) {
+            return canBeSkippedByPluginforHost(skipRequest, solver, challenge, plg, ((PluginForHost) plg).getDownloadLink());
+        } else if (plg instanceof PluginForDecrypt) {
+            return canBeSkippedByPluginforDecrypt(skipRequest, solver, challenge, plg);
+
+        }
+        return false;
+    }
+
+    private boolean canBeSkippedByPluginforDecrypt(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge, Plugin plg) {
+        Plugin challengePlugin = challenge.getPlugin();
+        if (challengePlugin == null || !(challengePlugin instanceof PluginForDecrypt)) {
+            /* we only want block PluginForDecrypt captcha here */
+            return false;
+        }
+        PluginForDecrypt decrypt = (PluginForDecrypt) challengePlugin;
+        final LinkCrawler currentCrawler = decrypt.getCrawler();
+        final CrawledLink currentOrigin = decrypt.getCurrentLink().getOriginLink();
+        if (currentCrawler != decrypt.getCrawler()) {
+            /* we have a different crawler source */
+            return false;
+        }
+        switch (skipRequest) {
+        case STOP_CURRENT_ACTION:
+            /* user wants to stop current action (eg crawling) */
+            return true;
+        case BLOCK_ALL_CAPTCHAS:
+            /* user wants to block all captchas (current session) */
+            return true;
+        case BLOCK_HOSTER:
+            /* user wants to block captchas from specific hoster */
+            return StringUtils.equals(getPlugin().getHost(), challenge.getHost());
+        case BLOCK_PACKAGE:
+            CrawledLink crawledLink = decrypt.getCurrentLink();
+            return crawledLink != null && crawledLink.getOriginLink() == currentOrigin;
+        default:
+            return false;
+        }
+    }
+
+    private boolean canBeSkippedByPluginforHost(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge, Plugin plg, DownloadLink downloadLink) {
+        if (isCreatedInsideAccountChecker()) {
+            /* we don't want to skip login captcha inside fetchAccountInfo(Thread is AccountCheckerThread) */
+            return false;
+        }
+        final Plugin challengePlugin = challenge.getPlugin();
+        DownloadLink link = challenge.getDownloadLink();
+        if (link == null) {
+            return false;
+        }
+        if (challengePlugin != null && !(challengePlugin instanceof PluginForHost)) {
+            /* we only want block PluginForHost captcha here */
+            return false;
+        }
+        switch (skipRequest) {
+        case BLOCK_ALL_CAPTCHAS:
+            /* user wants to block all captchas (current session) */
+            return true;
+        case BLOCK_HOSTER:
+            /* user wants to block captchas from specific hoster */
+            return StringUtils.equals(link.getHost(), challenge.getHost());
+        case BLOCK_PACKAGE:
+            /* user wants to block captchas from current FilePackage */
+
+            if (link == null || link.getDefaultPlugin() == null) {
+                return false;
+            }
+            return link.getFilePackage() == link.getFilePackage();
+        default:
+            return false;
+        }
+    }
 
     public boolean isAccountLogin() {
         return accountLogin;
@@ -41,13 +124,11 @@ public abstract class Challenge<T> {
         return id;
     }
 
-    abstract public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge);
-
     @SuppressWarnings("unchecked")
     public Challenge(String method, String explain2) {
         typeID = method;
         explain = explain2;
-
+        createdInsideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
         Type superClass = this.getClass().getGenericSuperclass();
         while (superClass instanceof Class) {
 
@@ -60,6 +141,10 @@ public abstract class Challenge<T> {
         resultType = (Class<T>) ((ParameterizedType) superClass).getActualTypeArguments()[0];
         created = System.currentTimeMillis();
         timeout = -1;
+    }
+
+    public boolean isCreatedInsideAccountChecker() {
+        return createdInsideAccountChecker;
     }
 
     public int getTimeout() {
@@ -109,27 +194,15 @@ public abstract class Challenge<T> {
 
     private ResponseList<T> result;
 
-    public static String getHost(Challenge<?> challenge) {
-        if (challenge instanceof ImageCaptchaChallenge) {
-            return ((ImageCaptchaChallenge) challenge).getPlugin().getHost();
-        }
-        if (challenge instanceof ClickCaptchaChallenge) {
-            return ((ClickCaptchaChallenge) challenge).getPlugin().getHost();
-        }
-        if (challenge instanceof PrePluginCheckDummyChallenge) {
-            return ((PrePluginCheckDummyChallenge) challenge).getLink().getHost();
-        }
-        if (challenge instanceof AbstractBrowserChallenge) {
-            return ((AbstractBrowserChallenge) challenge).getPlugin().getHost();
-        }
-        return null;
+    public String getHost() {
+
+        Plugin plg = getPlugin();
+        return plg == null ? null : plg.getHost();
     }
 
-    public static DownloadLink getDownloadLink(Challenge<?> challenge) {
-        if (challenge instanceof PrePluginCheckDummyChallenge) {
-            return ((PrePluginCheckDummyChallenge) challenge).getLink();
-        }
-        Plugin plugin = getPlugin(challenge);
+    public DownloadLink getDownloadLink() {
+
+        Plugin plugin = getPlugin();
         if (plugin == null) {
             return null;
         }
@@ -139,11 +212,9 @@ public abstract class Challenge<T> {
         return null;
     }
 
-    public static DomainInfo getDomainInfo(Challenge<?> challenge) {
-        if (challenge instanceof PrePluginCheckDummyChallenge) {
-            return ((PrePluginCheckDummyChallenge) challenge).getLink().getDomainInfo();
-        }
-        Plugin plugin = getPlugin(challenge);
+    public DomainInfo getDomainInfo() {
+
+        Plugin plugin = getPlugin();
         if (plugin == null) {
             throw new WTFException("no plugin for this challenge!?");
         }
@@ -163,18 +234,19 @@ public abstract class Challenge<T> {
         throw new WTFException("no domaininfo for this challenge!?");
     }
 
-    public static Plugin getPlugin(Challenge<?> challenge) {
-        if (challenge instanceof ImageCaptchaChallenge) {
-            return ((ImageCaptchaChallenge) challenge).getPlugin();
+    public Plugin getPlugin() {
+
+        if (this instanceof PrePluginCheckDummyChallenge) {
+            return ((PrePluginCheckDummyChallenge) this).getLink().getDefaultPlugin();
         }
-        if (challenge instanceof ClickCaptchaChallenge) {
-            return ((ClickCaptchaChallenge) challenge).getPlugin();
-        }
-        if (challenge instanceof PrePluginCheckDummyChallenge) {
-            return ((PrePluginCheckDummyChallenge) challenge).getLink().getDefaultPlugin();
-        }
-        if (challenge instanceof AbstractBrowserChallenge) {
-            return ((AbstractBrowserChallenge) challenge).getPlugin();
+
+        return null;
+    }
+
+    // Workaround until we implemented proper Refresh SUpport in the plugins
+    public T getRefreshTrigger() {
+        if (getResultType() == String.class) {
+            return (T) "";
         }
         return null;
     }

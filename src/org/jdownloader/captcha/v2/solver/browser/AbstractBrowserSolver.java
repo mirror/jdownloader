@@ -8,6 +8,7 @@ import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
+import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.captcha.v2.solverjob.ChallengeSolverJobListener;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
@@ -72,7 +73,7 @@ public abstract class AbstractBrowserSolver extends ChallengeSolver<String> {
 
     @Override
     public void solve(final SolverJob<String> job) throws InterruptedException, SkipException {
-        synchronized (this) {
+        synchronized (DialogBasicCaptchaSolver.getInstance()) {
 
             if (job.getChallenge() instanceof AbstractBrowserChallenge) {
 

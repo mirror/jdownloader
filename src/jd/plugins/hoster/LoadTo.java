@@ -41,6 +41,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "load.to" }, urls = { "http://(www\\.)?load\\.to/[A-Za-z0-9]+/" }, flags = { 2 })
 public class LoadTo extends PluginForHost {
@@ -149,13 +150,13 @@ public class LoadTo extends PluginForHost {
         } else if (br.containsHTML("solvemedia\\.com/papi/")) {
             for (int i = 1; i <= 3; i++) {
                 /* Captcha */
-                final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+               
+                final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                 File cf = null;
                 try {
                     cf = sm.downloadCaptcha(getLocalCaptchaFile());
                 } catch (final Exception e) {
-                    if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                    if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
                         throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
                     }
                     throw e;

@@ -45,6 +45,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jumbofiles.org" }, urls = { "http://(www\\.)?(jumbofiles\\.org|jumbofilebox\\.com|putcker\\.com|mediafile\\.co|10shared\\.com)/(linkfile|newfile)\\?n=\\d+" }, flags = { 2 })
 public class JumboFilesOrg extends PluginForHost {
@@ -133,8 +134,8 @@ public class JumboFilesOrg extends PluginForHost {
             if (server == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-            final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+           
+            final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
             // if (i == 1) {
             // waitTime(timebefore, downloadLink);
             // }
@@ -142,7 +143,7 @@ public class JumboFilesOrg extends PluginForHost {
             try {
                 cf = sm.downloadCaptcha(getLocalCaptchaFile());
             } catch (final Exception e) {
-                if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
                 }
                 throw e;

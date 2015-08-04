@@ -3,7 +3,6 @@ package org.jdownloader.gui.notify.captcha;
 import java.awt.event.MouseEvent;
 
 import org.jdownloader.captcha.v2.AbstractResponse;
-import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
@@ -22,7 +21,7 @@ public class CaptchaNotify extends AbstractNotifyWindow<BasicContentPanel> imple
     private SolverJob<?> job;
 
     public CaptchaNotify(CaptchaBubbleSupport captchaBubbleSupport, SolverJob<?> job) {
-        super(captchaBubbleSupport, _GUI._.CaptchaNotify_CaptchaNotify_title_(Challenge.getHost(job.getChallenge())), new BasicContentPanel(_GUI._.CaptchaNotify_CaptchaNotifyPanel_text(), NewTheme.I().getIcon(IconKey.ICON_OCR, 32)));
+        super(captchaBubbleSupport, _GUI._.CaptchaNotify_CaptchaNotify_title_(job.getChallenge().getHost()), new BasicContentPanel(_GUI._.CaptchaNotify_CaptchaNotifyPanel_text(), NewTheme.I().getIcon(IconKey.ICON_OCR, 32)));
 
         job.getEventSender().addListener(this, true);
         this.job = job;

@@ -49,7 +49,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
-import jd.controlling.captcha.SkipRequest;
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -103,7 +102,6 @@ import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByPackage;
 import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
-import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v1.RecaptchaV1CaptchaChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
@@ -307,27 +305,33 @@ public abstract class PluginForHost extends Plugin {
         if (Thread.currentThread() instanceof LinkCrawlerThread) {
             logger.severe("PluginForHost.getCaptchaCode inside LinkCrawlerThread!?");
         }
+        final String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
+        if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
+            file = new File(orgCaptchaImage);
+        }
+        File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
+        copy.deleteOnExit();
+        copy.getParentFile().mkdirs();
+        copy.delete();
+        IO.copyFile(file, copy);
+        file = copy;
+        if (this.getDownloadLink() == null) {
+            this.setDownloadLink(link);
+        }
+
+        BasicCaptchaChallenge c = createChallenge(method, file, flag, link, defaultValue, explain);
+        c.setTimeout(getCaptchaTimeout());
+
+        return handleCaptchaChallenge(link, c);
+    }
+
+    protected <T> T handleCaptchaChallenge(final DownloadLink link, Challenge<T> c) throws CaptchaException, PluginException, InterruptedException {
         final CaptchaStepProgress progress = new CaptchaStepProgress(0, 1, null);
         progress.setProgressSource(this);
         progress.setDisplayInProgressColumnEnabled(false);
+        link.addPluginProgress(progress);
         try {
-            link.addPluginProgress(progress);
-            final String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
-            if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
-                file = new File(orgCaptchaImage);
-            }
-            File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
-            copy.deleteOnExit();
-            copy.getParentFile().mkdirs();
-            copy.delete();
-            IO.copyFile(file, copy);
-            file = copy;
-            if (this.getDownloadLink() == null) {
-                this.setDownloadLink(link);
-            }
             final boolean insideAccountChecker = Thread.currentThread() instanceof AccountCheckerThread;
-            BasicCaptchaChallenge c = createChallenge(method, file, flag, link, defaultValue, explain, insideAccountChecker);
-            c.setTimeout(getCaptchaTimeout());
             if (insideAccountChecker || FilePackage.isDefaultFilePackage(link.getFilePackage())) {
                 /**
                  * account login -> do not use anticaptcha services
@@ -345,7 +349,7 @@ public abstract class PluginForHost extends Plugin {
                 logger.warning("Cancel. Blacklist Matching");
                 throw new CaptchaException(blackListEntry);
             }
-            final SolverJob<String> job = ChallengeResponseController.getInstance().handle(c);
+            final SolverJob<T> job = ChallengeResponseController.getInstance().handle(c);
             if (!c.isSolved()) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
@@ -392,7 +396,7 @@ public abstract class PluginForHost extends Plugin {
                     }
                 case REFRESH:
                     // we should forward the refresh request to a new pluginstructure soon. For now. the plugin will just retry
-                    return "";
+                    return c.getRefreshTrigger();
                 case STOP_CURRENT_ACTION:
                     if (Thread.currentThread() instanceof SingleDownloadController) {
                         DownloadWatchDog.getInstance().stopDownloads();
@@ -406,74 +410,12 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
-    protected BasicCaptchaChallenge createChallenge(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain, final boolean insideAccountChecker) {
+    protected BasicCaptchaChallenge createChallenge(final String method, File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) {
         if ("recaptcha".equalsIgnoreCase(method)) {
-            return new RecaptchaV1CaptchaChallenge(file, defaultValue, explain, this, flag) {
-
-                @Override
-                public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
-                    if (insideAccountChecker) {
-                        /* we don't want to skip login captcha inside fetchAccountInfo(Thread is AccountCheckerThread) */
-                        return false;
-                    }
-                    final Plugin challengePlugin = Challenge.getPlugin(challenge);
-                    if (challengePlugin != null && !(challengePlugin instanceof PluginForHost)) {
-                        /* we only want block PluginForHost captcha here */
-                        return false;
-                    }
-                    switch (skipRequest) {
-                    case BLOCK_ALL_CAPTCHAS:
-                        /* user wants to block all captchas (current session) */
-                        return true;
-                    case BLOCK_HOSTER:
-                        /* user wants to block captchas from specific hoster */
-                        return StringUtils.equals(link.getHost(), Challenge.getHost(challenge));
-                    case BLOCK_PACKAGE:
-                        /* user wants to block captchas from current FilePackage */
-                        final DownloadLink lLink = Challenge.getDownloadLink(challenge);
-                        if (lLink == null || lLink.getDefaultPlugin() == null) {
-                            return false;
-                        }
-                        return link.getFilePackage() == lLink.getFilePackage();
-                    default:
-                        return false;
-                    }
-                }
-            };
+            return new RecaptchaV1CaptchaChallenge(file, defaultValue, explain, this, flag);
         }
 
-        BasicCaptchaChallenge c = new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag) {
-
-            @Override
-            public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
-                if (insideAccountChecker) {
-                    /* we don't want to skip login captcha inside fetchAccountInfo(Thread is AccountCheckerThread) */
-                    return false;
-                }
-                final Plugin challengePlugin = Challenge.getPlugin(challenge);
-                if (challengePlugin != null && !(challengePlugin instanceof PluginForHost)) {
-                    /* we only want block PluginForHost captcha here */
-                    return false;
-                }
-                switch (skipRequest) {
-                case BLOCK_ALL_CAPTCHAS:
-                    /* user wants to block all captchas (current session) */
-                    return true;
-                case BLOCK_HOSTER:
-                    /* user wants to block captchas from specific hoster */
-                    return StringUtils.equals(link.getHost(), Challenge.getHost(challenge));
-                case BLOCK_PACKAGE:
-                    /* user wants to block captchas from current FilePackage */
-                    final DownloadLink lLink = Challenge.getDownloadLink(challenge);
-                    if (lLink == null || lLink.getDefaultPlugin() == null) {
-                        return false;
-                    }
-                    return link.getFilePackage() == lLink.getFilePackage();
-                default:
-                    return false;
-                }
-            }
-        };
+        BasicCaptchaChallenge c = new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag);
         return c;
     }
 

@@ -52,6 +52,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4safe.com" }, urls = { "https?://(www\\.)?file4safe\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class File4SafeCom extends PluginForHost {
@@ -335,8 +336,8 @@ public class File4SafeCom extends PluginForHost {
                     skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
-                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                   
+                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     final String code = getCaptchaCode(cf, downloadLink);
                     final String chid = sm.getChallenge(code);
@@ -344,9 +345,7 @@ public class File4SafeCom extends PluginForHost {
                     dlForm.put("adcopy_response", "manual_challenge");
                 } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
                     logger.info("Detected captcha method \"keycaptca\"");
-                    PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
-                    final String result = kc.handleKeyCaptcha(downloadLink.getDownloadURL(), downloadLink);
+                    String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
                     if (result != null && "CANCEL".equals(result)) {
                         throw new PluginException(LinkStatus.ERROR_FATAL);
                     }

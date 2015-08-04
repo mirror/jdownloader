@@ -48,7 +48,7 @@ public class CaptchaBlackList implements DownloadWatchdogListener {
 
     private BlacklistEntry matches(Challenge<?> c, boolean bypasswhitelist) {
         if (!bypasswhitelist) {
-            DownloadLink link = Challenge.getDownloadLink(c);
+            DownloadLink link = c.getDownloadLink();
             if (link != null) {
                 synchronized (whitelist) {
                     if (whitelist.containsKey(link)) {

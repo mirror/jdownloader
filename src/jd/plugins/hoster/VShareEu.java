@@ -72,6 +72,8 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vshare.eu" }, urls = { "https?://(www\\.)?vshare\\.eu/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 @SuppressWarnings("deprecation")
@@ -1476,8 +1478,8 @@ public class VShareEu extends PluginForHost {
             logger.info("Detected captcha method \"Solve Media\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
-            final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-            final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(captcha);
+           
+            final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(captcha);
             final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
             String code = "";
             String chid = sm.getChallenge();
@@ -1492,14 +1494,7 @@ public class VShareEu extends PluginForHost {
             logger.info("Detected captcha method \"Key Captcha\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
-            final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-            String result = null;
-            try {
-                final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(captcha);
-                result = (form.hasInputFieldByName("login") && form.hasInputFieldByName("password") ? kc.showDialog(downloadLink.getDownloadURL()) : kc.handleKeyCaptcha(downloadLink.getDownloadURL(), downloadLink));
-            } catch (final Throwable e) {
-                result = null;
-            }
+             String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, captcha,getDownloadLink()).createChallenge(form.hasInputFieldByName("login") && form.hasInputFieldByName("password"), this));
             if (result == null || "CANCEL".equals(result)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }

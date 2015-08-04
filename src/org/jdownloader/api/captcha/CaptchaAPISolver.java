@@ -302,7 +302,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         ret.setHoster(((ImageCaptchaChallenge) entry.getChallenge()).getPlugin().getHost());
         ret.setCaptchaCategory(entry.getChallenge().getTypeID());
         ret.setExplain(entry.getChallenge().getExplain());
-        DownloadLink link = entry.getChallenge().getDownloadLink(entry.getChallenge());
+        DownloadLink link = entry.getChallenge().getDownloadLink();
         if (link != null) {
             ret.setLink(link.getUniqueID().getID());
         }

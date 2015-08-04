@@ -176,8 +176,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             } else {
                 // Should never happen
                 logger.info("Unsupported linktype: " + PARAMETER);
-                // because facebook picks up so many false positives do not throw exception or add offline links.
-                // throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+                throw new DecrypterException(EXCEPTION_LINKOFFLINE);
             }
         } catch (final DecrypterException e) {
             try {

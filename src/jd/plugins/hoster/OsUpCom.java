@@ -28,11 +28,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "os-up.com" }, urls = { "http://(www\\.)?os\\-up\\.com/filehost/file/[A-Za-z0-9]+/.{1}" }, flags = { 0 })
 public class OsUpCom extends PluginForHost {
@@ -54,20 +53,28 @@ public class OsUpCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Der Download wurde Gesperrt|>Datei wurde vom User Gel\\&ouml;scht|>Datei nicht gefunden<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Der Download wurde Gesperrt|>Datei wurde vom User Gel\\&ouml;scht|>Datei nicht gefunden<")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML(PASSWORDTEXT)) {
             link.getLinkStatus().setStatusText("This link is password protected");
             return AvailableStatus.TRUE;
         }
         final String filename = br.getRegex("<dt>DateiName:</dt>[\t\n\r ]+<dd>([^<>\"]*?)</dd>").getMatch(0);
         final String filesize = br.getRegex("<dt>Datei Gr\\&ouml;\\&szlig;e:</dt>[\t\n\r ]+<dd>([^<>\"]*?)</dd>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         final String md5 = br.getRegex("<dt>MD5 Checksum:</dt>[\t\n\r ]+<dd>([^<>\"]*?)</dd>").getMatch(0);
-        if (md5 != null) link.setMD5Hash(md5);
+        if (md5 != null) {
+            link.setMD5Hash(md5);
+        }
         final String sha1 = br.getRegex("<dt>SHA1 Checksum:</dt>[\t\n\r ]+<dd>([^<>\"]*?)</dd>").getMatch(0);
-        if (sha1 != null) link.setSha1Hash(sha1);
+        if (sha1 != null) {
+            link.setSha1Hash(sha1);
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -76,7 +83,9 @@ public class OsUpCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (br.containsHTML(PASSWORDTEXT)) {
             String passCode = downloadLink.getStringProperty("pass", null);
-            if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
+            if (passCode == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            }
             br.postPage(br.getURL(), "Filehost_File_Kennwort_" + getFileID(downloadLink) + "=" + Encoding.urlEncode(passCode));
             if (br.containsHTML(PASSWORDTEXT)) {
                 downloadLink.setProperty("pass", Property.NULL);
@@ -84,16 +93,13 @@ public class OsUpCom extends PluginForHost {
             }
             downloadLink.setProperty("pass", passCode);
         }
-        String result = null;
-        final PluginForDecrypt keycplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-        try {
-            final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((jd.plugins.decrypter.LnkCrptWs) keycplug).getKeyCaptcha(br);
-            result = kc.handleKeyCaptcha(downloadLink.getDownloadURL(), downloadLink);
-        } catch (final Throwable e) {
-            result = null;
+        String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
+        if (result == null) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        if (result == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if ("CANCEL".equals(result)) throw new PluginException(LinkStatus.ERROR_FATAL);
+        if ("CANCEL".equals(result)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL);
+        }
         final String postData = "capcode=" + result + "&fileid=" + getFileID(downloadLink) + "&type=1&type=1";
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.os-up.com/index.php?p=filehost&action=getfile", postData, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -224,24 +230,23 @@ public class OsUpCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-
-/* NO OVERRIDE!! We need to stay 0.9*compatible */
-public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-if (acc == null) {
-/* no account, yes we can expect captcha */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-/* free accounts also have captchas */
-return true;
-}
- if (acc.getStringProperty("session_type")!=null&&!"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
-return true;
-}
-return false;
-}
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        if (acc == null) {
+            /* no account, yes we can expect captcha */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
+            /* free accounts also have captchas */
+            return true;
+        }
+        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
+            return true;
+        }
+        return false;
+    }
 }

@@ -5959,4 +5959,16 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Replace whitespace by underscores: Append [SU]. Examples: *videoname[UC][SU]* or *channelname[SU]*" })
     String YoutubeHelper_getDescription_replacetags();
 
+    @Default(lngs = { "en" }, values = { "Puzzle for %s1" })
+    String KeyCaptchaDialog(String tld);
+
+    @Default(lngs = { "en" }, values = { "To continue with %s1, it is required to \r\nassemble the image as you see at the upper right corner" })
+    String KeyCaptchaDialog_explain(String tld);
+
+    @Default(lngs = { "en" }, values = { "Challenge for %s1" })
+    String KeyCaptchaCategoryDialog(String tld);
+
+    @Default(lngs = { "en" }, values = { "To continue with %s1, it is required to assign each picture to the correct category." })
+    String KeyCaptchaCategoryDialog_explain(String tld);
+
 }

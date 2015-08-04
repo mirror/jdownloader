@@ -48,6 +48,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jumbofiles.net" }, urls = { "https?://(www\\.)?jumbofiles\\.net/[A-Za-z0-9]+" }, flags = { 2 })
 public class JumbofilesNet extends PluginForHost {
@@ -238,8 +239,8 @@ public class JumbofilesNet extends PluginForHost {
                         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
                     } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
-                        final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                        final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((jd.plugins.decrypter.LnkCrptWs) solveplug).getSolveMedia(br);
+                       
+                        final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                         if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
                             sm.setSecure(true);
                         }
@@ -247,7 +248,7 @@ public class JumbofilesNet extends PluginForHost {
                         try {
                             cf = sm.downloadCaptcha(getLocalCaptchaFile());
                         } catch (final Exception e) {
-                            if (jd.plugins.decrypter.LnkCrptWs.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                            if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
                                 throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
                             }
                             throw e;
