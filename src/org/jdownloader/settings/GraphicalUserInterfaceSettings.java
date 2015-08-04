@@ -76,6 +76,8 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     String getActiveConfigPanel();
 
+    String getActiveMyJDownloaderPanel();
+
     @AboutConfig
     @DescriptionForConfigEntry("Captcha Dialog Image scale Faktor in %")
     @DefaultIntValue(100)
@@ -160,6 +162,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @DefaultBooleanValue(false)
     boolean isConfigViewVisible();
+
+    @DefaultBooleanValue(true)
+    boolean isMyJDownloaderViewVisible();
 
     @AboutConfig
     @DescriptionForConfigEntry("Highlight Table in Downloadview if table is filtered")
@@ -318,6 +323,8 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setActiveConfigPanel(String name);
 
+    void setActiveMyJDownloaderPanel(String name);
+
     void setActivePluginConfigPanel(String name);
 
     // void setActiveCESConfigPanel(String name);
@@ -331,6 +338,8 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setClipboardMonitored(boolean b);
 
     void setColoredIconsForDisabledHosterColumnEnabled(boolean b);
+
+    void setMyJDownloaderViewVisible(boolean b);
 
     void setConfigViewVisible(boolean b);
 
