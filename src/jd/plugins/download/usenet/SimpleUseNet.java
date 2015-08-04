@@ -162,11 +162,11 @@ public class SimpleUseNet {
     }
 
     private final ByteArrayOutputStream lineBuffer = new ByteArrayOutputStream() {
-                                                       @Override
-                                                       public synchronized byte[] toByteArray() {
-                                                           return buf;
-                                                       };
-                                                   };
+        @Override
+        public synchronized byte[] toByteArray() {
+            return buf;
+        };
+    };
 
     protected synchronized String readLine() throws IOException {
         return readLine(lineBuffer);
@@ -266,19 +266,25 @@ public class SimpleUseNet {
                 return buf;
             };
         };
-        buffer.reset();
-        String line = null;
-        int lineLength = readLine(getInputStream(), buffer);
-        if (lineLength > 0) {
-            line = new String(buffer.toByteArray(), 0, lineLength, "ISO-8859-1");
-            logger.info("Read Response:" + line);
-            if (line.startsWith("=ybegin")) {
-                logger.info("yEnc Body detected");
-                return new YEncInputStream(this, buffer);
+        while (true) {
+            buffer.reset();
+            final int lineLength = readLine(getInputStream(), buffer);
+            if (lineLength > 0) {
+                String line = new String(buffer.toByteArray(), 0, lineLength, "ISO-8859-1");
+                logger.info("Read Response:" + line);
+                if (line.startsWith("=ybegin")) {
+                    logger.info("yEnc Body detected");
+                    return new YEncInputStream(this, buffer);
+                }
+                if (line.matches("^begin \\d{3} .+")) {
+                    logger.info("uuEncode Body detected");
+                    return new UUInputStream(this, buffer);
+                }
+            } else if (lineLength == -1) {
+                break;
             }
         }
-        silentDisconnect();
-        throw new IOException("Unknown Body Format:" + line);
+        throw new IOException("Unknown Body Format");
     }
 
     private synchronized void sendCommand(String request) throws IOException {

@@ -20,6 +20,8 @@ public class YEncInputStream extends InputStream {
 
     private final long                  partBegin;
 
+    private long                        decodedBytes = 0;
+
     /**
      * returns the starting points, in bytes, of the block in the original file
      *
@@ -166,6 +168,7 @@ public class YEncInputStream extends InputStream {
             if (c == 61) {
                 special = true;
             } else {
+                decodedBytes++;
                 if (special) {
                     return ((byte) (c - 106)) & 0xff;
                 } else {
@@ -179,6 +182,9 @@ public class YEncInputStream extends InputStream {
         final String trailer = new String(lineBuffer, 0, lineSize, "ISO-8859-1");
         final String sizeValue = getValue(trailer, "size");
         final long size = sizeValue != null ? Long.parseLong(sizeValue) : -1;
+        if (decodedBytes < size) {
+            throw new IOException("decoded-size-error");
+        }
         if (isMultiPart()) {
             if (size != getPartSize()) {
                 throw new IOException("part-size-error");
@@ -195,6 +201,10 @@ public class YEncInputStream extends InputStream {
                 throw new IOException("size-error");
             }
         }
+        readBodyEnd();
+    }
+
+    private void readBodyEnd() throws IOException {
         buffer.reset();
         client.readLine(inputStream, buffer);
         final String line = new String(buffer.toByteArray(), 0, buffer.size(), "ISO-8859-1");
