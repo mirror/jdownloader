@@ -26,6 +26,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
+import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
@@ -262,8 +263,10 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
     public PackageType setDirectory(PackageType pt, String directory) {
         if (pt instanceof FilePackage) {
             ((FilePackage) pt).setDownloadDirectory(directory);
+            DownloadPathHistoryManager.getInstance().listPaths(directory);
         } else if (pt instanceof CrawledPackage) {
             ((CrawledPackage) pt).setDownloadFolder(directory);
+            DownloadPathHistoryManager.getInstance().listPaths(directory);
         }
         return pt;
     }
