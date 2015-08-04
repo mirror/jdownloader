@@ -50,6 +50,8 @@ import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
 import jd.controlling.captcha.SkipRequest;
+import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -188,6 +190,20 @@ public abstract class PluginForHost extends Plugin {
 
     public long calculateAdditionalRequiredDiskSpace(DownloadLink link) {
         return 0;
+    }
+
+    protected void checkAndReserve(final DownloadLink downloadLink, final DiskSpaceReservation reservation) throws Exception {
+        DISKSPACERESERVATIONRESULT result = DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().checkAndReserve(reservation, downloadLink != null ? downloadLink.getDownloadLinkController() : null);
+        switch (result) {
+        case FAILED:
+            throw new SkipReasonException(SkipReason.DISK_FULL);
+        case INVALIDDESTINATION:
+            throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+        }
+    }
+
+    protected void free(final DownloadLink downloadLink, final DiskSpaceReservation reservation) {
+        DownloadWatchDog.getInstance().getSession().getDiskSpaceManager().free(reservation, downloadLink != null ? downloadLink.getDownloadLinkController() : null);
     }
 
     public void errLog(Throwable e, Browser br, LogSource log, DownloadLink link, Account account) {

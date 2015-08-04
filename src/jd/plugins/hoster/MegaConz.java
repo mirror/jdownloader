@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Base64;
@@ -151,6 +152,12 @@ public class MegaConz extends PluginForHost {
     }
 
     @Override
+    public long calculateAdditionalRequiredDiskSpace(DownloadLink link) {
+        final long finalSize = link.getVerifiedFileSize();
+        return finalSize >= 0 ? finalSize : 0;
+    }
+
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         AvailableStatus available = requestFileInformation(link);
         if (AvailableStatus.FALSE == available) {
@@ -170,70 +177,88 @@ public class MegaConz extends PluginForHost {
         }
         // check finished encrypted file. if the decryption interrupted - for whatever reason
         String path = link.getFileOutput();
-        File src = null;
+        final File src;
         if (path.endsWith(encrypted)) {
             src = new File(path);
         } else {
             src = new File(path);
         }
-        if (src.exists() && src.length() == link.getVerifiedFileSize()) {
-            // ready for decryption
-            decrypt(link, keyString);
-            link.getLinkStatus().setStatus(LinkStatus.FINISHED);
-            return;
-        }
+        final AtomicLong encryptionDone = new AtomicLong(link.getVerifiedFileSize());
+        final DiskSpaceReservation reservation = new DiskSpaceReservation() {
+
+            @Override
+            public long getSize() {
+                return encryptionDone.get();
+            }
+
+            @Override
+            public File getDestination() {
+                return src;
+            }
+        };
         try {
-            if (fileID == null || keyString == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            checkAndReserve(link, reservation);
+            if (src.exists() && src.length() == link.getVerifiedFileSize()) {
+                // ready for decryption
+                decrypt(encryptionDone, link, keyString);
+                link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                return;
             }
-            if (publicFile) {
-                br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
-            } else {
-                br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"n\":\"" + fileID + "\"}]");
-            }
-            String downloadURL = br.getRegex("\"g\"\\s*?:\\s*?\"(https?.*?)\"").getMatch(0);
-            if (downloadURL == null) {
-                String error = getError(br);
-                /*
-                 * https://mega.co.nz/#doc
-                 */
-                if ("-11".equals(error)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access violation", 5 * 60 * 1000l);
+            try {
+                if (fileID == null || keyString == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if ("-18".equals(error)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Resource temporarily not available, please try again later", 5 * 60 * 1000l);
+                if (publicFile) {
+                    br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"p\":\"" + fileID + "\"}]");
+                } else {
+                    br.postPageRaw("https://eu.api.mega.co.nz/cs?id=" + CS.incrementAndGet(), "[{\"a\":\"g\",\"g\":\"1\",\"ssl\":" + useSSL() + ",\"n\":\"" + fileID + "\"}]");
                 }
-                if ("-3".equals(error) || br.getRequest().getHtmlCode().trim().equals("-3")) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry again later", 2 * 60 * 1000l);
-                }
+                String downloadURL = br.getRegex("\"g\"\\s*?:\\s*?\"(https?.*?)\"").getMatch(0);
+                if (downloadURL == null) {
+                    String error = getError(br);
+                    /*
+                     * https://mega.co.nz/#doc
+                     */
+                    if ("-11".equals(error)) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access violation", 5 * 60 * 1000l);
+                    }
+                    if ("-18".equals(error)) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Resource temporarily not available, please try again later", 5 * 60 * 1000l);
+                    }
+                    if ("-3".equals(error) || br.getRequest().getHtmlCode().trim().equals("-3")) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry again later", 2 * 60 * 1000l);
+                    }
 
+                    checkServerBusy();
+
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (oldStyle()) {
+                    /* old 09581 stable only */
+                    dl = createHackedDownloadInterface(this, br, link, downloadURL);
+                } else {
+                    /* mega does not like much connections! */
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, -10);
+                }
+                if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+                    br.followConnection();
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                link.setProperty("usedPlugin", getHost());
+                if (dl.startDownload()) {
+                    if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getDownloadCurrent() > 0) {
+                        decrypt(encryptionDone, link, keyString);
+                    }
+                }
+            } catch (IOException e) {
                 checkServerBusy();
-
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (oldStyle()) {
-                /* old 09581 stable only */
-                dl = createHackedDownloadInterface(this, br, link, downloadURL);
-            } else {
-                /* mega does not like much connections! */
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, -10);
-            }
-            if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setProperty("usedPlugin", getHost());
-            if (dl.startDownload()) {
-                if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getDownloadCurrent() > 0) {
-                    decrypt(link, keyString);
+                if (dl != null && dl.getConnection() != null && dl.getConnection().getResponseCode() == 500) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l);
                 }
+                throw e;
             }
-        } catch (IOException e) {
-            checkServerBusy();
-            if (dl != null && dl.getConnection() != null && dl.getConnection().getResponseCode() == 500) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is Busy", 1 * 60 * 1000l);
-            }
-            throw e;
+        } finally {
+            free(link, reservation);
         }
     }
 
@@ -353,7 +378,7 @@ public class MegaConz extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_TMP, JDL.L("plugins.hoster.megaconz.usetmp", "Use tmp decrypting file?")).setDefaultValue(false));
     }
 
-    private void decrypt(DownloadLink link, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IOException {
+    private void decrypt(AtomicLong encryptionDone, DownloadLink link, String keyString) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException, IOException {
         byte[] b64Dec = b64decode(keyString);
         int[] intKey = aByte_to_aInt(b64Dec);
         int[] keyNOnce = new int[] { intKey[0] ^ intKey[4], intKey[1] ^ intKey[5], intKey[2] ^ intKey[6], intKey[3] ^ intKey[7], intKey[4], intKey[5] };
@@ -451,6 +476,7 @@ public class MegaConz extends PluginForHost {
                 if (read > 0) {
                     progress.updateValues(progress.getCurrent() + read, total);
                     cos.write(buffer, 0, read);
+                    encryptionDone.addAndGet(read);
                 }
             }
             cos.close();
