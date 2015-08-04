@@ -186,6 +186,10 @@ public abstract class PluginForHost extends Plugin {
         errLog(e, br, null, link, null);
     }
 
+    public long calculateAdditionalRequiredDiskSpace(DownloadLink link) {
+        return 0;
+    }
+
     public void errLog(Throwable e, Browser br, LogSource log, DownloadLink link, Account account) {
         if (e != null && e instanceof PluginException && ((PluginException) e).getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT) {
             final LogSource errlogger = LogController.getInstance().getLogger("PluginErrors");
