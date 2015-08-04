@@ -109,7 +109,7 @@ public class DownloadCo extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             final Browser br2 = br.cloneBrowser();
-            br2.postPage("/dll.php", "action=getLink&vfid=" + downloadLink.getLinkID());
+            br2.postPage("/dl.php", "action=getLink&vfid=" + downloadLink.getLinkID());
             // since filename can be unknown
             final Form f = br2.getForm(0);
             if (f == null) {
