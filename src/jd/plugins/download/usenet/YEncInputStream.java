@@ -1,4 +1,4 @@
-package jd.nutils;
+package jd.plugins.download.usenet;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

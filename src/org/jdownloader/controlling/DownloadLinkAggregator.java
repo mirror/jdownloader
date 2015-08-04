@@ -161,6 +161,7 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
                 totalBytes += 1;
             }
         } else {
+            final HashSet<String> localFileCheck = new HashSet<String>();
             boolean fileSizeKnown = false;
             total = children.size();
             for (final DownloadLink link : children) {
@@ -177,16 +178,17 @@ public class DownloadLinkAggregator implements MirrorPackageSetup {
                 long loaded = 0;
                 if (isLocalFileMode) {
                     final String fileOutput = link.getFileOutput();
-                    if (StringUtils.isNotEmpty(fileOutput)) {
-                        final File checkFile;
-                        if (isFinished) {
-                            checkFile = new File(fileOutput);
-                        } else {
-                            checkFile = new File(fileOutput + ".part");
-                        }
-                        if (checkFile.exists()) {
-                            loaded = checkFile.length();
+                    if (StringUtils.isNotEmpty(fileOutput) && localFileCheck.add(fileOutput)) {
+                        final File completeFile = new File(fileOutput);
+                        if (completeFile.exists()) {
+                            loaded = completeFile.length();
                             localFileCount++;
+                        } else {
+                            final File partFile = new File(fileOutput + ".part");
+                            if (partFile.exists()) {
+                                loaded = partFile.length();
+                                localFileCount++;
+                            }
                         }
                     }
                 } else {

@@ -180,6 +180,11 @@ public class BackupCreateAction extends CustomizableAppAction {
                             createAlive.addAndGet(bytesWrite);
                         }
                     }
+
+                    @Override
+                    protected boolean throwExceptionOnFileGone(File file) {
+                        return false;
+                    }
                 };
             } else {
                 zipper = new ZipIOWriter(auto);

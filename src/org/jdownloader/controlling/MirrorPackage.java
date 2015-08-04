@@ -91,14 +91,14 @@ public class MirrorPackage {
         if (setup.isLocalFileUsageEnabled()) {
             final String fileOutput = link.getFileOutput();
             if (StringUtils.isNotEmpty(fileOutput)) {
-                final File checkFile;
-                if (isFinished) {
-                    checkFile = new File(fileOutput);
+                final File completeFile = new File(fileOutput);
+                if (completeFile.exists()) {
+                    bytesLoaded = Math.max(bytesLoaded, completeFile.length());
                 } else {
-                    checkFile = new File(fileOutput + ".part");
-                }
-                if (checkFile.exists()) {
-                    bytesLoaded = Math.max(bytesLoaded, checkFile.length());
+                    final File partFile = new File(fileOutput + ".part");
+                    if (partFile.exists()) {
+                        bytesLoaded = Math.max(bytesLoaded, partFile.length());
+                    }
                 }
             }
         } else {

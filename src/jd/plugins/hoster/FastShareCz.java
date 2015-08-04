@@ -66,11 +66,11 @@ public class FastShareCz extends antiDDoSForHost {
         if (filename == null) {
             filename = br.getRegex("<h2><b><span style=color:black;>([^<>\"]*?)</b></h2>").getMatch(0);
         }
-        String filesize = br.getRegex("<tr><td>Velikost: </td><td style=font\\-weight:bold>([^<>\"]*?)</td></tr>").getMatch(0);
+        String filesize = br.getRegex("<tr><td>(Velikost|Size): </td><td style=font\\-weight:bold>([^<>\"]*?)</td></tr>").getMatch(1);
         if (filesize == null) {
-            filesize = br.getRegex("Velikost: ([0-9]+ .*?),").getMatch(0);
+            filesize = br.getRegex("(Velikost|Size): ([0-9]+ .*?),").getMatch(1);
             if (filesize == null) {
-                filesize = br.getRegex("<strong>Velikost :</strong>([^<>\"]*?)<").getMatch(0);
+                filesize = br.getRegex("<strong>(Velikost|Size) :</strong>([^<>\"]*?)<").getMatch(1);
             }
         }
         if (filename == null) {
