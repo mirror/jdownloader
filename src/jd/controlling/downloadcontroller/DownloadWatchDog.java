@@ -644,7 +644,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * returns how many downloads are currently watched by this DownloadWatchDog
-     * 
+     *
      * @return
      */
     public int getActiveDownloads() {
@@ -653,7 +653,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * returns the ThrottledConnectionManager of this DownloadWatchDog
-     * 
+     *
      * @return
      */
     public DownloadSpeedManager getDownloadSpeedManager() {
@@ -1343,10 +1343,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         if (downloadLink == null) {
             downloadLink = downloadLinkCandidates.get(0).getLink();
         }
-        final boolean isAccountAndIsMulti = downloadLinkCandidates.get(0).getCachedAccount() != null && downloadLinkCandidates.get(0).getCachedAccount().getAccount() != null ? downloadLinkCandidates.get(0).getCachedAccount().getAccount().isMulti() : false;
-        final File partFile = new File(downloadLink.getFileOutput(false, isAccountAndIsMulti) + ".part");
-        long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), downloadLink.getView().getBytesLoaded());
+        final File partFile = new File(downloadLink.getFileOutput() + ".part");
+        final long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), downloadLink.getView().getBytesLoaded());
         final long remainingSize = downloadLink.getView().getBytesTotal() - Math.max(0, doneSize);
+        final DownloadLink finalDownloadLink = downloadLink;
         return getSession().getDiskSpaceManager().check(new DiskSpaceReservation() {
 
             @Override
@@ -1356,10 +1356,18 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
             @Override
             public long getSize() {
+                final PluginForHost plugin = finalDownloadLink.getDefaultPlugin();
+                if (plugin != null) {
+                    return remainingSize + Math.max(0, plugin.calculateAdditionalRequiredDiskSpace(finalDownloadLink));
+                }
                 return remainingSize;
             }
 
         });
+    }
+
+    protected DISKSPACERESERVATIONRESULT validateDiskFree(DiskSpaceReservation reservation) {
+        return getSession().getDiskSpaceManager().check(reservation);
     }
 
     private List<DownloadLinkCandidate> nextDownloadLinkCandidates(DownloadLinkCandidateSelector selector) {
@@ -1635,7 +1643,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * returns current pause state
-     * 
+     *
      * @return
      */
     public boolean isPaused() {
@@ -1648,7 +1656,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * may the DownloadWatchDog start new Downloads?
-     * 
+     *
      * @return
      */
     private boolean newDLStartAllowed(DownloadSession session) {
@@ -1688,7 +1696,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * pauses the DownloadWatchDog
-     * 
+     *
      * @param value
      */
 
@@ -2112,9 +2120,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * activates new Downloads as long as possible and returns how many got activated
-     * 
+     *
      * @param downloadLinksWithConditionalSkipReasons
-     * 
+     *
      * @return
      **/
     private List<SingleDownloadController> activateDownloads(final List<DownloadLink> downloadLinksWithConditionalSkipReasons) throws Exception {
@@ -2298,7 +2306,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     /**
      * activates a new SingleDownloadController for the given SingleDownloadControllerActivator
-     * 
+     *
      * @param activator
      */
     private SingleDownloadController attach(final DownloadLinkCandidate candidate) {
@@ -3103,34 +3111,34 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                         final DelayedRunnable delayer = new DelayedRunnable(1000, 5000) {
 
-                                                          @Override
-                                                          public void delayedrun() {
-                                                              enqueueJob(new DownloadWatchDogJob() {
+                            @Override
+                            public void delayedrun() {
+                                enqueueJob(new DownloadWatchDogJob() {
 
-                                                                  @Override
-                                                                  public void interrupt() {
-                                                                  }
+                                    @Override
+                                    public void interrupt() {
+                                    }
 
-                                                                  @Override
-                                                                  public void execute(DownloadSession currentSession) {
-                                                                      /* reset CONNECTION_UNAVAILABLE */
-                                                                      final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
+                                    @Override
+                                    public void execute(DownloadSession currentSession) {
+                                        /* reset CONNECTION_UNAVAILABLE */
+                                        final List<DownloadLink> unSkip = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
-                                                                          @Override
-                                                                          public int returnMaxResults() {
-                                                                              return 0;
-                                                                          }
+                                            @Override
+                                            public int returnMaxResults() {
+                                                return 0;
+                                            }
 
-                                                                          @Override
-                                                                          public boolean acceptNode(DownloadLink node) {
-                                                                              return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
-                                                                          }
-                                                                      });
-                                                                      unSkip(unSkip);
-                                                                  }
-                                                              });
-                                                          }
-                                                      };
+                                            @Override
+                                            public boolean acceptNode(DownloadLink node) {
+                                                return SkipReason.CONNECTION_UNAVAILABLE.equals(node.getSkipReason());
+                                            }
+                                        });
+                                        unSkip(unSkip);
+                                    }
+                                });
+                            }
+                        };
 
                         @Override
                         public void onEvent(ProxyEvent<AbstractProxySelectorImpl> event) {
