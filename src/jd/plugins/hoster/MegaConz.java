@@ -476,7 +476,7 @@ public class MegaConz extends PluginForHost {
                 if (read > 0) {
                     progress.updateValues(progress.getCurrent() + read, total);
                     cos.write(buffer, 0, read);
-                    encryptionDone.decrementAndGet(read);
+                    encryptionDone.addAndGet(-read);
                 }
             }
             cos.close();
