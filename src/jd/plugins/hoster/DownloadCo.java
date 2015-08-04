@@ -17,10 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.LinkedHashSet;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -34,7 +36,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "download.co" }, urls = { "http://(www\\.)?downlod\\.co/file/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "downlod.co" }, urls = { "http://(www\\.)?downlod\\.co/file/[a-z0-9]+" }, flags = { 0 })
 public class DownloadCo extends PluginForHost {
 
     public DownloadCo(PluginWrapper wrapper) {
@@ -108,8 +110,9 @@ public class DownloadCo extends PluginForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
+            final String getPostURL = getPostUrl();
             final Browser br2 = br.cloneBrowser();
-            br2.postPage("/dl.php", "action=getLink&vfid=" + downloadLink.getLinkID());
+            br2.postPage(getPostURL, "action=getLink&vfid=" + downloadLink.getLinkID());
             // since filename can be unknown
             final Form f = br2.getForm(0);
             if (f == null) {
@@ -168,6 +171,38 @@ public class DownloadCo extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return FREE_MAXDOWNLOADS;
+    }
+
+    private String getPostUrl() {
+        // we need there crappy js to determine ever changing download url.
+        final String[] js = br.getRegex("<script[^>]*>.*?</script>").getColumn(-1);
+        final LinkedHashSet<String> scripts = new LinkedHashSet<String>();
+        for (final String j : js) {
+            String result = new Regex(j, "src\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
+            if (result == null) {
+                result = new Regex(j, "src\\s*=([^\\s<]+)").getMatch(0);
+            }
+            if (result != null) {
+                scripts.add(Request.getLocation(result, br.getRequest()));
+            }
+        }
+        for (final String s : scripts) {
+            if (!this.getHost().equalsIgnoreCase(Browser.getHost(s))) {
+                continue;
+            }
+            final Browser other = br.cloneBrowser();
+            other.getHeaders().put("Accept", "*/*");
+            other.getHeaders().put("Cache-Control", null);
+            try {
+                other.getPage(s);
+                final String r = other.getRegex("countDown\\.getLink\\s*=\\s*function\\s*\\(\\)\\s*\\{.*?content\\.load\\(\"(.*?)\".*?\\}\\);").getMatch(0);
+                if (r != null) {
+                    return Request.getLocation(r, br.getRequest());
+                }
+            } catch (final Exception e) {
+            }
+        }
+        return "/dl.php";
     }
 
     // private static final String MAINPAGE = "http://download.co";
