@@ -383,7 +383,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
 
                                     @Override
                                     public long getSize() {
-                                        return remainingSize + finalHandlePlugin.calculateAdditionalRequiredDiskSpace(downloadLink);
+                                        return remainingSize + Math.max(0, finalHandlePlugin.calculateAdditionalRequiredDiskSpace(downloadLink));
                                     }
 
                                 };

@@ -188,7 +188,7 @@ public class MegaConz extends PluginForHost {
 
             @Override
             public long getSize() {
-                return encryptionDone.get();
+                return Math.max(0, encryptionDone.get());
             }
 
             @Override
@@ -476,7 +476,7 @@ public class MegaConz extends PluginForHost {
                 if (read > 0) {
                     progress.updateValues(progress.getCurrent() + read, total);
                     cos.write(buffer, 0, read);
-                    encryptionDone.addAndGet(read);
+                    encryptionDone.decrementAndGet(read);
                 }
             }
             cos.close();
