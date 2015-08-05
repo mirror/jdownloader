@@ -147,7 +147,7 @@ public class DonationDialog extends AbstractDialog<Object> {
                         transactionID = JSonStorage.restoreFromString(json, TypeRef.STRING);
 
                         StatsManager.I().track("/donation/button/redirect");
-                        CrossSystem.openURL(DonateAction.SERVER + "payment/donationRedirect?" + toQuery(transactionID));
+                        CrossSystem.openURLOrShowMessage(DonateAction.SERVER + "payment/donationRedirect?" + toQuery(transactionID));
                         started = System.currentTimeMillis();
                         while (true) {
                             try {
@@ -233,7 +233,7 @@ public class DonationDialog extends AbstractDialog<Object> {
                             protected void runInEDT() {
 
                                 try {
-                                    CrossSystem.openURL(DonateAction.SERVER + "payment/fallbackDonation?" + toQuery(provider, cCode, amt, recurringValue, custom, list, noteText));
+                                    CrossSystem.openURLOrShowMessage(DonateAction.SERVER + "payment/fallbackDonation?" + toQuery(provider, cCode, amt, recurringValue, custom, list, noteText));
                                 } catch (Throwable e1) {
                                     logger.log(e1);
 
