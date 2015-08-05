@@ -153,31 +153,25 @@ public class YEncInputStream extends InputStream {
      * TODO: optimize to use larger reads (readline works with read()) and support read(byte[] b, int off, int len)
      *
      *
-     * TODO: optimize, decrypt a complete line first, remove the while as each line is complete (can end with escaped char)
+     * TODO: optimize, decrypt a complete line first
      */
     @Override
     public synchronized int read() throws IOException {
-        boolean special = false;
-        while (true) {
+        if (eof) {
+            return -1;
+        } else if (lineIndex == lineSize) {
+            readNextLine();
             if (eof) {
                 return -1;
-            } else if (lineIndex == lineSize) {
-                readNextLine();
-                if (eof) {
-                    return -1;
-                }
             }
-            final int c = lineBuffer[lineIndex++] & 0xff;
-            if (c == 61) {
-                special = true;
-            } else {
-                decodedBytes++;
-                if (special) {
-                    return ((byte) (c - 106)) & 0xff;
-                } else {
-                    return ((byte) (c - 42)) & 0xff;
-                }
-            }
+        }
+        decodedBytes++;
+        int c = lineBuffer[lineIndex++] & 0xff;
+        if (c != 61) {
+            return ((byte) (c - 42)) & 0xff;
+        } else {
+            c = lineBuffer[lineIndex++] & 0xff;
+            return ((byte) (c - 106)) & 0xff;
         }
     }
 
