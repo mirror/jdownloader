@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Locale;
 
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 
 import jd.controlling.faviconcontroller.FavIconRequestor;
 import jd.controlling.faviconcontroller.FavIcons;
@@ -43,13 +44,17 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
 
     /**
      * Returns a
-     * 
+     *
      * @return
      */
     public Icon getFavIcon() {
         Icon icon = hosterIcon;
         if (icon == null) {
             icon = setFavIcon(FavIcons.getFavIcon(getTld(), this));
+            if (icon != null) {
+                icon = new ImageIcon(IconIO.getCroppedImage(IconIO.toBufferedImage(icon)));
+                icon = IconIO.getScaledInstance(icon, WIDTH, HEIGHT, Interpolation.BICUBIC);
+            }
         }
         return icon;
     }
@@ -63,6 +68,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
             icon = FavIcons.getFavIcon(getTld(), this);
         }
         if (icon != null) {
+            icon = new ImageIcon(IconIO.getCroppedImage(IconIO.toBufferedImage(icon)));
             icon = IconIO.getScaledInstance(icon, WIDTH, HEIGHT, Interpolation.BICUBIC);
         }
         hosterIcon = icon;
@@ -101,7 +107,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
     /**
      * returns a high quality icon for this domain. most domains do not support this and will return null; the icon is NOT cached. use with
      * care
-     * 
+     *
      * @param i
      * @return
      */
