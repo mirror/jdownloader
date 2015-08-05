@@ -1,7 +1,5 @@
 package org.jdownloader.api.captcha;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,13 +13,10 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
-import org.appwork.utils.net.Base64OutputStream;
-import org.appwork.utils.net.httpserver.responses.FileResponse;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.captcha.event.ChallengeResponseListener;
 import org.jdownloader.captcha.v2.AbstractResponse;
@@ -29,11 +24,8 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseController;
 import org.jdownloader.captcha.v2.ChallengeSolver;
 import org.jdownloader.captcha.v2.JobRunnable;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickCaptchaChallenge;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
-import org.jdownloader.captcha.v2.challenge.stringcaptcha.BasicCaptchaChallenge;
-import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
-import org.jdownloader.captcha.v2.challenge.stringcaptcha.ClickCaptchaResponse;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaCategoryChallenge;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaPuzzleChallenge;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solver.browser.BrowserSolver;
 import org.jdownloader.captcha.v2.solver.gui.DialogBasicCaptchaSolver;
@@ -60,6 +52,12 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     @Override
     public boolean canHandle(Challenge<?> c) {
+        if (c instanceof KeyCaptchaPuzzleChallenge && super.canHandle(c)) {
+            return true;
+        }
+        if (c instanceof KeyCaptchaCategoryChallenge && super.canHandle(c)) {
+            return true;
+        }
         return c instanceof ImageCaptchaChallenge && super.canHandle(c);
     }
 
@@ -146,48 +144,28 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id) throws InternalApiException, InvalidCaptchaIDException {
         SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
-        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) {
+        if (job == null || job.isDone()) {
             throw new InvalidCaptchaIDException();
         }
-
-        ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
         try {
+
+            Challenge<?> challenge = job.getChallenge();
+
             OutputStream out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), true);
-            String mime = FileResponse.getMimeType(challenge.getImageFile().getName());
-            String header = "{\r\n\"data\":\"" + mime + ";base64,";
-            out.write(header.getBytes("UTF-8"));
-            Base64OutputStream b64os = new Base64OutputStream(out);
-            FileInputStream fis = null;
+
             try {
-                fis = new FileInputStream(challenge.getImageFile());
-                byte[] buffer = new byte[1024];
-                int read = 0;
-                while ((read = fis.read(buffer)) >= 0) {
-                    if (read > 0) {
-                        b64os.write(buffer, 0, read);
-                    } else {
-                        synchronized (this) {
-                            try {
-                                this.wait(500);
-                            } catch (final InterruptedException e) {
-                                throw new IOException(e);
-                            }
-                        }
-                    }
-                }
-                b64os.flush(true);
-                out.write("\"\r\n}".getBytes("UTF-8"));
+
+                out.write(JSonStorage.serializeToJson(challenge.getAPIStorable()).getBytes("UTF-8"));
+
             } finally {
                 try {
                     out.close();
                 } catch (final Throwable e) {
                 }
-                try {
-                    fis.close();
-                } catch (final Throwable e) {
-                }
+
             }
-        } catch (IOException e) {
+
+        } catch (Exception e) {
             Log.exception(e);
             throw new InternalApiException(e);
         }
@@ -231,21 +209,15 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
         }
         SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
-        if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) {
+        if (job == null || job.isDone()) {
             throw new InvalidCaptchaIDException();
         }
 
-        ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
+        Challenge<?> challenge = job.getChallenge();
+        AbstractResponse<?> ret = challenge.parseAPIAnswer(result, this);
+        if (ret != null) {
+            ((SolverJob<Object>) job).addAnswer((AbstractResponse<Object>) ret);
 
-        if (challenge instanceof BasicCaptchaChallenge) {
-            String res = JSonStorage.restoreFromString("\"" + result + "\"", TypeRef.STRING);
-
-            ((SolverJob<String>) job).addAnswer(new CaptchaResponse((BasicCaptchaChallenge) challenge, null, res, 100));
-        } else if (challenge instanceof ClickCaptchaChallenge) {
-            ClickedPoint res = JSonStorage.restoreFromString(result, new TypeRef<ClickedPoint>() {
-            });
-
-            ((SolverJob<ClickedPoint>) job).addAnswer(new ClickCaptchaResponse((ClickCaptchaChallenge) challenge, this, res, 100));
         } else {
             throw new InvalidChallengeTypeException(challenge.getClass().getName());
 
@@ -299,7 +271,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         }
 
         ret.setID(entry.getChallenge().getId().getID());
-        ret.setHoster(((ImageCaptchaChallenge) entry.getChallenge()).getPlugin().getHost());
+        ret.setHoster(entry.getChallenge().getHost());
         ret.setCaptchaCategory(entry.getChallenge().getTypeID());
         ret.setExplain(entry.getChallenge().getExplain());
         DownloadLink link = entry.getChallenge().getDownloadLink();
