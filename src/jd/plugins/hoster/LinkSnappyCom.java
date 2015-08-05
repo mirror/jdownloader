@@ -182,7 +182,10 @@ public class LinkSnappyCom extends PluginForHost {
                 continue;
             }
             final String status = getJson(hostInfo, "Status");
-            final String quota = getJson(hostInfo, "Quota");
+            String quota = getJson(hostInfo, "Quota");
+            if ("null".equalsIgnoreCase(quota)) {
+                quota = null;
+            }
             if (quota != null) {
                 if (quota.matches("\\d+")) {
                     e.put("quota", Integer.parseInt(quota));
@@ -193,7 +196,10 @@ public class LinkSnappyCom extends PluginForHost {
                     logger.warning("Possible plugin defect!");
                 }
             }
-            final String usage = getJson(hostInfo, "Usage");
+            String usage = getJson(hostInfo, "Usage");
+            if ("null".equalsIgnoreCase(usage)) {
+                usage = null;
+            }
             if (usage != null) {
                 e.put("usage", Integer.parseInt(usage));
             }
