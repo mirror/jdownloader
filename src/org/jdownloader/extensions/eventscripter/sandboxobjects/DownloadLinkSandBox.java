@@ -151,6 +151,13 @@ public class DownloadLinkSandBox {
         return downloadLink.getComment();
     }
 
+    public void setEnabled(boolean b) {
+        if (downloadLink != null) {
+
+            downloadLink.setEnabled(b);
+        }
+    }
+
     public String getDownloadPath() {
         if (downloadLink == null) {
             return "c:/I am a dummy folder/";
