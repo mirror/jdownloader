@@ -1,5 +1,7 @@
 package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
+import java.util.List;
+
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -15,6 +17,19 @@ public class DownloadlistSelectionSandbox {
 
     public DownloadlistSelectionSandbox() {
         // Test params
+
+    }
+
+    public DownloadLinkSandBox[] getDownloadLinks() {
+        if (selectionInfo == null) {
+            return null;
+        }
+        List<DownloadLink> childs = selectionInfo.getChildren();
+        DownloadLinkSandBox[] ret = new DownloadLinkSandBox[childs.size()];
+        for (int i = 0; i < ret.length; i++) {
+            ret[i] = new DownloadLinkSandBox(childs.get(i));
+        }
+        return ret;
 
     }
 
