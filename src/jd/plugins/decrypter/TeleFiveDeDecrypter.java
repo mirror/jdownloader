@@ -316,8 +316,8 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         getData += "&ignoreNull=1";
         final String getpage = "http://api.medianac.com//api_v3/index.php" + getData;
         br2.getPage(getpage);
-        if (br2.toString().length() < 50) {
-            /* Server error, offline or not available at users current location. */
+        if (br2.containsHTML("<isCountryRestricted>1</isCountryRestricted>")) {
+            /* Country blocked */
             return foundLinks;
         }
         Document doc = JDUtilities.parseXmlString(br2.toString(), false);
