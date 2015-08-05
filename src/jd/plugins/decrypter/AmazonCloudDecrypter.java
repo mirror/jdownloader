@@ -80,12 +80,14 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
     private ArrayList<DownloadLink> handleNewType(ArrayList<DownloadLink> decryptedLinks, CryptedLink parameter, ProgressController progress) throws Exception {
         LinkedHashMap<String, Object> entries = null;
         prepBR();
+        ArrayList<Object> resource_data_list = null;
         final String subfolder_id = new Regex(parameter, "/folder/([^/]+)").getMatch(0);
         if (subfolder_id != null) {
             /* Subfolders-/files */
             br.setAllowedResponseCodes(400);
             br.getPage("https://www.amazon.com/drive/v1/nodes/" + subfolder_id + "/children?customerId=0&resourceVersion=V2&ContentType=JSON&limit=200&sort=%5B%22kind+DESC%22%2C+%22name+ASC%22%5D&tempLink=true&shareId=" + plain_folder_id);
             entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            resource_data_list = (ArrayList) entries.get("data");
         } else {
             final DownloadLink main = createDownloadlink("https://amazondecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
             String requestedFilename = new Regex(parameter.getCryptedUrl(), "name=(.+)").getMatch(0);
@@ -107,14 +109,16 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
             entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
             final LinkedHashMap<String, Object> nodeInfo = (LinkedHashMap<String, Object>) entries.get("nodeInfo");
             final String kind = (String) nodeInfo.get("kind");
-            if (!kind.equals("FILE")) {
+            if (kind.equals("FILE")) {
+                resource_data_list = new ArrayList<Object>();
+                resource_data_list.add(nodeInfo);
+            } else {
                 final String id = (String) nodeInfo.get("id");
                 br.getPage("https://www.amazon.com/drive/v1/nodes/" + id + "/children?customerId=0&resourceVersion=V2&ContentType=JSON&limit=200&sort=%5B%22kind+DESC%22%2C+%22name+ASC%22%5D&tempLink=true&shareId=" + plain_folder_id);
                 entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                resource_data_list = (ArrayList) entries.get("data");
             }
         }
-
-        final ArrayList<Object> resource_data_list = (ArrayList) entries.get("data");
         for (final Object o : resource_data_list) {
             decryptedLinks.add(crawlSingleObject(o));
         }

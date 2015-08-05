@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viva.tv", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nickmom.com", "mtv.com.au", "mtv.com", "logotv.com" }, urls = { "http://www\\.viva\\.tv/charts/16\\-viva\\-top\\-100", "http://www\\.mtviggy\\.com/videos/[a-z0-9\\-]+/|http://www\\.mtvdesi\\.com/(videos/)?[a-z0-9\\-]+|http://www\\.mtvk\\.com/videos/[a-z0-9\\-]+", "http://www\\.southpark\\.de/alle\\-episoden/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://southpark\\.cc\\.com/full\\-episodes/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://www\\.vh1.com/(shows/[a-z0-9\\-_]+/[a-z0-9\\-_]+/.+|video/play\\.jhtml\\?id=\\d+|video/[a-z0-9\\-_]+/\\d+/[a-z0-9\\-_]+\\.jhtml|events/[a-z0-9\\-_]+/videos/[a-z0-9\\-_]+/\\d+/)", "http://www\\.nickmom\\.com/videos/[a-z0-9\\-]+/", "http://www\\.mtv\\.com\\.au/[a-z0-9\\-]+/videos/[a-z0-9\\-]+",
-        "http://www\\.mtv\\.com/(shows/[a-z0-9\\-_]+/[^<>\"]+|[^<>\"]*?videos/.+)", "http://www\\.logotv.com/video/[a-z0-9\\-]+/\\d+/[a-z0-9\\-]+\\.j?html" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+        "http://www\\.mtv\\.com/(shows/[a-z0-9\\-_]+/[^<>\"]+|[^<>\"]*?videos/.+)", "http://www\\.logotv.com/(video/[a-z0-9\\-]+/\\d+/[a-z0-9\\-]+\\.j?html|.+#id=\\d+$)" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class VivaTvDecrypt extends PluginForDecrypt {
 
     public VivaTvDecrypt(PluginWrapper wrapper) {
@@ -328,29 +328,56 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     }
 
     private void decrypLogoTvCom() throws Exception {
-        /* We have no feed-url so let's use this */
-        final String feedURL_plain = "http://media.mtvnservices.com/%s";
-        br.getPage(parameter);
-        if (decryptVevo()) {
-            return;
-        }
-        logger.info("Current link is NO VEVO link");
-        if (!br.containsHTML("MTVN\\.Player\\.")) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return;
-            } catch (final Throwable e) {
+        final String playlist_id = new Regex(this.parameter, "^.+#id=(\\d+)$").getMatch(0);
+        if (playlist_id != null) {
+            /* Playlist */
+            this.br.getPage("http://www.logotv.com/global/music/videos/ajax/playlist.jhtml?id=" + playlist_id);
+            final String[] entries = this.br.getRegex("(id=\"vid\\d+\">.*?<p class=\"usage\"/>)").getColumn(0);
+            for (final String entry : entries) {
+                String title = new Regex(entry, "<span class=\"title_container trim_container\">[\t\n\r ]+<span>([^<>]*?)</span>").getMatch(0);
+                if (title == null) {
+                    title = new Regex(entry, "class=\"song\">([^<>\"]*?)</span>").getMatch(0);
+                }
+                final String mgid = new Regex(entry, "logoonline\\.mtvnimages\\.com/uri/(mgid:[^<>\"\\?]+)").getMatch(0);
+                final String url_final = "http://media.mtvnservices.com/" + mgid;
+                final DownloadLink dl = this.createDownloadlink(url_final);
+                if (title == null) {
+                    logger.warning("WTF");
+                }
+                if (title != null) {
+                    /* Should cover 99% of all cases */
+                    title = this.doFilenameEncoding(title);
+                    dl.setName(title + default_ext);
+                    dl.setAvailable(true);
+                }
+                this.decryptedLinks.add(dl);
+            }
+        } else {
+            /* Feed */
+            /* We have no feed-url so let's use this */
+            final String feedURL_plain = "http://media.mtvnservices.com/%s";
+            br.getPage(parameter);
+            if (decryptVevo()) {
                 return;
             }
+            logger.info("Current link is NO VEVO link");
+            if (!br.containsHTML("MTVN\\.Player\\.")) {
+                try {
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return;
+                } catch (final Throwable e) {
+                    return;
+                }
+            }
+            this.mgid = br.getRegex("media\\.mtvnservices\\.com/(mgid[^<>\"]*?)\"").getMatch(0);
+            if (this.mgid == null) {
+                this.decryptedLinks = null;
+                return;
+            }
+            final String feedURL = "http://www.logotv.com/player/includes/rss.jhtml?uri=" + this.mgid;
+            br.getPage(feedURL);
+            decryptFeed(feedURL_plain);
         }
-        this.mgid = br.getRegex("media\\.mtvnservices\\.com/(mgid[^<>\"]*?)\"").getMatch(0);
-        if (this.mgid == null) {
-            this.decryptedLinks = null;
-            return;
-        }
-        final String feedURL = "http://www.logotv.com/player/includes/rss.jhtml?uri=" + this.mgid;
-        br.getPage(feedURL);
-        decryptFeed(feedURL_plain);
     }
 
     private boolean decryptVevo() {
