@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "8tracks.com" }, urls = { "http://8tracksdecrypted\\.com/\\d+" }, flags = { 0 })
-public class EightTracksCom extends PluginForHost {
+public class EightTracksCom extends antiDDoSForHost {
 
     public EightTracksCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -125,7 +125,7 @@ public class EightTracksCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
 
-            clipData = getPage(MAINPAGE + "sets/play_track/" + currenttrackid + "?format=jsonh");
+            clipData = pageGet(MAINPAGE + "sets/play_track/" + currenttrackid + "?format=jsonh");
             dllink = getDllink();
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -176,11 +176,8 @@ public class EightTracksCom extends PluginForHost {
                 if (i == 1) {
                     setCookies(playToken);
                     clipData = br.getPage(MAINPAGE + "sets/" + playToken + "/tracks_played?mix_id=" + mixid + "&reverse=true&format=jsonh");
-                    final String tracklist_text = br.getRegex("\\{\"tracks\":\\[(.*?)\\],\"status\"").getMatch(0);
-                    String[] ids = null;
-                    if (tracklist_text != null) {
-                        ids = new Regex(tracklist_text, "(\\{.*?\\})").getColumn(0);
-                    }
+                    final String tracklist_text = getJsonArray("tracks");
+                    final String[] ids = getJsonResultsFromArray(tracklist_text);
                     /* Check how many tracks we already unlocked and if our token still works */
                     if (ids != null && ids.length != 0) {
                         final int list_length = ids.length;
@@ -224,11 +221,11 @@ public class EightTracksCom extends PluginForHost {
                         /* Wait till "the song is (probably) "over" */
                         handleLongWait(dllink);
 
-                        clipData = getPage(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
+                        clipData = pageGet(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
                     } else {
                         logger.info("We are still allowed to skip");
                         /* Skip track */
-                        clipData = getPage(MAINPAGE + "sets/" + playToken + "/skip?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
+                        clipData = pageGet(MAINPAGE + "sets/" + playToken + "/skip?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
                     }
 
                     /*
@@ -239,7 +236,7 @@ public class EightTracksCom extends PluginForHost {
                         for (int skip_block = 1; skip_block <= 10; skip_block++) {
                             this.sleep(WAITTIME_SECONDS_SKIPLIMIT * 1000l, downloadLink);
                             // Maybe listened to the track -> Next track
-                            clipData = getPage(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
+                            clipData = pageGet(MAINPAGE + "sets/" + playToken + "/next?player=sm&include=track%5Bfaved%2Bannotation%2Bartist_details%5D&mix_id=" + mixid + "&track_id=" + currenttrackid + "&format=jsonh");
                             if (clipData.contains("\"notices\":\"Sorry, but track skips are limited by our license.\"")) {
                                 continue;
                             }
@@ -473,15 +470,14 @@ public class EightTracksCom extends PluginForHost {
     }
 
     private String getClipData(final String tag) {
-        return new Regex(clipData, "\"" + tag + "\"\\s?:\\s?\"?(.*?)\"?,").getMatch(0);
+        return getJson(clipData, tag);
     }
 
     private String getFilename() {
         String filename = null;
-        final Regex name_and_artist = new Regex(clipData, "\"name\":\"([^<>\"]*?)\",\"performer\":\"([^<>\"]*?)\"");
         String album = getClipData("release_name");
-        String title = name_and_artist.getMatch(0);
-        String artist = name_and_artist.getMatch(1);
+        String title = getClipData("name");
+        String artist = getClipData("performer");
         if (title == null || artist == null) {
             return null;
         }
@@ -534,7 +530,7 @@ public class EightTracksCom extends PluginForHost {
         br.setCookie(MAINPAGE, "initial_source", "");
     }
 
-    private String getPage(final String url) throws IOException, PluginException {
+    private String pageGet(final String url) throws IOException, PluginException {
         br.getHeaders().put("Referer", MAIN_LINK);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");

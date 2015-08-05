@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -170,17 +171,18 @@ public class EightTracksCom extends PluginForDecrypt {
             }
 
             final int tracks_in_mix = Integer.parseInt(tracksInMix);
+            final DecimalFormat df = (tracks_in_mix < 100 ? new DecimalFormat("00") : new DecimalFormat("000"));
             for (int i = 1; i <= tracks_in_mix; i++) {
                 final DownloadLink dl = createDownloadlink("http://8tracksdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-                final String temp_name = fpName + "_track" + i;
-                dl.setName(temp_name + TEMP_EXT);
+                final String temp_name = fpName + "_track" + df.format(i);
+                dl.setName(temp_name.concat(TEMP_EXT));
                 dl.setProperty("playtoken", playToken);
                 dl.setProperty("mixid", mixid);
                 dl.setProperty("mainlink", parameter);
                 dl.setProperty("mixname", fpName);
                 dl.setProperty("tempname", temp_name);
-                dl.setProperty("tempname_with_ext", temp_name + TEMP_EXT);
-                dl.setProperty("tracknumber", Integer.toString(i));
+                dl.setProperty("tempname_with_ext", temp_name.concat(TEMP_EXT));
+                dl.setProperty("tracknumber", i);
                 dl.setProperty("lasttracknumber", tracks_in_mix);
                 if (i == 1 && trackid != null && dllink != null && filename != null) {
                     dl.setProperty("trackid", trackid);
