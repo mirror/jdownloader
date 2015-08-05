@@ -6,7 +6,7 @@ import org.jdownloader.captcha.v2.challenge.stringcaptcha.CaptchaResponse;
 
 public class KeyCaptchaResponse extends CaptchaResponse {
 
-    public KeyCaptchaResponse(Challenge<String> captchaChallenge, ChallengeSolver<String> solver, String captchaCode, int priority) {
+    public KeyCaptchaResponse(Challenge<String> captchaChallenge, ChallengeSolver<?> solver, String captchaCode, int priority) {
         super(captchaChallenge, solver, captchaCode, priority);
 
     }

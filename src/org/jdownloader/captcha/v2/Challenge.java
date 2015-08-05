@@ -14,6 +14,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.storage.Storable;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
@@ -26,6 +27,11 @@ public abstract class Challenge<T> {
     private int                   timeout;
     private boolean               accountLogin = false;
     private boolean               createdInsideAccountChecker;
+
+    public Storable getAPIStorable() throws Exception {
+
+        return null;
+    }
 
     public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
 
@@ -248,6 +254,10 @@ public abstract class Challenge<T> {
         if (getResultType() == String.class) {
             return (T) "";
         }
+        return null;
+    }
+
+    public AbstractResponse<T> parseAPIAnswer(String json, ChallengeSolver<?> solver) {
         return null;
     }
 }
