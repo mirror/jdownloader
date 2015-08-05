@@ -44,11 +44,13 @@ public class ProSevenDe extends PluginForHost {
     /** Tags: prosiebensat1.de, */
     /** Interesting extern lib: https://github.com/bromix/repository.bromix.storage/tree/master/plugin.video.7tv */
 
-    private static final String            URLTEXT_NO_FLASH = "no_flash_de";
-    private static AtomicReference<String> agent_hbbtv      = new AtomicReference<String>(null);
-    private static AtomicReference<String> agent_normal     = new AtomicReference<String>(null);
-    private String                         json             = null;
-    private static final String[][]        bitrate_info     = { { "tp12", "" }, { "tp11", "2628" }, { "tp10", "2328" }, { "tp09", "1896" }, { "tp08", "" }, { "tp07", "" }, { "tp06", "1296" }, { "tp05", "664" }, { "tp04", "" }, { "tp03", "" }, { "tp02", "" }, { "tp01", "" } };
+    private static final String            URLTEXT_NO_FLASH         = "no_flash_de";
+    private static final String            URLTEXT_COUNTRYBLOCKED_1 = "/not_available_";
+    private static final String            URLTEXT_COUNTRYBLOCKED_2 = "wrong_cc_de_en_";
+    private static AtomicReference<String> agent_hbbtv              = new AtomicReference<String>(null);
+    private static AtomicReference<String> agent_normal             = new AtomicReference<String>(null);
+    private String                         json                     = null;
+    private static final String[][]        bitrate_info             = { { "tp12", "" }, { "tp11", "2628" }, { "tp10", "2328" }, { "tp09", "1896" }, { "tp08", "" }, { "tp07", "" }, { "tp06", "1296" }, { "tp05", "664" }, { "tp04", "" }, { "tp03", "" }, { "tp02", "" }, { "tp01", "" } };
 
     public ProSevenDe(final PluginWrapper wrapper) {
         super(wrapper);
@@ -195,21 +197,21 @@ public class ProSevenDe extends PluginForHost {
         if (json == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (json.contains(URLTEXT_NO_FLASH)) {
+        if (json.contains(URLTEXT_NO_FLASH) || json.contains(URLTEXT_COUNTRYBLOCKED_1) || json.contains(URLTEXT_COUNTRYBLOCKED_2)) {
             this.br = new Browser();
             /* User-Agent not necessarily needed */
             br.getHeaders().put("User-Agent", agent_normal.get());
-            /* http stream not available --> It's either rtmp or rtmpe */
-            br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clipID + "&app=moveplayer&method=2&callback=SIMVideoPlayer.FlashPlayer.jsonpCallback");
+            /* http stream not available[via the above method] --> Maybe here --> Or it's either rtmp or rtmpe */
+            br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + clipID + "&app=moveplayer&method=6&callback=SIMVideoPlayer.FlashPlayer.jsonpCallback");
             getDllink();
             if (json == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
 
-        if (json.contains("/not_available_")) {
+        if (json.contains(URLTEXT_COUNTRYBLOCKED_1)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not available in your country #1");
-        } else if (json.contains("wrong_cc_de_en_")) {
+        } else if (json.contains(URLTEXT_COUNTRYBLOCKED_2)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video is not available in your country #2");
         }
         if (json.startsWith("rtmp")) {
@@ -223,7 +225,7 @@ public class ProSevenDe extends PluginForHost {
              * TODO: Instead of just trying all qualities, consider to use the f4mgenerator XML file to find the existing qualities:
              * http://vas.sim-technik.de/f4mgenerator.f4m?cid=3868276&ttl=604800&access_token=kabeleins&cdn=akamai&token=
              * a3c706238cec19617b8e70b64480fa20aacc2a162a3bbd21294a8ddaf0209699&g=TGENNQIQUMYD&hdcore=3.7.0&plugin=aasp-3.7.0.39.44
-             * 
+             *
              * ... but it might happen that not all are listed so maybe trying all possible qualities makes more sense especially if one of
              * them is down e.g. because of server issues.
              */
