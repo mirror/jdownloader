@@ -29,20 +29,61 @@ public class UUInputStream extends InputStream {
         readNextLine();
     }
 
-    private int     lineIndex    = 0;
     private int     lineSize     = 0;
     private byte    lineBuffer[] = null;
     private boolean eof          = false;
 
+    private int     dataIndex    = 0;
+    private int     dataLength   = -1;
+
     private void readNextLine() throws IOException {
         buffer.reset();
-        lineIndex = 0;
         lineSize = client.readLine(inputStream, buffer);
         lineBuffer = buffer.toByteArray();
-        if (lineSize == 1 && lineBuffer[0] == (byte) 96) {
-            eof = true;
-            parseTrailer();
-            return;
+        if (lineSize == 1) {
+            if (lineBuffer[0] == (byte) 96) {
+                eof = true;
+                parseTrailer();
+                return;
+            } else {
+                throw new IOException("unexpected single byte line");
+            }
+        }
+        dataIndex = 0;
+        dataLength = (lineBuffer[0] & 0xff) - 32;
+        int writeIndex = 0;
+        int readIndex = 1;
+        while (true) {
+            final int encodedLeft = dataLength - writeIndex;
+            if (encodedLeft <= 0) {
+                break;
+            }
+            if (encodedLeft >= 3) {
+                final int a = lineBuffer[readIndex] & 0xff;
+                final int b = lineBuffer[readIndex + 1] & 0xff;
+                final int c = lineBuffer[readIndex + 2] & 0xff;
+                final int d = lineBuffer[readIndex + 3] & 0xff;
+                final int x = (((a - 32) & 63) << 2) | (((b - 32) & 63) >> 4);
+                final int y = (((b - 32) & 63) << 4) | (((c - 32) & 63) >> 2);
+                final int z = (((c - 32) & 63) << 6) | (((d - 32) & 63));
+                lineBuffer[writeIndex++] = (byte) x;
+                lineBuffer[writeIndex++] = (byte) y;
+                lineBuffer[writeIndex++] = (byte) z;
+            } else {
+                if (encodedLeft >= 1) {
+                    final int a = lineBuffer[readIndex] & 0xff;
+                    final int b = lineBuffer[readIndex + 1] & 0xff;
+                    final int x = (((a - 32) & 63) << 2) | (((b - 32) & 63) >> 4);
+                    lineBuffer[writeIndex++] = (byte) x;
+                }
+                if (encodedLeft >= 2) {
+                    final int b = lineBuffer[readIndex + 1] & 0xff;
+                    final int c = lineBuffer[readIndex + 2] & 0xff;
+                    final int y = (((b - 32) & 63) << 4) | (((c - 32) & 63) >> 2);
+                    lineBuffer[writeIndex++] = (byte) y;
+                }
+            }
+            readIndex += 4;
         }
     }
 
@@ -51,18 +92,16 @@ public class UUInputStream extends InputStream {
      */
     @Override
     public synchronized int read() throws IOException {
-        while (true) {
+        if (eof) {
+            return -1;
+        } else if (dataIndex == dataLength) {
+            readNextLine();
             if (eof) {
                 return -1;
-            } else if (lineIndex == lineSize) {
-                readNextLine();
-                if (eof) {
-                    return -1;
-                }
             }
-            final int c = lineBuffer[lineIndex++] & 0xff;
-            return c;
         }
+        final int c = lineBuffer[dataIndex++] & 0xff;
+        return c;
     }
 
     private void parseTrailer() throws IOException {
