@@ -100,8 +100,8 @@ public class HentaiFoundryCom extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("<title>([^<>]*?) \\- Hentai Foundry</title>").getMatch(0);
-            DLLINK = br.getRegex("(//pictures\\.hentai\\-foundry\\.com//?/[^<>\"]*?)\"").getMatch(0);
+            filename = br.getRegex("<title>([^<>]*?) - Hentai Foundry</title>").getMatch(0);
+            DLLINK = br.getRegex("(//pictures\\.hentai-foundry\\.com/{1,}[^<>\"]*?)\"").getMatch(0);
             if (filename == null || DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -125,31 +125,24 @@ public class HentaiFoundryCom extends PluginForHost {
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
+
         try {
-            try {
-                if (isJDStable()) {
-                    /* @since JD2 */
-                    con = br.openHeadConnection(DLLINK);
-                } else {
-                    /* Not supported in old 0.9.581 Stable */
-                    con = br.openGetConnection(DLLINK);
-                }
-            } catch (final BrowserException e) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setProperty("directlink", DLLINK);
-            return AvailableStatus.TRUE;
+            con = br.openHeadConnection(DLLINK);
+        } catch (final BrowserException e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
         }
+        if (!con.getContentType().contains("html")) {
+            downloadLink.setDownloadSize(con.getLongContentLength());
+        } else {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        downloadLink.setProperty("directlink", DLLINK);
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -306,7 +299,7 @@ public class HentaiFoundryCom extends PluginForHost {
         } catch (final Throwable e) {
             /* not available in old Stable 0.9.581 */
         }
-        ai.setStatus("Registered (free) user");
+        ai.setStatus("Free Account");
         account.setValid(true);
         return ai;
     }
