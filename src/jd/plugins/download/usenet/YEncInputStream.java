@@ -151,6 +151,9 @@ public class YEncInputStream extends InputStream {
 
     /**
      * TODO: optimize to use larger reads (readline works with read()) and support read(byte[] b, int off, int len)
+     *
+     *
+     * TODO: optimize, decrypt a complete line first, remove the while as each line is complete (can end with escaped char)
      */
     @Override
     public synchronized int read() throws IOException {
