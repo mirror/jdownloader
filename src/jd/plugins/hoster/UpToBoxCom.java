@@ -26,7 +26,6 @@ import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -50,7 +49,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
@@ -58,7 +56,6 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(?:www\\.)?(uptobox|uptostream)\\.com/(?:iframe/)?[a-z0-9]{12}" }, flags = { 2 })
 public class UpToBoxCom extends antiDDoSForHost {
@@ -131,18 +128,21 @@ public class UpToBoxCom extends antiDDoSForHost {
         return false;
     }
 
-    private static AtomicReference<String> agent = new AtomicReference<String>(null);
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
 
-    public void prepBrowser() {
-        // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        if (agent.get() == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
+    private boolean isLogin = false;
+
+    @Override
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        super.prepBrowser(prepBr, host);
+        prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        if (isLogin) {
+            prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:37.0) Gecko/20100101 Firefox/37.0");
         }
-        br.getHeaders().put("User-Agent", agent.get());
+        return prepBr;
     }
 
     @Override
@@ -150,7 +150,6 @@ public class UpToBoxCom extends antiDDoSForHost {
         correctDownloadLink(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        prepBrowser();
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, regexIpBlock).matches()) {
             // apparently error fatal will prevent multihoster.
@@ -321,7 +320,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                         skipWaittime = true;
                     } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
-                       
+
                         final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                         File cf = null;
                         try {
@@ -677,7 +676,6 @@ public class UpToBoxCom extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         try {
             login(account, true);
         } catch (final PluginException e) {
@@ -739,9 +737,9 @@ public class UpToBoxCom extends antiDDoSForHost {
         final boolean before = br.isFollowingRedirects();
         synchronized (LOCK) {
             try {
+                isLogin = true;
                 /** Load cookies */
                 br.setCookiesExclusive(true);
-                prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
@@ -759,7 +757,6 @@ public class UpToBoxCom extends antiDDoSForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:37.0) Gecko/20100101 Firefox/37.0");
                 getPage("https://login.uptobox.com/");
                 ipBlock();
                 // Form loginform = br.getForm(0);
@@ -779,14 +776,11 @@ public class UpToBoxCom extends antiDDoSForHost {
                 // loginform.put("login", Encoding.urlEncode(account.getUser()));
                 // loginform.put("password", Encoding.urlEncode(account.getPass()));
                 // loginform.setAction("http://login.uptobox.com/");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getHeaders().put("Accept", "*/*");
                 br.setCookie("login.uptobox.com", "lang", "english");
-                br.setCookie("login.uptobox.com", "_pk_ses.6.e106", "*");
-                br.setCookie("login.uptobox.com", "bm_last_load_status", "BLOCKING");
-                br.setCookie("login.uptobox.com", "bm_monthly_unique", "true");
-                br.setCookie("login.uptobox.com", "bm_daily_unique", "true");
-                br.postPage("https://login.uptobox.com/", "op=login&redirect=https%3A%2F%2Flogin.uptobox.com%2F&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                getPage("http://uptobox.com/");
-                if (!br.containsHTML("logout\">Logout</a>")) {
+                postPage("/logarithme", "op=login&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (!br.containsHTML("\\{\"success\"\\s*:\\s*\"OK\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -815,6 +809,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 throw e;
             } finally {
                 br.setFollowRedirects(before);
+                isLogin = false;
             }
         }
     }
@@ -929,9 +924,9 @@ public class UpToBoxCom extends antiDDoSForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.UpToBox.preferSSL", "Use Secure Communication over SSL (HTTPS://)")).setDefaultValue(false));
     }
 
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }
