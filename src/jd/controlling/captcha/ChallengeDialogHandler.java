@@ -131,11 +131,13 @@ public abstract class ChallengeDialogHandler<T extends Challenge<?>> {
 
     protected Logger getLogger() {
         Logger logger = null;
-        Plugin plg = captchaChallenge.getPlugin();
-        if (plg != null && plg instanceof PluginForHost) {
-            logger = plg.getLogger();
-        } else if (plg != null && plg instanceof PluginForDecrypt) {
-            logger = plg.getLogger();
+        final Plugin plg = captchaChallenge.getPlugin();
+        if (plg != null) {
+            if (plg instanceof PluginForHost) {
+                logger = plg.getLogger();
+            } else if (plg instanceof PluginForDecrypt) {
+                logger = plg.getLogger();
+            }
         }
         if (logger == null) {
             logger = LogController.GL;

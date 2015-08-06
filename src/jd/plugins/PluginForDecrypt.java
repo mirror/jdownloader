@@ -443,16 +443,13 @@ public abstract class PluginForDecrypt extends Plugin {
      * @throws DecrypterException
      */
     protected String getCaptchaCode(String method, File file, int flag, final CryptedLink link, String defaultValue, String explain) throws Exception {
-
-        File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
-        copy.deleteOnExit();
-        copy.getParentFile().mkdirs();
+        final File copy = Application.getResource("captchas/" + method + "/" + Hash.getMD5(file) + "." + Files.getExtension(file.getName()));
         copy.delete();
+        cleanUpCaptchaFiles.add(copy);
+        copy.getParentFile().mkdirs();
         IO.copyFile(file, copy);
         file = copy;
-        final LinkCrawler currentCrawler = getCrawler();
-        final CrawledLink currentOrigin = getCurrentLink().getOriginLink();
-        BasicCaptchaChallenge c = createChallenge(method, file, flag, defaultValue, explain, currentCrawler, currentOrigin);
+        final BasicCaptchaChallenge c = createChallenge(method, file, flag, defaultValue, explain);
         return handleCaptchaChallenge(c);
 
     }
@@ -461,7 +458,7 @@ public abstract class PluginForDecrypt extends Plugin {
         if (Thread.currentThread() instanceof SingleDownloadController) {
             logger.severe("PluginForDecrypt.getCaptchaCode inside SingleDownloadController!?");
         }
-        int ct = getCaptchaTimeout();
+        final int ct = getCaptchaTimeout();
         c.setTimeout(ct);
         invalidateLastChallengeResponse();
         final BlacklistEntry blackListEntry = CaptchaBlackList.getInstance().matches(c);
@@ -507,14 +504,11 @@ public abstract class PluginForDecrypt extends Plugin {
         return c.getResult().getValue();
     }
 
-    protected BasicCaptchaChallenge createChallenge(String method, File file, int flag, String defaultValue, String explain, final LinkCrawler currentCrawler, final CrawledLink currentOrigin) {
+    protected BasicCaptchaChallenge createChallenge(String method, File file, int flag, String defaultValue, String explain) {
         if ("recaptcha".equalsIgnoreCase(method)) {
             return new RecaptchaV1CaptchaChallenge(file, defaultValue, explain, this, flag);
-
         }
-        BasicCaptchaChallenge c = new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag);
-        ;
-        return c;
+        return new BasicCaptchaChallenge(method, file, defaultValue, explain, this, flag);
     }
 
     protected void setBrowserExclusive() {

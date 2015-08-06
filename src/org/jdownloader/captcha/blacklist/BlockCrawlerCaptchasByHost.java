@@ -24,7 +24,7 @@ public class BlockCrawlerCaptchasByHost implements BlacklistEntry {
 
     @Override
     public boolean canCleanUp() {
-        LinkCrawler lcrawler = getCrawler();
+        final LinkCrawler lcrawler = getCrawler();
         return lcrawler == null || !lcrawler.isRunning();
     }
 
@@ -34,11 +34,11 @@ public class BlockCrawlerCaptchasByHost implements BlacklistEntry {
 
     @Override
     public boolean matches(Challenge c) {
-        LinkCrawler lcrawler = getCrawler();
+        final LinkCrawler lcrawler = getCrawler();
         if (lcrawler != null && lcrawler.isRunning()) {
-            Plugin plugin = c.getPlugin();
+            final Plugin plugin = c.getPlugin();
             if (plugin instanceof PluginForDecrypt) {
-                PluginForDecrypt decrypt = (PluginForDecrypt) plugin;
+                final PluginForDecrypt decrypt = (PluginForDecrypt) plugin;
                 return decrypt.getCrawler() == lcrawler && decrypt.getHost().equalsIgnoreCase(getHost());
             }
         }

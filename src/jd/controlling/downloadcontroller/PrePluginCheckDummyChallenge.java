@@ -1,5 +1,7 @@
 package jd.controlling.downloadcontroller;
 
+import java.lang.ref.WeakReference;
+
 import jd.controlling.captcha.SkipRequest;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -10,31 +12,41 @@ import org.jdownloader.captcha.v2.ChallengeSolver;
 
 public class PrePluginCheckDummyChallenge extends Challenge<Object> {
 
-    private DownloadLink link;
+    private final WeakReference<DownloadLink> link;
 
     @Override
     public Plugin getPlugin() {
-
-        return this.getLink().getDefaultPlugin();
-
+        final DownloadLink link = getLink();
+        if (link != null) {
+            return link.getDefaultPlugin();
+        }
+        return null;
     }
 
     public String getHost() {
-        return getLink().getHost();
+        final DownloadLink link = getLink();
+        if (link != null) {
+            return link.getHost();
+        }
+        return null;
     }
 
     @Override
     public DomainInfo getDomainInfo() {
-        return this.getLink().getDomainInfo();
+        final DownloadLink link = getLink();
+        if (link != null) {
+            return link.getDomainInfo();
+        }
+        return null;
     }
 
     public PrePluginCheckDummyChallenge(DownloadLink link) {
         super("", "");
-        this.link = link;
+        this.link = new WeakReference<DownloadLink>(link);
     }
 
     public DownloadLink getLink() {
-        return link;
+        return link.get();
     }
 
     @Override
@@ -44,7 +56,7 @@ public class PrePluginCheckDummyChallenge extends Challenge<Object> {
 
     @Override
     public boolean isSolved() {
-        return false;
+        return getLink() == null;
     }
 
 }

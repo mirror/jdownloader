@@ -12,7 +12,12 @@ public class BlockDownloadCaptchasByPackage implements SessionBlackListEntry<Obj
     private final WeakReference<FilePackage> blockedPackage;
 
     public BlockDownloadCaptchasByPackage(FilePackage parentNode) {
-        blockedPackage = new WeakReference<FilePackage>(parentNode);
+        if (FilePackage.isDefaultFilePackage(parentNode)) {
+            /* we cannot blacklist the default filePackage */
+            blockedPackage = new WeakReference<FilePackage>(null);
+        } else {
+            blockedPackage = new WeakReference<FilePackage>(parentNode);
+        }
     }
 
     @Override
@@ -26,13 +31,13 @@ public class BlockDownloadCaptchasByPackage implements SessionBlackListEntry<Obj
 
     @Override
     public boolean matches(Challenge<Object> c) {
-        FilePackage filePackage = getFilePackage();
+        final FilePackage filePackage = getFilePackage();
         if (filePackage != null) {
-            DownloadLink link = c.getDownloadLink();
+            final DownloadLink link = c.getDownloadLink();
             if (link == null) {
                 return false;
             }
-            FilePackage parent = link.getParentNode();
+            final FilePackage parent = link.getParentNode();
             return filePackage == parent;
         }
         return false;
