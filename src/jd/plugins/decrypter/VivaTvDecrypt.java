@@ -402,15 +402,16 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
-        int counter = 0;
+        int counter = -1;
         for (final String item : items) {
+            counter++;
             String title = getFEEDtitle(item);
             final String item_mgid = new Regex(item, "uri=(mgid:[A-Za-z0-9:\\-\\.]+)").getMatch(0);
             if (title == null || item_mgid == null) {
                 throw new DecrypterException("Decrypter broken for link: " + parameter);
             }
             /* We don't need the intro - it's always the same! */
-            if (counter == 0 && title.contains("Intro")) {
+            if (counter == 0 && items.length > 1 && title.contains("Intro")) {
                 continue;
             }
             title = doFilenameEncoding(title);
