@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "http://(www\\.)?datafile.com/f/[^/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "datafile.com" }, urls = { "http://(www\\.)?datafile.com/f/[^/]+" }, flags = { 0 })
 public class DataFileComFolder extends PluginForDecrypt {
 
     public DataFileComFolder(PluginWrapper wrapper) {
@@ -37,29 +37,25 @@ public class DataFileComFolder extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        this.br.setAllowedResponseCodes(502);
+        br.setAllowedResponseCodes(502);
 
         br.getPage(parameter);
-
-        if (this.br.getHttpConnection().getResponseCode() == 502) {
+        jd.plugins.hoster.DataFileCom.redirectAntiDDos(br, this);
+        if (br.getHttpConnection().getResponseCode() == 502) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
-        if (br.containsHTML("class=\"error\\-msg\"")) {
+        if (br.containsHTML("class=\"error-msg\"")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String[] links = br.getRegex("<tr class=\"\">(.*?)</tr>").getColumn(0);
         if (links == null || links.length == 0) {
             /* Check for empty folder */
-            if (br.containsHTML("class=\"file\\-size\"")) {
-                logger.info("Link offline (folder empty): " + parameter);
-                final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                offline.setAvailable(false);
-                offline.setProperty("offline", true);
-                decryptedLinks.add(offline);
+            if (br.containsHTML("class=\"file-size\"")) {
+                decryptedLinks.add(createOfflinelink(parameter, "Empty Folder"));
                 return decryptedLinks;
             }
             logger.warning("Decrypter broken for link: " + parameter);
@@ -68,15 +64,11 @@ public class DataFileComFolder extends PluginForDecrypt {
         for (final String linkinfo : links) {
             final String finallink = new Regex(linkinfo, "\"(https?://(www\\.)datafile\\.com/d/[A-Za-z0-9]+)\"").getMatch(0);
             String filename = new Regex(linkinfo, ">([^<>\"]*?)</a>").getMatch(0);
-            final String filesize = new Regex(linkinfo, "class=\"row\\-size\">([^<>\"]*?)</td>").getMatch(0);
+            final String filesize = new Regex(linkinfo, "class=\"row-size\">([^<>\"]*?)</td>").getMatch(0);
             if (finallink == null || filename == null || filesize == null) {
                 /* Check for empty folder */
-                if (br.containsHTML("class=\"file\\-size\"")) {
-                    logger.info("Link offline (folder empty): " + parameter);
-                    final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-                    offline.setAvailable(false);
-                    offline.setProperty("offline", true);
-                    decryptedLinks.add(offline);
+                if (br.containsHTML("class=\"file-size\"")) {
+                    decryptedLinks.add(createOfflinelink(parameter, "Empty Folder"));
                     return decryptedLinks;
                 }
                 logger.warning("Decrypter broken for link: " + parameter);
