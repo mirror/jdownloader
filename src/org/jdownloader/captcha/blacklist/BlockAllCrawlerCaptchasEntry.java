@@ -18,7 +18,7 @@ public class BlockAllCrawlerCaptchasEntry implements BlacklistEntry {
 
     @Override
     public boolean canCleanUp() {
-        LinkCrawler lcrawler = getCrawler();
+        final LinkCrawler lcrawler = getCrawler();
         return lcrawler == null || !lcrawler.isRunning();
     }
 
@@ -28,9 +28,9 @@ public class BlockAllCrawlerCaptchasEntry implements BlacklistEntry {
 
     @Override
     public boolean matches(Challenge c) {
-        LinkCrawler lcrawler = getCrawler();
+        final LinkCrawler lcrawler = getCrawler();
         if (lcrawler != null && lcrawler.isRunning()) {
-            Plugin plugin = c.getPlugin();
+            final Plugin plugin = c.getPlugin();
             if (plugin instanceof PluginForDecrypt) {
                 return ((PluginForDecrypt) plugin).getCrawler() == lcrawler;
             }

@@ -198,29 +198,30 @@ public class LinkTreeUtils {
     }
 
     public static HashSet<String> getURLs(List<? extends AbstractNode> links, final boolean openInBrowser) {
-        LinkedHashSet<String> urls = new LinkedHashSet<String>();
+        final LinkedHashSet<String> urls = new LinkedHashSet<String>();
         if (links == null || links.size() == 0) {
             return urls;
         }
-
         String rawURL = null;
-        List<?> actualChildren = new SelectionInfo(null, links).getChildren();
-        for (Object node : actualChildren) {
-            DownloadLink link = null;
+        final List<AbstractPackageChildrenNode<?>> actualChildren = new SelectionInfo(null, links).getChildren();
+        for (AbstractPackageChildrenNode<?> node : actualChildren) {
+            final DownloadLink link;
             if (node instanceof DownloadLink) {
                 link = (DownloadLink) node;
             } else if (node instanceof CrawledLink) {
                 link = ((CrawledLink) node).getDownloadLink();
+            } else {
+                continue;
             }
             if (link != null) {
-                if (link.getCustomUrl() == null) {
+                rawURL = link.getCustomUrl();
+                if (rawURL == null) {
                     rawURL = link.getContentUrlOrPatternMatcher();
-                } else {
-                    // custom is preferable throughout
-                    rawURL = link.getCustomUrl();
                 }
-                urls.add(link.getView().getDisplayUrl());
-
+                final String url = link.getView().getDisplayUrl();
+                if (url != null) {
+                    urls.add(url);
+                }
             }
         }
         if (openInBrowser) {

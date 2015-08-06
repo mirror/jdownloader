@@ -17,7 +17,7 @@ public class BlockDownloadCaptchasByLink implements SessionBlackListEntry<Object
 
     @Override
     public boolean canCleanUp() {
-        DownloadLink link = getDownloadLink();
+        final DownloadLink link = getDownloadLink();
         return link == null || CaptchaBlackList.getInstance().isWhitelisted(link);
     }
 
@@ -27,7 +27,7 @@ public class BlockDownloadCaptchasByLink implements SessionBlackListEntry<Object
 
     @Override
     public boolean matches(Challenge<Object> c) {
-        DownloadLink link = getDownloadLink();
+        final DownloadLink link = getDownloadLink();
         if (link != null) {
             return link == c.getDownloadLink();
         }
