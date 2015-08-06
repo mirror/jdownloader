@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,8 +34,9 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -55,18 +55,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DummyScriptEnginePlugin.ThrowingRunnable;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile\\.com/d/[A-Za-z0-9]+(/[^<>\"/]+)?" }, flags = { 2 })
-public class DataFileCom extends PluginForHost {
+public class DataFileCom extends antiDDoSForHost {
 
     public DataFileCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -80,38 +77,36 @@ public class DataFileCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = false;
-    private static final int               FREE_MAXCHUNKS               = 1;
+    private static final boolean FREE_RESUME               = false;
+    private static final int     FREE_MAXCHUNKS            = 1;
     /*
      * How multiple free downloads are possible: Start first download & save timestamp of downloadstart. Next download can be started one
      * hour later - does not matter if the first one still runs. Tested up to 4 but more must be possible ;)
      */
-    private static final int               FREE_MAXDOWNLOADS            = 20;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final int     FREE_MAXDOWNLOADS         = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME    = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS = 0;
 
-    private final String                   PREMIUMONLY                  = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only by users with<br />Premium account\\!<|>You can download files up to)";
-    private final boolean                  SKIPRECONNECTWAITTIME        = true;
-    private final boolean                  SKIPWAITTIME                 = true;
+    private final String  accessKey             = "cddce1a5-a6dd-4300-9c08-eb70909de7c6";
+    private final String  PREMIUMONLY           = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only by users with<br />Premium account\\!<|>You can download files up to)";
+    private final boolean SKIPRECONNECTWAITTIME = true;
+    private final boolean SKIPWAITTIME          = true;
 
-    private final String[]                 IPCHECK                      = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private static final String            PROPERTY_LASTDOWNLOAD        = "datafilecom_lastdownload_timestamp";
-    private final String                   PROPERTY_LASTIP              = "PROPERTY_LASTIP";
-    private static AtomicReference<String> lastIP                       = new AtomicReference<String>();
-    private static AtomicReference<String> currentIP                    = new AtomicReference<String>();
-    private static HashMap<String, Long>   blockedIPsMap                = new HashMap<String, Long>();
-    private static Object                  CTRLLOCK                     = new Object();
-    private final Pattern                  IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static final long              FREE_RECONNECTWAIT           = 3610000L;
+    private final String[]                 IPCHECK               = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private static final String            PROPERTY_LASTDOWNLOAD = "datafilecom_lastdownload_timestamp";
+    private final String                   PROPERTY_LASTIP       = "PROPERTY_LASTIP";
+    private static AtomicReference<String> lastIP                = new AtomicReference<String>();
+    private static AtomicReference<String> currentIP             = new AtomicReference<String>();
+    private static HashMap<String, Long>   blockedIPsMap         = new HashMap<String, Long>();
+    private static Object                  CTRLLOCK              = new Object();
+    private final Pattern                  IPREGEX               = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static final long              FREE_RECONNECTWAIT    = 3610000L;
 
-    private Account                        currAcc                      = null;
-    private DownloadLink                   currDownloadLink             = null;
+    private Account currAcc = null;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static final AtomicInteger     totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
 
     @SuppressWarnings({ "deprecation" })
     public void correctDownloadLink(final DownloadLink link) {
@@ -125,7 +120,6 @@ public class DataFileCom extends PluginForHost {
 
     private void setConstants(final Account acc, final DownloadLink dl) {
         this.currAcc = acc;
-        this.currDownloadLink = dl;
     }
 
     /**
@@ -140,7 +134,7 @@ public class DataFileCom extends PluginForHost {
         prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        redirectAntiDDos(br);
+        redirectAntiDDos(br, this);
         br.setFollowRedirects(false);
         String filesize = null;
         // Limit reached -> Let's use their linkchecker to at least find the filesize and onlinestatus
@@ -233,19 +227,17 @@ public class DataFileCom extends PluginForHost {
 
         public String atob(String string) {
             String ret = Encoding.Base64Decode(string);
-
             return ret;
         }
 
     }
 
-    private void redirectAntiDDos(Browser br) throws Exception {
+    public static void redirectAntiDDos(final Browser br, final Plugin plugin) throws Exception {
 
         try {
             String js = br.getRegex("<script language=\"JavaScript\">(.*)</script>").getMatch(0);
             if (js != null) {
-
-                ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(plugin);
                 final ScriptEngine engine = mgr.getEngineByName("JavaScript");
                 // history.length<1){document.body.innerHTML=''
                 engine.eval("document={};document.body={};");
@@ -275,23 +267,19 @@ public class DataFileCom extends PluginForHost {
                     }
 
                 });
-
                 engine.eval(js);
-
                 Object redirect = engine.eval("window.location.href");
                 if (redirect != null) {
                     br.getPage(redirect + "");
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "AntiDDOS JS failed");
                 }
-
             }
         } catch (Exception e) {
             throw e;
         } finally {
 
         }
-
     }
 
     @Override
@@ -380,14 +368,14 @@ public class DataFileCom extends PluginForHost {
                     waitTime(timeBeforeCaptcha, downloadLink, wait);
                 }
                 // Validation phase, return token that need to be added to getFileDownloadLink call
-                postPage("http://www.datafile.com/files/ajax.html", "doaction=validateCaptcha&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid);
+                pagePost("http://www.datafile.com/files/ajax.html", "doaction=validateCaptcha&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid);
 
                 String token = br.getRegex("\\{\"success\":1,\"token\":\"(.*)\"\\}").getMatch(0);
                 if (token == null || br.containsHTML("\"success\":0")) {
                     rc.reload();
                     continue;
                 }
-                postPage("http://www.datafile.com/files/ajax.html", "doaction=getFileDownloadLink&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid + "&token=" + token);
+                pagePost("http://www.datafile.com/files/ajax.html", "doaction=getFileDownloadLink&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&fileid=" + fid + "&token=" + token);
                 captchaSuccess = true;
                 break;
             }
@@ -467,7 +455,7 @@ public class DataFileCom extends PluginForHost {
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        String dllink = downloadLink.getStringProperty(property, null);
         if (dllink != null) {
             URLConnectionAdapter con = null;
             try {
@@ -482,13 +470,13 @@ public class DataFileCom extends PluginForHost {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
                 }
-                con.disconnect();
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
             } finally {
-                if (con != null) {
+                try {
                     con.disconnect();
+                } catch (final Throwable t) {
                 }
             }
         }
@@ -524,13 +512,6 @@ public class DataFileCom extends PluginForHost {
                 br.setFollowRedirects(true);
                 // https is forced here anyways
                 String protocol = "https://";
-                if (isJava7nJDStable()) {
-                    if (!stableSucks.get()) {
-                        showSSLWarning(this.getHost());
-                    }
-                    // https is forced here anyways
-                    protocol = "https://";
-                }
                 br.postPage(protocol + "www.datafile.com/login.html", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember_me=0&remember_me=1&btn=");
                 if (br.getCookie(MAINPAGE, "hash") == null || br.getCookie(MAINPAGE, "user") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -582,13 +563,15 @@ public class DataFileCom extends PluginForHost {
             if (expire == null) {
                 logger.info("JD could not detect account expire time, your account has been determined as a free account");
                 account.setProperty("free", true);
-                account.setProperty("totalMaxSim", ACCOUNT_FREE_MAXDOWNLOADS);
-                ai.setStatus("Registered (free) account");
+                account.setConcurrentUsePossible(true);
+                account.setProperty("totalMaxSim", 1);
+                ai.setStatus("Free Account");
             } else {
                 account.setProperty("free", false);
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMM dd, yyyy HH:mm", Locale.ENGLISH));
-                account.setProperty("totalMaxSim", ACCOUNT_PREMIUM_MAXDOWNLOADS);
-                ai.setStatus("Premium account");
+                account.setConcurrentUsePossible(true);
+                account.setProperty("totalMaxSim", 20);
+                ai.setStatus("Premium Account");
             }
             account.setValid(true);
         }
@@ -687,9 +670,9 @@ public class DataFileCom extends PluginForHost {
 
     /**
      * code = 6 or 9
-     * 
+     *
      * Should only happen for free/free account mode.
-     * */
+     */
     private void errorFreeTooManySimultanDownloads() throws PluginException {
         logger.info("You are downloading another file at this moment. Please wait for it to complete and then try again.");
         if (this.currAcc != null) {
@@ -705,11 +688,11 @@ public class DataFileCom extends PluginForHost {
 
     /**
      * code = 7
-     * 
+     *
      * Can happen in any download mode
-     * 
+     *
      * @throws PluginException
-     * */
+     */
     private void errorDailyDownloadlimitReached() throws PluginException {
         if (this.currAcc == null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached", FREE_RECONNECTWAIT);
@@ -732,13 +715,7 @@ public class DataFileCom extends PluginForHost {
         }
     }
 
-    private void postPage(String url, final String postData) throws IOException {
-        if (isJava7nJDStable() && url.toLowerCase().startsWith("https://")) {
-            if (!stableSucks.get()) {
-                showSSLWarning(this.getHost());
-            }
-            url = url.replaceFirst("https://", "http://");
-        }
+    private void pagePost(String url, final String postData) throws IOException {
         br.postPage(url, postData);
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
     }
@@ -747,11 +724,6 @@ public class DataFileCom extends PluginForHost {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:29.0) Gecko/20100101 Firefox/29.0");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(MAINPAGE, "lang", "en");
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return maxPrem.get();
     }
 
     @Override
@@ -857,7 +829,6 @@ public class DataFileCom extends PluginForHost {
         return account.getAccountInfo();
     }
 
-    @SuppressWarnings("deprecation")
     private void handlePremium_API(final DownloadLink downloadLink, final Account account) throws Exception {
         // No API method for linkchecking, but can done based on this request response!
         getPage(br, apiURL + "/files/download?file=" + Encoding.urlEncode(downloadLink.getDownloadURL()), account);
@@ -929,7 +900,7 @@ public class DataFileCom extends PluginForHost {
     private String loginToken(final Account account) throws Exception {
         final Browser nbr = new Browser();
         prepApiBrowser(nbr);
-        nbr.getPage(apiURL + "/users/auth?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&accesskey=cddce1a5-a6dd-4300-9c08-eb70909de7c6");
+        nbr.getPage(apiURL + "/users/auth?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&accesskey=" + accessKey);
         final String apiToken = getJson(nbr, "token");
         final String code = getJson(nbr, "code");
         if (apiToken != null) {
@@ -944,14 +915,15 @@ public class DataFileCom extends PluginForHost {
                 ai.setValidUntil(Long.parseLong(primium_till + "000"));
                 if (!"0".equalsIgnoreCase(primium_till) || !ai.isExpired()) {
                     account.setProperty("free", false);
-                    account.setProperty("totalMaxSim", ACCOUNT_PREMIUM_MAXDOWNLOADS);
-                    ai.setStatus("Premium account");
+                    account.setConcurrentUsePossible(true);
+                    account.setProperty("totalMaxSim", 20);
+                    ai.setStatus("Premium Account");
                 } else {
                     account.setProperty("free", true);
-                    account.setProperty("totalMaxSim", ACCOUNT_FREE_MAXDOWNLOADS);
                     /* Don't use multiple free accounts at the same time. */
-                    account.setConcurrentUsePossible(false);
-                    ai.setStatus("Free account");
+                    account.setConcurrentUsePossible(true);
+                    account.setProperty("totalMaxSim", 1);
+                    ai.setStatus("Free Account");
                     ai.setUnlimitedTraffic();
                     ai.setValidUntil(-1);
                 }
@@ -1064,25 +1036,6 @@ public class DataFileCom extends PluginForHost {
         return lastdownload;
     }
 
-    private static long getLongProperty(final Property link, final String key, final long def) {
-        try {
-            return link.getLongProperty(key, def);
-        } catch (final Throwable e) {
-            try {
-                Object r = link.getProperty(key, def);
-                if (r instanceof String) {
-                    r = Long.parseLong((String) r);
-                } else if (r instanceof Integer) {
-                    r = ((Integer) r).longValue();
-                }
-                final Long ret = (Long) r;
-                return ret;
-            } catch (final Throwable e2) {
-                return def;
-            }
-        }
-    }
-
     private static final String  ENABLE_FREE_STORED_WAITTIME           = "ENABLE_FREE_STORED_WAITTIME";
     private static final boolean defaultENABLE_fREE_PARALLEL_DOWNLOADS = false;
 
@@ -1090,57 +1043,22 @@ public class DataFileCom extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), ENABLE_FREE_STORED_WAITTIME, JDL.L("plugins.hoster.datafilecom.enableStoredWaittimeForFreeModes", "Enable saved waittime in between free downloads?\r\nHelps to start more simultaneous downloads with less waittime/captchas in between.")).setDefaultValue(defaultENABLE_fREE_PARALLEL_DOWNLOADS));
     }
 
-    /**
-     * Tries to return value of key from JSon response, from String source.
-     * 
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        String result = new Regex(source, "\"" + key + "\":(-?\\d+(\\.\\d+)?|true|false|null)").getMatch(0);
-        if (result == null) {
-            result = new Regex(source, "\"" + key + "\":\"([^\"]+)\"").getMatch(0);
-        }
-        if (result != null) {
-            result = result.replaceAll("\\\\/", "/");
-        }
-        return result;
-    }
-
-    /**
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return getJson(br.toString(), key);
-    }
-
-    /**
-     * Tries to return value of key from JSon response, from provided Browser.
-     * 
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return getJson(ibr.toString(), key);
-    }
-
-    private static AtomicInteger maxPrem = new AtomicInteger(1);
     private static AtomicInteger maxFree = new AtomicInteger(1);
 
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlSlot
      *            (+1|-1)
      * @author raztoki
-     * */
+     */
     private void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
@@ -1148,78 +1066,10 @@ public class DataFileCom extends PluginForHost {
                 maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
                 logger.info("maxFree was = " + was + " && maxFree now = " + maxFree.get());
             } else {
-                int was = maxPrem.get();
-                maxPrem.set(Math.min(Math.max(1, maxPrem.addAndGet(num)), account.getIntegerProperty("totalMaxSim", 20)));
-                logger.info("maxPrem was = " + was + " && maxPrem now = " + maxPrem.get());
+                int was = account.getMaxSimultanDownloads();
+                account.setMaxSimultanDownloads(Math.min(Math.max(1, was + num), account.getIntegerProperty("totalMaxSim", 20)));
+                logger.info("maxPrem was = " + was + " && maxPrem now = " + account.getMaxSimultanDownloads());
             }
-        }
-    }
-
-    private boolean isJava7nJDStable() {
-        if (System.getProperty("jd.revision.jdownloaderrevision") == null && System.getProperty("java.version").matches("1\\.[7-9].+")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private static AtomicBoolean stableSucks = new AtomicBoolean(false);
-
-    public static void showSSLWarning(final String domain) {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    try {
-                        String lng = System.getProperty("user.language");
-                        String message = null;
-                        String title = null;
-                        boolean xSystem = CrossSystem.isOpenBrowserSupported();
-                        if ("de".equalsIgnoreCase(lng)) {
-                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Wegen einem Bug in in Java 7+ in dieser JDownloader version koennen wir keine HTTPS Post Requests ausfuehren.\r\n";
-                            message += "Wir haben eine Notloesung ergaenzt durch die man weiterhin diese JDownloader Version nutzen kann.\r\n";
-                            message += "Bitte bedenke, dass HTTPS Post Requests als HTTP gesendet werden. Nutzung auf eigene Gefahr!\r\n";
-                            message += "Falls du keine unverschluesselten Daten versenden willst, update bitte auf JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += "JDownloader 2 Installationsanleitung und Downloadlink: Klicke -OK- (per Browser oeffnen)\r\n ";
-                            } else {
-                                message += "JDownloader 2 Installationsanleitung und Downloadlink:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        } else if ("es".equalsIgnoreCase(lng)) {
-                            title = domain + " :: Java 7+ && HTTPS Solicitudes Post.";
-                            message = "Debido a un bug en Java 7+, al utilizar esta versión de JDownloader, no se puede enviar correctamente las solicitudes Post en HTTPS\r\n";
-                            message += "Por ello, hemos añadido una solución alternativa para que pueda seguir utilizando esta versión de JDownloader...\r\n";
-                            message += "Tenga en cuenta que las peticiones Post de HTTPS se envían como HTTP. Utilice esto a su propia discreción.\r\n";
-                            message += "Si usted no desea enviar información o datos desencriptados, por favor utilice JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación: Hacer Click en -Aceptar- (El navegador de internet se abrirá)\r\n ";
-                            } else {
-                                message += " Las instrucciones para descargar e instalar Jdownloader 2 se muestran a continuación, enlace :\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        } else {
-                            title = domain + " :: Java 7+ && HTTPS Post Requests.";
-                            message = "Due to a bug in Java 7+ when using this version of JDownloader, we can not successfully send HTTPS Post Requests.\r\n";
-                            message += "We have added a work around so you can continue to use this version of JDownloader...\r\n";
-                            message += "Please be aware that HTTPS Post Requests are sent as HTTP. Use at your own discretion.\r\n";
-                            message += "If you do not want to send unecrypted data, please upgrade to JDownloader 2!\r\n";
-                            if (xSystem) {
-                                message += "Jdownloader 2 install instructions and download link: Click -OK- (open in browser)\r\n ";
-                            } else {
-                                message += "JDownloader 2 install instructions and download link:\r\n" + new URL("http://board.jdownloader.org/showthread.php?t=37365") + "\r\n";
-                            }
-                        }
-                        int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.CLOSED_OPTION, JOptionPane.CLOSED_OPTION);
-                        if (xSystem && JOptionPane.OK_OPTION == result) {
-                            CrossSystem.openURL(new URL("http://board.jdownloader.org/showthread.php?t=37365"));
-                        }
-                        stableSucks.set(true);
-                    } catch (Throwable e) {
-                    }
-                }
-            });
-        } catch (Throwable e) {
         }
     }
 
