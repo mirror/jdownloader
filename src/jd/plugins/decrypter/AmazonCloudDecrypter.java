@@ -100,10 +100,7 @@ public class AmazonCloudDecrypter extends PluginForDecrypt {
 
             br.getPage("https://www." + this.plain_domain + "/drive/v1/shares/" + plain_folder_id + "?customerId=0&resourceVersion=V2&ContentType=JSON&asset=ALL");
             if (br.containsHTML("\"message\":\"ShareId does not exist") || this.br.getHttpConnection().getResponseCode() == 404) {
-                main.setFinalFileName(new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0));
-                main.setAvailable(false);
-                main.setProperty("offline", true);
-                decryptedLinks.add(main);
+                decryptedLinks.add(createOfflinelink(this.parameter, new Regex(this.parameter, "([A-Za-z0-9]+)$").getMatch(0), "File does not exist"));
                 return decryptedLinks;
             }
             entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
