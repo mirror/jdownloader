@@ -41,7 +41,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://(www\\.)?(keezmovies\\.com/embed_player\\.php\\?v?id=\\d+|keezmoviesdecrypted\\.com/video/[\\w\\-]+)" }, flags = { 2 })
-public class KeezMoviesCom extends PluginForHost {
+public class KeezMoviesCom extends antiDDoSForHost {
 
     private String DLLINK    = null;
     private String FLASHVARS = null;
@@ -56,6 +56,11 @@ public class KeezMoviesCom extends PluginForHost {
 
     private static final String default_extension = ".mp4";
 
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
     /*
      * IMPORTANT: If this plugin fails and we have problems with the encryption there are 2 ways around: 1. Add account support --> Download
      * button is available then AND 2. Use a mobile User-Agent so we can get non encrypted final links. Keep in mind that we might get lower
@@ -68,14 +73,13 @@ public class KeezMoviesCom extends PluginForHost {
         // DEV NOTE: you can get the DLLINK from the embed page without need for crypto!
         setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         /* Offline links should also get nice filenames. */
         downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([\\w\\-]+)$").getMatch(0));
         String filename = null;
         // embed corrections
         if (downloadLink.getDownloadURL().contains(".com/embed_player.php")) {
             Browser br2 = br.cloneBrowser();
-            br2.getPage(downloadLink.getDownloadURL());
+            getPage(br2, downloadLink.getDownloadURL());
             if (br2.containsHTML("<share>N/A</share>") || br2.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -97,7 +101,7 @@ public class KeezMoviesCom extends PluginForHost {
         if (downloadLink.getDownloadURL().matches("http://(www\\.)?keezmovies\\.com/video/[\\w\\-]+")) {
             // Set cookie so we can watch all videos ;)
             br.setCookie("http://www.keezmovies.com/", "age_verified", "1");
-            br.getPage(downloadLink.getDownloadURL());
+            getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() != null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -185,8 +189,8 @@ public class KeezMoviesCom extends PluginForHost {
     /**
      * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
      *
-     * @see <a
-     *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
+     * @see <a href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">
+     *      "Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
      */
     private String AESCounterModeDecrypt(String cipherText, String key, int nBits) throws Exception {
         if (!(nBits == 128 || nBits == 192 || nBits == 256)) {
