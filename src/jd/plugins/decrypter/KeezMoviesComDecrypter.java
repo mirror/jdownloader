@@ -34,11 +34,16 @@ public class KeezMoviesComDecrypter extends PornEmbedParser {
     /* Using playerConfig script */
     /* Tags: playerConfig.php */
 
+    @Override
+    protected boolean useRUA() {
+        return true;
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("/embed/", "/video/");
         final DownloadLink decryptedMainlink = createDownloadlink(parameter.replace("keezmovies.com/", "keezmoviesdecrypted.com/"));
-        br.getPage(parameter);
+        getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
@@ -52,7 +57,6 @@ public class KeezMoviesComDecrypter extends PornEmbedParser {
             return decryptedLinks;
         }
         /* No external url found --> Video must be selfhosted. */
-        decryptedLinks = new ArrayList<DownloadLink>();
         decryptedLinks.add(decryptedMainlink);
         return decryptedLinks;
     }

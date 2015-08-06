@@ -19,6 +19,10 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -35,10 +39,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
-
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -59,9 +59,10 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     }
 
     protected static final String                 cfRequiredCookies = "__cfduid|cf_clearance";
+    protected static final String                 icRequiredCookies = "visid_incap_\\d+|incap_ses_\\d+_\\d+";
     protected static HashMap<String, Cookies>     antiDDoSCookies   = new HashMap<String, Cookies>();
-    protected final WeakHashMap<Browser, Boolean> browserPrepped    = new WeakHashMap<Browser, Boolean>();
     protected static AtomicReference<String>      userAgent         = new AtomicReference<String>(null);
+    protected final WeakHashMap<Browser, Boolean> browserPrepped    = new WeakHashMap<Browser, Boolean>();
 
     protected Browser prepBrowser(final Browser prepBr, final String host) {
         if ((browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
@@ -135,7 +136,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      *
      * @author raztoki
      *
-     * */
+     */
     protected void getPage(final String page) throws Exception {
         getPage(br, page);
     }
@@ -169,7 +170,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      *
      * @author raztoki
      *
-     * */
+     */
     protected void postPage(final String page, final String postData) throws Exception {
         postPage(br, page, postData);
     }
@@ -203,7 +204,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      *
      * @author raztoki
      *
-     * */
+     */
     protected void postPage(final String page, final LinkedHashMap<String, String> param) throws Exception {
         postPage(br, page, param);
     }
@@ -243,7 +244,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      *
      * @author raztoki
      *
-     * */
+     */
     protected void submitForm(final Form form) throws Exception {
         submitForm(br, form);
     }
@@ -269,7 +270,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      *
      * @author raztoki
      *
-     * */
+     */
     protected void sendRequest(final Request request) throws Exception {
         sendRequest(br, request);
     }
@@ -414,7 +415,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                             ibr.getPage(ibr.getRedirectLocation());
                         }
                     }
-                } else if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]+" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]+" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
+                } else if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]*" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]*" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
                     // website address could be www. or what ever prefixes, need to make sure
                     // eg. within 403 response code,
                     // <p>The owner of this website (www.premiumax.net) has banned your IP address (x.x.x.x).</p>
@@ -524,6 +525,58 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     }
                 }
             }
+            // incapsula
+            if (containsIncapsulaCookies(ibr)) {
+                // they also rdns there servers to themsevles. we could use this.. but I think cookie is fine for now
+                // nslookup 103.28.250.173
+                // Name: 103.28.250.173.ip.incapdns.net
+                // Address: 103.28.250.173
+
+                // not sure if this is the best way to detect this. could be done via line count (13) or html tag count (13 also including
+                // closing tags)..
+                final String functionz = ibr.getRegex("function\\(\\)\\s*\\{\\s*var z\\s*=\\s*\"\";.*?\\}\\)\\(\\);").getMatch(-1);
+                final String[] crudeyes = ibr.toString().split("[\r\n]{1,2}");
+                if (functionz != null && crudeyes != null && crudeyes.length < 15) {
+                    final String b = new Regex(functionz, "var b\\s*=\\s*\"(.*?)\";").getMatch(0);
+                    if (b != null) {
+                        String z = "";
+                        for (int i = 0; i < b.length(); i += 2) {
+                            z = z + Integer.parseInt(b.substring(i, i + 2), 16) + ",";
+                        }
+                        z = z.substring(0, z.length() - 1);
+                        String a = "";
+                        for (String zz : z.split(",")) {
+                            final int zzz = Integer.parseInt(zz);
+                            a += Character.toString((char) zzz);
+                        }
+                        // now z contains two requests, first one unlocks, second is feedback, third is failover. don't think any
+                        // feedbacks/failovers are required but most likely improves your cookie health.
+                        final String c = new Regex(a, "xhr\\.open\\(\"GET\",\"(/_Incapsula_Resource\\?.*?)\"").getMatch(0);
+                        if (c != null) {
+                            final Browser ajax = ibr.cloneBrowser();
+                            ajax.getHeaders().put("Accept", "*/*");
+                            ajax.getHeaders().put("Cache-Control", null);
+                            ajax.getPage(c);
+                            // now it should say "window.location.reload(true);"
+                            if (ajax.containsHTML("window\\.location\\.reload\\(true\\);")) {
+                                ibr.getPage(ibr.getURL());
+                            } else {
+                                // lag/delay between = no html
+                                System.out.println("error");
+                            }
+                        }
+                    }
+                }
+                // get cookies we want/need.
+                // refresh these with every getPage/postPage/submitForm?
+                final Cookies add = ibr.getCookies(ibr.getHost());
+                for (final Cookie c : add.getCookies()) {
+                    if (new Regex(c.getKey(), icRequiredCookies).matches()) {
+                        cookies.add(c);
+                    }
+                }
+            }
+
             // save the session!
             synchronized (antiDDoSCookies) {
                 antiDDoSCookies.put(ibr.getHost(), cookies);
@@ -532,9 +585,26 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     }
 
     /**
+     * returns true if browser contains cookies that match expected
      *
      * @author raztoki
-     * */
+     * @param ibr
+     * @return
+     */
+    protected boolean containsIncapsulaCookies(final Browser ibr) {
+        final Cookies add = ibr.getCookies(ibr.getHost());
+        for (final Cookie c : add.getCookies()) {
+            if (new Regex(c.getKey(), icRequiredCookies).matches()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     *
+     * @author raztoki
+     */
     @SuppressWarnings("unused")
     private boolean requestHeadersHasKeyNValueStartsWith(final Browser ibr, final String k, final String v) {
         if (k == null || v == null || ibr == null || ibr.getHttpConnection() == null) {
@@ -549,7 +619,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
     /**
      *
      * @author raztoki
-     * */
+     */
     private boolean requestHeadersHasKeyNValueContains(final Browser ibr, final String k, final String v) {
         if (k == null || v == null || ibr == null || ibr.getHttpConnection() == null) {
             return false;
@@ -595,7 +665,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         final HashMap<String, String> cookies = new HashMap<String, String>();
         final Cookies add = br.getCookies(host);
         for (final Cookie c : add.getCookies()) {
-            if (!c.getKey().matches(cfRequiredCookies)) {
+            if (!c.getKey().matches(cfRequiredCookies + "|" + icRequiredCookies)) {
                 cookies.put(c.getKey(), c.getValue());
             }
         }
@@ -609,7 +679,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     protected boolean inValidate(final String s) {
         if (s == null || s.matches("\\s+") || s.equals("")) {
             return true;
@@ -623,7 +693,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * Tries to return value of key from JSon response, from String source.
      *
      * @author raztoki
-     * */
+     */
     protected final String getJson(final String source, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
@@ -633,7 +703,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     protected final String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
@@ -643,7 +713,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * Tries to return value of key from JSon response, from provided Browser.
      *
      * @author raztoki
-     * */
+     */
     protected final String getJson(final Browser ibr, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
     }
@@ -653,7 +723,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * Tries to return value given JSon Array of Key from JSon response provided String source.
      *
      * @author raztoki
-     * */
+     */
     protected final String getJsonArray(final String source, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
     }
@@ -663,7 +733,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * Tries to return value given JSon Array of Key from JSon response provided Browser.
      *
      * @author raztoki
-     * */
+     */
     protected final String getJsonArray(final Browser ibr, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(ibr.toString(), key);
     }
@@ -673,7 +743,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     protected final String getJsonArray(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
     }
