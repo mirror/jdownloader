@@ -161,8 +161,12 @@ public class XHamsterCom extends PluginForHost {
                 }
             }
         }
+        if (dllink == null) {
+            // urlmode fails, eg: 1099006
+            dllink = br.getRegex("video\\s*:\\s*\\{[^\\}]+file\\s*:\\s*('|\")(.*?)\\1").getMatch(1);
+        }
         DLLINK = Encoding.htmlDecode(dllink);
-        return Encoding.htmlDecode(dllink);
+        return DLLINK;
     }
 
     @Override
