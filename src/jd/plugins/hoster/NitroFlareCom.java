@@ -573,7 +573,8 @@ public class NitroFlareCom extends antiDDoSForHost {
                         // lets do a test
                         final Browser br2 = br.cloneBrowser();
                         getPage(br2, "https://www.nitroflare.com/");
-                        if (br2.getCookie("nitroflare.com", "user") != null) {
+                        final String user = br2.getCookie("nitroflare.com", "user");
+                        if (user != null && !"deleted".equalsIgnoreCase(user)) {
                             if (!fullInfo) {
                                 return null;
                             } else {
@@ -614,7 +615,8 @@ public class NitroFlareCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nIncorrect User/Password", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                     // final failover, we expect 'user' cookie
-                    if (br.getCookie("nitroflare.com", "user") == null) {
+                    final String user = br.getCookie("nitroflare.com", "user");
+                    if (user == null || "deleted".equalsIgnoreCase(user)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nCould not find Account Cookie", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
