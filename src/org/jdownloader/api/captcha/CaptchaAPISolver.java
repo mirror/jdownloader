@@ -150,11 +150,8 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             throw new InvalidCaptchaIDException();
         }
         try {
-
             Challenge<?> challenge = job.getChallenge();
-
             OutputStream out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), true);
-
             try {
                 final HashMap<String, Object> captchaResponseData = new HashMap<String, Object>();
                 captchaResponseData.put("data", challenge.getAPIStorable());
@@ -162,7 +159,6 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
                     captchaResponseData.put("rid", ((MyJDownloaderRequestInterface) request.getHttpRequest()).getRid());
                 }
                 out.write(JSonStorage.serializeToJson(captchaResponseData).getBytes("UTF-8"));
-
             } finally {
                 try {
                     out.close();
