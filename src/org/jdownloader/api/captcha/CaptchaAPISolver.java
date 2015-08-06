@@ -2,6 +2,7 @@ package org.jdownloader.api.captcha;
 
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import jd.controlling.captcha.SkipException;
@@ -18,6 +19,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
+import org.jdownloader.api.myjdownloader.MyJDownloaderRequestInterface;
 import org.jdownloader.captcha.event.ChallengeResponseListener;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
@@ -154,8 +156,12 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
             OutputStream out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), true);
 
             try {
-
-                out.write(JSonStorage.serializeToJson(challenge.getAPIStorable()).getBytes("UTF-8"));
+                final HashMap<String, Object> captchaResponseData = new HashMap<String, Object>();
+                captchaResponseData.put("data", challenge.getAPIStorable());
+                if (request.getHttpRequest() instanceof MyJDownloaderRequestInterface) {
+                    captchaResponseData.put("rid", ((MyJDownloaderRequestInterface) request.getHttpRequest()).getRid());
+                }
+                out.write(JSonStorage.serializeToJson(captchaResponseData).getBytes("UTF-8"));
 
             } finally {
                 try {

@@ -14,7 +14,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.storage.Storable;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
@@ -28,7 +27,7 @@ public abstract class Challenge<T> {
     private volatile boolean      accountLogin = false;
     private final boolean         createdInsideAccountChecker;
 
-    public Storable getAPIStorable() throws Exception {
+    public Object getAPIStorable() throws Exception {
         return null;
     }
 
