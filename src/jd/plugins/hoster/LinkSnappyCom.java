@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -45,9 +48,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksnappy.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class LinkSnappyCom extends PluginForHost {
 
@@ -68,22 +68,22 @@ public class LinkSnappyCom extends PluginForHost {
     private static final String USE_API                = "USE_API";
     private static final String CLEAR_DOWNLOAD_HISTORY = "CLEAR_DOWNLOAD_HISTORY";
 
-    private static final String COOKIE_HOST            = "http://linksnappy.com";
-    private static final String HTTP_S                 = "https://";
-    private static final int    MAX_DOWNLOAD_ATTEMPTS  = 10;
-    private int                 i                      = 1;
+    private static final String COOKIE_HOST           = "http://linksnappy.com";
+    private static final String HTTP_S                = "https://";
+    private static final int    MAX_DOWNLOAD_ATTEMPTS = 10;
+    private int                 i                     = 1;
 
-    private DownloadLink        currentLink            = null;
-    private Account             currentAcc             = null;
-    private boolean             resumes                = true;
-    private int                 chunks                 = 0;
+    private DownloadLink currentLink = null;
+    private Account      currentAcc  = null;
+    private boolean      resumes     = true;
+    private int          chunks      = 0;
 
-    private String              dllink                 = null;
+    private String dllink = null;
 
     /* 75 GB, Last checked: 18.06.2015 */
-    private static final long   dfault_traffic_max     = 80530636800L;
+    private static final long   dfault_traffic_max  = 80530636800L;
     /* Last checked: 18.06.2015 */
-    private static final String reCaptchaV2_sitekey    = "6LfhJgQTAAAAAIM7Pz3XxW1QMWssU51lcN-kUDRA";
+    private static final String reCaptchaV2_sitekey = "6LfhJgQTAAAAAIM7Pz3XxW1QMWssU51lcN-kUDRA";
 
     /**
      * Status 22.06.15: Host has ddos problems. Along with that they added login captchas. For the website version of the plugin that works
@@ -155,7 +155,7 @@ public class LinkSnappyCom extends PluginForHost {
             if (trafficLeft.contains("-")) {
                 ac.setTrafficLeft(0);
             } else {
-                ac.setTrafficLeft((long) Double.parseDouble(trafficLeft) * 1024 * 1024);
+                ac.setTrafficLeft(Long.parseLong(trafficLeft));
             }
             /* API does not (yet) return max daily traffic - use default value! */
             ac.setTrafficMax(dfault_traffic_max);
@@ -188,7 +188,7 @@ public class LinkSnappyCom extends PluginForHost {
             }
             if (quota != null) {
                 if (quota.matches("\\d+")) {
-                    e.put("quota", Integer.parseInt(quota));
+                    e.put("quota", Long.parseLong(quota));
                 } else if ("unlimited".equalsIgnoreCase(quota)) {
                     e.put("quota", -1);
                 } else {
@@ -201,7 +201,7 @@ public class LinkSnappyCom extends PluginForHost {
                 usage = null;
             }
             if (usage != null) {
-                e.put("usage", Integer.parseInt(usage));
+                e.put("usage", Long.parseLong(usage));
             }
             final String resumes = getJson(hostInfo, "resume");
             if (resumes != null) {
@@ -796,7 +796,7 @@ public class LinkSnappyCom extends PluginForHost {
      * Tries to return value of key from JSon response, from String source.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String source, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
     }
@@ -806,7 +806,7 @@ public class LinkSnappyCom extends PluginForHost {
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
@@ -816,7 +816,7 @@ public class LinkSnappyCom extends PluginForHost {
      * Tries to return value of key from JSon response, from provided Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final Browser ibr, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
     }
@@ -826,7 +826,7 @@ public class LinkSnappyCom extends PluginForHost {
      * Tries to return value given JSon Array of Key from JSon response provided String source.
      *
      * @author raztoki
-     * */
+     */
     private String getJsonArray(final String source, final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
     }
@@ -836,7 +836,7 @@ public class LinkSnappyCom extends PluginForHost {
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJsonArray(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
     }
