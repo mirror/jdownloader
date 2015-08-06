@@ -17,6 +17,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,8 +31,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/folder/([A-Z0-9]+)" }, flags = { 0 })
 public class FShareVnFolder extends PluginForDecrypt {
 
@@ -38,8 +39,9 @@ public class FShareVnFolder extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("mega.1280.com", "fshare.vn");
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString().replace("mega.1280.com", "fshare.vn");
+        final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
         boolean failed = false;
         br.getPage(parameter);
         if (!br.containsHTML("filename")) {
@@ -74,7 +76,13 @@ public class FShareVnFolder extends PluginForDecrypt {
                     // check if folder
                     final String folder = new Regex(data, "class=\"filename folder\" data-id=\"(.*?)\"").getMatch(0);
                     if (folder != null) {
-                        decryptedLinks.add(createDownloadlink(parameter.replace(uid, folder)));
+                        final String fder = parameter.replace(uid, folder);
+                        if (!dupe.add(fder)) {
+                            // this is a way to break page getting since now they return same links over and over, creates infinite loop.
+                            linkinformation = null;
+                            break;
+                        }
+                        decryptedLinks.add(createDownloadlink(fder));
                         continue;
                     }
                     final String filename = new Regex(data, "title=\"(.*?)\"").getMatch(0);
@@ -85,6 +93,11 @@ public class FShareVnFolder extends PluginForDecrypt {
                     }
                     if (dlink == null) {
                         return null;
+                    }
+                    if (!dupe.add(dlink)) {
+                        // this is a way to break page getting since now they return same links over and over, creates infinite loop.
+                        linkinformation = null;
+                        break;
                     }
                     final DownloadLink aLink = createDownloadlink(dlink);
                     if (filename != null) {
