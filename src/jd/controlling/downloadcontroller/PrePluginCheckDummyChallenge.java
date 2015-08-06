@@ -16,7 +16,7 @@ public class PrePluginCheckDummyChallenge extends Challenge<Object> {
 
     @Override
     public Plugin getPlugin() {
-        final DownloadLink link = getLink();
+        final DownloadLink link = getDownloadLink();
         if (link != null) {
             return link.getDefaultPlugin();
         }
@@ -24,7 +24,7 @@ public class PrePluginCheckDummyChallenge extends Challenge<Object> {
     }
 
     public String getHost() {
-        final DownloadLink link = getLink();
+        final DownloadLink link = getDownloadLink();
         if (link != null) {
             return link.getHost();
         }
@@ -32,8 +32,13 @@ public class PrePluginCheckDummyChallenge extends Challenge<Object> {
     }
 
     @Override
+    public DownloadLink getDownloadLink() {
+        return link.get();
+    }
+
+    @Override
     public DomainInfo getDomainInfo() {
-        final DownloadLink link = getLink();
+        final DownloadLink link = getDownloadLink();
         if (link != null) {
             return link.getDomainInfo();
         }
@@ -45,10 +50,6 @@ public class PrePluginCheckDummyChallenge extends Challenge<Object> {
         this.link = new WeakReference<DownloadLink>(link);
     }
 
-    public DownloadLink getLink() {
-        return link.get();
-    }
-
     @Override
     public boolean canBeSkippedBy(SkipRequest skipRequest, ChallengeSolver<?> solver, Challenge<?> challenge) {
         return false;
@@ -56,7 +57,7 @@ public class PrePluginCheckDummyChallenge extends Challenge<Object> {
 
     @Override
     public boolean isSolved() {
-        return getLink() == null;
+        return getDownloadLink() == null;
     }
 
 }

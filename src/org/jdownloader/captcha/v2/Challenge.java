@@ -5,7 +5,6 @@ import java.lang.reflect.Type;
 
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.SkipRequest;
-import jd.controlling.downloadcontroller.PrePluginCheckDummyChallenge;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.plugins.DownloadLink;
@@ -236,9 +235,6 @@ public abstract class Challenge<T> {
     }
 
     public Plugin getPlugin() {
-        if (this instanceof PrePluginCheckDummyChallenge) {
-            return ((PrePluginCheckDummyChallenge) this).getLink().getDefaultPlugin();
-        }
         return null;
     }
 
