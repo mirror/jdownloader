@@ -8,7 +8,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.utils.JDUtilities;
+import jd.plugins.components.UserAgents;
 
 public class SolveMedia {
     private final Browser      br;
@@ -59,14 +59,13 @@ public class SolveMedia {
         // solvemedia works off API key, and javascript. The imported browser session isn't actually needed.
         /*
          * Randomise user-agent to prevent tracking by solvemedia, each time we load(). Without this they could make the captchas images
-         * harder read, the more a user requests captcha'. Also algos could track captcha requests based on user-agent globally, which
-         * means JD default user-agent been very old (firefox 3.x) negatively biased to JD clients! Tracking takes place on based on IP
-         * address, User-Agent, and APIKey of request (site of APIKey), cookies session submitted, and combinations of those.
-         * Effectively this can all be done with a new browser, with regex tasks from source browser (ids|keys|submitting forms).
+         * harder read, the more a user requests captcha'. Also algos could track captcha requests based on user-agent globally, which means
+         * JD default user-agent been very old (firefox 3.x) negatively biased to JD clients! Tracking takes place on based on IP address,
+         * User-Agent, and APIKey of request (site of APIKey), cookies session submitted, and combinations of those. Effectively this can
+         * all be done with a new browser, with regex tasks from source browser (ids|keys|submitting forms).
          */
         /* we first have to load the plugin, before we can reference it */
-        JDUtilities.getPluginForHost("mediafire.com");
-        smBr.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
+        smBr.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
 
         if (smBr.getURL() == null || !smBr.getURL().contains("solvemedia.com/")) {
             // this prevents solvemedia group from seeing referrer

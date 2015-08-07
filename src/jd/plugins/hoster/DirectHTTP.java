@@ -744,7 +744,7 @@ public class DirectHTTP extends PluginForHost {
     private String customDownloadURL = null;
 
     private void setDownloadURL(String newURL, DownloadLink link) {
-        if (link != null && !StringUtils.equals(link.getDownloadURL(), newURL)) {
+        if (link != null && !StringUtils.equals(link.getDownloadURL(), newURL) && StringUtils.endsWithCaseInsensitive(link.getDownloadURL(), newURL)) {
             link.setUrlDownload(newURL);
         } else {
             this.customDownloadURL = newURL;
@@ -782,9 +782,9 @@ public class DirectHTTP extends PluginForHost {
                     } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
                         urlConnection = br.openHeadConnection(getDownloadURL(downloadLink));
                         if (urlConnection.getResponseCode() == 404 /*
-                         * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
-                         * "must-revalidate") && urlConnection.getHeaderField("Via") != null
-                         */) {
+                                                                    * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
+                                                                    * "must-revalidate") && urlConnection.getHeaderField("Via") != null
+                                                                    */) {
                             urlConnection.disconnect();
                             urlConnection = br.openGetConnection(getDownloadURL(downloadLink));
                         } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
