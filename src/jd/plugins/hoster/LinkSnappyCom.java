@@ -214,7 +214,7 @@ public class LinkSnappyCom extends PluginForHost {
             }
             if (!"1".equals(status)) {
                 continue;
-            } else if ((usage != null && quota != null && !"unlimited".equals(quota)) && (Long.parseLong(quota) - Long.parseLong(usage)) >= 0) {
+            } else if ((usage != null && quota != null && !"unlimited".equals(quota)) && (Long.parseLong(quota) - Long.parseLong(usage)) <= 0) {
                 continue;
             } else if (host != null) {
                 supportedHosts.add(host);
