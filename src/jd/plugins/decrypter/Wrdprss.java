@@ -30,55 +30,15 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
+
+names = { "hd-area.org", "movie-blog.org", "doku.cc", "hoerbuch.in", "hd-area.org", "hi10anime.com", "watchseries-online.ch", "solarmovie.ws", "scene-rls.com", "urbanmusicdaily.me", "ddmkv.me", "links.ddmkv.me" },
+
+urls = { "https?://(www\\.)?hd-area\\.org/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?movie-blog\\.org/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?doku\\.cc/\\d{4}/\\d{2}/\\d{2}/.+", "https?://(www\\.)?hoerbuch\\.in/blog\\.php\\?id=[\\d]+", "https?://(www\\.)?hd-area\\.org/index\\.php\\?id=\\d+", "https?://(www\\.)?hi10anime\\.com/([\\w\\-]+/){2}", "https?://(\\w+\\.)?watchseries-online\\.ch/episode/.+", "https?://(\\w+\\.)?solarmovie\\.ws/watch-[\\w-]+\\.html", "https?://(www\\.)?scene-rls\\.com/[\\w-]+/?$", "https?://(www\\.)?urbanmusicdaily\\.me/videos/[\\w\\-]+/", "https?://(www\\.)?ddmkv\\.me/\\d{4}/\\d{2}/[\\w\\-]+\\.html", "https?://(www\\.)?links\\.ddmkv\\.me/\\?p=\\d+" },
+
+flags = { 0 })
+
 public class Wrdprss extends antiDDoSForDecrypt {
-    /**
-     * Returns the annotations names array
-     *
-     * @return
-     */
-    public static String[] getAnnotationNames() {
-        return new String[] { "Wrdprss" };
-    }
-
-    /**
-     * returns the annotation pattern array
-     *
-     * @return
-     */
-    public static String[] getAnnotationUrls() {
-
-        StringBuilder completePattern = new StringBuilder();
-        completePattern.append("https?://(\\w+\\.)?(");
-        completePattern.append("(cinetopia\\.ws/.*\\.html)");
-        String[] listType1 = { "hd-area.org", "movie-blog.org", "doku.cc" };
-        for (String pattern : listType1) {
-            completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\d{4}/\\d{2}/\\d{2}/.+)");
-        }
-        String[] listType2 = { "hoerbuch.in" };
-        for (String pattern : listType2) {
-            completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/blog\\.php\\?id=[\\d]+)");
-        }
-        completePattern.append("|hd-area\\.org/index\\.php\\?id=\\d+");
-        completePattern.append("|hi10anime\\.com/([\\w\\-]+/){2}");
-        completePattern.append("|watchseries-online\\.ch/episode/.+");
-        completePattern.append("|solarmovie\\.ws/watch-[\\w-]+\\.html");
-        completePattern.append("|scene-rls\\.com/[\\w-]+/?$");
-        completePattern.append("|urbanmusicdaily\\.me/(?:videos/[\\w\\-]+/)");
-        completePattern.append(")");
-        // System.out.println(("Wrdprss: " + (10 + listType1.length + listType2.length) + " Pattern added!"));
-        return new String[] { completePattern.toString() };
-    }
-
-    /**
-     * Returns the annotations flags array
-     *
-     * @return
-     */
-    public static int[] getAnnotationFlags() {
-
-        return new int[] { 0 };
-    }
 
     private HashMap<String, String[]> defaultPasswords = new HashMap<String, String[]>();
 
@@ -89,7 +49,11 @@ public class Wrdprss extends antiDDoSForDecrypt {
         defaultPasswords.put("doku.cc", new String[] { "doku.cc", "doku.dl.am" });
         defaultPasswords.put("hd-area.org", new String[] { "hd-area.org" });
         defaultPasswords.put("movie-blog.org", new String[] { "movie-blog.org", "movie-blog.dl.am" });
-        defaultPasswords.put("cinetopia.ws", new String[] { "cinetopia.ws" });
+    }
+
+    @Override
+    protected boolean useRUA() {
+        return true;
     }
 
     private String parameter = null;
@@ -104,12 +68,10 @@ public class Wrdprss extends antiDDoSForDecrypt {
 
         /* Defaultpasswörter der Seite setzen */
         final ArrayList<String> link_passwds = new ArrayList<String>();
-        for (String host : defaultPasswords.keySet()) {
-            if (br.getHost().toLowerCase().contains(host)) {
-                for (String password : defaultPasswords.get(host)) {
-                    link_passwds.add(password);
-                }
-                break;
+        final String[] passwords = defaultPasswords.get(this.getHost());
+        if (passwords != null) {
+            for (final String password : passwords) {
+                link_passwds.add(password);
             }
         }
         final ArrayList<String[]> customHeaders = new ArrayList<String[]>();
@@ -179,10 +141,10 @@ public class Wrdprss extends antiDDoSForDecrypt {
         if (!ch) {
             return ch;
         }
-        if (parameter.contains("hd-area.org/")) {
+        if ("hd-area.org".equalsIgnoreCase(this.getHost())) {
             return !link.matches(".+\\.(css|xml)(.*)?|.+://img\\.hd-area\\.org/.+");
         }
-        if (parameter.contains("urbanmusicdaily.me/")) {
+        if ("urbanmusicdaily.me".equalsIgnoreCase(this.getHost())) {
             return !link.contains("urbanmusicdaily.me") && !link.matches(".+(\\.|/)(css|xml|jpe?g|png|gif|ico).*");
         }
         return !link.matches(".+\\.(css|xml)(.*)?");
@@ -191,11 +153,6 @@ public class Wrdprss extends antiDDoSForDecrypt {
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return new String[] { "urbanmusicdaily.me", "cinetopia.ws", "hd-area.org", "movie-blog.org", "doku.cc", "hoerbuch.in", "hd-area.org", "hi10anime.com", "watchseries-online.ch", "solarmovie.ws", "scene-rls.com" };
     }
 
 }
