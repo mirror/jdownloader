@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 names = { "anonym.to", "hiderefer.com", "blankrefer.com", "anon.click" },
 
-urls = { "https?://[\\w\\.]*?anonym\\.to/\\?.+", "https?://[\\w\\.]*?hiderefer\\.com/\\?.+", "https?://[\\w\\.]*?blankrefer.com/\\?.+", "https?://[\\w\\.]*?anon.click/.+", },
+urls = { "https?://[\\w\\.]*?anonym\\.to/\\?.+", "https?://[\\w\\.]*?hiderefer\\.com/\\?.+", "https?://[\\w\\.]*?blankrefer\\.com/\\?.+", "https?://[\\w\\.]*?anon\\.click/.+" },
 
 flags = { 0 })
 public class NnmT extends PluginForDecrypt {

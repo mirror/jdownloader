@@ -35,8 +35,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.UserAgents;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "downlod.co" }, urls = { "http://(www\\.)?downlod\\.co/file/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "downlod.co" }, urls = { "http://(www\\.)?downlod\\.co/file/[a-z0-9]+" }, flags = { 0 })
 public class DownloadCo extends PluginForHost {
 
     public DownloadCo(PluginWrapper wrapper) {
@@ -73,6 +74,7 @@ public class DownloadCo extends PluginForHost {
         link.setName(fid);
         br.addAllowedResponseCodes(500);
         br.setReadTimeout(2 * 60 * 1000);
+        br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<strong>ERROR") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
