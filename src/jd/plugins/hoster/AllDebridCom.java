@@ -119,7 +119,7 @@ public class AllDebridCom extends antiDDoSForHost {
             final String secondsLeft = accDetails.get("timestamp");
             if (secondsLeft != null) {
                 account.setValid(true);
-                final long validuntil = System.currentTimeMillis() + 1001 * Long.parseLong(secondsLeft);
+                final long validuntil = System.currentTimeMillis() + (Long.parseLong(secondsLeft) * 1001);
                 ac.setValidUntil(validuntil);
             } else {
                 /* no daysleft available?! */
