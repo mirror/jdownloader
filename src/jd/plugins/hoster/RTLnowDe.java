@@ -54,7 +54,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowtv.de" }, urls = { "https?://(www\\.)?nowtv\\.de/(?:rtl|vox|rtl2|rtlnitro|superrtl|ntv)/[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 3 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowtv.de" }, urls = { "https?://(www\\.)?nowtv\\.(?:de|ch)/(?:rtl|vox|rtl2|rtlnitro|superrtl|ntv)/[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 3 })
 public class RTLnowDe extends PluginForHost {
 
     public RTLnowDe(final PluginWrapper wrapper) {
@@ -100,6 +100,11 @@ public class RTLnowDe extends PluginForHost {
     private DownloadLink                  currDownloadLink             = null;
     private LinkedHashMap<String, Object> entries                      = null;
     private LinkedHashMap<String, Object> format                       = null;
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("nowtv.ch/", "nowtv.de/"));
+    }
 
     /* Thx https://github.com/bromix/plugin.video.rtl-now.de/blob/master/resources/lib/rtlinteractive/client.py */
     // private String apiUrl = null;

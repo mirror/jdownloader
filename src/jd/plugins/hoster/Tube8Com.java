@@ -77,7 +77,7 @@ public class Tube8Com extends PluginForHost {
         }
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("No htmlCode read") || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("No htmlCode read") || br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().length() < 30) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String verifyAge = br.getRegex("(<div class=\"enter\\-btn\">)").getMatch(0);

@@ -41,7 +41,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
@@ -49,7 +48,6 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thefile.me" }, urls = { "https?://(www\\.)?thefile\\.me/[A-Za-z0-9]+" }, flags = { 2 })
 public class TheFileMe extends antiDDoSForHost {
@@ -122,12 +120,13 @@ public class TheFileMe extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        this.br.setAllowedResponseCodes(500);
         br.setFollowRedirects(true);
         String filename;
         String filesize;
         if (available_CHECK_OVER_INFO_PAGE) {
             getPage(link.getDownloadURL() + "~i");
-            if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
+            if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("Filename:[\t\n\r ]*?</td>[\t\n\r ]*?<td(?: class=\"responsiveInfoTable\")?>([^<>\"]*?)<").getMatch(0);
@@ -151,7 +150,7 @@ public class TheFileMe extends antiDDoSForHost {
                 return AvailableStatus.TRUE;
             }
             handleErrors();
-            if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\"")) || br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\"")) || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
@@ -237,7 +236,7 @@ public class TheFileMe extends antiDDoSForHost {
                         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
                     } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
-                       
+
                         final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                         if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
                             sm.setSecure(true);
@@ -608,10 +607,9 @@ public class TheFileMe extends antiDDoSForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.MFScripts_YetiShare;
-	}
-
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MFScripts_YetiShare;
+    }
 
 }

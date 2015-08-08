@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2013  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -49,20 +49,20 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keepshare.net" }, urls = { "https?://(www\\.)?keepshare\\.net/(embed\\-)?[A-Za-z0-9]+" }, flags = { 0 })
-public class KeepShareNet extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.al" }, urls = { "https?://(www\\.)?file\\.al/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class FileAl extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://keepshare.net";
+    private static final String            COOKIE_HOST                  = "http://file.al";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(keepshare\\.net)";
+    private static final String            DOMAINS                      = "(file\\.al)";
     /* Linktypes */
-    private static final String            TYPE_NORMAL                  = "https?://[A-Za-z0-9\\-\\.]+/[A-Za-z0-9]+";
+    private static final String            TYPE_NORMAL                  = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
     private static final String            TYPE_EMBED                   = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
     private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
@@ -86,7 +86,7 @@ public class KeepShareNet extends PluginForHost {
     private static final int               WAITSECONDSFORCED            = 5;
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = -2;
+    private static final int               FREE_MAXCHUNKS               = 1;
     private static final int               FREE_MAXDOWNLOADS            = 1;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
     private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
@@ -103,12 +103,12 @@ public class KeepShareNet extends PluginForHost {
     private String                         fuid                         = null;
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.8.7
+    // XfileSharingProBasic Version 2.6.8.8
     // Tags: Script, template
-    // mods: heavily modified, do NOT upgrade!
+    // mods:
     // limit-info:
     // protocol: no https
-    // captchatype: 4dignum
+    // captchatype: null 4dignum solvemedia recaptcha
     // other:
     // TODO: Add case maintenance + alternative filesize check
 
@@ -142,7 +142,7 @@ public class KeepShareNet extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public KeepShareNet(PluginWrapper wrapper) {
+    public FileAl(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -178,7 +178,6 @@ public class KeepShareNet extends PluginForHost {
                 if (br.containsHTML(">No such file<")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                fileInfo[0] = altbr.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
                 if (SUPPORTS_ALT_AVAILABLECHECK) {
                     altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
                     fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
@@ -264,9 +263,6 @@ public class KeepShareNet extends PluginForHost {
                 }
             }
         }
-        if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)<").getMatch(0);
-        }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
             if (fileInfo[1] == null) {
@@ -296,11 +292,7 @@ public class KeepShareNet extends PluginForHost {
 
     private String getFnameViaAbuseLink(final Browser br, final DownloadLink dl) throws IOException, PluginException {
         br.getPage("http://" + NICE_HOST + "/?op=report_file&id=" + fuid);
-        String fname = br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
-        if (fname == null) {
-            fname = br.getRegex("<b>Filename</b></td><td>([^<>\"]*?)</td>").getMatch(0);
-        }
-        return fname;
+        return br.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
     }
 
     @Override
@@ -389,9 +381,6 @@ public class KeepShareNet extends PluginForHost {
                     }
                 }
                 /* end of backward compatibility */
-                if (download1.hasInputFieldByName("method_free") && download1.getInputFieldByName("method_free").getValue() == null) {
-                    download1.put("method_free", "Free Download >>");
-                }
                 submitForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();
@@ -741,7 +730,7 @@ public class KeepShareNet extends PluginForHost {
             ttt = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
         }
         if (ttt == null) {
-            ttt = new Regex(correctedBR, "class=\"seconds count\">(\\d+)</").getMatch(0);
+            ttt = new Regex(correctedBR, "class=\"seconds\">(\\d+)</span>").getMatch(0);
         }
         if (ttt != null) {
             wait = Integer.parseInt(ttt);
@@ -857,7 +846,7 @@ public class KeepShareNet extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private String getFUIDFromURL(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        return new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
     }
 
     private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {
@@ -1254,6 +1243,11 @@ public class KeepShareNet extends PluginForHost {
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
+    }
+
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
     }
 
 }
