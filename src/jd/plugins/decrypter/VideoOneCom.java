@@ -97,16 +97,12 @@ public class VideoOneCom extends PornEmbedParser {
                 br.getPage(externID);
                 externID = br.getRegex("<url>([^<>]*?)</url>").getMatch(0);
                 if (externID == null) {
-                    if (this.br.containsHTML("<url>\\]>") || this.br.containsHTML("<url>http")) {
-                        /* Serverside broken url --> Video will not play via browser either! */
-                        decryptedLinks.add(this.createOfflinelink(parameter));
-                        return decryptedLinks;
-                    }
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    /* Chances are very high that that url is simply offline. */
+                    decryptedLinks.add(this.createOfflinelink(parameter));
+                    return decryptedLinks;
                 }
                 if (!externID.startsWith("http")) {
-                    logger.info("Link offline: " + parameter);
+                    decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 }
                 externID = "directhttp://" + externID;

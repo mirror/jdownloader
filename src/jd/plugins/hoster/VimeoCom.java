@@ -105,6 +105,7 @@ public class VimeoCom extends PluginForHost {
         /* we do not want German headers! */
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         prepBr.getHeaders().put("User-Agent", userAgent.get());
+        prepBr.setAllowedResponseCodes(418);
         return prepBr;
     }
 
@@ -353,9 +354,9 @@ public class VimeoCom extends PluginForHost {
     }
 
     public final String getXsrft(Browser br) throws PluginException {
-        String xsrft = br.getRegex("vimeo\\.xsrft\\s*=\\s*('|\"|)([a-f0-9\\.]{32,})\\1").getMatch(1);
+        String xsrft = br.getRegex("vimeo\\.xsrft\\s*=\\s*('|\"|)([a-z0-9\\.]{32,})\\1").getMatch(1);
         if (xsrft == null) {
-            xsrft = br.getRegex("\"xsrft\"\\s*:\\s*\"([a-f0-9\\.]{32,})\"").getMatch(0);
+            xsrft = br.getRegex("\"xsrft\"\\s*:\\s*\"([a-z0-9\\.]{32,})\"").getMatch(0);
         }
         if (xsrft == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

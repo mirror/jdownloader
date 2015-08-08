@@ -328,31 +328,36 @@ public class VivaTvDecrypt extends PluginForDecrypt {
     }
 
     private void decrypLogoTvCom() throws Exception {
+        boolean isPlaylist = false;
         final String playlist_id = new Regex(this.parameter, "^.+#id=(\\d+)$").getMatch(0);
         if (playlist_id != null) {
             /* Playlist */
             this.br.getPage("http://www.logotv.com/global/music/videos/ajax/playlist.jhtml?id=" + playlist_id);
             final String[] entries = this.br.getRegex("(id=\"vid\\d+\">.*?<p class=\"usage\"/>)").getColumn(0);
-            for (final String entry : entries) {
-                String title = new Regex(entry, "<span class=\"title_container trim_container\">[\t\n\r ]+<span>([^<>]*?)</span>").getMatch(0);
-                if (title == null) {
-                    title = new Regex(entry, "class=\"song\">([^<>\"]*?)</span>").getMatch(0);
+            if (entries != null && entries.length != 0) {
+                isPlaylist = true;
+                for (final String entry : entries) {
+                    String title = new Regex(entry, "<span class=\"title_container trim_container\">[\t\n\r ]+<span>([^<>]*?)</span>").getMatch(0);
+                    if (title == null) {
+                        title = new Regex(entry, "class=\"song\">([^<>\"]*?)</span>").getMatch(0);
+                    }
+                    final String mgid = new Regex(entry, "logoonline\\.mtvnimages\\.com/uri/(mgid:[^<>\"\\?]+)").getMatch(0);
+                    final String url_final = "http://media.mtvnservices.com/" + mgid;
+                    final DownloadLink dl = this.createDownloadlink(url_final);
+                    if (title == null) {
+                        logger.warning("WTF");
+                    }
+                    if (title != null) {
+                        /* Should cover 99% of all cases */
+                        title = this.doFilenameEncoding(title);
+                        dl.setName(title + default_ext);
+                        dl.setAvailable(true);
+                    }
+                    this.decryptedLinks.add(dl);
                 }
-                final String mgid = new Regex(entry, "logoonline\\.mtvnimages\\.com/uri/(mgid:[^<>\"\\?]+)").getMatch(0);
-                final String url_final = "http://media.mtvnservices.com/" + mgid;
-                final DownloadLink dl = this.createDownloadlink(url_final);
-                if (title == null) {
-                    logger.warning("WTF");
-                }
-                if (title != null) {
-                    /* Should cover 99% of all cases */
-                    title = this.doFilenameEncoding(title);
-                    dl.setName(title + default_ext);
-                    dl.setAvailable(true);
-                }
-                this.decryptedLinks.add(dl);
             }
-        } else {
+        }
+        if (!isPlaylist) {
             /* Feed */
             /* We have no feed-url so let's use this */
             final String feedURL_plain = "http://media.mtvnservices.com/%s";
@@ -361,7 +366,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 return;
             }
             logger.info("Current link is NO VEVO link");
-            if (!br.containsHTML("MTVN\\.Player\\.")) {
+            if (!br.containsHTML("\"video\":")) {
                 try {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return;
@@ -377,6 +382,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             final String feedURL = "http://www.logotv.com/player/includes/rss.jhtml?uri=" + this.mgid;
             br.getPage(feedURL);
             decryptFeed(feedURL_plain);
+
         }
     }
 

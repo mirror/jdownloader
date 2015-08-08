@@ -89,6 +89,8 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private static final String             TYPE_PLAYLIST     = "https?://(www\\.)?dailymotion\\.com/playlist/[A-Za-z0-9]+_[A-Za-z0-9\\-_]+(/\\d+)?";
     private static final String             TYPE_VIDEO        = "https?://(www\\.)?dailymotion\\.com/((embed/)?video/[a-z0-9\\-_]+|swf(/video)?/[a-zA-Z0-9]+)";
 
+    private static final String             REGEX_VIDEOURLS   = "preview_link[\t\n\r ]*?\"[\t\n\r ]*?href=\"(/video/[^<>\"/]+)\"";
+
     public final static boolean             defaultAllowAudio = true;
 
     private ArrayList<DownloadLink>         decryptedLinks    = new ArrayList<DownloadLink>();
@@ -228,7 +230,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             }
             logger.info("Decrypting page " + currentPage + " / " + pagesNum);
             br.getPage("http://www.dailymotion.com/user/" + username + "/" + currentPage);
-            final String[] videos = br.getRegex("preview_link \"  href=\"(/video/[^<>\"/]+)\"").getColumn(0);
+            final String[] videos = br.getRegex(REGEX_VIDEOURLS).getColumn(0);
             if (videos == null || videos.length == 0) {
                 logger.info("Found no videos on page " + currentPage + " -> Stopping decryption");
                 break;
@@ -330,7 +332,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             final String nextpage = base_link + "/" + currentPage;
             logger.info("Decrypting page: " + nextpage);
             br.getPage(nextpage);
-            final String[] videos = br.getRegex("preview_link \"  href=\"(/video/[^<>\"/]+)\"").getColumn(0);
+            final String[] videos = br.getRegex(REGEX_VIDEOURLS).getColumn(0);
             if (videos == null || videos.length == 0) {
                 logger.info("Found no videos on page " + currentPage + " -> Stopping decryption");
                 break;
