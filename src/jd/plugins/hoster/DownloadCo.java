@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.LinkedHashSet;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -33,8 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "downlod.co" }, urls = { "http://(www\\.)?downlod\\.co/file/[a-z0-9]+" }, flags = { 0 })
 public class DownloadCo extends PluginForHost {
@@ -71,6 +71,7 @@ public class DownloadCo extends PluginForHost {
         final String fid = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         link.setLinkID(fid);
         link.setName(fid);
+        br.addAllowedResponseCodes(500);
         br.setReadTimeout(2 * 60 * 1000);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<strong>ERROR") || this.br.getHttpConnection().getResponseCode() == 404) {
@@ -112,7 +113,12 @@ public class DownloadCo extends PluginForHost {
         if (dllink == null) {
             final String getPostURL = getPostUrl();
             final Browser br2 = br.cloneBrowser();
+            // there is a 1 minute wait, its not needed but can help
+            sleep(61134, downloadLink);
             br2.postPage(getPostURL, "action=getLink&vfid=" + downloadLink.getLinkID());
+            if (br2.getHttpConnection().getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "500 Response Code Error", 2 * 60 * 1000l);
+            }
             // since filename can be unknown
             final Form f = br2.getForm(0);
             if (f == null) {
@@ -237,11 +243,13 @@ public class DownloadCo extends PluginForHost {
     // if (br.getCookie(MAINPAGE, "") == null) {
     // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
+    // "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername
+    // und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
+    // "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your
+    // password contains special characters, change it (remove them) and try again!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // }
@@ -292,11 +300,13 @@ public class DownloadCo extends PluginForHost {
     // final String lang = System.getProperty("user.language");
     // if ("de".equalsIgnoreCase(lang)) {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
+    // "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein
+    // eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // } else {
     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-    // "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
+    // "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered
+    // are correct?\r\nIf your password contains special characters, change it (remove them) and try again!",
     // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
     // } else {
