@@ -73,9 +73,7 @@ public class AmazonCloud extends PluginForHost {
         if ("old20140922".equals(link.getStringProperty("type"))) {
             return requestFileInformationOld(link);
         }
-        if (link.getBooleanProperty("offline", false)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!link.getDownloadURL().matches("https://amazondecrypted\\.com/\\d+")) {
+        if (!link.getDownloadURL().matches("https://amazondecrypted\\.com/\\d+")) {
             /* Check if user still has old links in his list --> Invalid */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
