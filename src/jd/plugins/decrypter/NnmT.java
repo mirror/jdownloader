@@ -16,76 +16,44 @@
 
 package jd.plugins.decrypter;
 
-import java.net.URI;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
+
+names = { "anonym.to", "hiderefer.com", "blankrefer.com", "anon.click" },
+
+urls = { "https?://[\\w\\.]*?anonym\\.to/\\?.+", "https?://[\\w\\.]*?hiderefer\\.com/\\?.+", "https?://[\\w\\.]*?blankrefer.com/\\?.+", "https?://[\\w\\.]*?anon.click/.+", },
+
+flags = { 0 })
 public class NnmT extends PluginForDecrypt {
 
-    /**
-     * Returns the annotations names array
-     *
-     * @return
-     */
-    public static String[] getAnnotationNames() {
-        return new String[] { "anonym.to" };
-    }
-
-    /**
-     * returns the annotation pattern array
-     *
-     * @return
-     */
-    public static String[] getAnnotationUrls() {
-        String[] names = getAnnotationNames();
-        String[] ret = new String[names.length];
-        // "http://[\\w\\.]*?anonym\\.to/\\?.+"
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = "(http://[\\w\\.]*?" + names[i].replaceAll("\\.", "\\\\.") + "\\?/.+)|(http://[\\w\\-]{5,16}\\." + names[i].replaceAll("\\.", "\\\\.") + ")";
-
-        }
-        return ret;
-    }
-
-    /**
-     * Returns the annotations flags array
-     *
-     * @return
-     */
-    public static int[] getAnnotationFlags() {
-        String[] names = getAnnotationNames();
-        int[] ret = new int[names.length];
-
-        for (int i = 0; i < ret.length; i++) {
-            ret[i] = 0;
-
-        }
-        return ret;
-    }
-
-    public NnmT(PluginWrapper wrapper) {
+    public NnmT(final PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-        this.setBrowserExclusive();
-        ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-        String host = new URI(parameter.getCryptedUrl()).getHost();
-        links.add(this.createDownloadlink(parameter.getCryptedUrl().replaceFirst("http://.*?" + host + "/\\?", "")));
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
+        String url = new Regex(parameter, "https?://[^/]+/\\??(.+)").getMatch(0);
+        // some allow www. or domain without any protocol prefixes.
+        if (!url.matches("^(?:https?|ftp)://.+$")) {
+            url = new Regex(parameter, "^https?://").getMatch(-1) + url;
+        }
+        links.add(createDownloadlink(url));
         return links;
     }
 
     /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
     }
 

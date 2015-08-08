@@ -2,6 +2,9 @@ package jd.plugins.hoster;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.jdownloader.DomainInfo;
+import org.jdownloader.images.NewTheme;
+
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -9,9 +12,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.DomainInfo;
-import org.jdownloader.images.NewTheme;
 
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" }, flags = { 0 })
 public class UseNet extends PluginForHost {
@@ -57,5 +57,10 @@ public class UseNet extends PluginForHost {
             }
         }
         return ret;
+    }
+
+    @Override
+    public Boolean siteTesterDisabled() {
+        return true;
     }
 }

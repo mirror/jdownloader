@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -28,10 +26,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
+/**
+ * DEV NOTES:<br/>
+ * - related to keezmovies, same group of sites. Tells: incapsula and phncdn.com CDN -raztoki
+ *
+ */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mofosex.com" }, urls = { "http://(www\\.)?mofosex\\.com/(videos/\\d+/[a-z0-9\\-]+\\.html|embed\\?videoid=\\d+|embed_player\\.php\\?id=\\d+)" }, flags = { 0 })
-public class MofoSexCom extends PluginForHost {
+public class MofoSexCom extends antiDDoSForHost {
 
     private String DLLINK = null;
 
@@ -52,12 +54,12 @@ public class MofoSexCom extends PluginForHost {
     private static final String TYPE_EMBED = "http://(www\\.)?mofosex\\.com/(embed\\?videoid=|embed_player\\.php\\?id=)\\d+";
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         if (downloadLink.getDownloadURL().matches(TYPE_EMBED)) {
             logger.info("Handling embedded url...");
-            br.getPage("http://www.mofosex.com/embed?videoid=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+            getPage("http://www.mofosex.com/embed?videoid=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
             if (br.containsHTML("This video is no longer available")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -67,9 +69,9 @@ public class MofoSexCom extends PluginForHost {
             }
             real_url = Encoding.htmlDecode(real_url);
             downloadLink.setUrlDownload(real_url);
-            br.getPage(real_url);
+            getPage(real_url);
         } else {
-            br.getPage(downloadLink.getDownloadURL());
+            getPage(downloadLink.getDownloadURL());
             if (br.containsHTML("(<h2>The porn you are looking for has been removed|<title>Free Porn Videos, Porn Tube, Sex Videos, Sex \\&amp; Free XXX Porno Clips</title>|>Page Not Found<|This video is no longer available|video\\-removed\\-tos\\.png\")") || br.getURL().contains("/404.php")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -80,7 +82,7 @@ public class MofoSexCom extends PluginForHost {
         }
         String fid = br.getRegex("\\?v=([a-z0-9_\\-]+)%2").getMatch(0);
         if (fid != null) {
-            br.getPage("http://www.mofosex.com/playlist.php?v=" + fid);
+            getPage("http://www.mofosex.com/playlist.php?v=" + fid);
             DLLINK = br.getRegex("<url>(http://.*?)</url>").getMatch(0);
         } else {
             fid = br.getRegex("flashvars\\.video_url = \'(.*?)\'").getMatch(0);

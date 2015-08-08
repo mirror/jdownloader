@@ -529,6 +529,8 @@ public abstract class antiDDoSForHost extends PluginForHost {
                 // Name: 103.28.250.173.ip.incapdns.net
                 // Address: 103.28.250.173
 
+                // they also have additional header response, X-Iinfo or ("X-CDN", "Incapsula")**. ** = optional
+
                 // not sure if this is the best way to detect this. could be done via line count (13) or html tag count (13 also including
                 // closing tags)..
                 final String functionz = ibr.getRegex("function\\(\\)\\s*\\{\\s*var z\\s*=\\s*\"\";.*?\\}\\)\\(\\);").getMatch(-1);
@@ -559,11 +561,67 @@ public abstract class antiDDoSForHost extends PluginForHost {
                                 ibr.getPage(ibr.getURL());
                             } else {
                                 // lag/delay between = no html
-                                System.out.println("error");
+                                // should only happen in debug mode breakpointing!
+                                // System.out.println("error");
                             }
                         }
                     }
                 }
+                // written support based on logged output from JDownloader.. not the best, but here goes! refine if it fails!
+                // recaptcha events are loaded from iframe,
+                // z reference is within the script src url (contains md5checksum), once decoded their is no magic within, unlike above.
+
+                // on a single line
+                if (crudeyes != null && crudeyes.length == 1) {
+                    // xinfo in the iframe is the same as header info...
+                    final String xinfo = ibr.getHttpConnection().getHeaderField("X-Iinfo");
+                    // so far in logs ive only seen this trigger after one does NOT answer a function z..
+                    String azas = "<iframe[^<]*\\s+src=\"(/_Incapsula_Resource\\?(?:[^\"]+&|)xinfo=" + (!inValidate(xinfo) ? Pattern.quote(xinfo) : "") + "[^\"]*)\"";
+                    final String iframe = ibr.getRegex(azas).getMatch(0);
+                    if (iframe != null) {
+                        final Browser ifr = ibr.cloneBrowser();
+                        // will need referrer,, but what other custom headers??
+                        ifr.getPage(iframe);
+                        final Form captcha = ifr.getFormbyProperty("id", "captcha-form");
+                        if (captcha == null) {
+                            System.out.println("error");
+                        }
+                        String apiKey = captcha.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                        if (apiKey == null) {
+                            apiKey = "6Lebls0SAAAAAHo72LxPsLvFba0g1VzknU83sJLg";
+                        }
+                        final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Incapsula' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
+                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr);
+                        rc.setId(apiKey);
+                        rc.load();
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        final String response = getCaptchaCode("recaptcha", cf, dllink);
+                        if (inValidate(response)) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        // they have no script value and our form parser adds the input field when it shouldn't
+                        while (captcha.hasInputFieldByName("recaptcha_response_field")) {
+                            captcha.remove("recaptcha_response_field");
+                        }
+                        captcha.put("recaptcha_challenge_field", rc.getChallenge());
+                        captcha.put("recaptcha_response_field", Encoding.urlEncode(response));
+                        ifr.submitForm(captcha);
+                        if (ifr.getFormbyProperty("id", "captcha-form") != null) {
+                            logger.warning("Wrong captcha");
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        } else if (ifr.containsHTML(">window\\.parent\\.location\\.reload\\(true\\);<")) {
+                            // they show z again after captcha...
+                            getPage(ibr.getURL());
+                            // above request saves, as it re-enters this method!
+                            return;
+                        } else {
+                            // shouldn't happen???
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                    }
+                }
+
                 // get cookies we want/need.
                 // refresh these with every getPage/postPage/submitForm?
                 final Cookies add = ibr.getCookies(ibr.getHost());
