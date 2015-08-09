@@ -12,10 +12,13 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -30,8 +33,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dropbox.com" }, urls = { "https?://(www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" }, flags = { 2 })
 public class DropboxCom extends PluginForHost {
@@ -59,65 +60,69 @@ public class DropboxCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        br = new Browser();
         if (link.getBooleanProperty("decrypted")) {
             if (link.getBooleanProperty("offline", false)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             URLConnectionAdapter con = null;
-            try {
-                if (link.getDownloadURL().matches(TYPE_S)) {
-                    this.br.setFollowRedirects(true);
-                    DLLINK = link.getDownloadURL().replace("https://", "https://dl.");
-                    con = this.br.openHeadConnection(DLLINK);
+            if (link.getDownloadURL().matches(TYPE_S)) {
+                DLLINK = link.getDownloadURL().replace("https://", "https://dl.");
+                for (int i = 0; i < 2; i++) {
+                    try {
+                        this.br.setFollowRedirects(true);
+                        con = i == 0 ? br.openHeadConnection(DLLINK) : br.openGetConnection(DLLINK);
+                        if (!con.getContentType().contains("html")) {
+                            link.setProperty("directlink", con.getURL().toString());
+                            link.setDownloadSize(con.getLongContentLength());
+                            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
+                            return AvailableStatus.TRUE;
+                        }
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (Throwable e) {
+                        }
+                    }
+                }
+                DLLINK = link.getDownloadURL();
+                /* Either offline or password protected */
+                this.br.getPage(DLLINK);
+                if (!this.br.getURL().contains("/password")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                PASSWORDPROTECTED = true;
+                return AvailableStatus.TRUE;
+            }
+            DLLINK = link.getStringProperty("directlink", null);
+            if (DLLINK == null) {
+                DLLINK = link.getDownloadURL();
+            }
+            this.br.setCookie("http://dropbox.com", "locale", "en");
+            this.br.setFollowRedirects(true);
+            for (int i = 0; i < 2; i++) {
+                try {
+                    con = i == 0 ? br.openHeadConnection(DLLINK) : br.openGetConnection(DLLINK);
+                    if (con.getResponseCode() == 509) {
+                        link.getLinkStatus().setStatusText("Temporarily unavailable");
+                        TEMPUNAVAILABLE = true;
+                        return AvailableStatus.TRUE;
+                    }
                     if (!con.getContentType().contains("html")) {
                         link.setProperty("directlink", con.getURL().toString());
                         link.setDownloadSize(con.getLongContentLength());
                         link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
                         return AvailableStatus.TRUE;
                     }
-                    DLLINK = null;
-                    /* Either offline or password protected */
-                    this.br.getPage(link.getDownloadURL());
-                    if (!this.br.getURL().contains("/password")) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    if (i != 0) {
+                        this.br.followConnection();
+                        break;
                     }
-                    PASSWORDPROTECTED = true;
-                    return AvailableStatus.TRUE;
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
-
-            DLLINK = link.getStringProperty("directlink", null);
-            if (DLLINK == null) {
-                DLLINK = link.getDownloadURL();
-                if (con.getContentType().contains("html")) {
-                    this.br.followConnection();
-                }
-            }
-            this.br.setCookie("http://dropbox.com", "locale", "en");
-            this.br.setFollowRedirects(true);
-            try {
-                con = br.openHeadConnection(DLLINK);
-                if (con.getResponseCode() == 509) {
-                    link.getLinkStatus().setStatusText("Temporarily unavailable");
-                    TEMPUNAVAILABLE = true;
-                    return AvailableStatus.TRUE;
-                }
-                if (!con.getContentType().contains("html")) {
-                    link.setProperty("directlink", con.getURL().toString());
-                    link.setDownloadSize(con.getLongContentLength());
-                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
-                    return AvailableStatus.TRUE;
-                }
-                this.br.followConnection();
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
                 }
             }
 
@@ -128,7 +133,7 @@ public class DropboxCom extends PluginForHost {
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String filesize = br.getRegex("class=\"meta\">\\d+ (days|months) ago\\&nbsp;\\&middot;\\&nbsp; ([^<>\"]*?)</div><a").getMatch(1);
+            final String filesize = br.getRegex("class=\"meta\">\\d+ (?:days|hrs|months) ago&nbsp;&middot;&nbsp; ([^<>\"]*?)</div><a").getMatch(0);
             if (filesize != null) {
                 link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
             }
@@ -359,7 +364,7 @@ public class DropboxCom extends PluginForHost {
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
