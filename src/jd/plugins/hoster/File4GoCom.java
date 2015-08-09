@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -28,6 +31,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -36,9 +40,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sizedrive.com", "file4go.net", "file4go.com" }, urls = { "http://(?:www\\.)?(?:file4go|sizedrive)\\.(?:com|net)/(?:r/|d/|download\\.php\\?id=)([a-f0-9]{20})", "regex://nullfied/ranoasdahahdom", "regex://nullfied/ranoasdahahdom" }, flags = { 2, 0, 0 })
 public class File4GoCom extends PluginForHost {
@@ -108,9 +109,10 @@ public class File4GoCom extends PluginForHost {
         final String id = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
+            final Form getDownload = br.getFormbyActionRegex("^.*?/getdownload\\.php$");
             int wait = 0;
             final String waittime = br.getRegex("var time = (\\d+)").getMatch(0);
-            if (waittime == null) {
+            if (waittime == null || getDownload == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             wait = Integer.parseInt(waittime);
@@ -118,7 +120,7 @@ public class File4GoCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
             }
             this.sleep(wait * 1001l, downloadLink);
-            br.postPage("/getdownload.php", "id=" + id);
+            br.submitForm(getDownload);
             dllink = br.getRegex("\"(https?://[a-z0-9]+\\.sizedrive\\.com:\\d+/betafree/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = getDllink();
