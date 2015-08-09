@@ -17,7 +17,8 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -33,8 +34,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(?:www\\.)?dropbox\\.com/((sh|sc|s)/[^<>\"]+|l/[A-Za-z0-9]+)|https?://(www\\.)?db\\.tt/[A-Za-z0-9]+" }, flags = { 0 })
 public class DropBoxCom extends PluginForDecrypt {
 
@@ -44,20 +43,20 @@ public class DropBoxCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String TYPE_NORMAL     = "https?://(www\\.)?dropbox\\.com/(sh|sc)/.+";
-    private static final String TYPE_S          = "https?://(www\\.)?dropbox\\.com/s/.+";
-    private static final String TYPE_REDIRECT   = "https?://(www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
-    private static final String TYPE_SHORT      = "https://(www\\.)?db\\.tt/[A-Za-z0-9]+";
+    private static final String TYPE_NORMAL   = "https?://(www\\.)?dropbox\\.com/(sh|sc)/.+";
+    private static final String TYPE_S        = "https?://(www\\.)?dropbox\\.com/s/.+";
+    private static final String TYPE_REDIRECT = "https?://(www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
+    private static final String TYPE_SHORT    = "https://(www\\.)?db\\.tt/[A-Za-z0-9]+";
 
     /* Unsupported linktypes which can occur during the decrypt process */
     private static final String TYPE_DIRECTLINK = "https?://dl\\.dropboxusercontent.com/.+";
     private static final String TYPE_REFERRAL   = "https?://(www\\.)?dropbox\\.com/referrals/.+";
 
     /* Settings constants */
-    private static final String DOWNLOAD_ZIP    = "DOWNLOAD_ZIP";
+    private static final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("?dl=1", "");
         if (parameter.matches(TYPE_S)) {
             decryptedLinks.add(generateType_s_dlink(parameter));
@@ -109,6 +108,33 @@ public class DropBoxCom extends PluginForDecrypt {
             } catch (Throwable e) {
             }
         }
+        // Decrypt file- and folderlinks
+        String fpName = br.getRegex("content=\"([^<>/]*?)\" property=\"og:title\"").getMatch(0);
+        // TYPE_NORMAL
+        decryptedLinks.addAll(handleTypeNormal(parameter, fpName));
+
+        if (decryptedLinks.size() == 0) {
+            logger.info("Found nothing to download: " + parameter);
+            final DownloadLink dl = createDownloadlink(parameter.replace("dropbox.com/", "dropboxdecrypted.com/"));
+            dl.setProperty("decrypted", true);
+            dl.setProperty("offline", true);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        if (fpName != null) {
+            if (fpName.contains("\\")) {
+                fpName = unescape(fpName);
+            }
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
+        }
+        return decryptedLinks;
+    }
+
+    private ArrayList<DownloadLink> handleTypeNormal(final String parameter, String fpName) {
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+
         // Handling for single links
         /* TODO: Fix handling for single links - disabled by now to prevent errors */
         // if (br.containsHTML(new Regex(parameter, ".*?(\\.com/sh/[a-z0-9]+).+").getMatch(0) + "[^<>\"]+" + "dl=1([^<>\"]*?)\"")) {
@@ -125,42 +151,31 @@ public class DropBoxCom extends PluginForDecrypt {
             dl.setProperty("directlink", parameter + "?dl=1");
             decryptedLinks.add(dl);
         }
-        // Decrypt file- and folderlinks
-        String fpName = br.getRegex("content=\"([^<>/]*?)\" property=\"og:title\"").getMatch(0);
-        String emSnippets[][] = br.getRegex("\\('emsnippet-(.*?)'\\).*?=\\s*'(.*?)'").getMatches();
-        HashMap<String, String> fileNameMap = new HashMap<String, String>();
-        if (emSnippets != null && emSnippets.length > 0) {
-            for (String[] fileName : emSnippets) {
-                fileNameMap.put(fileName[0], unescape(fileName[1]));
-            }
-        }
-        final String listHTML = br.getRegex("id=\"list\\-view\\-container\" class=\"gallery\\-view\\-section\">(.*?)id=\"modal\\-progress\\-content\">").getMatch(0);
-        if (listHTML != null) {
-            final String[] entries = new Regex(listHTML, "(class=\"filename\\-col\"><a.*?</span></div>)").getColumn(0);
-            if (entries != null && entries.length != 0) {
-                for (final String entry : entries) {
-                    final String link = new Regex(entry, "<a href=\"(https?://(www\\.)?dropbox\\.com/[^<>\"]*?)\"").getMatch(0);
-                    if (entry.contains("class=\"s_web_folder_")) {
-                        /* Folder */
-                        decryptedLinks.add(createDownloadlink(link));
-                    } else {
-                        /* File */
-                        final String size = new Regex(entry, "class=\"size\">([^<>\"]*?)</span>").getMatch(0);
-                        if (link == null) {
-                            continue;
-                        }
-                        String filename = new Regex(link, "/([^<>\"/]*?)(\\?dl=\\d)?$").getMatch(0);
 
-                        final DownloadLink dl = createDownloadlink(link.replace("dropbox.com/", "dropboxdecrypted.com/"));
-                        filename = Encoding.htmlDecode(filename).trim();
-                        dl.setName(filename);
-                        if (size != null) {
-                            dl.setDownloadSize(SizeFormatter.getSize(size.replace(",", ".")));
-                        }
-                        dl.setProperty("decrypted", true);
-                        dl.setAvailable(true);
-                        decryptedLinks.add(dl);
+        final String[] entries = br.getRegex("<li[^>]+><div class=\"filename-col\"><a.*?</span></div><br[^>]+></li>").getColumn(-1);
+        if (entries != null && entries.length != 0) {
+            for (final String entry : entries) {
+                final String link = new Regex(entry, "<a [^>]*href=\"(https?://(www\\.)?dropbox\\.com/[^<>\"]*?)\"").getMatch(0);
+                if (entry.contains("class=\"s_web_folder_")) {
+                    /* Folder */
+                    decryptedLinks.add(createDownloadlink(link));
+                } else {
+                    /* File */
+                    final String size = new Regex(entry, "class=\"size\">([^<>\"]*?)</span>").getMatch(0);
+                    if (link == null) {
+                        continue;
                     }
+                    String filename = new Regex(link, "/([^<>\"/]*?)(\\?dl=\\d)?$").getMatch(0);
+
+                    final DownloadLink dl = createDownloadlink(link.replace("dropbox.com/", "dropboxdecrypted.com/"));
+                    filename = Encoding.htmlDecode(filename).trim();
+                    dl.setName(filename);
+                    if (size != null) {
+                        dl.setDownloadSize(SizeFormatter.getSize(size.replace(",", ".")));
+                    }
+                    dl.setProperty("decrypted", true);
+                    dl.setAvailable(true);
+                    decryptedLinks.add(dl);
                 }
             }
         }
@@ -188,22 +203,7 @@ public class DropBoxCom extends PluginForDecrypt {
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
-        if (decryptedLinks.size() == 0) {
-            logger.info("Found nothing to download: " + parameter);
-            final DownloadLink dl = createDownloadlink(parameter.replace("dropbox.com/", "dropboxdecrypted.com/"));
-            dl.setProperty("decrypted", true);
-            dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        if (fpName != null) {
-            if (fpName.contains("\\")) {
-                fpName = unescape(fpName);
-            }
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-        }
+
         return decryptedLinks;
     }
 
