@@ -109,7 +109,7 @@ public class File4GoCom extends PluginForHost {
         final String id = new Regex(downloadLink.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            final Form getDownload = br.getFormbyActionRegex("^.*?/getdownload\\.php$");
+            final Form getDownload = br.getFormByInputFieldKeyValue("id", id);
             int wait = 0;
             final String waittime = br.getRegex("var time = (\\d+)").getMatch(0);
             if (waittime == null || getDownload == null) {
