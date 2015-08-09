@@ -24,6 +24,8 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -44,9 +46,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "daclips.in" }, urls = { "https?://(www\\.)?daclips\\.(in|com)/[a-z0-9]{12}" }, flags = { 0 })
 public class DaClipsIn extends PluginForHost {
@@ -423,7 +422,7 @@ public class DaClipsIn extends PluginForHost {
         if (dllink == null) {
             dllink = new Regex(brg, "file:([ ]+)?\"(http://[^<>\"]*?)\"").getMatch(1);
             if (dllink == null) {
-                dllink = new Regex(brg, "(https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(:\\d{1,5})?/(\\d+/)?[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
+                dllink = new Regex(brg, "(https?://\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}(:\\d{1,5})?/(\\d+/)?[a-z0-9]{15,}/[^<>\"]*?)\"").getMatch(0);
             }
         }
         return dllink;
@@ -653,9 +652,15 @@ public class DaClipsIn extends PluginForHost {
         }
         return false;
     }
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return new String[] { "daclips.in", "daclips.com" };
+    }
 
 }
