@@ -22,11 +22,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,8 +37,10 @@ import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.CaptchaException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -65,39 +70,38 @@ public class DlPrtcCom extends antiDDoSForDecrypt {
     private Browser                        cbr            = new Browser();
     private static Object                  ctrlLock       = new Object();
 
-    private boolean                        debug          = false;
+    private boolean debug = false;
 
     @SuppressWarnings("unchecked")
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
-        super.prepBrowser(prepBr, host);
-        // loading previous cookie session results in less captchas
-        synchronized (cookieMonster) {
-            // link agent to cookieMonster via synchronized
-            if (agent.get() == null) {
-                /* we first have to load the plugin, before we can reference it */
-                JDUtilities.getPluginForHost("mediafire.com");
-                agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
-            }
-            if (cookieMonster.get() != null && cookieMonster.get() instanceof HashMap<?, ?>) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) cookieMonster.get();
-                for (Map.Entry<String, String> entry : cookies.entrySet()) {
-                    prepBr.setCookie(this.getHost(), entry.getKey(), entry.getValue());
-
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            // loading previous cookie session results in less captchas
+            synchronized (cookieMonster) {
+                // link agent to cookieMonster via synchronized
+                if (agent.get() == null) {
+                    /* we first have to load the plugin, before we can reference it */
+                    JDUtilities.getPluginForHost("mediafire.com");
+                    agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
                 }
-                coLoaded = true;
-            }
-        }
-        prepBr.getHeaders().put("User-Agent", agent.get());
+                if (cookieMonster.get() != null && cookieMonster.get() instanceof HashMap<?, ?>) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) cookieMonster.get();
+                    for (Map.Entry<String, String> entry : cookies.entrySet()) {
+                        prepBr.setCookie(this.getHost(), entry.getKey(), entry.getValue());
 
-        // Prefer English language
-        if (!coLoaded) {
-            prepBr.setCookie(this.getHost(), "l", "en");
+                    }
+                    coLoaded = true;
+                }
+            }
+            prepBr.getHeaders().put("User-Agent", agent.get());
+
+            // Prefer English language
+            if (!coLoaded) {
+                prepBr.setCookie(this.getHost(), "l", "en");
+            }
+            prepBr.setRequestIntervalLimit(this.getHost(), 1500);
         }
-        prepBr.getHeaders().put("Pragma", null);
-        prepBr.getHeaders().put("Accept-Charset", null);
-        prepBr.getHeaders().put("Cache-Control", null);
-        prepBr.setRequestIntervalLimit(this.getHost(), 1500);
         return prepBr;
     }
 
@@ -117,6 +121,7 @@ public class DlPrtcCom extends antiDDoSForDecrypt {
 
                     // has to be this side of lock otherwise loading of cookies before lock will always be blank or wrong.
                     br = new Browser();
+
                     // little wait between ties?
                     if (lastUsed.get() == 0) {
                         // magic
@@ -131,7 +136,7 @@ public class DlPrtcCom extends antiDDoSForDecrypt {
                         decryptedLinks.add(createDownloadlink(rdl));
                         return decryptedLinks;
                     } else if (rdl != null) {
-                        br.getPage(rdl);
+                        getPage(rdl);
                     }
                     if (cbr.containsHTML(">Unfortunately, the link you are looking for is not found")) {
                         logger.info("Link offline: " + parameter);
@@ -172,9 +177,9 @@ public class DlPrtcCom extends antiDDoSForDecrypt {
                                 if (code == null || "".equals(code)) {
                                     return decryptedLinks;
                                 }
-                                br.cloneBrowser().getPage("/pub_footer.html");
-                                String formName = "secure";
-                                importantForm.put(formName, code);
+                                getPage(br.cloneBrowser(), "/pub_footer.html");
+                                String formName = "secureu";
+                                importantForm.put(formName, Encoding.urlEncode(code));
                                 // importantForm.put("secure", "");
                                 importantForm.put("submitform", "");
                             }
@@ -199,18 +204,39 @@ public class DlPrtcCom extends antiDDoSForDecrypt {
 
                     if (cbr.containsHTML(secondary)) {
                         Browser br2 = br.cloneBrowser();
-                        br2.getPage("/pub_footer.html");
-                        test(cbr, br2);
+                        // getPage(br2, "/pub_footer.html");
+                        // test(cbr, br2);
                         Form continueForm = getContinueForm();
                         if (continueForm == null) {
                             logger.warning("Decrypter broken 3 for link: " + parameter);
                             return null;
                         }
+                        continueForm.put("i", "");
+                        {
+                            final List<InputField> inf = continueForm.getInputFields();
+                            final ArrayList<InputField> results = new ArrayList<InputField>();
+                            for (final InputField ifn : inf) {
+                                if (StringUtils.equalsIgnoreCase(ifn.getKey(), "submitform")) {
+                                    if (results.isEmpty()) {
+                                        ifn.setValue("");
+                                        results.add(ifn);
+                                    } else {
+                                        results.add(ifn);
+                                    }
+                                }
+                            }
+                            // remove dupes
+                            for (int count = 0; count != results.size(); count++) {
+                                if (count != 0) {
+                                    continueForm.getInputFields().remove(results.get(count));
+                                }
+                            }
+                        }
+                        if (!continueForm.hasInputFieldByName("submitformu")) {
+                            continueForm.put("submitformu", "Continue");
+                        }
                         if (coLoaded) {
-                            // renames null to ""
-                            continueForm.put("submitform", "");
-                            // this should be fine.
-                            // continueForm.put("submitform", "Continue");
+
                         }
                         submitForm(continueForm);
                     }
@@ -218,7 +244,7 @@ public class DlPrtcCom extends antiDDoSForDecrypt {
                         nullSession(parameter);
                         throw new DecrypterException("D-TECTED!");
                     }
-                    final String linktext = cbr.getRegex("(class=\"divlink link\"\\s*id=\"slinks\"|id=\"slinks\"\\s*class=\"divlink link\")><a(.*?)</table>").getMatch(1);
+                    final String linktext = cbr.getRegex("<table[^>]*>.*?<a\\s+(.*?)</table").getMatch(-1);
                     if (linktext == null) {
                         if (br.containsHTML(">Your link :</div>")) {
                             logger.info("Link offline: " + parameter);
@@ -231,9 +257,9 @@ public class DlPrtcCom extends antiDDoSForDecrypt {
                         logger.warning("Decrypter broken 4 for link: " + parameter);
                         return null;
                     }
-                    Browser br2 = br.cloneBrowser();
-                    br2.getPage("/pub_footer.html");
-                    test(cbr, br2);
+                    // Browser br2 = br.cloneBrowser();
+                    // getPage(br2, "/pub_footer.html");
+                    // test(cbr, br2);
                     final String[] links = new Regex(linktext, "href=(\"|')(.*?)\\1").getColumn(1);
                     if (links == null || links.length == 0) {
                         logger.warning("Decrypter broken 5 for link: " + parameter);
@@ -396,7 +422,7 @@ public class DlPrtcCom extends antiDDoSForDecrypt {
         }
         // fake captchas are lame, so lets remove them here
         // <center><img id="captcha_" src="/captcha.php?uid=a1" style="display:none">
-        // regexStuff.add("((?!<script[^>]+)<!--.*?-->)");
+        regexStuff.add("((?!<script[^>]+)<!--.*?-->)");
         regexStuff.add("(<img[^>]+display:(\\s+)?(none|hidden)[^>]+>)");
         regexStuff.add("(\\{[^\\}]+getElementById\\('captcha'\\)[^\\}]+/captcha\\.php[^\\}]+)");
 
@@ -415,12 +441,17 @@ public class DlPrtcCom extends antiDDoSForDecrypt {
 
     private void nullSession(String parameter) {
         logger.warning("No longer using previously saved session information!, please try adding the link again! : " + parameter);
-        synchronized (cookieMonster) {
-            agent.set(null);
-            cookieMonster.set(new Object());
+        synchronized (antiDDoSCookies) {
+            synchronized (cookieMonster) {
+                agent.set(null);
+                cookieMonster.set(new Object());
+                maxConProIns.set(1);
+                coLoaded = false;
+                // wipe cloudflare also
+                antiDDoSCookies.clear();
+            }
         }
-        maxConProIns.set(1);
-        coLoaded = false;
+
     }
 
     /**
@@ -432,7 +463,7 @@ public class DlPrtcCom extends antiDDoSForDecrypt {
      * @param t
      *            Provided replacement string output browser
      * @author raztoki
-     * */
+     */
     private void cleanupBrowser(final Browser ibr, final String t) throws Exception {
         String dMD5 = JDHash.getMD5(ibr.toString());
         // preserve valuable original request components.
