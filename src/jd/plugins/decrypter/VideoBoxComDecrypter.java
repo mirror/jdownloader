@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -35,8 +37,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobox.com" }, urls = { "http://(www\\.)?videobox\\.com/(movie\\-details\\?contentId=|flashPage/)\\d+" }, flags = { 0 })
 public class VideoBoxComDecrypter extends PluginForDecrypt {
 
@@ -52,7 +52,7 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String[] qualities = { "DVD", "H264_640", "HIGH", "H264_IPOD" };
         if (!getUserLogin()) {
@@ -88,6 +88,7 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
                     dl.setAvailable(true);
                     dl.setDownloadSize(SizeFormatter.getSize(downloadSize));
                     dl.setFinalFileName(finalfilename);
+                    dl.setProperty("originalurl", parameter);
                     dl.setProperty("sceneid", linkID);
                     dl.setProperty("directlink", directLink);
                     dl.setProperty("quality", quality);
@@ -132,6 +133,7 @@ public class VideoBoxComDecrypter extends PluginForDecrypt {
                         dl.setAvailable(true);
                         dl.setDownloadSize(SizeFormatter.getSize(downloadSize));
                         dl.setFinalFileName(finalfilename);
+                        dl.setProperty("originalurl", parameter);
                         dl.setProperty("sceneid", sceneID);
                         dl.setProperty("directlink", directLink);
                         dl.setProperty("quality", quality);
