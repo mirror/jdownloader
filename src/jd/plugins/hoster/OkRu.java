@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ok.ru" }, urls = { "http://(www\\.|m\\.)?ok\\.ru/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ok.ru" }, urls = { "http://(www\\.|m\\.)?ok\\.ru/(?:video|videoembed)/\\d+" }, flags = { 0 })
 public class OkRu extends PluginForHost {
 
     public OkRu(PluginWrapper wrapper) {
@@ -52,7 +52,7 @@ public class OkRu extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String               DLLINK            = null;
+    private String DLLINK = null;
 
     @Override
     public String getAGBLink() {
@@ -61,7 +61,7 @@ public class OkRu extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("http://m.", "http://www."));
+        link.setUrlDownload(link.getDownloadURL().replace("http://m.", "http://www.").replace("/videoembed/", "/video/"));
     }
 
     @SuppressWarnings("deprecation")
