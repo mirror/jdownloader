@@ -907,7 +907,7 @@ public class LinkCrawler {
         try {
             if (canHandle(pDecrypt, url, link)) {
                 if (!isBlacklisted(pDecrypt)) {
-                    final java.util.List<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pDecrypt.getPattern(), link, null);
+                    final java.util.List<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pDecrypt.getPattern(), link, link.getCustomCrawledLinkModifier());
                     if (allPossibleCryptedLinks != null) {
                         if (insideCrawlerPlugin()) {
                             /*
@@ -971,6 +971,7 @@ public class LinkCrawler {
     protected Boolean distributePluginC(final PluginsC pluginC, final int generation, final String url, final CrawledLink link) {
         try {
             if (pluginC.canHandle(url)) {
+                final CrawledLinkModifier originalModifier = link.getCustomCrawledLinkModifier();
                 final CrawledLinkModifier lm;
                 if (pluginC.hideLinks()) {
                     lm = new CrawledLinkModifier() {
@@ -978,6 +979,9 @@ public class LinkCrawler {
                          * set new LinkModifier, hides the url if needed
                          */
                         public void modifyCrawledLink(CrawledLink link) {
+                            if (originalModifier != null) {
+                                originalModifier.modifyCrawledLink(link);
+                            }
                             /* we hide the links */
                             final DownloadLink dl = link.getDownloadLink();
                             if (dl != null) {
@@ -986,7 +990,7 @@ public class LinkCrawler {
                         }
                     };
                 } else {
-                    lm = null;
+                    lm = originalModifier;
                 }
                 final java.util.List<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pluginC.getSupportedLinks(), link, lm);
                 if (allPossibleCryptedLinks != null) {
