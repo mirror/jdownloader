@@ -744,7 +744,7 @@ public class DirectHTTP extends PluginForHost {
     private String customDownloadURL = null;
 
     private void setDownloadURL(String newURL, DownloadLink link) {
-        if (link != null && !StringUtils.equals(link.getDownloadURL(), newURL) && StringUtils.endsWithCaseInsensitive(link.getDownloadURL(), newURL)) {
+        if (link != null && !StringUtils.equals(link.getDownloadURL(), newURL)) {
             link.setUrlDownload(newURL);
         } else {
             this.customDownloadURL = newURL;
@@ -782,9 +782,9 @@ public class DirectHTTP extends PluginForHost {
                     } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
                         urlConnection = br.openHeadConnection(getDownloadURL(downloadLink));
                         if (urlConnection.getResponseCode() == 404 /*
-                                                                    * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
-                                                                    * "must-revalidate") && urlConnection.getHeaderField("Via") != null
-                                                                    */) {
+                         * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
+                         * "must-revalidate") && urlConnection.getHeaderField("Via") != null
+                         */) {
                             urlConnection.disconnect();
                             urlConnection = br.openGetConnection(getDownloadURL(downloadLink));
                         } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
@@ -824,11 +824,17 @@ public class DirectHTTP extends PluginForHost {
     private boolean       preferHeadRequest = true;
     private final boolean raz               = false;
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException {
+        return requestFileInformation(downloadLink, 0);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink downloadLink, int retry) throws PluginException {
         if (downloadLink.getBooleanProperty("OFFLINE", false) || downloadLink.getBooleanProperty("offline", false)) {
             // used to make offline links for decrypters. To prevent 'Checking online status' and/or prevent downloads of downloadLink.
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (retry == 5) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // if (true) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
@@ -944,14 +950,14 @@ public class DirectHTTP extends PluginForHost {
                 }
                 if (mp3URL != null) {
                     setDownloadURL(mp3URL, null);
-                    return this.requestFileInformation(downloadLink);
+                    return this.requestFileInformation(downloadLink, retry + 1);
                 }
             }
             final long length = urlConnection.getLongContentLength();
             if (length == 0 && urlConnection.getRequest() instanceof HeadRequest) {
                 preferHeadRequest = false;
                 br.followConnection();
-                return this.requestFileInformation(downloadLink);
+                return this.requestFileInformation(downloadLink, retry + 1);
             }
             final String streamMod = urlConnection.getHeaderField("X-Mod-H264-Streaming");
             if (streamMod != null && downloadLink.getProperty("streamMod") == null) {
@@ -961,7 +967,7 @@ public class DirectHTTP extends PluginForHost {
                 } else {
                     urlConnection.disconnect();
                 }
-                return this.requestFileInformation(downloadLink);
+                return this.requestFileInformation(downloadLink, retry + 1);
             }
             if (this.contentType != null && this.contentType.startsWith("text/html") && urlConnection.isContentDisposition() == false && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
                 /* jd does not want to download html content! */
@@ -969,7 +975,7 @@ public class DirectHTTP extends PluginForHost {
                 if (urlConnection.getRequest() instanceof HeadRequest) {
                     preferHeadRequest = false;
                     br.followConnection();
-                    return this.requestFileInformation(downloadLink);
+                    return this.requestFileInformation(downloadLink, retry + 1);
                 } else {
                     final String pageContent = this.br.followConnection();
                     if (StringUtils.endsWithCaseInsensitive(br.getURL(), "mp4")) {
@@ -1006,14 +1012,14 @@ public class DirectHTTP extends PluginForHost {
                                 downloadLink.setProperty(DirectHTTP.POSSIBLE_URLPARAM, Property.NULL);
                                 final String newURL = getDownloadURL(downloadLink) + urlParams;
                                 setDownloadURL(newURL, downloadLink);
-                                return this.requestFileInformation(downloadLink);
+                                return this.requestFileInformation(downloadLink, retry + 1);
                             }
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                     }
                     /* found one valid url */
                     setDownloadURL(embeddedLink, downloadLink);
-                    return this.requestFileInformation(downloadLink);
+                    return this.requestFileInformation(downloadLink, retry + 1);
                 }
             } else {
                 if (urlConnection.getRequest() instanceof HeadRequest) {
@@ -1092,7 +1098,7 @@ public class DirectHTTP extends PluginForHost {
             /* try referer set by flashgot and check if it works then */
             if (downloadLink.getBooleanProperty("tryoldref", false) == false && downloadLink.getStringProperty("referer", null) != null) {
                 downloadLink.setProperty("tryoldref", true);
-                return this.requestFileInformation(downloadLink);
+                return this.requestFileInformation(downloadLink, retry + 1);
             } else {
                 resetDownloadlink(downloadLink);
                 throw e2;
