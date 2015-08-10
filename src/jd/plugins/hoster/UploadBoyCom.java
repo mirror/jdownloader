@@ -26,6 +26,10 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,16 +50,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadboy.com" }, urls = { "https?://(www\\.)?uploadboy\\.com/(vidembed\\-)?[a-z0-9]{12}(\\.html)?(\\?ref=[a-zA-Z0-9\\%\\.]+)?$" }, flags = { 2 })
 public class UploadBoyCom extends antiDDoSForHost {
@@ -153,10 +151,12 @@ public class UploadBoyCom extends antiDDoSForHost {
     }
 
     @Override
-    protected Browser prepBrowser(final Browser br, final String host) {
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        super.prepBrowser(br, host);
-        return br;
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        }
+        return prepBr;
     }
 
     @Override
@@ -364,7 +364,7 @@ public class UploadBoyCom extends antiDDoSForHost {
                     skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
-                   
+
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     final String code = getCaptchaCode(cf, downloadLink);
@@ -960,7 +960,7 @@ public class UploadBoyCom extends antiDDoSForHost {
      * captcha processing can be used download/login/anywhere assuming the submit values are the same (they usually are)...
      *
      * @author raztoki
-     * */
+     */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
         final boolean captchaSkipableSolveMedia = false;
         final int captchaTries = downloadLink.getIntegerProperty("captchaTries", 0);
@@ -1077,9 +1077,9 @@ public class UploadBoyCom extends antiDDoSForHost {
 
     }
 
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }

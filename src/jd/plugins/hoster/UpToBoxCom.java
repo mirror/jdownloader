@@ -28,6 +28,9 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -54,13 +57,10 @@ import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(?:www\\.)?(uptobox|uptostream)\\.com/(?:iframe/)?[a-z0-9]{12}" }, flags = { 2 })
 public class UpToBoxCom extends antiDDoSForHost {
 
-    private final static String  SSL_CONNECTION               = "SSL_CONNECTION";
+    private final static String SSL_CONNECTION = "SSL_CONNECTION";
 
     private boolean              happyHour                    = false;
     private String               correctedBR                  = "";
@@ -137,10 +137,12 @@ public class UpToBoxCom extends antiDDoSForHost {
 
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
-        super.prepBrowser(prepBr, host);
-        prepBr.setCookie(COOKIE_HOST, "lang", "english");
-        if (isLogin) {
-            prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:37.0) Gecko/20100101 Firefox/37.0");
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            prepBr.setCookie(COOKIE_HOST, "lang", "english");
+            if (isLogin) {
+                prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:37.0) Gecko/20100101 Firefox/37.0");
+            }
         }
         return prepBr;
     }
