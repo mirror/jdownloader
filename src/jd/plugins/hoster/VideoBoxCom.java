@@ -21,6 +21,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -37,9 +40,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobox.com" }, urls = { "http://(www\\.)?videoboxdecrypted\\.com/decryptedscene/\\d+" }, flags = { 2 })
 public class VideoBoxCom extends PluginForHost {
@@ -65,19 +65,27 @@ public class VideoBoxCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa == null) {
             link.getLinkStatus().setStatusText("Only checkable with enabled premium account");
             return AvailableStatus.UNCHECKABLE;
         }
-        login(aa, false, this.br);
+        return requestFileInformation(link, aa);
+    }
+
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+        this.setBrowserExclusive();
+        login(account, false, this.br);
         final String sessionID = br.getCookie("http://videobox.com/", "JSESSIONID");
         DLLINK = checkDirectLink(link, "directlink");
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        final String orginalurl = link.getStringProperty("originalurl", null);
+        if (orginalurl == null) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Delete link and re-add it!");
+        }
+        br.getPage(orginalurl);
         if (DLLINK == null) {
-            br.getPage("http://www.videobox.com/content/download/options/" + link.getStringProperty("sceneid", null) + ".json?x-user-name=" + Encoding.urlEncode(aa.getUser()) + "&x-session-key=" + sessionID + "&callback=metai.buildDownloadLinks");
+            br.getPage("http://www.videobox.com/content/download/options/" + link.getStringProperty("sceneid", null) + ".json?x-user-name=" + Encoding.urlEncode(account.getUser()) + "&x-session-key=" + sessionID + "&callback=metai.buildDownloadLinks");
             DLLINK = getSpecifiedQuality(link.getStringProperty("quality", null));
         }
         link.setFinalFileName(link.getStringProperty("finalname", null));
@@ -195,8 +203,7 @@ public class VideoBoxCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false, this.br);
+        requestFileInformation(link, account);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
