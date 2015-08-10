@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyblog.org" }, urls = { "http://(www\\.)?naughtyblog\\.org/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtyblog.org" }, urls = { "http://(www\\.)?naughtyblog\\.org/[a-z0-9\\-]+" }, flags = { 0 })
 public class NaughtyBlgOrg extends PluginForDecrypt {
 
     private enum Category {
@@ -42,49 +42,28 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private Category            CATEGORY;
-    private static final String INVALIDLINKS = "http://(www\\.)?naughtyblog\\.org/(category|linkex|feed|\\d{4}|tag|free\\-desktop\\-strippers|list\\-of\\-.+|contact\\-us|how\\-to\\-download\\-files|siterips)";
+    private Category category;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        CATEGORY = Category.UNDEF;
-
+        category = Category.UNDEF;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        if (parameter.matches(INVALIDLINKS)) {
-            logger.info("Invalid link: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        }
         br.getPage(parameter);
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Page not found \\(404\\)<|>403 Forbidden<") || br.containsHTML("No htmlCode read")) {
-            logger.info("Link offline: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Page not found \\(404\\)<|>403 Forbidden<") || br.containsHTML("No htmlCode read") || br.containsHTML(">Deleted due DMCA report<")) {
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        if (br.containsHTML(">Deleted due DMCA report<")) {
-            logger.info("Link offline: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        }
-
         String contentReleaseName = br.getRegex("<h2 class=\"post\\-title\">(.*?)</h2>").getMatch(0);
         if (contentReleaseName == null) {
             contentReleaseName = br.getRegex("<h1 class=\"post\\-title\">([^<>\"]*?)</h1>").getMatch(0);
         }
         if (contentReleaseName == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            // easier to return offline than throw error.
+            decryptedLinks.add(createOfflinelink(parameter));
+            return decryptedLinks;
         }
+
         // replace en-dash with a real dash
         contentReleaseName = contentReleaseName.replace("&#8211;", "-");
         contentReleaseName = Encoding.htmlDecode(contentReleaseName).trim();
@@ -109,20 +88,20 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         Regex categoryCheck = null;
         categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category\\-clips.*\">");
         if (categoryCheck.matches()) {
-            CATEGORY = Category.CLIP;
+            category = Category.CLIP;
         }
         // check if DL is from the 'movies' section
         categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category\\-movies.*\">");
         if (categoryCheck.matches()) {
-            CATEGORY = Category.MOVIE;
+            category = Category.MOVIE;
         }
         // check if DL is from the 'siterips' section
         categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category\\-siterips.*\">");
         if (categoryCheck.matches()) {
-            CATEGORY = Category.SITERIP;
+            category = Category.SITERIP;
         }
         String contentReleaseLinks = null;
-        if (CATEGORY != Category.SITERIP) {
+        if (category != Category.SITERIP) {
             contentReleaseLinks = br.getRegex(">Download:?</(.*?)</div>").getMatch(0);
             // Nothing found? Get all links from title till comment field
             if (contentReleaseLinks == null) {
@@ -171,7 +150,7 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
     }
 
     private String getFpName(String filePackageName) {
-        switch (CATEGORY) {
+        switch (category) {
         case CLIP:
             final int firstOccurrenceOfSeparator = filePackageName.indexOf(" - ");
             if (firstOccurrenceOfSeparator > -1) {

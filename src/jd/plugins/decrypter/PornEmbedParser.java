@@ -467,6 +467,22 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("('|\")(https?://(?:www\\.)?4tube.com/(?:videos|embed)/\\d+)\\1").getMatch(1);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("('|\")(https?://(?:www\\.)?pornsharing.com/.+)\\1").getMatch(1);
+        if (externID != null) {
+            if (externID.contains("playlist")) {
+                // get the id and reformat?
+                final String uid = new Regex(externID, "id=(\\d+)").getMatch(0);
+                // any random crap is needed before _vUID to make it a 'valid' link.
+                externID = new Regex(externID, "https?://").getMatch(-1) + "pornsharing.com/" + (!inValidate(title) ? title.replaceAll("\\s", "-") : "abc") + "_v" + uid;
+            }
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         // filename needed for all IDs below
         if (title == null) {
             return decryptedLinks;

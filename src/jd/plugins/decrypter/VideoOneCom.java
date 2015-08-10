@@ -33,8 +33,8 @@ public class VideoOneCom extends PornEmbedParser {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         br.getPage(parameter);
         String filename = new Regex(parameter, "http://(www\\.)?video\\-one\\.com/video/([a-z0-9]+)\\.html").getMatch(1);
         br.getPage("http://m.8-d.com/prein");
@@ -118,9 +118,16 @@ public class VideoOneCom extends PornEmbedParser {
 
         /** Or not crypted... */
         decryptedLinks.addAll(findEmbedUrls(filename));
-        if (decryptedLinks.isEmpty()) {
+        if (!decryptedLinks.isEmpty()) {
+            return decryptedLinks;
+        }
+        // final failover!
+        // they are all shown within iframe, return it incase findEmbedUrls doens't provide assistance.
+        final String iframe = br.getRegex("<iframe[^>]*\\s*('|\")(https?://.*?)\\1").getMatch(1);
+        if (iframe == null) {
             return null;
         }
+        decryptedLinks.add(createDownloadlink(iframe));
         return decryptedLinks;
     }
 
