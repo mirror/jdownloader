@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 
 /**
  * @author raztoki
- * */
+ */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pururin.com" }, urls = { "^http://(?:www\\.)?pururin\\.com/(?:view/\\d+/\\d+/[\\-a-z0-9]+_\\d+\\.html|download/\\d+/.+)$" }, flags = { 0 })
 public class PururinCom extends antiDDoSForHost {
 
@@ -154,8 +154,10 @@ public class PururinCom extends antiDDoSForHost {
 
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
-        super.prepBrowser(prepBr, host);
-        prepBr.setConnectTimeout(90 * 1000);
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            prepBr.setConnectTimeout(90 * 1000);
+        }
         return prepBr;
     }
 

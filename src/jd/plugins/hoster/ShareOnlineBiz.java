@@ -32,6 +32,11 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.os.CrossSystem;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -56,41 +61,36 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.os.CrossSystem;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download\\.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
 public class ShareOnlineBiz extends antiDDoSForHost {
 
-    private static final String                                     COOKIE_HOST                          = "http://share-online.biz";
-    private static WeakHashMap<Account, HashMap<String, String>>    ACCOUNTINFOS                         = new WeakHashMap<Account, HashMap<String, String>>();
-    private static WeakHashMap<Account, CopyOnWriteArrayList<Long>> THREADFAILURES                       = new WeakHashMap<Account, CopyOnWriteArrayList<Long>>();
-    private static Object                                           LOCK                                 = new Object();
-    private static HashMap<Long, Long>                              noFreeSlot                           = new HashMap<Long, Long>();
-    private static HashMap<Long, Long>                              overloadedServer                     = new HashMap<Long, Long>();
-    private long                                                    server                               = -1;
-    private long                                                    waitNoFreeSlot                       = 10 * 60 * 1000l;
-    private long                                                    waitOverloadedServer                 = 5 * 60 * 1000l;
+    private static final String                                     COOKIE_HOST          = "http://share-online.biz";
+    private static WeakHashMap<Account, HashMap<String, String>>    ACCOUNTINFOS         = new WeakHashMap<Account, HashMap<String, String>>();
+    private static WeakHashMap<Account, CopyOnWriteArrayList<Long>> THREADFAILURES       = new WeakHashMap<Account, CopyOnWriteArrayList<Long>>();
+    private static Object                                           LOCK                 = new Object();
+    private static HashMap<Long, Long>                              noFreeSlot           = new HashMap<Long, Long>();
+    private static HashMap<Long, Long>                              overloadedServer     = new HashMap<Long, Long>();
+    private long                                                    server               = -1;
+    private long                                                    waitNoFreeSlot       = 10 * 60 * 1000l;
+    private long                                                    waitOverloadedServer = 5 * 60 * 1000l;
 
     /* Connection stuff */
-    private static final boolean                                    free_resume                          = false;
-    private static final int                                        free_maxchunks                       = 1;
-    private static final int                                        free_maxdownloads                    = 1;
-    private static final boolean                                    account_premium_resume               = true;
-    private static final int                                        account_premium_maxchunks            = 0;
-    private static final int                                        account_premium_maxdownloads         = 10;
-    private static final int                                        account_premium_penalty_maxdownloads = 2;
+    private static final boolean free_resume                          = false;
+    private static final int     free_maxchunks                       = 1;
+    private static final int     free_maxdownloads                    = 1;
+    private static final boolean account_premium_resume               = true;
+    private static final int     account_premium_maxchunks            = 0;
+    private static final int     account_premium_maxdownloads         = 10;
+    private static final int     account_premium_penalty_maxdownloads = 2;
 
-    private boolean                                                 hideID                               = true;
-    private static AtomicInteger                                    maxChunksnew                         = new AtomicInteger(-2);
-    private char[]                                                  FILENAMEREPLACES                     = new char[] { '_', '&', 'ü' };
-    private final String                                            SHARED_IP_WORKAROUND                 = "SHARED_IP_WORKAROUND";
-    private final String                                            TRAFFIC_WORKAROUND                   = "TRAFFIC_WORKAROUND";
-    private final String                                            PREFER_HTTPS                         = "PREFER_HTTPS";
+    private boolean              hideID               = true;
+    private static AtomicInteger maxChunksnew         = new AtomicInteger(-2);
+    private char[]               FILENAMEREPLACES     = new char[] { '_', '&', 'ü' };
+    private final String         SHARED_IP_WORKAROUND = "SHARED_IP_WORKAROUND";
+    private final String         TRAFFIC_WORKAROUND   = "TRAFFIC_WORKAROUND";
+    private final String         PREFER_HTTPS         = "PREFER_HTTPS";
 
-    private static AtomicInteger                                    maxPrem                              = new AtomicInteger(1);
+    private static AtomicInteger maxPrem = new AtomicInteger(1);
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -301,7 +301,8 @@ public class ShareOnlineBiz extends antiDDoSForHost {
             // +
             // "You're trying to use your account from more than one IP-Adress.\n"
             // +
-            // "The usage of different IP addresses is not allowed with every type of access,\nthe same affects any kind of account sharing.\n"
+            // "The usage of different IP addresses is not allowed with every type of access,\nthe same affects any kind of account
+            // sharing.\n"
             // +
             // "You are free to buy a further access for pay accounts, in order to use it from every place you want to.\n"
             // +
@@ -877,12 +878,14 @@ public class ShareOnlineBiz extends antiDDoSForHost {
 
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
-        super.prepBrowser(prepBr, host);
-        prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        prepBr.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
-        prepBr.getHeaders().put("Pragma", null);
-        prepBr.getHeaders().put("Cache-Control", null);
-        prepBr.setCookie("share-online.biz", "page_language", "english");
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            prepBr.getHeaders().put("Accept-Language", "en-us,de;q=0.7,en;q=0.3");
+            prepBr.getHeaders().put("Pragma", null);
+            prepBr.getHeaders().put("Cache-Control", null);
+            prepBr.setCookie("share-online.biz", "page_language", "english");
+        }
         return prepBr;
     }
 
@@ -1067,7 +1070,8 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                         }
                     }
                     // throw new PluginException(LinkStatus.ERROR_PREMIUM,
-                    // "\r\nEs werden nur share-online Premiumaccounts akzeptiert, dies ist ein Sammleraccount!\r\nJDownloader only accepts premium accounts, this is a collectors account!",
+                    // "\r\nEs werden nur share-online Premiumaccounts akzeptiert, dies ist ein Sammleraccount!\r\nJDownloader only accepts
+                    // premium accounts, this is a collectors account!",
                     // PluginException.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     account.setProperty("free", false);
@@ -1118,7 +1122,8 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         try {
 
             // // document.getElementById('id').href
-            // engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function href() { return a.href; } this[a].href = href(); } return this[a]; }};");
+            // engine.eval("var document = { getElementById: function (a) { if (!this[a]) { this[a] = new Object(); function href() { return
+            // a.href; } this[a].href = href(); } return this[a]; }};");
             // engine.eval(fun);
             // tools.js
             engine.eval("function info(a){a=a.split(\"\").reverse().join(\"\").split(\"a|b\");var b=a[1].split(\"\");a[1]=new Array();var i=0;for(j=0;j<b.length;j++){if(j%3==0&&j!=0){i++}if(typeof(a[1][i])==\"undefined\"){a[1][i]=\"\"}a[1][i]+=b[j]}b=new Array();a[0]=a[0].split(\"\");for(i=0;i<a[1].length;i++){a[1][i]=parseInt(a[1][i].toUpperCase(),16);b[a[1][i]]=parseInt(i)}a[1]=\"\";for(i=0;i<b.length;i++){if(typeof(a[0][b[i]])!=\"undefined\"){a[1]+=a[0][b[i]]}else{a[1]+=\" \"}}return a[1]}");

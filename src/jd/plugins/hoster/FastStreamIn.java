@@ -24,6 +24,8 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -44,8 +46,6 @@ import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "faststream.in" }, urls = { "https?://(www\\.)?faststream\\.in/[a-z0-9]{12}" }, flags = { 0 })
 public class FastStreamIn extends antiDDoSForHost {
 
@@ -62,13 +62,13 @@ public class FastStreamIn extends antiDDoSForHost {
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
-    private static final boolean VIDEOHOSTER_2                = true;
+    private static final boolean VIDEOHOSTER_2 = true;
 
     // DEV NOTES
     /**
      * Script notes: Streaming versions of this script sometimes redirect you to their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
-     * */
+     */
     // XfileSharingProBasic Version 2.5.7.2
     // mods: getdllink
     // non account: 2 * 1
@@ -100,9 +100,11 @@ public class FastStreamIn extends antiDDoSForHost {
 
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
-        super.prepBrowser(prepBr, host);
-        // define custom browser headers and language settings.
-        prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            // define custom browser headers and language settings.
+            prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        }
         return prepBr;
     }
 
@@ -681,9 +683,10 @@ public class FastStreamIn extends antiDDoSForHost {
         }
         return false;
     }
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }

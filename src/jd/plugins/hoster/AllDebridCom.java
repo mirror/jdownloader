@@ -50,12 +50,12 @@ public class AllDebridCom extends antiDDoSForHost {
     private static final String NICE_HOST         = "alldebrid.com";
     private static final String NICE_HOSTproperty = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
-    private static final String NOCHUNKS          = "NOCHUNKS";
-    private final String        hash1             = "593f356a67e32332c13d6692d1fe10b7";
+    private static final String NOCHUNKS = "NOCHUNKS";
+    private final String        hash1    = "593f356a67e32332c13d6692d1fe10b7";
 
-    private int                 statuscode        = 0;
-    private Account             currAcc           = null;
-    private DownloadLink        currDownloadLink  = null;
+    private int          statuscode       = 0;
+    private Account      currAcc          = null;
+    private DownloadLink currDownloadLink = null;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -287,11 +287,13 @@ public class AllDebridCom extends antiDDoSForHost {
     }
 
     protected Browser prepBrowser(final Browser prepBr, final String host) {
-        super.prepBrowser(prepBr, host);
-        // define custom browser headers and language settings.
-        prepBr.getHeaders().put("User-Agent", "JDownloader");
-        prepBr.setCustomCharset("utf-8");
-        prepBr.setFollowRedirects(true);
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            // define custom browser headers and language settings.
+            prepBr.getHeaders().put("User-Agent", "JDownloader");
+            prepBr.setCustomCharset("utf-8");
+            prepBr.setFollowRedirects(true);
+        }
         return prepBr;
     }
 

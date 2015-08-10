@@ -31,6 +31,14 @@ import javax.imageio.ImageIO;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
+import org.jdownloader.captcha.v2.challenge.xsolver.CaptXSolver;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
@@ -49,14 +57,6 @@ import jd.plugins.Plugin;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
-import org.jdownloader.captcha.v2.challenge.xsolver.CaptXSolver;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
 public class LnkCrptWs extends antiDDoSForDecrypt {
@@ -548,18 +548,20 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
 
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
-        super.prepBrowser(prepBr, host);
-        prepBr.setCustomCharset("ISO-8859-1");
-        prepBr.getHeaders().put("Cache-Control", null);
-        prepBr.getHeaders().put("Accept-Charset", null);
-        prepBr.getHeaders().put("Accept", "*/*");
-        prepBr.getHeaders().put("Accept-Language", "en-EN");
-        prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
-        try {
-            prepBr.setCookie("linkcrypt.ws", "language", "en");
-        } catch (final Throwable e) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            prepBr.setCustomCharset("ISO-8859-1");
+            prepBr.getHeaders().put("Cache-Control", null);
+            prepBr.getHeaders().put("Accept-Charset", null);
+            prepBr.getHeaders().put("Accept", "*/*");
+            prepBr.getHeaders().put("Accept-Language", "en-EN");
+            prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
+            try {
+                prepBr.setCookie("linkcrypt.ws", "language", "en");
+            } catch (final Throwable e) {
+            }
+            prepBr.setKeepResponseContentBytes(true);
         }
-        prepBr.setKeepResponseContentBytes(true);
         return prepBr;
     }
 

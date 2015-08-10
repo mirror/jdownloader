@@ -20,6 +20,9 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,9 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upstore.net", "upsto.re" }, urls = { "http://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" }, flags = { 2, 0 })
 public class UpstoRe extends antiDDoSForHost {
@@ -84,11 +84,13 @@ public class UpstoRe extends antiDDoSForHost {
      * defines custom browser requirements
      *
      * @author raztoki
-     * */
+     */
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
-        super.prepBrowser(prepBr, host);
-        prepBr.setCookie("http://upstore.net/", "lang", "en");
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            prepBr.setCookie("http://upstore.net/", "lang", "en");
+        }
         return prepBr;
     }
 
@@ -429,7 +431,7 @@ public class UpstoRe extends antiDDoSForHost {
      * NOTE: loginCookies[] can only contain true names! Remove all dead names from array!
      *
      * @author raztoki
-     * */
+     */
     private boolean browserCookiesMatchLoginCookies(final Browser br) {
         final Cookies cookies = br.getCookies(MAINPAGE);
         // simple math logic here

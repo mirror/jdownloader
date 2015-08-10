@@ -23,6 +23,9 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -38,15 +41,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "streamin.to" }, urls = { "https?://(www\\.)?streamin\\.to/(?:(?:vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class StreaminTo extends antiDDoSForHost {
@@ -116,8 +114,10 @@ public class StreaminTo extends antiDDoSForHost {
 
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
-        super.prepBrowser(prepBr, host);
-        prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        }
         return prepBr;
     }
 
@@ -255,7 +255,9 @@ public class StreaminTo extends antiDDoSForHost {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                /* stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable! */
+                /*
+                 * stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                 */
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -350,7 +352,7 @@ public class StreaminTo extends antiDDoSForHost {
                     skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
-                   
+
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     File cf = null;
                     try {
@@ -367,7 +369,7 @@ public class StreaminTo extends antiDDoSForHost {
                     dlForm.put("adcopy_response", "manual_challenge");
                 } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
                     logger.info("Detected captcha method \"keycaptca\"");
-                    String result = handleCaptchaChallenge(getDownloadLink(),new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
+                    String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
                     if (result == null) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
@@ -640,7 +642,7 @@ public class StreaminTo extends antiDDoSForHost {
      *
      * @version 0.2
      * @author raztoki
-     * */
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
@@ -670,7 +672,9 @@ public class StreaminTo extends antiDDoSForHost {
         if (orgName.equalsIgnoreCase(fuid.toLowerCase())) {
             FFN = servNameExt;
         } else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
-            /* when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster */
+            /*
+             * when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster
+             */
             FFN = servNameExt;
         } else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
             FFN = orgName + servExt;
@@ -855,9 +859,9 @@ public class StreaminTo extends antiDDoSForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }

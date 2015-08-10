@@ -26,6 +26,10 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -46,37 +50,31 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafree.co" }, urls = { "https?://(www\\.)?mediafree\\.co/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class MediaFreeCo extends antiDDoSForHost {
 
-    private String               correctedBR                  = "";
-    private String               passCode                     = null;
-    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private String               correctedBR         = "";
+    private String               passCode            = null;
+    private static final String  PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String  COOKIE_HOST                  = "http://mediafree.co";
-    private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String  COOKIE_HOST         = "http://mediafree.co";
+    private static final String  NICE_HOST           = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String  NICE_HOSTproperty   = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String  DOMAINS                      = "(mediafree\\.co)";
-    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
-    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean VIDEOHOSTER                  = false;
-    private static final boolean VIDEOHOSTER_2                = false;
-    private static final boolean SUPPORTSHTTPS                = false;
+    private static final String  DOMAINS             = "(mediafree\\.co)";
+    private static final String  MAINTENANCE         = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
+    private static final String  ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String  PREMIUMONLY1        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String  PREMIUMONLY2        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean VIDEOHOSTER         = false;
+    private static final boolean VIDEOHOSTER_2       = false;
+    private static final boolean SUPPORTSHTTPS       = false;
 
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
@@ -259,7 +257,9 @@ public class MediaFreeCo extends antiDDoSForHost {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                /* stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable! */
+                /*
+                 * stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                 */
                 if (downloadLink.getName().contains("'")) {
                     String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
                     if (fname != null) {
@@ -353,7 +353,7 @@ public class MediaFreeCo extends antiDDoSForHost {
                     skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
-                   
+
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     File cf = null;
                     try {
@@ -370,7 +370,7 @@ public class MediaFreeCo extends antiDDoSForHost {
                     dlForm.put("adcopy_response", "manual_challenge");
                 } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
                     logger.info("Detected captcha method \"keycaptca\"");
-                    String result = handleCaptchaChallenge(getDownloadLink(),new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
+                    String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
                     if (result == null) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
@@ -461,8 +461,10 @@ public class MediaFreeCo extends antiDDoSForHost {
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
         /* define custom browser headers and language settings */
-        super.prepBrowser(prepBr, host);
-        prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            prepBr.setCookie(COOKIE_HOST, "lang", "english");
+        }
         return prepBr;
     }
 
@@ -646,7 +648,7 @@ public class MediaFreeCo extends antiDDoSForHost {
      *
      * @version 0.2
      * @author raztoki
-     * */
+     */
     private void fixFilename(final DownloadLink downloadLink) {
         String orgName = null;
         String orgExt = null;
@@ -676,7 +678,9 @@ public class MediaFreeCo extends antiDDoSForHost {
         if (orgName.equalsIgnoreCase(fuid.toLowerCase())) {
             FFN = servNameExt;
         } else if (inValidate(orgExt) && !inValidate(servExt) && (servName.toLowerCase().contains(orgName.toLowerCase()) && !servName.equalsIgnoreCase(orgName))) {
-            /* when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster */
+            /*
+             * when partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster
+             */
             FFN = servNameExt;
         } else if (!inValidate(orgExt) && !inValidate(servExt) && !orgExt.equalsIgnoreCase(servExt)) {
             FFN = orgName + servExt;

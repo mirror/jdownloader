@@ -51,17 +51,17 @@ public class DebridItaliaCom extends antiDDoSForHost {
         return "https://www.debriditalia.com/premium.php";
     }
 
-    private static final String                            NICE_HOST                        = "debriditalia.com";
-    private static final String                            NICE_HOSTproperty                = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String                            NOCHUNKS                         = "NOCHUNKS";
-    private static final String                            MAX_RETRIES_UNAVAILABLE_PROPERTY = "MAX_RETRIES_UNAVAILABLE";
-    private static final int                               DEFAULT_MAX_RETRIES_UNAVAILABLE  = 30;
-    private static final String                            MAX_RETRIES_DL_ERROR_PROPERTY    = "MAX_RETRIES_DL_ERROR";
-    private static final int                               DEFAULT_MAX_RETRIES_DL_ERROR     = 50;
+    private static final String NICE_HOST                        = "debriditalia.com";
+    private static final String NICE_HOSTproperty                = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String NOCHUNKS                         = "NOCHUNKS";
+    private static final String MAX_RETRIES_UNAVAILABLE_PROPERTY = "MAX_RETRIES_UNAVAILABLE";
+    private static final int    DEFAULT_MAX_RETRIES_UNAVAILABLE  = 30;
+    private static final String MAX_RETRIES_DL_ERROR_PROPERTY    = "MAX_RETRIES_DL_ERROR";
+    private static final int    DEFAULT_MAX_RETRIES_DL_ERROR     = 50;
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap               = new HashMap<Account, HashMap<String, Long>>();
-    private Account                                        currAcc                          = null;
-    private DownloadLink                                   currDownloadLink                 = null;
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+    private Account                                        currAcc            = null;
+    private DownloadLink                                   currDownloadLink   = null;
 
     private void setConstants(final Account acc, final DownloadLink dl) {
         this.currAcc = acc;
@@ -70,12 +70,14 @@ public class DebridItaliaCom extends antiDDoSForHost {
 
     @Override
     protected Browser prepBrowser(final Browser prepBr, final String host) {
-        super.prepBrowser(prepBr, host);
-        prepBr.setConnectTimeout(60 * 1000);
-        prepBr.setReadTimeout(60 * 1000);
-        /* 401 can happen when user enters invalid logindata */
-        prepBr.addAllowedResponseCodes(401);
-        prepBr.getHeaders().put("User-Agent", "JDownloader");
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            prepBr.setConnectTimeout(60 * 1000);
+            prepBr.setReadTimeout(60 * 1000);
+            /* 401 can happen when user enters invalid logindata */
+            prepBr.addAllowedResponseCodes(401);
+            prepBr.getHeaders().put("User-Agent", "JDownloader");
+        }
         return prepBr;
     }
 
