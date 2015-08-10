@@ -30,8 +30,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4tube.com" }, urls = { "http://(www\\.)?4tube\\.com/videos/\\d+/?([\\w-]+)?" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4tube.com" }, urls = { "http://(www\\.)?4tube\\.com/(?:embed|videos)/\\d+/?([\\w-]+)?" }, flags = { 32 })
 public class FourTubeCom extends PluginForHost {
+
+    // DEV NOTES
+    // /embed/UID are not transferable to /videos/UID -raztoki
 
     public FourTubeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,13 +50,15 @@ public class FourTubeCom extends PluginForHost {
         return -1;
     }
 
-    private String               DLLINK = null;
-    private URLConnectionAdapter con    = null;
+    private String               DLLINK  = null;
+    private URLConnectionAdapter con     = null;
+    private boolean              isEmbed = false;
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         String dllink = downloadLink.getDownloadURL();
+        isEmbed = dllink.contains("/embed/");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:31.0) Gecko/20100101 Firefox/31.0");
         br.setFollowRedirects(true);
@@ -65,6 +70,9 @@ public class FourTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?) \\| 4tube\"").getMatch(0);
+        if (filename == null && isEmbed) {
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        }
         if (filename == null) {
             filename = dllink.substring(dllink.lastIndexOf("/") + 1);
         }
