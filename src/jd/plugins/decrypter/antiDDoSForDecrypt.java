@@ -71,7 +71,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
         // define custom browser headers and language settings.
         // required for native cloudflare support, without the need to repeat requests.
         try {
-            prepBr.addAllowedResponseCodes(new int[] { 429, 503, 504, 520, 521, 522, 525 });
+            prepBr.addAllowedResponseCodes(new int[] { 429, 503, 504, 520, 521, 522, 523, 525 });
         } catch (final Throwable t) {
         }
         synchronized (antiDDoSCookies) {
@@ -448,7 +448,7 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     // HTTP/1.1 521 Origin Down || <title>api.share-online.biz | 521: Web server is down</title>
                     responseCode5xx++;
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare says \"Origin Sever\" is down!", 5 * 60 * 1000l);
-                } else if (responseCode == 504 || responseCode == 520 || responseCode == 522 || responseCode == 525) {
+                } else if (responseCode == 504 || responseCode == 520 || responseCode == 522 || responseCode == 523 || responseCode == 525) {
                     // these warrant retry instantly, as it could be just slave issue? most hosts have 2 DNS response to load balance.
                     // additional request could work via additional IP
                     /**
@@ -457,6 +457,10 @@ public abstract class antiDDoSForDecrypt extends PluginForDecrypt {
                     // HTTP/1.1 504 Gateway Time-out
                     // HTTP/1.1 520 Origin Error
                     // HTTP/1.1 522 Origin Connection Time-out
+                    /**
+                     * @see cloudflare_523_snippet.html
+                     */
+                    // HTTP/1.1 523 Origin Unreachable
                     // HTTP/1.1 525 Origin SSL Handshake Error || >CloudFlare is unable to establish an SSL connection to the origin
                     // server.<
                     // cache system with possible origin dependency... we will wait and retry
