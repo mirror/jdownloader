@@ -226,7 +226,7 @@ public class DownloadLinkSandBox {
         return storable.isSkipped();
     }
 
-    public String getSkippedEnum() {
+    public String getSkippedReason() {
         if (downloadLink != null) {
             final SkipReason skipped = downloadLink.getSkipReason();
             if (skipped != null) {
@@ -236,7 +236,7 @@ public class DownloadLinkSandBox {
         return null;
     }
 
-    public String getFinalLinkStatusEnum() {
+    public String getFinalLinkStatus() {
         if (downloadLink != null) {
             final FinalLinkState state = downloadLink.getFinalLinkState();
             if (state != null) {
