@@ -70,6 +70,16 @@ public class AccountData implements Storable {
 
     private String              errorString;
 
+    private String              statusString;
+
+    public String getStatusString() {
+        return statusString;
+    }
+
+    public void setStatusString(String statusString) {
+        this.statusString = statusString;
+    }
+
     public long getId() {
         return id;
     }
@@ -97,21 +107,23 @@ public class AccountData implements Storable {
         ret.id = a.getId().getID();
         ret.errorType = enumToString(a.getError());
         ret.errorString = a.getErrorString();
-        if (a.getAccountInfo() != null) {
-            ret.infoProperties = a.getAccountInfo().getProperties();
+        final AccountInfo ai = a.getAccountInfo();
+        if (ai != null) {
+            ret.infoProperties = ai.getProperties();
             if (ret.infoProperties == null) {
                 /*
                  * we need at least an empty hashmap, so account restore also restores account info
                  */
                 ret.infoProperties = new HashMap<String, Object>();
             }
-            ret.createTime = a.getAccountInfo().getCreateTime();
-            ret.trafficLeft = a.getAccountInfo().getTrafficLeft();
-            ret.trafficMax = a.getAccountInfo().getTrafficMax();
-            ret.validUntil = a.getAccountInfo().getValidUntil();
-            ret.trafficUnlimited = a.getAccountInfo().isUnlimitedTraffic();
+            ret.createTime = ai.getCreateTime();
+            ret.trafficLeft = ai.getTrafficLeft();
+            ret.trafficMax = ai.getTrafficMax();
+            ret.validUntil = ai.getValidUntil();
+            ret.trafficUnlimited = ai.isUnlimitedTraffic();
             // whatever??
-            ret.specialtraffic = a.getAccountInfo().isSpecialTraffic();
+            ret.specialtraffic = ai.isSpecialTraffic();
+            ret.statusString = ai.getStatus();
         }
         ret.concurrentUsePossible = a.isConcurrentUsePossible();
         ret.enabled = a.isEnabled();
@@ -243,6 +255,7 @@ public class AccountData implements Storable {
             ai.setTrafficLeft(trafficLeft);
             ai.setTrafficMax(trafficMax);
             ai.setValidUntil(validUntil);
+            ai.setStatus(getStatusString());
             if (trafficUnlimited) {
                 ai.setUnlimitedTraffic();
             }
