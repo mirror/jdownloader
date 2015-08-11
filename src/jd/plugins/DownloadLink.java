@@ -1803,11 +1803,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             return;
         }
         resumeable = b;
-        if (!b) {
-            setProperty(PROPERTY_RESUMEABLE, Property.NULL);
-        } else {
-            setProperty(PROPERTY_RESUMEABLE, true);
-        }
+        setProperty(PROPERTY_RESUMEABLE, b);
         if (hasNotificationListener()) {
             notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.RESUMABLE, b));
         }
@@ -1817,7 +1813,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (resumeable == null) {
             resumeable = getBooleanProperty(PROPERTY_RESUMEABLE, false);
         }
-        return resumeable;
+        return Boolean.TRUE.equals(resumeable);
     }
 
     public DomainInfo getDomainInfo() {

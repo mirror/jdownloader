@@ -73,6 +73,9 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
                 super.setResumeable(value);
             }
         };
+        if (!link.hasProperty(DownloadLink.PROPERTY_RESUMEABLE)) {
+            downloadable.setResumeable(true);
+        }
         this.filePath = filePath;
         logger = downloadable.getLogger();
         downloadable.setDownloadInterface(this);
