@@ -20,6 +20,7 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.DownloadPluginProgress;
+import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.SkipReason;
 import org.jdownloader.plugins.TimeOutCondition;
 
@@ -153,7 +154,6 @@ public class DownloadLinkSandBox {
 
     public void setEnabled(boolean b) {
         if (downloadLink != null) {
-
             downloadLink.setEnabled(b);
         }
     }
@@ -224,6 +224,26 @@ public class DownloadLinkSandBox {
 
     public boolean isSkipped() {
         return storable.isSkipped();
+    }
+
+    public String getSkippedEnum() {
+        if (downloadLink != null) {
+            final SkipReason skipped = downloadLink.getSkipReason();
+            if (skipped != null) {
+                return skipped.name();
+            }
+        }
+        return null;
+    }
+
+    public String getFinalLinkStatusEnum() {
+        if (downloadLink != null) {
+            final FinalLinkState state = downloadLink.getFinalLinkState();
+            if (state != null) {
+                return state.name();
+            }
+        }
+        return null;
     }
 
     public void setSkipped(boolean b) {
