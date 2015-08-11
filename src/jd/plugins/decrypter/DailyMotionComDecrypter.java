@@ -187,9 +187,9 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             fpName = username;
         }
         fpName = Encoding.htmlDecode(fpName.trim());
-        String videosNum = br.getRegex(Pattern.compile("<span class=\"font\\-xl mrg\\-end\\-xs\">(\\d+(,\\d+)?)</span>[\t\n\r ]+Videos?[\t\n\r ]+</div>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String videosNum = br.getRegex(Pattern.compile("<span class=\"font\\-xl mrg\\-end\\-xs\">(\\d+(?:,\\d+)?)</span>[\t\n\r ]+Videos?[\t\n\r ]+</div>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (videosNum == null) {
-            videosNum = br.getRegex("class=\"font-xl mrg-end-xs\">(\\d+)</span> Videos").getMatch(0);
+            videosNum = br.getRegex("class=\"font-xl mrg-end-xs\">(\\d+(?:,\\d+)?)</span> Videos").getMatch(0);
         }
         if (videosNum == null) {
             logger.warning("dailymotion.com: decrypter failed: " + PARAMETER);
