@@ -333,8 +333,11 @@ public class ARDMediathek extends PluginForHost {
 
     private static String getColorCode(final String colorName) {
         /* Unhandled case/standard = white */
-        String colorCode = "FFFFFF";
-        if (colorName.equals("blue")) {
+        String colorCode;
+        if (colorName == null) {
+            /* Use black for missing/not used/given colors */
+            colorCode = "FFFFFF";
+        } else if (colorName.equals("blue")) {
             colorCode = "0000FF";
         } else if (colorName.equals("yellow")) {
             colorCode = "FFFF00";
@@ -348,6 +351,8 @@ public class ARDMediathek extends PluginForHost {
             colorCode = "008000";
         } else if (colorName.equals("cyan")) {
             colorCode = "00FFFF";
+        } else {
+            colorCode = "FFFFFF";
         }
         return colorCode;
     }
