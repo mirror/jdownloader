@@ -16,11 +16,22 @@
 
 package jd.plugins.download;
 
+import java.awt.Color;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.plugins.PluginProgress;
 import jd.plugins.download.raf.FileBytesMap.FileBytesMapView;
+import jd.plugins.download.raf.HTTPDownloader;
+
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.plugins.HashCheckPluginProgress;
+import org.jdownloader.settings.GeneralSettings;
 
 abstract public class DownloadInterface {
 
@@ -74,6 +85,53 @@ abstract public class DownloadInterface {
         return null;
     };
 
+    protected static final ArrayList<AtomicBoolean> HASHCHECK_QEUEU = new ArrayList<AtomicBoolean>();
+
+    protected HashResult getHashResult(Downloadable downloadable, File file) throws InterruptedException {
+        if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled() && downloadable.isHashCheckEnabled()) {
+            AtomicBoolean hashCheckLock = new AtomicBoolean(false);
+            synchronized (HTTPDownloader.HASHCHECK_QEUEU) {
+                HTTPDownloader.HASHCHECK_QEUEU.add(hashCheckLock);
+                hashCheckLock.set(HTTPDownloader.HASHCHECK_QEUEU.indexOf(hashCheckLock) != 0);
+            }
+            try {
+                if (hashCheckLock.get()) {
+                    synchronized (hashCheckLock) {
+                        if (hashCheckLock.get()) {
+                            final PluginProgress hashProgress = new HashCheckPluginProgress(null, Color.YELLOW.darker().darker(), null);
+                            try {
+                                downloadable.addPluginProgress(hashProgress);
+                                hashCheckLock.wait();
+                            } finally {
+                                downloadable.removePluginProgress(hashProgress);
+                            }
+                        }
+                    }
+                }
+                final HashInfo hashInfo = downloadable.getHashInfo();
+                final HashResult hashResult = downloadable.getHashResult(hashInfo, file);
+                return hashResult;
+            } finally {
+                synchronized (HTTPDownloader.HASHCHECK_QEUEU) {
+                    boolean callNext = HTTPDownloader.HASHCHECK_QEUEU.indexOf(hashCheckLock) == 0;
+                    HTTPDownloader.HASHCHECK_QEUEU.remove(hashCheckLock);
+                    if (HTTPDownloader.HASHCHECK_QEUEU.size() > 0 && callNext) {
+                        hashCheckLock = HTTPDownloader.HASHCHECK_QEUEU.get(0);
+                    } else {
+                        hashCheckLock = null;
+                    }
+                }
+                if (hashCheckLock != null) {
+                    synchronized (hashCheckLock) {
+                        hashCheckLock.set(false);
+                        hashCheckLock.notifyAll();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     public abstract boolean startDownload() throws Exception;
 
     public abstract URLConnectionAdapter getConnection();
@@ -91,7 +149,7 @@ abstract public class DownloadInterface {
     /* do not use in old JD 09581 plugins */
     /**
      * returns of the download has been resumed
-     * 
+     *
      * @return
      */
     public abstract boolean isResumedDownload();

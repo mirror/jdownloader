@@ -775,9 +775,7 @@ public class ScriptEnvironment {
                         SCRIPT_PROPERTIES.put(getScriptThread().getScript(), store);
                     }
                     return store.put(key, value);
-
                 }
-
             }
 
         } catch (Throwable e) {
