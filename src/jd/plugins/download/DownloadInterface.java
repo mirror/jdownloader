@@ -27,7 +27,6 @@ import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.raf.FileBytesMap.FileBytesMapView;
-import jd.plugins.download.raf.HTTPDownloader;
 
 import org.appwork.storage.config.JsonConfig;
 import org.jdownloader.plugins.HashCheckPluginProgress;
@@ -90,9 +89,9 @@ abstract public class DownloadInterface {
     protected HashResult getHashResult(Downloadable downloadable, File file) throws InterruptedException {
         if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled() && downloadable.isHashCheckEnabled()) {
             AtomicBoolean hashCheckLock = new AtomicBoolean(false);
-            synchronized (HTTPDownloader.HASHCHECK_QEUEU) {
-                HTTPDownloader.HASHCHECK_QEUEU.add(hashCheckLock);
-                hashCheckLock.set(HTTPDownloader.HASHCHECK_QEUEU.indexOf(hashCheckLock) != 0);
+            synchronized (HASHCHECK_QEUEU) {
+                HASHCHECK_QEUEU.add(hashCheckLock);
+                hashCheckLock.set(HASHCHECK_QEUEU.indexOf(hashCheckLock) != 0);
             }
             try {
                 if (hashCheckLock.get()) {
@@ -112,11 +111,11 @@ abstract public class DownloadInterface {
                 final HashResult hashResult = downloadable.getHashResult(hashInfo, file);
                 return hashResult;
             } finally {
-                synchronized (HTTPDownloader.HASHCHECK_QEUEU) {
-                    boolean callNext = HTTPDownloader.HASHCHECK_QEUEU.indexOf(hashCheckLock) == 0;
-                    HTTPDownloader.HASHCHECK_QEUEU.remove(hashCheckLock);
-                    if (HTTPDownloader.HASHCHECK_QEUEU.size() > 0 && callNext) {
-                        hashCheckLock = HTTPDownloader.HASHCHECK_QEUEU.get(0);
+                synchronized (HASHCHECK_QEUEU) {
+                    boolean callNext = HASHCHECK_QEUEU.indexOf(hashCheckLock) == 0;
+                    HASHCHECK_QEUEU.remove(hashCheckLock);
+                    if (HASHCHECK_QEUEU.size() > 0 && callNext) {
+                        hashCheckLock = HASHCHECK_QEUEU.get(0);
                     } else {
                         hashCheckLock = null;
                     }
