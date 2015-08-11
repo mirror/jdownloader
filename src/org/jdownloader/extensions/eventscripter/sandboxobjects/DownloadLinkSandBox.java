@@ -1,7 +1,9 @@
 package org.jdownloader.extensions.eventscripter.sandboxobjects;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.WeakHashMap;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -27,8 +29,10 @@ import org.jdownloader.plugins.TimeOutCondition;
 @ScriptAPI(description = "The context download list link")
 public class DownloadLinkSandBox {
 
-    private final DownloadLink              downloadLink;
-    private final DownloadLinkAPIStorableV2 storable;
+    private final DownloadLink                                              downloadLink;
+    private final DownloadLinkAPIStorableV2                                 storable;
+
+    private final static WeakHashMap<DownloadLink, HashMap<String, Object>> SESSIONPROPERTIES = new WeakHashMap<DownloadLink, HashMap<String, Object>>();
 
     public DownloadLinkSandBox(DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
@@ -62,6 +66,38 @@ public class DownloadLinkSandBox {
             return null;
         }
         return downloadLink.getProperty(key);
+    }
+
+    public Object getSessionProperty(final String key) {
+        final DownloadLink link = downloadLink;
+        if (link != null) {
+            synchronized (SESSIONPROPERTIES) {
+                final HashMap<String, Object> properties = SESSIONPROPERTIES.get(link);
+                if (properties != null) {
+                    return properties.get(key);
+                }
+            }
+        }
+        return null;
+    }
+
+    public void setSessionProperty(final String key, final Object value) {
+        if (value != null) {
+            if (!Clazz.isPrimitive(value.getClass()) && !(value instanceof Storable)) {
+                throw new WTFException("Type " + value.getClass().getSimpleName() + " is not supported");
+            }
+        }
+        final DownloadLink link = downloadLink;
+        if (link != null) {
+            synchronized (SESSIONPROPERTIES) {
+                HashMap<String, Object> properties = SESSIONPROPERTIES.get(link);
+                if (properties != null) {
+                    properties = new HashMap<String, Object>();
+                    SESSIONPROPERTIES.put(link, properties);
+                }
+                properties.put(key, value);
+            }
+        }
     }
 
     public String getUUID() {
