@@ -1,8 +1,11 @@
 package org.jdownloader.captcha.v2.solver.dbc;
 
+import java.util.HashMap;
+
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
@@ -37,4 +40,10 @@ public interface DeathByCaptchaSettings extends ChallengeSolverConfig {
 
     void setFeedBackSendingEnabled(boolean b);
 
+    @AboutConfig
+    @DefaultJsonObject("{\"jdownloader.org\":60000}")
+    @DescriptionForConfigEntry("Host bound Waittime before using CES. Use CaptchaExchangeChanceToSkipBubbleTimeout for a global timeout")
+    HashMap<String, Integer> getBubbleTimeoutByHostMap();
+
+    void setBubbleTimeoutByHostMap(HashMap<String, Integer> map);
 }

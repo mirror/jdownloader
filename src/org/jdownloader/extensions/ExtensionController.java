@@ -62,7 +62,7 @@ public class ExtensionController implements MenuExtenderHandler {
 
     /**
      * get the only existing instance of ExtensionController. This is a singleton
-     * 
+     *
      * @return
      */
     public static ExtensionController getInstance() {
@@ -192,18 +192,23 @@ public class ExtensionController implements MenuExtenderHandler {
         if (set.add("org.jdownloader.extensions.eventscripter.EventScripterExtension") || !Application.isJared(null)) {
             ret.add(new UninstalledExtension("eventscripter", IconKey.ICON_EVENT, _GUI._.ExtensionController_initUninstalledExtensions_EventScripterExtension(), _GUI._.ExtensionController_initUninstalledExtensions_EventScripterExtension_description()));
         }
-
-        if (set.add("org.jdownloader.extensions.chat.ChatExtension") || !Application.isJared(null)) {
-            ret.add(new UninstalledExtension("chat", IconKey.ICON_CHAT, _GUI._.ExtensionController_initUninstalledExtensions_JDChat(), _GUI._.ExtensionController_initUninstalledExtensions_JDChat_description()));
+        if (!Application.isHeadless()) {
+            if (set.add("org.jdownloader.extensions.chat.ChatExtension") || !Application.isJared(null)) {
+                ret.add(new UninstalledExtension("chat", IconKey.ICON_CHAT, _GUI._.ExtensionController_initUninstalledExtensions_JDChat(), _GUI._.ExtensionController_initUninstalledExtensions_JDChat_description()));
+            }
         }
         if (set.add("org.jdownloader.extensions.folderwatchV2.FolderWatchExtension") || !Application.isJared(null)) {
             ret.add(new UninstalledExtension("folderwatch", IconKey.ICON_FOLDER_ADD, _GUI._.ExtensionController_initUninstalledExtensions_FolderWatchExtension(), _GUI._.ExtensionController_initUninstalledExtensions_FolderWatchExtension_description()));
         }
-        if (set.add("org.jdownloader.extensions.schedulerV2.SchedulerExtension") || !Application.isJared(null)) {
-            ret.add(new UninstalledExtension("scheduler", IconKey.ICON_WAIT, _GUI._.ExtensionController_initUninstalledExtensions_SchedulerExtension(), _GUI._.ExtensionController_initUninstalledExtensions_SchedulerExtension_description()));
+        if (!Application.isHeadless()) {
+            if (set.add("org.jdownloader.extensions.schedulerV2.SchedulerExtension") || !Application.isJared(null)) {
+                ret.add(new UninstalledExtension("scheduler", IconKey.ICON_WAIT, _GUI._.ExtensionController_initUninstalledExtensions_SchedulerExtension(), _GUI._.ExtensionController_initUninstalledExtensions_SchedulerExtension_description()));
+            }
         }
-        if (set.add("org.jdownloader.extensions.translator.TranslatorExtension") || !Application.isJared(null)) {
-            ret.add(new UninstalledExtension("translator", IconKey.ICON_LANGUAGE, _GUI._.ExtensionController_initUninstalledExtensions_TranslatorExtension(), _GUI._.ExtensionController_initUninstalledExtensions_TranslatorExtension_description()));
+        if (!Application.isHeadless()) {
+            if (set.add("org.jdownloader.extensions.translator.TranslatorExtension") || !Application.isJared(null)) {
+                ret.add(new UninstalledExtension("translator", IconKey.ICON_LANGUAGE, _GUI._.ExtensionController_initUninstalledExtensions_TranslatorExtension(), _GUI._.ExtensionController_initUninstalledExtensions_TranslatorExtension_description()));
+            }
         }
         if (UpdateController.getInstance().isHandlerSet()) {
             // reinstall extensions if we could not load them
@@ -532,7 +537,7 @@ public class ExtensionController implements MenuExtenderHandler {
 
     /**
      * Returns a list of all currently running extensions
-     * 
+     *
      * @return
      */
     public java.util.List<AbstractExtension<?, ?>> getEnabledExtensions() {
