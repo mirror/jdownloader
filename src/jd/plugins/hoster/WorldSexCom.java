@@ -18,8 +18,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -51,7 +54,14 @@ public class WorldSexCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        try {
+            br.getPage(downloadLink.getDownloadURL());
+        } catch (final BrowserException b) {
+            if (b.getCause() != null && StringUtils.containsIgnoreCase(b.getCause().toString(), "UnknownHostException")) {
+                return AvailableStatus.UNCHECKABLE;
+            }
+            throw b;
+        }
         String filename = null;
         if (downloadLink.getDownloadURL().matches(EMBEDLINK)) {
             filename = new Regex(downloadLink.getDownloadURL(), "playerConfig\\.php\\?([a-z0-9]+)\\.flv").getMatch(0);
@@ -102,6 +112,9 @@ public class WorldSexCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (downloadLink.getAvailableStatus() == AvailableStatus.UNCHECKABLE) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 2 * 60 * 60 * 1000l);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
