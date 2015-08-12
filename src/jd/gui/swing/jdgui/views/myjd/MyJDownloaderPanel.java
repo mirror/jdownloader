@@ -21,16 +21,19 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class MyJDownloaderPanel extends SwitchPanel implements ListSelectionListener {
 
-    private static final long              serialVersionUID = -6554600142198250742L;
+    private static final long              serialVersionUID        = -6554600142198250742L;
     private MyJDSidebar                    sidebar;
     private SwitchPanel                    panel;
     private GraphicalUserInterfaceSettings cfg;
     private MigPanel                       right;
     private String                         lastE;
+    private SidebarModel                   model;
+    private boolean                        treeModelUpdateRequired = true;
 
     public MyJDownloaderPanel() {
         super(new MigLayout("ins 0", "[][grow,fill]", "[grow,fill]"));
-        sidebar = new MyJDSidebar();
+        model = new SidebarModel(this);
+        sidebar = new MyJDSidebar(model);
         right = new RightPanel();
 
         // right.add(sb, "pushx,growx,pushy,growy");
@@ -57,28 +60,34 @@ public class MyJDownloaderPanel extends SwitchPanel implements ListSelectionList
 
     @Override
     protected void onShow() {
-        new EDTRunner() {
-            protected void runInEDT() {
-                if (sidebar.getSelectedPanel() == null) {
-                    sidebar.getTreeCompleteState().executeWhenReached(new Runnable() {
 
-                        @Override
-                        public void run() {
-                            new EDTRunner() {
+        if (treeModelUpdateRequired) {
+            treeModelUpdateRequired = false;
+            model.fill();
+        }
 
-                                @Override
-                                protected void runInEDT() {
-                                    if (sidebar.getSelectedPanel() == null) {
-                                        restoreSelection(true);
-                                    }
-                                }
-
-                            };
-                        }
-                    });
-                }
-            };
-        };
+        // new EDTRunner() {
+        // protected void runInEDT() {
+        // if (sidebar.getSelectedPanel() == null) {
+        // sidebar.getTreeCompleteState().executeWhenReached(new Runnable() {
+        //
+        // @Override
+        // public void run() {
+        // new EDTRunner() {
+        //
+        // @Override
+        // protected void runInEDT() {
+        // if (sidebar.getSelectedPanel() == null) {
+        // restoreSelection(true);
+        // }
+        // }
+        //
+        // };
+        // }
+        // });
+        // }
+        // };
+        // };
 
     }
 
@@ -86,6 +95,7 @@ public class MyJDownloaderPanel extends SwitchPanel implements ListSelectionList
         Class<?> selected = MyJDownloaderSettingsPanel.class;
         try {
             String panelClass = cfg.getActiveMyJDownloaderPanel();
+
             selected = Class.forName(panelClass);
         } catch (Throwable e) {
 
@@ -146,7 +156,7 @@ public class MyJDownloaderPanel extends SwitchPanel implements ListSelectionList
         if (panel != null) {
             panel.setHidden();
         }
-        cfg.setActiveConfigPanel(selectedPanel.getClass().getName());
+        cfg.setActiveMyJDownloaderPanel(selectedPanel.getClass().getName());
         // selectedPanel.setPreferredSize(sb.getSize());
         // sb.setViewportView(selectedPanel);
         right.removeAll();
@@ -173,6 +183,28 @@ public class MyJDownloaderPanel extends SwitchPanel implements ListSelectionList
     public void paint(Graphics g) {
 
         super.paint(g);
+    }
+
+    public void onBeforeModelUpdate() {
+    }
+
+    public void onAfterModelUpdate() {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (sidebar.getSelectedPanel() == null) {
+                    restoreSelection(true);
+                }
+            }
+
+        };
+    }
+
+    public void setSelectedSubPanel(Class<?> class1) {
+
+        sidebar.setSelectedTreeEntry(class1);
+
     }
 
 }

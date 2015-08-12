@@ -180,7 +180,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         MyJDownloaderController.getInstance().getEventSender().addListener(this, true);
         SwingUtils.toBold(status);
         CFG_MYJD.LATEST_ERROR.getEventSender().addListener(this, true);
-        this.addHeader(getTitle(), NewTheme.I().getIcon("myjdownloader", 32));
+        this.addHeader(getTitle(), getIcon());
         this.addDescription(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_description());
         add(openMyJDownloader, "gapleft 37,spanx,pushx,growx");
         this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
@@ -205,6 +205,7 @@ public class MyJDownloaderSettingsPanel extends AbstractConfigPanel implements G
         add(p, "spanx,pushx,growx");
         add(Box.createHorizontalGlue(), "gapleft 37");
         add(error, "gaptop 0,spanx,growx,pushx,gapbottom 5,wmin 10,hidemode 3");
+
     }
 
     @Override

@@ -40,13 +40,15 @@ import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 import jd.gui.swing.jdgui.views.settings.sidebar.EmptyExtensionConfigPanel;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.controlling.SingleReachableState;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.ConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.api.myjdownloader.MyJDownloaderConnectionStatus;
+import org.jdownloader.api.myjdownloader.MyJDownloaderController;
+import org.jdownloader.api.myjdownloader.event.MyJDownloaderListener;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.LazyExtension;
@@ -56,7 +58,7 @@ import org.jdownloader.extensions.UninstalledExtension;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseListener, ConfigEventListener {
+public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseListener, ConfigEventListener, MyJDownloaderListener {
 
     private static final long serialVersionUID = 6456662020047832983L;
 
@@ -66,7 +68,7 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
 
     private SidebarModel      treemodel        = null;
 
-    public MyJDSidebar() {
+    public MyJDSidebar(SidebarModel model) {
         super(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
         list = new JList() {
             /**
@@ -100,7 +102,7 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
 
         list.addMouseMotionListener(this);
         list.addMouseListener(this);
-        list.setModel(treemodel = new SidebarModel(list));
+        list.setModel(treemodel = model);
 
         list.setCellRenderer(new TreeRenderer());
 
@@ -188,6 +190,7 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
 
             }
         });
+        MyJDownloaderController.getInstance().getEventSender().addListener(this, true);
 
     }
 
@@ -231,9 +234,9 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
         list.setSelectedIndex(0);
     }
 
-    public SingleReachableState getTreeCompleteState() {
-        return treemodel.getTreeCompleteState();
-    }
+    // public SingleReachableState getTreeCompleteState() {
+    // return treemodel.getTreeCompleteState();
+    // }
 
     public boolean treeInitiated() {
         return treemodel.getSize() > 0;
@@ -362,5 +365,17 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
     }
 
     public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onMyJDownloaderConnectionStatusChanged(MyJDownloaderConnectionStatus status, int connections) {
+
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                repaint();
+            }
+        };
     }
 }

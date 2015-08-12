@@ -43,9 +43,14 @@ public class MyJDownloaderView extends ClosableView {
 
     private MyJDownloaderView() {
         super();
+
         setBackground(new Color(0xF5FCFF));
         init();
         this.setContent(new MyJDownloaderPanel());
+    }
+
+    public void setSelectedSubPanel(Class<?> class1) {
+        ((MyJDownloaderPanel) getContent()).setSelectedSubPanel(class1);
     }
 
     @Override
@@ -74,6 +79,7 @@ public class MyJDownloaderView extends ClosableView {
         if (panel != null) {
             panel.setShown();
         }
+
     }
 
     @Override

@@ -1,34 +1,36 @@
 package jd.gui.swing.jdgui.views.myjd;
 
+import java.util.ArrayList;
+
 import javax.swing.DefaultListModel;
-import javax.swing.JList;
 
-import jd.SecondLevelLaunch;
-import jd.gui.swing.jdgui.views.settings.panels.MyJDownloaderSettingsPanel;
+import jd.gui.swing.jdgui.views.myjd.panels.MyJDownloaderAccount;
+import jd.gui.swing.jdgui.views.myjd.panels.MyJDownloaderSettingsPanelForTab;
 
-import org.appwork.controlling.SingleReachableState;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class SidebarModel extends DefaultListModel implements GenericConfigEventListener<Object> {
 
-    private static final long            serialVersionUID = -204494527404304349L;
+    private static final long  serialVersionUID = -204494527404304349L;
 
-    private Object                       lock             = new Object();
+    private Object             lock             = new Object();
 
-    private SingleReachableState         TREE_COMPLETE    = new SingleReachableState("TREE_COMPLETE");
-    private final JList                  list;
+    private MyJDownloaderPanel owner;
 
-    protected MyJDownloaderSettingsPanel myJDownloader;
+    // private SingleReachableState TREE_COMPLETE = new SingleReachableState("TREE_COMPLETE");
+    // private final JList list;
 
-    public SidebarModel(JList list) {
+    public SidebarModel(MyJDownloaderPanel owner) {
+
         super();
-        this.list = list;
+        this.owner = owner;
+        // this.list = list;
         GenericConfigEventListener<Boolean> listener = new GenericConfigEventListener<Boolean>() {
 
             @Override
@@ -48,46 +50,11 @@ public class SidebarModel extends DefaultListModel implements GenericConfigEvent
         };
         org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getEventSender().addListener(listener);
         org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.getEventSender().addListener(listener);
-        SecondLevelLaunch.EXTENSIONS_LOADED.executeWhenReached(new Runnable() {
 
-            @Override
-            public void run() {
-                fill();
-            }
-        });
-    }
-
-    private void edtAllElement(final Object element) {
-        if (element == null) {
-            return;
-        }
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                addElement(element);
-            }
-        };
-    }
-
-    private MyJDownloaderSettingsPanel getMyJDownloaderPanel() {
-        if (myJDownloader != null) {
-            return myJDownloader;
-        }
-
-        return new EDTHelper<MyJDownloaderSettingsPanel>() {
-
-            public MyJDownloaderSettingsPanel edtRun() {
-                if (myJDownloader != null) {
-                    return myJDownloader;
-                }
-                myJDownloader = new MyJDownloaderSettingsPanel();
-                return myJDownloader;
-            }
-        }.getReturnValue();
     }
 
     public void fill() {
+        System.out.println("Fill");
         new Thread("FillMyJDownloaderSideBarModel") {
             @Override
             public void run() {
@@ -101,24 +68,43 @@ public class SidebarModel extends DefaultListModel implements GenericConfigEvent
                                 removeAllElements();
                             }
                         };
+                        final ArrayList<AbstractConfigPanel> lst = new ArrayList<AbstractConfigPanel>();
+                        lst.add(new MyJDownloaderSettingsPanelForTab());
+                        lst.add(new MyJDownloaderAccount());
+                        new EDTRunner() {
 
-                        edtAllElement(getMyJDownloaderPanel());
+                            @Override
+                            protected void runInEDT() {
+                                owner.onBeforeModelUpdate();
+                                for (AbstractConfigPanel c : lst) {
+                                    addElement(c);
+                                }
+                                owner.onAfterModelUpdate();
 
+                            }
+
+                        };
                     }
                 } finally {
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-                            if (list != null) {
-                                list.repaint();
-                            }
-                        }
-                    };
-                    TREE_COMPLETE.setReached();
+                    // new EDTRunner() {
+                    //
+                    // @Override
+                    // protected void runInEDT() {
+                    // if (list != null) {
+                    // list.repaint();
+                    // }
+                    // }
+                    // };
+                    // TREE_COMPLETE.setReached();
                 }
             }
         }.start();
+    }
+
+    protected void onAfterUpdate() {
+    }
+
+    protected void onBeforeUpdate() {
     }
 
     public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
@@ -142,11 +128,11 @@ public class SidebarModel extends DefaultListModel implements GenericConfigEvent
         };
     }
 
-    /**
-     * @return the tREE_COMPLETE
-     */
-    public SingleReachableState getTreeCompleteState() {
-        return TREE_COMPLETE;
-    }
+    // /**
+    // * @return the tREE_COMPLETE
+    // */
+    // public SingleReachableState getTreeCompleteState() {
+    // return TREE_COMPLETE;
+    // }
 
 }

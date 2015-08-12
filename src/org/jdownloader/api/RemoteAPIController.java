@@ -46,7 +46,9 @@ import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
+import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
+import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -79,6 +81,7 @@ import org.jdownloader.api.plugins.PluginsAPIImpl;
 import org.jdownloader.api.polling.PollingAPIImpl;
 import org.jdownloader.api.system.SystemAPIImpl;
 import org.jdownloader.api.toolbar.JDownloaderToolBarAPIImpl;
+import org.jdownloader.api.useragent.UserAgentController;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClient;
 import org.jdownloader.myjdownloader.client.bindings.ClientApiNameSpace;
@@ -106,6 +109,7 @@ public class RemoteAPIController {
     private DownloadsAPIV2Impl                 downloadsAPIV2;
     private RemoteAPIInternalEventSender       eventSender;
     private LinkCollectorAPIImplV2             linkcollector;
+    private UserAgentController                uaController;
 
     public static class MyJDownloaderEvent extends MyJDEvent implements Storable {
         public MyJDownloaderEvent() {
@@ -115,9 +119,36 @@ public class RemoteAPIController {
 
     private RemoteAPIController() {
         eventSender = new RemoteAPIInternalEventSender();
+        this.uaController = new UserAgentController();
         logger = LogController.getInstance().getLogger(RemoteAPIController.class.getName());
         rids = new HashMap<String, RIDArray>();
         rapi = new SessionRemoteAPI<RemoteAPISession>() {
+            @Override
+            public boolean onPostSessionRequest(RemoteAPISession session, PostRequest request, HttpResponse response) throws BasicRemoteAPIException {
+                return super.onPostSessionRequest(session, request, response);
+            }
+
+            @Override
+            protected void _handleRemoteAPICall(RemoteAPIRequest request, RemoteAPIResponse response) throws BasicRemoteAPIException {
+                uaController.handle(request);
+                super._handleRemoteAPICall(request, response);
+            }
+
+            @Override
+            public boolean onPostRequest(PostRequest request, HttpResponse response) throws BasicRemoteAPIException {
+                return super.onPostRequest(request, response);
+            }
+
+            @Override
+            public boolean onGetRequest(GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
+                return super.onGetRequest(request, response);
+            }
+
+            @Override
+            public boolean onGetSessionRequest(RemoteAPISession session, GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
+                return super.onGetSessionRequest(session, request, response);
+            }
+
             @Override
             public String toString(RemoteAPIRequest request, RemoteAPIResponse response, Object responseData) {
                 if (((SessionRemoteAPIRequest) request).getApiRequest() instanceof DeprecatedRemoteAPIRequest) {
@@ -358,6 +389,10 @@ public class RemoteAPIController {
         register(wrapper.getRemoteHandler());
 
         JDAnywhereAPI.getInstance().init(this, downloadsAPI);
+    }
+
+    public UserAgentController getUaController() {
+        return uaController;
     }
 
     public LinkCollectorAPIImplV2 getLinkcollector() {

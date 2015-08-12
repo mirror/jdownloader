@@ -5980,4 +5980,28 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Save & Close" })
     String lit_save_and_close();
 
+    @Default(lngs = { "en" }, values = { "Login" })
+    String MyJDownloaderSettingsPanelForTab_title();
+
+    @Default(lngs = { "en" }, values = { "Account Details" })
+    String MyJDownloaderAccount_title();
+
+    @Default(lngs = { "en" }, values = { "Connected Devices" })
+    String MyJDownloaderAccount_connected_devices();
+
+    @Default(lngs = { "en" }, values = { "Frontend" })
+    String ConnectedDevicesTableModel_frontend();
+
+    @Default(lngs = { "en" }, values = { "Device" })
+    String ConnectedDevicesTableModel_device();
+
+    @Default(lngs = { "en" }, values = { "Connection" })
+    String ConnectedDevicesTableModel_connection();
+
+    @Default(lngs = { "en" }, values = { "Kill Session" })
+    String ConnectedDevicesTableModel_kill();
+
+    @Default(lngs = { "en" }, values = { "Disconnect" })
+    String lit_disconnect();
+
 }
