@@ -19,8 +19,12 @@ import org.jdownloader.images.NewTheme;
 
 public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
 
-    private static final int WIDTH  = 16;
-    private static final int HEIGHT = 16;
+    private static final HashMap<String, String> HARDCODEDFAVICONS = new HashMap<String, String>();
+    static {
+        HARDCODEDFAVICONS.put("usenet", "nzb");
+    }
+    private static final int                     WIDTH             = 16;
+    private static final int                     HEIGHT            = 16;
 
     private DomainInfo(String tld) {
         if (Application.getJavaVersion() >= Application.JAVA17) {
@@ -50,7 +54,12 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
     public Icon getFavIcon() {
         Icon icon = hosterIcon;
         if (icon == null) {
-            icon = setFavIcon(FavIcons.getFavIcon(getTld(), this));
+            final String hardcodedFavIcon = HARDCODEDFAVICONS.get(tld);
+            if (hardcodedFavIcon != null) {
+                icon = NewTheme.I().getIcon(hardcodedFavIcon, -1);
+            } else {
+                icon = FavIcons.getFavIcon(tld, null);
+            }
             if (icon != null) {
                 icon = new ImageIcon(IconIO.getCroppedImage(IconIO.toBufferedImage(icon)));
                 icon = IconIO.getScaledInstance(icon, WIDTH, HEIGHT, Interpolation.BICUBIC);
@@ -113,16 +122,22 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
      */
     public Icon getIcon(int size) {
         Icon ret = null;
-        if (NewTheme.I().hasIcon("fav/big." + getTld())) {
-            ret = NewTheme.I().getIcon("fav/big." + getTld(), -1);
+        final String tld = getTld();
+        if (NewTheme.I().hasIcon("fav/big." + tld)) {
+            ret = NewTheme.I().getIcon("fav/big." + tld, -1);
         }
-        if (ret == null && NewTheme.I().hasIcon("fav/" + getTld())) {
-            ret = NewTheme.I().getIcon("fav/" + getTld(), -1);
+        if (ret == null && NewTheme.I().hasIcon("fav/" + tld)) {
+            ret = NewTheme.I().getIcon("fav/" + tld, -1);
         }
         if (ret != null && ret.getIconHeight() >= size && ret.getIconWidth() >= size) {
             return IconIO.getScaledInstance(ret, size, size);
         }
-        ret = FavIcons.getFavIcon(getTld(), null);
+        final String hardcodedFavIcon = HARDCODEDFAVICONS.get(tld);
+        if (hardcodedFavIcon != null) {
+            ret = NewTheme.I().getIcon(hardcodedFavIcon, -1);
+        } else {
+            ret = FavIcons.getFavIcon(tld, null);
+        }
         if (ret.getIconHeight() >= size && ret.getIconWidth() >= size) {
             return IconIO.getScaledInstance(ret, size, size);
         }

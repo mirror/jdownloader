@@ -64,7 +64,7 @@ public class UsenetFile implements Storable {
         if (compressedJSonString != null) {
             final byte[] bytes = org.appwork.utils.encoding.Base64.decode(compressedJSonString);
             final String jsonString = IO.readInputStreamToString(new GZIPInputStream(new ByteArrayInputStream(bytes)));
-            return JSonStorage.restoreFrom(jsonString, new TypeRef<UsenetFile>() {
+            return JSonStorage.restoreFromString(jsonString, new TypeRef<UsenetFile>() {
             }, null);
         }
         return null;
