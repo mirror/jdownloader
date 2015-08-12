@@ -26,6 +26,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -53,20 +56,17 @@ import jd.plugins.components.UserAgents;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mediafire.com" }, urls = { "https?://(www\\.)?mediafire\\.com/(download/[a-z0-9]+|(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n))" }, flags = { 32 })
 public class MediafireCom extends PluginForHost {
 
-    private static final boolean ACCOUNT_PREMIUM_RESUME          = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS       = 10;
+    private static final int ACCOUNT_FREE_MAXDOWNLOADS = 10;
 
     /** Settings stuff */
-    private static final String  FREE_FORCE_RECONNECT_ON_CAPTCHA = "FREE_FORCE_RECONNECT_ON_CAPTCHA";
+    private static final String FREE_FORCE_RECONNECT_ON_CAPTCHA = "FREE_FORCE_RECONNECT_ON_CAPTCHA";
 
     public static String stringUserAgent() {
         return UserAgents.stringUserAgent();
@@ -146,20 +146,20 @@ public class MediafireCom extends PluginForHost {
         }
     }
 
-    private static AtomicReference<String> agent                      = new AtomicReference<String>(stringUserAgent());
+    private static AtomicReference<String> agent = new AtomicReference<String>(stringUserAgent());
 
-    static private final String            offlinelink                = "tos_aup_violation";
+    static private final String offlinelink = "tos_aup_violation";
 
     /** The name of the error page used by MediaFire */
-    private static final String            ERROR_PAGE                 = "error.php";
+    private static final String ERROR_PAGE                 = "error.php";
     /**
      * The number of retries to be performed in order to determine if a file is availableor to try captcha/password.
      */
-    private int                            max_number_of_free_retries = 3;
+    private int                 max_number_of_free_retries = 3;
 
-    private String                         fileID;
+    private String fileID;
 
-    private String                         dlURL;
+    private String dlURL;
 
     @SuppressWarnings("deprecation")
     public MediafireCom(final PluginWrapper wrapper) {
@@ -292,9 +292,9 @@ public class MediafireCom extends PluginForHost {
                     // TODO: This errorhandling is missing for premium users!
                     captchaCorrect = false;
                     Form form = br.getFormbyProperty("name", "form_captcha");
-                    String freeArea = br.getRegex("class=\"nonOwner nonpro_adslayout dl\\-page dlCaptchaActive\"(.*?)class=\"captchaPromo\"").getMatch(0);
+                    String freeArea = br.getRegex("class=\"nonOwner\\s+nonpro_adslayout\\s+dl-page\\s+dlCaptchaActive\"(.*?)class=\"captchaPromo\"").getMatch(0);
                     if (freeArea == null) {
-                        freeArea = br.getRegex("class=\"nonOwner nonpro_adslayout dl\\-page dlCaptchaActive\"(.*?)class=\"dl\\-utility\\-nav\"").getMatch(0);
+                        freeArea = br.getRegex("class=\"nonOwner nonpro_adslayout dl-page dlCaptchaActive\"(.*?)class=\"dl\\-utility\\-nav\"").getMatch(0);
                     }
                     if (freeArea != null && freeArea.contains("solvemedia.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
