@@ -315,7 +315,7 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
 
     @Override
     public URLConnectionAdapter getConnection() {
-        throw new WTFException("Not needed for SimpleFTPDownloadInterface");
+        throw new WTFException("SimpleUseNetDownloadInterface");
     }
 
     @Override
