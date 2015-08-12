@@ -1770,6 +1770,7 @@ lit_reset=Reset
 lit_restart=Restart
 lit_restart_now=Restartuj sada
 lit_save=Sačuvaj
+lit_save_and_close=Sačuvaj i Zatvori
 lit_save_to=Snimi u
 lit_send=Pošalji
 lit_settings=Podešenja
