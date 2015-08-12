@@ -307,7 +307,6 @@ public class ReconnectPluginController {
             plugins.add(new ExternReconnectPlugin());
             plugins.add(new UPNPRouterPlugin());
             plugins.add(new LiveHeaderReconnect());
-            plugins.add(new LiveHeaderReconnect());
             final java.util.List<URL> urls = new ArrayList<URL>();
             if (files != null) {
                 final int length = files.length;
