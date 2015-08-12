@@ -5977,4 +5977,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Use a My.JDownloader.org account to access advanced JDownloader features and full remote control." })
     String MyJDownloaderView_tooltip();
 
+    @Default(lngs = { "en" }, values = { "Save & Close" })
+    String lit_save_and_close();
+
 }

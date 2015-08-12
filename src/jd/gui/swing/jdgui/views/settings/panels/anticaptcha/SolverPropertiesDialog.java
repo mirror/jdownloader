@@ -111,7 +111,7 @@ public class SolverPropertiesDialog extends AbstractDialog<Object> {
     }
 
     public SolverPropertiesDialog(SolverService editing, AbstractCaptchaSolverConfigPanel configPanel) {
-        super(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_HIDE_ICON, _GUI._.SolverPropertiesDialog_SolverPropertiesDialog_object_(editing.getName(), editing.getType()), null, _GUI._.lit_close(), null);
+        super(UIOManager.BUTTONS_HIDE_CANCEL | Dialog.STYLE_HIDE_ICON, _GUI._.SolverPropertiesDialog_SolverPropertiesDialog_object_(editing.getName(), editing.getType()), null, _GUI._.lit_save_and_close(), null);
         this.configPanel = configPanel;
         setLocator(new RememberAbsoluteDialogLocator(getClass().getSimpleName()));
         setDimensor(new RememberLastDialogDimension(getClass().getSimpleName()));

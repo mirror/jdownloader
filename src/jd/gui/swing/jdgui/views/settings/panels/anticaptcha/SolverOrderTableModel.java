@@ -131,7 +131,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
 
             @Override
             public int getDefaultWidth() {
-                return 150;
+                return 100;
             }
 
             @Override
@@ -254,9 +254,31 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
                 setClickcount(1);
             }
 
+            public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
+
+                final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+
+                    @Override
+                    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                        super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                        setIcon(new AbstractIcon(IconKey.ICON_WAIT, 14));
+                        setHorizontalAlignment(CENTER);
+                        setText(_GUI._.SolverOrderTableModel_initColumns_timeout());
+                        return this;
+                    }
+
+                };
+
+                return ret;
+            }
+
             @Override
             protected boolean isDefaultResizable() {
                 return false;
+            }
+
+            protected String generateID() {
+                return "CaptchaOrderTable.timeoutbutton";
             }
 
             @Override
@@ -266,7 +288,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
 
             @Override
             public int getDefaultWidth() {
-                return 80;
+                return 100;
             }
 
             @Override
@@ -297,7 +319,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
             @Override
             public void configureRendererComponent(SolverService value, boolean isSelected, boolean hasFocus, int row, int column) {
 
-                rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
+                // rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
                 rendererBtn.setText(_GUI._.lit_edit());
                 // }
             }
@@ -305,7 +327,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
             @Override
             public void configureEditorComponent(SolverService value, boolean isSelected, int row, int column) {
                 editing = value;
-                editorBtn.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
+                // editorBtn.setIcon(new AbstractIcon(IconKey.ICON_WAIT, 16));
                 editorBtn.setText(_GUI._.lit_edit());
 
             }
@@ -368,7 +390,7 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
 
             @Override
             public int getDefaultWidth() {
-                return 80;
+                return 100;
             }
 
             @Override
@@ -401,14 +423,36 @@ public class SolverOrderTableModel extends ExtTableModel<SolverService> {
 
                 // rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 16));
                 rendererBtn.setText(_GUI._.lit_edit());
-                rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
+                // rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
+            }
+
+            protected String generateID() {
+                return "CaptchaOrderTable.editButton";
             }
 
             @Override
             public void configureEditorComponent(SolverService value, boolean isSelected, int row, int column) {
                 editing = value;
                 editorBtn.setText(_GUI._.lit_edit());
-                editorBtn.setIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
+                // editorBtn.setIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
+            }
+
+            public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
+
+                final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
+
+                    @Override
+                    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                        super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                        setIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 14));
+                        setHorizontalAlignment(CENTER);
+                        setText(_GUI._.lit_settings());
+                        return this;
+                    }
+
+                };
+
+                return ret;
             }
 
             @Override

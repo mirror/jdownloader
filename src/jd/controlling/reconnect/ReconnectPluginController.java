@@ -155,7 +155,7 @@ public class ReconnectPluginController {
 
     /**
      * Maps old reconnect panel, to new one. can be removed after 2.*
-     * 
+     *
      * @return
      */
     private String convertFromOldSystem() {
@@ -186,7 +186,7 @@ public class ReconnectPluginController {
 
     /**
      * Performs a reconnect with plugin plg.
-     * 
+     *
      * @param retry
      * @param plg
      * @return
@@ -217,7 +217,7 @@ public class ReconnectPluginController {
 
     /**
      * returns the currently active routerplugin. Only one plugin may be active
-     * 
+     *
      * @return
      */
     public RouterPlugin getActivePlugin() {
@@ -237,7 +237,7 @@ public class ReconnectPluginController {
 
     /**
      * returns how long the controller has to wait between two ip checks
-     * 
+     *
      * @return
      */
     private int getIpCheckInterval() {
@@ -270,7 +270,7 @@ public class ReconnectPluginController {
 
     /**
      * Returns all registered Plugins
-     * 
+     *
      * @return
      */
     public java.util.List<RouterPlugin> getPlugins() {
@@ -307,7 +307,7 @@ public class ReconnectPluginController {
             plugins.add(new ExternReconnectPlugin());
             plugins.add(new UPNPRouterPlugin());
             plugins.add(new LiveHeaderReconnect());
-
+            plugins.add(new LiveHeaderReconnect());
             final java.util.List<URL> urls = new ArrayList<URL>();
             if (files != null) {
                 final int length = files.length;
@@ -409,7 +409,7 @@ public class ReconnectPluginController {
 
     /**
      * Sets the active reconnect plugin
-     * 
+     *
      * @param selectedItem
      */
     public void setActivePlugin(final RouterPlugin selectedItem) {
@@ -418,7 +418,7 @@ public class ReconnectPluginController {
 
     /**
      * Sets the active reconnect plugin
-     * 
+     *
      * @param id
      */
     public void setActivePlugin(final String id) {

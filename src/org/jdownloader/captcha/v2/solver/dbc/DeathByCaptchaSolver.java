@@ -1,5 +1,7 @@
 package org.jdownloader.captcha.v2.solver.dbc;
 
+import java.util.HashMap;
+import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -25,6 +27,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.settings.staticreferences.CFG_DBC;
 
 public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements ChallengeResponseValidation {
@@ -71,7 +74,7 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
 
     private void solveBasicCaptchaChallenge(CESSolverJob<String> job, BasicCaptchaChallenge challenge) throws InterruptedException {
 
-        job.showBubble(this);
+        job.showBubble(this, getBubbleTimeout(challenge));
         checkInterruption();
         final Client client = getClient();
         try {
@@ -110,6 +113,16 @@ public class DeathByCaptchaSolver extends CESChallengeSolver<String> implements 
             client.close();
         }
 
+    }
+
+    private int getBubbleTimeout(BasicCaptchaChallenge challenge) {
+        HashMap<String, Integer> map = config.getBubbleTimeoutByHostMap();
+
+        Integer ret = map.get(challenge.getHost().toLowerCase(Locale.ENGLISH));
+        if (ret == null || ret < 0) {
+            ret = CFG_CAPTCHA.CFG.getCaptchaExchangeChanceToSkipBubbleTimeout();
+        }
+        return ret;
     }
 
     private synchronized Client getClient() {
