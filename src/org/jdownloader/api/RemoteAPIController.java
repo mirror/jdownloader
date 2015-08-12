@@ -46,9 +46,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
-import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
-import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -100,16 +98,17 @@ public class RemoteAPIController {
         return INSTANCE;
     }
 
-    private SessionRemoteAPI<RemoteAPISession> rapi     = null;
-    private RemoteAPISessionControllerImp      sessionc = null;
-    private EventsAPI                          eventsapi;
-    private LogSource                          logger;
-    private AdvancedConfigManagerAPIImpl       advancedConfigAPI;
-    private ContentAPIImplV2                   contentAPI;
-    private DownloadsAPIV2Impl                 downloadsAPIV2;
-    private RemoteAPIInternalEventSender       eventSender;
-    private LinkCollectorAPIImplV2             linkcollector;
-    private UserAgentController                uaController;
+    private final SessionRemoteAPI<RemoteAPISession> rapi;
+    private RemoteAPISessionControllerImp            sessionc = null;
+    private EventsAPI                                eventsapi;
+    private final LogSource                          logger;
+    private AdvancedConfigManagerAPIImpl             advancedConfigAPI;
+    private ContentAPIImplV2                         contentAPI;
+    private DownloadsAPIV2Impl                       downloadsAPIV2;
+    private final RemoteAPIInternalEventSender       eventSender;
+    private LinkCollectorAPIImplV2                   linkcollector;
+    private final UserAgentController                uaController;
+    private final HashMap<String, RIDArray>          rids;
 
     public static class MyJDownloaderEvent extends MyJDEvent implements Storable {
         public MyJDownloaderEvent() {
@@ -123,30 +122,11 @@ public class RemoteAPIController {
         logger = LogController.getInstance().getLogger(RemoteAPIController.class.getName());
         rids = new HashMap<String, RIDArray>();
         rapi = new SessionRemoteAPI<RemoteAPISession>() {
-            @Override
-            public boolean onPostSessionRequest(RemoteAPISession session, PostRequest request, HttpResponse response) throws BasicRemoteAPIException {
-                return super.onPostSessionRequest(session, request, response);
-            }
 
             @Override
             protected void _handleRemoteAPICall(RemoteAPIRequest request, RemoteAPIResponse response) throws BasicRemoteAPIException {
                 uaController.handle(request);
                 super._handleRemoteAPICall(request, response);
-            }
-
-            @Override
-            public boolean onPostRequest(PostRequest request, HttpResponse response) throws BasicRemoteAPIException {
-                return super.onPostRequest(request, response);
-            }
-
-            @Override
-            public boolean onGetRequest(GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
-                return super.onGetRequest(request, response);
-            }
-
-            @Override
-            public boolean onGetSessionRequest(RemoteAPISession session, GetRequest request, HttpResponse response) throws BasicRemoteAPIException {
-                return super.onGetSessionRequest(session, request, response);
             }
 
             @Override
@@ -317,7 +297,6 @@ public class RemoteAPIController {
                 } catch (IOException e) {
                     throw new BasicRemoteAPIException(e, e.getMessage(), ResponseCode.SERVERERROR_INTERNAL, null);
                 }
-
             }
 
             @Override
@@ -327,7 +306,6 @@ public class RemoteAPIController {
             }
         };
         sessionc = new RemoteAPISessionControllerImp();
-
         try {
             sessionc.registerSessionRequestHandler(rapi);
             rapi.register(sessionc);
@@ -414,8 +392,6 @@ public class RemoteAPIController {
     public AdvancedConfigManagerAPIImpl getAdvancedConfigAPI() {
         return advancedConfigAPI;
     }
-
-    private HashMap<String, RIDArray> rids;
 
     /* TODO: add session support, currently all sessions share the same validateRID */
     public synchronized boolean validateRID(long rid, String sessionToken) {

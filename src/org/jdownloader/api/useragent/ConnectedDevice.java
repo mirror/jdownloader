@@ -3,17 +3,29 @@ package org.jdownloader.api.useragent;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.List;
 
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpserver.HttpConnection;
 import org.jdownloader.api.myjdownloader.MyJDownloaderDirectHttpConnection;
+import org.jdownloader.api.myjdownloader.MyJDownloaderHttpConnection;
 
 public class ConnectedDevice {
 
     private RemoteAPIRequest latestRequest;
-    private long             lastPing;
-    private UserAgentInfo    info;
+    private String           token;
+
+    public String getConnectToken() {
+        return token;
+    }
+
+    public void setConnectToken(String token) {
+        this.token = token;
+    }
+
+    private long          lastPing;
+    private UserAgentInfo info;
 
     public UserAgentInfo getInfo() {
         return info;
@@ -96,20 +108,32 @@ public class ConnectedDevice {
     }
 
     public String getConnectionString() {
+        final List<MyJDownloaderHttpConnection> list = MyJDownloaderHttpConnection.getConnectionsByToken(getConnectToken());
+        final int num;
+        if (list == null) {
+            num = 0;
+        } else {
+            num = list.size();
+        }
         HttpConnection con = latestRequest.getHttpRequest().getConnection();
         if (con instanceof MyJDownloaderDirectHttpConnection) {
-            String ip = latestRequest.getHttpRequest().getRemoteAddress().get(0);
-            // try {
-            // if (isThisMyIpAddress(InetAddress.getByName(ip))) {
-            // return "Direct Local Connection";
-            // } else {
-            return "Direct Connection from " + ip;
-            // }
-            // } catch (UnknownHostException e) {
-            // return "Direct Connection";
-            // }
+            if (num == 0) {
+                return "0 Direct Connections via my.jdownloader";
+            } else {
+                final String ip = latestRequest.getHttpRequest().getRemoteAddress().get(0);
+                if (num > 1) {
+                    return Integer.toString(num).concat(" Direct Connections from " + ip);
+                } else {
+                    return Integer.toString(num).concat(" Direct Connection from " + ip);
+                }
+            }
         } else {
-            return "Remote Connection via my.jdownloader";
+            if (num > 1 || num == 0) {
+                return Integer.toString(num).concat(" Remote Connections via my.jdownloader");
+            } else {
+                return Integer.toString(num).concat(" Remote Connection via my.jdownloader");
+            }
+
         }
 
     }

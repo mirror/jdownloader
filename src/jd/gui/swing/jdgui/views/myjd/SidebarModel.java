@@ -19,12 +19,9 @@ public class SidebarModel extends DefaultListModel implements GenericConfigEvent
 
     private static final long  serialVersionUID = -204494527404304349L;
 
-    private Object             lock             = new Object();
+    private final Object       LOCK             = new Object();
 
     private MyJDownloaderPanel owner;
-
-    // private SingleReachableState TREE_COMPLETE = new SingleReachableState("TREE_COMPLETE");
-    // private final JList list;
 
     public SidebarModel(MyJDownloaderPanel owner) {
 
@@ -54,48 +51,31 @@ public class SidebarModel extends DefaultListModel implements GenericConfigEvent
     }
 
     public void fill() {
-        System.out.println("Fill");
         new Thread("FillMyJDownloaderSideBarModel") {
             @Override
             public void run() {
-                try {
-                    synchronized (lock) {
+                synchronized (LOCK) {
+                    new EDTRunner() {
 
-                        new EDTRunner() {
+                        @Override
+                        protected void runInEDT() {
+                            removeAllElements();
+                        }
+                    };
+                    final ArrayList<AbstractConfigPanel> lst = new ArrayList<AbstractConfigPanel>();
+                    lst.add(new MyJDownloaderSettingsPanelForTab());
+                    lst.add(new MyJDownloaderAccount());
+                    new EDTRunner() {
 
-                            @Override
-                            protected void runInEDT() {
-                                removeAllElements();
+                        @Override
+                        protected void runInEDT() {
+                            owner.onBeforeModelUpdate();
+                            for (AbstractConfigPanel c : lst) {
+                                addElement(c);
                             }
-                        };
-                        final ArrayList<AbstractConfigPanel> lst = new ArrayList<AbstractConfigPanel>();
-                        lst.add(new MyJDownloaderSettingsPanelForTab());
-                        lst.add(new MyJDownloaderAccount());
-                        new EDTRunner() {
-
-                            @Override
-                            protected void runInEDT() {
-                                owner.onBeforeModelUpdate();
-                                for (AbstractConfigPanel c : lst) {
-                                    addElement(c);
-                                }
-                                owner.onAfterModelUpdate();
-
-                            }
-
-                        };
-                    }
-                } finally {
-                    // new EDTRunner() {
-                    //
-                    // @Override
-                    // protected void runInEDT() {
-                    // if (list != null) {
-                    // list.repaint();
-                    // }
-                    // }
-                    // };
-                    // TREE_COMPLETE.setReached();
+                            owner.onAfterModelUpdate();
+                        }
+                    };
                 }
             }
         }.start();

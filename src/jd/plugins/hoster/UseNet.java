@@ -32,32 +32,32 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 @HostPlugin(revision = "$Revision: 31032 $", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" }, flags = { 0 })
 public class UseNet extends PluginForHost {
 
-    private final String SELECTED_PORT    = "selected_port";
-    private final String SELECTED_SSLPORT = "selected_sslport";
-    private final String PREFER_SSL       = "prefer_ssl";
+    private final String USENET_SELECTED_PORT    = "usenet_selected_port";
+    private final String USENET_SELECTED_SSLPORT = "usenet_selected_sslport";
+    private final String USENET_PREFER_SSL       = "usenet_prefer_ssl";
 
     public UseNet(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
+        setUseNetConfigElements();
     }
 
     protected boolean isUsenetLink(DownloadLink link) {
         return link != null && "usenet".equals(link.getHost());
     }
 
-    public void setConfigElements() {
+    public void setUseNetConfigElements() {
         if (!"usenet".equals(getHost())) {
             final Integer[] ports = getPortSelection(getAvailablePorts());
             if (ports.length > 1) {
-                getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_PORT, ports, "Select ServerPort").setDefaultValue(0));
+                getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), USENET_SELECTED_PORT, ports, "Select (Usenet)ServerPort").setDefaultValue(0));
             }
             if (supportsSSL()) {
                 final Integer[] sslPorts = getPortSelection(getAvailableSSLPorts());
                 if (sslPorts.length > 1 || ports.length == 0) {
-                    getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SELECTED_SSLPORT, sslPorts, "Select ServerPort(SSL)").setDefaultValue(0));
+                    getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), USENET_SELECTED_SSLPORT, sslPorts, "Select (Usenet)ServerPort(SSL)").setDefaultValue(0));
                 }
                 if (sslPorts.length > 0 && ports.length > 0) {
-                    getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_SSL, "Use SSL?").setDefaultValue(false));
+                    getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USENET_PREFER_SSL, "Use (Usenet)SSL?").setDefaultValue(false));
                 }
             }
         }
@@ -162,7 +162,7 @@ public class UseNet extends PluginForHost {
         final SimpleUseNet client = new SimpleUseNet(proxies.get(0), getLogger());
         this.client.set(client);
         try {
-            client.connect(getServerAdress(), getPort(SELECTED_PORT, getAvailablePorts()), false, account.getUser(), account.getPass());
+            client.connect(getServerAdress(), getPort(USENET_SELECTED_PORT, getAvailablePorts()), false, account.getUser(), account.getPass());
         } catch (InvalidAuthException e) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
