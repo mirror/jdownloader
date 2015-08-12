@@ -82,29 +82,34 @@ public class RenameDialog extends AbstractDialog<Object> {
         if (useRegex) {
             return Pattern.compile(regex, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         } else {
-            String[] parts = regex.split("\\*+");
-            StringBuilder sb = new StringBuilder();
-            if (regex.startsWith("*")) {
+            regex = regex.replaceAll("\\*+", "*").trim();
+            final StringBuilder sb = new StringBuilder();
+            if (StringUtils.isEmpty(regex)) {
                 sb.append("(.*)");
-            }
-            int actualParts = 0;
-            for (int i = 0; i < parts.length; i++) {
-
-                if (parts[i].length() != 0) {
-                    if (actualParts > 0) {
-                        sb.append("(.*)");
-                    }
-                    sb.append(Pattern.quote(parts[i]));
-                    actualParts++;
-                }
-            }
-            if (sb.length() == 0) {
+            } else if (regex.equals("*")) {
                 sb.append("(.*)");
             } else {
-                if (regex.endsWith("*")) {
+                if (regex.startsWith("*")) {
                     sb.append("(.*)");
                 }
-
+                final String[] parts = regex.split("\\*+");
+                int actualParts = 0;
+                for (int i = 0; i < parts.length; i++) {
+                    if (parts[i].length() != 0) {
+                        if (actualParts > 0) {
+                            sb.append("(.*)");
+                        }
+                        sb.append(Pattern.quote(parts[i]));
+                        actualParts++;
+                    }
+                }
+                if (sb.length() == 0) {
+                    sb.append("(.*)");
+                } else {
+                    if (regex.endsWith("*")) {
+                        sb.append("(.*)");
+                    }
+                }
             }
             return Pattern.compile(sb.toString(), Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         }
