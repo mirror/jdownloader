@@ -1770,6 +1770,7 @@ lit_reset=Redefinir
 lit_restart=Reiniciar
 lit_restart_now=Reiniciar agora
 lit_save=Salvar
+lit_save_and_close=Salvar & fechar
 lit_save_to=Salvar para
 lit_send=Enviar
 lit_settings=Configurações
