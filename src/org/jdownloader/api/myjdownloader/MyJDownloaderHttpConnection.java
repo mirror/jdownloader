@@ -64,6 +64,14 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     public MyJDownloaderHttpConnection(Socket clientConnection, MyJDownloaderAPI api) throws IOException {
         super(null, clientConnection);
         this.api = api;
+        // try {
+        // SessionInfo session = api.getSessionInfo();
+        // if (session != null) {
+        // session.increaseConnections();
+        // }
+        // } catch (UnconnectedException e) {
+        // e.printStackTrace();
+        // }
         logger = api.getLogger();
     }
 
@@ -151,6 +159,15 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
 
     @Override
     public void closeConnection() {
+        // try {
+        // SessionInfo session = api.getSessionInfo();
+        // if (session != null) {
+        // session.decreaseConnections();
+        // }
+        // } catch (UnconnectedException e) {
+        // e.printStackTrace();
+        // }
+
         try {
             if (!clientSocket.isClosed()) {
                 getOutputStream(true).close();
@@ -235,10 +252,10 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                     this.os = new OutputStream() {
                         private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(clientSocket.getOutputStream(), 16384));
                         Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
-                            // public void close() throws IOException {
-                            // };
+                                                                  // public void close() throws IOException {
+                                                                  // };
 
-                        };
+                                                              };
                         OutputStream                outos     = new CipherOutputStream(b64os, cipher);
 
                         {

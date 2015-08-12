@@ -119,6 +119,7 @@ public class TreeRenderer extends JPanel implements ListCellRenderer {
             } else {
                 lbl.setFont(orgFont);
             }
+            lbl.setEnabled(te.isEnabled());
             ret.setPreferredSize(null);
             TreeRenderer.DIMENSION.width = (int) Math.max(TreeRenderer.DIMENSION.width, ret.getPreferredSize().width * _1_15);
             ret.setPreferredSize(TreeRenderer.DIMENSION);
