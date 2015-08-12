@@ -71,6 +71,14 @@ public class PornTubeCom extends PluginForHost {
         String mediaID = info.getMatch(0);
         if (mediaID == null) {
             mediaID = br.getRegex("\\$\\.ajax\\(url, opts\\);[\t\n\r ]+\\}[\t\n\r ]+\\}\\)\\((\\d+),").getMatch(0);
+            if (mediaID == null) {
+                // just like 4tube....<script id="playerembed" src...
+                final String embed = br.getRegex("/js/player/web/\\d+").getMatch(-1);
+                if (embed != null) {
+                    br.getPage(embed);
+                    mediaID = br.getRegex("\\((\\d+), \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
+                }
+            }
         }
         String availablequalities = info.getMatch(1);
         if (availablequalities != null) {

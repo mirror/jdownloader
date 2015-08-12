@@ -56,20 +56,32 @@ public class FuxCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<title>Fux \\- Error \\- Page not found</title>|<h2>Page<br />not found</h2>|We can\\'t find that page you\\'re looking for|<h3>Oops\\!</h3>|class='videoNotAvailable')") || br.getURL().matches(".+/video\\?error=\\d+")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<title>Fux \\- Error \\- Page not found</title>|<h2>Page<br />not found</h2>|We can\\'t find that page you\\'re looking for|<h3>Oops\\!</h3>|class='videoNotAvailable')") || br.getURL().matches(".+/video\\?error=\\d+")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) \\- FUX</title>").getMatch(0);
         }
         final Regex info = br.getRegex("\\$\\.ajax\\(url, opts\\);[\t\n\r ]+\\}[\t\n\r ]+\\}\\)\\((\\d+), \\d+, \\[(.*?)\\]\\);");
-        final String mediaID = info.getMatch(0);
+        String mediaID = info.getMatch(0);
+        if (mediaID == null) {
+            // just like 4tube....<script id="playerembed" src...
+            final String embed = br.getRegex("/js/player/web/\\d+").getMatch(-1);
+            if (embed != null) {
+                br.getPage(embed);
+                mediaID = br.getRegex("\\((\\d+), \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
+            }
+        }
         String availablequalities = info.getMatch(1);
         if (availablequalities != null) {
             availablequalities = availablequalities.replace(",", "+");
         } else {
             availablequalities = "1080+720+480+360+240";
         }
-        if (mediaID == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (mediaID == null || filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("Origin", "http://www.fux.com");
         br.postPage("http://tkn.fux.com/" + mediaID + "/desktop/" + availablequalities, "");
@@ -81,12 +93,13 @@ public class FuxCom extends PluginForHost {
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = Encoding.htmlDecode(filename.trim());
-        if (DLLINK.contains(".m4v"))
+        if (DLLINK.contains(".m4v")) {
             downloadLink.setFinalFileName(filename + ".m4v");
-        else if (DLLINK.contains(".mp4")) {
+        } else if (DLLINK.contains(".mp4")) {
             downloadLink.setFinalFileName(filename + ".mp4");
-        } else
+        } else {
             downloadLink.setFinalFileName(filename + ".flv");
+        }
         // In case the link redirects to the finallink
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
@@ -124,11 +137,15 @@ public class FuxCom extends PluginForHost {
         for (final String quality : qualities) {
             if (br.containsHTML("\"" + quality + "\"")) {
                 finallink = br.getRegex("\"" + quality + "\":\\{\"status\":\"success\",\"token\":\"(http[^<>\"]*?)\"").getMatch(0);
-                if (finallink != null && checkDirectLink(finallink) != null) break;
+                if (finallink != null && checkDirectLink(finallink) != null) {
+                    break;
+                }
             }
         }
         /* Hm probably this is only needed if only one quality exists */
-        if (finallink == null) finallink = br.getRegex("\"token\":\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) {
+            finallink = br.getRegex("\"token\":\"(http://[^<>\"]*?)\"").getMatch(0);
+        }
         return finallink;
     }
 
