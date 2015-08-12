@@ -60,35 +60,10 @@ public class MyJDownloaderPanel extends SwitchPanel implements ListSelectionList
 
     @Override
     protected void onShow() {
-
         if (treeModelUpdateRequired) {
             treeModelUpdateRequired = false;
             model.fill();
         }
-
-        // new EDTRunner() {
-        // protected void runInEDT() {
-        // if (sidebar.getSelectedPanel() == null) {
-        // sidebar.getTreeCompleteState().executeWhenReached(new Runnable() {
-        //
-        // @Override
-        // public void run() {
-        // new EDTRunner() {
-        //
-        // @Override
-        // protected void runInEDT() {
-        // if (sidebar.getSelectedPanel() == null) {
-        // restoreSelection(true);
-        // }
-        // }
-        //
-        // };
-        // }
-        // });
-        // }
-        // };
-        // };
-
     }
 
     public void restoreSelection(final boolean onlyOnEmptySelection) {

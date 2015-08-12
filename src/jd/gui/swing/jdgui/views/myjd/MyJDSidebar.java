@@ -198,14 +198,6 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
         list.getSelectionModel().addListSelectionListener(x);
     }
 
-    // @Override
-    // public void setOpaque(boolean isOpaque) {
-    // // super.setOpaque(isOpaque);
-    // }
-
-    // public boolean isOpaque() {
-    // return true;
-    // }
     public <T> T getTreeEntry(Class<T> class1) {
         for (int i = 0; i < list.getModel().getSize(); i++) {
             Object el = list.getModel().getElementAt(i);
@@ -233,10 +225,6 @@ public class MyJDSidebar extends JPanel implements MouseMotionListener, MouseLis
         }
         list.setSelectedIndex(0);
     }
-
-    // public SingleReachableState getTreeCompleteState() {
-    // return treemodel.getTreeCompleteState();
-    // }
 
     public boolean treeInitiated() {
         return treemodel.getSize() > 0;

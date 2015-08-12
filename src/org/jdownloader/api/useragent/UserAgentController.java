@@ -130,7 +130,7 @@ public class UserAgentController {
 
     private String getSessionID(RemoteAPIRequest request) {
         if (request instanceof SessionRemoteAPIRequest) {
-            HttpSession session = ((SessionRemoteAPIRequest) request).getSession();
+            final HttpSession session = ((SessionRemoteAPIRequest) request).getSession();
             if (session != null) {
                 return session.getSessionID();
             }
@@ -145,16 +145,16 @@ public class UserAgentController {
             if (ua != null) {
                 ret.add(ua);
             }
-
         }
         return ret;
 
     }
 
     private ConnectedDevice createNewUserAgent(RemoteAPIRequest request, String nuaID) {
-        ConnectedDevice ret = new ConnectedDevice(nuaID);
+        final ConnectedDevice ret = new ConnectedDevice(nuaID);
+        final String token = getSessionID(request);
+        ret.setConnectToken(token);
         ret.setLatestRequest(request);
-
         return ret;
     }
 

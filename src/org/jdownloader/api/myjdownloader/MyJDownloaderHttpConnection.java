@@ -6,7 +6,9 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.zip.GZIPOutputStream;
 
 import javax.crypto.Cipher;
@@ -42,14 +44,22 @@ import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
 
 public class MyJDownloaderHttpConnection extends HttpConnection {
 
-    protected final static ArrayList<HttpRequestHandler> requestHandler = new ArrayList<HttpRequestHandler>();
+    protected final static ArrayList<HttpRequestHandler>                    requestHandler = new ArrayList<HttpRequestHandler>();
     static {
         requestHandler.add(new OptionsRequestHandler());
         requestHandler.add(RemoteAPIController.getInstance().getRequestHandler());
     }
-    protected final MyJDownloaderAPI                     api;
+    protected final MyJDownloaderAPI                                        api;
 
-    private LogSource                                    logger;
+    private final LogSource                                                 logger;
+
+    private static final HashMap<String, List<MyJDownloaderHttpConnection>> CONNECTIONS    = new HashMap<String, List<MyJDownloaderHttpConnection>>();
+
+    public static List<MyJDownloaderHttpConnection> getConnectionsByToken(final String connectToken) {
+        synchronized (CONNECTIONS) {
+            return CONNECTIONS.get(connectToken);
+        }
+    }
 
     public static MyJDownloaderHttpConnection getMyJDownloaderHttpConnection(RemoteAPIRequest request) {
         if (request instanceof SessionRemoteAPIRequest<?>) {
@@ -64,14 +74,6 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     public MyJDownloaderHttpConnection(Socket clientConnection, MyJDownloaderAPI api) throws IOException {
         super(null, clientConnection);
         this.api = api;
-        // try {
-        // SessionInfo session = api.getSessionInfo();
-        // if (session != null) {
-        // session.increaseConnections();
-        // }
-        // } catch (UnconnectedException e) {
-        // e.printStackTrace();
-        // }
         logger = api.getLogger();
     }
 
@@ -120,16 +122,6 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
         return apiException.handle(this.response);
     }
 
-    // @Override
-    // public byte[] getAESJSon_IV(String ID) {
-    // if (ID != null) {
-    // if (ID.equalsIgnoreCase("jd")) {
-    // return Arrays.copyOfRange(payloadEncryptionToken, 0, 16);
-    // } else if (ID.equalsIgnoreCase("server")) { return Arrays.copyOfRange(serverSecret, 0, 16); }
-    // }
-    // return null;
-    // }
-
     public byte[] getPayloadEncryptionToken() {
         return payloadEncryptionToken;
     }
@@ -137,16 +129,6 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     public String getRequestConnectToken() {
         return requestConnectToken;
     }
-
-    // @Override
-    // public byte[] getAESJSon_KEY(String ID) {
-    // if (ID != null) {
-    // if (ID.equalsIgnoreCase("jd")) {
-    // return Arrays.copyOfRange(payloadEncryptionToken, 16, 32);
-    // } else if (ID.equalsIgnoreCase("server")) { return Arrays.copyOfRange(serverSecret, 16, 32); }
-    // }
-    // return null;
-    // }
 
     @Override
     protected HttpRequest buildRequest() throws IOException {
@@ -159,15 +141,15 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
 
     @Override
     public void closeConnection() {
-        // try {
-        // SessionInfo session = api.getSessionInfo();
-        // if (session != null) {
-        // session.decreaseConnections();
-        // }
-        // } catch (UnconnectedException e) {
-        // e.printStackTrace();
-        // }
-
+        final String token = getRequestConnectToken();
+        if (token != null) {
+            synchronized (CONNECTIONS) {
+                List<MyJDownloaderHttpConnection> list = CONNECTIONS.get(token);
+                if (list != null && list.remove(this) && list.size() == 0) {
+                    CONNECTIONS.remove(token);
+                }
+            }
+        }
         try {
             if (!clientSocket.isClosed()) {
                 getOutputStream(true).close();
@@ -188,6 +170,17 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
             throw new IOException("Invalid my.jdownloader.org request: " + requestLine);
         }
         requestConnectToken = parser.getSessionToken();
+        final String token = getRequestConnectToken();
+        if (token != null) {
+            synchronized (CONNECTIONS) {
+                List<MyJDownloaderHttpConnection> list = CONNECTIONS.get(token);
+                if (list == null) {
+                    list = new CopyOnWriteArrayList<MyJDownloaderHttpConnection>();
+                    CONNECTIONS.put(token, list);
+                }
+                list.add(this);
+            }
+        }
         try {
             SessionInfo session = api.getSessionInfo();
             if (StringUtils.equals(parser.getSessionToken(), session.getSessionToken())) {
@@ -252,10 +245,10 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
                     this.os = new OutputStream() {
                         private ChunkedOutputStream chunkedOS = new ChunkedOutputStream(new BufferedOutputStream(clientSocket.getOutputStream(), 16384));
                         Base64OutputStream          b64os     = new Base64OutputStream(chunkedOS) {
-                                                                  // public void close() throws IOException {
-                                                                  // };
+                            // public void close() throws IOException {
+                            // };
 
-                                                              };
+                        };
                         OutputStream                outos     = new CipherOutputStream(b64os, cipher);
 
                         {

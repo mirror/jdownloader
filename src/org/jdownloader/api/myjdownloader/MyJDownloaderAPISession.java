@@ -6,7 +6,7 @@ import org.jdownloader.api.RemoteAPISession;
 
 public class MyJDownloaderAPISession extends RemoteAPISession {
 
-    private MyJDownloaderHttpConnection connection;
+    private final MyJDownloaderHttpConnection connection;
 
     public MyJDownloaderAPISession(HttpSessionController<? extends HttpSession> controller, MyJDownloaderHttpConnection connection) {
         super(controller);
