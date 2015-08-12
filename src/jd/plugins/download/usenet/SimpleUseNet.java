@@ -45,6 +45,7 @@ public class SimpleUseNet {
             }
         },
         BODY,
+        STAT,
         QUIT;
 
         public boolean isMultiLineResponse(int code) {
@@ -62,7 +63,7 @@ public class SimpleUseNet {
 
     private final Socket socket;
 
-    private static class CommandResponse {
+    public static class CommandResponse {
         private final int responseCode;
 
         public int getResponseCode() {
@@ -115,7 +116,7 @@ public class SimpleUseNet {
             socket.connect(socketAddress);
             outputStream = socket.getOutputStream();
             inputStream = socket.getInputStream();
-            CommandResponse response = readCommandResponse(null);
+            final CommandResponse response = readCommandResponse(null);
             switch (response.getResponseCode()) {
             case 200:
                 // Service available, posting allowed
@@ -123,11 +124,11 @@ public class SimpleUseNet {
                 // Service available, posting prohibited
                 break;
             case 400:
-                throw new IOException("Service temporarily unavailable");
+                throw new ServerErrorResponseException(response);
             case 500:
-                throw new IOException("Service permanently unavailable");
+                throw new ServerErrorResponseException(response);
             default:
-                throw new IOException("Unknown Response: " + response);
+                throw new UnknownResponseException(response);
             }
             if (username != null || password != null) {
                 authenticate(username, password);
@@ -155,10 +156,10 @@ public class SimpleUseNet {
                 return;
             case 481:
                 // user/pass incorrect
-                throw new IOException("User/Pass invalid?!");
+                throw new InvalidAuthException();
             }
         }
-        throw new IOException("Unknown Response: " + response);
+        throw new UnknownResponseException(response);
     }
 
     private final ByteArrayOutputStream lineBuffer = new ByteArrayOutputStream() {
@@ -252,13 +253,38 @@ public class SimpleUseNet {
         return inputStream;
     }
 
+    protected String wrapMessageID(final String messageID) {
+        String ret = messageID.trim();
+        if (!ret.startsWith("<")) {
+            ret = "<".concat(ret);
+        }
+        if (!ret.endsWith(">")) {
+            ret = ret.concat(">");
+        }
+        return ret;
+    }
+
+    public synchronized boolean isMessageExisting(final String messageID) throws IOException {
+        final CommandResponse response = sendCmd(COMMAND.STAT, wrapMessageID(messageID));
+        switch (response.getResponseCode()) {
+        case 223:
+            return true;
+        case 430:
+            return false;
+        default:
+            throw new UnknownResponseException(response);
+        }
+    }
+
     public synchronized InputStream requestMessageBodyAsInputStream(final String messageID) throws IOException {
-        final CommandResponse response = sendCmd(COMMAND.BODY, messageID);
+        final CommandResponse response = sendCmd(COMMAND.BODY, wrapMessageID(messageID));
         switch (response.getResponseCode()) {
         case 222:
             break;
+        case 430:
+            throw new MessageBodyNotFoundException();
         default:
-            throw new IOException("Unknown Response: " + response);
+            throw new UnknownResponseException(response);
         }
         final ByteArrayOutputStream buffer = new ByteArrayOutputStream() {
             @Override
@@ -299,10 +325,6 @@ public class SimpleUseNet {
         }
     }
 
-    public CommandResponse articleHead(final String articleID) throws IOException {
-        return sendCmd(COMMAND.HEAD, articleID);
-    }
-
     public CommandResponse sendCmd(COMMAND command) throws IOException {
         return sendCmd(command, null);
     }
@@ -315,8 +337,10 @@ public class SimpleUseNet {
         }
         final CommandResponse response = readCommandResponse(command);
         switch (response.getResponseCode()) {
+        case 400:
+            throw new UnrecognizedCommandException(command, parameter);
         case 480:
-            throw new IOException("Authentication required for command");
+            throw new AuthRequiredException();
         }
         return response;
     }
@@ -325,7 +349,7 @@ public class SimpleUseNet {
         try {
             final CommandResponse response = sendCmd(COMMAND.QUIT, null);
             if (response.getResponseCode() != 205) {
-                throw new IOException("Unclean QUIT:" + response);
+                throw new UnexpectedResponseException(response);
             }
         } finally {
             disconnect();

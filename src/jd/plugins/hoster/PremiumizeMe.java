@@ -43,7 +43,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.swing.MigPanel;
@@ -58,7 +57,7 @@ import org.jdownloader.plugins.accounts.EditAccountPanel;
 import org.jdownloader.plugins.accounts.Notifier;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
-public class PremiumizeMe extends PluginForHost {
+public class PremiumizeMe extends UseNet {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static final String                            SENDDEBUGLOG       = "SENDDEBUGLOG";
@@ -77,6 +76,7 @@ public class PremiumizeMe extends PluginForHost {
     }
 
     public void setConfigElements() {
+        super.setConfigElements();
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SENDDEBUGLOG, "Send debug logs to PremiumizeMe automatically?").setDefaultValue(true));
     }
 
@@ -106,8 +106,8 @@ public class PremiumizeMe extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws PluginException {
-        return AvailableStatus.UNCHECKABLE;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        return super.requestFileInformation(link);
     }
 
     @Override
@@ -133,6 +133,9 @@ public class PremiumizeMe extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
+        if (isUsenetLink(link)) {
+            return 10;
+        }
         if (link != null && account != null) {
             Object ret = getConnectionSettingsValue(link.getHost(), account, "max_connections_per_hoster");
             if (ret != null && ret instanceof Integer) {
@@ -263,68 +266,72 @@ public class PremiumizeMe extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
+        if (isUsenetLink(link)) {
+            super.handleMultiHost(link, account);
+            return;
+        } else {
+            synchronized (hostUnavailableMap) {
+                HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+                if (unavailableMap != null) {
+                    Long lastUnavailable = unavailableMap.get(link.getHost());
+                    if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                        final long wait = lastUnavailable - System.currentTimeMillis();
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                    } else if (lastUnavailable != null) {
+                        unavailableMap.remove(link.getHost());
+                        if (unavailableMap.size() == 0) {
+                            hostUnavailableMap.remove(account);
+                        }
                     }
                 }
             }
-        }
 
-        br = newBrowser();
-        showMessage(link, "Task 1: Generating Link");
-        /* request Download */
-        br.getPage(getProtocol() + "api.premiumize.me/pm-api/v1.php?method=directdownloadlink&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()) + "&params[link]=" + Encoding.urlEncode(link.getDownloadURL()));
-        if (br.containsHTML(">403 Forbidden<")) {
-            int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING, 0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                link.setProperty("timesfailed" + FAIL_STRING, timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
-            } else {
-                link.setProperty("timesfailed" + FAIL_STRING, Property.NULL);
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-            }
-        }
-        handleAPIErrors(br, account, link);
-        String dllink = br.getRegex("location\":\"(https?[^\"]+)").getMatch(0);
-        if (dllink == null) {
-            logger.info(this.getHost() + ": Unknown error");
-            sendErrorLog(link, account);
-            int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING + "_unknown", 0);
-            link.getLinkStatus().setRetryCount(0);
-            if (timesFailed <= 2) {
-                timesFailed++;
-                link.setProperty("timesfailed" + FAIL_STRING + "_unknown", timesFailed);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
-            } else {
-                link.setProperty("timesfailed" + FAIL_STRING + "_unknown", Property.NULL);
-                logger.info("premiumize.me: Unknown error - disabling current host!");
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-            }
-        }
-        dllink = dllink.replaceAll("\\\\/", "/");
-        showMessage(link, "Task 2: Download begins!");
-        try {
-            handleDL(account, link, dllink);
-        } catch (Exception e) {
-            try {
-                if (dl.externalDownloadStop() == false) {
-                    LogSource.exception(logger, e);
-                    sendErrorLog(link, account);
+            br = newBrowser();
+            showMessage(link, "Task 1: Generating Link");
+            /* request Download */
+            br.getPage(getProtocol() + "api.premiumize.me/pm-api/v1.php?method=directdownloadlink&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()) + "&params[link]=" + Encoding.urlEncode(link.getDownloadURL()));
+            if (br.containsHTML(">403 Forbidden<")) {
+                int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING, 0);
+                if (timesFailed <= 2) {
+                    timesFailed++;
+                    link.setProperty("timesfailed" + FAIL_STRING, timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+                } else {
+                    link.setProperty("timesfailed" + FAIL_STRING, Property.NULL);
+                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
                 }
-            } catch (final Throwable e1) {
             }
-            throw e;
+            handleAPIErrors(br, account, link);
+            String dllink = br.getRegex("location\":\"(https?[^\"]+)").getMatch(0);
+            if (dllink == null) {
+                logger.info(this.getHost() + ": Unknown error");
+                sendErrorLog(link, account);
+                int timesFailed = link.getIntegerProperty("timesfailed" + FAIL_STRING + "_unknown", 0);
+                link.getLinkStatus().setRetryCount(0);
+                if (timesFailed <= 2) {
+                    timesFailed++;
+                    link.setProperty("timesfailed" + FAIL_STRING + "_unknown", timesFailed);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Unknown error");
+                } else {
+                    link.setProperty("timesfailed" + FAIL_STRING + "_unknown", Property.NULL);
+                    logger.info("premiumize.me: Unknown error - disabling current host!");
+                    tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+                }
+            }
+            dllink = dllink.replaceAll("\\\\/", "/");
+            showMessage(link, "Task 2: Download begins!");
+            try {
+                handleDL(account, link, dllink);
+            } catch (Exception e) {
+                try {
+                    if (dl.externalDownloadStop() == false) {
+                        LogSource.exception(logger, e);
+                        sendErrorLog(link, account);
+                    }
+                } catch (final Throwable e1) {
+                }
+                throw e;
+            }
         }
     }
 
@@ -383,6 +390,7 @@ public class PremiumizeMe extends PluginForHost {
         String HostsJSON = new Regex(hostsSup, "\"tldlist\":\\[([^\\]]+)\\]").getMatch(0);
         String[] hosts = new Regex(HostsJSON, "\"([a-zA-Z0-9\\.\\-]+)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+        supportedHosts.add("usenet");
         ai.setMultiHostSupport(this, supportedHosts);
         ai.setProperty("connection_settings", response.get("connection_settings"));
         return ai;
@@ -549,6 +557,21 @@ public class PremiumizeMe extends PluginForHost {
             logger.info("PremiumizeMe Exception: statusCode: " + statusCode + " statusMessage: " + statusMessage);
             throw e;
         }
+    }
+
+    @Override
+    protected String getServerAdress() {
+        return "usenet.premiumize.me";
+    }
+
+    @Override
+    protected int[] getAvailablePorts() {
+        return new int[] { 119 };
+    }
+
+    @Override
+    protected int[] getAvailableSSLPorts() {
+        return new int[] { 563 };
     }
 
     @SuppressWarnings("deprecation")

@@ -255,7 +255,7 @@ public class AccountData implements Storable {
             ai.setTrafficLeft(trafficLeft);
             ai.setTrafficMax(trafficMax);
             ai.setValidUntil(validUntil);
-            ai.setStatus(getStatusString());
+            ai.setStatus(statusString);
             if (trafficUnlimited) {
                 ai.setUnlimitedTraffic();
             }

@@ -214,36 +214,36 @@ public class DownloadSession extends Property {
     }
 
     private final CopyOnWriteArraySet<SingleDownloadController> controllers        = new CopyOnWriteArraySet<SingleDownloadController>() {
-        /**
+                                                                                       /**
          *
          */
-        private static final long serialVersionUID = -3897088297641777499L;
+                                                                                       private static final long serialVersionUID = -3897088297641777499L;
 
-        public boolean add(SingleDownloadController e) {
-            downloadsStarted.incrementAndGet();
-            e.getDownloadLinkCandidate().getLink().setDownloadLinkController(e);
-            return super.add(e);
-        };
+                                                                                       public boolean add(SingleDownloadController e) {
+                                                                                           downloadsStarted.incrementAndGet();
+                                                                                           e.getDownloadLinkCandidate().getLink().setDownloadLinkController(e);
+                                                                                           return super.add(e);
+                                                                                       };
 
-        @Override
-        public boolean remove(Object e) {
-            boolean ret = super.remove(e);
-            if (ret) {
-                try {
-                    getDiskSpaceManager().freeAllReservationsBy(e);
-                } catch (final Throwable ignore) {
-                }
-                try {
-                    getFileAccessManager().unlockAllHeldby(e);
-                } finally {
-                    if (e instanceof SingleDownloadController) {
-                        ((SingleDownloadController) e).getDownloadLinkCandidate().getLink().setDownloadLinkController(null);
-                    }
-                }
-            }
-            return ret;
-        };
-    };
+                                                                                       @Override
+                                                                                       public boolean remove(Object e) {
+                                                                                           boolean ret = super.remove(e);
+                                                                                           if (ret) {
+                                                                                               try {
+                                                                                                   getDiskSpaceManager().freeAllReservationsBy(e);
+                                                                                               } catch (final Throwable ignore) {
+                                                                                               }
+                                                                                               try {
+                                                                                                   getFileAccessManager().unlockAllHeldby(e);
+                                                                                               } finally {
+                                                                                                   if (e instanceof SingleDownloadController) {
+                                                                                                       ((SingleDownloadController) e).getDownloadLinkCandidate().getLink().setDownloadLinkController(null);
+                                                                                                   }
+                                                                                               }
+                                                                                           }
+                                                                                           return ret;
+                                                                                       };
+                                                                                   };
     private long                                                createTime;
     private static volatile WeakReference<FileBytesCache>       downloadWriteCache = null;
 
@@ -401,17 +401,18 @@ public class DownloadSession extends Property {
                 return ret;
             }
         }
+        final PluginForHost defaulPlugin = getPlugin(host);
         if (isUseAccountsEnabled() == false) {
             /* accounts disabled -> free only */
             final ArrayList<CachedAccount> newCache = new ArrayList<CachedAccount>();
-            newCache.add(new CachedAccount(host, null, getPlugin(host)));
+            newCache.add(new CachedAccount(host, null, defaulPlugin));
             ret = new AccountCache(newCache);
         } else {
             ret = HosterRuleController.getInstance().getAccountCache(host, this);
             if (ret == null) {
                 final ArrayList<CachedAccount> newCache = new ArrayList<CachedAccount>();
                 for (Account acc : AccountController.getInstance().list(host)) {
-                    newCache.add(new CachedAccount(host, acc, getPlugin(host)));
+                    newCache.add(new CachedAccount(host, acc, defaulPlugin));
                 }
                 final List<Account> multiHosts = AccountController.getInstance().getMultiHostAccounts(host);
                 if (multiHosts != null) {
@@ -419,7 +420,7 @@ public class DownloadSession extends Property {
                         newCache.add(new CachedAccount(host, acc, getPlugin(acc.getHoster())));
                     }
                 }
-                newCache.add(new CachedAccount(host, null, getPlugin(host)));
+                newCache.add(new CachedAccount(host, null, defaulPlugin));
                 try {
                     if (true) {
                         /* temp hotfix for candidate issues losing premium candidate */

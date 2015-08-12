@@ -44,9 +44,7 @@ public class RenameDialog extends AbstractDialog<Object> {
 
             @Override
             public void actionPerformed(ActionEvent e1) {
-
                 try {
-
                     boolean regex = cbRegex.isSelected();
                     CFG_GUI.CFG.setRenameActionRegexEnabled(regex);
                     Pattern pattern = createPattern(txtSearch.getText(), regex);
@@ -64,7 +62,6 @@ public class RenameDialog extends AbstractDialog<Object> {
                             String newName = pattern.matcher(name).replaceAll(rep);
                             list.add(new Result(name, newName, l));
                         }
-
                     }
                     TestWaitDialog d = new TestWaitDialog(regex, pattern, rep, list);
                     UIOManager.I().show(null, d);
