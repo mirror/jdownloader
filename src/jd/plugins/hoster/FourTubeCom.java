@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4tube.com" }, urls = { "http://(www\\.)?4tube\\.com/(?:embed|videos)/\\d+/?([\\w-]+)?" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4tube.com" }, urls = { "http://(?:www\\.)?4tube\\.com/(?:embed|videos)/(\\d+)/?([\\w-]+)?" }, flags = { 32 })
 public class FourTubeCom extends PluginForHost {
 
     // DEV NOTES
@@ -52,12 +52,14 @@ public class FourTubeCom extends PluginForHost {
 
     private String               DLLINK  = null;
     private URLConnectionAdapter con     = null;
+    private String               uid     = null;
     private boolean              isEmbed = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         String dllink = downloadLink.getDownloadURL();
+        uid = new Regex(dllink, this.getSupportedLinks()).getMatch(0);
         isEmbed = dllink.contains("/embed/");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:31.0) Gecko/20100101 Firefox/31.0");
@@ -66,7 +68,7 @@ public class FourTubeCom extends PluginForHost {
         if (br.getHttpConnection() == null) {
             return AvailableStatus.UNCHECKABLE;
         }
-        if (br.containsHTML("Page not found|This Video Is No Longer Available") || new Regex(br.getURL(), "/videos\\?error=\\d+").matches()) {
+        if (br.containsHTML("Page not found|This Video Is No Longer Available") || new Regex(br.getURL(), "/videos\\?error=\\d+").matches() || (br.containsHTML("<title>\\s*Video not found\\s*</title>") && isEmbed)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?) \\| 4tube\"").getMatch(0);
@@ -97,8 +99,16 @@ public class FourTubeCom extends PluginForHost {
 
     private void getDllink() throws PluginException, IOException {
         final String id_media = "\\((\\d+), \\d+, \\[([0-9,]+)\\]\\);";
-        final String mediaID = br.getRegex(id_media).getMatch(0);
-
+        String mediaID = br.getRegex(id_media).getMatch(0);
+        if (mediaID == null && isEmbed) {
+            // some times this isn't shown within the embed page, its within /js/player/\d+, or the uid for embed is transferable back to
+            // standard /videos/, but like dev note indicates not all embed videos are transferable!
+            final String playerEmbed = br.getRegex("/js/player/embed/" + uid).getMatch(-1);
+            if (playerEmbed != null) {
+                br.getPage(playerEmbed);
+                mediaID = br.getRegex(id_media).getMatch(0);
+            }
+        }
         String availablequalities = br.getRegex(id_media).getMatch(1);
         if (availablequalities != null) {
             availablequalities = availablequalities.replace(",", "+");
