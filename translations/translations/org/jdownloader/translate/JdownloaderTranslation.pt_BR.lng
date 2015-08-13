@@ -156,6 +156,7 @@ MyJDownloaderController_onError_outdated=O JDownloader não pôde se conectar ao
 MyJDownloaderController_onError_unknown=Não foi possível conectar ao serviço My.JDownloader: %s1
 OptionalContainer_OptionalContainer=Mais Ações...
 PackagizerSettings_folderbypackage_rule_name=Criar Subpasta por Nome do Pacote
+PackagizerSettings_folderbyplugin_rule_name=Criar subpasta pelo Plugin
 PasteContextLinksAction_getTranslationForDeepDecryptEnabled=Descriptografia profunda
 PasteLinksAction_getTranslationForDeepDecryptEnabled=Descriptografia profunda
 PauseDownloadsAction_getHideIfDownloadsAreStoppedTranslation=Ocultar se downloads não estão em andamento
