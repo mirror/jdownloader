@@ -66,7 +66,6 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ProxyDialog;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.FilterList;
@@ -378,15 +377,9 @@ public class ProxyController implements ProxySelectorInterface {
         final LinkedHashSet<AbstractProxySelectorImpl> ret = new LinkedHashSet<AbstractProxySelectorImpl>();
         try {
             final CachedAccount cachedAccount = downloadLinkCandidate.getCachedAccount();
-            Account acc = cachedAccount.getAccount();
-
+            final Account acc = cachedAccount.getAccount();
             final PluginForHost pluginForHost = cachedAccount.getPlugin();
-            final String pluginHost;
-            if (isSpecialPlugin(pluginForHost)) {
-                pluginHost = downloadLinkCandidate.getLink().getDomainInfo().getTld();
-            } else {
-                pluginHost = pluginForHost.getHost();
-            }
+            final String pluginHost = pluginForHost.getHost(downloadLinkCandidate.getLink(), acc);
             int maxResults;
             if (pluginForHost.isProxyRotationEnabled(cachedAccount.getAccount() != null)) {
                 maxResults = Integer.MAX_VALUE;
@@ -509,7 +502,7 @@ public class ProxyController implements ProxySelectorInterface {
 
     /**
      * returns a copy of current proxy list
-     * 
+     *
      * @return
      */
     public List<AbstractProxySelectorImpl> getList() {
@@ -1112,7 +1105,7 @@ public class ProxyController implements ProxySelectorInterface {
 
     /**
      * Used by the updatesystem. it returnes all "NOT banned" proxies for the given url.
-     * 
+     *
      * @param url
      * @return
      */
@@ -1147,7 +1140,7 @@ public class ProxyController implements ProxySelectorInterface {
     /**
      * default proxy selector. This method ignores the banned information. it will always return the same proxy order, including banned
      * proxies.
-     * 
+     *
      * @param url
      * @return
      */
@@ -1161,22 +1154,6 @@ public class ProxyController implements ProxySelectorInterface {
             ret = getProxiesByUrl(urlString, true, true);
         }
         return ret;
-    }
-
-    public static boolean isSpecialPlugin(Plugin plugin) {
-        if (plugin instanceof PluginForHost) {
-            LazyHostPlugin lazy = ((PluginForHost) plugin).getLazyP();
-            if ("ftp".equals(lazy.getHost())) {
-                return true;
-            }
-            if ("directhttp".equals(lazy.getHost())) {
-                return true;
-            }
-            if ("http links".equals(lazy.getHost())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public List<HTTPProxy> getProxiesByUrl(final String urlString, final boolean ignoreConnectionBans, final boolean ignoreAllBans) {
@@ -1204,7 +1181,7 @@ public class ProxyController implements ProxySelectorInterface {
             final URL url = new URL(urlString);
             final String host = url.getHost();
             final String plgHost;
-            if (plugin == null || isSpecialPlugin(plugin)) {
+            if (plugin == null || plugin.isHandlingMultipleHosts()) {
                 plgHost = host;
             } else {
                 plgHost = plugin.getHost();

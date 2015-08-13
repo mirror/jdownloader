@@ -10,13 +10,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.jdownloader.DomainInfo;
-
 /**
  * This plugin only serves as a FallBack in case another plugin could not be initiated
- * 
+ *
  * @author daniel
- * 
+ *
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "UpdateRequired" }, urls = { "LXISAWESOME" }, flags = { 0 })
 public class UpdateRequiredHostPlugin extends PluginForHost {
@@ -30,10 +28,9 @@ public class UpdateRequiredHostPlugin extends PluginForHost {
         return null;
     }
 
-    @Override
-    public DomainInfo getDomainInfo(DownloadLink link) {
-        return DomainInfo.getInstance("jdownloader.org");
-    }
+    public String getHost(DownloadLink link, Account account) {
+        return "jdownloader.org";
+    };
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {

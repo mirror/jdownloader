@@ -598,20 +598,6 @@ public class DirectHTTP extends PluginForHost {
     }
 
     @Override
-    public String getCustomFavIconURL(final DownloadLink link) {
-        if (link != null) {
-            final String domain = Browser.getHost(getDownloadURL(link), true);
-            if (domain != null) {
-                return domain;
-            }
-        }
-        if (this.customFavIconHost != null) {
-            return this.customFavIconHost;
-        }
-        return null;
-    }
-
-    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
@@ -782,9 +768,9 @@ public class DirectHTTP extends PluginForHost {
                     } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
                         urlConnection = br.openHeadConnection(getDownloadURL(downloadLink));
                         if (urlConnection.getResponseCode() == 404 /*
-                         * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
-                         * "must-revalidate") && urlConnection.getHeaderField("Via") != null
-                         */) {
+                                                                    * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
+                                                                    * "must-revalidate") && urlConnection.getHeaderField("Via") != null
+                                                                    */) {
                             urlConnection.disconnect();
                             urlConnection = br.openGetConnection(getDownloadURL(downloadLink));
                         } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
@@ -1263,19 +1249,18 @@ public class DirectHTTP extends PluginForHost {
         }
     }
 
-    @Override
-    public void setDownloadLink(final DownloadLink link) {
-        try {
-            super.setDownloadLink(link);
-            this.customFavIconHost = Browser.getHost(getDownloadURL(link), false);
-        } catch (final Throwable e) {
-        }
-    }
-
     /* NO OVERRIDE!! We need to stay 0.9*compatible */
     @Override
     public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public String getHost(DownloadLink link, Account account) {
+        if (link != null) {
+            return Browser.getHost(link.getDownloadURL(), true);
+        }
+        return super.getHost(link, account);
     }
 
     @Override

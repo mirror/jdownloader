@@ -26,6 +26,7 @@ import jd.http.Browser;
 import jd.nutils.SimpleFTP;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -44,14 +45,12 @@ public class Ftp extends PluginForHost {
         super(wrapper);
     }
 
-    public String getCustomFavIconURL(DownloadLink link) {
+    @Override
+    public String getHost(DownloadLink link, Account account) {
         if (link != null) {
-            String domain = Browser.getHost(link.getDownloadURL(), true);
-            if (domain != null) {
-                return domain;
-            }
+            return Browser.getHost(link.getDownloadURL(), true);
         }
-        return null;
+        return super.getHost(link, account);
     }
 
     public void download(String ftpurl, final DownloadLink downloadLink, boolean throwException) throws Exception {

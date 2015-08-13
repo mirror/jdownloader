@@ -18,6 +18,7 @@ import jd.controlling.proxy.SelectedProxy;
 import jd.gui.swing.jdgui.GUIUtils;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import net.miginfocom.swing.MigLayout;
 
@@ -31,6 +32,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
+import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.SkipReason;
@@ -191,11 +193,13 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
     public void configureRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value instanceof DownloadLink) {
-            DownloadLink dlLink = (DownloadLink) value;
-            DownloadInterface dli = null;
-            SingleDownloadController sdc = dlLink.getDownloadLinkController();
+            final DownloadLink dlLink = (DownloadLink) value;
+            final SingleDownloadController sdc = dlLink.getDownloadLinkController();
+            final DownloadInterface dli;
             if (sdc != null) {
                 dli = sdc.getDownloadInstance();
+            } else {
+                dli = null;
             }
             int index = 0;
             if (dlLink.isSkipped()) {
@@ -225,7 +229,8 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 }
                 index++;
                 if (sdc.getAccount() != null && sdc.getAccount().getPlugin() != null) {
-                    Icon icon = sdc.getAccount().getPlugin().getDomainInfo(dlLink).getFavIcon();
+                    final PluginForHost plugin = sdc.getAccount().getPlugin();
+                    final Icon icon = DomainInfo.getInstance(plugin.getHost(dlLink, sdc.getAccount())).getFavIcon();
                     labels[index].setIcon(icon);
                     labels[index].setVisible(true);
                     index++;
@@ -269,13 +274,15 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
          */
         private static final long serialVersionUID = -6581783135666367021L;
 
-        public ConnectionTooltip(DownloadLink link) {
+        public ConnectionTooltip(final DownloadLink link) {
             JLabel lbl;
             this.panel = new TooltipPanel("ins 3,wrap 1", "[grow,fill]", "[grow,fill]");
-            DownloadInterface dli = null;
-            SingleDownloadController sdc = link.getDownloadLinkController();
+            final SingleDownloadController sdc = link.getDownloadLinkController();
+            final DownloadInterface dli;
             if (sdc != null) {
                 dli = sdc.getDownloadInstance();
+            } else {
+                dli = null;
             }
             {
                 if (dlWatchdog.isLinkForced(link)) {
@@ -321,7 +328,8 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 }
                 if (sdc.getAccount() != null && sdc.getAccount().getPlugin() != null) {
                     /* account in use? */
-                    Icon icon = sdc.getAccount().getPlugin().getDomainInfo(link).getFavIcon();
+                    final PluginForHost plugin = sdc.getAccount().getPlugin();
+                    final Icon icon = DomainInfo.getInstance(plugin.getHost(link, sdc.getAccount())).getFavIcon();
                     panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadUsesAccount(GUIUtils.getAccountName(sdc.getAccount().getUser())), icon, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));

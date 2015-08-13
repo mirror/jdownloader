@@ -3,7 +3,6 @@ package jd.controlling.downloadcontroller;
 import java.util.Comparator;
 
 import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.proxy.ProxyController;
 
 import org.jdownloader.DomainInfo;
 
@@ -14,7 +13,7 @@ public class DownloadLinkCandidateLoadBalancer implements Comparator<AbstractPro
     private final DomainInfo domainInfo;
 
     public DownloadLinkCandidateLoadBalancer(DownloadLinkCandidate candidate) {
-        specialHandling = ProxyController.isSpecialPlugin(candidate.getCachedAccount().getPlugin());
+        specialHandling = candidate.getCachedAccount().getPlugin().isHandlingMultipleHosts();
         this.pluginHost = candidate.getCachedAccount().getPlugin().getHost();
         domainInfo = candidate.getLink().getDomainInfo();
     }

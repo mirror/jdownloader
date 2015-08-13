@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.net.URL;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -46,17 +45,11 @@ public class GenericM3u8 extends PluginForHost {
     }
 
     @Override
-    public String getCustomFavIconURL(final DownloadLink link) {
+    public String getHost(DownloadLink link, Account account) {
         if (link != null) {
-            final String domain = Browser.getHost(link.getDownloadURL(), true);
-            if (domain != null) {
-                return domain;
-            }
+            return Browser.getHost(link.getDownloadURL(), true);
         }
-        if (this.customFavIconHost != null) {
-            return this.customFavIconHost;
-        }
-        return null;
+        return super.getHost(link, account);
     }
 
     @Override
@@ -148,15 +141,6 @@ public class GenericM3u8 extends PluginForHost {
         dl = new HLSDownloader(downloadLink, br, master);
         dl.startDownload();
 
-    }
-
-    @Override
-    public void setDownloadLink(final DownloadLink link) {
-        try {
-            super.setDownloadLink(link);
-            this.customFavIconHost = Browser.getHost(new URL(link.getDownloadURL()));
-        } catch (final Throwable e) {
-        }
     }
 
     @Override

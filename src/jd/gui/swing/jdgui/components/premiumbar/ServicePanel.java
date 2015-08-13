@@ -302,7 +302,7 @@ public class ServicePanel extends JPanel implements MouseListener, AccountToolti
 
             final PluginForHost plugin = acc.getPlugin();
             if (plugin != null) {
-                final DomainInfo domainInfo = plugin.getDomainInfo(null);
+                final DomainInfo domainInfo = DomainInfo.getInstance(plugin.getHost());
                 final String domainTld = domainInfo.getTld();
                 domainInfo.getFavIcon();
                 switch (premiumStatusBarDisplay) {

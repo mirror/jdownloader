@@ -657,6 +657,17 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
+    /**
+     * returns the host of the service handling the download for link with given account
+     *
+     * @param link
+     * @param account
+     * @return
+     */
+    public String getHost(DownloadLink link, Account account) {
+        return getHost();
+    }
+
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
@@ -1193,18 +1204,6 @@ public abstract class PluginForHost extends Plugin {
             LogController.CL().log(e);
         }
         return false;
-    }
-
-    public String getCustomFavIconURL(DownloadLink link) {
-        return getHost();
-    }
-
-    public DomainInfo getDomainInfo(DownloadLink link) {
-        String host = getCustomFavIconURL(link);
-        if (host == null) {
-            host = getHost();
-        }
-        return DomainInfo.getInstance(host);
     }
 
     public static void main(String[] args) throws Exception {
