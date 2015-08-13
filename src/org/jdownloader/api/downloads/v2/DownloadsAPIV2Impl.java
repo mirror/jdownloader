@@ -497,9 +497,12 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
 
     @Override
     public void renameLink(Long linkId, String newName) {
-        final DownloadLink link = DownloadController.getInstance().getLinkByID(linkId);
-        if (link != null && newName != null) {
-            link.setName(newName);
+        if (newName != null && linkId != null) {
+            DownloadController dwd = DownloadController.getInstance();
+            final DownloadLink link = dwd.getLinkByID(linkId);
+            if (link != null) {
+                DownloadWatchDog.getInstance().renameLink(link, newName);
+            }
         }
     }
 
