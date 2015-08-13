@@ -20,8 +20,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.components.ThrowingRunnable;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
-import jd.plugins.hoster.DummyScriptEnginePlugin.ThrowingRunnable;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.IO;

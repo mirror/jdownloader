@@ -35,9 +35,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -58,9 +55,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DummyScriptEnginePlugin.ThrowingRunnable;
+import jd.plugins.components.ThrowingRunnable;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datafile.com" }, urls = { "https?://(www\\.)?datafile\\.com/d/[A-Za-z0-9]+(/[^<>\"/]+)?" }, flags = { 2 })
 public class DataFileCom extends antiDDoSForHost {
@@ -77,36 +77,36 @@ public class DataFileCom extends antiDDoSForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME               = false;
-    private static final int     FREE_MAXCHUNKS            = 1;
+    private static final boolean           FREE_RESUME                  = false;
+    private static final int               FREE_MAXCHUNKS               = 1;
     /*
      * How multiple free downloads are possible: Start first download & save timestamp of downloadstart. Next download can be started one
      * hour later - does not matter if the first one still runs. Tested up to 4 but more must be possible ;)
      */
-    private static final int     FREE_MAXDOWNLOADS         = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME    = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    private static final int               FREE_MAXDOWNLOADS            = 20;
+    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
 
-    private final String  accessKey             = "cddce1a5-a6dd-4300-9c08-eb70909de7c6";
-    private final String  PREMIUMONLY           = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only by users with<br />Premium account\\!<|>You can download files up to)";
-    private final boolean SKIPRECONNECTWAITTIME = true;
-    private final boolean SKIPWAITTIME          = true;
+    private final String                   accessKey                    = "cddce1a5-a6dd-4300-9c08-eb70909de7c6";
+    private final String                   PREMIUMONLY                  = "(\"Sorry\\. Only premium users can download this file\"|>This file can be downloaded only by users with<br />Premium account\\!<|>You can download files up to)";
+    private final boolean                  SKIPRECONNECTWAITTIME        = true;
+    private final boolean                  SKIPWAITTIME                 = true;
 
-    private final String[]                 IPCHECK               = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private static final String            PROPERTY_LASTDOWNLOAD = "datafilecom_lastdownload_timestamp";
-    private final String                   PROPERTY_LASTIP       = "PROPERTY_LASTIP";
-    private static AtomicReference<String> lastIP                = new AtomicReference<String>();
-    private static AtomicReference<String> currentIP             = new AtomicReference<String>();
-    private static HashMap<String, Long>   blockedIPsMap         = new HashMap<String, Long>();
-    private static Object                  CTRLLOCK              = new Object();
-    private final Pattern                  IPREGEX               = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static final long              FREE_RECONNECTWAIT    = 3610000L;
+    private final String[]                 IPCHECK                      = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private static final String            PROPERTY_LASTDOWNLOAD        = "datafilecom_lastdownload_timestamp";
+    private final String                   PROPERTY_LASTIP              = "PROPERTY_LASTIP";
+    private static AtomicReference<String> lastIP                       = new AtomicReference<String>();
+    private static AtomicReference<String> currentIP                    = new AtomicReference<String>();
+    private static HashMap<String, Long>   blockedIPsMap                = new HashMap<String, Long>();
+    private static Object                  CTRLLOCK                     = new Object();
+    private final Pattern                  IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static final long              FREE_RECONNECTWAIT           = 3610000L;
 
-    private Account currAcc = null;
+    private Account                        currAcc                      = null;
 
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static final AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static final AtomicInteger     totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
 
     @SuppressWarnings({ "deprecation" })
     public void correctDownloadLink(final DownloadLink link) {
