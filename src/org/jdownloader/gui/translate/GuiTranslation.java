@@ -5980,7 +5980,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Save & Close" })
     String lit_save_and_close();
 
-    @Default(lngs = { "en" }, values = { "Login" })
+    @Default(lngs = { "en" }, values = { "Setup & Login" })
     String MyJDownloaderSettingsPanelForTab_title();
 
     @Default(lngs = { "en" }, values = { "Account Details" })
@@ -6003,5 +6003,47 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Disconnect" })
     String lit_disconnect();
+
+    @Default(lngs = { "en" }, values = { "Are you sure that you want to kill the connection? This device would not be able to connect unless you re-enter the logins." })
+    String myjd_kill_connections_are_you_sure();
+
+    @Default(lngs = { "en" }, values = { "Remote Control" })
+    String RemoteControlPanel_title();
+
+    @Default(lngs = { "en" }, values = { "Via My.JDownloader, you can control your JDownloader from almost everywhere you want. Just install one of our mobile apps or visit the webinterface. Use your My.JDownloader account to establish a connection between your JDownloader and your remote control device." })
+    String RemoteControlPanel_description();
+
+    @Default(lngs = { "en" }, values = { "The Webinterface is developed by the JDownloader Team. Open http://my.jdownloader.org in any modern browser you want, log in and control the most important parts of JDownloader in your browser. This includes download list, linkgrabber, confirm dialogs, captcha windows..." })
+    String RemoteControlPanel_Webinterface();
+
+    @Default(lngs = { "en" }, values = { "The mobile apps grant you almost full control over most JDownloader features. Whenever your JDownloader needs you, e.g. to enter a captcha code, the apps will notify you. Add links, start or stop downloads, answer dialogs or captchas, and much more.\r\nPlease note that only the andoid app is developed by the JDownloader Team. For iOS and Windows phone, there are 3rd-party applications." })
+    String RemoteControlPanel_mobile_desc();
+
+    @Default(lngs = { "en" }, values = { "Open the Android Playstore\r\nDeveloper: JDownloader Team" })
+    String RemoteControlPanel_android_open();
+
+    @Default(lngs = { "en" }, values = { "Open the JD-Anywhere Website\r\nDeveloper: Oliver Fürst" })
+    String RemoteControlPanel_ios_open();
+
+    @Default(lngs = { "en" }, values = { "Open File.recon Website\r\nDeveloper: Christof Rakowski" })
+    String RemoteControlPanel_file_recon_open();
+
+    @Default(lngs = { "en" }, values = { "Open the Webinterface\r\nDeveloper: JDownloader Team" })
+    String RemoteControlPanel_website_open();
+
+    @Default(lngs = { "en" }, values = { "This extension intergrates JDownloader into your Chrome Browser. It enables you to send links, selections and image urls directly to one of your connected JDownloader." })
+    String RemoteControlPanel_browser_extension_desc();
+
+    @Default(lngs = { "en" }, values = { "Open the Chrome Extension Webstore\r\nDeveloper: JDownloader Team" })
+    String RemoteControlPanel_chrome_open();
+
+    @Default(lngs = { "en" }, values = { "Open the Firefox Add-ons\r\nDeveloper: JDownloader Team" })
+    String RemoteControlPanel_firefox_open();
+
+    @Default(lngs = { "en" }, values = { "Open the My.JDownloader Panel" })
+    String action_myjdownloader_menu_tooltip();
+
+    @Default(lngs = { "en" }, values = { "My.JDownloader" })
+    String action_myjdownloader_menu();
 
 }

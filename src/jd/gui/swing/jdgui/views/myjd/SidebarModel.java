@@ -6,6 +6,7 @@ import javax.swing.DefaultListModel;
 
 import jd.gui.swing.jdgui.views.myjd.panels.MyJDownloaderAccount;
 import jd.gui.swing.jdgui.views.myjd.panels.MyJDownloaderSettingsPanelForTab;
+import jd.gui.swing.jdgui.views.myjd.panels.RemoteControlPanel;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
@@ -65,6 +66,7 @@ public class SidebarModel extends DefaultListModel implements GenericConfigEvent
                     final ArrayList<AbstractConfigPanel> lst = new ArrayList<AbstractConfigPanel>();
                     lst.add(new MyJDownloaderSettingsPanelForTab());
                     lst.add(new MyJDownloaderAccount());
+                    lst.add(new RemoteControlPanel());
                     new EDTRunner() {
 
                         @Override

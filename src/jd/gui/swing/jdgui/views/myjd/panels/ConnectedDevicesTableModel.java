@@ -11,11 +11,13 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtComponentColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
@@ -28,28 +30,36 @@ import org.jdownloader.images.AbstractIcon;
 
 public class ConnectedDevicesTableModel extends ExtTableModel<ConnectedDevice> {
 
+    private DelayedRunnable delayer;
+
     public ConnectedDevicesTableModel() {
         super("SolverOrderTableModel");
 
         update();
+        delayer = new DelayedRunnable(1000) {
 
+            @Override
+            public void delayedrun() {
+                update();
+            }
+        };
         RemoteAPIController.getInstance().getUaController().getEventSender().addListener(new UserAgentListener() {
 
             @Override
             public void onRemovedAPIUserAgent(ConnectedDevice ua) {
-                update();
+                delayer.resetAndStart();
 
             }
 
             @Override
             public void onNewAPIUserAgent(ConnectedDevice ua) {
-                update();
+                delayer.resetAndStart();
 
             }
 
             @Override
             public void onAPIUserAgentUpdate(ConnectedDevice fua) {
-                update();
+                delayer.resetAndStart();
             }
         });
     }
@@ -62,8 +72,14 @@ public class ConnectedDevicesTableModel extends ExtTableModel<ConnectedDevice> {
                 // make sure that this class is loaded. it contains the logic to restore old settings.
 
                 List<ConnectedDevice> lst = RemoteAPIController.getInstance().getUaController().list();
+                // refreshSort();
+                System.out.println("Update -> " + lst.size());
+                final List<ConnectedDevice> tableData;
 
-                _fireTableStructureChanged(lst, true);
+                tableData = refreshSort(lst);
+
+                _replaceTableData(tableData, false);
+                // fireTableDataChanged();
             }
         };
 
@@ -100,6 +116,7 @@ public class ConnectedDevicesTableModel extends ExtTableModel<ConnectedDevice> {
             protected MigPanel         editor;
             protected RendererMigPanel renderer;
             private RenderLabel        label;
+            private boolean            editable = true;
 
             {
                 editorBtn = new JButton("");
@@ -109,9 +126,14 @@ public class ConnectedDevicesTableModel extends ExtTableModel<ConnectedDevice> {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         if (editing != null) {
-                            // SolverPropertiesDialog d = new SolverPropertiesDialog(editing, editing.getConfigPanel());
-                            // UIOManager.I().show(null, d);
+                            if (UIOManager.I().showConfirmDialog(0, _GUI._.lit_are_you_sure(), _GUI._.myjd_kill_connections_are_you_sure(), new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI._.lit_yes(), null)) {
+                                editable = false;
 
+                                stopCellEditing();
+                                editorBtn.setEnabled(false);
+                                RemoteAPIController.getInstance().getUaController().disconnectDecice(editing);
+                                update();
+                            }
                         }
                     }
                 });
@@ -128,6 +150,11 @@ public class ConnectedDevicesTableModel extends ExtTableModel<ConnectedDevice> {
                 this.renderer = new RendererMigPanel("ins 1", "[grow,fill]", "[18!]");
                 renderer.add(rendererBtn);
                 setClickcount(1);
+            }
+
+            @Override
+            public boolean isEditable(ConnectedDevice obj) {
+                return editable;
             }
 
             @Override

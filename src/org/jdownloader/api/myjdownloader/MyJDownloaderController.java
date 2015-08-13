@@ -410,7 +410,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
 
     /**
      * Call this method to send a push request
-     * 
+     *
      * @param captchasPending
      */
     public void pushCaptchaFlag(boolean captchasPending) {
@@ -481,6 +481,15 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
             }
         }
         return false;
+
+    }
+
+    public void terminateSession(String connectToken) throws MyJDownloaderException {
+
+        MyJDownloaderConnectThread ct = getConnectThread();
+        if (ct != null) {
+            ct.getApi().kill(ct.getEmail(), ct.getPassword(), connectToken);
+        }
 
     }
 
