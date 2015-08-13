@@ -347,7 +347,10 @@ public class JetDebridCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                this.postAPISafe(DOMAIN + "user_login_session.php", "B1=Login&user_name2=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.getPage(DOMAIN + "user_login_session.php");
+                final String userName = br.getRegex("name=\"(user_name.*?)\"").getMatch(0);
+                final String passWord = br.getRegex("name=\"(password.*?)\"").getMatch(0);
+                this.postAPISafe(DOMAIN + "user_login_session.php", "B1=Login&" + userName + "=" + Encoding.urlEncode(account.getUser()) + "&" + passWord + "=" + Encoding.urlEncode(account.getPass()));
                 if (this.br.getCookie(DOMAIN, "secureid") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
