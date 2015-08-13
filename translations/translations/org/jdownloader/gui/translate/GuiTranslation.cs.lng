@@ -1770,6 +1770,7 @@ lit_reset=Obnovit
 lit_restart=Restartovat
 lit_restart_now=Restartovat nyní
 lit_save=Uložit
+lit_save_and_close=Uložit a zavřít
 lit_save_to=Uložit do
 lit_send=Odeslat
 lit_settings=Nastavení
