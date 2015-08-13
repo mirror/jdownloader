@@ -48,7 +48,9 @@ public class CompiledFiletypeFilter {
         MD5,
         SHA,
         SHA256,
-        SHA512;
+        SHA512,
+        PAR2("(vol\\d+\\.par2|vol\\d+\\+\\d+\\.par2|par2)"),
+        PAR("(p\\d+|par)");
 
         private final Pattern  pattern;
         private static Pattern allPattern;
@@ -248,9 +250,7 @@ public class CompiledFiletypeFilter {
         XZ,
         TGZ,
         LZH,
-        LHA,
-        PAR2("(vol\\d+\\.par2|vol\\d+\\+\\d+\\.par2|par2)"),
-        PAR("(p\\d+|par)");
+        LHA;
 
         private final Pattern  pattern;
         private static Pattern allPattern;

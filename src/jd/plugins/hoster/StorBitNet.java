@@ -43,7 +43,7 @@ public class StorBitNet extends PluginForHost {
 
     public StorBitNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://storbit.net/premium/");
+        // this.enablePremium("http://storbit.net/premium/");
         // this.setConfigElements();
     }
 
@@ -154,6 +154,7 @@ public class StorBitNet extends PluginForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("CAPTCHA_ERROR"), -1l);
         }
+        dllink = dllink.replace("//.storbit.net", "//storbit.net");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, MAXCHUNKSFORFREE);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

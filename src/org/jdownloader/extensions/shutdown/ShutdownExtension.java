@@ -574,16 +574,13 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         try {
             switch (newValue) {
             case HIBERNATE:
-
                 if (isHibernateActivated()) {
                     return;
                 }
-
-                Dialog.getInstance().showMessageDialog(T._.show_admin());
+                Dialog.getInstance().showMessageDialog(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T._.show_admin());
                 String path = CrossSystem.is64BitOperatingSystem() ? Application.getResource("tools\\Windows\\elevate\\Elevate64.exe").getAbsolutePath() : Application.getResource("tools\\Windows\\elevate\\Elevate32.exe").getAbsolutePath();
                 try {
                     LogController.CL().info(ShutdownExtension.execute(new String[] { path, "powercfg", "-hibernate", "on" }).toString());
-
                 } catch (Throwable e) {
                     LogController.CL().log(e);
                 }
@@ -592,8 +589,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 if (!isHibernateActivated()) {
                     return;
                 }
-
-                Dialog.getInstance().showMessageDialog(T._.show_admin());
+                Dialog.getInstance().showMessageDialog(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, T._.show_admin());
                 path = CrossSystem.is64BitOperatingSystem() ? Application.getResource("tools\\Windows\\elevate\\Elevate64.exe").getAbsolutePath() : Application.getResource("tools\\Windows\\elevate\\Elevate32.exe").getAbsolutePath();
                 try {
                     LogController.CL().info(ShutdownExtension.execute(new String[] { path, "powercfg", "-hibernate", "off" }).toString());
@@ -615,21 +611,25 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     }
 
     private static boolean isHibernateActivated() throws UnsupportedEncodingException, IOException, InterruptedException {
-        Response status = ShutdownExtension.execute(new String[] { "powercfg", "-a" });
+        final Response status = ShutdownExtension.execute(new String[] { "powercfg", "-a" });
         LogController.CL().info(status.toString());
         // we should add the return for other languages
         if (status.getStd() != null) {
-            if (status.getStd().contains("Ruhezustand wurde nicht aktiviert")) {
+            final String std = status.getStd();
+            if (std.contains("Ruhezustand wurde nicht aktiviert")) {
                 return false;
             }
-            if (status.getStd().contains("Hibernation has not been enabled")) {
+            if (std.contains("Hibernation has not been enabled")) {
                 return false;
             }
-            if (status.getStd().contains("Hibernation")) {
+            if (std.contains("La mise en veille") && std.contains("n'a pas")) {
                 return false;
             }
-        }
+            if (std.contains("Hibernation")) {
+                return false;
+            }
 
+        }
         return true;
     }
 
