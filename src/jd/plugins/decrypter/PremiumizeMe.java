@@ -77,7 +77,7 @@ public class PremiumizeMe extends PluginForDecrypt {
                 link.setAvailable(true);
                 link.setLinkID("premiumizetorrent://" + Hash.getSHA256(currentPath + node.getName()) + node.getSize());
                 if (addPath) {
-                    link.setProperty(PackagizerController.SUBFOLDERBYPLUGIN, "../" + currentPath);
+                    link.setProperty(PackagizerController.SUBFOLDERBYPLUGIN, currentPath);
                 }
                 ret.add(link);
             } else if (node._isDirectory() && node.getChildren() != null) {
