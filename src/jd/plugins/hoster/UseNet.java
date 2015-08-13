@@ -258,6 +258,11 @@ public class UseNet extends PluginForHost {
     }
 
     @Override
+    public String getHost(DownloadLink link, Account account) {
+        return super.getHost(link, account);
+    }
+
+    @Override
     public void reset() {
     }
 
