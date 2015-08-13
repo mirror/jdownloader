@@ -19,6 +19,7 @@ package jd.plugins;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -121,6 +122,18 @@ public abstract class Plugin implements ActionListener {
             }
         }
         return null;
+    }
+
+    public boolean isHandlingMultipleHosts() {
+        if (this instanceof PluginForHost) {
+            try {
+                final Method method = this.getClass().getMethod("getHost", new Class[] { DownloadLink.class, Account.class });
+                final boolean ret = method.getDeclaringClass() != PluginForHost.class;
+                return ret;
+            } catch (Throwable e) {
+            }
+        }
+        return false;
     }
 
     public PluginCache getCache() {

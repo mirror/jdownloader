@@ -1818,16 +1818,19 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public DomainInfo getDomainInfo() {
         if (domainInfo == null) {
-            DomainInfo newDomainInfo = null;
-            if (defaultplugin != null) {
-                newDomainInfo = defaultplugin.getDomainInfo(this);
-            }
-            if (newDomainInfo == null) {
-                newDomainInfo = DomainInfo.getInstance(getHost());
-            }
-            domainInfo = newDomainInfo;
+            domainInfo = DomainInfo.getInstance(getServiceHost());
         }
         return domainInfo;
+    }
+
+    public String getServiceHost() {
+        if (defaultplugin != null) {
+            final String ret = defaultplugin.getHost(this, null);
+            if (ret != null) {
+                return ret;
+            }
+        }
+        return getHost();
     }
 
     public FilePackage getParentNode() {
