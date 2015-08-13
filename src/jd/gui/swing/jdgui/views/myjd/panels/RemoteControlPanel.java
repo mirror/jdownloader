@@ -30,7 +30,7 @@ public class RemoteControlPanel extends AbstractConfigPanel {
 
         addButton("https://play.google.com/store/apps/details?id=org.appwork.myjdandroid", "android", "<html>" + _GUI._.RemoteControlPanel_android_open().replace("\r\n", "<br>") + "</html>");
 
-        addButton("http://www.jdanywhere.de/", "ios", "<html>" + _GUI._.RemoteControlPanel_ios_open().replace("\r\n", "<br>") + "</html>");
+        addButton("https://itunes.apple.com/app/jdanywhere/id683222457", "ios", "<html>" + _GUI._.RemoteControlPanel_ios_open().replace("\r\n", "<br>") + "</html>");
 
         addButton("http://www.pixelvalley.de/?page_id=1649", "windows", "<html>" + _GUI._.RemoteControlPanel_file_recon_open().replace("\r\n", "<br>") + "</html>");
         this.addHeader("Browser Extensions", new AbstractIcon("url", 32));
