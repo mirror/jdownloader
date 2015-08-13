@@ -7,6 +7,7 @@ import jd.gui.swing.jdgui.menu.actions.AboutAction;
 import jd.gui.swing.jdgui.menu.actions.ExitAction;
 import jd.gui.swing.jdgui.menu.actions.KnowledgeAction;
 import jd.gui.swing.jdgui.menu.actions.LatestChangesAction;
+import jd.gui.swing.jdgui.menu.actions.MyJDownloaderTabAction;
 import jd.gui.swing.jdgui.menu.actions.RestartAction;
 import jd.gui.swing.jdgui.menu.actions.SettingsAccountUsageRulesAction;
 import jd.gui.swing.jdgui.menu.actions.SettingsAction;
@@ -54,7 +55,7 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
 
     /**
      * get the only existing instance of DownloadListContextMenuManager. This is a singleton
-     * 
+     *
      * @return
      */
     public static MenuManagerMainmenu getInstance() {
@@ -147,6 +148,7 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
         SettingsMenuContainer ret = new SettingsMenuContainer();
 
         ret.add(SettingsAction.class);
+        ret.add(MyJDownloaderTabAction.class);
         ret.add(hide(new MenuItemData(SettingsAccountUsageRulesAction.class)));
         ret.add(new SeparatorData());
         // add(new ChunksEditor());

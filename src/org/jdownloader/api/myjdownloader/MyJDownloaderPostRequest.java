@@ -167,13 +167,16 @@ public class MyJDownloaderPostRequest extends PostRequest implements MyJDownload
             if (jsonRequest != null) {
                 return jsonRequest;
             }
+            try {
+                final byte[] jsonBytes = IO.readStream(-1, getInputStream());
+                final String json = new String(jsonBytes, "UTF-8");
+                jsonRequest = JSonStorage.restoreFromString(json, new TypeRef<JSonRequest>() {
+                });
 
-            final byte[] jsonBytes = IO.readStream(-1, getInputStream());
-            final String json = new String(jsonBytes, "UTF-8");
-            jsonRequest = JSonStorage.restoreFromString(json, new TypeRef<JSonRequest>() {
-            });
-
-            return jsonRequest;
+                return jsonRequest;
+            } catch (IOException e) {
+                throw e;
+            }
         }
     }
 

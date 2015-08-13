@@ -31,7 +31,8 @@ public class ConnectedDevice {
         return info;
     }
 
-    private String id;
+    private String  id;
+    private boolean jdanywhere = false;
 
     public String getId() {
         return id;
@@ -52,9 +53,17 @@ public class ConnectedDevice {
     public void setLatestRequest(RemoteAPIRequest request) {
         latestRequest = request;
         this.lastPing = System.currentTimeMillis();
+        if (latestRequest.getRequestedPath().contains("anywhere")) {
+
+            // workaround. jdanywhere does not use a user agent
+            this.jdanywhere = true;
+        }
     }
 
     public String getDeviceName() {
+        if (jdanywhere) {
+            return "IPhone/IPad";
+        }
         if (StringUtils.equals(getUserAgentString(), "JDownloader Android App")) {
             return "Android";
         }
@@ -75,7 +84,9 @@ public class ConnectedDevice {
     }
 
     public String getFrontendName() {
-
+        if (jdanywhere) {
+            return "JDAnywhere";
+        }
         String origin = latestRequest.getRequestHeaders().getValue("Origin");
 
         if (StringUtils.equals(origin, "http://my.jdownloader.org") || StringUtils.equals(origin, "https://my.jdownloader.org")) {
@@ -136,5 +147,9 @@ public class ConnectedDevice {
 
         }
 
+    }
+
+    public RemoteAPIRequest getLatestRequest() {
+        return latestRequest;
     }
 }

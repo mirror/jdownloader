@@ -13,10 +13,13 @@ import org.appwork.remoteapi.SessionRemoteAPIRequest;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpserver.session.HttpSession;
+import org.jdownloader.api.myjdownloader.MyJDownloaderController;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
 
 public class UserAgentController {
     private ConcurrentHashMap<String, ConnectedDevice>          map;
@@ -93,14 +96,15 @@ public class UserAgentController {
             if (delayed != null) {
                 delayed.resetAndStart();
             }
-            String pre = ua.getConnectionString();
+            final String pre = ua.getConnectionString();
             ua.setLatestRequest(request);
-            if (StringUtils.equals(pre, ua.getConnectionString())) {
+            if (!StringUtils.equals(pre, ua.getConnectionString())) {
                 final ConnectedDevice fua = ua;
                 eventSender.fireEvent(new UserAgentEvent() {
 
                     @Override
                     public void fireTo(UserAgentListener listener) {
+
                         listener.onAPIUserAgentUpdate(fua);
                     }
 
@@ -156,6 +160,15 @@ public class UserAgentController {
         ret.setConnectToken(token);
         ret.setLatestRequest(request);
         return ret;
+    }
+
+    public void disconnectDecice(ConnectedDevice editing) {
+        try {
+            MyJDownloaderController.getInstance().terminateSession(editing.getConnectToken());
+            onTimeout(editing);
+        } catch (MyJDownloaderException e) {
+            UIOManager.I().showException(e.getMessage(), e);
+        }
     }
 
 }
