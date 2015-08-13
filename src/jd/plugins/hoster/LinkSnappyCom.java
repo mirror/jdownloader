@@ -22,9 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,6 +45,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linksnappy.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class LinkSnappyCom extends PluginForHost {
 
@@ -68,22 +68,22 @@ public class LinkSnappyCom extends PluginForHost {
     private static final String USE_API                = "USE_API";
     private static final String CLEAR_DOWNLOAD_HISTORY = "CLEAR_DOWNLOAD_HISTORY";
 
-    private static final String COOKIE_HOST           = "http://linksnappy.com";
-    private static final String HTTP_S                = "https://";
-    private static final int    MAX_DOWNLOAD_ATTEMPTS = 10;
-    private int                 i                     = 1;
+    private static final String COOKIE_HOST            = "http://linksnappy.com";
+    private static final String HTTP_S                 = "https://";
+    private static final int    MAX_DOWNLOAD_ATTEMPTS  = 10;
+    private int                 i                      = 1;
 
-    private DownloadLink currentLink = null;
-    private Account      currentAcc  = null;
-    private boolean      resumes     = true;
-    private int          chunks      = 0;
+    private DownloadLink        currentLink            = null;
+    private Account             currentAcc             = null;
+    private boolean             resumes                = true;
+    private int                 chunks                 = 0;
 
-    private String dllink = null;
+    private String              dllink                 = null;
 
     /* 75 GB, Last checked: 18.06.2015 */
-    private static final long   dfault_traffic_max  = 80530636800L;
+    private static final long   dfault_traffic_max     = 80530636800L;
     /* Last checked: 18.06.2015 */
-    private static final String reCaptchaV2_sitekey = "6LfhJgQTAAAAAIM7Pz3XxW1QMWssU51lcN-kUDRA";
+    private static final String reCaptchaV2_sitekey    = "6LfhJgQTAAAAAIM7Pz3XxW1QMWssU51lcN-kUDRA";
 
     /**
      * Status 22.06.15: Host has ddos problems. Along with that they added login captchas. For the website version of the plugin that works
@@ -220,6 +220,7 @@ public class LinkSnappyCom extends PluginForHost {
                 supportedHosts.add(host);
             }
         }
+        supportedHosts.remove("mega.co.nz");// buggy support
         currentAcc.setProperty("accountProperties", con);
         ac.setMultiHostSupport(this, supportedHosts);
         return ac;
