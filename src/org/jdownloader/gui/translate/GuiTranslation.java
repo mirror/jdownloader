@@ -6016,7 +6016,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "The Webinterface is developed by the JDownloader Team. Open http://my.jdownloader.org in any modern browser you want, log in and control the most important parts of JDownloader in your browser. This includes download list, linkgrabber, confirm dialogs, captcha windows..." })
     String RemoteControlPanel_Webinterface();
 
-    @Default(lngs = { "en" }, values = { "The mobile apps grant you almost full control over most JDownloader features. Whenever your JDownloader needs you, e.g. to enter a captcha code, the apps will notify you. Add links, start or stop downloads, answer dialogs or captchas, and much more.\r\nPlease note that only the andoid app is developed by the JDownloader Team. For iOS and Windows phone, there are 3rd-party applications." })
+    @Default(lngs = { "en" }, values = { "The mobile apps grant you almost full control over most JDownloader features. Whenever your JDownloader needs you, e.g. to enter a captcha code, the apps will notify you. Add links, start or stop downloads, answer dialogs or captchas, and much more.\r\nPlease note that only the android app is developed by the JDownloader Team. For iOS and Windows phone, there are 3rd-party applications." })
     String RemoteControlPanel_mobile_desc();
 
     @Default(lngs = { "en" }, values = { "Open the Android Playstore\r\nDeveloper: JDownloader Team" })
