@@ -34,6 +34,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.ThrowingRunnable;
 
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
@@ -57,11 +58,6 @@ import org.mozilla.javascript.Wrapper;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DummyScriptEnginePlugin" }, urls = { "donotmatch://neverever" }, flags = { 2 })
 public class DummyScriptEnginePlugin extends PluginForHost {
-
-    public static interface ThrowingRunnable<S extends Throwable> {
-
-        public void run() throws S;
-    }
 
     public DummyScriptEnginePlugin(PluginWrapper wrapper) {
         super(wrapper);
@@ -487,9 +483,9 @@ public class DummyScriptEnginePlugin extends PluginForHost {
                 /*
                  * script may use Java primitive wrapper type objects (such as java.lang.Integer, java.lang.Boolean etc) explicitly. If we
                  * unwrap, then these script objects will become script primitive types. For example,
-                 *
+                 * 
                  * var x = new java.lang.Double(3.0); print(typeof x);
-                 *
+                 * 
                  * will print 'number'. We don't want that to happen.
                  */
                 Object obj = njb.unwrap();
