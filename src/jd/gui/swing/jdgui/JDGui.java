@@ -553,7 +553,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                         if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isLogViewVisible()) {
                             // this.mainTabbedPane.addTab(LogView.getInstance());
                         }
-                        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isMyJDownloaderViewVisible()) {
+                        if (!Application.isJared(null) && JsonConfig.create(GraphicalUserInterfaceSettings.class).isMyJDownloaderViewVisible()) {
                             mainTabbedPane.addTab(MyJDownloaderView.getInstance());
                         }
                         long maxHeap = -1;
