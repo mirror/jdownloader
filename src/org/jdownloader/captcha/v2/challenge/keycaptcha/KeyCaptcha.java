@@ -2,6 +2,7 @@ package org.jdownloader.captcha.v2.challenge.keycaptcha;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -20,10 +21,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.ThrowingRunnable;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.utils.IO;
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.captcha.v2.Challenge;
@@ -130,8 +133,7 @@ public class KeyCaptcha {
     }
 
     private String getCapsUrl(String string) throws ScriptException {
-        ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-        ScriptEngine engine = manager.getEngineByName("javascript");
+        final ScriptEngine engine = getScriptEngine();
 
         /* creating pseudo functions: document.location */
         engine.eval("var document = { loc : function() { return \"" + downloadUrl + "\";}}");
@@ -379,11 +381,21 @@ public class KeyCaptcha {
 
     }
 
+    private ScriptEngine getScriptEngine() {
+        final PluginForHost plugin = JDUtilities.getPluginForHost("DummyScriptEnginePlugin");
+        try {
+            final Method method = plugin.getClass().getMethod("getScriptEngineManager", new Class[] { Object.class });
+            final ScriptEngineManager manager = (ScriptEngineManager) method.invoke(null, this);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            return engine;
+        } catch (Throwable e) {
+            throw new WTFException("Could not load DummyScriptEnginePlugin", e);
+        }
+    }
+
     private String evalGHS(String arg0, String arg1) throws Exception {
         try {
-            ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-
-            final ScriptEngine engine = manager.getEngineByName("javascript");
+            final ScriptEngine engine = getScriptEngine();
             DummyScriptEnginePlugin.runTrusted(new ThrowingRunnable<ScriptException>() {
 
                 @Override
@@ -447,8 +459,7 @@ public class KeyCaptcha {
         String q = new Regex(capJs, reg).getMatch(0);
 
         String[] methods = new Regex(q, "([\\w\\d]+)\\(\\).*?([\\w\\d]+)\\(\\)").getRow(0);
-        ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
-        ScriptEngine engine = manager.getEngineByName("javascript");
+        final ScriptEngine engine = getScriptEngine();
 
         String env = "s_s_c_get_form=function(){return null;};s_s_c_captcha_field_id=\"\";document={};" + "document.getElementById=function(){var obj={};obj.s_s_c_check_process=" + inProcess + ";return obj;};" + "document.s_s_c_popupmode=false;" + "document.s_s_c_do_not_auto_show=true;";
 
