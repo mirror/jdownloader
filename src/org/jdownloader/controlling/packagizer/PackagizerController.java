@@ -54,22 +54,23 @@ import org.jdownloader.jd1import.JD1Importer;
 
 public class PackagizerController implements PackagizerInterface, FileCreationListener {
     private final PackagizerSettings              config;
-    private ArrayList<PackagizerRule>             list           = new ArrayList<PackagizerRule>();
+    private ArrayList<PackagizerRule>             list              = new ArrayList<PackagizerRule>();
     private PackagizerControllerEventSender       eventSender;
     private java.util.List<PackagizerRuleWrapper> fileFilter;
     private java.util.List<PackagizerRuleWrapper> urlFilter;
 
-    public static final String                    ORGFILENAME    = "orgfilename";
-    public static final String                    ORGFILETYPE    = "orgfiletype";
-    public static final String                    HOSTER         = "hoster";
-    public static final String                    SOURCE         = "source";
+    public static final String                    ORGFILENAME       = "orgfilename";
+    public static final String                    ORGFILETYPE       = "orgfiletype";
+    public static final String                    HOSTER            = "hoster";
+    public static final String                    SOURCE            = "source";
 
-    public static final String                    PACKAGENAME    = "packagename";
-    public static final String                    SIMPLEDATE     = "simpledate";
+    public static final String                    PACKAGENAME       = "packagename";
+    public static final String                    SIMPLEDATE        = "simpledate";
 
-    private static final PackagizerController     INSTANCE       = new PackagizerController(false);
-    public static final String                    ORGPACKAGENAME = "orgpackagename";
-    private HashMap<String, PackagizerReplacer>   replacers      = new HashMap<String, PackagizerReplacer>();
+    private static final PackagizerController     INSTANCE          = new PackagizerController(false);
+    public static final String                    ORGPACKAGENAME    = "orgpackagename";
+    public static final String                    SUBFOLDERBYPLUGIN = "subfolderbyplugin";
+    private HashMap<String, PackagizerReplacer>   replacers         = new HashMap<String, PackagizerReplacer>();
     private final boolean                         testInstance;
 
     public static PackagizerController getInstance() {
@@ -171,12 +172,11 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (!isTestInstance()) {
             ArrayList<PackagizerRule> newList = new ArrayList<PackagizerRule>();
             HashSet<String> dupefinder = new HashSet<String>();
-
-            boolean revFileRule = false;
-
+            DisableRevFilesPackageRule disableRevFilesRule = null;
             SubFolderByPackageRule subFolderByPackgeRule = null;
+            SubFolderByPluginRule subFolderByPluginRule = null;
             for (PackagizerRule rule : list) {
-                PackagizerRule clone = JSonStorage.restoreFromString(JSonStorage.serializeToJson(rule), new TypeRef<PackagizerRule>() {
+                final PackagizerRule clone = JSonStorage.restoreFromString(JSonStorage.serializeToJson(rule), new TypeRef<PackagizerRule>() {
                 });
                 clone.setCreated(-1);
                 if (!dupefinder.add(JSonStorage.serializeToJson(clone))) {
@@ -184,41 +184,44 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
                     continue;
                 }
                 if (SubFolderByPackageRule.ID.equals(rule.getId())) {
-                    SubFolderByPackageRule r;
-                    if (!dupefinder.add(rule.getId())) {
-                        continue;
+                    if (dupefinder.add(rule.getId())) {
+                        final SubFolderByPackageRule r = new SubFolderByPackageRule();
+                        newList.add(r);
+                        r.init();
+                        r.setEnabled(rule.isEnabled());
+                        subFolderByPackgeRule = r;
                     }
-                    newList.add(r = new SubFolderByPackageRule());
-                    r.init();
-                    r.setEnabled(rule.isEnabled());
-                    subFolderByPackgeRule = r;
-                    continue;
-
-                }
-                if (DisableRevFilesPackageRule.ID.equals(rule.getId())) {
-                    DisableRevFilesPackageRule r;
-                    if (!dupefinder.add(rule.getId())) {
-                        continue;
+                } else if (SubFolderByPluginRule.ID.equals(rule.getId())) {
+                    if (dupefinder.add(rule.getId())) {
+                        final SubFolderByPluginRule r = new SubFolderByPluginRule();
+                        newList.add(r);
+                        r.init();
+                        r.setEnabled(rule.isEnabled());
+                        subFolderByPluginRule = r;
                     }
-                    newList.add(r = new DisableRevFilesPackageRule());
-                    r.init();
-                    r.setEnabled(rule.isEnabled());
-                    revFileRule = true;
-                    continue;
-
+                } else if (DisableRevFilesPackageRule.ID.equals(rule.getId())) {
+                    if (dupefinder.add(rule.getId())) {
+                        final DisableRevFilesPackageRule r = new DisableRevFilesPackageRule();
+                        newList.add(r);
+                        r.init();
+                        r.setEnabled(rule.isEnabled());
+                        disableRevFilesRule = r;
+                    }
+                } else {
+                    newList.add(rule);
                 }
-
-                newList.add(rule);
+            }
+            if (disableRevFilesRule == null) {
+                newList.add(disableRevFilesRule = new DisableRevFilesPackageRule());
+                disableRevFilesRule.init();
             }
             if (subFolderByPackgeRule == null) {
                 newList.add(subFolderByPackgeRule = new SubFolderByPackageRule());
                 subFolderByPackgeRule.init();
-
             }
-            if (!revFileRule) {
-                DisableRevFilesPackageRule dis;
-                newList.add(dis = new DisableRevFilesPackageRule());
-                dis.init();
+            if (subFolderByPluginRule == null) {
+                newList.add(subFolderByPluginRule = new SubFolderByPluginRule());
+                subFolderByPluginRule.init();
             }
             list = newList;
         }
@@ -372,6 +375,47 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             }
 
         });
+
+        addReplacer(new PackagizerReplacer() {
+
+            private final Pattern pat = Pattern.compile("<jd:" + SUBFOLDERBYPLUGIN + ">");
+
+            public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
+                String subFolder = null;
+                final DownloadLink dlLink = link.getDownloadLink();
+                if (dlLink != null) {
+                    final Object subFolderByPlugin = dlLink.getProperty(SUBFOLDERBYPLUGIN);
+                    if (subFolderByPlugin != null && subFolderByPlugin instanceof String) {
+                        final String pathParts[] = ((String) subFolderByPlugin).split("/");
+                        final StringBuilder sb = new StringBuilder();
+                        for (String pathPart : pathParts) {
+                            if (sb.length() > 0) {
+                                sb.append("/");
+                            }
+                            pathPart = CrossSystem.alleviatePathParts(pathPart);
+                            if (StringUtils.isNotEmpty(pathPart)) {
+                                sb.append(pathPart);
+                            }
+                        }
+                        subFolder = sb.toString();
+                        if (CrossSystem.isAbsolutePath(subFolder)) {
+                            subFolder = null;
+                        }
+                    }
+                }
+                if (StringUtils.isEmpty(subFolder)) {
+                    return pat.matcher(input).replaceAll(Matcher.quoteReplacement(""));
+                } else {
+                    return pat.matcher(input).replaceAll(Matcher.quoteReplacement(subFolder));
+                }
+            }
+
+            public String getID() {
+                return SUBFOLDERBYPLUGIN;
+            }
+
+        });
+
         addReplacer(new PackagizerReplacer() {
 
             private final Pattern pat = Pattern.compile("<jd:orgfiletype/?>");

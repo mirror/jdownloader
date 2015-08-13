@@ -27,6 +27,14 @@ public class PremiumizeBrowseNode implements Storable {
         return url;
     }
 
+    public boolean _isFile() {
+        return "file".equals(getType());
+    }
+
+    public boolean _isDirectory() {
+        return "dir".equals(getType());
+    }
+
     public void setUrl(String url) {
         this.url = url;
     }
@@ -57,9 +65,9 @@ public class PremiumizeBrowseNode implements Storable {
 
     @Override
     public String toString() {
-        if ("file".equals(getType())) {
+        if (_isFile()) {
             return "File>Name:" + getName() + "|Size:" + getSize() + "|URL:" + getUrl();
-        } else if ("dir".equals(getType())) {
+        } else if (_isDirectory()) {
             final Map<String, PremiumizeBrowseNode> lChildren = getChildren();
             if (lChildren == null) {
                 return "Dir>Name:" + getName() + "|Children:0";

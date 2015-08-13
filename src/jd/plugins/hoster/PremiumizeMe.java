@@ -56,7 +56,7 @@ import org.jdownloader.plugins.accounts.AccountFactory;
 import org.jdownloader.plugins.accounts.EditAccountPanel;
 import org.jdownloader.plugins.accounts.Notifier;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "https?://dt\\d+.energycdn.com/torrentdl/.+" }, flags = { 2 })
 public class PremiumizeMe extends UseNet {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
@@ -106,7 +106,11 @@ public class PremiumizeMe extends UseNet {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        return super.requestFileInformation(link);
+        if (isUsenetLink(link)) {
+            return super.requestFileInformation(link);
+        } else {
+            return AvailableStatus.UNCHECKABLE;
+        }
     }
 
     @Override
@@ -134,8 +138,7 @@ public class PremiumizeMe extends UseNet {
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
         if (isUsenetLink(link)) {
             return 10;
-        }
-        if (link != null && account != null) {
+        } else if (link != null && account != null) {
             Object ret = getConnectionSettingsValue(link.getHost(), account, "max_connections_per_hoster");
             if (ret != null && ret instanceof Integer) {
                 return (Integer) ret;
@@ -156,8 +159,12 @@ public class PremiumizeMe extends UseNet {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        /* handle premium should never be called */
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
+        if (!dl.getConnection().isOK() || dl.getConnection().getLongContentLength() == -1) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     private void handleDL(Account account, DownloadLink link, String dllink) throws Exception {
@@ -458,13 +465,13 @@ public class PremiumizeMe extends UseNet {
                 }
                 tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000);
                 break;
-            /* DB cnnection problem */
-            // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
-            // /* Retried enough times --> Temporarily disable account! */
-            // globalDB.compareAndSet(5, 0);
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            // }
-            // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
+                /* DB cnnection problem */
+                // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
+                // /* Retried enough times --> Temporarily disable account! */
+                // globalDB.compareAndSet(5, 0);
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                // }
+                // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
             case 2:
                 /* E.g. Error: file_get_contents[...] */
                 logger.info("Errorcode 2: Strange error");
