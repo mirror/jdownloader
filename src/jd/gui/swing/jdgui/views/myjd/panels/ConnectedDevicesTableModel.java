@@ -70,16 +70,9 @@ public class ConnectedDevicesTableModel extends ExtTableModel<ConnectedDevice> {
             @Override
             protected void runInEDT() {
                 // make sure that this class is loaded. it contains the logic to restore old settings.
-
-                List<ConnectedDevice> lst = RemoteAPIController.getInstance().getUaController().list();
-                // refreshSort();
-                System.out.println("Update -> " + lst.size());
-                final List<ConnectedDevice> tableData;
-
-                tableData = refreshSort(lst);
-
+                final List<ConnectedDevice> lst = RemoteAPIController.getInstance().getUaController().list();
+                final List<ConnectedDevice> tableData = refreshSort(lst);
                 _replaceTableData(tableData, false);
-                // fireTableDataChanged();
             }
         };
 
@@ -112,7 +105,7 @@ public class ConnectedDevicesTableModel extends ExtTableModel<ConnectedDevice> {
         this.addColumn(new ExtComponentColumn<ConnectedDevice>(_GUI._.ConnectedDevicesTableModel_kill()) {
             private JButton            editorBtn;
             private JButton            rendererBtn;
-            private ConnectedDevice    editing;
+            private ConnectedDevice    device;
             protected MigPanel         editor;
             protected RendererMigPanel renderer;
             private RenderLabel        label;
@@ -125,13 +118,12 @@ public class ConnectedDevicesTableModel extends ExtTableModel<ConnectedDevice> {
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        if (editing != null) {
+                        if (device != null) {
                             if (UIOManager.I().showConfirmDialog(0, _GUI._.lit_are_you_sure(), _GUI._.myjd_kill_connections_are_you_sure(), new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI._.lit_yes(), null)) {
                                 editable = false;
-
                                 stopCellEditing();
                                 editorBtn.setEnabled(false);
-                                RemoteAPIController.getInstance().getUaController().disconnectDecice(editing);
+                                RemoteAPIController.getInstance().getUaController().disconnectDecice(device);
                                 update();
                             }
                         }
@@ -199,17 +191,13 @@ public class ConnectedDevicesTableModel extends ExtTableModel<ConnectedDevice> {
 
             @Override
             public void configureRendererComponent(ConnectedDevice value, boolean isSelected, boolean hasFocus, int row, int column) {
-
-                // rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_THUMBS_DOWN, 16));
                 rendererBtn.setText(_GUI._.lit_disconnect());
-                // rendererBtn.setIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
             }
 
             @Override
             public void configureEditorComponent(ConnectedDevice value, boolean isSelected, int row, int column) {
-                editing = value;
+                device = value;
                 editorBtn.setText(_GUI._.lit_disconnect());
-                // editorBtn.setIcon(new AbstractIcon(IconKey.ICON_SETTINGS, 16));
             }
 
             public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {

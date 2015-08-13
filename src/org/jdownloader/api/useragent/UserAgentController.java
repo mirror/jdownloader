@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import jd.controlling.TaskQueue;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
@@ -15,6 +16,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpserver.session.HttpSession;
 import org.jdownloader.api.myjdownloader.MyJDownloaderController;
@@ -162,13 +164,20 @@ public class UserAgentController {
         return ret;
     }
 
-    public void disconnectDecice(ConnectedDevice editing) {
-        try {
-            MyJDownloaderController.getInstance().terminateSession(editing.getConnectToken());
-            onTimeout(editing);
-        } catch (MyJDownloaderException e) {
-            UIOManager.I().showException(e.getMessage(), e);
-        }
+    public void disconnectDecice(final ConnectedDevice device) {
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+
+            @Override
+            protected Void run() throws RuntimeException {
+                try {
+                    MyJDownloaderController.getInstance().terminateSession(device.getConnectToken());
+                } catch (MyJDownloaderException e) {
+                    UIOManager.I().showException(e.getMessage(), e);
+                }
+                return null;
+            }
+        });
+        onTimeout(device);
     }
 
 }
