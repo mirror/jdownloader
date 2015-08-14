@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heavy-r.com" }, urls = { "http://(www\\.)?heavy\\-r\\.com/video/\\d+/.{1}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heavy-r.com" }, urls = { "http://(www\\.)?heavy\\-r\\.com/video/\\d+" }, flags = { 0 })
 public class HeavyRCom extends PluginForHost {
 
     public HeavyRCom(PluginWrapper wrapper) {
@@ -53,8 +53,15 @@ public class HeavyRCom extends PluginForHost {
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("class=\"errorBox\"")) {
+        String url = downloadLink.getDownloadURL();
+        if (url.matches(".+\\d+$")) {
+            url = url + "/x/";
+        }
+        br.getPage(url);
+        if (br.containsHTML("404 - Not Found")) {
+            br.getPage(url);
+        }
+        if (br.containsHTML("class=\"errorBox\"") || br.containsHTML("Video not found!")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("id=\"videotitle\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
