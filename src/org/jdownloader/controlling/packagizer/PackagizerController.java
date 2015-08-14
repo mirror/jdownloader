@@ -769,32 +769,52 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
         if (!StringUtils.isEmpty(lgr.getRule().getDownloadDestination())) {
             /* customize download destination folder */
-            String path = replaceVariables(lgr.getRule().getDownloadDestination(), link, lgr);
+            final String path = replaceVariables(lgr.getRule().getDownloadDestination(), link, lgr);
             final PackageInfo dpi;
             if (link.getDesiredPackageInfo() != null) {
-                dpi = link.getDesiredPackageInfo();
+                if (StringUtils.isNotEmpty(path)) {
+                    dpi = link.getDesiredPackageInfo();
+                } else {
+                    dpi = null;
+                }
             } else {
-                dpi = new PackageInfo();
+                if (StringUtils.isNotEmpty(path)) {
+                    dpi = new PackageInfo();
+                } else {
+                    dpi = null;
+                }
             }
-            dpi.setPackagizerRuleMatched(true);
-            dpi.setDestinationFolder(path);
-            link.setDesiredPackageInfo(dpi);
+            if (dpi != null) {
+                dpi.setPackagizerRuleMatched(true);
+                dpi.setDestinationFolder(path);
+                link.setDesiredPackageInfo(dpi);
+            }
         }
         if (lgr.getRule().getLinkEnabled() != null) {
             link.setEnabled(lgr.getRule().getLinkEnabled());
         }
         if (!StringUtils.isEmpty(lgr.getRule().getPackageName())) {
             /* customize package name */
-            String name = replaceVariables(lgr.getRule().getPackageName(), link, lgr);
+            final String name = replaceVariables(lgr.getRule().getPackageName(), link, lgr);
             final PackageInfo dpi;
             if (link.getDesiredPackageInfo() != null) {
-                dpi = link.getDesiredPackageInfo();
+                if (StringUtils.isNotEmpty(name)) {
+                    dpi = link.getDesiredPackageInfo();
+                } else {
+                    dpi = null;
+                }
             } else {
-                dpi = new PackageInfo();
+                if (StringUtils.isNotEmpty(name)) {
+                    dpi = new PackageInfo();
+                } else {
+                    dpi = null;
+                }
             }
-            dpi.setPackagizerRuleMatched(true);
-            dpi.setName(name);
-            link.setDesiredPackageInfo(dpi);
+            if (dpi != null) {
+                dpi.setPackagizerRuleMatched(true);
+                dpi.setName(name);
+                link.setDesiredPackageInfo(dpi);
+            }
         }
         if (lgr.getRule().getPriority() != null) {
             /* customize priority */
@@ -802,7 +822,10 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
         if (!StringUtils.isEmpty(lgr.getRule().getFilename())) {
             /* customize filename */
-            link.setName(replaceVariables(lgr.getRule().getFilename(), link, lgr));
+            final String name = replaceVariables(lgr.getRule().getFilename(), link, lgr);
+            if (StringUtils.isNotEmpty(name)) {
+                link.setName(name);
+            }
         }
         if (!StringUtils.isEmpty(lgr.getRule().getComment())) {
             /* customize filename */

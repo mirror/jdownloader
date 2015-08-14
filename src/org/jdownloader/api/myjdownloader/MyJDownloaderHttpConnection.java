@@ -47,6 +47,7 @@ public class MyJDownloaderHttpConnection extends HttpConnection {
     protected final static ArrayList<HttpRequestHandler>                    requestHandler = new ArrayList<HttpRequestHandler>();
     static {
         requestHandler.add(new OptionsRequestHandler());
+        requestHandler.add(new SessionTokenCheckHandler());
         requestHandler.add(RemoteAPIController.getInstance().getRequestHandler());
     }
     protected final MyJDownloaderAPI                                        api;
