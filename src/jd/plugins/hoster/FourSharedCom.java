@@ -28,6 +28,9 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.os.CrossSystem;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,10 +51,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(-china)?\\.com/(account/)?(download|get|file|document|embed|photo|video|audio|mp3|office|rar|zip|archive|music)/.+?/.*|https?://api\\.4shared(-china)?\\.com/download/[A-Za-z0-9]+" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
@@ -59,16 +60,16 @@ public class FourSharedCom extends PluginForHost {
     // DEV NOTES:
     // old versions of JDownloader can have troubles with Java7+ with HTTPS posts.
 
-    public final String                    PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
-    private final String                   PASSWORDTEXT                              = "enter a password to access";
-    private final String                   COOKIE_HOST                               = "http://4shared.com";
-    private static Object                  LOCK                                      = new Object();
+    public final String   PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
+    private final String  PASSWORDTEXT                              = "enter a password to access";
+    private final String  COOKIE_HOST                               = "http://4shared.com";
+    private static Object LOCK                                      = new Object();
 
-    private static final boolean           TRY_FAST_FREE                             = true;
-    private static final String            type_api_direct                           = "https?://api\\.4shared(-china)?\\.com/download/[A-Za-z0-9]+";
+    private static final boolean TRY_FAST_FREE   = true;
+    private static final String  type_api_direct = "https?://api\\.4shared(-china)?\\.com/download/[A-Za-z0-9]+";
 
-    private static AtomicReference<String> agent                                     = new AtomicReference<String>();
-    private String                         DLLINK                                    = null;
+    private static AtomicReference<String> agent  = new AtomicReference<String>();
+    private String                         DLLINK = null;
 
     public FourSharedCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -79,7 +80,7 @@ public class FourSharedCom extends PluginForHost {
     /**
      * TODO: Implement API: http://www.4shared.com/developer/docs/rest/resources/#files 19.12.12: Their support never responded so we don't
      * know how to use the API...
-     * */
+     */
     /* IMPORTANT: When checking logs, look for these elements: class="warn", "limitErrorMsg" */
     private static final String DOWNLOADSTREAMS              = "DOWNLOADSTREAMS";
     private static final String DOWNLOADSTREAMSERRORHANDLING = "DOWNLOADSTREAMSERRORHANDLING";
@@ -705,7 +706,8 @@ public class FourSharedCom extends PluginForHost {
                     filename = br.getRegex("photos and media in one place\\. Access anytime from everywhere\\! Download \\&quot;([^<>\"]*?)\\&quot; at 4shared' />").getMatch(0);
                 }
                 if (filename == null) {
-                    filename = br.getRegex("filename:'([^<>']*?)'\\}\\);").getMatch(0);
+                    // json
+                    filename = JSonUtils.getJson(br, "filename");
                 }
                 /* Here, extension might be missing */
                 if (filename == null) {
