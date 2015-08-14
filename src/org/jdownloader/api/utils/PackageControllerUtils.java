@@ -335,11 +335,13 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
                 final PackageType pt = pkg.getPackage();
                 if (pt instanceof FilePackage) {
                     DownloadWatchDog.getInstance().setDownloadDirectory((FilePackage) pt, directory);
+                    DownloadPathHistoryManager.getInstance().add(directory);
                 } else if (pt instanceof CrawledPackage) {
                     pt.getControlledBy().getQueue().add(new QueueAction<Void, RuntimeException>() {
                         @Override
                         protected Void run() throws RuntimeException {
                             ((CrawledPackage) pt).setDownloadFolder(directory);
+                            DownloadPathHistoryManager.getInstance().add(directory);
                             return null;
                         }
                     });
