@@ -302,7 +302,7 @@ public class MyJDownloaderDirectServer extends Thread {
             throw new IOException("api no longer available");
         }
         final long requestNumber = connectThread.THREADCOUNTER.incrementAndGet();
-        Thread connectionThread = new Thread("MyJDownloaderDirectConnection:" + requestNumber) {
+        final Thread connectionThread = new Thread("MyJDownloaderDirectConnection:" + requestNumber) {
             @Override
             public void run() {
                 try {

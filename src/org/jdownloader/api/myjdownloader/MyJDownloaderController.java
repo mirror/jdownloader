@@ -17,7 +17,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.api.myjdownloader.MyJDownloaderSettings.MyJDownloaderError;
-import org.jdownloader.api.myjdownloader.api.MyJDownloaderAPI;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderEvent;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderEventSender;
 import org.jdownloader.logging.LogController;
@@ -484,10 +483,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
     public void terminateSession(String connectToken) throws MyJDownloaderException {
         final MyJDownloaderConnectThread ct = getConnectThread();
         if (ct != null) {
-            final MyJDownloaderAPI api = ct.getApi();
-            if (api != null) {
-                api.kill(ct.getEmail(), ct.getPassword(), connectToken);
-            }
+            ct.killSession(connectToken);
         }
     }
 

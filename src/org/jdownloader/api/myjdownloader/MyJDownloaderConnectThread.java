@@ -167,45 +167,52 @@ public class MyJDownloaderConnectThread extends Thread {
         }
     }
 
-    protected final AtomicLong      THREADCOUNTER = new AtomicLong(0);
-    private MyJDownloaderController myJDownloaderController;
+    protected final AtomicLong            THREADCOUNTER = new AtomicLong(0);
+    private final MyJDownloaderController myJDownloaderController;
 
-    private MyJDownloaderAPI        api;
-    private final LogSource         logger;
+    private volatile MyJDownloaderAPI     api           = null;
+    private final LogSource               logger;
 
     public LogSource getLogger() {
         return logger;
     }
 
-    private final AtomicLong                                       syncMark        = new AtomicLong(Integer.MIN_VALUE);
-    private ScheduledExecutorService                               THREADQUEUE     = DelayedRunnable.getNewScheduledExecutorService();
-    private final DeviceConnectionHelper[]                         deviceConnectionHelper;
-    private int                                                    helperIndex     = 0;
-    private NullsafeAtomicReference<MyJDownloaderConnectionStatus> connected       = new NullsafeAtomicReference<MyJDownloaderConnectionStatus>(MyJDownloaderConnectionStatus.UNCONNECTED);
-    private String                                                 password;
-    private String                                                 email;
-    private String                                                 deviceName;
-    private Set<TYPE>                                              notifyInterests;
-    private final static HashMap<Thread, Socket>                   openConnections = new HashMap<Thread, Socket>();
+    private final AtomicLong                                             syncMark                  = new AtomicLong(Integer.MIN_VALUE);
+    private ScheduledExecutorService                                     THREADQUEUE               = DelayedRunnable.getNewScheduledExecutorService();
+    private final DeviceConnectionHelper[]                               deviceConnectionHelper;
+    private int                                                          helperIndex               = 0;
+    private final NullsafeAtomicReference<MyJDownloaderConnectionStatus> connected                 = new NullsafeAtomicReference<MyJDownloaderConnectionStatus>(MyJDownloaderConnectionStatus.UNCONNECTED);
+    private String                                                       password;
+    private String                                                       email;
+    private String                                                       deviceName;
+    private final Set<TYPE>                                              notifyInterests           = new CopyOnWriteArraySet<NotificationRequestMessage.TYPE>();
+    private final static HashMap<Thread, Socket>                         openConnections           = new HashMap<Thread, Socket>();
+    private final static HashSet<String>                                 KILLEDSESSIONS            = new HashSet<String>();
 
-    protected static HashMap<Thread, Socket> getOpenconnections() {
-        return openConnections;
-    }
-
-    private final ArrayDeque<MyJDownloaderConnectionResponse>     responses                 = new ArrayDeque<MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionResponse>();
-    private final ArrayList<MyJDownloaderWaitingConnectionThread> waitingConnections        = new ArrayList<MyJDownloaderWaitingConnectionThread>();
-    private final int                                             minimumWaitingConnections = 1;
-    private final int                                             maximumWaitingConnections = 4;
-    private final File                                            sessionInfoCache;
-    private final MyJDownloaderDirectServer                       directServer;
-    private final AtomicBoolean                                   challengeExchangeEnabled  = new AtomicBoolean(false);
-    private final boolean                                         debugEnabled;
+    private final ArrayDeque<MyJDownloaderConnectionResponse>            responses                 = new ArrayDeque<MyJDownloaderWaitingConnectionThread.MyJDownloaderConnectionResponse>();
+    private final ArrayList<MyJDownloaderWaitingConnectionThread>        waitingConnections        = new ArrayList<MyJDownloaderWaitingConnectionThread>();
+    private final int                                                    minimumWaitingConnections = 1;
+    private final int                                                    maximumWaitingConnections = 4;
+    private final File                                                   sessionInfoCache          = Application.getTempResource("myjd.session");
+    private final MyJDownloaderDirectServer                              directServer;
+    private final AtomicBoolean                                          challengeExchangeEnabled  = new AtomicBoolean(false);
+    private final boolean                                                debugEnabled;
 
     public MyJDownloaderDirectServer getDirectServer() {
         return directServer;
     }
 
+    public boolean isSessionTokenKilled(final String sessionToken) {
+        synchronized (KILLEDSESSIONS) {
+            return KILLEDSESSIONS.contains(sessionToken);
+        }
+    }
+
     private final static Object SESSIONLOCK = new Object();
+
+    protected static HashMap<Thread, Socket> getOpenconnections() {
+        return openConnections;
+    }
 
     public MyJDownloaderConnectThread(MyJDownloaderController myJDownloaderExtension) {
         setName("MyJDownloaderConnectThread");
@@ -236,13 +243,11 @@ public class MyJDownloaderConnectThread extends Thread {
                 return MyJDownloaderConnectThread.this.getLogger();
             }
         };
-        ArrayList<DeviceConnectionHelper> helper = new ArrayList<DeviceConnectionHelper>();
+        final ArrayList<DeviceConnectionHelper> helper = new ArrayList<DeviceConnectionHelper>();
         for (int port : CFG_MYJD.CFG.getDeviceConnectPorts()) {
             helper.add(new DeviceConnectionHelper(port, CFG_MYJD.CFG.getConnectIP()));
         }
         deviceConnectionHelper = helper.toArray(new DeviceConnectionHelper[helper.size()]);
-        notifyInterests = new CopyOnWriteArraySet<NotificationRequestMessage.TYPE>();
-        sessionInfoCache = Application.getTempResource("myjd.session");
         loadSessionInfo();
         DIRECTMODE mode = CFG_MYJD.CFG.getDirectConnectMode();
         if (mode == null) {
@@ -823,7 +828,7 @@ public class MyJDownloaderConnectThread extends Thread {
                 }
             }
             setConnected(MyJDownloaderConnectionStatus.UNCONNECTED);
-            ScheduledExecutorService lTHREADQUEUE = THREADQUEUE;
+            final ScheduledExecutorService lTHREADQUEUE = THREADQUEUE;
             THREADQUEUE = null;
             if (lTHREADQUEUE != null) {
                 lTHREADQUEUE.shutdownNow();
@@ -1086,6 +1091,16 @@ public class MyJDownloaderConnectThread extends Thread {
             }
         }
         return false;
+    }
+
+    public void killSession(String connectToken) throws MyJDownloaderException {
+        final MyJDownloaderAPI api = getApi();
+        if (api != null && connectToken != null) {
+            api.kill(getEmail(), getPassword(), connectToken);
+            synchronized (KILLEDSESSIONS) {
+                KILLEDSESSIONS.add(connectToken);
+            }
+        }
     }
 
 }
