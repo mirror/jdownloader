@@ -77,6 +77,7 @@ public class HeavyRCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
+            br2.getHeaders().put("Range", "bytes=" + 0 + "-");
             con = openConnection(br2, DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
@@ -104,6 +105,7 @@ public class HeavyRCom extends PluginForHost {
         if (!resume) {
             maxchunks = 1;
         }
+        downloadLink.setProperty("ServerComaptibleForByteRangeRequest", true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resume, maxchunks);
         if (dl.getConnection().getResponseCode() == 416) {
             logger.info("Resume impossible, disabling it for the next try");
