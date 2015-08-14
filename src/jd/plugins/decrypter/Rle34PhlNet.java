@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rule34.paheal.net" }, urls = { "http://(www\\.)?rule34\\.paheal\\.net/post/list/[\\w\\-\\.%!]+/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rule34.paheal.net" }, urls = { "http://(www\\.)?rule34\\.paheal\\.net/post/(list/[\\w\\-\\.%!]+|view)/\\d+" }, flags = { 0 })
 public class Rle34PhlNet extends PluginForDecrypt {
 
     public Rle34PhlNet(PluginWrapper wrapper) {
@@ -37,6 +37,7 @@ public class Rle34PhlNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML(">No Images Found<")) {
             decryptedLinks.add(createOfflinelink(parameter, "Offline Content"));
