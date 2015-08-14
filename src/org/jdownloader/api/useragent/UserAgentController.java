@@ -170,6 +170,7 @@ public class UserAgentController {
             @Override
             protected Void run() throws RuntimeException {
                 try {
+
                     MyJDownloaderController.getInstance().terminateSession(device.getConnectToken());
                 } catch (MyJDownloaderException e) {
                     UIOManager.I().showException(e.getMessage(), e);

@@ -6,7 +6,6 @@ import javax.swing.Icon;
 import javax.swing.SwingConstants;
 
 import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
-import jd.nutils.encoding.Encoding;
 
 import org.appwork.storage.StorageException;
 import org.appwork.utils.os.CrossSystem;
@@ -15,12 +14,10 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.statistics.StatsManager;
-import org.jdownloader.statistics.StatsManager.CollectionName;
 
-public class RemoteControlPanel extends AbstractConfigPanel {
+public class DeveloperPanel extends AbstractConfigPanel {
 
-    public RemoteControlPanel() {
+    public DeveloperPanel() {
         this.addHeader(getTitle(), getIcon());
         this.addDescription(_GUI._.RemoteControlPanel_description());
 
@@ -33,7 +30,7 @@ public class RemoteControlPanel extends AbstractConfigPanel {
 
         addButton("https://play.google.com/store/apps/details?id=org.appwork.myjdandroid", "android", "<html>" + _GUI._.RemoteControlPanel_android_open().replace("\r\n", "<br>") + "</html>");
 
-        addButton("https://itunes.apple.com/app/apple-store/id683222457?pt=435060&ct=JD&mt=8", "ios", "<html>" + _GUI._.RemoteControlPanel_ios_open().replace("\r\n", "<br>") + "</html>");
+        addButton("https://itunes.apple.com/app/jdanywhere/id683222457", "ios", "<html>" + _GUI._.RemoteControlPanel_ios_open().replace("\r\n", "<br>") + "</html>");
 
         addButton("http://www.pixelvalley.de/?page_id=1649", "windows", "<html>" + _GUI._.RemoteControlPanel_file_recon_open().replace("\r\n", "<br>") + "</html>");
         this.addHeader("Browser Extensions", new AbstractIcon("url", 32));
@@ -55,9 +52,7 @@ public class RemoteControlPanel extends AbstractConfigPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-
-                    StatsManager.I().track("myjd/" + url, CollectionName.BASIC);
-                    CrossSystem.openURLOrShowMessage("http://update3.jdownloader.org/jdserv/RedirectInterface/redirect?" + Encoding.urlEncode(url));
+                    CrossSystem.openURLOrShowMessage(url);
                 } catch (StorageException e1) {
                     e1.printStackTrace();
                 }
