@@ -17,11 +17,14 @@
 package jd.plugins.decrypter;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,15 +37,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 @DecrypterPlugin(revision = "$Revision: 28619 $", interfaceVersion = 3, names = { "smoozed.rocks" }, urls = { "https?://(www\\.)?smoozed\\.rocks/folder/[A-Za-z0-9\\-_]+" }, flags = { 0 })
-public class SmzdRcks extends PluginForDecrypt {
+public class SmzdRcks extends antiDDoSForDecrypt {
 
     private final String ssid;
 
@@ -58,7 +56,7 @@ public class SmzdRcks extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        br.getPage(parameter);
+        getPage(parameter);
         final String rcID = br.getRegex("challenge\\?k=([^\"]+)").getMatch(0);
         // Form[] forms = br.getForms();
         final DirectHTTP.Recaptcha rc = DirectHTTP.getReCaptcha(br);
@@ -91,7 +89,7 @@ public class SmzdRcks extends PluginForDecrypt {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             // waittime is not evaluated
             // Thread.sleep(15000);
-            br.submitForm(rcForm);
+            submitForm(rcForm);
             secretKey = br.getRegex("\"secretKey\"\\s*\\:\\s*\"([^\"]+)").getMatch(0);
             if (StringUtils.isNotEmpty(secretKey)) {
                 break;
@@ -102,34 +100,34 @@ public class SmzdRcks extends PluginForDecrypt {
             throw new DecrypterException(DecrypterException.CAPTCHA);
         }
 
-        br.getPage(parameter + "/" + secretKey);
+        getPage(parameter + "/" + secretKey);
         parse(br.getRequest().getHtmlCode(), decryptedLinks);
         return decryptedLinks;
     }
 
-    private void parse(String htmlCode, ArrayList<DownloadLink> decryptedLinks) throws IOException {
+    private void parse(final String htmlCode, final ArrayList<DownloadLink> decryptedLinks) throws Exception {
 
-        ArrayList<Object> obj = JSonStorage.restoreFromString(br.toString(), new TypeRef<ArrayList<Object>>() {
+        final ArrayList<Object> obj = JSonStorage.restoreFromString(br.toString(), new TypeRef<ArrayList<Object>>() {
         });
         // String cnl = (String) obj.get(0);
         // String dlc = (String) obj.get(1);
-        String accessKey = (String) obj.get(3);
+        final String accessKey = (String) obj.get(3);
 
-        Map<String, List<List<String>>> mirrorMap = (Map<String, List<List<String>>>) obj.get(2);
+        final Map<String, List<List<String>>> mirrorMap = (Map<String, List<List<String>>>) obj.get(2);
 
-        for (Entry<String, List<List<String>>> es : mirrorMap.entrySet()) {
-            for (List<String> linkInfo : es.getValue()) {
+        for (final Entry<String, List<List<String>>> es : mirrorMap.entrySet()) {
+            for (final List<String> linkInfo : es.getValue()) {
                 // String status = linkInfo.get(0);
                 // String name = linkInfo.get(1);
                 // String name_short = linkInfo.get(2);
                 // String size = linkInfo.get(3);
-                String id = linkInfo.get(4);
+                final String id = linkInfo.get(4);
 
-                String link = "https://www.smoozed.rocks/dl/" + id + "/" + accessKey + "/" + ssid + "?direct=1";
-                Browser clone = br.cloneBrowser();
+                final String link = "https://www.smoozed.rocks/dl/" + id + "/" + accessKey + "/" + ssid + "?direct=1";
+                final Browser clone = br.cloneBrowser();
                 clone.setFollowRedirects(false);
-                clone.getPage(link);
-                String redirect = clone.getRedirectLocation();
+                getPage(clone, link);
+                final String redirect = clone.getRedirectLocation();
                 if (StringUtils.isNotEmpty(redirect)) {
                     decryptedLinks.add(createDownloadlink(redirect));
                 }
