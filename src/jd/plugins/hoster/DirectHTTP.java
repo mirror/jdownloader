@@ -605,7 +605,7 @@ public class DirectHTTP extends PluginForHost {
     /**
      * TODO: can be removed with next major update cause of recaptcha change
      */
-    public Recaptcha getReCaptcha(final Browser br) {
+    public static Recaptcha getReCaptcha(final Browser br) {
         return new Recaptcha(br);
     }
 
@@ -768,9 +768,9 @@ public class DirectHTTP extends PluginForHost {
                     } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
                         urlConnection = br.openHeadConnection(getDownloadURL(downloadLink));
                         if (urlConnection.getResponseCode() == 404 /*
-                                                                    * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
-                                                                    * "must-revalidate") && urlConnection.getHeaderField("Via") != null
-                                                                    */) {
+                         * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
+                         * "must-revalidate") && urlConnection.getHeaderField("Via") != null
+                         */) {
                             urlConnection.disconnect();
                             urlConnection = br.openGetConnection(getDownloadURL(downloadLink));
                         } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
