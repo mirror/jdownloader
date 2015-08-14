@@ -6022,7 +6022,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Open the Android Playstore\r\nDeveloper: JDownloader Team" })
     String RemoteControlPanel_android_open();
 
-    @Default(lngs = { "en" }, values = { "Open the JD-Anywhere Website\r\nDeveloper: Oliver Fürst" })
+    @Default(lngs = { "en" }, values = { "Open the iTunes Store\r\nDeveloper: Oliver Fürst" })
     String RemoteControlPanel_ios_open();
 
     @Default(lngs = { "en" }, values = { "Open File.recon Website\r\nDeveloper: Christof Rakowski" })
