@@ -440,6 +440,12 @@ public class YoutubeDashV2 extends PluginForHost {
         void setSubtitlesEnabled(boolean b);
 
         @AboutConfig
+        @DefaultBooleanValue(false)
+        boolean isDescriptionTextEnabled();
+
+        void setDescriptionTextEnabled(boolean b);
+
+        @AboutConfig
         ArrayList<YoutubeCustomVariantStorable> getCustomVariants();
 
         void setCustomVariants(ArrayList<YoutubeCustomVariantStorable> list);
@@ -593,6 +599,9 @@ public class YoutubeDashV2 extends PluginForHost {
                 }
                 case IMAGE:
                     break;
+                case DESCRIPTION:
+                    downloadLink.setDownloadSize(downloadLink.getStringProperty(YoutubeHelper.YT_DESCRIPTION).getBytes("UTF-8").length);
+                    return AvailableStatus.TRUE;
                 default:
                     break;
                 }
@@ -629,6 +638,9 @@ public class YoutubeDashV2 extends PluginForHost {
             }
 
             break;
+        case DESCRIPTION:
+            downloadLink.setDownloadSize(downloadLink.getStringProperty(YoutubeHelper.YT_DESCRIPTION).getBytes("UTF-8").length);
+            return AvailableStatus.TRUE;
         case IMAGE:
             for (int i = 0; i < 2; i++) {
                 UrlCollection urls = getUrlPair(downloadLink);
@@ -892,8 +904,8 @@ public class YoutubeDashV2 extends PluginForHost {
             // _JDT._.CountryIPBlockException_createCandidateResult(), 1 * 24 * 60 * 60 * 100l);
             // }
             if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error,/*
-                                                                                                                                 * 15.12.2014
-                                                                                                                                 */"This video is not available.")) {
+             * 15.12.2014
+             */"This video is not available.")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.CountryIPBlockException_createCandidateResult());
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
@@ -1526,6 +1538,15 @@ public class YoutubeDashV2 extends PluginForHost {
         // if (!Application.isJared(null)) throw new RuntimeException("Shit happened");
         boolean resume = true;
         switch (variant.getType()) {
+        case DESCRIPTION:
+
+            // TODO Jiaz: dummy interface
+            File file = new File(downloadLink.getFileOutput());
+            file.getParentFile().mkdirs();
+            file.delete();
+            IO.writeStringToFile(file, downloadLink.getStringProperty(YoutubeHelper.YT_DESCRIPTION));
+            downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+            return;
         case IMAGE:
             this.setBrowserExclusive();
 

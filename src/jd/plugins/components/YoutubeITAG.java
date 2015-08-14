@@ -65,6 +65,7 @@ public enum YoutubeITAG {
     DASH_WEBM_VIDEO_240P_VP9(242, "vp9", "240p", null, null, VideoResolution.P_240, VideoContainer.WEBM, VideoCodec.VP9),
     DASH_WEBM_VIDEO_360P_VP9(243, "vp9", "360p", null, null, VideoResolution.P_360, VideoContainer.WEBM, VideoCodec.VP9),
     DASH_WEBM_VIDEO_480P_VP9(244, "vp9", "480p", null, null, VideoResolution.P_480, VideoContainer.WEBM, VideoCodec.VP9),
+    DESCRIPTION(10002, "txt", null, null, null, MediaTagsVarious.DESCRIPTION),
     DASH_WEBM_VIDEO_480P_VP9_2(245, "vp9 High Quality Profile", "480p", null, null, VideoResolution.P_480, VideoContainer.WEBM, VideoCodec.VP9_BETTER_PROFILE_1),
     DASH_WEBM_VIDEO_480P_VP9_3(246, "vp9 Higher Quality Profile", "480p", null, null, VideoResolution.P_480, VideoContainer.WEBM, VideoCodec.VP9_BETTER_PROFILE_2),
     DASH_WEBM_VIDEO_720P_VP9(247, "vp9", "720p", null, null, VideoResolution.P_720, VideoContainer.WEBM, VideoCodec.VP9),
@@ -125,7 +126,7 @@ public enum YoutubeITAG {
     WEBM_VIDEO_720P_VP8_AUDIO_192K_VORBIS_3D(102, "VP8", "720p", "Vorbis", "192kbit", VideoResolution.P_720, VideoContainer.WEBM, VideoCodec.VP8, AudioCodec.VORBIS, AudioBitrate.KBIT_192),
 
     // not sure - did not find testvideos
-    WEBM_VIDEO_720P_VP8_AUDIO_VORBIS(45, "VP8", "720p", "Vorbis", "192kbit", VideoResolution.P_720, VideoContainer.WEBM, VideoCodec.VP8, AudioCodec.VORBIS, AudioBitrate.KBIT_192);
+    WEBM_VIDEO_720P_VP8_AUDIO_VORBIS(45, "VP8", "720p", "Vorbis", "192kbit", VideoResolution.P_720, VideoContainer.WEBM, VideoCodec.VP8, AudioCodec.VORBIS, AudioBitrate.KBIT_192), ;
     public static enum YoutubeITAGVersion {
         // http://www.h3xed.com/web-and-internet/youtube-audio-quality-bitrate-240p-360p-480p-720p-1080p
         // Before March 2011, YouTube used these audio qualities for several years:

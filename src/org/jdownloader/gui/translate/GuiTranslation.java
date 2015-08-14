@@ -4325,6 +4325,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Plugin" })
     String lit_plugin();
 
+    @Default(lngs = { "en" }, values = { "Description Text File" })
+    String YoutubeVariant_name_DESCRIPTION();
+
     @Default(lngs = { "en" }, values = { "SubRip Subtitle File" })
     String YoutubeVariant_name_SUBTITLES();
 
@@ -4501,6 +4504,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "720p WebM-Video" })
     String YoutubeVariant_name_WEBM_720();
+
+    @Default(lngs = { "en" }, values = { "Description" })
+    String YoutubeVariant_filenametag_DESCRIPTION();
 
     @Default(lngs = { "en" }, values = { "Subtitles" })
     String YoutubeVariant_filenametag_SUBTITLES();
@@ -6045,5 +6051,8 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "My.JDownloader" })
     String action_myjdownloader_menu();
+
+    @Default(lngs = { "en" }, values = { "Video Description" })
+    String YoutubeVariantInterface_getLabel_description();
 
 }

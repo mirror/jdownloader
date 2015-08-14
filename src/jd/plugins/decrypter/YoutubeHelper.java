@@ -670,12 +670,12 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     /**
      * *
-     * 
+     *
      * @param html5PlayerJs
      *            TODO
      * @param br
      * @param s
-     * 
+     *
      * @return
      * @throws IOException
      * @throws PluginException
@@ -775,6 +775,15 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 vid.title = Encoding.htmlDecode(match.replaceAll("\\+", " ").trim());
             }
 
+        }
+        if (StringUtils.isEmpty(vid.description)) {
+            String match = br.getRegex("<div id=\"watch-description-text\".*?><p id=\"eow-description\"\\s*>(.*?)</p\\s*>\\s*</div>\\s*<div id=\"watch-description-extras\"\\s*>").getMatch(0);
+            if (StringUtils.isNotEmpty(match)) {
+                match = Encoding.htmlDecode(match.replaceAll("\\+", " ").trim().replaceAll("<br\\s*/>", "\r\n"));
+                match = match.replaceAll("<a.*?href=\"([^\"]*)\".*?>(.*?)</a\\s*>", "$1");
+                vid.description = match;
+
+            }
         }
         if (StringUtils.isEmpty(vid.title)) {
             final String match = this.br.getRegex("<title>(.*?) - YouTube</title>").getMatch(0);
@@ -1300,7 +1309,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     /**
      * this method calls an API which has been deprecated by youtube. TODO: Find new API!
-     * 
+     *
      * @deprecated
      * @param vid
      * @throws IOException
@@ -1580,6 +1589,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
     public static final String YT_SUBTITLE_CODE_LIST = "YT_SUBTITLE_CODE_LIST";
 
     public static final String YT_BEST_VIDEO         = "YT_BEST_VIDEO";
+
+    public static final String YT_DESCRIPTION        = "YT_DESCRIPTION";
 
     public String createFilename(DownloadLink link) {
 
@@ -1944,6 +1955,10 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     public YoutubeConfig getConfig() {
         return cfg;
+    }
+
+    public String loadDescription(YoutubeClipData vid) {
+        return vid.description;
     }
 
 }

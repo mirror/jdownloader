@@ -22,6 +22,7 @@ public interface YoutubeVariantInterface extends LinkVariant {
          */
         IMAGE,
         SUBTITLES,
+        DESCRIPTION,
 
     }
 
@@ -55,6 +56,12 @@ public interface YoutubeVariantInterface extends LinkVariant {
             @Override
             public String getLabel() {
                 return _GUI._.YoutubeVariantInterface_getLabel_subtitles();
+            }
+        },
+        DESCRIPTION {
+            @Override
+            public String getLabel() {
+                return _GUI._.YoutubeVariantInterface_getLabel_description();
             }
         };
     }
