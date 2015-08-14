@@ -35,9 +35,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
-import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -46,42 +44,39 @@ import org.appwork.utils.StringUtils;
 @DecrypterPlugin(revision = "$Revision: 28619 $", interfaceVersion = 3, names = { "smoozed.rocks" }, urls = { "https?://(www\\.)?smoozed\\.rocks/folder/[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class SmzdRcks extends PluginForDecrypt {
 
-    private String ssid;
+    private final String ssid;
 
     public SmzdRcks(PluginWrapper wrapper) {
         super(wrapper);
-
         // some kind of canvas browser id?
         // seems like a random number works pretty fine
-        long min = 1000000000l;
-        long max = 9999999999l;
+        final long min = 1000000000l;
+        final long max = 9999999999l;
         ssid = (min + (int) (Math.random() * ((max - min) + 1))) + "";
-
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
         final String rcID = br.getRegex("challenge\\?k=([^\"]+)").getMatch(0);
         // Form[] forms = br.getForms();
-        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        final DirectHTTP.Recaptcha rc = DirectHTTP.getReCaptcha(br);
         rc.setId(rcID);
         rc.load();
         String secretKey = null;
-
         for (int i = 0; i <= 15; i++) {
+            if (isAbort()) {
+                return decryptedLinks;
+            }
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-
-            String c = getCaptchaCode("recaptcha", cf, param);
-
+            final String c = getCaptchaCode("recaptcha", cf, param);
             if (c == null || c.length() == 0) {
                 rc.reload();
                 continue;
             }
 
-            Form rcForm = br.getFormbyKey("recaptcha_response_field");
+            final Form rcForm = br.getFormbyKey("recaptcha_response_field");
             rcForm.getInputField("ssid").setValue(ssid);
             rcForm.getInputField("recaptcha_response_field").setValue(c);
 
