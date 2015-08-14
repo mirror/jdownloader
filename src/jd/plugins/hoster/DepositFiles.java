@@ -33,6 +33,11 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,12 +65,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends antiDDoSForHost {
 
@@ -76,19 +75,19 @@ public class DepositFiles extends antiDDoSForHost {
     public static AtomicReference<String> MAINPAGE                 = new AtomicReference<String>();
     public static final String            DOMAINS                  = "(depositfiles\\.(com|org)|dfiles\\.(eu|ru))";
 
-    private String                        protocol                 = null;
+    private String protocol = null;
 
-    public String                         DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
-    private final Pattern                 FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
-    private final Pattern                 FILE_INFO_SIZE           = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
+    public String         DLLINKREGEX2   = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
+    private final Pattern FILE_INFO_NAME = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
+    private final Pattern FILE_INFO_SIZE = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
 
-    private static Object                 PREMLOCK                 = new Object();
-    private static Object                 LOCK                     = new Object();
+    private static Object PREMLOCK = new Object();
+    private static Object LOCK     = new Object();
 
-    private static AtomicInteger          simultanpremium          = new AtomicInteger(1);
-    private static AtomicBoolean          useAPI                   = new AtomicBoolean(true);
+    private static AtomicInteger simultanpremium = new AtomicInteger(1);
+    private static AtomicBoolean useAPI          = new AtomicBoolean(true);
 
-    private final String                  SETTING_SSL_CONNECTION   = "SSL_CONNECTION";
+    private final String SETTING_SSL_CONNECTION = "SSL_CONNECTION";
 
     // private final String SETTING_PREFER_SOLVEMEDIA = "SETTING_PREFER_SOLVEMEDIA";
 
@@ -487,7 +486,7 @@ public class DepositFiles extends antiDDoSForHost {
                                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                             }
                         }
-                        finallink = submitCapthcaStep("fid=" + fid + "&challenge=" + chid + "&response=" + Encoding.urlEncode(code) + "&acpuzzle=1");
+                        finallink = submitCapthcaStep("fid=" + fid + "&challenge=" + Encoding.urlEncode(chid) + "&response=" + Encoding.urlEncode(code) + "&acpuzzle=1");
                         break;
                     }
                 } else {
@@ -1178,7 +1177,10 @@ public class DepositFiles extends antiDDoSForHost {
                 // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dllink = dllink.replaceAll("\\\\/", "/");
+        // for now limit to premium accounts
+        if (!account.getBooleanProperty("free", false)) {
+            dllink = fixLinkSSL(dllink);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, apiResumes, apiChunks);
         final URLConnectionAdapter con = dl.getConnection();
         if (Plugin.getFileNameFromHeader(con) == null || Plugin.getFileNameFromHeader(con).indexOf("?") >= 0) {
