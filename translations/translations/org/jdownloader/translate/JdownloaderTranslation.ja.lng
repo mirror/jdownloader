@@ -156,6 +156,7 @@ MyJDownloaderController_onError_outdated=JDownloaderがMy JDownloaderサービ�
 MyJDownloaderController_onError_unknown=JDownloaderがMy JDownloaderサービスに接続できませんでした: %s1
 OptionalContainer_OptionalContainer=追加アクション...
 PackagizerSettings_folderbypackage_rule_name=サブフォルダをパッケージ名毎に作成
+PackagizerSettings_folderbyplugin_rule_name=プラグインによりサブフォルダを作成
 PasteContextLinksAction_getTranslationForDeepDecryptEnabled=深層解析
 PasteLinksAction_getTranslationForDeepDecryptEnabled=深層解析
 PauseDownloadsAction_getHideIfDownloadsAreStoppedTranslation=ダウンロード中で無い場合は非表示
