@@ -16,7 +16,8 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitcasa.com" }, urls = { "https://drive\\.bitcasa\\.com/send/[A-Za-z0-9\\-]+|https?://l\\.bitcasa\\.com/[A-Za-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitcasa.com" }, urls = { "https://drive\\.bitcasa\\.com/send/[A-Za-z0-9\\-_]+(?:.+\\?file=[A-Za-z0-9\\-_]+)?|https?://l\\.bitcasa\\.com/[A-Za-z0-9\\-]+" }, flags = { 0 })
 public class BitCasaCom extends PluginForHost {
 
     public BitCasaCom(PluginWrapper wrapper) {
@@ -42,12 +43,19 @@ public class BitCasaCom extends PluginForHost {
         return "https://www.bitcasa.com/legal";
     }
 
-    private static final String TYPE_NORMAL = "https://drive\\.bitcasa\\.com/send/[A-Za-z0-9\\-]+";
-    private static final String TYPE_SHORT  = "https?://l\\.bitcasa\\.com/[A-Za-z0-9\\-]+";
+    private static final String TYPE_NORMAL             = "^https://drive\\.bitcasa\\.com/send/.+$";
+    private static final String TYPE_NORMAL_FOLDER_FILE = "^https://drive\\.bitcasa\\.com/send/[A-Za-z0-9\\-_#]+/.+/\\?file=[A-Za-z0-9\\-_]+$";
+    private static final String TYPE_SHORT              = "^https?://l\\.bitcasa\\.com/[A-Za-z0-9\\-]+$";
 
-    @SuppressWarnings("deprecation")
+    private String              digest                  = null;
+    private String              nonce                   = null;
+    private String              payload                 = null;
+
+    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        String filename = null;
+        String filesize = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         try {
@@ -68,10 +76,44 @@ public class BitCasaCom extends PluginForHost {
             }
             link.setUrlDownload(br.getURL());
         }
-        br.getPage("https://drive.bitcasa.com/portal/v2/shares/" + getFID(link) + "/meta");
-        final String errcode = getJson("code");
-        if ("4002".equals(errcode)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getDownloadURL().matches(TYPE_NORMAL_FOLDER_FILE)) {
+            /* Single file inside a folder */
+            final Regex inforegex = new Regex(link.getDownloadURL(), "^https://drive\\.bitcasa\\.com/send/([A-Za-z0-9\\-_#]+/.+)/\\?file=([A-Za-z0-9\\-_]+)$");
+            final String link_id = inforegex.getMatch(0).replace("#", "");
+            final String file_id = inforegex.getMatch(1);
+            /* limit=300 == standard value from website */
+            this.br.getPage("https://drive.bitcasa.com/portal/v2/shares/" + link_id + "/meta?limit=300");
+            final String errcode = getJson("code");
+            if ("4002".equals(errcode)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+            final ArrayList<Object> ressourcelist = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "result/items");
+            for (final Object jso : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) jso;
+                final String file_id_temp = (String) entries.get("id");
+                if (file_id_temp.equals(file_id)) {
+                    filename = (String) entries.get("name");
+                    filesize = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("size"), -1));
+                    digest = (String) DummyScriptEnginePlugin.walkJson(entries, "application_data/_server/nebula/digest");
+                    nonce = (String) DummyScriptEnginePlugin.walkJson(entries, "application_data/_server/nebula/nonce");
+                    payload = (String) DummyScriptEnginePlugin.walkJson(entries, "application_data/_server/nebula/payload");
+                    break;
+                }
+            }
+
+        } else {
+            /* Single file */
+            this.br.getPage("https://drive.bitcasa.com/portal/v2/shares/" + getFID(link) + "/meta");
+            final String errcode = getJson("code");
+            if ("4002".equals(errcode)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = getJson("share_name");
+            filesize = getJson("share_size");
+            digest = getJson("digest");
+            nonce = getJson("nonce");
+            payload = getJson("payload");
         }
         /* Did not yet get any password protected links for V2. */
         // /* Filename/size is not available for password protected links */
@@ -79,8 +121,6 @@ public class BitCasaCom extends PluginForHost {
         // link.getLinkStatus().setStatusText("This link is password protected");
         // return AvailableStatus.TRUE;
         // }
-        final String filename = getJson("share_name");
-        final String filesize = getJson("share_size");
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -93,9 +133,6 @@ public class BitCasaCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         // String passCode = downloadLink.getStringProperty("pass", null);
         requestFileInformation(downloadLink);
-        final String digest = getJson("digest");
-        final String nonce = getJson("nonce");
-        final String payload = getJson("payload");
         if (digest == null || nonce == null || payload == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -130,8 +167,9 @@ public class BitCasaCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @SuppressWarnings("deprecation")
     private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9\\-]+)$").getMatch(0);
+        return new Regex(dl.getDownloadURL(), "/([^<>\"/]+)$").getMatch(0);
     }
 
     /**
