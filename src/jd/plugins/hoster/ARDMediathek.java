@@ -317,7 +317,7 @@ public class ARDMediathek extends PluginForHost {
                     dest.write(text + lineseparator + lineseparator);
                 }
                 success = true;
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 success = false;
             } finally {
                 try {

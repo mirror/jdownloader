@@ -20,13 +20,17 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(www\\.)?instagram\\.com/(?!p/)[^/]+" }, flags = { 0 })
 public class InstaGramComDecrypter extends PluginForDecrypt {
@@ -35,29 +39,46 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        final PluginForHost hostplugin = JDUtilities.getPluginForHost("instagram.com");
+        final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
+        if (aa != null) {
+            /* Login whenever possible */
+            try {
+                jd.plugins.hoster.InstaGramCom.login(this.br, aa, false);
+            } catch (final Throwable e) {
+            }
+        }
+
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("user\\?username=.+")) {
-            try {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-            } catch (final Throwable e) {
-                /* Not available in old 0.9.581 Stable */
-            }
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String username_url = parameter.substring(parameter.lastIndexOf("/") + 1);
         final String json = br.getRegex(">window\\._sharedData = (\\{.*?);</script>").getMatch(0);
         final String id_owner = br.getRegex("\"owner\":\\{\"id\":\"(\\d+)\"\\}").getMatch(0);
-        if (id_owner == null || json == null) {
+        if (json == null) {
             return null;
         }
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        final boolean isPrivate = ((Boolean) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/user/is_private")).booleanValue();
+        if (isPrivate) {
+            logger.info("Cannot parse url as profile is private");
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+
+        if (id_owner == null) {
+            return null;
+        }
+
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username_url);
 
-        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
         String nextid = (String) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor");
         final String maxid = (String) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/__get_params/max_id");
         ArrayList<Object> resource_data_list = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/nodes");

@@ -59,8 +59,11 @@ public class TwitterCom extends PornEmbedParser {
             if (finallink == null) {
                 finallink = this.br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+;URL=(http[^<>\"]*?)\"").getMatch(0);
             }
-            if (finallink == null) {
-                return null;
+            if (br.getRequest().getHttpConnection().getResponseCode() == 403 || br.getRequest().getHttpConnection().getResponseCode() == 404 || finallink == null) {
+                final DownloadLink offline = this.createOfflinelink(parameter);
+                offline.setFinalFileName(urlfilename);
+                decryptedLinks.add(offline);
+                return decryptedLinks;
             }
             decryptedLinks.add(this.createDownloadlink(finallink));
             return decryptedLinks;
@@ -75,18 +78,14 @@ public class TwitterCom extends PornEmbedParser {
         }
         br.getPage(parameter);
         if (br.getRequest().getHttpConnection().getResponseCode() == 403 || br.getRequest().getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(urlfilename);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
             decryptedLinks.add(offline);
             return decryptedLinks;
         } else if (br.containsHTML("class=\"ProtectedTimeline\"")) {
             logger.info("This tweet timeline is protected");
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+            final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName("This tweet timeline is protected_" + urlfilename);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
