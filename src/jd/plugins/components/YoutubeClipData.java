@@ -3,7 +3,7 @@ package jd.plugins.components;
 public class YoutubeClipData {
 
     /**
-     * 
+     *
      */
 
     public String      user;
@@ -21,6 +21,7 @@ public class YoutubeClipData {
     public long        dateUpdated;
     public String      userGooglePlusID;
     public YoutubeITAG bestVideoItag;
+    public String      description;
 
     public YoutubeClipData(final String videoID) {
         this(videoID, -1);

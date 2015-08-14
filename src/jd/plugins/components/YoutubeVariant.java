@@ -1693,6 +1693,18 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
         }
 
     },
+    DESCRIPTION(null, YoutubeVariantInterface.VariantGroup.DESCRIPTION, YoutubeVariantInterface.DownloadType.DESCRIPTION, "txt", null, null, YoutubeITAG.DESCRIPTION, null, null) {
+        @Override
+        public String _getName() {
+            return _GUI._.YoutubeVariant_name_DESCRIPTION();
+        }
+
+        @Override
+        public String getQualityExtension() {
+            return _GUI._.YoutubeVariant_filenametag_DESCRIPTION();
+        }
+
+    },
     THREEGP_144(null, YoutubeVariantInterface.VariantGroup.VIDEO, YoutubeVariantInterface.DownloadType.VIDEO, "3gp", YoutubeITAG.THREEGP_VIDEO_144P_H264_AUDIO_AAC, null, null, null, null) {
         @Override
         public String _getName() {
@@ -2307,7 +2319,7 @@ public enum YoutubeVariant implements YoutubeVariantInterface {
 
     /**
      * returns true if this variant requires a video tool like ffmpge for muxing, demuxing or container converting
-     * 
+     *
      * @return
      */
     public boolean isVideoToolRequired() {

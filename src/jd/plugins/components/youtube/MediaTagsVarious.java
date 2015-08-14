@@ -3,7 +3,8 @@ package jd.plugins.components.youtube;
 public enum MediaTagsVarious implements MediaQualityInterface {
 
     SUBTITLE(1, 10),
-    VIDEO_FPS_60(5, 100);
+    VIDEO_FPS_60(5, 100),
+    DESCRIPTION(1, 10);
 
     private double rating = -1;
 
