@@ -41,7 +41,9 @@ public class HitFileNetFolder extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getHeaders().put("Referer", parameter);
         br.getPage("http://hitfile.net/lang/en");
-        if (!br.getURL().equals(parameter)) br.getPage(parameter);
+        if (!br.getURL().equals(parameter)) {
+            br.getPage(parameter);
+        }
         if (br.containsHTML(">There are no any files in this folder<|>Searching file\\.\\.\\.Please wait|>Please wait, searching file")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
@@ -49,14 +51,17 @@ public class HitFileNetFolder extends PluginForDecrypt {
         final String fpName = br.getRegex("class=\\'folder\\-big\\'><img src=\\'/js/lib/grid/icon/folder\\.png\\'>([^<>\"\\']+)</div>").getMatch(0);
         final String fid = new Regex(parameter, "/folder/(\\d+)").getMatch(0);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("http://hitfile.net/downloadfolder/gridFile?rootId=" + fid + "&currentId=" + fid + "&_search=false&nd=" + Math.random() + "&rows=2000&page=1&sidx=name&sord=asc");
+        br.getPage("http://hitfile.net/downloadfolder/gridFile?rootId=" + fid + "&currentId=" + fid + "&_search=false&nd=" + Math.random() + "&rows=100000&page=1&sidx=file_type&sord=asc");
         String[] ids = br.getRegex("\"id\":\"([A-Za-z0-9]+)\"").getColumn(0);
         if (ids == null || ids.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String id : ids)
-            decryptedLinks.add(createDownloadlink("http://hitfile.net/" + id));
+        for (String id : ids) {
+            if (!id.equals(fid)) {
+                decryptedLinks.add(createDownloadlink("http://hitfile.net/" + id));
+            }
+        }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
