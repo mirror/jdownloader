@@ -242,7 +242,7 @@ public class SrBoxCom extends PluginForDecrypt {
             return null;
         }
 
-        if (link.toLowerCase().contains("download")) {
+        if (link.toLowerCase().contains("1407658336_download.png")) {
             return null;
         }
 
@@ -250,7 +250,7 @@ public class SrBoxCom extends PluginForDecrypt {
             return null;
         }
 
-        if (link.toLowerCase().contains("discogs") || link.toLowerCase().contains("tracklist") || link.toLowerCase().contains("all-music")) {
+        if (link.toLowerCase().contains("discogs") || link.toLowerCase().contains("tracklist") || link.toLowerCase().contains("all-music") || link.toLowerCase().contains("junodownload")) {
             return null;
         }
 
