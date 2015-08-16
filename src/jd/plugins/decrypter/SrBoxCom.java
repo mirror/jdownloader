@@ -242,7 +242,7 @@ public class SrBoxCom extends PluginForDecrypt {
             return null;
         }
 
-        if (link.toLowerCase().contains("1407658336_download.png")) {
+        if (link.toLowerCase().contains("1407658336_download.png") || link.toLowerCase().contains("1439703144_04c.png") || link.toLowerCase().contains("1439703098_kap-download.jpg")) {
             return null;
         }
 
@@ -294,7 +294,6 @@ public class SrBoxCom extends PluginForDecrypt {
             strName = strName.replace("VA - ", "");
         }
         strName = strName.replace("Various Artists - ", "");
-        strName = strName.replace("HDTracks", "");
         strName = strName.replace("Vinyl", "");
 
         // Remove the exact words mp3, flac, lossless and ape
@@ -304,6 +303,9 @@ public class SrBoxCom extends PluginForDecrypt {
         strName = ReplacePattern(strName, "[0-9]+ *albums");
         strName = ReplacePattern(strName, "- [0-9]+ *CD Box Set");
         strName = ReplacePattern(strName, "Box Set");
+
+        // Remove the HDTracks information (Take care of the case)
+        strName = ReplacePattern(strName, "HDTracks");
 
         // Remove the vinyl digitizing information
         strName = ReplacePattern(strName, "Vinyl Digitizing");
