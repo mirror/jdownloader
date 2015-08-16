@@ -69,15 +69,17 @@ public class HentaiFoundryComGallery extends PluginForDecrypt {
             if (page > 1) {
                 br.getPage(next);
             }
-            String[] links = br.getRegex("<td class=\\'thumb_square\\'(.*?)<table><tr>").getColumn(0);
+            String[] links = br.getRegex("<td class=\\'thumb_square\\'(.*?)\\s+</td>").getColumn(0);
             if (links == null || links.length == 0) {
                 return null;
             }
             for (String link : links) {
-                String title = new Regex(link, "class=\"thumbTitle\">([^<>]*?)</span>").getMatch(0);
+                String title = new Regex(link, "thumbTitle\"><[^<>]*?>([^<>]*?)<").getMatch(0);
                 final String url = new Regex(link, "\"(/pictures/user/[A-Za-z0-9\\-_]+/\\d+[^<>\"]*?)\"").getMatch(0);
                 if (title == null || url == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
+                    logger.info("link: " + link);
+                    logger.info("title: " + title + "url: " + url);
                     return null;
                 }
                 title = Encoding.htmlDecode(title).trim();
