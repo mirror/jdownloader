@@ -23,7 +23,7 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
 
     void setDeepExtractionBlacklistPatterns(String[] patterns);
 
-    @DefaultStringArrayValue(value = { "##Lines with XX are comments", "##Example to skip extraction of JPEG files", "##.*\\.jpe?g" })
+    @DefaultStringArrayValue(value = { "##Lines with ## are comments", "##Example to skip extraction of JPEG files", "##.*\\.jpe?g" })
     @AboutConfig
     @DescriptionForConfigEntry("A list of regular expressions. Use to avoid extracting certain filetypes.")
     String[] getBlacklistPatterns();
