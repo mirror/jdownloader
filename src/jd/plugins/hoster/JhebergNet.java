@@ -122,7 +122,7 @@ public class JhebergNet extends PluginForHost {
         br.setFollowRedirects(true);
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("application/json")) {
             br.followConnection();
             if (br.containsHTML("Download not available at the moment")) {
                 handleErrorRetries("download_not_available", 5, 5 * 60 * 1000l);
@@ -158,7 +158,8 @@ public class JhebergNet extends PluginForHost {
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
         if (dllink == null) {
             /* request Download */
-            this.accessAPISafe("http://jheberg.net/profile/debrid/link/");
+            this.br.setFollowRedirects(true);
+            this.accessAPISafe("http://www.jheberg.net/profile/debrid/link/");
             final String token = getToken();
             if (token == null) {
                 handleErrorRetries("tokennull", 5, 60 * 60 * 1000l);
@@ -196,7 +197,7 @@ public class JhebergNet extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before we temporarily remove the host
      * from the host list.
-     * 
+     *
      * @param error
      *            : The name of the error
      * @param maxRetries
@@ -388,7 +389,7 @@ public class JhebergNet extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {

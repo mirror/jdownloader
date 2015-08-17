@@ -237,10 +237,10 @@ public class CopyCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.getPage("https://www.copy.com/auth/login?");
-                br.postPage("/auth/login", "persist=on&login=&redirect=%2Fbrowse&source=&user_count=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                final String logincookie = br.getCookie(MAINPAGE, "COPY_AUTH");
-                if (logincookie == null || !logincookie.contains("www.copy.com")) {
+                prepAPIHeaders();
+                br.postPageRaw("https://apiweb.copy.com/jsonrpc", "{\"jsonrpc\":\"2.0\",\"method\":\"auth_user\",\"params\":{\"username\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\"},\"id\":1}");
+                final String logintoken = this.getJson("auth_token");
+                if (logintoken == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -337,10 +337,7 @@ public class CopyCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 /* Prepare usage of site-API */
-                br.getHeaders().put("Accept", "application/json");
-                br.getHeaders().put("X-Client-Type", "API");
-                br.getHeaders().put("X-Client-Version", "1.0.00");
-                br.getHeaders().put("X-Api-Version", "1.0");
+                prepAPIHeaders();
                 br.getHeaders().put("X-Authorization", api_auth);
                 /*
                  * Do NOT check whether the file/folder already exists in the account as if we delete single files of folders later, this
@@ -426,6 +423,14 @@ public class CopyCom extends PluginForHost {
             link.setProperty("premium_directlink", dllink);
             dl.startDownload();
         }
+    }
+
+    /** Prepare usage of site-API */
+    private void prepAPIHeaders() {
+        br.getHeaders().put("Accept", "application/json");
+        br.getHeaders().put("X-Client-Type", "API");
+        br.getHeaders().put("X-Client-Version", "1.0.00");
+        br.getHeaders().put("X-Api-Version", "1.0");
     }
 
     private String getFID(final DownloadLink dl) {

@@ -518,7 +518,7 @@ public class RDMdthk extends PluginForDecrypt {
             try {
                 /* JD2 only */
                 dl_subtitle.setContentUrl(orig_link);
-                link.setLinkID(linkid);
+                dl_subtitle.setLinkID(linkid);
             } catch (Throwable e) {/* Stable */
                 dl_subtitle.setBrowserUrl(orig_link);
             }

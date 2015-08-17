@@ -37,15 +37,16 @@ import jd.plugins.hoster.ImgUrCom;
 import jd.utils.JDUtilities;
 
 /*Only accept single-imag URLs with an LID-length or either 5 OR 7 - everything else are invalid links or thumbnails*/
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://(www\\.)?imgur\\.com/(gallery|a)/[A-Za-z0-9]{5,7}|https?://i\\.imgur\\.com/(download/)?([A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(www\\.)?imgur\\.com/(download/)?([A-Za-z0-9]{7}|[A-Za-z0-9]{5})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgur.com" }, urls = { "https?://(?:www\\.)?imgur\\.com/(?:gallery|a)/[A-Za-z0-9]{5,7}|https?://i\\.imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.)?imgur\\.com/(?:download/)?(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})|https?://(?:www\\.)?imgur\\.com/r/[^/]+/(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})" }, flags = { 0 })
 public class ImgurCom extends PluginForDecrypt {
 
     public ImgurCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String            TYPE_ALBUM                    = "https?://(www\\.)?imgur\\.com/a/[A-Za-z0-9]{5,7}";
-    private final String            TYPE_GALLERY                  = "https?://(www\\.)?imgur\\.com/gallery/[A-Za-z0-9]{5,7}";
+    private final String            TYPE_SINGLE_IMAGE_R           = "https?://(?:www\\.)?imgur\\.com/r/[^/]+/(?:[A-Za-z0-9]{7}|[A-Za-z0-9]{5})";
+    private final String            TYPE_ALBUM                    = "https?://(?:www\\.)?imgur\\.com/a/[A-Za-z0-9]{5,7}";
+    private final String            TYPE_GALLERY                  = "https?://(?:www\\.)?imgur\\.com/gallery/[A-Za-z0-9]{5,7}";
     private static Object           ctrlLock                      = new Object();
     private static AtomicBoolean    pluginLoaded                  = new AtomicBoolean(false);
 
