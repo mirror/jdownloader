@@ -12,6 +12,9 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.confidentcaptcha.CaptchaHelperCrawlerPluginConfidentCaptcha;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -26,19 +29,15 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.confidentcaptcha.CaptchaHelperCrawlerPluginConfidentCaptcha;
 
 /**
  * abstract class to handle sites similar to safelinking type sites. <br />
  * Google "Secure your links with a captcha, a password and much more" to find such sites
  *
- * @author raztoki - new json implemenation.
+ * @author raztoki - new json implementation.
  * @author raztoki - abstract & improvements
  * @author bismarck - parts of the original
  * @author psp - parts of the original
@@ -49,9 +48,9 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    protected String                               parameter = null;
-    protected String                               cType     = "notDetected";
-    protected String                               uid       = null;
+    protected String parameter = null;
+    protected String cType     = "notDetected";
+    protected String uid       = null;
 
     protected final static AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
@@ -78,7 +77,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // link correction
         parameter = correctLink(param.toString());
         prepBrowser(br);
@@ -110,7 +109,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
         } else {
             // now comes the json
             ajaxPostPageRaw("/v1/protected", ammendJson(null, "hash", uid));
-            if (StringUtils.containsIgnoreCase(getJson(ajax, "message"), "not found")) {
+            if (StringUtils.containsIgnoreCase(getJson(ajax, "message"), "not found") || StringUtils.containsIgnoreCase(getJson(ajax, "messsage"), "not found")) {
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
@@ -141,13 +140,11 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                     }
                     if (JSonUtils.parseBoolean(useCaptcha)) {
                         // captchas:[
-                        // {name:"SolveMedia",id:0,isDefault:!0,enabled:!0,publicKey:solvemediaPublicKey,init:function(e){!function
-                        // t(){window.ACPuzzle?window.ACPuzzle.create(e.publicKey,"captcha",{lang:"en",size:"standard"}):setTimeout(t,500)}()},getModel:function(){return{answer:window.ACPuzzle.get_response(),challengeId:window.ACPuzzle.get_challenge()}},refresh:function(){window.ACPuzzle.reload()}},
+                        // {name:"SolveMedia",id:0,isDefault:!0,enabled:!0,publicKey:solvemediaPublicKey,init:function(e){!function t(){window.ACPuzzle?window.ACPuzzle.create(e.publicKey,"captcha",{lang:"en",size:"standard"}):setTimeout(t,500)}()},getModel:function(){return{answer:window.ACPuzzle.get_response(),challengeId:window.ACPuzzle.get_challenge()}},refresh:function(){window.ACPuzzle.reload()}},
                         // {name:"Recaptcha",id:1,isDefaultBackup:!0,enabled:!0,publicKey:"6Lf5bAITAAAAABDTzSsLdgMDY1jeK6qE6IKGxvqk",init:function(e){window.renderRecaptchaCB=function(){grecaptcha.render(document.getElementById("recaptcha"),{sitekey:e.publicKey})},$.getScript("https://www.google.com/recaptcha/api.js?onload=renderRecaptchaCB&render=explicit",function(){})},getModel:function(e){return{answer:grecaptcha.getResponse(),challengeId:e.captcha2.publicKey}},refresh:function(){grecaptcha.reset()}},
                         // {name:"Basic captcha",id:2},
                         // {name:"3D captcha",id:3},
-                        // {name:"Fancy captcha",id:4,enabled:!0,init:function(){$.getScript("/assets/components/plugins/fancy_captcha/jquery.captcha.js",function(){$("#fancy").fancy_captcha({captchaDir:"/",url:baseUrl+"/fancy_captcha",imagesDir:"/assets/images/fancycaptcha"})})},getModel:function(e){return
-                        // window.fancyCaptcha?{answer:window.fancyCaptcha.answer}:null},refresh:function(){}},
+                        // {name:"Fancy captcha",id:4,enabled:!0,init:function(){$.getScript("/assets/components/plugins/fancy_captcha/jquery.captcha.js",function(){$("#fancy").fancy_captcha({captchaDir:"/",url:baseUrl+"/fancy_captcha",imagesDir:"/assets/images/fancycaptcha"})})},getModel:function(e){return window.fancyCaptcha?{answer:window.fancyCaptcha.answer}:null},refresh:function(){}},
                         // {name:"QapTcha",id:5,enabled:!0,init:function(e){e.enableQaptcha=!0},getModel:function(e){return{answer:e.security.qaptcha?e.security.captcha2.key:"",challengeId:e.security.captcha2.key}}},
                         // {name:"Simple Captcha",id:6},
                         // {name:"Dotty Captcha",id:7},
@@ -162,7 +159,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                         // refresh/toggle
                         switch (0) { // Integer.parseInt(captchaType)) {
                         case 0: {
-                          
+
                             org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                             sm.setChallengeKey(br.getHost().equalsIgnoreCase("safelinking.net") ? "OZ987i6xTzNs9lw5.MA-2Vxbc-UxFrLu" : "t62EJ1oSPvEIEl.tnmC0la5sdfLHDPsl");
                             File cf = sm.downloadCaptcha(getLocalCaptchaFile());
@@ -546,7 +543,7 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                         protectedForm.put("adcopy_response", "");
                         break;
                     } else {
-                      
+
                         org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                         File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                         String code = getCaptchaCode(cf, param);
@@ -640,9 +637,9 @@ public abstract class abstractSafeLinking extends antiDDoSForDecrypt {
                     }
                     protectedForm = formProtected();
                     /*
-                     * I doubt that the following is required, (confirmationCheck() ||
-                     * br.containsHTML("<strong>Prove you are human</strong>")). it shouldn't be, but if the form is present even after
-                     * successful captcha&|password step, we will need to reinstate. -raz 20150510
+                     * I doubt that the following is required, (confirmationCheck() || br.containsHTML(
+                     * "<strong>Prove you are human</strong>")). it shouldn't be, but if the form is present even after successful
+                     * captcha&|password step, we will need to reinstate. -raz 20150510
                      */
                     if (protectedForm != null) {
                         if (i + 1 > repeat) {
