@@ -90,7 +90,7 @@ public class SmzdRcks extends antiDDoSForDecrypt {
             // waittime is not evaluated
             // Thread.sleep(15000);
             submitForm(rcForm);
-            secretKey = br.getRegex("\"secretKey\"\\s*\\:\\s*\"([^\"]+)").getMatch(0);
+            secretKey = getJson("secretKey");
             if (StringUtils.isNotEmpty(secretKey)) {
                 break;
             }
