@@ -18,19 +18,20 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "workupload.com" }, urls = { "http://(www\\.|en\\.)?workupload\\.com/file/[A-Za-z0-9]+" }, flags = { 0 })
 public class WorkuploadCom extends PluginForHost {
@@ -63,6 +64,7 @@ public class WorkuploadCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("img/404\\.jpg\"|>Whoops\\! 404")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -70,10 +72,21 @@ public class WorkuploadCom extends PluginForHost {
         String filename = br.getRegex("<td>Dateiname:</td><td>([^<>\"]*?)<").getMatch(0);
         String filesize = br.getRegex("<td>Dateigröße:</td><td>([^<>\"]*?)<").getMatch(0);
         if (filename == null || filesize == null) {
+            Regex filenameSize = br.getRegex("<p class=\"intro\"><b>(.*?)</b>\\s*\\((.*?)\\)");
+            if (filename == null) {
+                filename = filenameSize.getMatch(0);
+            }
+            if (filesize == null) {
+                filesize = filenameSize.getMatch(1);
+            }
+        }
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -91,7 +104,7 @@ public class WorkuploadCom extends PluginForHost {
         if (dllink == null) {
             final String fid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1);
             this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.br.postPage("http://workupload.com/file/api/getDownloadServer/" + fid, "");
+            this.br.postPage("/file/api/getDownloadServer/" + fid, "");
             dllink = getJson("server");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
@@ -140,7 +153,7 @@ public class WorkuploadCom extends PluginForHost {
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     private String getJson(final String key) {
         return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }

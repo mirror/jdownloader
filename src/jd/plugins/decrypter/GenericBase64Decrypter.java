@@ -81,6 +81,8 @@ public class GenericBase64Decrypter extends PluginForDecrypt {
             if (finallink != null && new Regex(finallink, "%[0-9A-Fa-f]{2}").matches()) {
                 finallink = Encoding.urlDecode(finallink, false);
             }
+            // whitespace cleanup
+            finallink = StringUtils.trim(finallink);
         }
         // determine multi or single result?
         final String[] multi = new Regex(finallink, "(?:https?|ftp)://").getColumn(-1);
@@ -93,7 +95,7 @@ public class GenericBase64Decrypter extends PluginForDecrypt {
                 }
             }
         } else {
-            results.add(StringUtils.trim(finallink));
+            results.add(finallink);
         }
         return results;
     }
