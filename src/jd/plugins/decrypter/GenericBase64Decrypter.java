@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -39,12 +41,12 @@ import jd.plugins.PluginForDecrypt;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "free.downloader.my", "saylicadebrid.tk", "binbox.io", "re-direcciona.me", "asianspankee.com", "mediaboom.org", "bookgn.com", "vip-files.net", "url4u.org", "tunesies.com", "xtragfx.com", "psdkeys.com" },
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hbrowse.com", "free.downloader.my", "saylicadebrid.tk", "binbox.io", "re-direcciona.me", "asianspankee.com", "mediaboom.org", "bookgn.com", "vip-files.net", "url4u.org", "tunesies.com", "xtragfx.com", "psdkeys.com" },
 
-urls = { "https?://(?:\\w+\\.)?free\\.downloader\\.my/gateway\\.php\\?q=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:\\w+\\.)?saylicadebrid\\.tk/mali\\.php\\?reklamlar=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:\\w+\\.)?binbox\\.io/o/([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?re-direcciona\\.me/(?:I|r)/([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?asianspankee\\.com/.*\\?goto=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?mediaboom\\.org/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?bookgn\\.com/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?vip-files\\.net/download\\.php\\?e=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://www\\.url4u\\.org/([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?tunesies\\.com/go/([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?xtragfx\\.com/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)",
-        "https?://(?:www\\.)?psdkeys\\.com/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)" },
+urls = { "https?://(?:\\w+\\.)?hbrowse\\.com/redirect/([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:\\w+\\.)?free\\.downloader\\.my/gateway\\.php\\?q=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:\\w+\\.)?saylicadebrid\\.tk/mali\\.php\\?reklamlar=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:\\w+\\.)?binbox\\.io/o/([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?re-direcciona\\.me/(?:I|r)/([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?asianspankee\\.com/.*\\?goto=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?mediaboom\\.org/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?bookgn\\.com/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?vip-files\\.net/download\\.php\\?e=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://www\\.url4u\\.org/([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?tunesies\\.com/go/([a-zA-Z0-9_/\\+\\=\\-%]+)",
+        "https?://(?:www\\.)?xtragfx\\.com/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?psdkeys\\.com/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)" },
 
-        flags = { 0 })
+flags = { 0 })
 public class GenericBase64Decrypter extends PluginForDecrypt {
 
     public GenericBase64Decrypter(final PluginWrapper wrapper) {
@@ -71,10 +73,14 @@ public class GenericBase64Decrypter extends PluginForDecrypt {
         String finallink = b64;
         int i = 0;
         // this covers nested encoding.
-        while (i < 20 && finallink != null && !finallink.matches("(?:ftp|https?)://.+")) {
+        while (i < 20 && finallink != null && !new Regex(finallink, "(?:ftp|https?)://.+").matches()) {
             i++;
             // cleanup crap after padding. this can break subsequent tries
             finallink = Encoding.Base64Decode(finallink.replaceFirst("(={1,2})[\\w\\+]+$", "$1"));
+            // urldecode
+            if (finallink != null && new Regex(finallink, "%[0-9A-Fa-f]{2}").matches()) {
+                finallink = Encoding.urlDecode(finallink, false);
+            }
         }
         // determine multi or single result?
         final String[] multi = new Regex(finallink, "(?:https?|ftp)://").getColumn(-1);
@@ -87,7 +93,7 @@ public class GenericBase64Decrypter extends PluginForDecrypt {
                 }
             }
         } else {
-            results.add(finallink);
+            results.add(StringUtils.trim(finallink));
         }
         return results;
     }
