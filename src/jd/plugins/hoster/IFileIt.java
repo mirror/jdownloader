@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -45,8 +47,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecloud.io" }, urls = { "https?://(www\\.)?decryptedfilecloud\\.io/[a-z0-9]+" }, flags = { 2 })
 public class IFileIt extends antiDDoSForHost {
 
@@ -57,16 +57,16 @@ public class IFileIt extends antiDDoSForHost {
     private final int            MAXFREECHUNKS            = 1;
     private final int            MAXPREMIUMCHUNKS         = 1;
     private static final String  ONLY4REGISTERED          = "\"message\":\"signup\"";
-    private static final String  ONLY4REGISTEREDUSERTEXT  = JDL.LF("plugins.hoster.ifileit.only4registered", "Wait or register to download the files");
+    private static final String  ONLY4REGISTEREDUSERTEXT  = "Wait or register to download the files";
     private static final String  NOCHUNKS                 = "NOCHUNKS";
     private static final String  NORESUME                 = "NORESUME";
     public static final String   MAINPAGE                 = "https://filecloud.io";
     private static AtomicBoolean UNDERMAINTENANCE         = new AtomicBoolean(false);
     private static final String  UNDERMAINTENANCEUSERTEXT = "The site is under maintenance!";
 
-    private static final String  NICE_HOST                = "filecloud.io";
-    private String               dllink                   = null;
-    private boolean              webMethod                = false;
+    private static final String NICE_HOST = "filecloud.io";
+    private String              dllink    = null;
+    private boolean             webMethod = false;
 
     public IFileIt(final PluginWrapper wrapper) {
         super(wrapper);
@@ -578,12 +578,14 @@ public class IFileIt extends antiDDoSForHost {
     }
 
     @Override
-    protected Browser prepBrowser(final Browser br, final String host) {
-        super.prepBrowser(br, host);
-        br.getHeaders().put("User-Agent", useragent);
-        br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
-        br.setCookie("http://filecloud.io/", "lang", "en");
-        return br;
+    protected Browser prepBrowser(final Browser prepBr, final String host) {
+        if (!(browserPrepped.containsKey(prepBr) && browserPrepped.get(prepBr) == Boolean.TRUE)) {
+            super.prepBrowser(prepBr, host);
+            prepBr.getHeaders().put("User-Agent", useragent);
+            prepBr.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
+            prepBr.setCookie("http://filecloud.io/", "lang", "en");
+        }
+        return prepBr;
     }
 
     private String getFid(final DownloadLink downloadLink) {
