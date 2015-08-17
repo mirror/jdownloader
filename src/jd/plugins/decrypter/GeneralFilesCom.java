@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "general-files.org" }, urls = { "http://(www\\.)?(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me|general\\-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general\\-file\\.com|general\\-fil\\.es|generalfil\\.es)/download/[a-z0-9]+/[^<>\"/]*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "general-files.org" }, urls = { "http://(www\\.)?(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me|general\\-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general\\-file\\.com|general\\-fil\\.es|generalfil\\.es)/download/[a-z0-9]+/[^<>\"/]*?\\.html" }, flags = { 0 })
 public class GeneralFilesCom extends PluginForDecrypt {
 
     public GeneralFilesCom(PluginWrapper wrapper) {
@@ -40,42 +40,21 @@ public class GeneralFilesCom extends PluginForDecrypt {
     private static final String currenthost = "generalfil.es";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final String parameter = param.toString().replaceAll("(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me|general\\-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general\\-file\\.com|general\\-fil\\.es|generalfil\\.es)/", currenthost + "/");
         try {
             br.getPage(parameter);
         } catch (final UnknownHostException e) {
-            logger.info("Link offline (server error): " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            decryptedLinks.add(createOfflinelink(parameter, "Link offline (server error)"));
             return decryptedLinks;
         }
-
-        if (br.containsHTML(">File was removed from filehosting<|>The file no longer exists at this location|class=\"gf\\-removed\\-h\"|class=\"deleted\"|class=\"removed\"") || br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+        if (br.containsHTML(">File was removed from filehosting<|>The file no longer exists at this location|class=\"gf\\-removed\\-h\"|class=\"deleted\"|class=\"removed\"") || br.getHttpConnection().getResponseCode() == 404 || br.getURL().equals("http://www." + currenthost + "/")) {
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        if (br.getURL().equals("http://www." + currenthost + "/")) {
-            logger.info("Link offline: " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        }
-        if (br.containsHTML("No htmlCode read")) {
-            logger.info("Cannot decrypt link (server error): " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+        if (br.toString().equals("No htmlCode read")) {
+            decryptedLinks.add(createOfflinelink(parameter, "Link offline (server error)"));
             return decryptedLinks;
         }
 
@@ -100,7 +79,8 @@ public class GeneralFilesCom extends PluginForDecrypt {
             }
             for (int i = 1; i <= 3; i++) {
                 final String c = getCaptchaCode("http://www." + currenthost + "/captcha/" + goLink, param);
-                br.postPage("http://www." + currenthost + "/go/" + goLink, "captcha=" + Encoding.urlEncode(c));
+                // this is probably wrong.... raztoki 20150817
+                br.postPage("/go/" + goLink, "captcha=" + Encoding.urlEncode(c));
                 if (br.getRedirectLocation() != null && br.getRedirectLocation().matches("http://(www\\.)?" + currenthost + "/download/[a-z0-9]+/[^<>\"/]*?\\.html")) {
                     br.getPage(br.getRedirectLocation());
                     continue;
@@ -113,17 +93,25 @@ public class GeneralFilesCom extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
         } else {
-            br.getPage("http://www." + currenthost + "/go/" + goLink + "?ajax=1");
+            br.getPage("/get_links/" + goLink);
         }
         /* First try ajax regex */
         String finallink = br.getRegex("\"link\":\"(https?:[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) {
             finallink = br.getRegex("window\\.location\\.replace\\(\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
-        }
-        if (finallink == null) {
-            finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                finallink = br.getRedirectLocation();
+                if (finallink == null) {
+                    finallink = br.getRegex("<a href=(\"|')(https?://.*?)\\1").getMatch(1);
+                }
+            }
         }
         if (finallink == null || finallink.contains(currenthost)) {
+            // not error
+            if (br.containsHTML("<div>Download links not found</div>")) {
+                decryptedLinks.add(createOfflinelink(parameter, "Download links not found!"));
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

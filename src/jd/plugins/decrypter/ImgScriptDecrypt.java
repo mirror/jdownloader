@@ -17,11 +17,12 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -58,7 +59,7 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
 
         final String[] ret = new String[names.length];
         for (int i = 0; i < ret.length; i++) {
-            ret[i] = "http://(www\\.)?" + names[i].replaceAll("\\.", "\\\\.") + "/img\\-[a-z0-9\\-]+\\.html";
+            ret[i] = "^https?://(www\\.)?" + names[i].replaceAll("\\.", "\\\\.") + "/img\\-[a-z0-9\\-]+\\.(?:html|jpe?g)$";
         }
         return ret;
     }
@@ -83,8 +84,7 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
             return decryptedLinks;
         }
         br.postPage(br.getURL(), "imgContinue=Continue+to+image+...+");
-        final String currentHost = new Regex(parameter, "http://(www\\.)?([a-z0-9\\.]+)/").getMatch(1).replace("\\.", "\\\\.");
-        final String finallink = br.getRegex("(\\'|\")(http://(www\\.)?" + currentHost + "(/upload/big/|/uploads/images/)[^<>\"]*?)(\\'|\")").getMatch(1);
+        final String finallink = br.getRegex("(\\'|\")(http://(www\\.)?" + Pattern.quote(Browser.getHost(parameter)) + "(/upload/big/|/uploads/images/)[^<>\"]*?)\\1").getMatch(1);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -96,7 +96,7 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
 
     /* NO OVERRIDE!! */
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return true;
+        return false;
     }
 
 }
