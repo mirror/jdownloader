@@ -156,6 +156,7 @@ MyJDownloaderController_onError_outdated=JDownloader non riesce a connettersi al
 MyJDownloaderController_onError_unknown=JDownloader non può collegarsi al servizio My.JDownloader: %s1
 OptionalContainer_OptionalContainer=Altre azioni...
 PackagizerSettings_folderbypackage_rule_name=Crea sottocartella in base al nome del pacchetto
+PackagizerSettings_folderbyplugin_rule_name=Crea sottocartella da plugin
 PasteContextLinksAction_getTranslationForDeepDecryptEnabled=Decriptazione Profonda
 PasteLinksAction_getTranslationForDeepDecryptEnabled=Decriptazione Profonda
 PauseDownloadsAction_getHideIfDownloadsAreStoppedTranslation=Nascondi se i download non sono avviati
