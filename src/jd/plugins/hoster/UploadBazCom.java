@@ -64,7 +64,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
@@ -74,7 +73,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadbaz.com" }, urls = { "https?://(www\\.)?uploadbaz\\.com/((vid)?embed-)?[a-z0-9]{12}" }, flags = { 2 })
 @SuppressWarnings("deprecation")
@@ -92,6 +90,7 @@ public class UploadBazCom extends PluginForHost {
     private final boolean              enforcesHTTPS                = false;
     private final boolean              useRUA                       = false;
     private final boolean              useAltLinkCheck              = false;
+    private final boolean              useDownload1LinkCheck        = true;
     private final boolean              useVidEmbed                  = false;
     private final boolean              useAltEmbed                  = false;
     private final boolean              useAltExpire                 = true;
@@ -284,6 +283,10 @@ public class UploadBazCom extends PluginForHost {
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (fileInfo[1] == null && useDownload1LinkCheck) {
+            handleDownload1Form();
+            fileInfo[1] = cbr.getRegex("\\((\\d+ bytes)\\)").getMatch(0);
+        }
         fileInfo[0] = fileInfo[0].replaceAll("(</?b>|\\.html)", "");
         downloadLink.setName(fileInfo[0].trim());
         if (getAvailableStatus(downloadLink).toString().equals("UNCHECKED")) {
@@ -396,18 +399,11 @@ public class UploadBazCom extends PluginForHost {
             }
         }
         // Fourth, continue like normal.
-        if (inValidate(dllink)) {
+        if (inValidate(dllink) && !useDownload1LinkCheck) {
             checkErrors(downloadLink, account, false);
-            Form download1 = getFormByKey(cbr, "op", "download1");
-            if (download1 != null) {
-                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
-                download1 = cleanForm(download1);
-                // end of backward compatibility
-                download1.remove("method_premium");
-                sendForm(download1);
-                checkErrors(downloadLink, account, false);
-                getDllink();
-            }
+            handleDownload1Form();
+            checkErrors(downloadLink, account, false);
+            getDllink();
         }
         if (inValidate(dllink)) {
             Form dlForm = getFormByKey(cbr, "op", "download2");
@@ -508,6 +504,17 @@ public class UploadBazCom extends PluginForHost {
                 // remove download slot
                 controlSlot(-1, account);
             }
+        }
+    }
+
+    private void handleDownload1Form() throws Exception {
+        Form download1 = getFormByKey(cbr, "op", "download1");
+        if (download1 != null) {
+            // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+            download1 = cleanForm(download1);
+            // end of backward compatibility
+            download1.remove("method_premium");
+            sendForm(download1);
         }
     }
 
@@ -1476,7 +1483,7 @@ public class UploadBazCom extends PluginForHost {
             logger.info("Detected captcha method \"Solve Media\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
-           
+
             final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(captcha);
             final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
             String code = "";
@@ -1492,7 +1499,7 @@ public class UploadBazCom extends PluginForHost {
             logger.info("Detected captcha method \"Key Captcha\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
-             String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, captcha,getDownloadLink()).createChallenge(form.hasInputFieldByName("login") && form.hasInputFieldByName("password"), this));
+            String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, captcha, getDownloadLink()).createChallenge(form.hasInputFieldByName("login") && form.hasInputFieldByName("password"), this));
             if (result == null || "CANCEL".equals(result)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
@@ -2063,9 +2070,9 @@ public class UploadBazCom extends PluginForHost {
         }
     }
 
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }

@@ -31,6 +31,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viva.tv", "mtviggy.com", "southpark.de", "southpark.cc.com", "vh1.com", "nickmom.com", "mtv.com.au", "mtv.com", "logotv.com" }, urls = { "http://www\\.viva\\.tv/charts/16\\-viva\\-top\\-100", "http://www\\.mtviggy\\.com/videos/[a-z0-9\\-]+/|http://www\\.mtvdesi\\.com/(videos/)?[a-z0-9\\-]+|http://www\\.mtvk\\.com/videos/[a-z0-9\\-]+", "http://www\\.southpark\\.de/alle\\-episoden/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://southpark\\.cc\\.com/full\\-episodes/s\\d{2}e\\d{2}[a-z0-9\\-]+", "http://www\\.vh1.com/(shows/[a-z0-9\\-_]+/[a-z0-9\\-_]+/.+|video/play\\.jhtml\\?id=\\d+|video/[a-z0-9\\-_]+/\\d+/[a-z0-9\\-_]+\\.jhtml|events/[a-z0-9\\-_]+/videos/[a-z0-9\\-_]+/\\d+/)", "http://www\\.nickmom\\.com/videos/[a-z0-9\\-]+/", "http://www\\.mtv\\.com\\.au/[a-z0-9\\-]+/videos/[a-z0-9\\-]+",
@@ -93,7 +94,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             } else if (parameter.matches(type_nickmom_com)) {
                 decryptNickmomCom();
             } else if (parameter.matches(type_mtv_com_au)) {
-                decryptMtvComAuPlaylist();
+                decryptMtvComAu();
             } else if (parameter.matches(type_mtv_com)) {
                 decryptMtvCom();
             } else if (parameter.matches(type_logotv_com)) {
@@ -248,41 +249,24 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         decryptedLinks.add(main);
     }
 
-    /** This function should be able to decrypt any playlist from mtv.com.au. */
+    /** This function should be able to decrypt any playlist- and single video from mtv.com.au. */
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
-    private void decryptMtvComAuPlaylist() throws Exception {
+    private void decryptMtvComAu() throws Exception {
         br.getPage(parameter);
         final String playlist_id = br.getRegex("name=\"vimn:entity_uuid\" content=\"([a-z0-9\\-:]*?)\"").getMatch(0);
-        final String js = br.getRegex("<script>jQuery\\.extend\\(Drupal\\.settings, (\\{.*?)\\);</script>").getMatch(0);
+        final String js = br.getRegex("jQuery\\.extend\\(Drupal\\.settings, (\\{.*?)\\);.*?</script>").getMatch(0);
         if (js == null || playlist_id == null) {
             decryptedLinks = null;
             return;
         }
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(js);
-        entries = (LinkedHashMap<String, Object>) entries.get("vimn_video");
-        entries = (LinkedHashMap<String, Object>) entries.get("playlists");
-        entries = (LinkedHashMap<String, Object>) entries.get(playlist_id);
-        final ArrayList<Object> parts = (ArrayList) entries.get("items");
-        final Object title_object = entries.get("title");
-        if (title_object instanceof String) {
-            fpName = (String) entries.get("title");
-        }
-        if (fpName == null) {
-            fpName = new Regex(parameter, "mtv\\.com\\.au/([a-z0-9\\-_]+)/videos/.+").getMatch(0);
-        }
-        if (fpName == null) {
-            logger.warning("fpName is null");
-            decryptedLinks = null;
-            return;
-        }
-        fpName = fpName != null ? doFilenameEncoding(fpName) : null;
-        for (final Object pt : parts) {
-            final LinkedHashMap<String, Object> playlistentry = (LinkedHashMap<String, Object>) pt;
-            final String part_mgid = (String) playlistentry.get("guid");
-            final String partname = (String) playlistentry.get("title");
-            if (fpName == null) {
-                fpName = doFilenameEncoding(partname);
-            }
+        final LinkedHashMap<String, Object> vimn_video = (LinkedHashMap<String, Object>) entries.get("vimn_video");
+        final Object playlist_o = vimn_video.get("playlists");
+        if (playlist_o instanceof ArrayList) {
+            /* Single video */
+            entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "vimn_videoplayer/" + playlist_id);
+            final String part_mgid = (String) entries.get("video_id");
+            final String partname = (String) entries.get("title");
             final String final_filename = this.doFilenameEncoding(partname) + this.default_ext;
             final DownloadLink fina = createDownloadlink("http://intl.mtvnservices.com/mrss/" + part_mgid + "/");
             fina.setFinalFileName(final_filename);
@@ -295,6 +279,44 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 fina.setBrowserUrl(this.parameter);
             }
             decryptedLinks.add(fina);
+        } else {
+            /* Playlist */
+            entries = (LinkedHashMap<String, Object>) playlist_o;
+            entries = (LinkedHashMap<String, Object>) entries.get(playlist_id);
+            final ArrayList<Object> parts = (ArrayList) entries.get("items");
+            final Object title_object = entries.get("title");
+            if (title_object instanceof String) {
+                fpName = (String) entries.get("title");
+            }
+            if (fpName == null) {
+                fpName = new Regex(parameter, "mtv\\.com\\.au/([a-z0-9\\-_]+)/videos/.+").getMatch(0);
+            }
+            if (fpName == null) {
+                logger.warning("fpName is null");
+                decryptedLinks = null;
+                return;
+            }
+            fpName = fpName != null ? doFilenameEncoding(fpName) : null;
+            for (final Object pt : parts) {
+                final LinkedHashMap<String, Object> playlistentry = (LinkedHashMap<String, Object>) pt;
+                final String part_mgid = (String) playlistentry.get("guid");
+                final String partname = (String) playlistentry.get("title");
+                if (fpName == null) {
+                    fpName = doFilenameEncoding(partname);
+                }
+                final String final_filename = this.doFilenameEncoding(partname) + this.default_ext;
+                final DownloadLink fina = createDownloadlink("http://intl.mtvnservices.com/mrss/" + part_mgid + "/");
+                fina.setFinalFileName(final_filename);
+                fina.setProperty("decryptedfilename", final_filename);
+                fina.setAvailable(true);
+                try {
+                    fina.setContentUrl(this.parameter);
+                } catch (final Throwable e) {
+                    /* Not available in old 0.9.581 Stable */
+                    fina.setBrowserUrl(this.parameter);
+                }
+                decryptedLinks.add(fina);
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         fpName = Encoding.htmlDecode(fpName.trim());
