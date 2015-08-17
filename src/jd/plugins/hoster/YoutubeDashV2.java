@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.ExceptionRunnable;
 import jd.controlling.downloadcontroller.FileIsLockedException;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -100,6 +101,8 @@ import org.jdownloader.gui.views.SelectionInfo.PluginView;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.plugins.DownloadPluginProgress;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -904,8 +907,8 @@ public class YoutubeDashV2 extends PluginForHost {
             // _JDT._.CountryIPBlockException_createCandidateResult(), 1 * 24 * 60 * 60 * 100l);
             // }
             if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error,/*
-             * 15.12.2014
-             */"This video is not available.")) {
+                                                                                                                                 * 15.12.2014
+                                                                                                                                 */"This video is not available.")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.CountryIPBlockException_createCandidateResult());
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
@@ -1065,12 +1068,10 @@ public class YoutubeDashV2 extends PluginForHost {
                 downloadLink.setResumeable(value);
             }
 
-            @Override
             public long[] getChunksProgress() {
                 return chunkProgress;
             }
 
-            @Override
             public void setChunksProgress(long[] ls) {
                 chunkProgress = ls;
                 if (ls == null) {
@@ -1539,13 +1540,7 @@ public class YoutubeDashV2 extends PluginForHost {
         boolean resume = true;
         switch (variant.getType()) {
         case DESCRIPTION:
-
-            // TODO Jiaz: dummy interface
-            File file = new File(downloadLink.getFileOutput());
-            file.getParentFile().mkdirs();
-            file.delete();
-            IO.writeStringToFile(file, downloadLink.getStringProperty(YoutubeHelper.YT_DESCRIPTION));
-            downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
+            downloadDescription(downloadLink);
             return;
         case IMAGE:
             this.setBrowserExclusive();
@@ -1702,6 +1697,52 @@ public class YoutubeDashV2 extends PluginForHost {
             break;
         }
 
+    }
+
+    private void downloadDescription(DownloadLink downloadLink) throws Exception {
+        final String description = downloadLink.getStringProperty(YoutubeHelper.YT_DESCRIPTION, null);
+        if (description == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final byte[] bytes = description.getBytes("UTF-8");
+        final File outputFile = new File(downloadLink.getFileOutput());
+        final DiskSpaceReservation reservation = new DiskSpaceReservation() {
+
+            @Override
+            public long getSize() {
+                return Math.max(0, bytes.length - outputFile.length());
+            }
+
+            @Override
+            public File getDestination() {
+                return outputFile;
+            }
+        };
+        final DownloadLinkDownloadable downloadable = new DownloadLinkDownloadable(downloadLink);
+        if (!downloadable.checkIfWeCanWrite(new ExceptionRunnable() {
+
+            @Override
+            public void run() throws Exception {
+                downloadable.checkAndReserve(reservation);
+                try {
+                    downloadable.lockFiles(outputFile);
+                } catch (FileIsLockedException e) {
+                    downloadable.unlockFiles(outputFile);
+                    throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                }
+            }
+        }, null)) {
+            throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+        }
+        try {
+            final long size = bytes.length;
+            IO.writeToFile(outputFile, bytes);
+            downloadable.setDownloadTotalBytes(size);
+            downloadable.setDownloadBytesLoaded(size);
+            downloadable.setLinkStatus(LinkStatus.FINISHED);
+        } finally {
+            downloadable.unlockFiles(outputFile);
+        }
     }
 
     @Override

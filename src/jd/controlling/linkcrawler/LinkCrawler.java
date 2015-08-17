@@ -1270,11 +1270,11 @@ public class LinkCrawler {
     }
 
     protected Boolean distributeEmbeddedLink(final int generation, final String url, final CrawledLink source) {
+        final ArrayList<CrawledLink> embeddedLinks = new ArrayList<CrawledLink>();
         try {
             final String queryString = new Regex(source.getURL(), "\\?(.+)$").getMatch(0);
             if (StringUtils.isNotEmpty(queryString)) {
                 final String[] parameters = queryString.split("\\&(?!#)", -1);
-                final ArrayList<CrawledLink> embeddedLinks = new ArrayList<CrawledLink>();
                 for (final String parameter : parameters) {
                     try {
                         final String params[] = parameter.split("=", 2);
@@ -1286,28 +1286,49 @@ public class LinkCrawler {
                         }
                         if (checkParam.startsWith("aHR0c") || checkParam.startsWith("ZnRwOi")) {
                             /* base64 http and ftp */
-                            final String possibleURL = new String(Base64.decode(checkParam), "UTF-8");
-                            embeddedLinks.add(crawledLinkFactorybyURL(possibleURL));
+                            String possibleURLs = new String(Base64.decode(checkParam), "UTF-8");
+                            if (HTMLParser.getProtocol(possibleURLs) == null) {
+                                possibleURLs = URLDecoder.decode(possibleURLs, "UTF-8");
+                            }
+                            if (HTMLParser.getProtocol(possibleURLs) != null) {
+                                final List<CrawledLink> links = find(possibleURLs, null, false);
+                                embeddedLinks.addAll(links);
+                            }
                         }
                     } catch (final Throwable e) {
                         LogController.CL().log(e);
                     }
-                    if (embeddedLinks.size() > 0) {
-                        final boolean singleDest = embeddedLinks.size() == 1;
-                        final String[] sourceURLs = getAndClearSourceURLs(source);
-                        final CrawledLinkModifier sourceLinkModifier = source.getCustomCrawledLinkModifier();
-                        source.setCustomCrawledLinkModifier(null);
-                        source.setBrokenCrawlerHandler(null);
-                        for (final CrawledLink embeddedLink : embeddedLinks) {
-                            forwardCrawledLinkInfos(source, embeddedLink, sourceLinkModifier, sourceURLs, singleDest);
-                        }
-                        crawl(generation, embeddedLinks);
-                        return true;
+                }
+            } else if (StringUtils.contains(source.getURL(), "aHR0c") || StringUtils.contains(source.getURL(), "ZnRwOi")) {
+                String base64 = new Regex(source.getURL(), "(aHR0c[0-9a-zA-Z\\+\\/=]+)").getMatch(0);// http
+                if (base64 == null) {
+                    base64 = new Regex(source.getURL(), "(ZnRwOi[0-9a-zA-Z\\+\\/=]+)").getMatch(0);// ftp
+                }
+                if (base64 != null) {
+                    String possibleURLs = new String(Base64.decode(base64), "UTF-8");
+                    if (HTMLParser.getProtocol(possibleURLs) == null) {
+                        possibleURLs = URLDecoder.decode(possibleURLs, "UTF-8");
+                    }
+                    if (HTMLParser.getProtocol(possibleURLs) != null) {
+                        final List<CrawledLink> links = find(possibleURLs, null, false);
+                        embeddedLinks.addAll(links);
                     }
                 }
             }
         } catch (final Throwable e) {
             LogController.CL().log(e);
+        }
+        if (embeddedLinks.size() > 0) {
+            final boolean singleDest = embeddedLinks.size() == 1;
+            final String[] sourceURLs = getAndClearSourceURLs(source);
+            final CrawledLinkModifier sourceLinkModifier = source.getCustomCrawledLinkModifier();
+            source.setCustomCrawledLinkModifier(null);
+            source.setBrokenCrawlerHandler(null);
+            for (final CrawledLink embeddedLink : embeddedLinks) {
+                forwardCrawledLinkInfos(source, embeddedLink, sourceLinkModifier, sourceURLs, singleDest);
+            }
+            crawl(generation, embeddedLinks);
+            return true;
         }
         return null;
     }
