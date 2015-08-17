@@ -109,15 +109,20 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
 
             /*
              * (non-Javadoc)
-             * 
+             *
              * @see org.appwork.swing.exttable.ExtDefaultRowSorter#compare(java.lang .Object, java.lang.Object)
              */
             @Override
             public int compare(AbstractNode o1, AbstractNode o2) {
                 if (o1 instanceof AbstractPackageNode && o2 instanceof AbstractPackageNode) {
                     DomainInfo[] dis1 = ((AbstractPackageNode<?, ?>) o1).getView().getDomainInfos();
+                    if (dis1 == null) {
+                        dis1 = new DomainInfo[0];
+                    }
                     DomainInfo[] dis2 = ((AbstractPackageNode<?, ?>) o2).getView().getDomainInfos();
-
+                    if (dis2 == null) {
+                        dis2 = new DomainInfo[0];
+                    }
                     for (int i = 0; i < Math.max(dis1.length, dis2.length); i++) {
                         String d1 = i < dis1.length ? dis1[i].getTld() : "";
                         String d2 = i < dis2.length ? dis2[i].getTld() : "";
@@ -136,8 +141,20 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
 
                     return 0;
                 } else if (o1 instanceof AbstractPackageChildrenNode && o2 instanceof AbstractPackageChildrenNode) {
-                    String l1 = ((AbstractPackageChildrenNode<?>) o1).getDomainInfo().getTld();
-                    String l2 = ((AbstractPackageChildrenNode<?>) o2).getDomainInfo().getTld();
+                    final DomainInfo di1 = ((AbstractPackageChildrenNode<?>) o1).getDomainInfo();
+                    final DomainInfo di2 = ((AbstractPackageChildrenNode<?>) o2).getDomainInfo();
+                    final String l1;
+                    if (di1 != null) {
+                        l1 = di1.getTld();
+                    } else {
+                        l1 = "";
+                    }
+                    final String l2;
+                    if (di2 != null) {
+                        l2 = di2.getTld();
+                    } else {
+                        l2 = "";
+                    }
                     if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
                         return l1.compareTo(l2);
                     } else {
@@ -193,45 +210,29 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
         return DEFAULT_ICON_COUNT * 19 + 7;
     }
 
-    // @Override
-    // public int getMaxWidth() {
-    //
-    // return 150;
-    // }
-
-    // public JToolTip createToolTip(final AbstractNode obj) {
-    // if (obj instanceof DownloadLink) {
-    // tip.setExtText(((DownloadLink) obj).getHost());
-    // return tip;
-    // } else if (obj instanceof FilePackage) {
-    // tooltip.setObj(obj);
-    // return tooltip;
-    // }
-    // return null;
-    //
-    // }
-
     public void configureRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
-        int width = getTableColumn().getWidth();
-        int count = ((width - 6) / 19);
+        final int width = getTableColumn().getWidth();
+        final int count = ((width - 6) / 19);
         if (value instanceof AbstractPackageNode) {
-            int i = 0;
-            DomainInfo[] icons = ((AbstractPackageNode<?, ?>) value).getView().getDomainInfos();
-            for (DomainInfo link : icons) {
-                if (i == maxIcons || i == count) {
-                    labels[i].setIcon(moreIcon);
-                    labels[i].setVisible(true);
-                    break;
-                }
-                Icon icon = link.getFavIcon();
-                if (icon != null) {
-                    labels[i].setVisible(true);
-                    labels[i].setIcon(icon);
-                    i++;
+            final DomainInfo[] icons = ((AbstractPackageNode<?, ?>) value).getView().getDomainInfos();
+            if (icons != null) {
+                int i = 0;
+                for (final DomainInfo link : icons) {
+                    if (i == maxIcons || i == count) {
+                        labels[i].setIcon(moreIcon);
+                        labels[i].setVisible(true);
+                        break;
+                    }
+                    final Icon icon = link.getFavIcon();
+                    if (icon != null) {
+                        labels[i].setVisible(true);
+                        labels[i].setIcon(icon);
+                        i++;
+                    }
                 }
             }
         } else if (value instanceof AbstractPackageChildrenNode) {
-            DomainInfo dl = ((AbstractPackageChildrenNode<?>) value).getDomainInfo();
+            final DomainInfo dl = ((AbstractPackageChildrenNode<?>) value).getDomainInfo();
             if (dl != null && dl.getFavIcon() != null) {
                 labels[0].setVisible(true);
                 labels[0].setIcon(dl.getFavIcon());
@@ -246,42 +247,40 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public boolean onDoubleClick(final MouseEvent e, final AbstractNode obj) {
-
         SwingUtilities.invokeLater(new Runnable() {
 
             public void run() {
 
                 if (obj instanceof AbstractPackageChildrenNode) {
                     final DomainInfo di = ((AbstractPackageChildrenNode<?>) obj).getDomainInfo();
-                    final List<ServiceCollection<?>> services = ServicePanel.getInstance().groupServices(PremiumStatusBarDisplay.GROUP_BY_SUPPORTED_ACCOUNTS, false, di.getTld(), null);
-                    if (services.size() > 0) {
-                        ToolTipController.getInstance().show(services.get(0).createTooltip(null));
-                    } else {
-                        ToolTipController.getInstance().show(createToolTip(e.getPoint(), obj));
+                    if (di != null) {
+                        final List<ServiceCollection<?>> services = ServicePanel.getInstance().groupServices(PremiumStatusBarDisplay.GROUP_BY_SUPPORTED_ACCOUNTS, false, di.getTld(), null);
+                        if (services.size() > 0) {
+                            ToolTipController.getInstance().show(services.get(0).createTooltip(null));
+                        } else {
+                            ToolTipController.getInstance().show(createToolTip(e.getPoint(), obj));
+                        }
                     }
-
                 } else if (obj instanceof AbstractPackageNode) {
-
                 }
-
             }
         });
-
         return true;
     }
 
     @Override
     public ExtTooltip createToolTip(Point position, AbstractNode obj) {
-
         if (obj instanceof AbstractPackageChildrenNode) {
-            DomainInfo di = ((AbstractPackageChildrenNode<?>) obj).getDomainInfo();
-
-            return new IconLabelToolTip(di.getTld(), di.getFavIcon());
+            final DomainInfo di = ((AbstractPackageChildrenNode<?>) obj).getDomainInfo();
+            if (di != null) {
+                return new IconLabelToolTip(di.getTld(), di.getFavIcon());
+            }
         } else if (obj instanceof AbstractPackageNode) {
-
-            return new HosterToolTip(((AbstractPackageNode<?, ?>) obj).getView().getDomainInfos());
+            final DomainInfo[] di = ((AbstractPackageNode<?, ?>) obj).getView().getDomainInfos();
+            if (di != null) {
+                return new HosterToolTip(di);
+            }
         }
-
         return null;
     }
 
