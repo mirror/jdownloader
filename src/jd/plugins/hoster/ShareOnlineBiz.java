@@ -105,7 +105,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         }
         try {
             Browser br = new Browser();
-            loadAPIWorkAround(br);
+            // loadAPIWorkAround(br);
             br.setCookiesExclusive(true);
             br.setFollowRedirects(true);
             /* api does not support keep-alive */
@@ -136,7 +136,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                 br.setKeepResponseContentBytes(true);
                 // because Request.setHTML(String) it nullifies byte array it will cause NPE here. .. do not call antiddos methods and hope
                 // it will work.
-                br.postPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1", sb.toString());
+                postPage(br, userProtocol() + "://api.share-online.biz/cgi-bin?q=checklinks&md5=1", sb.toString());
                 final byte[] responseBytes = br.getRequest().getResponseBytes();
                 final String infosUTF8[][] = new Regex(new String(responseBytes, "UTF-8"), Pattern.compile("(.*?);\\s*?(OK)\\s*?;(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32})")).getMatches();
                 final String infosISO88591[][] = new Regex(new String(responseBytes, "ISO-8859-1"), Pattern.compile("(.*?);\\s*?(OK)\\s*?;(.*?)\\s*?;(\\d+);([0-9a-fA-F]{32})")).getMatches();
@@ -917,10 +917,10 @@ public class ShareOnlineBiz extends antiDDoSForHost {
                     br.setCookie("http://www.share-online.biz", "a", a);
                 }
             }
-            loadAPIWorkAround(br);
+            // loadAPIWorkAround(br);
             br.setFollowRedirects(true);
             br.setKeepResponseContentBytes(true);
-            br.getPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=linkdata&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&lid=" + linkID);
+            getPage(userProtocol() + "://api.share-online.biz/cgi-bin?q=linkdata&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&lid=" + linkID);
             final byte[] responseBytes = br.getRequest().getResponseBytes();
             final String responseUTF8 = new String(responseBytes, "UTF-8");
             final String responseISO88591 = new String(responseBytes, "ISO-8859-1");
@@ -1107,7 +1107,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
 
     /* Used for API request - also handles (server) errors */
     private String apiGetPage(final String link) throws Exception {
-        loadAPIWorkAround(br);
+        // loadAPIWorkAround(br);
         getPage(link);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
@@ -1146,7 +1146,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         hideID = false;
         correctDownloadLink(downloadLink);
         server = -1;
-        loadAPIWorkAround(br);
+        // loadAPIWorkAround(br);
         br.setCookie("http://www.share-online.biz", "king_mylang", "en");
         String id = getID(downloadLink);
         br.setDebug(true);
