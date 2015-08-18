@@ -50,7 +50,7 @@ public class OpenLoadIo extends antiDDoSForHost {
 
     @Override
     public String rewriteHost(final String host) {
-        if ("openload.io".equals(this.getHost())) {
+        if ("openload.io".equals(host)) {
             return "openload.co";
         }
         return super.rewriteHost(host);
