@@ -38,25 +38,33 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "openload.io" }, urls = { "https?://(www\\.)?openload\\.io/(f|embed)/[A-Za-z0-9_\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "openload.co", "openload.io" }, urls = { "https?://(?:www\\.)?openload\\.(?:io|co)/(?:f|embed)/[A-Za-z0-9_\\-]+", "/null/void" }, flags = { 2, 0 })
 public class OpenLoadIo extends antiDDoSForHost {
 
     public OpenLoadIo(PluginWrapper wrapper) {
         super(wrapper);
         /* Server doesn't like it when we open too many connections in a short time */
         this.setStartIntervall(2000);
-        this.enablePremium("https://openload.io/register");
+        this.enablePremium("https://openload.co/register");
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        if ("openload.io".equals(this.getHost())) {
+            return "openload.co";
+        }
+        return super.rewriteHost(host);
     }
 
     @Override
     public String getAGBLink() {
-        return "https://openload.io/tos";
+        return "https://openload.co/tos";
     }
 
     /* Constants */
     /* Status 20.06.15: free API seems to be broken, returns response 500 when usually it should return final downloadurl */
     private static final boolean enable_api_free = false;
-    private static final String  api_base        = "https://api.openload.io/1";
+    private static final String  api_base        = "https://api.openload.co/1";
 
     /* Connection stuff */
     private static final boolean          FREE_RESUME       = true;
@@ -78,7 +86,7 @@ public class OpenLoadIo extends antiDDoSForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* Force https & correct embedded urls */
-        link.setUrlDownload("https://openload.io/f" + link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/")));
+        link.setUrlDownload("https://openload.co/f" + link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/")));
     }
 
     /*
@@ -89,8 +97,11 @@ public class OpenLoadIo extends antiDDoSForHost {
     @SuppressWarnings({ "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        correctDownloadLink(link);
         final String fid = getFID(link);
-        link.setName(fid);
+        if (link.getName() == null) {
+            link.setName(fid);
+        }
         this.setBrowserExclusive();
         getPage(api_base + "/file/info?file=" + fid);
         api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
@@ -169,7 +180,7 @@ public class OpenLoadIo extends antiDDoSForHost {
                 final String rwlink = br.getRegex("var token = \"([^<>\"]*?)\";").getMatch(0);
                 if (rwlink != null) {
                     try {
-                        getPage(br.cloneBrowser(), "https://openload.io/reward/" + rwlink + "?adblock=0");
+                        getPage(br.cloneBrowser(), "https://openload.co/reward/" + rwlink + "?adblock=0");
                     } catch (final Throwable e) {
                         /* Don't fail here! */
                     }
@@ -234,7 +245,7 @@ public class OpenLoadIo extends antiDDoSForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    private static final String MAINPAGE = "http://openload.io";
+    private static final String MAINPAGE = "http://openload.co";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
