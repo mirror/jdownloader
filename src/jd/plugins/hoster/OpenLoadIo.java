@@ -22,12 +22,11 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -38,12 +37,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "openload.io" }, urls = { "https?://(www\\.)?openload\\.io/(f|embed)/[A-Za-z0-9_\\-]+" }, flags = { 2 })
-public class OpenLoadIo extends PluginForHost {
+public class OpenLoadIo extends antiDDoSForHost {
 
     public OpenLoadIo(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,25 +55,25 @@ public class OpenLoadIo extends PluginForHost {
 
     /* Constants */
     /* Status 20.06.15: free API seems to be broken, returns response 500 when usually it should return final downloadurl */
-    private static final boolean          enable_api_free              = false;
-    private static final String           api_base                     = "https://api.openload.io/1";
+    private static final boolean enable_api_free = false;
+    private static final String  api_base        = "https://api.openload.io/1";
 
     /* Connection stuff */
-    private static final boolean          FREE_RESUME                  = true;
-    private static final int              FREE_MAXCHUNKS               = 0;
-    private static final int              FREE_MAXDOWNLOADS            = 20;
-    private int                           api_responsecode             = 0;
-    private LinkedHashMap<String, Object> api_data                     = null;
+    private static final boolean          FREE_RESUME       = true;
+    private static final int              FREE_MAXCHUNKS    = 0;
+    private static final int              FREE_MAXDOWNLOADS = 20;
+    private int                           api_responsecode  = 0;
+    private LinkedHashMap<String, Object> api_data          = null;
 
-    private static final boolean          ACCOUNT_FREE_RESUME          = true;
-    private static final int              ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int              ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean          ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int              ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int              ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean ACCOUNT_FREE_RESUME          = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     /* don't touch the following! */
-    private static AtomicInteger          maxPrem                      = new AtomicInteger(1);
+    private static AtomicInteger maxPrem = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
@@ -96,7 +92,7 @@ public class OpenLoadIo extends PluginForHost {
         final String fid = getFID(link);
         link.setName(fid);
         this.setBrowserExclusive();
-        br.getPage(api_base + "/file/info?file=" + fid);
+        getPage(api_base + "/file/info?file=" + fid);
         api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         api_data = (LinkedHashMap<String, Object>) api_data.get("result");
         api_data = (LinkedHashMap<String, Object>) api_data.get(fid);
@@ -139,7 +135,7 @@ public class OpenLoadIo extends PluginForHost {
             String ticket;
             String waittime;
             if (enable_api_free) {
-                br.getPage(api_base + "/file/dlticket?file=" + fid);
+                getPage(api_base + "/file/dlticket?file=" + fid);
                 api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 api_data = (LinkedHashMap<String, Object>) api_data.get("result");
                 ticket = (String) api_data.get("ticket");
@@ -153,7 +149,7 @@ public class OpenLoadIo extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
-                br.getPage(api_base + "/file/dl?file=" + fid + "&ticket=" + Encoding.urlEncode(ticket) + "&captcha_response=null");
+                getPage(api_base + "/file/dl?file=" + fid + "&ticket=" + Encoding.urlEncode(ticket) + "&captcha_response=null");
                 api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 api_data = (LinkedHashMap<String, Object>) api_data.get("result");
                 dllink = (String) api_data.get("url");
@@ -161,13 +157,11 @@ public class OpenLoadIo extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
-                try {
-                    br.getPage(downloadLink.getDownloadURL());
-                } catch (final BrowserException e) {
-                    if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    throw e;
+                br.addAllowedResponseCodes(500);
+                br.setFollowRedirects(true);
+                getPage(downloadLink.getDownloadURL());
+                if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 500) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -175,7 +169,7 @@ public class OpenLoadIo extends PluginForHost {
                 final String rwlink = br.getRegex("var token = \"([^<>\"]*?)\";").getMatch(0);
                 if (rwlink != null) {
                     try {
-                        br.cloneBrowser().getPage("https://openload.io/reward/" + rwlink + "?adblock=0");
+                        getPage(br.cloneBrowser(), "https://openload.io/reward/" + rwlink + "?adblock=0");
                     } catch (final Throwable e) {
                         /* Don't fail here! */
                     }
@@ -212,11 +206,7 @@ public class OpenLoadIo extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                if (isJDStable()) {
-                    con = br2.openGetConnection(dllink);
-                } else {
-                    con = br2.openHeadConnection(dllink);
-                }
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -232,10 +222,6 @@ public class OpenLoadIo extends PluginForHost {
             }
         }
         return dllink;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @SuppressWarnings("deprecation")
@@ -254,6 +240,7 @@ public class OpenLoadIo extends PluginForHost {
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
+            final boolean followsRedirect = br.isFollowingRedirects();
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -274,7 +261,7 @@ public class OpenLoadIo extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("https://openload.co/login");
+                getPage("https://openload.co/login");
                 final String csrftoken = br.getRegex("name=\"csrf\\-token\" content=\"([^<>\"]*?)\"").getMatch(0);
                 if (csrftoken == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -285,7 +272,7 @@ public class OpenLoadIo extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                br.postPageRaw("/login", "_csrf=" + Encoding.urlEncode(csrftoken) + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1");
+                postPage("/login", "_csrf=" + Encoding.urlEncode(csrftoken) + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1");
                 if (!this.br.containsHTML("href=\"/logout\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -293,18 +280,14 @@ public class OpenLoadIo extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies", fetchCookies(this.getHost()));
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
+            } finally {
+                br.setFollowRedirects(followsRedirect);
             }
         }
     }
@@ -323,15 +306,11 @@ public class OpenLoadIo extends PluginForHost {
         /* At the moment we only support free accounts */
         if (account.getBooleanProperty("free", false) || true) {
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.FREE);
-                /* free accounts can still have captcha */
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Registered (free) user");
+            account.setType(AccountType.FREE);
+            /* free accounts can still have captcha */
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Free Account");
         } else {
             final String expire = br.getRegex("").getMatch(0);
             if (expire == null) {
@@ -345,13 +324,9 @@ public class OpenLoadIo extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
             }
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(true);
             ai.setStatus("Premium Account");
         }
         account.setValid(true);
@@ -369,7 +344,7 @@ public class OpenLoadIo extends PluginForHost {
         } else {
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
-                br.getPage(link.getDownloadURL());
+                getPage(link.getDownloadURL());
                 dllink = br.getRegex("").getMatch(0);
                 if (dllink == null) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
