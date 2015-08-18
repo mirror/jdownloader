@@ -100,10 +100,10 @@ public class FourTubeCom extends PluginForHost {
     private void getDllink() throws PluginException, IOException {
         final String id_media = "\\((\\d+), \\d+, \\[([0-9,]+)\\]\\);";
         String mediaID = br.getRegex(id_media).getMatch(0);
-        if (mediaID == null && isEmbed) {
+        if (mediaID == null) {
             // some times this isn't shown within the embed page, its within /js/player/\d+, or the uid for embed is transferable back to
             // standard /videos/, but like dev note indicates not all embed videos are transferable!
-            final String playerEmbed = br.getRegex("/js/player/embed/" + uid).getMatch(-1);
+            final String playerEmbed = br.getRegex("/js/player/(?:embed|web)/" + uid).getMatch(-1);
             if (playerEmbed != null) {
                 br.getPage(playerEmbed);
                 mediaID = br.getRegex(id_media).getMatch(0);
