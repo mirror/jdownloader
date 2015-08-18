@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -312,14 +313,15 @@ public class JetDebridCom extends PluginForHost {
             /* It's impossible to download anything with free accounts of this service. */
             ai.setTrafficLeft(0);
         }
-
-        final String[] supportedHosts = br.getRegex("class=\"host-icon-work\" alt=\"([^<>\"]*?)\"").getColumn(0);
+        this.getAPISafe("/user_download.php");
+        final String[] supportedHosts = br.getRegex("\\s+<img src=\"images/hosts/.*?\\.png\" title=\"(.*?)\"").getColumn(0);
+        final List<String> list = Arrays.asList(supportedHosts);
         account.setValid(true);
         account.setConcurrentUsePossible(true);
 
         hostMaxchunksMap.clear();
         hostMaxdlsMap.clear();
-        ai.setMultiHostSupport(this, Arrays.asList(supportedHosts));
+        ai.setMultiHostSupport(this, list);
         return ai;
     }
 
