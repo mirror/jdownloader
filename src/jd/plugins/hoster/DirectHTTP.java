@@ -459,6 +459,9 @@ public class DirectHTTP extends PluginForHost {
     @Override
     public boolean isValidURL(String url) {
         if (url != null) {
+            if (StringUtils.startsWithCaseInsensitive(url, "directhttp")) {
+                return true;
+            }
             url = url.toLowerCase(Locale.ENGLISH);
             if (url.contains("facebook.com/l.php")) {
                 return false;

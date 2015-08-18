@@ -264,8 +264,16 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
             final ClassCache cc = ClassCache.getClassCache(CrawlJobStorable.class);
             CrawlJobStorable entry = null;
             final HashSet<String> entryDelimiter = new HashSet<String>();
+            StringBuilder restText = null;
             parserLoop: for (String line : Regex.getLines(str)) {
                 line = line.trim();
+                if (restText != null) {
+                    if (StringUtils.isNotEmpty(line)) {
+                        restText.append("\r\n");
+                        restText.append(line);
+                    }
+                    continue parserLoop;
+                }
                 if (line.startsWith("#")) {
                     /* comment line */
                     continue parserLoop;
@@ -281,6 +289,15 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                     continue parserLoop;
                 }
                 final String key = line.substring(0, i);
+                if (StringUtils.equalsIgnoreCase(key, "resttext")) {
+                    /* special key, all lines (including current one) will go to CrawlJobStorable.setText */
+                    restText = new StringBuilder();
+                    final String value = line.substring(i + 1).trim();
+                    if (StringUtils.isNotEmpty(value)) {
+                        restText.append(value);
+                    }
+                    continue parserLoop;
+                }
                 if (entryDelimiter.contains(key)) {
                     /* artificial delimiter for single empty line(Regex.getLines removes linux \n\n), check for duplicated keys -> new entry */
                     if (entry != null && StringUtils.isNotEmpty(entry.getText())) {
@@ -304,6 +321,12 @@ public class FolderWatchExtension extends AbstractExtension<FolderWatchConfig, F
                     entry = (CrawlJobStorable) cc.getInstance();
                 }
                 set(setter, entry, value);
+            }
+            if (restText != null && restText.length() > 0) {
+                if (entry == null) {
+                    entry = (CrawlJobStorable) cc.getInstance();
+                }
+                entry.setText(restText.toString());
             }
             if (entry != null && StringUtils.isNotEmpty(entry.getText())) {
                 /* last entry */
