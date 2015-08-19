@@ -344,6 +344,7 @@ public class RtmpDump extends RTMPDownload {
             setResume(rtmpConnection.isResume());
             final ExecutorService executor = Executors.newSingleThreadExecutor();
             try {
+                logger.info(cmdArgsMacAndLinux.toString());
                 if (CrossSystem.isWindows()) {
                     NP = new NativeProcess(RTMPDUMP, cmdArgsWindows);
                     R = new InputStreamReader(NP.getErrorStream());
