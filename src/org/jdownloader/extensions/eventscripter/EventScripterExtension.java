@@ -40,6 +40,8 @@ import jd.controlling.reconnect.ReconnecterListener;
 import jd.gui.swing.jdgui.MainTabbedPane;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.plugins.AddonPanel;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import net.sourceforge.htmlunit.corejs.javascript.Context;
 import net.sourceforge.htmlunit.corejs.javascript.Script;
 import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
@@ -358,21 +360,23 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
     public void onDownloadControllerStopped(SingleDownloadController downloadController, DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript())) {
+                final DownloadLink dlLink = downloadController.getDownloadLink();
+                final FilePackage fp = dlLink.getParentNode();
                 if (EventTrigger.ON_DOWNLOAD_CONTROLLER_STOPPED == script.getEventTrigger()) {
                     try {
                         HashMap<String, Object> props = new HashMap<String, Object>();
-                        props.put("link", new DownloadLinkSandBox(downloadController.getDownloadLink()));
-                        props.put("package", new FilePackageSandBox(downloadController.getDownloadLink().getParentNode()));
+                        props.put("link", new DownloadLinkSandBox(dlLink));
+                        props.put("package", new FilePackageSandBox(fp));
                         runScript(script, props);
                     } catch (Throwable e) {
                         getLogger().log(e);
                     }
                 }
                 FilePackageSandBox pkg = null;
-                if (EventTrigger.ON_PACKAGE_FINISHED == script.getEventTrigger() && (pkg = new FilePackageSandBox(downloadController.getDownloadLink().getParentNode())).isFinished()) {
+                if (EventTrigger.ON_PACKAGE_FINISHED == script.getEventTrigger() && (pkg = new FilePackageSandBox(fp)).isFinished()) {
                     try {
                         HashMap<String, Object> props = new HashMap<String, Object>();
-                        props.put("link", new DownloadLinkSandBox(downloadController.getDownloadLink()));
+                        props.put("link", new DownloadLinkSandBox(dlLink));
                         props.put("package", pkg);
                         runScript(script, props);
                     } catch (Throwable e) {
