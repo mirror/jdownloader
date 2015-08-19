@@ -719,7 +719,6 @@ public class EventScripterExtension extends AbstractExtension<EventScripterConfi
 
     @Override
     public void onBeforeReconnect(ReconnecterEvent event) {
-
         for (ScriptEntry script : entries) {
             if (script.isEnabled() && StringUtils.isNotEmpty(script.getScript()) && EventTrigger.RECONNECT_BEFORE == script.getEventTrigger()) {
                 try {

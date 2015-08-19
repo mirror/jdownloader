@@ -22,10 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -38,6 +34,11 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision: 28619 $", interfaceVersion = 3, names = { "smoozed.rocks" }, urls = { "https?://(www\\.)?smoozed\\.rocks/folder/[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class SmzdRcks extends antiDDoSForDecrypt {
@@ -53,9 +54,18 @@ public class SmzdRcks extends antiDDoSForDecrypt {
         ssid = (min + (int) (Math.random() * ((max - min) + 1))) + "";
     }
 
+    private String getProtocol() {
+        if (Application.getJavaVersion() >= Application.JAVA17) {
+            return "https://";
+        } else {
+            return "http://";
+        }
+    }
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        String parameter = param.toString();
+        parameter = parameter.replace("https://", getProtocol());
         getPage(parameter);
         final String rcID = br.getRegex("challenge\\?k=([^\"]+)").getMatch(0);
         // Form[] forms = br.getForms();
@@ -81,7 +91,7 @@ public class SmzdRcks extends antiDDoSForDecrypt {
             rcForm.addInputField(new InputField("recaptcha_challenge_field", rc.getChallenge()));
             rcForm.addInputField(new InputField("mode", "free"));
             rcForm.setAction(parameter + "/access");
-            Cookies cookies = br.getCookies("https://www.smoozed.rocks");
+            Cookies cookies = br.getCookies(getProtocol() + "www.smoozed.rocks");
 
             cookies.add(new Cookie("smoozed.rocks", "sid", ssid));
             cookies.add(new Cookie("smoozed.rocks", "jid", ssid));
@@ -123,7 +133,7 @@ public class SmzdRcks extends antiDDoSForDecrypt {
                 // String size = linkInfo.get(3);
                 final String id = linkInfo.get(4);
 
-                final String link = "https://www.smoozed.rocks/dl/" + id + "/" + accessKey + "/" + ssid + "?direct=1";
+                final String link = getProtocol() + "www.smoozed.rocks/dl/" + id + "/" + accessKey + "/" + ssid + "?direct=1";
                 final Browser clone = br.cloneBrowser();
                 clone.setFollowRedirects(false);
                 getPage(clone, link);

@@ -32,6 +32,7 @@ import javax.swing.ImageIcon;
 import jd.captcha.utils.GifDecoder;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.parser.html.HTMLParser;
 import net.sf.image4j.codec.ico.ICODecoder;
 
 import org.appwork.shutdown.ShutdownController;
@@ -450,15 +451,15 @@ public class FavIcons {
         try {
             favBr.setFollowRedirects(true);
             favBr.getPage("http://" + host);
-            String url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=('|\")([^>'\"]*?)('|\")").getMatch(4);
+            String url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=('|\")([^>'\"]*?(ico|png))('|\")").getMatch(4);
             if (StringUtils.isEmpty(url)) {
-                url = favBr.getRegex("href=('|\")([^>'\"]*?)('|\")[^>]*?rel=('|\")(SHORTCUT )?ICON('|\")").getMatch(1);
+                url = favBr.getRegex("href=('|\")([^>'\"]*?(ico|png))('|\")[^>]*?rel=('|\")(SHORTCUT )?ICON('|\")").getMatch(1);
             }
             if (StringUtils.isEmpty(url)) {
                 /*
                  * workaround for hoster with not complete url, eg rapidshare.com
                  */
-                url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=[^>]*?//([^>'\"]*?)('|\")").getMatch(3);
+                url = favBr.getRegex("rel=('|\")(SHORTCUT )?ICON('|\")[^>]*?href=[^>]*?//([^>'\"]*?(ico|png))('|\")").getMatch(3);
                 if (!StringUtils.isEmpty(url) && !url.equalsIgnoreCase(host)) {
                     url = "http://" + url;
                 }
@@ -473,8 +474,18 @@ public class FavIcons {
                 url = "http://images3.rapidshare.com/img/favicon.ico";
             }
             if (!StringUtils.isEmpty(url)) {
+                if (HTMLParser.getProtocol(url) == null) {
+                    final String protocol = HTMLParser.getProtocol(favBr.getRequest().getUrl());
+                    if (url.startsWith("//")) {
+                        url = protocol + url.substring(2);
+                    } else if (url.startsWith("/")) {
+                        url = protocol + host + url;
+                    } else if (!url.startsWith("../")) {
+                        url = protocol + host + "/" + url;
+                    }
+                }
                 /* favicon tag with ico extension */
-                favBr.setFollowRedirects(false);
+                favBr.setFollowRedirects(true);
                 favBr.getHeaders().put("Accept-Encoding", null);
                 con = favBr.openGetConnection(url);
                 /* we use bufferedinputstream to reuse it later if needed */

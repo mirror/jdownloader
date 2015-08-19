@@ -23,8 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -47,6 +45,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecloud.io" }, urls = { "https?://(www\\.)?decryptedfilecloud\\.io/[a-z0-9]+" }, flags = { 2 })
 public class IFileIt extends antiDDoSForHost {
 
@@ -64,9 +64,9 @@ public class IFileIt extends antiDDoSForHost {
     private static AtomicBoolean UNDERMAINTENANCE         = new AtomicBoolean(false);
     private static final String  UNDERMAINTENANCEUSERTEXT = "The site is under maintenance!";
 
-    private static final String NICE_HOST = "filecloud.io";
-    private String              dllink    = null;
-    private boolean             webMethod = false;
+    private static final String  NICE_HOST                = "filecloud.io";
+    private String               dllink                   = null;
+    private boolean              webMethod                = false;
 
     public IFileIt(final PluginWrapper wrapper) {
         super(wrapper);
@@ -465,6 +465,9 @@ public class IFileIt extends antiDDoSForHost {
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
+        }
+        if (br.containsHTML("no such user")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "no such user", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         // Only free acc support till now
         if ("0".equals(getJson("is_premium"))) {

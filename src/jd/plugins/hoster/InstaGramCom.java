@@ -168,7 +168,16 @@ public class InstaGramCom extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 br.getPage("https://instagram.com/accounts/login/");
-                br.postPage("/accounts/login/ajax/", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                try {
+                    br.setHeader("X-Instagram-AJAX", "1");
+                    br.setHeader("X-CSRFToken", br.getCookie("instagram.com", "csrftoken"));
+                    br.setHeader("X-Requested-With", "XMLHttpRequest");
+                    br.postPage("/accounts/login/ajax/", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                } finally {
+                    br.setHeader("X-Instagram-AJAX", null);
+                    br.setHeader("X-CSRFToken", null);
+                    br.setHeader("X-Requested-With", null);
+                }
                 if (!br.containsHTML("\"authenticated\":true")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);

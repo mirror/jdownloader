@@ -38,6 +38,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
@@ -51,11 +52,12 @@ import org.jdownloader.plugins.controller.host.PluginFinder;
 @HostPlugin(revision = "$Revision: 27915 $", interfaceVersion = 3, names = { "smoozed.com" }, urls = { "" }, flags = { 2 })
 public class SmoozedCom extends PluginForHost {
 
-    private final String                                     API          = "https://www.smoozed.com";
+    private final String                                     API          = "www.smoozed.com";
 
     private static WeakHashMap<Account, Map<String, Object>> ACCOUNTINFOS = new WeakHashMap<Account, Map<String, Object>>();
     private final String                                     ACCOUNTINFO  = "ACCOUNTINFO";
     private final String                                     ACCOUNTHASH  = "ACCOUNTHASH";
+    private final String                                     SSL          = "SSL";
 
     public SmoozedCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -327,8 +329,18 @@ public class SmoozedCom extends PluginForHost {
     private final String AUTOMIRROR = "AUTOMIRROR";
 
     public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SSL, "Use SSL?").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), AUTOLOG, "Send debug logs to Smoozed.com automatically?").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), AUTOMIRROR, "Enable Smoozed.com mirror selection mode?").setDefaultValue(true));
+    }
+
+    private String getProtocol() {
+        boolean ssl = getPluginConfig().getBooleanProperty(SSL, true);
+        if (ssl && Application.getJavaVersion() >= Application.JAVA17) {
+            return "https://";
+        } else {
+            return "http://";
+        }
     }
 
     @Override
@@ -343,7 +355,7 @@ public class SmoozedCom extends PluginForHost {
                     os.write(log.toString().getBytes("UTF-8"));
                     os.close();
                     final String postString = "api_key=x12GiLzH2bM069rxmLpCcto69&caption=errorLog&content=" + Encoding.urlEncode(bos.toString("UTF-8"));
-                    new Browser().postPage("https://www.smoozed.com/api/debuglog/add/jd", postString);
+                    new Browser().postPage(getProtocol() + "www.smoozed.com/api/debuglog/add/jd", postString);
                 }
             } catch (final Throwable ignore) {
                 LogSource.exception(logger, ignore);
@@ -354,7 +366,7 @@ public class SmoozedCom extends PluginForHost {
     private void apiDownload(final Account account, final String session_Key, final DownloadLink link, int maxChunks) throws Exception {
         br.setFollowRedirects(false);
         final String postParam = "session_key=" + Encoding.urlEncode(session_Key) + "&" + "url=" + Encoding.urlEncode(link.getDownloadURL()) + "&silent_errors=true";
-        URLConnectionAdapter con = br.openPostConnection(API + "/api/download", postParam);
+        URLConnectionAdapter con = br.openPostConnection(getAPI() + "/api/download", postParam);
         Request request;
         if (StringUtils.contains(con.getHeaderField("Content-Type"), "application/json") || con.getRequest().getLocation() == null) {
             br.followConnection();
@@ -403,8 +415,12 @@ public class SmoozedCom extends PluginForHost {
         return api(account, null, "/api/login", "auth=" + Encoding.urlEncode(account.getUser()) + "&password=" + PBKDF2Key(account.getPass()));
     }
 
+    private String getAPI() {
+        return getProtocol() + API;
+    }
+
     private Request apiConfigJS(final Account account, final String session_Key) throws Exception {
-        br.getPage(API + "/config.js?session_key=" + Encoding.urlEncode(session_Key));
+        br.getPage(getAPI() + "/config.js?session_key=" + Encoding.urlEncode(session_Key));
         final Request request = br.getRequest();
         errorHandling(request, account, session_Key, "/config.js", null);
         final String responseString = request.getHtmlCode();
@@ -541,7 +557,7 @@ public class SmoozedCom extends PluginForHost {
         } else {
             postParam = param + "&silent_errors=true";
         }
-        br.postPage(API + method, postParam);
+        br.postPage(getAPI() + method, postParam);
         final Request request = br.getRequest();
         errorHandling(request, account, session_Key, method, null);
         return request;
