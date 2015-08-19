@@ -50,22 +50,15 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     /* Sync the following functions in hoster- and decrypterplugin */
-    public static String getVideosource(final Browser br) {
-
-        String videosource = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
-        if (videosource == null) {
-            videosource = br.getRegex("%2Fsequence%2F(.*?)</object>").getMatch(0);
-        }
-        if (videosource == null) {
-            videosource = br.getRegex("name=\"flashvars\" value=\"(.*?)\"/></object>").getMatch(0);
-        }
-        if (videosource != null) {
-            videosource = Encoding.htmlDecode(videosource).replace("\\", "");
-        }
-        return videosource;
-    }
 
     private static AtomicBoolean hostplg_loaded = new AtomicBoolean(false);
+
+    public static String getVideosource(final Browser br) {
+        if (!hostplg_loaded.getAndSet(true)) {
+            JDUtilities.getPluginForDecrypt("dailymotion.com");
+        }
+        return jd.plugins.decrypter.DailyMotionComDecrypter.getVideosource(br);
+    }
 
     public static LinkedHashMap<String, String[]> findVideoQualities(final Browser br, final String parameter, String videosource) throws IOException {
         if (!hostplg_loaded.getAndSet(true)) {
@@ -137,7 +130,10 @@ public class DailyMotionCom extends PluginForHost {
             }
 
         } else {
+            String mainlink = downloadLink.getStringProperty("mainlink", null);
+            logger.info("mainlink: " + mainlink);
             dllink = downloadLink.getStringProperty("directlink", null);
+            logger.info("dllink: " + dllink);
             if (dllink == null) {
                 System.out.println(1);
             } else {
@@ -208,9 +204,11 @@ public class DailyMotionCom extends PluginForHost {
 
             br.setFollowRedirects(true);
             br.getPage(mainlink);
+            logger.info("findFreshDirectlink - getPage mainlink has been done, next: getVideosource");
             br.setFollowRedirects(false);
-            final String videosource = getVideosource(this.br);
+            final String videosource = getVideosource(br);
             if (videosource == null) {
+                logger.info("videosource: " + videosource);
                 return null;
             }
             LinkedHashMap<String, String[]> foundqualities = findVideoQualities(this.br, mainlink, videosource);
