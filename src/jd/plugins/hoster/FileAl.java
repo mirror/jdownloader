@@ -114,7 +114,7 @@ public class FileAl extends PluginForHost {
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.8.8
     // Tags: Script, template
-    // mods:
+    // mods: getDllink[Additional RegEx]
     // limit-info: premium untested, set FREE account limits
     // protocol: no https
     // captchatype: 4dignum
@@ -672,6 +672,9 @@ public class FileAl extends PluginForHost {
                     }
                 }
             }
+        }
+        if (dllink == null) {
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://[^/]+/d/[^<>\"]*?)(\"|\\')").getMatch(1);
         }
         if (dllink == null) {
             /* Sometimes used for streaming */

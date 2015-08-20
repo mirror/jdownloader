@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -54,6 +55,7 @@ public class ChipDe extends PluginForHost {
 
     private static final String type_file_invalidlinks = "http://(www\\.)?(chip\\.de/downloads|download\\.chip\\.(eu|asia)/.{2})/download\\-manager\\-for\\-free\\-zum\\-download.+";
     private static final String type_file              = "http://(www\\.)?(chip\\.de/downloads|download\\.chip\\.(eu|asia)/.{2})/[A-Za-z0-9\\-]+_\\d+\\.html";
+    private static final String type_file_chip_eu      = "http://(www\\.)?download\\.chip\\.(eu|asia)/.{2}/[A-Za-z0-9\\-]+_\\d+\\.html";
     private static final String type_video             = "http://(www\\.)?chip\\.de/video/[A-Za-z0-9\\-]+_\\d+\\.html";
 
     private String              DLLINK                 = null;
@@ -74,7 +76,8 @@ public class ChipDe extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(link.getDownloadURL());
-            if (con.getResponseCode() == 410) {
+            final long responsecode = con.getResponseCode();
+            if (responsecode == 404 || responsecode == 410) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.followConnection();
@@ -127,6 +130,10 @@ public class ChipDe extends PluginForHost {
                 }
             }
         } else {
+            if (link.getDownloadURL().matches(type_file_chip_eu) && !this.br.containsHTML("class=\"downloadnow_button")) {
+                /* chip.eu url without download button --> No downloadable content --> URL is offline for us */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = br.getRegex("<title>(.*?)\\- Download \\- CHIP Online</title>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("somtr\\.prop18=\"(.*?)\";").getMatch(0);
@@ -138,6 +145,13 @@ public class ChipDe extends PluginForHost {
                             filename = br.getRegex("var cxo_adtech_page_title = \\'(.*?)\\';").getMatch(0);
                         }
                     }
+                }
+            }
+            if (filename == null) {
+                /* All RegExes failed? Get filename from url. */
+                filename = new Regex(link.getDownloadURL(), "/([A-Za-z0-9\\-]+)_\\d+\\.html$").getMatch(0);
+                if (filename == null) {
+                    filename = new Regex(link.getDownloadURL(), "http://(www\\.)?(chip\\.de/downloads|download\\.chip\\.(eu|asia)/.{2})/download\\-manager\\-for\\-free\\-zum\\-download(.+)").getMatch(0);
                 }
             }
             if (filename == null) {
@@ -174,17 +188,25 @@ public class ChipDe extends PluginForHost {
             }
         } else {
             br.setFollowRedirects(true);
-            String step1 = br.getRegex("\"http://x\\.chip\\.de/intern/dl/\\?url=(http[^<>\"]*?)\"").getMatch(0);
-            if (step1 == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String getfile_url = br.getRegex("\"(/.{2}/download_getfile_[^<>\"]*?)\"").getMatch(0);
+            if (getfile_url != null) {
+                /* chip.eu */
+                this.br.getPage(getfile_url);
+                DLLINK = br.getRegex("If not, please click <a href=\"(http[^<>\"]*?)\"").getMatch(0);
+            } else {
+                /* chip.de */
+                String step1 = br.getRegex("\"http://x\\.chip\\.de/intern/dl/\\?url=(http[^<>\"]*?)\"").getMatch(0);
+                if (step1 == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                step1 = Encoding.htmlDecode(step1);
+                br.getPage(step1);
+                String step2 = br.getRegex("\"(https?://(www\\.)?chip\\.de/downloads/c1_downloads_hs_getfile[^<>\"]*?)\"").getMatch(0);
+                if (step2 != null) {
+                    br.getPage(step2);
+                }
+                DLLINK = getDllink();
             }
-            step1 = Encoding.htmlDecode(step1);
-            br.getPage(step1);
-            String step2 = br.getRegex("\"(https?://(www\\.)?chip\\.de/downloads/c1_downloads_hs_getfile[^<>\"]*?)\"").getMatch(0);
-            if (step2 != null) {
-                br.getPage(step2);
-            }
-            DLLINK = getDllink();
             if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

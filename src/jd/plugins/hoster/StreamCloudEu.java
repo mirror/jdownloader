@@ -64,7 +64,7 @@ public class StreamCloudEu extends PluginForHost {
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = false;
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
@@ -189,7 +189,7 @@ public class StreamCloudEu extends PluginForHost {
             }
         }
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, 0);
         } catch (final ConnectException ce) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issues", 30 * 60 * 1000l);
         }
@@ -276,7 +276,7 @@ public class StreamCloudEu extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
             try {
-                maxPrem.set(1);
+                maxPrem.set(20);
                 // free accounts can still have captcha.
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
@@ -673,9 +673,9 @@ public class StreamCloudEu extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }
