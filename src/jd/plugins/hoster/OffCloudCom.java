@@ -366,7 +366,7 @@ public class OffCloudCom extends PluginForHost {
         return dllink;
     }
 
-    @SuppressWarnings({ "deprecation" })
+    @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         setConstants(account, null);
@@ -434,7 +434,8 @@ public class OffCloudCom extends PluginForHost {
         /* Only add hosts which are listed as 'active' (working) */
         postAPISafe("https://offcloud.com/stats/sites", "");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final String jsonlist = br.getRegex("\"fs\":[\t\n\r ]+\\[(.*?)\\][\t\nr ]+}").getMatch(0);
+        final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+        final ArrayList<Object> ressourcelist = (ArrayList) entries.get("fs");
         /**
          * Explanation of their status-types: Healthy = working, Fragile = may work or not - if not will be fixed within the next 72 hours
          * (support also said it means that they currently have no accounts for this host), Limited = broken, will be fixed tomorrow, dead =
@@ -442,15 +443,15 @@ public class OffCloudCom extends PluginForHost {
          * though it is marked RED on the site)
          */
         cloudOnlyHosts.clear();
-        final String[] hostDomainsInfo = jsonlist.split("\\},([\t\n\r ]+)?\\{");
-        for (final String domaininfo : hostDomainsInfo) {
-            final String status = getJson(domaininfo, "isActive").toLowerCase();
-            String realhost = getJson(domaininfo, "displayName");
+        for (final Object domaininfo_o : ressourcelist) {
+            final LinkedHashMap<String, Object> domaininfo = (LinkedHashMap<String, Object>) domaininfo_o;
+            final String status = (String) domaininfo.get("isActive");
+            String realhost = (String) domaininfo.get("displayName");
             if (realhost == null || status == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                continue;
             }
             realhost = realhost.toLowerCase();
-            boolean active = Arrays.asList("cloud only", "healthy", "fragile", "limited").contains(status);
+            boolean active = Arrays.asList("cloud only", "Cloud only", "healthy", "Healthy", "fragile", "Fragile", "limited", "Limited").contains(status);
 
             logger.info("offcloud.com status of host " + realhost + ": " + status);
             if (active && "180upload.com".equals(realhost)) {
