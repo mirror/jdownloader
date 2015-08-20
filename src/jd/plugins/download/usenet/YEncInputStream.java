@@ -1,8 +1,10 @@
 package jd.plugins.download.usenet;
 
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PushbackInputStream;
 
 public class YEncInputStream extends InputStream {
 
@@ -15,7 +17,6 @@ public class YEncInputStream extends InputStream {
     private final long                  size;
     private final String                name;
     private final int                   lineLength;
-    private final int                   maxLineLength;
     private final boolean               isMultiPart;
 
     private final long                  partBegin;
@@ -85,7 +86,6 @@ public class YEncInputStream extends InputStream {
         }
         final String lineValue = getValue(line, "line");
         this.lineLength = lineValue != null ? Integer.parseInt(lineValue) : -1;
-        maxLineLength = lineLength + 1;
         name = getValue(line, "name");
         final String sizeValue = getValue(line, "size");
         this.size = sizeValue != null ? Long.parseLong(sizeValue) : -1l;
@@ -112,14 +112,14 @@ public class YEncInputStream extends InputStream {
             partBegin = -1;
             partEnd = -1;
         }
-        readNextLine();
     }
 
-    private int     lineIndex    = 0;
-    private int     lineSize     = 0;
-    private byte    lineBuffer[] = null;
-    private boolean eof          = false;
-    private String  crc32Value   = null;
+    protected final InputStream getInputStream() {
+        return inputStream;
+    }
+
+    private boolean eof        = false;
+    private String  crc32Value = null;
 
     public String getFileCRC32() {
         return crc32Value;
@@ -131,51 +131,211 @@ public class YEncInputStream extends InputStream {
         return pcrc32Value;
     }
 
-    private void readNextLine() throws IOException {
-        buffer.reset();
-        lineIndex = 0;
-        lineSize = client.readLine(inputStream, buffer);
-        lineBuffer = buffer.toByteArray();
-        if (lineSize >= 5) {
-            final boolean yEnd = lineBuffer[0] == (byte) '=' && lineBuffer[1] == (byte) 'y' && lineBuffer[2] == (byte) 'e' && lineBuffer[3] == (byte) 'n' && lineBuffer[4] == (byte) 'd';
-            if (yEnd) {
-                eof = true;
-                parseTrailer();
-                return;
+    /**
+     * read() uses the performance optimized read(byte[] b, int off, int len) with a 1 byte buffer
+     */
+    @Override
+    public synchronized int read() throws IOException {
+        final byte[] readB = new byte[1];
+        while (true) {
+            final int read = read(readB, 0, 1);
+            if (read == 1) {
+                return readB[0] & 0xff;
+            } else if (read == -1) {
+                return -1;
             }
-        }
-        if (lineSize > maxLineLength) {
-            throw new IOException("line-size-error " + lineSize + "-" + maxLineLength);
         }
     }
 
     /**
-     * TODO: optimize to use larger reads (readline works with read()) and support read(byte[] b, int off, int len)
-     *
-     *
-     * TODO: optimize, decrypt a complete line first
+     * performanced optimized version for decoding yEnc
      */
     @Override
-    public synchronized int read() throws IOException {
+    public synchronized int read(final byte[] b, final int off, final int len) throws IOException {
         if (eof) {
             return -1;
-        } else if (lineIndex == lineSize) {
-            readNextLine();
-            if (eof) {
-                return -1;
-            }
-        }
-        decodedBytes++;
-        int c = lineBuffer[lineIndex++] & 0xff;
-        if (c != 61) {
-            return ((byte) (c - 42)) & 0xff;
         } else {
-            c = lineBuffer[lineIndex++] & 0xff;
-            return ((byte) (c - 106)) & 0xff;
+            final int read;
+            if (yEncMarker_Index == 0) {
+                read = getInputStream().read(b, off, len);
+            } else if (len > yEncMarker_Index) {
+                // prefill b array with yend
+                if (yEncMarker_Index == 1) {
+                    b[off] = (byte) '=';
+                } else if (yEncMarker_Index == 2) {
+                    b[off] = (byte) '=';
+                    b[off + 1] = (byte) 'y';
+                } else if (yEncMarker_Index == 3) {
+                    b[off] = (byte) '=';
+                    b[off + 1] = (byte) 'y';
+                    b[off + 2] = (byte) 'e';
+                } else if (yEncMarker_Index == 4) {
+                    b[off] = (byte) '=';
+                    b[off + 1] = (byte) 'y';
+                    b[off + 2] = (byte) 'e';
+                    b[off + 3] = (byte) 'n';
+                }
+                read = getInputStream().read(b, off + yEncMarker_Index, len - yEncMarker_Index);
+            } else {
+                throw new IOException("FIX ME");
+            }
+            if (read == -1) {
+                throw new EOFException("incomplete yenc stream");
+            } else {
+                return yEncDecoder(b, off, read + yEncMarker_Index);
+            }
         }
     }
 
-    private void parseTrailer() throws IOException {
+    private int     yEncMarker_Index          = 0;
+    private boolean skip_yEncMarker_Detection = false;
+
+    private int yEncDecoder(final byte[] b, final int off, final int len) throws IOException {
+        yEncMarker_Index = 0;
+        int written = 0;
+        if (len > 0) {
+            final int endReadIndex = off + len;
+            int readIndex = off;
+            int writeIndex = off;
+            detectionLineLoop: while (readIndex < endReadIndex) {
+                if (skip_yEncMarker_Detection) {
+                    while (readIndex < endReadIndex) {
+                        final int c = b[readIndex++] & 0xff;
+                        if (c == 10 || c == 13) {
+                            // newLine
+                            yEncMarker_Index = 0;
+                            skip_yEncMarker_Detection = false;
+                            continue detectionLineLoop;
+                        } else {
+                            if (yEncMarker_Index == 0) {
+                                // marker ''
+                                if (c == 61) {
+                                    // mark '='
+                                    yEncMarker_Index = 1;
+                                } else {
+                                    // decode c-42
+                                    b[writeIndex++] = (byte) (((byte) (c - 42)) & 0xff);
+                                }
+                            } else {
+                                // decode c-106
+                                b[writeIndex++] = (byte) (((byte) (c - 106)) & 0xff);
+                                // reset marker
+                                yEncMarker_Index = 0;
+                            }
+                        }
+                    }
+                } else {
+                    while (readIndex < endReadIndex) {
+                        final int c = b[readIndex++] & 0xff;
+                        if (c == 10 || c == 13) {
+                            // newLine
+                            yEncMarker_Index = 0;
+                            skip_yEncMarker_Detection = false;
+                            continue detectionLineLoop;
+                        } else {
+                            if (yEncMarker_Index == 0) {
+                                // marker ''
+                                if (c == 61) {
+                                    // mark '='
+                                    yEncMarker_Index = 1;
+                                } else {
+                                    // decode c-42
+                                    b[writeIndex++] = (byte) (((byte) (c - 42)) & 0xff);
+                                }
+                            } else if (yEncMarker_Index == 1) {
+                                // marker '='
+                                if (c == 121) {
+                                    // mark '=y'
+                                    yEncMarker_Index = 2;
+                                } else {
+                                    // decode c-106
+                                    b[writeIndex++] = (byte) (((byte) (c - 106)) & 0xff);
+                                    // reset marker
+                                    yEncMarker_Index = 0;
+                                    skip_yEncMarker_Detection = true;
+                                    continue detectionLineLoop;
+                                }
+                            } else if (yEncMarker_Index == 2) {
+                                // marker '=y'
+                                if (c == 101) {
+                                    // mark '=ye'
+                                    yEncMarker_Index = 3;
+                                } else {
+                                    // decode '=y'
+                                    b[writeIndex++] = (byte) (((byte) (121 - 106)) & 0xff);
+                                    // reset marker
+                                    yEncMarker_Index = 0;
+                                    skip_yEncMarker_Detection = true;
+                                    // continue with last c
+                                    readIndex -= 1;
+                                    continue detectionLineLoop;
+                                }
+                            } else if (yEncMarker_Index == 3) {
+                                // marker '=ye'
+                                if (c == 110) {
+                                    // mark '=yen'
+                                    yEncMarker_Index = 4;
+                                } else {
+                                    // decode '=y'
+                                    b[writeIndex++] = (byte) (((byte) (121 - 106)) & 0xff);
+                                    // reset marker
+                                    yEncMarker_Index = 0;
+                                    skip_yEncMarker_Detection = true;
+                                    // continue with last cc
+                                    readIndex -= 2;
+                                    continue detectionLineLoop;
+                                }
+                            } else if (yEncMarker_Index == 4) {
+                                // marker '=yen'
+                                if (c == 100) {
+                                    // mark '=yend'
+                                    eof = true;
+                                    written = writeIndex - off;
+                                    decodedBytes += written;
+                                    final int readLeft = endReadIndex - readIndex;
+                                    if (readLeft > 0) {
+                                        final PushbackInputStream inputStream = new PushbackInputStream(getInputStream(), readLeft);
+                                        inputStream.unread(b, readIndex, readLeft);
+                                        parseTrailer(inputStream);
+                                    } else {
+                                        parseTrailer(getInputStream());
+                                    }
+                                    if (written == 0) {
+                                        return -1;
+                                    } else {
+                                        return written;
+                                    }
+                                } else {
+                                    // decode '=y'
+                                    b[writeIndex++] = (byte) (((byte) (121 - 106)) & 0xff);
+                                    // reset marker
+                                    yEncMarker_Index = 0;
+                                    skip_yEncMarker_Detection = true;
+                                    // continue with last ccc
+                                    readIndex -= 3;
+                                    continue detectionLineLoop;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            written = writeIndex - off;
+        }
+        decodedBytes += written;
+        return written;
+    }
+
+    /**
+     * read and parse yEnc trailer
+     *
+     * @param inputStream
+     * @throws IOException
+     */
+    private void parseTrailer(final InputStream inputStream) throws IOException {
+        buffer.reset();
+        final int lineSize = client.readLine(inputStream, buffer);
+        final byte[] lineBuffer = buffer.toByteArray();
         final String trailer = new String(lineBuffer, 0, lineSize, "ISO-8859-1");
         final String sizeValue = getValue(trailer, "size");
         final long size = sizeValue != null ? Long.parseLong(sizeValue) : -1;
@@ -198,15 +358,28 @@ public class YEncInputStream extends InputStream {
                 throw new IOException("size-error");
             }
         }
-        readBodyEnd();
+        readBodyEnd(inputStream);
     }
 
-    private void readBodyEnd() throws IOException {
-        buffer.reset();
-        client.readLine(inputStream, buffer);
-        final String line = new String(buffer.toByteArray(), 0, buffer.size(), "ISO-8859-1");
-        if (!".".equals(line)) {
-            throw new IOException("missing body termination(.): " + line);
+    /**
+     * read body end until "."
+     *
+     * @param is
+     * @throws IOException
+     */
+    private void readBodyEnd(final InputStream is) throws IOException {
+        while (true) {
+            buffer.reset();
+            final int size = client.readLine(is, buffer);
+            if (size > 0) {
+                final String line = new String(buffer.toByteArray(), 0, size, "ISO-8859-1");
+                if (!".".equals(line)) {
+                    throw new IOException("missing body termination(end): " + line);
+                }
+                break;
+            } else if (size == -1) {
+                throw new EOFException();
+            }
         }
     }
 
