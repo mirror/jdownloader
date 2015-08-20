@@ -158,18 +158,18 @@ public class ARDMediathek extends PluginForHost {
         if (downloadLink.getStringProperty("directURL", null) == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String stream[] = downloadLink.getStringProperty("directURL").split("@");
-        if (stream[0].startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, stream[0]);
-            setupRTMPConnection(stream, dl);
-            ((RTMPDownload) dl).startDownload();
+        if (DLLINK.startsWith("rtmp")) {
+            /* rtmp = unsupported */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            // dl = new RTMPDownload(this, downloadLink, DLLINK);
+            // setupRTMPConnection(null, dl);
+            // ((RTMPDownload) dl).startDownload();
         } else {
             br.setFollowRedirects(true);
-            final String dllink = stream[0];
-            if (dllink == null) {
+            if (DLLINK == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (dllink.startsWith("mms")) {
+            if (DLLINK.startsWith("mms")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol (mms://) not supported!");
             }
             // Workaround to avoid DOWNLOAD INCOMPLETE errors
@@ -181,7 +181,7 @@ public class ARDMediathek extends PluginForHost {
                 resume = false;
                 maxChunks = 1;
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxChunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, resume, maxChunks);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 if (dl.getConnection().getResponseCode() == 403) {
