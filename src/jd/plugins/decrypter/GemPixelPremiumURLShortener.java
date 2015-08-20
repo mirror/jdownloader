@@ -19,6 +19,8 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -32,8 +34,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-
 // DEV NOTES: no error handling should work for any language default. no results = no link! clean and efficient
 
 /**
@@ -41,7 +41,7 @@ import org.appwork.utils.StringUtils;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 30447 $", interfaceVersion = 3, names = { "newf.xyz", "hwba.ch", "888.xirkle.com", "gempixel.com" }, urls = { "https?://(?:www\\.)?newf.xyz/[a-zA-Z0-9]+", "https?://(?:www\\.)?hwba\\.ch/[a-zA-Z0-9]+", "https?://(?:www\\.)?888\\.xirkle\\.com/[a-zA-Z0-9]+", "https?://(?:www\\.)?gempixel\\.com/short/[a-zA-Z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 30447 $", interfaceVersion = 3, names = { "shortenurl.pw", "newf.xyz", "hwba.ch", "888.xirkle.com", "gempixel.com" }, urls = { "https?://(?:www\\.)?shortenurl\\.pw/[a-zA-Z0-9]+", "https?://(?:www\\.)?newf\\.xyz/[a-zA-Z0-9]+", "https?://(?:www\\.)?hwba\\.ch/[a-zA-Z0-9]+", "https?://(?:www\\.)?888\\.xirkle\\.com/[a-zA-Z0-9]+", "https?://(?:www\\.)?gempixel\\.com/short/[a-zA-Z0-9]+" }, flags = { 0 })
 public class GemPixelPremiumURLShortener extends antiDDoSForDecrypt {
 
     public GemPixelPremiumURLShortener(PluginWrapper wrapper) {
@@ -91,10 +91,18 @@ public class GemPixelPremiumURLShortener extends antiDDoSForDecrypt {
                 if (StringUtils.containsIgnoreCase(href, "btn btn-primary btn-block redirect")) {
                     final String b64 = new Regex(href, "/\\?r=([a-zA-Z0-9_/\\+\\=\\-%]+)").getMatch(0);
                     final HashSet<String> results = jd.plugins.decrypter.GenericBase64Decrypter.handleBase64Decode(b64);
-                    for (final String result : results) {
-                        decryptedLinks.add(createDownloadlink(result));
+                    if (results != null) {
+                        for (final String result : results) {
+                            decryptedLinks.add(createDownloadlink(result));
+                        }
+                        return decryptedLinks;
+                    } else {
+                        final String lnk = new Regex(href, "href\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
+                        if (lnk != null) {
+                            decryptedLinks.add(createDownloadlink(lnk));
+                        }
+                        return decryptedLinks;
                     }
-                    return decryptedLinks;
                 }
             }
         }
