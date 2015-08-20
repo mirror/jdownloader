@@ -23,6 +23,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -34,6 +39,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -44,10 +50,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "http://twitchdecrypted\\.tv/\\d+" }, flags = { 2 })
 public class JustinTv extends PluginForHost {
@@ -68,16 +70,16 @@ public class JustinTv extends PluginForHost {
         return -1;
     }
 
-    private final String        FASTLINKCHECK             = "FASTLINKCHECK";
-    private final String        NOCHUNKS                  = "NOCHUNKS";
-    private final static String CUSTOM_DATE_2             = "CUSTOM_DATE_2";
-    private final static String CUSTOM_FILENAME_3         = "CUSTOM_FILENAME_3";
-    private final static String CUSTOM_FILENAME_4         = "CUSTOM_FILENAME_4";
-    private final static String PARTNUMBERFORMAT          = "PARTNUMBERFORMAT";
+    private final String        FASTLINKCHECK     = "FASTLINKCHECK";
+    private final String        NOCHUNKS          = "NOCHUNKS";
+    private final static String CUSTOM_DATE_2     = "CUSTOM_DATE_2";
+    private final static String CUSTOM_FILENAME_3 = "CUSTOM_FILENAME_3";
+    private final static String CUSTOM_FILENAME_4 = "CUSTOM_FILENAME_4";
+    private final static String PARTNUMBERFORMAT  = "PARTNUMBERFORMAT";
 
-    private static final int    ACCOUNT_FREE_MAXDOWNLOADS = 20;
+    private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
 
-    private String              dllink                    = null;
+    private String dllink = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -310,16 +312,30 @@ public class JustinTv extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("http://www.twitch.tv/user/login_popup?follow=");
-                final String auth_token = br.getRegex("name=\"authenticity_token\" type=\"hidden\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (auth_token == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // they don't allow requests to home page to handshake with https.. very poor.
+                br.getPage("http://www.twitch.tv/user/login_popup");
+                // two iframes. one signup, one login.
+                final String[] iframes = br.getRegex("<iframe [^>]*src\\s*=\\s*(\"|')(.*?)\\1").getColumn(1);
+                if (iframes == null) {
+                    throwError();
+                }
+                for (String iframe : iframes) {
+                    iframe = Encoding.htmlDecode(iframe);
+                    if (StringUtils.containsIgnoreCase(iframe, "/authentications/new")) {
+                        br.getPage(iframe);
+                        break;
                     }
                 }
-                br.postPage("https://secure.twitch.tv/user/login", "utf8=%E2%9C%93&authenticity_token=" + Encoding.urlEncode(auth_token) + "&redirect_on_login=&embed_form=false&mp_source_action=login-button&follow=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                // form time!
+                final Form f = br.getFormbyProperty("id", "loginForm");
+                if (f == null) {
+                    throwError();
+                }
+                // NOTE: form can contain recaptchav2, even though js is loaded on the auth, the div isn't present only in new user iframe
+                // <div class="g-recaptcha" data-sitekey="6Ld65QcTAAAAAMBbAE8dkJq4Wi4CsJy7flvKhYqX"></div>
+                f.put("login", Encoding.urlEncode(account.getUser()));
+                f.put("password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(f);
                 if (br.getCookie(MAINPAGE, "persistent") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -340,6 +356,14 @@ public class JustinTv extends PluginForHost {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
             }
+        }
+    }
+
+    private static void throwError() throws PluginException {
+        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
