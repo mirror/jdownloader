@@ -204,6 +204,9 @@ public class RDMdthk extends PluginForDecrypt {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         subtitleLink = getJson("_subtitleUrl", br.toString());
+        if (!subtitleLink.startsWith("http://")) {
+            subtitleLink = "http://www.ardmediathek.de" + subtitleLink;
+        }
         int t = 0;
 
         final String extension = ".mp4";
@@ -443,13 +446,11 @@ public class RDMdthk extends PluginForDecrypt {
                         final String plain_name = keep.getStringProperty("plain_name", null);
                         final String orig_streamingtype = keep.getStringProperty("streamingType", null);
                         final String linkid = plain_name + "_" + orig_streamingtype;
-                        final String plain_quality_part = keep.getStringProperty("plain_quality_part", null);
                         final String subtitle_filename = plain_name + ".xml";
-                        final String finallink = "http://www.ardmediathek.de" + subtitleLink + "@" + plain_quality_part;
                         final DownloadLink dl_subtitle = createDownloadlink("http://ardmediathekdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
                         dl_subtitle.setAvailable(true);
                         dl_subtitle.setFinalFileName(subtitle_filename);
-                        dl_subtitle.setProperty("directURL", finallink);
+                        dl_subtitle.setProperty("directURL", subtitleLink);
                         dl_subtitle.setProperty("directName", subtitle_filename);
                         dl_subtitle.setProperty("streamingType", "subtitle");
                         dl_subtitle.setProperty("mainlink", parameter);
@@ -513,7 +514,6 @@ public class RDMdthk extends PluginForDecrypt {
         if (grab_subtitle && subtitleLink != null && !isEmpty(subtitleLink)) {
             linkid = plain_name + "_subtitle_" + t;
             final String subtitle_filename = plain_name + ".xml";
-            final String finallink = "http://www.ardmediathek.de" + subtitleLink + "@" + quality_part;
             final DownloadLink dl_subtitle = createDownloadlink("http://ardmediathekdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
             try {
                 /* JD2 only */
@@ -524,7 +524,7 @@ public class RDMdthk extends PluginForDecrypt {
             }
             dl_subtitle.setAvailable(true);
             dl_subtitle.setFinalFileName(subtitle_filename);
-            dl_subtitle.setProperty("directURL", finallink);
+            dl_subtitle.setProperty("directURL", subtitleLink);
             dl_subtitle.setProperty("directName", subtitle_filename);
             dl_subtitle.setProperty("streamingType", "subtitle");
             dl_subtitle.setProperty("mainlink", orig_link);

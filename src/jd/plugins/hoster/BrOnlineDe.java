@@ -191,7 +191,7 @@ public class BrOnlineDe extends PluginForHost {
             }
             final DecimalFormat df = new DecimalFormat("00");
             /* empty subtitle|subtitle with text */
-            final String[] matches = new Regex(xmlContent, "(<tt:p xml:id=\"sub\\d+\".*?(?:end=\"\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\" />|</tt:p>))").getColumn(0);
+            final String[] matches = new Regex(xmlContent, "(<tt:p xml:id=\"sub(?:title)?\\d+\".*?(?:end=\"\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\" />|</tt:p>))").getColumn(0);
             boolean offsetSet = false;
             for (final String info : matches) {
                 dest.write(counter++ + lineseparator);

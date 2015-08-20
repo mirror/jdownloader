@@ -44,17 +44,20 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hyperspeeds.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
-public class HyperspeedsCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumizator.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
+public class PremiumizatorCom extends PluginForHost {
 
     /**
      * TODO API: Return max downloadable filesize (especially for free accounts), return traffic information (if not unlimited), return host
      * array based on account e.g. free accounts get another host list than premium, implement list of supported hosts via API, remove the
-     * website workaround
+     * website workaround.
+     *
+     *
+     * TODO: Remove hyperspeeds.com plugin once they either shut it down or it is clear that only premiumizator.com will be continued!
      */
     /* Tags: Script vinaget.us */
-    private static final String                            DOMAIN               = "http://hyperspeeds.com/dl/debrid";
-    private static final String                            NICE_HOST            = "hyperspeeds.com";
+    private static final String                            DOMAIN               = "http://premiumizator.com/dl/debrid";
+    private static final String                            NICE_HOST            = "premiumizator.com";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
 
@@ -81,14 +84,14 @@ public class HyperspeedsCom extends PluginForHost {
     private static Object                                  LOCK                 = new Object();
 
     @SuppressWarnings("deprecation")
-    public HyperspeedsCom(PluginWrapper wrapper) {
+    public PremiumizatorCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://hyperspeeds.com/signup");
+        this.enablePremium("http://premiumizator.com/signup");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://hyperspeeds.com/page/terms";
+        return "http://premiumizator.com/page/terms";
     }
 
     private Browser newBrowser() {
@@ -184,7 +187,7 @@ public class HyperspeedsCom extends PluginForHost {
         if (dl.getConnection().getResponseCode() == 416) {
             logger.info("Resume impossible, disabling it for the next try");
             link.setChunksProgress(null);
-            link.setProperty(HyperspeedsCom.NORESUME, Boolean.valueOf(true));
+            link.setProperty(PremiumizatorCom.NORESUME, Boolean.valueOf(true));
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("json")) {
@@ -195,7 +198,11 @@ public class HyperspeedsCom extends PluginForHost {
         }
         final String filename_server = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         /* MOCH sometimes tags filenames (maybe only for free accounts) --> Fix that! */
-        link.setFinalFileName(filename_server.replace("HyperSpeeds_com_", ""));
+        String filename_final = filename_server.replace("HyperSpeeds_com_", "");
+        filename_final = filename_server.replace("PremiumiZator_com_", "");
+        filename_final = filename_server.replace("premiumizator_com_", "");
+        filename_final = filename_server.replace("Premiumizator_com_", "");
+        link.setFinalFileName(filename_final);
         try {
             controlSlot(+1);
             this.dl.startDownload();
@@ -334,7 +341,7 @@ public class HyperspeedsCom extends PluginForHost {
 
         /* TODO: Add API call for this once it's available */
         // this.getAPISafe("/deb_hosters.php");
-        this.getAPISafe("http://hyperspeeds.com/");
+        this.getAPISafe("http://premiumizator.com/");
         ArrayList<String> supportedhostslist = new ArrayList();
         final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
         final String[] crippledHosts = br.getRegex("hosters\\-icons/([^<>\"]*?)\\.png").getColumn(0);
