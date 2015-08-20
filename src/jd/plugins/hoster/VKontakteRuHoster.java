@@ -31,6 +31,7 @@ import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
+import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
@@ -128,6 +129,23 @@ public class VKontakteRuHoster extends PluginForHost {
         } else {
             return utf8;
         }
+    }
+
+    @Override
+    public CrawledLink convert(DownloadLink link) {
+        final CrawledLink ret = super.convert(link);
+        if (link.getDownloadURL().matches(TYPE_AUDIO_DIRECT)) {
+            final String filename = new Regex(link.getDownloadURL(), "/([^<>\"/]+\\.mp3)$").getMatch(0);
+            if (filename != null) {
+                try {
+                    final String urlDecoded = URLDecode(filename);
+                    link.setFinalFileName(urlDecoded);
+                } catch (final Throwable e) {
+                    link.setName(filename);
+                }
+            }
+        }
+        return ret;
     }
 
     @SuppressWarnings("deprecation")
@@ -252,7 +270,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         *
+                         * 
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         this.postPageSafe(aa, link, "https://vk.com/audio", getAudioAlbumPostString(this.mainlink, this.ownerID));
