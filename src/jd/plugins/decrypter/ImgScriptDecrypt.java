@@ -59,7 +59,7 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
 
         final String[] ret = new String[names.length];
         for (int i = 0; i < ret.length; i++) {
-            ret[i] = "^https?://(www\\.)?" + names[i].replaceAll("\\.", "\\\\.") + "/img\\-[a-z0-9\\-]+\\.(?:html|jpe?g)$";
+            ret[i] = "^https?://(www\\.)?" + Pattern.quote(names[i]) + "/img\\-[a-z0-9\\-_]+\\.(?:html|jpe?g(?:\\.html)?)$";
         }
         return ret;
     }
@@ -79,7 +79,7 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(parameter);
-        if (br.containsHTML(">Image Removed or Bad Link<") || br.getURL().contains("/noimage.php")) {
+        if (br.containsHTML(">Image Removed or Bad Link<") || br.getURL().contains("/noimage.php") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

@@ -29,6 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "general-files.org" }, urls = { "http://(www\\.)?(general\\-files\\.com|generalfiles\\.org|generalfiles\\.me|general\\-files\\.org|generalfiles\\.biz|generalfiles\\.pw|general\\-file\\.com|general\\-fil\\.es|generalfil\\.es)/download/[a-z0-9]+/[^<>\"/]*?\\.html" }, flags = { 0 })
 public class GeneralFilesCom extends PluginForDecrypt {
@@ -64,9 +65,9 @@ public class GeneralFilesCom extends PluginForDecrypt {
             fpName = new Regex(parameter, "/download/[a-z0-9]+/([^<>\"/]*?)\\.html").getMatch(0);
         }
         fpName = Encoding.htmlDecode(fpName.trim());
-        String goLink = br.getRegex("\\'/go/(\\d+)(\\?ajax=1)?\\'").getMatch(0);
+        String goLink = br.getRegex("\\'(/go/(\\d+)(\\?ajax=1)?)\\'").getMatch(0);
         if (goLink == null) {
-            goLink = br.getRegex("/rate/2/(\\d+)\\'\\)").getMatch(0);
+            goLink = br.getRegex("(/rate/2/(\\d+))\\'\\)").getMatch(0);
         }
         if (goLink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -80,7 +81,7 @@ public class GeneralFilesCom extends PluginForDecrypt {
             for (int i = 1; i <= 3; i++) {
                 final String c = getCaptchaCode("http://www." + currenthost + "/captcha/" + goLink, param);
                 // this is probably wrong.... raztoki 20150817
-                br.postPage("/go/" + goLink, "captcha=" + Encoding.urlEncode(c));
+                br.postPage(goLink, "captcha=" + Encoding.urlEncode(c));
                 if (br.getRedirectLocation() != null && br.getRedirectLocation().matches("http://(www\\.)?" + currenthost + "/download/[a-z0-9]+/[^<>\"/]*?\\.html")) {
                     br.getPage(br.getRedirectLocation());
                     continue;
@@ -93,10 +94,10 @@ public class GeneralFilesCom extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
         } else {
-            br.getPage("/get_links/" + goLink);
+            br.getPage(goLink);
         }
         /* First try ajax regex */
-        String finallink = br.getRegex("\"link\":\"(https?:[^<>\"]*?)\"").getMatch(0);
+        String finallink = JSonUtils.getJson(br, "link");
         if (finallink == null) {
             finallink = br.getRegex("window\\.location\\.replace\\(\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
             if (finallink == null) {
@@ -115,7 +116,6 @@ public class GeneralFilesCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        finallink = finallink.replace("\\", "");
         if (finallink.endsWith(".torrent")) {
             finallink = "directhttp://" + finallink;
         }

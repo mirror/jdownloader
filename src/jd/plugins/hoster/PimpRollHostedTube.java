@@ -83,7 +83,7 @@ public class PimpRollHostedTube extends PluginForHost {
         for (int ssize = 0; ssize != t.length; ssize++) {
             s[ssize] = constructUrl(t[ssize]);
         }
-        s[s.length - 1] = "http://www\\.wankz\\.com/[\\w\\-]+\\d+";
+        s[s.length - 1] = "http://(?:www\\.)?wankz\\.com/(?:[\\w\\-]+|embed/)\\d+";
         return s;
     }
 
@@ -102,6 +102,13 @@ public class PimpRollHostedTube extends PluginForHost {
 
     public static String constructUrl(final String host) {
         return "http://(?:(?:www|m)\\.)?" + Pattern.quote(host) + "/(?![^/]*(?:models|stars|categories|channels|tags)[^/]*)[\\w\\-]+/\\d+";
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) throws Exception {
+        if (link.getDownloadURL().contains("wankz.com/")) {
+            link.setUrlDownload(link.getDownloadURL().replace("/embed/", "/"));
+        }
     }
 
     public PimpRollHostedTube(PluginWrapper wrapper) {
