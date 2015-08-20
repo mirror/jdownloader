@@ -42,8 +42,11 @@ public class EfuktComDecrypter extends PluginForDecrypt {
         final String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        final String redirect = br.getRedirectLocation();
-        if (parameter.matches(type_redirect) && redirect != null && !redirect.contains("efukt.com/")) {
+        String redirect = br.getRedirectLocation();
+        if (redirect == null) {
+            redirect = this.br.getRegex("window\\.location[\t\n\r ]*?=[\t\n\r ]*?\\'(http[^<>\"]*?)\\';").getMatch(0);
+        }
+        if (redirect != null && !redirect.contains("efukt.com/")) {
             decryptedLinks.add(createDownloadlink(redirect));
             return decryptedLinks;
         } else if (redirect != null) {

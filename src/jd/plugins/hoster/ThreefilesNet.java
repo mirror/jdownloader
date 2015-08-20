@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3files.net" }, urls = { "https?://(www\\.)?3files\\.net/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "3files.net" }, urls = { "https?://(?:www\\.)?3files\\.net/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class ThreefilesNet extends PluginForHost {
 
     private String                         correctedBR                  = "";

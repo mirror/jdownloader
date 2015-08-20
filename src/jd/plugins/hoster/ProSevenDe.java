@@ -105,12 +105,16 @@ public class ProSevenDe extends PluginForHost {
         if (json == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String brand = getJson(json, "brand");
+        String brand = getJson(json, "brand");
         final String channel = getJson(json, "channel");
         final String title = getJson(json, "subchannel1");
         final String subtitle = getJson(json, "subchannel3");
-        if (brand == null || channel == null || title == null || subtitle == null) {
+        if (channel == null || title == null || subtitle == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (brand == null) {
+            /* Brand not given via json - simply extract it from the url the user added. */
+            brand = new Regex(downloadLink.getDownloadURL(), "https?://(?:www\\.)?([^<>\"/]*?)\\.de/").getMatch(0);
         }
         if (date == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -225,7 +229,7 @@ public class ProSevenDe extends PluginForHost {
              * TODO: Instead of just trying all qualities, consider to use the f4mgenerator XML file to find the existing qualities:
              * http://vas.sim-technik.de/f4mgenerator.f4m?cid=3868276&ttl=604800&access_token=kabeleins&cdn=akamai&token=
              * a3c706238cec19617b8e70b64480fa20aacc2a162a3bbd21294a8ddaf0209699&g=TGENNQIQUMYD&hdcore=3.7.0&plugin=aasp-3.7.0.39.44
-             *
+             * 
              * ... but it might happen that not all are listed so maybe trying all possible qualities makes more sense especially if one of
              * them is down e.g. because of server issues.
              */
