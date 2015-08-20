@@ -67,7 +67,11 @@ public class GeneralFilesCom extends PluginForDecrypt {
         fpName = Encoding.htmlDecode(fpName.trim());
         String goLink = br.getRegex("\\'(/go/(\\d+)(\\?ajax=1)?)\\'").getMatch(0);
         if (goLink == null) {
-            goLink = br.getRegex("(/rate/2/(\\d+))\\'\\)").getMatch(0);
+            goLink = br.getRegex("/rate/2/(\\d+)\\'\\)").getMatch(0);
+            if (goLink != null) {
+                // correction might be needed
+                goLink = "/get_links/" + goLink;
+            }
         }
         if (goLink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
