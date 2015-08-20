@@ -189,7 +189,7 @@ public class StreamCloudEu extends PluginForHost {
             }
         }
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         } catch (final ConnectException ce) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issues", 30 * 60 * 1000l);
         }
