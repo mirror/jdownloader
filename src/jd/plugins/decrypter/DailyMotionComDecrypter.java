@@ -57,19 +57,19 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     private String                          VIDEOSOURCE       = null;
     /**
      * @ 1hd1080URL or stream_h264_hd1080_url [1920x1080]
-     *
+     * 
      * @ 2 hd720URL or stream_h264_hd_url [1280x720]
-     *
+     * 
      * @ 3 hqURL or stream_h264_hq_url [848x480]
-     *
+     * 
      * @ 4 sdURL or stream_h264_url [512x384]
-     *
+     * 
      * @ 5 ldURL or video_url or stream_h264_ld_url [320x240]
-     *
+     * 
      * @ 6 video_url or rtmp
-     *
+     * 
      * @ 7 hds
-     *
+     * 
      * @String[] = {"Direct download url", "filename, if available before quality selection"}
      */
     private LinkedHashMap<String, String[]> FOUNDQUALITIES    = new LinkedHashMap<String, String[]>();
@@ -688,7 +688,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             videosource = br.getRegex("window\\.playerV5 = dmp\\.create\\(document\\.getElementById\\(\\'player\\'\\), (\\{.*?\\}\\})\\);").getMatch(0);
         }
         if (videosource != null) {
-            videosource = Encoding.htmlDecode(videosource).replace("\\", "");
+            videosource = videosource.replace("\\", "");
         }
         return videosource;
     }
