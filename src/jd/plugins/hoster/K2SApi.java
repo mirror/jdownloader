@@ -1534,9 +1534,9 @@ public abstract class K2SApi extends PluginForHost {
                             ibr.getPage(ibr.getRedirectLocation());
                         }
                     }
-                } else if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]+" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]+" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
+                } else if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]*" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]*" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
                     // website address could be www. or what ever prefixes, need to make sure
-                    // eg. within 403 response code,
+                    // eg. within 403 response code, Link; 5544562095341.log; 162684; jdlog://5544562095341
                     // <p>The owner of this website (www.premiumax.net) has banned your IP address (x.x.x.x).</p>
                     // also common when proxies are used?? see keep2share.cc jdlog://5562413173041
                     String ip = ibr.getRegex("your IP address \\((.*?)\\)\\.</p>").getMatch(0);

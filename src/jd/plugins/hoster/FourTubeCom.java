@@ -103,7 +103,7 @@ public class FourTubeCom extends PluginForHost {
         if (mediaID == null) {
             // some times this isn't shown within the embed page, its within /js/player/\d+, or the uid for embed is transferable back to
             // standard /videos/, but like dev note indicates not all embed videos are transferable!
-            final String playerEmbed = br.getRegex("/js/player/(?:embed|web)/" + uid).getMatch(-1);
+            final String playerEmbed = br.getRegex("/js/player/(?:embed|web)/" + uid + "(?:\\.js)?").getMatch(-1);
             if (playerEmbed != null) {
                 br.getPage(playerEmbed);
                 mediaID = br.getRegex(id_media).getMatch(0);

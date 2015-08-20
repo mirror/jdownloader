@@ -38,18 +38,20 @@ public class SexCom extends PornEmbedParser {
     /* Using playerConfig script */
     /* Tags: playerConfig.php */
 
-    private static final String TYPE_VIDEO     = "http://(www\\.)?sex\\.com/video/\\d+.*?";
+    private static final String TYPE_VIDEO = "http://(www\\.)?sex\\.com/video/\\d+.*?";
 
-    ArrayList<DownloadLink>     decryptedLinks = new ArrayList<DownloadLink>();
-    private String              PARAMETER      = null;
+    ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    private String          PARAMETER      = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         PARAMETER = param.toString().replace("/pin/", "/picture/");
         br.setFollowRedirects(true);
         String externID;
         String filename;
+        br.setAllowedResponseCodes(502);
         br.getPage(PARAMETER);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        final int responseCode = br.getHttpConnection().getResponseCode();
+        if (responseCode == 404 || responseCode == 502) {
             decryptedLinks.add(createOfflinelink(PARAMETER));
             return decryptedLinks;
         }

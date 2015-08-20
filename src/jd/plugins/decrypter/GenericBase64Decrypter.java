@@ -69,6 +69,9 @@ public class GenericBase64Decrypter extends PluginForDecrypt {
     }
 
     public final static HashSet<String> handleBase64Decode(final String b64) {
+        if (b64 == null) {
+            return null;
+        }
         final HashSet<String> results = new HashSet<String>();
         String finallink = b64;
         int i = 0;
