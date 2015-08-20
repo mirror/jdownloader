@@ -131,6 +131,9 @@ public class SimpleUseNetDownloadInterface extends DownloadInterface {
         MeteredThrottledInputStream meteredThrottledInputStream = null;
         try {
             for (UsenetFileSegment segment : usenetFile.getSegments()) {
+                if (abort.get()) {
+                    break;
+                }
                 final InputStream bodyInputStream = client.requestMessageBodyAsInputStream(segment.getMessageID());
                 if (meteredThrottledInputStream == null) {
                     meteredThrottledInputStream = new MeteredThrottledInputStream(bodyInputStream, new AverageSpeedMeter(10));

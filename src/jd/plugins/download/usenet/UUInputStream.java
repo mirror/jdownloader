@@ -104,6 +104,33 @@ public class UUInputStream extends InputStream {
         return c;
     }
 
+    /**
+     * TODO: optimize to use larger reads for underlying inputstream
+     * 
+     * @param b
+     * @param off
+     * @param len
+     * @return
+     * @throws IOException
+     */
+
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+        if (eof) {
+            return -1;
+        } else if (dataIndex == dataLength) {
+            readNextLine();
+            if (eof) {
+                return -1;
+            }
+        }
+        int written = 0;
+        while (dataIndex < dataLength && written < len) {
+            b[off + written++] = (byte) (lineBuffer[dataIndex++] & 0xff);
+        }
+        return written;
+    }
+
     private void parseTrailer() throws IOException {
         buffer.reset();
         client.readLine(inputStream, buffer);
