@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slideshare.net" }, urls = { "http://(?:(?:www|es|de)\\.)?slideshare\\.net/(?!search|business)[a-z0-9\\-_]+/[a-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "slideshare.net" }, urls = { "http://(?:(?:www|es|de|fr|pt)\\.)?slideshare\\.net/(?!search|business)[a-z0-9\\-_]+/[a-z0-9\\-_]+" }, flags = { 0 })
 public class SlideShareNetDecrypter extends PluginForDecrypt {
 
     public SlideShareNetDecrypter(PluginWrapper wrapper) {
@@ -46,29 +46,58 @@ public class SlideShareNetDecrypter extends PluginForDecrypt {
     private static final String FILENOTFOUND    = ">Sorry\\! We could not find what you were looking for|>Don\\'t worry, we will help you get to the right place|<title>404 error\\. Page Not Found\\.</title>";
     private static final String NOTDOWNLOADABLE = "class=\"sprite iconNoDownload j\\-tooltip\"";
 
+    private static final String TYPE_INVALID    = "https?://(?:[a-z0-9]+\\.)?slideshare\\.net/(?:search|business).*?";
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceAll("http://(?:(?:www|es|de)\\.)?slideshare\\.net/", "http://www.slideshare.net/");
+        final String parameter = param.toString().replaceAll("https?://(?:[a-z0-9]+\\.)?slideshare\\.net/", "http://www.slideshare.net/");
+        if (parameter.matches(TYPE_INVALID)) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
         final DownloadLink mainlink = createDownloadlink(parameter.replace("slideshare.net/", "slidesharedecrypted.net/"));
         String filename = null;
-        if (getUserLogin(false)) {
-            try {
-                br.getPage(parameter);
-            } catch (final Exception e) {
-                if (br.getHttpConnection().getResponseCode() == 410) {
-                    mainlink.setAvailable(false);
-                    mainlink.setProperty("offline", true);
-                    decryptedLinks.add(mainlink);
-                    return decryptedLinks;
-                } else {
-                    decryptedLinks.add(mainlink);
+        getUserLogin(false);
+        try {
+            br.getPage(parameter);
+        } catch (final Exception e) {
+            if (br.getHttpConnection().getResponseCode() == 410) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            } else {
+                decryptedLinks.add(mainlink);
+                return decryptedLinks;
+            }
+        }
+        if (this.br.containsHTML("class=\"profileHeader\"")) {
+            /* All documents/presentations/videos/info graphics of a user */
+            int pagenum = 0;
+            String next = null;
+            do {
+                logger.info("Decrypting page: " + pagenum);
+                if (this.isAbort()) {
+                    logger.info("Decryption aborted by user");
                     return decryptedLinks;
                 }
-            }
+                if (pagenum > 0) {
+                    this.br.getPage(next);
+                }
+                final String[] entries = this.br.getRegex("<a class=(?:\"|\\')notranslate(?:\"|\\') title=(?:\"|\\')[^<>\"]+(?:\"|\\') href=(?:\"|\\')(/[^<>\"]*?)(?:\"|\\')").getColumn(0);
+                if (entries == null || entries.length == 0) {
+                    return null;
+                }
+
+                for (String url : entries) {
+                    url = "http://www.slideshare.net" + url;
+                    decryptedLinks.add(this.createDownloadlink(url));
+                }
+                next = this.br.getRegex("href=\"(/[^<>\"]*?\\d+)\" rel=\"next\"").getMatch(0);
+                pagenum++;
+            } while (next != null);
+        } else {
+            /* Single url */
             if (br.containsHTML(FILENOTFOUND) || br.containsHTML(">Uploaded Content Removed<")) {
-                mainlink.setAvailable(false);
-                mainlink.setProperty("offline", true);
-                decryptedLinks.add(mainlink);
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
@@ -80,7 +109,7 @@ public class SlideShareNetDecrypter extends PluginForDecrypt {
                 if (filename == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                 }
-                final String[] links = br.getRegex("data\\-full=\"(http://image\\.slidesharecdn\\.com/[^<>\"]*?)\"").getColumn(0);
+                final String[] links = br.getRegex("data\\-full=\"(https?://image\\.slidesharecdn\\.com/[^<>\"]*?)\"").getColumn(0);
                 if (links != null && links.length != 0) {
                     final FilePackage fp = FilePackage.getInstance();
                     fp.setName(filename + " (" + links.length + " pages)");

@@ -82,16 +82,17 @@ public class DrssTvDecrypter extends PluginForDecrypt {
             /* Not available ind old 0.9.581 Stable */
             MAIN.setBrowserUrl(PARAMETER);
         }
-        br.getPage(PARAMETER);
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        this.br.setFollowRedirects(true);
+        this.br.getPage(PARAMETER);
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
             MAIN.setFinalFileName("drss Sendung vom " + new Regex(PARAMETER, "endung/(\\d{2}\\-\\d{2}\\-\\d{4})/").getMatch(0) + ".mp4");
             MAIN.setAvailable(false);
             MAIN.setProperty("offline", true);
             DECRYPTEDLINKS.add(MAIN);
             return DECRYPTEDLINKS;
         }
-        DESCRIPTION = br.getRegex("<div class=\"row profile-container-text margin-bottom\">(.*?)<div class=\"row\">").getMatch(0);
-        ALLVIDEOS = br.getRegex("data\\-src=\"(https?://(www\\.)?(youtube|dailymotion)\\.com/[^<>\"]*?)\"").getColumn(0);
+        DESCRIPTION = this.br.getRegex("<div class=\"row profile-container-text margin-bottom\">(.*?)<div class=\"row\">").getMatch(0);
+        ALLVIDEOS = this.br.getRegex("data\\-src=\"(https?://(www\\.)?(youtube|dailymotion)\\.com/[^<>\"]*?)\"").getColumn(0);
 
         try {
             if (DESCRIPTION != null) {

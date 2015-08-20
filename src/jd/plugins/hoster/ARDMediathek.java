@@ -59,6 +59,8 @@ public class ARDMediathek extends PluginForHost {
 
     private static final String EXCEPTION_LINKOFFLINE = "EXCEPTION_LINKOFFLINE";
 
+    private String              DLLINK                = null;
+
     public ARDMediathek(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -76,36 +78,15 @@ public class ARDMediathek extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, GeneralSecurityException {
+        DLLINK = null;
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Load this plugin as we use functions of it. */
         JDUtilities.getPluginForHost("br-online.de");
         if (downloadLink.getStringProperty("directURL", null) == null) {
-            /* fetch fresh directURL */
-            setBrowserExclusive();
-            br.setFollowRedirects(true);
-            br.getPage(getMainlink(downloadLink));
-
-            if (br.containsHTML("<h1>Leider konnte die gew&uuml;nschte Seite<br />nicht gefunden werden.</h1>")) {
-                logger.info("ARD-Mediathek: Nicht mehr verfügbar: " + getMainlink(downloadLink));
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-
-            String newUrl[] = br.getRegex("mediaCollection\\.addMediaStream\\((\\d+), (" + downloadLink.getStringProperty("directQuality", "1") + "), \"([^\"]+|)\", \"([^\"]+)\", \"([^\"]+)\"\\);").getRow(0);
-            // http
-            if (newUrl == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            String url = newUrl[2];
-            String path = newUrl[3];
-            downloadLink.setProperty("directURL", path + "@");
-            // rtmp
-            if ("0".equals(downloadLink.getStringProperty("streamingType", "1"))) {
-                if (!isEmpty(url) && url.startsWith("rtmp")) {
-                    downloadLink.setProperty("directURL", newUrl[2] + "@" + newUrl[3].split("\\?")[0]);
-                }
-            }
+            /* Undefined case! */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String finalName = downloadLink.getStringProperty("directName", null);
         if (finalName == null) {
@@ -121,7 +102,12 @@ public class ARDMediathek extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             br2.getHeaders().put("Accept-Encoding", "identity");
-            con = br2.openGetConnection(downloadLink.getStringProperty("directURL").split("@")[0]);
+            /* TODO: Remove this compatibility workaround AFTER 2015-10 */
+            DLLINK = downloadLink.getStringProperty("directURL");
+            if (DLLINK.contains("@")) {
+                DLLINK = DLLINK.split("@")[0];
+            }
+            con = br2.openGetConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

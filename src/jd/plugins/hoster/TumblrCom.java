@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tumblr.com" }, urls = { "http://[\\w\\.\\-]*?tumblrdecrypted\\.com/post/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "http://[\\w\\.\\-]*?tumblrdecrypted\\.com/post/\\d+" }, flags = { 0 })
 public class TumblrCom extends PluginForHost {
 
     private String dllink = null;
@@ -45,6 +45,7 @@ public class TumblrCom extends PluginForHost {
         return "http://www.tumblr.com/terms_of_service";
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         // Links come from a decrypter
         link.setUrlDownload(link.getDownloadURL().replace("tumblrdecrypted.com/", "tumblr.com/"));
@@ -53,7 +54,9 @@ public class TumblrCom extends PluginForHost {
     private void getDllink() throws IOException {
         br.setFollowRedirects(false);
         dllink = br.getRegex("\"><img src=\"(( +)?http://\\d+\\.media\\.tumblr\\.com/[^<>\"/\\']*?\\.jpg)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(( +)?http://\\d+\\.media\\.tumblr\\.com/[^<>\"/\\']*?\\.(jpg|gif|png))\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(( +)?http://\\d+\\.media\\.tumblr\\.com/[^<>\"/\\']*?\\.(jpg|gif|png))\"").getMatch(0);
+        }
     }
 
     @Override
@@ -68,28 +71,40 @@ public class TumblrCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("The URL you requested could not be found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("The URL you requested could not be found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         dllink = checkDirectLink(downloadLink, "audiodirectlink");
         if (dllink != null) {
             dllink += Encoding.Base64Decode(ADDITION);
         } else {
             String filename = downloadLink.getFinalFileName();
-            if (filename == null) filename = new Regex(br.getURL(), "tumblr\\.com/post/\\d+/(.+)").getMatch(0);
-            if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), "tumblr\\.com/post/(\\d+)").getMatch(0);
+            if (filename == null) {
+                filename = new Regex(br.getURL(), "tumblr\\.com/post/\\d+/(.+)").getMatch(0);
+            }
+            if (filename == null) {
+                filename = new Regex(downloadLink.getDownloadURL(), "tumblr\\.com/post/(\\d+)").getMatch(0);
+            }
             filename = filename.trim();
             if (br.containsHTML(">renderVideo\\(")) {
                 dllink = br.getRegex("\\'(http://[^<>\"/]*?\\.tumblr\\.com/video_file/\\d+/[^<>\"/]*?)\\'").getMatch(0);
                 downloadLink.setFinalFileName(filename + ".mp4");
             } else if (br.containsHTML("class=\"audio_player\"")) {
                 dllink = br.getRegex("\\?audio_file=(http[^<>\"]*?)\\&color").getMatch(0);
-                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 dllink = Encoding.htmlDecode(dllink.trim()) + Encoding.Base64Decode(ADDITION);
             } else {
                 getDllink();
-                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 dllink = Encoding.htmlDecode(dllink.trim());
                 String ext = dllink.substring(dllink.lastIndexOf("."));
-                if (ext == null || ext.length() > 5) ext = ".mp3";
+                if (ext == null || ext.length() > 5) {
+                    ext = ".mp3";
+                }
                 downloadLink.setFinalFileName(filename + ext);
             }
         }

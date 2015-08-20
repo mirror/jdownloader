@@ -53,6 +53,7 @@ public class TwitterCom extends PluginForHost {
     }
 
     private static final String  TYPE_DIRECT               = "https?://[a-z0-9]+\\.twimg\\.com/.+";
+    private static final String  TYPE_VIDEO                = "https?://amp\\.twimg\\.com/v/.+";
 
     /* Connection stuff - don't allow chunks as we only download small pictures */
     private static final boolean FREE_RESUME               = true;
@@ -75,7 +76,26 @@ public class TwitterCom extends PluginForHost {
         this.setBrowserExclusive();
         /* Most times twitter-image/videolinks will come from the decrypter. */
         String filename = link.getStringProperty("decryptedfilename", null);
-        dllink = link.getDownloadURL();
+        if (link.getDownloadURL().matches(TYPE_VIDEO)) {
+            this.br.getPage(link.getDownloadURL());
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            dllink = this.br.getRegex("name=\"twitter:amplify:teaser_segments_stream\" content=\"(https?://[^<>\"]*?\\.mp4)\"").getMatch(0);
+            if (dllink == null) {
+                final String vmap_url = this.br.getRegex("name=\"twitter:amplify:vmap\" content=\"(https?://[^<>\"]*?\\.vmap)\"").getMatch(0);
+                if (vmap_url == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                this.br.getPage(vmap_url);
+                dllink = this.br.getRegex("<MediaFile>[\t\n\r ]+<\\!\\[CDATA\\[(http[^<>\"]*?)\\]\\]>[\t\n\r ]+</MediaFile>").getMatch(0);
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        } else {
+            dllink = link.getDownloadURL();
+        }
         try {
             try {
                 if (isJDStable()) {

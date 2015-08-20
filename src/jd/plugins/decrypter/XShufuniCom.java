@@ -39,7 +39,7 @@ public class XShufuniCom extends PornEmbedParser {
         String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML("Sorry, this page was deleted")) {
-            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         String filename = br.getRegex("<title>([^<>\"]*?)\\| nudeamateurgirls\\.net</title>").getMatch(0);

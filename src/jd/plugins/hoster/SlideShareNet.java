@@ -36,7 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "slideshare.net" }, urls = { "http://(www\\.)?(slidesharedecrypted\\.net/[a-z0-9\\-_]+/[a-z0-9\\-_]+|slidesharepicturedecrypted\\.net/\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "slideshare.net" }, urls = { "http://(www\\.)?(slidesharedecrypted\\.net/[a-z0-9\\-_]+/[a-z0-9\\-_]+|slidesharepicturedecrypted\\.net/\\d+)" }, flags = { 2 })
 public class SlideShareNet extends PluginForHost {
 
     public SlideShareNet(PluginWrapper wrapper) {
@@ -124,14 +124,7 @@ public class SlideShareNet extends PluginForHost {
             fixFilename(downloadLink);
             dl.startDownload();
         } else {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via account!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
     }
 
