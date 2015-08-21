@@ -22,13 +22,12 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {}, flags = {})
 public class ImgScriptDecrypt extends PluginForDecrypt {
 
     /**
@@ -77,10 +76,10 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
         final String parameter = param.toString();
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("User-Agent", jd.plugins.components.UserAgents.stringUserAgent());
         br.getPage(parameter);
         if (br.containsHTML(">Image Removed or Bad Link<") || br.getURL().contains("/noimage.php") || br.getHttpConnection().getResponseCode() == 404) {
-            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         br.postPage(br.getURL(), "imgContinue=Continue+to+image+...+");
