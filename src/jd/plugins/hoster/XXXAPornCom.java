@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -39,6 +37,10 @@ public class XXXAPornCom extends PluginForHost {
     public XXXAPornCom(PluginWrapper wrapper) {
         //
         super(wrapper);
+        try {
+            Browser.setRequestIntervalLimitGlobal(getHost(), 100, 5, 1000);
+        } catch (final Throwable e) {
+        }
     }
 
     @Override
@@ -56,7 +58,7 @@ public class XXXAPornCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         String filename = null;
@@ -125,6 +127,7 @@ public class XXXAPornCom extends PluginForHost {
 
     @Override
     public void reset() {
+        DLLINK = null;
     }
 
     @Override
