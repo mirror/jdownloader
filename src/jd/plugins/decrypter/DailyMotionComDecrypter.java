@@ -554,14 +554,14 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 selectedQualities.add("7");
             }
         }
-        for (final String selectedQualityValue : selectedQualities) {
-            final DownloadLink dl = getVideoDownloadlink(this.br, FOUNDQUALITIES, selectedQualityValue);
+        for (final String selectedQuality : selectedQualities) {
+            final DownloadLink dl = setVideoDownloadlink(this.br, FOUNDQUALITIES, selectedQuality);
             if (dl == null) {
-                continue;
+                break;
             }
             dl.setContentUrl(PARAMETER);
             fp.add(dl);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(dl); // Needed only for the "if" below.
         }
         /** Pick qualities, selected by the user END */
         if (decryptedLinks.size() == 0) {
@@ -694,12 +694,12 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
     }
 
     @SuppressWarnings("deprecation")
-    private DownloadLink getVideoDownloadlink(final Browser br, final LinkedHashMap<String, String[]> foundqualities, final String qualityValue) throws ParseException {
+    private DownloadLink setVideoDownloadlink(final Browser br, final LinkedHashMap<String, String[]> foundqualities, final String qualityValue) throws ParseException {
         String directlinkinfo[] = foundqualities.get(qualityValue);
         if (directlinkinfo != null) {
             final String directlink = Encoding.htmlDecode(directlinkinfo[0]);
             final DownloadLink dl = createDownloadlink("http://dailymotiondecrypted.com/video/" + System.currentTimeMillis() + new Random().nextInt(10000));
-            String qualityName = directlinkinfo[1];
+            String qualityName = directlinkinfo[1]; // qualityName is dlinfo[2]
             if (qualityName == null) {
                 qualityName = new Regex(directlink, "cdn/([^<>\"]*?)/video").getMatch(0);
             }
@@ -725,6 +725,8 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
                 /* Not available in old 0.9.581 Stable */
                 dl.setBrowserUrl(PARAMETER);
             }
+            logger.info("Creating: " + directlinkinfo[2] + "/" + qualityName + " link");
+            decryptedLinks.add(dl); // This is it, not the other one.
             return dl;
         } else {
             return null;
