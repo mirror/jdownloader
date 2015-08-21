@@ -41,7 +41,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de", "rbb-online.de" }, urls = { "http://(?:www\\.)?(?:ardmediathek|mediathek\\.daserste)\\.de/.+|http://www\\.daserste\\.de/[^<>\"]+/(videos|videosextern)/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+" }, flags = { 32, 32 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ardmediathek.de", "rbb-online.de" }, urls = { "http://(?:www\\.)?(?:ardmediathek|mediathek\\.daserste)\\.de/.+|http://www\\.daserste\\.de/[^<>\"]+/(videos|videosextern)/[a-z0-9\\-]+\\.html", "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+" }, flags = { 32, 32 })
 public class RDMdthk extends PluginForDecrypt {
 
     /* Settings */
@@ -54,7 +54,6 @@ public class RDMdthk extends PluginForDecrypt {
     private static final String                 Q_SUBTITLES           = "Q_SUBTITLES";
     private boolean                             BEST                  = false;
     private boolean                             HTTP_ONLY             = false;
-    private int                                 notForStable          = 0;
     private static final String                 EXCEPTION_LINKOFFLINE = "EXCEPTION_LINKOFFLINE";
 
     /* Constants */
@@ -131,12 +130,9 @@ public class RDMdthk extends PluginForDecrypt {
         }
 
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            if (notForStable > 0) {
-                logger.info("ARD-Mediathek: Only flash content is available. Not downloadable with JD1, please use JD2!");
-                return decryptedLinks;
-            }
             if (fsk != null) {
                 logger.info("ARD-Mediathek: " + fsk);
+                /** TODO: Check if this case still exists */
                 return decryptedLinks;
             }
             logger.warning("Decrypter out of date for link: " + parameter);
@@ -441,14 +437,8 @@ public class RDMdthk extends PluginForDecrypt {
                         dl_subtitle.setProperty("directName", subtitle_filename);
                         dl_subtitle.setProperty("streamingType", "subtitle");
                         dl_subtitle.setProperty("mainlink", parameter);
-                        try {
-                            /* JD2 only */
-                            dl_subtitle.setContentUrl(parameter);
-                            dl_subtitle.setLinkID(linkid);
-                        } catch (Throwable e) {
-                            /* Stable */
-                            dl_subtitle.setBrowserUrl(parameter);
-                        }
+                        dl_subtitle.setContentUrl(parameter);
+                        dl_subtitle.setLinkID(linkid);
                         newRet.add(dl_subtitle);
                     }
 
@@ -477,13 +467,8 @@ public class RDMdthk extends PluginForDecrypt {
             link.setAvailable(true);
         }
         link.setFinalFileName(full_name);
-        try {
-            /* JD2 only */
-            link.setContentUrl(orig_link);
-            link.setLinkID(linkid);
-        } catch (Throwable e) {/* Stable */
-            link.setBrowserUrl(orig_link);
-        }
+        link.setContentUrl(orig_link);
+        link.setLinkID(linkid);
         if (this.date != null) {
             link.setProperty("date", this.date);
         }
@@ -502,13 +487,9 @@ public class RDMdthk extends PluginForDecrypt {
             linkid = plain_name + "_subtitle_" + t;
             final String subtitle_filename = plain_name + ".xml";
             final DownloadLink dl_subtitle = createDownloadlink("http://ardmediathekdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
-            try {
-                /* JD2 only */
-                dl_subtitle.setContentUrl(orig_link);
-                dl_subtitle.setLinkID(linkid);
-            } catch (Throwable e) {/* Stable */
-                dl_subtitle.setBrowserUrl(orig_link);
-            }
+            /* JD2 only */
+            dl_subtitle.setContentUrl(orig_link);
+            dl_subtitle.setLinkID(linkid);
             dl_subtitle.setAvailable(true);
             dl_subtitle.setFinalFileName(subtitle_filename);
             dl_subtitle.setProperty("directURL", subtitleLink);
