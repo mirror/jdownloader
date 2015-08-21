@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -30,13 +31,18 @@ public class XXXAPornComDecrypter extends PluginForDecrypt {
 
     public XXXAPornComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
+        try {
+            Browser.setRequestIntervalLimitGlobal(getHost(), 100, 5, 1000);
+        } catch (final Throwable e) {
+        }
     }
 
     /* Using playerConfig script */
     /* Tags: playerConfig.php */
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        this.setBrowserExclusive();
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
