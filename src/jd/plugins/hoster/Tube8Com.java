@@ -48,7 +48,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tube8.com" }, urls = { "http://(www\\.)?tube8\\.com/(?!(cat|latest)/)[^/]+/[^/]+/([^/]+/)?[0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tube8.com" }, urls = { "http://(www\\.)?tube8\\.com/(?!(cat|latest)/)[^/]+/[^/]+/([^/]+/)?[0-9]+" }, flags = { 2 })
 public class Tube8Com extends PluginForHost {
 
     private boolean              setEx                           = true;
@@ -72,6 +72,7 @@ public class Tube8Com extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         dllink = null;
+        this.br.setAllowedResponseCodes(500);
         if (setEx) {
             this.setBrowserExclusive();
         }
@@ -86,6 +87,9 @@ public class Tube8Com extends PluginForHost {
         }
         if (br.containsHTML("class=\"video\\-removed\\-div\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (this.br.getHttpConnection().getResponseCode() == 500) {
+            return AvailableStatus.UNCHECKABLE;
         }
         String filename = br.getRegex("<title>(.*?) \\- ").getMatch(0);
         if (filename == null) {
@@ -248,6 +252,9 @@ public class Tube8Com extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (this.br.getHttpConnection().getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is in maintenance mode", 30 * 1000l);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (downloadLink.getIntegerProperty("401", -1) == 401) {
