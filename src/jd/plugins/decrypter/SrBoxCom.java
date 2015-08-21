@@ -242,7 +242,7 @@ public class SrBoxCom extends PluginForDecrypt {
             return null;
         }
 
-        if (link.toLowerCase().contains("1407658336_download.png") || link.toLowerCase().contains("1439703144_04c.png") || link.toLowerCase().contains("1439703098_kap-download.jpg") || link.toLowerCase().contains("1407658532_download-button.png") || link.toLowerCase().contains("1428148298_download.png")) {
+        if (link.toLowerCase().endsWith("_04c.png") || link.toLowerCase().endsWith("_kap-download.jpg") || link.toLowerCase().endsWith("_download-button.png") || link.toLowerCase().endsWith("_download.png")) {
             return null;
         }
 
