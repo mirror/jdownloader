@@ -88,6 +88,9 @@ public class SpankWireCom extends PluginForHost {
                 downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
                 return AvailableStatus.TRUE;
             }
+            if (this.br.containsHTML("playerData\\.articleTitle\\s+=\\s+null")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = br.getRegex("playerData.articleTitle\\s+= (\'|\")([^\']*?)(\'|\")").getMatch(1);
             if (filename != null) {
                 filename = Encoding.htmlDecode(filename.trim());

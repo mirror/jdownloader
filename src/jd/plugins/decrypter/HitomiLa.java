@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitomi.la" }, urls = { "http://(www\\.)?hitomi\\.la/galleries/\\d+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitomi.la" }, urls = { "https?://(www\\.)?hitomi\\.la/galleries/\\d+\\.html" }, flags = { 0 })
 public class HitomiLa extends PluginForDecrypt {
 
     public HitomiLa(PluginWrapper wrapper) {
@@ -37,8 +37,10 @@ public class HitomiLa extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        /* Avoid https, prefer http */
+        final String parameter = param.toString().replace("https://", "http://");
         final String gid = new Regex(parameter, "galleries/(\\d+)").getMatch(0);
+        this.br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             try {

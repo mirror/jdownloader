@@ -38,7 +38,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
@@ -204,7 +203,7 @@ public class RDMdthk extends PluginForDecrypt {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         subtitleLink = getJson("_subtitleUrl", br.toString());
-        if (!subtitleLink.startsWith("http://")) {
+        if (subtitleLink != null && !subtitleLink.startsWith("http://")) {
             subtitleLink = "http://www.ardmediathek.de" + subtitleLink;
         }
         int t = 0;
@@ -225,8 +224,8 @@ public class RDMdthk extends PluginForDecrypt {
                 network = "default_nonetwork";
             }
             /*
-             * Sometimes one quality has multiple streams/sub-qualities --> Usually one qualits is missing in the main array so let's "fix"
-             * that. Happens e.g. for documentId: 24157750
+             * Sometimes one quality has multiple streams/sub-qualities --> Usually one qualities is missing in the main array so let's
+             * "fix" that. Happens e.g. for documentId: 30102036
              */
             int quality = ((Number) streammap.get("_quality")).intValue();
             if (streammap.get("_stream") instanceof ArrayList) {
@@ -237,7 +236,7 @@ public class RDMdthk extends PluginForDecrypt {
                     continue;
                 }
                 addQuality(network, title, extension, false, (String) streamArray.get(1), quality, t, parameter);
-                /* Move current quality one up to correct this */
+                // /* Move current quality one up to correct this */
                 quality++;
             } else {
                 directlink = (String) streammap.get("_stream");
@@ -256,16 +255,9 @@ public class RDMdthk extends PluginForDecrypt {
             if (!directlink.startsWith("http://") && isEmpty(server)) {
                 continue;
             }
-
-            directlink += "@";
             // rtmp t=?
             if (isRTMP) {
                 directlink = server + "@" + directlink.split("\\?")[0];
-            }
-            // only http streams for old stable
-            if (isRTMP && isStableEnviroment()) {
-                notForStable++;
-                continue;
             }
             /* Skip rtmp streams if user wants http only */
             if (isRTMP && HTTP_ONLY) {
@@ -380,11 +372,6 @@ public class RDMdthk extends PluginForDecrypt {
             // rtmp t=?
             if (isRTMP) {
                 directlink = server + "@" + directlink.split("\\?")[0];
-            }
-            // only http streams for old stable
-            if (isRTMP && isStableEnviroment()) {
-                notForStable++;
-                continue;
             }
             /* Skip rtmp streams if user wants http only */
             if (isRTMP && HTTP_ONLY) {
@@ -624,20 +611,6 @@ public class RDMdthk extends PluginForDecrypt {
 
     private boolean isEmpty(String ip) {
         return ip == null || ip.trim().length() == 0;
-    }
-
-    private boolean isStableEnviroment() {
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        final int rev = Integer.parseInt(prev);
-        if (rev < 10000) {
-            return true;
-        }
-        return false;
     }
 
     private String formatDateArdMediathek(final String input) {
