@@ -17,6 +17,7 @@ import org.jdownloader.myjdownloader.client.bindings.AccountQuery;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.AccountInterface;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 public class AccountAPIImplV2 implements AccountAPIV2 {
 
@@ -105,14 +106,11 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
     }
 
     public List<String> listPremiumHoster() {
-
         final Collection<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
         // Filter - only premium plugins should be here
-        final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
-        List<String> ret = new ArrayList<String>();
-        for (LazyHostPlugin lhp : allPLugins) {
+        final List<String> ret = new ArrayList<String>();
+        for (final LazyHostPlugin lhp : allPLugins) {
             if (lhp.isPremium()) {
-                plugins.add(lhp);
                 ret.add(lhp.getDisplayName());
             }
         }
@@ -121,15 +119,11 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
 
     @Override
     public HashMap<String, String> listPremiumHosterUrls() {
-
         final Collection<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
         // Filter - only premium plugins should be here
-        final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
-
-        HashMap<String, String> ret = new HashMap<String, String>();
-        for (LazyHostPlugin lhp : allPLugins) {
+        final HashMap<String, String> ret = new HashMap<String, String>();
+        for (final LazyHostPlugin lhp : allPLugins) {
             if (lhp.isPremium()) {
-                plugins.add(lhp);
                 ret.put(lhp.getDisplayName(), AccountController.createFullBuyPremiumUrl(lhp.getPremiumUrl(), "accountmanager/webinterface"));
             }
         }
@@ -149,25 +143,23 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
     }
 
     public void removeAccounts(long[] ids) {
-        java.util.List<Account> removeACCs = getAccountbyIDs(ids);
-        for (Account acc : removeACCs) {
+        final List<Account> removeACCs = getAccountbyIDs(ids);
+        for (final Account acc : removeACCs) {
             AccountController.getInstance().removeAccount(acc);
         }
-
     }
 
-    private java.util.List<Account> getAccountbyIDs(long[] ids) {
-        HashSet<Long> todoIDs = new HashSet<Long>();
+    private List<Account> getAccountbyIDs(long[] ids) {
+        final HashSet<Long> todoIDs = new HashSet<Long>();
         for (long l : ids) {
             todoIDs.add(l);
         }
-        java.util.List<Account> accs = new ArrayList<Account>();
-        for (Account lacc : AccountController.getInstance().list()) {
+        final List<Account> accs = new ArrayList<Account>();
+        for (final Account lacc : AccountController.getInstance().list()) {
             if (lacc != null && todoIDs.size() > 0) {
                 if (todoIDs.remove(lacc.getId().getID())) {
                     accs.add(lacc);
                 }
-
             } else if (todoIDs.size() == 0) {
                 break;
             }
@@ -187,32 +179,34 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
 
     @Override
     public void refreshAccounts(long[] ids) {
-        java.util.List<Account> accs = getAccountbyIDs(ids);
-        for (Account acc : accs) {
+        final List<Account> accs = getAccountbyIDs(ids);
+        for (final Account acc : accs) {
             AccountController.getInstance().updateAccountInfo(acc, false);
         }
     }
 
     public void setEnabledState(boolean enabled, long[] ids) {
-        java.util.List<Account> accs = getAccountbyIDs(ids);
-        for (Account acc : accs) {
+        final List<Account> accs = getAccountbyIDs(ids);
+        for (final Account acc : accs) {
             acc.setEnabled(enabled);
         }
-
     }
 
     @Override
-    public void addAccount(String premiumHoster, String username, String password) {
-        Account acc = new Account(username, password);
-        acc.setHoster(premiumHoster);
-        AccountController.getInstance().addAccount(acc);
-
+    public void addAccount(String host, String username, String password) {
+        final PluginFinder pluginFinder = new PluginFinder();
+        final String pluginHost = new PluginFinder().assignHost(host);
+        if (pluginHost != null) {
+            final Account acc = new Account(username, password);
+            acc.setHoster(pluginHost);
+            pluginFinder.assignPlugin(acc, true);
+            AccountController.getInstance().addAccount(acc);
+        }
     }
 
     @Override
     public boolean setUserNameAndPassword(long accountId, String username, String password) {
-
-        for (Account acc : AccountController.getInstance().list()) {
+        for (final Account acc : AccountController.getInstance().list()) {
             if (accountId == acc.getId().getID()) {
                 if (StringUtils.isNotEmpty(username)) {
                     acc.setUser(username);

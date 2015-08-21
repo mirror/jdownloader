@@ -27,6 +27,7 @@ import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.MigPanel;
 import org.appwork.uio.ComboBoxDialogInterface;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
@@ -578,11 +579,9 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                     toMove.add(cl);
                 }
                 if (toDelete.size() > 0) {
-                    java.awt.Toolkit.getDefaultToolkit().beep();
                     LinkCollector.getInstance().removeChildren(new ArrayList<CrawledLink>(toDelete));
                 }
                 if (toMove.size() == 0) {
-                    java.awt.Toolkit.getDefaultToolkit().beep();
                     return;
                 }
                 if (createNewSelectionInfo) {
@@ -623,15 +622,15 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
     }
 
     protected static void switchToDownloadTab() {
+        if (!Application.isHeadless()) {
+            new EDTRunner() {
 
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST);
-            }
-        };
-
+                @Override
+                protected void runInEDT() {
+                    JDGui.getInstance().requestPanel(JDGui.Panels.DOWNLOADLIST);
+                }
+            };
+        }
     }
 
     private OnOfflineLinksAction handleOffline = OnOfflineLinksAction.GLOBAL;

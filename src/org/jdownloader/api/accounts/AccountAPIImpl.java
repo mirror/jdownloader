@@ -20,6 +20,7 @@ import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.InternalApiException;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.HTTPHeader;
@@ -27,6 +28,7 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.myjdownloader.client.json.JsonMap;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 @Deprecated
 public class AccountAPIImpl implements AccountAPI {
@@ -91,14 +93,11 @@ public class AccountAPIImpl implements AccountAPI {
 
     @Deprecated
     public List<String> listPremiumHoster() {
-
         final Collection<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
         // Filter - only premium plugins should be here
-        final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
-        List<String> ret = new ArrayList<String>();
-        for (LazyHostPlugin lhp : allPLugins) {
+        final List<String> ret = new ArrayList<String>();
+        for (final LazyHostPlugin lhp : allPLugins) {
             if (lhp.isPremium()) {
-                plugins.add(lhp);
                 ret.add(lhp.getDisplayName());
             }
         }
@@ -108,15 +107,11 @@ public class AccountAPIImpl implements AccountAPI {
     @Deprecated
     @Override
     public JsonMap listPremiumHosterUrls() {
-
         final Collection<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
         // Filter - only premium plugins should be here
-        final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
-
-        JsonMap ret = new JsonMap();
-        for (LazyHostPlugin lhp : allPLugins) {
+        final JsonMap ret = new JsonMap();
+        for (final LazyHostPlugin lhp : allPLugins) {
             if (lhp.isPremium()) {
-                plugins.add(lhp);
                 ret.put(lhp.getDisplayName(), AccountController.createFullBuyPremiumUrl(lhp.getPremiumUrl(), "accountmanager/webinterface"));
             }
         }
@@ -164,8 +159,8 @@ public class AccountAPIImpl implements AccountAPI {
 
     @Deprecated
     public boolean removeAccounts(Long[] ids) {
-        java.util.List<Account> removeACCs = getAccountbyIDs(ids);
-        for (Account acc : removeACCs) {
+        final List<Account> removeACCs = getAccountbyIDs(ids);
+        for (final Account acc : removeACCs) {
             AccountController.getInstance().removeAccount(acc);
         }
         return true;
@@ -173,13 +168,13 @@ public class AccountAPIImpl implements AccountAPI {
 
     @Deprecated
     private java.util.List<Account> getAccountbyIDs(Long IDs[]) {
-        java.util.List<Long> todoIDs = new ArrayList<Long>(Arrays.asList(IDs));
-        java.util.List<Account> accs = new ArrayList<Account>();
-        for (Account lacc : AccountController.getInstance().list()) {
+        final List<Long> todoIDs = new ArrayList<Long>(Arrays.asList(IDs));
+        final List<Account> accs = new ArrayList<Account>();
+        for (final Account lacc : AccountController.getInstance().list()) {
             if (lacc != null && todoIDs.size() > 0) {
-                Iterator<Long> it = todoIDs.iterator();
+                final Iterator<Long> it = todoIDs.iterator();
                 while (it.hasNext()) {
-                    long id = it.next();
+                    final long id = it.next();
                     if (lacc.getId().getID() == id) {
                         accs.add(lacc);
                         it.remove();
@@ -206,8 +201,8 @@ public class AccountAPIImpl implements AccountAPI {
 
     @Deprecated
     public boolean setEnabledState(boolean enabled, Long[] ids) {
-        java.util.List<Account> accs = getAccountbyIDs(ids);
-        for (Account acc : accs) {
+        final List<Account> accs = getAccountbyIDs(ids);
+        for (final Account acc : accs) {
             acc.setEnabled(enabled);
         }
         return true;
@@ -215,7 +210,7 @@ public class AccountAPIImpl implements AccountAPI {
 
     @Deprecated
     public AccountAPIStorable getAccountInfo(long id) {
-        java.util.List<Account> accs = getAccountbyIDs(new Long[] { id });
+        final List<Account> accs = getAccountbyIDs(new Long[] { id });
         if (accs.size() == 1) {
             return new AccountAPIStorable(accs.get(0));
         }
@@ -224,11 +219,17 @@ public class AccountAPIImpl implements AccountAPI {
 
     @Deprecated
     @Override
-    public boolean addAccount(String premiumHoster, String username, String password) {
-        Account acc = new Account(username, password);
-        acc.setHoster(premiumHoster);
-        AccountController.getInstance().addAccount(acc);
-        return true;
+    public boolean addAccount(String host, String username, String password) {
+        final PluginFinder pluginFinder = new PluginFinder();
+        final String pluginHost = new PluginFinder().assignHost(host);
+        if (pluginHost != null) {
+            final Account acc = new Account(username, password);
+            acc.setHoster(pluginHost);
+            pluginFinder.assignPlugin(acc, true);
+            AccountController.getInstance().addAccount(acc);
+            return true;
+        }
+        return false;
     }
 
     @Deprecated
@@ -237,13 +238,12 @@ public class AccountAPIImpl implements AccountAPI {
         if (accountId == null) {
             return false;
         }
-
-        for (Account acc : AccountController.getInstance().list()) {
+        for (final Account acc : AccountController.getInstance().list()) {
             if (accountId.equals(acc.getId().getID())) {
-                if (username != null && !username.isEmpty()) {
+                if (StringUtils.isNotEmpty(username)) {
                     acc.setUser(username);
                 }
-                if (password != null && !password.isEmpty()) {
+                if (StringUtils.isNotEmpty(password)) {
                     acc.setPass(password);
                 }
                 return true;
