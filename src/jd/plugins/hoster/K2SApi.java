@@ -52,15 +52,15 @@ import jd.utils.JDUtilities;
  */
 public abstract class K2SApi extends PluginForHost {
 
-    private String          authToken;
-    protected String        directlinkproperty;
-    protected int           chunks;
-    protected boolean       resumes;
-    protected boolean       isFree;
-    private final String    lng                    = getLanguage();
-    private final String    AUTHTOKEN              = "auth_token";
-    private int             authTokenFail          = 0;
-    private int             loginCaptchaFail       = -1;
+    private String       authToken;
+    protected String     directlinkproperty;
+    protected int        chunks;
+    protected boolean    resumes;
+    protected boolean    isFree;
+    private final String lng              = getLanguage();
+    private final String AUTHTOKEN        = "auth_token";
+    private int          authTokenFail    = 0;
+    private int          loginCaptchaFail = -1;
 
     // plugin config definition
     protected final String  USE_API                = "USE_API_2";
@@ -739,7 +739,8 @@ public abstract class K2SApi extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FATAL, msg);
                 case 5:
                     // DOWNLOAD_WAITING = 5; "Please wait to download this file"
-                    // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
+                    // {"message":"Download not
+                    // available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
                     // think timeRemaining is in seconds
                     String time = getJson(iString, "timeRemaining");
                     if (!inValidate(time) && time.matches("[\\d\\.]+")) {
@@ -770,7 +771,8 @@ public abstract class K2SApi extends PluginForHost {
                 case 21:
                 case 22:
                     // ERROR_FILE_IS_NOT_AVAILABLE = 21;
-                    // {"message":"Download is not available","status":"error","code":406,"errorCode":21,"errors":[{"code":2,"message":"Traffic limit exceed"}]}
+                    // {"message":"Download is not
+                    // available","status":"error","code":406,"errorCode":21,"errors":[{"code":2,"message":"Traffic limit exceed"}]}
                     // sub error, pass it back into itself.
                     handleErrors(account, getJsonArray(iString, "errors"), true);
                     // ERROR_FILE_IS_BLOCKED = 22;
@@ -782,7 +784,8 @@ public abstract class K2SApi extends PluginForHost {
                     // ERROR_CAPTCHA_REQUIRED = 30;
                     // this shouldn't happen in dl method.. beware website can contain captcha onlogin, api not of yet.
                     if (account != null) {
-                        // {"message":"You need send request for free download with captcha fields","status":"error","code":406,"errorCode":30}
+                        // {"message":"You need send request for free download with captcha
+                        // fields","status":"error","code":406,"errorCode":30}
                         // false positive for invalid auth_token (work around)! dump cookies and retry
                         dumpAuthToken(account);
                         throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -798,10 +801,13 @@ public abstract class K2SApi extends PluginForHost {
                 case 42:
                     // ERROR_NEED_WAIT_TO_FREE_DOWNLOAD = 41;
                     // ERROR_DOWNLOAD_NOT_AVAILABLE = 42;
-                    // {"message":"Download is not available","status":"error","code":406,"errorCode":21,"errors":[{"code":2,"message":"Traffic limit exceed"}]}
+                    // {"message":"Download is not
+                    // available","status":"error","code":406,"errorCode":21,"errors":[{"code":2,"message":"Traffic limit exceed"}]}
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":3}]}
-                    // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
-                    // {"message":"Download is not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6,"message":" Free account does not allow to download more than one file at the same time"}]}
+                    // {"message":"Download not
+                    // available","status":"error","code":406,"errorCode":42,"errors":[{"code":5,"timeRemaining":"2521.000000"}]}
+                    // {"message":"Download is not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6,"message":"
+                    // Free account does not allow to download more than one file at the same time"}]}
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":6}]}
                     // {"message":"Download not available","status":"error","code":406,"errorCode":42,"errors":[{"code":7}]}
                     // sub error, pass it back into itself.
@@ -818,7 +824,8 @@ public abstract class K2SApi extends PluginForHost {
                     // 30min wait time.... since wait time isn't respected (throw new PluginException(LinkStatus.ERROR_PREMIUM, msg, time)),
                     // we need to set value like this and then throw temp disable.
                     // new one
-                    // {"message":"Login attempt was exceed, please wait or verify your request via captcha challenge","status":"error","code":406,"errorCode":71}
+                    // {"message":"Login attempt was exceed, please wait or verify your request via captcha
+                    // challenge","status":"error","code":406,"errorCode":71}
                     // ^^^ OLD they now switched to 30
                     account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", 31 * 60 * 1000l);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n" + msg, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -1207,7 +1214,7 @@ public abstract class K2SApi extends PluginForHost {
      * Tries to return value of key from JSon response, from String source.
      *
      * @author raztoki
-     * */
+     */
     protected String getJson(final String source, final String key) {
         return JSonUtils.getJson(source, key);
     }
@@ -1217,7 +1224,7 @@ public abstract class K2SApi extends PluginForHost {
      * Tries to return value of key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     protected String getJson(final String key) {
         return JSonUtils.getJson(br.toString(), key);
     }
@@ -1227,7 +1234,7 @@ public abstract class K2SApi extends PluginForHost {
      * Tries to return value of key from JSon response, from provided Browser.
      *
      * @author raztoki
-     * */
+     */
     protected String getJson(final Browser ibr, final String key) {
         return JSonUtils.getJson(ibr.toString(), key);
     }
@@ -1237,7 +1244,7 @@ public abstract class K2SApi extends PluginForHost {
      * Tries to return value given JSon Array of Key from JSon response provided String source.
      *
      * @author raztoki
-     * */
+     */
     protected String getJsonArray(final String source, final String key) {
         return JSonUtils.getJsonArray(source, key);
     }
@@ -1247,7 +1254,7 @@ public abstract class K2SApi extends PluginForHost {
      * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
      *
      * @author raztoki
-     * */
+     */
     protected String getJsonArray(final String key) {
         return JSonUtils.getJsonArray(br.toString(), key);
     }
@@ -1271,7 +1278,7 @@ public abstract class K2SApi extends PluginForHost {
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
      * @author raztoki
-     * */
+     */
     public boolean inValidate(final String s) {
         if (s == null || s.matches("\\s+") || s.equals("")) {
             return true;
@@ -1292,9 +1299,9 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    private static Object                CTRLLOCK                     = new Object();
-    protected static AtomicInteger       maxPrem                      = new AtomicInteger(1);
-    protected static AtomicInteger       maxFree                      = new AtomicInteger(1);
+    private static Object          CTRLLOCK = new Object();
+    protected static AtomicInteger maxPrem  = new AtomicInteger(1);
+    protected static AtomicInteger maxFree  = new AtomicInteger(1);
 
     /**
      * Connection Management<br />
@@ -1316,7 +1323,7 @@ public abstract class K2SApi extends PluginForHost {
      * @param controlSlot
      *            (+1|-1)
      * @author raztoki
-     * */
+     */
     protected void controlSlot(final int num, final Account account) {
         synchronized (CTRLLOCK) {
             if (account == null) {
@@ -1364,7 +1371,7 @@ public abstract class K2SApi extends PluginForHost {
      *
      * @author raztoki
      *
-     * */
+     */
     public void getPage(final String page) throws Exception {
         getPage(br, page);
     }
@@ -1396,7 +1403,7 @@ public abstract class K2SApi extends PluginForHost {
      *
      * @author raztoki
      *
-     * */
+     */
     public void postPage(String page, final String postData) throws Exception {
         postPage(br, page, postData);
     }
@@ -1434,7 +1441,7 @@ public abstract class K2SApi extends PluginForHost {
      *
      * @author raztoki
      *
-     * */
+     */
     public void sendForm(final Form form) throws Exception {
         sendForm(br, form);
     }
@@ -1459,7 +1466,7 @@ public abstract class K2SApi extends PluginForHost {
      *
      * @author raztoki
      *
-     * */
+     */
     protected void sendRequest(final Request request) throws Exception {
         sendRequest(br, request);
     }
@@ -1645,7 +1652,7 @@ public abstract class K2SApi extends PluginForHost {
     /**
      *
      * @author raztoki
-     * */
+     */
     @SuppressWarnings("unused")
     private boolean requestHeadersHasKeyNValueStartsWith(final Browser ibr, final String k, final String v) {
         if (k == null || v == null || ibr == null || ibr.getHttpConnection() == null) {
@@ -1660,7 +1667,7 @@ public abstract class K2SApi extends PluginForHost {
     /**
      *
      * @author raztoki
-     * */
+     */
     private boolean requestHeadersHasKeyNValueContains(final Browser ibr, final String k, final String v) {
         if (k == null || v == null || ibr == null || ibr.getHttpConnection() == null) {
             return false;
@@ -1896,12 +1903,12 @@ public abstract class K2SApi extends PluginForHost {
          * Tries to return value given JSon Array of Key from JSon response provided String source.
          *
          * @author raztoki
-         * */
+         */
         public static String getJsonArray(final String source, final String key) {
-            String result = new Regex(source, "\"" + Pattern.quote(key) + "\":(\\[\\{.*?\\}\\]|\\[.*?\\])(?:,|\\})").getMatch(0);
+            String result = new Regex(source, "\"" + Pattern.quote(key) + "\"\\s*:\\s*(\\[\\s*\\{.*?\\}\\s*\\]|\\[.*?\\])\\s*(?:,|\\})").getMatch(0);
             if (result == null) {
                 // javascript doesn't always encase keyname with quotation
-                result = new Regex(source, Pattern.quote(key) + ":(\\[\\{.*?\\}\\]|\\[.*?\\])(?:,|\\})").getMatch(0);
+                result = new Regex(source, Pattern.quote(key) + "\\s*:\\s*(\\[\\s*\\{.*?\\}\\s*\\]|\\[.*?\\])\\s*(?:,|\\})").getMatch(0);
             }
             result = validateResultForArrays(source, result);
             if (result != null) {
