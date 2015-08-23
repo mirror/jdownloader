@@ -24,6 +24,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -44,9 +48,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadable.ch" }, urls = { "http://(www\\.)?uploadable\\.ch/file/[A-Za-z0-9]+" }, flags = { 2 })
 public class UploadableCh extends PluginForHost {
@@ -152,11 +153,11 @@ public class UploadableCh extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        doFree(downloadLink, null);
     }
 
     @SuppressWarnings("deprecation")
-    private void doFree(final DownloadLink downloadLink) throws Exception {
+    private void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
@@ -165,10 +166,20 @@ public class UploadableCh extends PluginForHost {
         if (dllink == null) {
             final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
             final String postLink = br.getURL();
-            br.getHeaders().put("Accept", "application/json, text/javascript, */*");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.cloneBrowser().getPage("http://www.uploadable.ch/now.php");
+            {
+                final Browser json = br.cloneBrowser();
+                json.getHeaders().put("Accept", "application/json, text/javascript, */*");
+                json.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                json.cloneBrowser().getPage("/now.php");
+            }
             br.postPage(postLink, "downloadLink=wait");
+            if (StringUtils.endsWithCaseInsensitive(br.getRedirectLocation(), "/account.php") && account != null) {
+                br.getPage(br.getRedirectLocation());
+                if (br.containsHTML("<div>For security measures, we ask you to update your password\\.</div>")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Service provider asks that you update your passsword.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown error! Please report to JDownloader Development Team.");
+            }
             int wait = 90;
             final String waittime = br.getRegex("\"waitTime\":(\\d+)").getMatch(0);
             if (waittime != null) {
@@ -203,11 +214,11 @@ public class UploadableCh extends PluginForHost {
             br.getHeaders().put("Accept-Language", "de,en-us;q=0.7,en;q=0.3");
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             br.getHeaders().put("Referer", postLink);
-            br.postPage("http://www.uploadable.ch/file/" + fid, "downloadLink=show");
+            br.postPage("/file/" + fid, "downloadLink=show");
             if (br.containsHTML("fail")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             }
-            br.postPage("http://www.uploadable.ch/file/" + fid, "download=normal");
+            br.postPage("/file/" + fid, "download=normal");
 
             final String reconnect_mins = br.getRegex(">Please wait for (\\d+) minutes  to download the next file").getMatch(0);
             if (reconnect_mins != null) {
@@ -357,7 +368,7 @@ public class UploadableCh extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         if (account.getBooleanProperty("nopremium", false)) {
-            doFree(link);
+            doFree(link, account);
         } else {
             br.setFollowRedirects(false);
             /* This way we don't have to care about the users' "instant download" setting */
