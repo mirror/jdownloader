@@ -38,6 +38,7 @@ LiveHeaderReconnect_getGUI_help_user=Zadajte meno užívateľa webového rozhran
 ReconnectRecorderAction_ReconnectRecorderAction_=Vytvoriť nový skript
 RouterSendAction_RouterSendAction_=Zdieľať nastavenia
 RouterSendAction_actionPerformed_title=Zdieľanie nastavenia znovu-pripojenia
+details=Detaily
 gui_btn_abort=Prerušiť
 gui_btn_cancel=Zrušiť
 gui_btn_help=Pomocník
