@@ -18,7 +18,9 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.SortedMap;
@@ -26,11 +28,16 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -50,10 +57,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadboy.com" }, urls = { "https?://(www\\.)?uploadboy\\.com/(vidembed\\-)?[a-z0-9]{12}(\\.html)?(\\?ref=[a-zA-Z0-9\\%\\.]+)?$" }, flags = { 2 })
 public class UploadBoyCom extends antiDDoSForHost {
@@ -447,13 +450,13 @@ public class UploadBoyCom extends antiDDoSForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
@@ -594,7 +597,7 @@ public class UploadBoyCom extends antiDDoSForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      * @param value
      * @return
@@ -958,7 +961,7 @@ public class UploadBoyCom extends antiDDoSForHost {
 
     /**
      * captcha processing can be used download/login/anywhere assuming the submit values are the same (they usually are)...
-     * 
+     *
      * @author raztoki
      */
     private Form captchaForm(DownloadLink downloadLink, Form form) throws Exception {
@@ -986,14 +989,27 @@ public class UploadBoyCom extends antiDDoSForHost {
             form.put("code", code.toString());
         } else if (form.containsHTML("/captchas/")) {
             logger.info("Detected captcha method \"Standard Captcha\"");
-            final String[] sitelinks = HTMLParser.getHttpLinks(form.getHtmlCode(), null);
-            if (sitelinks == null || sitelinks.length == 0) {
+
+            final ArrayList<String> sitelinks = new ArrayList<String>();
+            final HashSet<String> captchaDupe = new HashSet<String>();
+            {
+                String[] a = HTMLParser.getHttpLinks(form.getHtmlCode(), null);
+                if (a != null) {
+                    sitelinks.addAll(Arrays.asList(a));
+                }
+                a = new Regex(form.getHtmlCode(), "(https?.*?" + DOMAINS + ")?/captchas/[a-z0-9]{18,}\\.jpg").getColumn(-1);
+                if (a != null) {
+                    sitelinks.addAll(Arrays.asList(a));
+                }
+            }
+            if (sitelinks.isEmpty()) {
                 logger.warning("Standard captcha captchahandling broken!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String code = null;
-            for (final String link : sitelinks) {
-                if (link.matches("(https?.+" + DOMAINS + ")?/captchas/[a-z0-9]{18,}\\.jpg")) {
+            for (String link : sitelinks) {
+                link = Request.getLocation(link, br.getRequest());
+                if (captchaDupe.add(link) && link.matches("(https?.*?" + DOMAINS + ")?/captchas/[a-z0-9]{18,}\\.jpg")) {
                     final Browser testcap = br.cloneBrowser();
                     URLConnectionAdapter con = null;
                     try {
@@ -1010,10 +1026,6 @@ public class UploadBoyCom extends antiDDoSForHost {
                         }
                         continue;
                     }
-                } else {
-                    String captchalink = new Regex(br, "\"(/captchas/.+?\\.jpg)\"").getMatch(0);
-                    captchalink = "http://uploadboy.com" + captchalink;
-                    code = getCaptchaCode("xfilesharingprobasic", captchalink, downloadLink);
                 }
             }
             if (inValidate(code)) {
