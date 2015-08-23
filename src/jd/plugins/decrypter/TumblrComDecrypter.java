@@ -30,6 +30,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "http://(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/(audio|video)_file/\\d+/tumblr_[A-Za-z0-9]+|/image/\\d+|/post/\\d+|.+)" }, flags = { 0 })
@@ -263,6 +264,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return;
         }
+        final FilePackage fp = FilePackage.getInstance();
+        String fpName = new Regex(parameter, "//(.+?)\\.tumblr").getMatch(0);
+        fp.setName(fpName);
         while (nextPage != null) {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user");
@@ -280,6 +284,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             for (final String post : allPosts) {
                 final DownloadLink fpost = createDownloadlink(post);
                 fpost.setProperty("nopackagename", true);
+                fp.add(fpost);
                 distribute(fpost);
                 decryptedLinks.add(fpost);
             }
