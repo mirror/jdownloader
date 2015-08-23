@@ -93,7 +93,7 @@ public class VideoOneCom extends PornEmbedParser {
             } else {
                 externID += embedID;
             }
-            if (externID.matches("http://media\\.8\\-d\\.com/getcode\\.php\\?id=\\d+\\&code=\\d+")) {
+            if (externID.matches("http://media\\.8\\-d\\.com/getcode\\.php\\?id=\\d+\\&code=\\w+")) {
                 br.getPage(externID);
                 externID = br.getRegex("<url>([^<>]*?)</url>").getMatch(0);
                 if (externID == null) {
