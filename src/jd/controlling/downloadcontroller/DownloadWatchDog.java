@@ -2148,16 +2148,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 /* first process forcedLinks */
                 selector.setForcedOnly(true);
                 loopCounter = 0;
-                while (abort == false && session.isForcedLinksWaiting() && (getActiveDownloads() < maxConcurrentForced) && loopCounter < maxConcurrentForced) {
+                while (this.newDLStartAllowed(session) && session.isForcedLinksWaiting() && (getActiveDownloads() < maxConcurrentForced) && loopCounter < maxConcurrentForced) {
                     try {
-                        if (abort || (abort = (!this.newDLStartAllowed(session)))) {
+                        final DownloadLinkCandidate candidate = this.next(selector);
+                        if (candidate != null) {
+                            ret.add(attach(candidate));
+                        } else {
                             break;
                         }
-                        DownloadLinkCandidate candidate = this.next(selector);
-                        if (candidate == null) {
-                            break;
-                        }
-                        ret.add(attach(candidate));
                     } finally {
                         loopCounter++;
                     }
@@ -2166,23 +2164,21 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
             selector.setForcedOnly(false);
             /* then process normal activationRequests */
-            boolean canExceed = DomainRuleController.getInstance().getMaxSimultanDownloads() > 0;
+            final boolean canExceed = DomainRuleController.getInstance().getMaxSimultanDownloads() > 0;
             // heckForAdditionalDownloadSlots(session)
-            while (abort == false) {
+            while (session.isStopMarkReached() == false && this.newDLStartAllowed(session)) {
                 if (!canExceed) {
                     // no rules that may exceed the global download limits
                     if (getActiveDownloads() >= maxConcurrentNormal && !checkForAdditionalDownloadSlots(session)) {
                         break;
                     }
                 }
-                if (abort || (abort = (!this.newDLStartAllowed(session) || session.isStopMarkReached()))) {
+                final DownloadLinkCandidate candidate = this.next(selector);
+                if (candidate != null) {
+                    ret.add(attach(candidate));
+                } else {
                     break;
                 }
-                DownloadLinkCandidate candidate = this.next(selector);
-                if (candidate == null) {
-                    break;
-                }
-                ret.add(attach(candidate));
             }
         } finally {
             finalize(selector, downloadLinksWithConditionalSkipReasons);
@@ -4098,28 +4094,21 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     @Override
     public void onDownloadControllerRemovedPackage(final FilePackage pkg) {
-        DownloadSession session = getSession();
-        if (session.isStopMarkSet() == false) {
-            return;
-        }
-        if (session.getStopMark() == STOPMARK.HIDDEN) {
+        final DownloadSession session = getSession();
+        if (session.isStopMarkSet() == false || session.getStopMark() == STOPMARK.HIDDEN) {
             return;
         }
         enqueueJob(new DownloadWatchDogJob() {
 
             @Override
             public void execute(DownloadSession currentSession) {
-                if (currentSession.isStopMarkSet() == false) {
-                    return;
-                }
-                Object stopMark = currentSession.getStopMark();
-                if (stopMark == STOPMARK.HIDDEN) {
+                final Object stopMark = currentSession.getStopMark();
+                if (currentSession.isStopMarkSet() == false || stopMark == STOPMARK.HIDDEN) {
                     return;
                 }
                 if (stopMark == pkg) {
                     /* now the stopmark is hidden */
                     currentSession.setStopMark(STOPMARK.HIDDEN);
-                    return;
                 }
             }
 
@@ -4131,27 +4120,19 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     @Override
     public void onDownloadControllerRemovedLinklist(final List<DownloadLink> list) {
-        DownloadSession session = getSession();
-
-        if (session.isStopMarkSet() == false) {
-            return;
-        }
-        if (session.getStopMark() == STOPMARK.HIDDEN) {
+        final DownloadSession session = getSession();
+        if (session.isStopMarkSet() == false || session.getStopMark() == STOPMARK.HIDDEN) {
             return;
         }
         enqueueJob(new DownloadWatchDogJob() {
 
             @Override
             public void execute(DownloadSession currentSession) {
-                if (currentSession.isStopMarkSet() == false) {
+                final Object stopMark = currentSession.getStopMark();
+                if (currentSession.isStopMarkSet() == false || stopMark == STOPMARK.HIDDEN) {
                     return;
                 }
-                Object stopMark = currentSession.getStopMark();
-
-                if (stopMark == STOPMARK.HIDDEN) {
-                    return;
-                }
-                for (DownloadLink l : list) {
+                for (final DownloadLink l : list) {
                     if (stopMark == l) {
                         currentSession.setStopMark(STOPMARK.HIDDEN);
                         return;
@@ -4207,6 +4188,20 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 }
             });
         }
+    }
+
+    public void setStopMark(final Object stopEntry) {
+        enqueueJob(new DownloadWatchDogJob() {
+
+            @Override
+            public void interrupt() {
+            }
+
+            @Override
+            public void execute(DownloadSession currentSession) {
+                currentSession.setStopMark(stopEntry);
+            }
+        });
     }
 
     public void handleMovedDownloadLinks(final FilePackage dest, final FilePackage source, final List<DownloadLink> links) {

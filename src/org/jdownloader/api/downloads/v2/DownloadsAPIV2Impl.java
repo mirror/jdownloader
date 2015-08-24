@@ -580,13 +580,14 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     public void setStopMark(long linkId, long packageId) {
         final SelectionInfo<FilePackage, DownloadLink> selectionInfo = packageControllerUtils.getSelectionInfo(new long[] { linkId }, new long[] { packageId });
         for (DownloadLink dl : selectionInfo.getChildren()) {
-            DownloadWatchDog.getInstance().getSession().setStopMark(dl);
+            DownloadWatchDog.getInstance().setStopMark(dl);
+            break;
         }
     }
 
     @Override
     public void removeStopMark() {
-        DownloadWatchDog.getInstance().getSession().setStopMark(null);
+        DownloadWatchDog.getInstance().setStopMark(null);
     }
 
     @Override

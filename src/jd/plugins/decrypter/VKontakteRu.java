@@ -416,7 +416,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
                 throw e;
             }
-            sleep(2500l, param);
+            sleep(100l, param);
         }
         if (decryptedLinks == null) {
             logger.warning("vk.com: Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
