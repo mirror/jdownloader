@@ -18,11 +18,16 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Locale;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -30,7 +35,8 @@ import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
-import jd.nutils.JDHash;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -47,37 +53,34 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
 
     /* Settings */
-    private static final String  SETTING_JAC                          = "SETTING_JAC";
-    private static final String  SETTING_FREE_PARALLEL_DOWNLOADSTARTS = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
+    private static final String SETTING_JAC                          = "SETTING_JAC";
+    private static final String SETTING_FREE_PARALLEL_DOWNLOADSTARTS = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
 
-    private final String         UA                                   = RandomUserAgent.generate();
-    private static final String  HTML_RECAPTCHATEXT                   = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-    private static final String  HTML_CAPTCHATEXT                     = "hitfile\\.net/captcha/";
+    private final String         UA                  = RandomUserAgent.generate();
+    private static final String  HTML_RECAPTCHATEXT  = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+    private static final String  HTML_CAPTCHATEXT    = "hitfile\\.net/captcha/";
     /* Website will say something like "Searching file..." which means that it is offline. */
-    public static final String   HTML_FILE_OFFLINE                    = "class=\"code\\-404\"";
-    private static final String  MAINPAGE                             = "http://hitfile.net";
-    public static Object         LOCK                                 = new Object();
-    private static final String  BLOCKED                              = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
-    private static final boolean ENABLE_CRYPTO_STUFF                  = false;
+    public static final String   HTML_FILE_OFFLINE   = "class=\"code\\-404\"";
+    private static final String  MAINPAGE            = "http://hitfile.net";
+    public static Object         LOCK                = new Object();
+    private static final String  BLOCKED             = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
+    private static final boolean ENABLE_CRYPTO_STUFF = false;
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                          = true;
-    private static final int     FREE_MAXCHUNKS                       = 1;
-    private static final int     FREE_MAXDOWNLOADS                    = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME               = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS            = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS         = 20;
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = 1;
+    private static final int     FREE_MAXDOWNLOADS            = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload         = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
-    private static AtomicInteger maxFree                              = new AtomicInteger(1);
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
     public HitFileNet(final PluginWrapper wrapper) {
@@ -224,9 +227,11 @@ public class HitFileNet extends PluginForHost {
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
         setBrowserExclusive();
-        br.setFollowRedirects(true);
+        br = new Browser();
         prepareBrowser(UA);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        simulateBrowser();
         if (br.containsHTML("(\\'File not found\\. Probably it was deleted)") || br.containsHTML(HTML_FILE_OFFLINE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -241,13 +246,8 @@ public class HitFileNet extends PluginForHost {
         if (fileID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        try {
-            br.getPage("http://hitfile.net/turbolight?file=" + fileID);
-            br.setFollowRedirects(false);
-            this.sleep(3 * 1000l, downloadLink);
-        } catch (final Throwable e) {
-        }
         br.getPage("/download/free/" + fileID);
+        simulateBrowser();
         if (br.containsHTML(HTML_FILE_OFFLINE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -300,7 +300,7 @@ public class HitFileNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Handling normal captchas");
-            final String captchaUrl = br.getRegex("<div><img alt=\"Captcha\" src=\"(http://hitfile\\.net/captcha/.*?)\"").getMatch(0);
+            final String captchaUrl = br.getRegex("<div><img alt=\"Captcha\" src=\"(https?://(?:\\w+\\.)?hitfile\\.net/captcha/.*?)\"").getMatch(0);
             Form captchaForm = br.getForm(2);
             if (captchaForm == null) {
                 captchaForm = br.getForm(1);
@@ -312,9 +312,13 @@ public class HitFileNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             captchaForm.remove(null);
-            for (int i = 1; i <= 2; i++) {
+            if (StringUtils.equalsIgnoreCase(captchaForm.getAction(), "#")) {
+                captchaForm.setAction(br.getURL());
+            }
+            final int retry = 2;
+            for (int i = 0; i < retry; i++) {
                 String captchaCode;
-                if (!getPluginConfig().getBooleanProperty(SETTING_JAC, false) || i == 2) {
+                if (!getPluginConfig().getBooleanProperty(SETTING_JAC, false) || i == retry - 1) {
                     captchaCode = getCaptchaCode("hitfile.net.disabled", captchaUrl, downloadLink);
                 } else if (captchaUrl.contains("/basic/")) {
                     logger.info("Handling basic captchas");
@@ -322,7 +326,8 @@ public class HitFileNet extends PluginForHost {
                 } else {
                     captchaCode = getCaptchaCode("hitfile.net", captchaUrl, downloadLink);
                 }
-                captchaForm.put("captcha_response", captchaCode);
+                captchaForm.put("captcha_response", Encoding.urlEncode(captchaCode));
+                final Browser br = this.br.cloneBrowser();
                 try {
                     br.submitForm(captchaForm);
                 } catch (final BrowserException e) {
@@ -331,24 +336,19 @@ public class HitFileNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500: Server has server issues and/or user entered wrong captcha", 5 * 60 * 1000l);
                     }
                 }
-                if (!br.containsHTML(HTML_CAPTCHATEXT)) {
-                    try {
-                        validateLastChallengeResponse();
-                    } catch (final Throwable e) {
+                if (br.containsHTML(HTML_RECAPTCHATEXT)) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else if (br.containsHTML(HTML_CAPTCHATEXT)) {
+                    if (i + 1 == retry) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
-                    break;
-                } else {
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
+                    continue;
                 }
-            }
-            if (br.containsHTML(HTML_RECAPTCHATEXT) || br.containsHTML(HTML_CAPTCHATEXT)) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                this.br = br;
+                break;
             }
         }
-
+        simulateBrowser();
         // Ticket Time
         String ttt = parseImageUrl(br.getRegex(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(null)).getMatch(0), true);
         int maxWait = 9999, realWait = 0;
@@ -380,41 +380,45 @@ public class HitFileNet extends PluginForHost {
 
         boolean waittimeFail = true;
 
-        final Browser tOut = br.cloneBrowser();
-        final String to = br.getRegex("(?i)(/\\w+/timeout\\.js\\?\\w+=[^\"\'<>]+)").getMatch(0);
-        tOut.getPage(to == null ? "/files/timeout.js?ver=" + JDHash.getMD5(String.valueOf(Math.random())).toUpperCase(Locale.ENGLISH) : to);
-        final String fun = escape(tOut.toString());
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        String res = "/download/getLinkTimeout/" + fileID;
 
-        // realtime update
-        String rtUpdate = getPluginConfig().getStringProperty("rtupdate", null);
-        final boolean isUpdateNeeded = getPluginConfig().getBooleanProperty("isUpdateNeeded", false);
+        // final Browser tOut = br.cloneBrowser();
+        // final String to = br.getRegex("(?i)(/\\w+/timeout\\.js\\?\\w+=[^\"\'<>]+)").getMatch(0);
+        // tOut.getPage(to == null ? "/files/timeout.js?ver=" + JDHash.getMD5(String.valueOf(Math.random())).toUpperCase(Locale.ENGLISH)
+        // :
+        // to);
+        // final String fun = escape(tOut.toString());
+        // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        //
+        // // realtime update
+        // String rtUpdate = getPluginConfig().getStringProperty("rtupdate", null);
+        // final boolean isUpdateNeeded = getPluginConfig().getBooleanProperty("isUpdateNeeded", false);
         int attemps = getPluginConfig().getIntegerProperty("attemps", 1);
-
-        if (isUpdateNeeded || rtUpdate == null) {
-            final Browser rt = new Browser();
-            try {
-                rtUpdate = rt.getPage("http://update0.jdownloader.org/pluginstuff/tbupdate.js");
-                rtUpdate = JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(rtUpdate.split("[\r\n]+")[1]));
-                getPluginConfig().setProperty("rtupdate", rtUpdate);
-            } catch (Throwable e) {
-            }
-            getPluginConfig().setProperty("isUpdateNeeded", false);
-            getPluginConfig().setProperty("attemps", attemps++);
-            getPluginConfig().save();
-        }
-
-        String res = rhino("var id = \'" + fileID + "\';@" + fun + "@" + rtUpdate, 666);
-        if (res == null || res != null && !res.matches(hf(10))) {
-            res = rhino("var id = \'" + fileID + "\';@" + fun + "@" + rtUpdate, 100);
-            if (new Regex(res, "/~ID~/").matches()) {
-                res = res.replaceAll("/~ID~/", fileID);
-            }
-        }
-
-        if (res == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        //
+        // if (isUpdateNeeded || rtUpdate == null) {
+        // final Browser rt = new Browser();
+        // try {
+        // rtUpdate = rt.getPage("http://update0.jdownloader.org/pluginstuff/tbupdate.js");
+        // rtUpdate = JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(rtUpdate.split("[\r\n]+")[1]));
+        // getPluginConfig().setProperty("rtupdate", rtUpdate);
+        // } catch (Throwable e) {
+        // }
+        // getPluginConfig().setProperty("isUpdateNeeded", false);
+        // getPluginConfig().setProperty("attemps", attemps++);
+        // getPluginConfig().save();
+        // }
+        //
+        // String res = rhino("var id = \'" + fileID + "\';@" + fun + "@" + rtUpdate, 666);
+        // if (res == null || res != null && !res.matches(hf(10))) {
+        // res = rhino("var id = \'" + fileID + "\';@" + fun + "@" + rtUpdate, 100);
+        // if (new Regex(res, "/~ID~/").matches()) {
+        // res = res.replaceAll("/~ID~/", fileID);
+        // }
+        // }
+        //
+        // if (res == null) {
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // }
         if (res.matches(hf(10)) && this.ENABLE_CRYPTO_STUFF) {
             sleep(tt * 1001, downloadLink);
             for (int i = 0; i <= 4; i++) {
@@ -439,13 +443,18 @@ public class HitFileNet extends PluginForHost {
                 res = correctRes;
             }
             sleep(tt * 1001, downloadLink);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage(res);
         }
         downloadUrl = br.getRegex("<br/><h1><a href=\\'(/.*?)\\'").getMatch(0);
         if (downloadUrl == null) {
             downloadUrl = br.getRegex("\\'(/download/redirect/[^<>\"]*?)\\'").getMatch(0);
             if (downloadUrl == null) {
-                downloadUrl = rhino(escape(br.toString()) + "@" + rtUpdate, 999);
+                if (br.toString().matches("(?i)Error\\s*:\\s*\\d+")) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                // downloadUrl = rhino(escape(br.toString()) + "@" + rtUpdate, 999);
+
             }
         }
         if (downloadUrl == null) {
@@ -454,15 +463,24 @@ public class HitFileNet extends PluginForHost {
             logger.warning("dllink couldn't be found...");
 
             if (attemps > 1) {
-                getPluginConfig().setProperty("isUpdateNeeded", false);
-                getPluginConfig().setProperty("attemps", 1);
-                getPluginConfig().save();
+                // getPluginConfig().setProperty("isUpdateNeeded", false);
+                // getPluginConfig().setProperty("attemps", 1);
+                // getPluginConfig().save();
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
-
+        // md5 crapola
+        br.setFollowRedirects(false);
+        // Future redirects at this point! We want to catch them and not process in order to get the MD5sum! example url structure
+        // http://s\\d{2}.turbobit.ru:\\d+/download.php?name=FILENAME.FILEEXTENTION&md5=793379e72eef01ed1fa3fec91eff5394&fid=b5w4jikojflm&uid=free&speed=59&till=1356198536&trycount=1&ip=YOURIP&sid=60193f81464cca228e7bb240a0c39130&browser=201c88fd294e46f9424f724b0d1a11ff&did=800927001&sign=7c2e5d7b344b4a205c71c18c923f96ab
+        br.getPage(downloadUrl);
+        downloadUrl = br.getRedirectLocation() != null ? br.getRedirectLocation() : br.getURL();
+        final String md5sum = new Regex(downloadUrl, "md5=([a-f0-9]{32})").getMatch(0);
+        if (md5sum != null) {
+            downloadLink.setMD5Hash(md5sum);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -492,6 +510,16 @@ public class HitFileNet extends PluginForHost {
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // md5 crapola
+        br.setFollowRedirects(false);
+        // Future redirects at this point! We want to catch them and not process in order to get the MD5sum! example url structure
+        // http://s\\d{2}.turbobit.ru:\\d+/download.php?name=FILENAME.FILEEXTENTION&md5=793379e72eef01ed1fa3fec91eff5394&fid=b5w4jikojflm&uid=free&speed=59&till=1356198536&trycount=1&ip=YOURIP&sid=60193f81464cca228e7bb240a0c39130&browser=201c88fd294e46f9424f724b0d1a11ff&did=800927001&sign=7c2e5d7b344b4a205c71c18c923f96ab
+        br.getPage(dllink);
+        dllink = br.getRedirectLocation() != null ? br.getRedirectLocation() : br.getURL();
+        final String md5sum = new Regex(dllink, "md5=([a-f0-9]{32})").getMatch(0);
+        if (md5sum != null) {
+            link.setMD5Hash(md5sum);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -594,6 +622,7 @@ public class HitFileNet extends PluginForHost {
 
     private void prepareBrowser(final String userAgent) {
         // br.getHeaders().put("Pragma", null);
+        br.setCookie(MAINPAGE, "user_lang", "en");
         br.getHeaders().put("Cache-Control", null);
         br.getHeaders().put("Accept-Charset", null);
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
@@ -708,6 +737,69 @@ public class HitFileNet extends PluginForHost {
             return true;
         }
         return false;
+    }
+
+    private LinkedHashSet<String> dupe = new LinkedHashSet<String>();
+
+    private void simulateBrowser() throws InterruptedException {
+        // dupe.clear();
+
+        final AtomicInteger requestQ = new AtomicInteger(0);
+        final AtomicInteger requestS = new AtomicInteger(0);
+        final ArrayList<String> links = new ArrayList<String>();
+
+        String[] l1 = new Regex(br, "\\s+(?:src|href)=(\"|')(.*?)\\1").getColumn(1);
+        if (l1 != null) {
+            links.addAll(Arrays.asList(l1));
+        }
+        l1 = new Regex(br, "\\s+(?:src|href)=(?!\"|')([^\\s]+)").getColumn(0);
+        if (l1 != null) {
+            links.addAll(Arrays.asList(l1));
+        }
+        for (final String link : links) {
+            // lets only add links related to this hoster.
+            final String correctedLink = Request.getLocation(link, br.getRequest());
+            if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.endsWith(this.getHost() + "/") && !correctedLink.contains(".html") && !correctedLink.equals(br.getURL()) && !correctedLink.contains("/captcha/")) {
+                if (dupe.add(correctedLink)) {
+
+                    final Thread simulate = new Thread("SimulateBrowser") {
+
+                        public void run() {
+                            final Browser rb = br.cloneBrowser();
+                            rb.getHeaders().put("Cache-Control", null);
+                            // open get connection for images, need to confirm
+                            if (correctedLink.matches(".+\\.png.*")) {
+                                rb.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
+                            } else if (correctedLink.matches(".+\\.js.*")) {
+                                rb.getHeaders().put("Accept", "*/*");
+                            } else if (correctedLink.matches(".+\\.css.*")) {
+                                rb.getHeaders().put("Accept", "text/css,*/*;q=0.1");
+                            }
+                            URLConnectionAdapter con = null;
+                            try {
+                                requestQ.getAndIncrement();
+                                con = rb.openGetConnection(correctedLink);
+                            } catch (final Exception e) {
+                            } finally {
+                                try {
+                                    con.disconnect();
+                                } catch (final Exception e) {
+                                }
+                                requestS.getAndIncrement();
+                            }
+                            return;
+                        }
+
+                    };
+                    simulate.start();
+                    Thread.sleep(100);
+
+                }
+            }
+        }
+        while (requestQ.get() != requestS.get()) {
+            Thread.sleep(1000);
+        }
     }
 
     @Override
