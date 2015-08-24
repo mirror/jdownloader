@@ -61,6 +61,10 @@ public class VKontakteRu extends PluginForDecrypt {
 
     public VKontakteRu(PluginWrapper wrapper) {
         super(wrapper);
+        try {
+            Browser.setRequestIntervalLimitGlobal("vk.com", 20, 70, 2000);
+        } catch (final Throwable e) {
+        }
     }
 
     public int getMaxConcurrentProcessingInstances() {
@@ -416,7 +420,6 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
                 throw e;
             }
-            sleep(100l, param);
         }
         if (decryptedLinks == null) {
             logger.warning("vk.com: Decrypter broken for link: " + this.CRYPTEDLINK_FUNCTIONAL);
@@ -1100,7 +1103,6 @@ public class VKontakteRu extends PluginForDecrypt {
                 // Not available in 0.9.851 Stable
             }
             logger.info("Starting to decrypt offset " + currentOffset + " / " + total_numberof_entries);
-            this.sleep(500, CRYPTEDLINK);
             getPage(br, "https://api.vk.com/method/wall.get?format=json&owner_id=" + userID + "&count=" + API_MAX_ENTRIES_PER_REQUEST + "&offset=" + currentOffset + "&filter=all&extended=0");
 
             Map<String, Object> map = (Map<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
@@ -1747,7 +1749,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
             }
             if (br.containsHTML("You tried to load the same page more than once in one second")) {
-                Thread.sleep(2000);
+                Thread.sleep(1000);
                 continue;
             } else {
                 break;
