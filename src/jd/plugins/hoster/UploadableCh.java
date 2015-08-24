@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -39,6 +38,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -49,7 +49,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadable.ch" }, urls = { "http://(www\\.)?uploadable\\.ch/file/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadable.ch" }, urls = { "http://(www\\.)?uploadable\\.ch/file/[A-Za-z0-9]+" }, flags = { 2 })
 public class UploadableCh extends PluginForHost {
 
     public UploadableCh(PluginWrapper wrapper) {
@@ -63,9 +63,8 @@ public class UploadableCh extends PluginForHost {
         return "http://www.uploadable.ch/terms.php";
     }
 
-    private static AtomicInteger maxPrem                 = new AtomicInteger(1);
-    private static final long    FREE_SIZELIMIT          = 2 * 1073741824l;
-    private static final String  PREMIUM_UNLIMITEDCHUNKS = "PREMIUM_UNLIMITEDCHUNKS";
+    private static final long   FREE_SIZELIMIT          = 2 * 1073741824l;
+    private static final String PREMIUM_UNLIMITEDCHUNKS = "PREMIUM_UNLIMITEDCHUNKS";
 
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -272,8 +271,9 @@ public class UploadableCh extends PluginForHost {
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    private AccountInfo login(final Account account, final boolean force, final AccountInfo ac) throws Exception {
         synchronized (LOCK) {
+            final AccountInfo ai = ac != null ? ac : new AccountInfo();
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
@@ -291,18 +291,44 @@ public class UploadableCh extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             br.setCookie(MAINPAGE, key, value);
                         }
-                        return;
+                        // lets do a check!
+                        br.getPage("/");
+                        if (!isNotLoggedIn()) {
+                            return ai;
+                        }
                     }
                 }
                 br.setFollowRedirects(false);
                 br.postPage("http://www.uploadable.ch/login.php", "autoLogin=on&action__login=normalLogin&userName=" + Encoding.urlEncode(account.getUser()) + "&userPassword=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "autologin") == null || !br.containsHTML("class=\"icon logout\"")) {
+                if (isNotLoggedIn()) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                br.getPage("/indexboard.php");
+                final String space = br.getRegex(">Storage</div>[\t\r\n ]+<div class=\"b_blue_type\">\\s*([^\"/]*?)\\s*</span>").getMatch(0);
+                if (space != null) {
+                    ai.setUsedSpace(space.trim().replace("<span>", ""));
+                }
+                final String expiredate = br.getRegex("lass=\"grey_type\">[\r\n\t ]+Until\\s*([^<>\"]*?)\\s*</div>").getMatch(0);
+                if (expiredate == null) {
+                    // free accounts can still have captcha.
+                    account.setMaxSimultanDownloads(1);
+                    account.setConcurrentUsePossible(false);
+                    account.setType(AccountType.FREE);
+                    ai.setStatus("Free Account");
+                } else {
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate.trim(), "dd MMM yyyy", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
+                    account.setMaxSimultanDownloads(20);
+                    account.setConcurrentUsePossible(true);
+                    account.setType(AccountType.PREMIUM);
+                    ai.setStatus("Premium Account");
+                }
+                ai.setUnlimitedTraffic();
+                account.setValid(true);
+
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(MAINPAGE);
@@ -312,6 +338,10 @@ public class UploadableCh extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
+                if (ac == null) {
+                    account.setAccountInfo(ai);
+                }
+                return ai;
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
                 throw e;
@@ -319,55 +349,26 @@ public class UploadableCh extends PluginForHost {
         }
     }
 
+    private boolean isNotLoggedIn() {
+        return br.getCookie(MAINPAGE, "autologin") == null || StringUtils.containsIgnoreCase(br.getCookie(MAINPAGE, "autologin"), "deleted") || !br.containsHTML("class=\"icon logout\"");
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            return login(account, true, new AccountInfo());
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
         }
-        br.getPage("http://www.uploadable.ch/indexboard.php");
-        final String space = br.getRegex(">Storage</div>[\t\r\n ]+<div class=\"b_blue_type\">([^\"/]*?)</span>").getMatch(0);
-        if (space != null) {
-            ai.setUsedSpace(space.trim().replace("<span>", ""));
-        }
-        final String expiredate = br.getRegex("lass=\"grey_type\">[\r\n\t ]+Until([^<>\"]*?)</div>").getMatch(0);
-        if (expiredate == null) {
-            try {
-                maxPrem.set(1);
-                // free accounts can still have captcha.
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
-            account.setProperty("nopremium", true);
-            ai.setStatus("Registered (free) user");
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate.trim(), "dd MMM yyyy", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
-            try {
-                maxPrem.set(20);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                // not available in old Stable 0.9.581
-            }
-            account.setProperty("nopremium", false);
-            ai.setStatus("Premium user");
-        }
-        ai.setUnlimitedTraffic();
-        account.setValid(true);
-        return ai;
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
-        if (account.getBooleanProperty("nopremium", false)) {
+        login(account, false, null);
+        if (account.getType() == AccountType.FREE) {
             doFree(link, account);
         } else {
             br.setFollowRedirects(false);
@@ -403,16 +404,11 @@ public class UploadableCh extends PluginForHost {
     }
 
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        if ((account == null || account.getBooleanProperty("free", false)) && downloadLink.getDownloadSize() > FREE_SIZELIMIT) {
+        if ((account == null || account.getType() == AccountType.FREE) && downloadLink.getDownloadSize() > FREE_SIZELIMIT) {
             return false;
         } else {
             return true;
         }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
     }
 
     @Override
@@ -434,15 +430,8 @@ public class UploadableCh extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (acc.getType() == AccountType.FREE) {
             /* free accounts also have captchas */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
             return true;
         }
         return false;
