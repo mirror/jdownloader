@@ -95,7 +95,7 @@ public class SfLnkCnvCm extends PluginForDecrypt {
 
     @Override
     public String[] siteSupportedNames() {
-        return new String[] { "safelinkconverter.com", "safelinkreview\\.com" };
+        return new String[] { "safelinkconverter.com", "safelinkreview.com" };
     }
 
 }
