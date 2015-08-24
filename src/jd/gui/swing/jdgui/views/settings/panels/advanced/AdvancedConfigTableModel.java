@@ -98,7 +98,7 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
 
             @Override
             public boolean isEditable(AdvancedConfigEntry obj) {
-                return true;
+                return false;
             }
 
             @Override
