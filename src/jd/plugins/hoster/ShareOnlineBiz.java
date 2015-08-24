@@ -32,11 +32,6 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.os.CrossSystem;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -57,40 +52,43 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download\\.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
 public class ShareOnlineBiz extends antiDDoSForHost {
 
-    private static final String                                     COOKIE_HOST          = "http://share-online.biz";
-    private static WeakHashMap<Account, HashMap<String, String>>    ACCOUNTINFOS         = new WeakHashMap<Account, HashMap<String, String>>();
-    private static WeakHashMap<Account, CopyOnWriteArrayList<Long>> THREADFAILURES       = new WeakHashMap<Account, CopyOnWriteArrayList<Long>>();
-    private static Object                                           LOCK                 = new Object();
-    private static HashMap<Long, Long>                              noFreeSlot           = new HashMap<Long, Long>();
-    private static HashMap<Long, Long>                              overloadedServer     = new HashMap<Long, Long>();
-    private long                                                    server               = -1;
-    private long                                                    waitNoFreeSlot       = 10 * 60 * 1000l;
-    private long                                                    waitOverloadedServer = 5 * 60 * 1000l;
+    private static final String                                     COOKIE_HOST                          = "http://share-online.biz";
+    private static WeakHashMap<Account, HashMap<String, String>>    ACCOUNTINFOS                         = new WeakHashMap<Account, HashMap<String, String>>();
+    private static WeakHashMap<Account, CopyOnWriteArrayList<Long>> THREADFAILURES                       = new WeakHashMap<Account, CopyOnWriteArrayList<Long>>();
+    private static Object                                           LOCK                                 = new Object();
+    private static HashMap<Long, Long>                              noFreeSlot                           = new HashMap<Long, Long>();
+    private static HashMap<Long, Long>                              overloadedServer                     = new HashMap<Long, Long>();
+    private long                                                    server                               = -1;
+    private long                                                    waitNoFreeSlot                       = 10 * 60 * 1000l;
+    private long                                                    waitOverloadedServer                 = 5 * 60 * 1000l;
 
     /* Connection stuff */
-    private static final boolean free_resume                          = false;
-    private static final int     free_maxchunks                       = 1;
-    private static final int     free_maxdownloads                    = 1;
-    private static final boolean account_premium_resume               = true;
-    private static final int     account_premium_maxchunks            = 0;
-    private static final int     account_premium_maxdownloads         = 10;
-    private static final int     account_premium_penalty_maxdownloads = 2;
+    private static final boolean                                    free_resume                          = false;
+    private static final int                                        free_maxchunks                       = 1;
+    private static final int                                        free_maxdownloads                    = 1;
+    private static final boolean                                    account_premium_resume               = true;
+    private static final int                                        account_premium_maxchunks            = 0;
+    private static final int                                        account_premium_maxdownloads         = 10;
+    private static final int                                        account_premium_penalty_maxdownloads = 2;
 
-    private boolean              hideID               = true;
-    private static AtomicInteger maxChunksnew         = new AtomicInteger(-2);
-    private char[]               FILENAMEREPLACES     = new char[] { '_', '&', 'ü' };
-    private final String         SHARED_IP_WORKAROUND = "SHARED_IP_WORKAROUND";
-    private final String         TRAFFIC_WORKAROUND   = "TRAFFIC_WORKAROUND";
-    private final String         PREFER_HTTPS         = "PREFER_HTTPS";
+    private boolean                                                 hideID                               = true;
+    private static AtomicInteger                                    maxChunksnew                         = new AtomicInteger(-2);
+    private char[]                                                  FILENAMEREPLACES                     = new char[] { '_', '&', 'ü' };
+    private final String                                            SHARED_IP_WORKAROUND                 = "SHARED_IP_WORKAROUND";
+    private final String                                            TRAFFIC_WORKAROUND                   = "TRAFFIC_WORKAROUND";
+    private final String                                            PREFER_HTTPS                         = "PREFER_HTTPS";
 
-    private static AtomicInteger maxPrem = new AtomicInteger(1);
+    private static AtomicInteger                                    maxPrem                              = new AtomicInteger(1);
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -775,8 +773,7 @@ public class ShareOnlineBiz extends antiDDoSForHost {
         String url = Encoding.Base64Decode(dlINFO);
         if (captcha) {
             /* recaptcha handling */
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = jd.plugins.hoster.DirectHTTP.getReCaptcha(br);
             rc.setId("6LdatrsSAAAAAHZrB70txiV5p-8Iv8BtVxlTtjKX");
             rc.load();
             long last = -1;
