@@ -557,6 +557,9 @@ public class PowVideoNet extends antiDDoSForHost {
         String ttt = cbr.getRegex("id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         if (inValidate(ttt)) {
             ttt = cbr.getRegex("id=\"countdown_str\"[^>]+>Wait[^>]+>(\\d+)\\s?+</span>").getMatch(0);
+            if (inValidate(ttt)) {
+                ttt = cbr.getRegex("var countdownNum\\s*=\\s*(\\d+);").getMatch(0);
+            }
         }
         if (!inValidate(ttt)) {
             // remove one second from past, to prevent returning too quickly.
