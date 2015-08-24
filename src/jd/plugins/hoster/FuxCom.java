@@ -67,7 +67,7 @@ public class FuxCom extends PluginForHost {
         String mediaID = info.getMatch(0);
         if (mediaID == null) {
             // just like 4tube....<script id="playerembed" src...
-            final String embed = br.getRegex("/js/player/web/\\d+").getMatch(-1);
+            final String embed = br.getRegex("/js/player/(?:embed|web)/\\d+(?:\\.js)?").getMatch(-1);
             if (embed != null) {
                 br.getPage(embed);
                 mediaID = br.getRegex("\\((\\d+), \\d+, \\[([0-9,]+)\\]\\);").getMatch(0);
