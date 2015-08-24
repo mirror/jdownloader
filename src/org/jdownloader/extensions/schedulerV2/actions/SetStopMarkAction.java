@@ -19,6 +19,6 @@ public class SetStopMarkAction extends AbstractScheduleAction<ScheduleActionEmpt
 
     @Override
     public void execute() {
-        DownloadWatchDog.getInstance().getSession().setStopMark(STOPMARK.RANDOM);
+        DownloadWatchDog.getInstance().setStopMark(STOPMARK.RANDOM);
     }
 }

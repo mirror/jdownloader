@@ -34,6 +34,8 @@ import jd.utils.JDUtilities;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.Queue.QueuePriority;
+import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.logging.LogController;
@@ -297,12 +299,13 @@ public class DownloadSession extends Property {
     }
 
     public void toggleStopMark(Object entry) {
+        final Object stopMark = getStopMark();
         if (entry == STOPMARK.RANDOM) {
-            if (getStopMark() != STOPMARK.NONE) {
+            if (stopMark != STOPMARK.NONE) {
                 entry = null;
             }
         }
-        if (entry == null || stopMark.get() == entry || entry == STOPMARK.NONE) {
+        if (entry == null || stopMark == entry || entry == STOPMARK.NONE) {
             /* no stopmark OR toggle current set stopmark */
             setStopMark(STOPMARK.NONE);
         } else {
@@ -483,7 +486,7 @@ public class DownloadSession extends Property {
     }
 
     public boolean isStopMark(final Object item) {
-        Object stopMark = this.stopMark.get();
+        final Object stopMark = this.stopMark.get();
         if (stopMark instanceof DownloadLink) {
             //
             return stopMark == item || item == ((DownloadLink) stopMark).getFilePackage();
@@ -499,44 +502,67 @@ public class DownloadSession extends Property {
         final Object stop = stopMark.get();
         if (stop == STOPMARK.NONE) {
             return false;
-        }
-        if (stop == STOPMARK.HIDDEN) {
+        } else if (stop == STOPMARK.HIDDEN) {
             return true;
-        }
-        if (stop instanceof DownloadLink) {
+        } else if (stop instanceof DownloadLink) {
             final DownloadLink link = (DownloadLink) stop;
-            return (!link.isEnabled() || link.isSkipped() || link.getFinalLinkState() != null || getHistory(link) != null);
-        }
-        if (stop instanceof FilePackage) {
-            final FilePackage fp = (FilePackage) stop;
-            final boolean readL = fp.getModifyLock().readLock();
-            try {
-                for (final DownloadLink link : fp.getChildren()) {
-                    if ((!link.isEnabled() || link.isSkipped() || link.getFinalLinkState() != null || getHistory(link) != null)) {
-                        continue;
+            if (!link.isEnabled() || link.isSkipped() || link.getFinalLinkState() != null || getHistory(link) != null) {
+                return true;
+            } else {
+                return Boolean.TRUE.equals(DownloadController.getInstance().getQueue().addWait(new QueueAction<Boolean, RuntimeException>(QueuePriority.HIGH) {
+
+                    @Override
+                    protected Boolean run() throws RuntimeException {
+                        final FilePackage fp = link.getParentNode();
+                        return FilePackage.isDefaultFilePackage(fp) || fp == null || DownloadController.getInstance() == fp.getControlledBy();
                     }
-                    return false;
+                }));
+            }
+        } else if (stop instanceof FilePackage) {
+            final FilePackage fp = (FilePackage) stop;
+            final Boolean fpResult = DownloadController.getInstance().getQueue().addWait(new QueueAction<Boolean, RuntimeException>(QueuePriority.HIGH) {
+
+                @Override
+                protected Boolean run() throws RuntimeException {
+                    return FilePackage.isDefaultFilePackage(fp) || fp == null || DownloadController.getInstance() == fp.getControlledBy();
                 }
-            } finally {
-                fp.getModifyLock().readUnlock(readL);
+            });
+            if (Boolean.FALSE.equals(fpResult)) {
+                final boolean readL = fp.getModifyLock().readLock();
+                try {
+                    for (final DownloadLink link : fp.getChildren()) {
+                        if ((!link.isEnabled() || link.isSkipped() || link.getFinalLinkState() != null || getHistory(link) != null)) {
+                            continue;
+                        }
+                        return false;
+                    }
+                } finally {
+                    fp.getModifyLock().readUnlock(readL);
+                }
             }
             return true;
         }
         return false;
     }
 
-    public void setStopMark(final Object stopEntry) {
+    protected void setStopMark(final Object stopEntry) {
         Object entry = stopEntry;
         if (entry == null || entry == STOPMARK.NONE) {
             entry = STOPMARK.NONE;
         }
         if (entry == STOPMARK.RANDOM) {
             /* user wants to set a random stopmark */
-            Iterator<SingleDownloadController> it = controllers.iterator();
-            if (it.hasNext()) {
-                entry = it.next().getDownloadLink();
-            } else {
-                entry = STOPMARK.HIDDEN;
+            while (true) {
+                try {
+                    final Iterator<SingleDownloadController> it = controllers.iterator();
+                    if (it.hasNext()) {
+                        entry = it.next().getDownloadLink();
+                    } else {
+                        entry = STOPMARK.HIDDEN;
+                    }
+                    break;
+                } catch (final Throwable e) {
+                }
             }
         }
         stopMark.set(entry);
