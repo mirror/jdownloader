@@ -87,7 +87,7 @@ public class PowVideoNet extends antiDDoSForHost {
     private final String  dllinkRegex                = "https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,5})?/((files(/(dl|download))?|d|cgi-bin/dl\\.cgi)/(\\d+/)?([a-z0-9]+/){1,4}[^/<>\r\n\t]+|[a-z0-9]{58}/v(?:ideo)?\\.mp4)";
     private final boolean supportsHTTPS              = false;
     private final boolean enforcesHTTPS              = false;
-    private final boolean useAltLinkCheck            = true;
+    private final boolean useAltLinkCheck            = false;
     private final boolean useVidEmbed                = false;
     private final boolean useAltEmbed                = true;
     private final boolean useAltExpire               = true;
