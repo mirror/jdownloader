@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -39,6 +40,8 @@ import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
+import jd.parser.html.HTMLParser.HtmlParserCharSequence;
+import jd.parser.html.HTMLParser.HtmlParserResultSet;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -483,12 +486,41 @@ public class LinkCrawler {
         }
     }
 
-    public java.util.List<CrawledLink> find(String text, String url, boolean allowDeep) {
-        String[] possibleLinks = HTMLParser.getHttpLinks(text, url);
+    public java.util.List<CrawledLink> find(String text, String url, final boolean allowDeep) {
+        final int generation = this.getCrawlerGeneration(true);
+        final HtmlParserResultSet resultSet = new HtmlParserResultSet() {
+            private final HashSet<CharSequence> fastResults = new HashSet<CharSequence>();
+
+            @Override
+            public boolean add(HtmlParserCharSequence e) {
+                final boolean ret = super.add(e);
+                if (ret && !e.contains("...")) {
+                    fastResults.add(e);
+                    final CrawledLink crawledLink = crawledLinkFactorybyURL(e.toString());
+                    crawledLink.setCrawlDeep(allowDeep);
+                    final ArrayList<CrawledLink> crawledLinks = new ArrayList<CrawledLink>(1);
+                    crawledLinks.add(crawledLink);
+                    crawl(generation, crawledLinks);
+                }
+                return ret;
+            };
+
+            @Override
+            protected LinkedHashSet<String> exportResults() {
+                final LinkedHashSet<String> ret = new LinkedHashSet<String>();
+                for (HtmlParserCharSequence result : this.getResults()) {
+                    if (!fastResults.contains(result)) {
+                        ret.add(result.toString());
+                    }
+                }
+                return ret;
+            }
+        };
+        final String[] possibleLinks = HTMLParser.getHttpLinks(text, url, resultSet);
         if (possibleLinks != null && possibleLinks.length > 0) {
             final List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
-            for (String possibleLink : possibleLinks) {
-                CrawledLink link = crawledLinkFactorybyURL(possibleLink);
+            for (final String possibleLink : possibleLinks) {
+                final CrawledLink link = crawledLinkFactorybyURL(possibleLink);
                 link.setCrawlDeep(allowDeep);
                 possibleCryptedLinks.add(link);
             }
