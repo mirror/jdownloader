@@ -337,6 +337,12 @@ public class DownloadLinkCandidateSelector {
         roundResults.put(link, null);
     }
 
+    public boolean isStopMarkReached = false;
+
+    public boolean isStopMarkReached() {
+        return isStopMarkReached;
+    }
+
     public void addExcluded(DownloadLinkCandidate candidate, DownloadLinkCandidateResult result) {
         if (result == null) {
             throw new IllegalArgumentException("result == null");
@@ -347,6 +353,16 @@ public class DownloadLinkCandidateSelector {
             roundResults.put(candidate.getLink(), map);
         }
         map.put(candidate, result);
+        if (candidate.getLink() == getSession().getStopMark()) {
+            switch (result.getResult()) {
+            case PLUGIN_DEFECT:
+            case ACCOUNT_REQUIRED:
+            case FATAL_ERROR:
+            case SKIPPED:
+                isStopMarkReached = true;
+                break;
+            }
+        }
     }
 
     public LinkedHashMap<DownloadLinkCandidate, DownloadLinkCandidateResult> finalizeDownloadLinkCandidatesResults() {
