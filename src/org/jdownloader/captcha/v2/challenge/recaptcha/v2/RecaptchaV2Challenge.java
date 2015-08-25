@@ -61,16 +61,11 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
         private void load() {
 
-            URLConnectionAdapter conn = null;
-            FileOutputStream fos = null;
             try {
-
                 iframe.getPage("http://www.google.com/recaptcha/api2/demo");
-
                 String dataSiteKey = owner.getSiteKey();
                 iframe.getHeaders().put(new HTTPHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:37.0) Gecko/20100101 Firefox/37.0"));
                 iframe.getHeaders().put(new HTTPHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"));
-
                 HTTPHeader cookie;
                 iframe.getPage("http://www.google.com/recaptcha/api/fallback?k=" + dataSiteKey);
 
@@ -81,13 +76,25 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
                     String challenge = iframe.getRegex("name=\"c\"\\s+value=\\s*\"([^\"]+)").getMatch(0);
                     System.out.println(challenge);
                     System.out.println("Challenge length: " + challenge.length());
-                    conn = iframe.cloneBrowser().openGetConnection("http://www.google.com" + payload);
 
-                    File file;
+                    final File file = Application.getResource("rc_" + System.currentTimeMillis() + ".jpg");
+                    FileOutputStream fos = null;
+                    URLConnectionAdapter con = null;
+                    try {
+                        con = iframe.cloneBrowser().openGetConnection("http://www.google.com" + payload);
+                        fos = new FileOutputStream(file);
+                        IO.readStreamToOutputStream(-1, con.getInputStream(), fos, true);
+                    } finally {
+                        try {
+                            fos.close();
+                        } catch (final Throwable ignore) {
+                        }
+                        try {
+                            con.disconnect();
+                        } catch (final Throwable ignore) {
+                        }
+                    }
 
-                    IO.readStreamToOutputStream(-1, conn.getInputStream(), fos = new FileOutputStream(file = Application.getResource("rc_" + System.currentTimeMillis() + ".jpg")), true);
-                    conn.disconnect();
-                    fos.close();
                     BufferedImage img = ImageIO.read(file);
                     // iframe.getHeaders().remove("Cookie");
                     String response = Dialog.getInstance().showInputDialog(0, "Recaptcha", first ? "Please Enter..." : "Wrong Captcha Input. Try again...", null, new ImageIcon(IconIO.getScaledInstance(img, img.getWidth() * 2, img.getHeight() * 2)), null, null);
@@ -111,17 +118,6 @@ public class RecaptchaV2Challenge extends AbstractBrowserChallenge {
 
             } catch (Throwable e) {
                 throw new WTFException(e);
-            } finally {
-                try {
-                    conn.disconnect();
-                } catch (Throwable e) {
-
-                }
-                try {
-                    fos.close();
-                } catch (Throwable e) {
-
-                }
             }
         }
 

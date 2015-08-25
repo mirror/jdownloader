@@ -687,7 +687,6 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
         super(false, true);
         GUIEventSender.getInstance().addListener(this, true);
         metaCtrl = KeyObserver.getInstance().isMetaDown(true) || KeyObserver.getInstance().isControlDown(true);
-
     }
 
     public void actionPerformed(ActionEvent e) {
