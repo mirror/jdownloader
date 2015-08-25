@@ -17,10 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -32,19 +28,19 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.downloader.hls.HLSDownloader;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "servustv.com" }, urls = { "https?://(?:www\\.)?servustv\\.com/(?:de|at)/Medien/[^/]+" }, flags = { 0 })
-public class ServustvCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "srf.ch", "rts.ch", "rsi.ch", "rtr.ch", "swissinfo.ch" }, urls = { "^https?://(?:www\\.)?srf\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rts\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rsi\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?rtr\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$", "^https?://(?:www\\.)?play\\.swissinfo\\.ch/play/.+\\?id=[A-Za-z0-9\\-]+$" }, flags = { 0, 0, 0, 0, 0 })
+public class SrfCh extends PluginForHost {
 
-    public ServustvCom(PluginWrapper wrapper) {
+    @SuppressWarnings("deprecation")
+    public SrfCh(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.servustv.com/Nutzungsbedingungen";
+        return "http://www.srf.ch/allgemeines/impressum";
     }
 
     @SuppressWarnings("deprecation")
@@ -56,32 +52,34 @@ public class ServustvCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String date = br.getRegex("itemprop=\"uploaddate \" content=\"(\\d+)\"").getMatch(0);
-        if (date == null) {
-            date = this.br.getRegex("class=\"ato programm\\-datum\\-uhrzeit \" >[\t\n\r ]+<span>([^<>\"]*?\\d{1,2}\\.)</span>").getMatch(0);
+        String filename = br.getRegex("<meta name=\"title\" content=\"([^<>]*?) \\- Play [^\"]+\"").getMatch(0);
+        if (filename == null) {
+            /* Get filename via url */
+            filename = new Regex(link.getDownloadURL(), "/([^/]+)\\?id=.+").getMatch(0);
+            filename = filename.replace("-", " ");
         }
-        String title = br.getRegex("itemprop=\"name\">([^<>\"]*?)<").getMatch(0);
-        if (title == null) {
-            title = new Regex(link.getDownloadURL(), "edien/(.+)$").getMatch(0);
-        }
-        if (title == null || date == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        title = Encoding.htmlDecode(title.trim());
-        final String date_formatted = formatDate(date);
-        link.setFinalFileName(date_formatted + "_servustv_" + title + ".mp4");
+        filename = Encoding.htmlDecode(filename.trim()) + ".mp4";
+        filename = encodeUnicode(filename);
+        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String videoid = br.getRegex("name=\"@videoPlayer\" value=\"(\\d+)\"").getMatch(0);
-        if (videoid == null) {
-            /* Seems like what the user wants to download hasn't aired yet --> Wait and retry later! */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Sendung wurde noch nicht ausgestrahlt", 60 * 60 * 1000l);
+        final String domainpart = new Regex(downloadLink.getDownloadURL(), "https?://(?:www\\.)?([A-Za-z0-9\\.]+)\\.ch/").getMatch(0);
+        final String videoid = new Regex(downloadLink.getDownloadURL(), "\\?id=([A-Za-z0-9\\-]+)").getMatch(0);
+        final String channelname = convertDomainPartToShortChannelName(domainpart);
+        this.br.getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/play/" + videoid + ".xml");
+        final String hls_master = this.br.getRegex("<url quality=\"(?:HD|SD)\">(http[^<>\"]*?\\.m3u8)</url>").getMatch(0);
+        if (hls_master == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("http://c.brightcove.com/services/mobile/streaming/index/master.m3u8?videoId=" + videoid);
+        this.br.getPage(hls_master);
         final String[] medias = this.br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
         if (medias == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -89,8 +87,6 @@ public class ServustvCom extends PluginForHost {
         String url_hls = null;
         long bandwidth_highest = 0;
         for (final String media : medias) {
-            // name = quality
-            // final String quality = new Regex(media, "NAME=\"(.*?)\"").getMatch(0);
             final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
             final long bandwidth_temp = Long.parseLong(bw);
             if (bandwidth_temp > bandwidth_highest) {
@@ -101,32 +97,39 @@ public class ServustvCom extends PluginForHost {
         if (url_hls == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        try {
+        } catch (final Throwable e) {
+            this.br.getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/" + videoid + "/clicked.xml");
+        }
         checkFFmpeg(downloadLink, "Download a HLS Stream");
         dl = new HLSDownloader(downloadLink, br, url_hls);
         dl.startDownload();
     }
 
-    @SuppressWarnings({ "static-access" })
-    private String formatDate(String input) {
-        final long date;
-        if (input.matches("\\d+")) {
-            date = Long.parseLong(input) * 1000;
+    private String convertDomainPartToShortChannelName(final String input) {
+        final String output;
+        if (input.equals("play.swissinfo")) {
+            output = "swi";
         } else {
-            final Calendar cal = Calendar.getInstance();
-            input += cal.get(cal.YEAR);
-            date = TimeFormatter.getMilliSeconds(input, "E '|' dd.MM.yyyy", Locale.GERMAN);
+            output = input;
         }
-        String formattedDate = null;
-        final String targetFormat = "yyyy-MM-dd";
-        Date theDate = new Date(date);
-        try {
-            final SimpleDateFormat formatter = new SimpleDateFormat(targetFormat);
-            formattedDate = formatter.format(theDate);
-        } catch (Exception e) {
-            /* prevent input error killing plugin */
-            formattedDate = input;
-        }
-        return formattedDate;
+        return output;
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     @Override

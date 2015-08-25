@@ -21,8 +21,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.DateFormat;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Scanner;
 
 import jd.PluginWrapper;
@@ -39,6 +42,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "br-online.de" }, urls = { "http://brdecrypted\\-online\\.de/\\?format=(mp4|xml)\\&quality=\\d+x\\d+\\&hash=[a-z0-9]+" }, flags = { 0 })
 public class BrOnlineDe extends PluginForHost {
@@ -158,7 +163,7 @@ public class BrOnlineDe extends PluginForHost {
             in.close();
         }
         final String xmlContent = xml.toString();
-        final boolean success = convertSubtitleBrOnlineDe(downloadlink, xmlContent, 10);
+        final boolean success = convertSubtitleBrOnlineDe(downloadlink, xmlContent, 0);
 
         return success;
     }
@@ -168,7 +173,7 @@ public class BrOnlineDe extends PluginForHost {
      *
      * @return The success of the conversion.
      */
-    public static boolean convertSubtitleBrOnlineDe(final DownloadLink downloadlink, final String xmlContent, int offset_reduce_hours) {
+    public static boolean convertSubtitleBrOnlineDe(final DownloadLink downloadlink, final String xmlContent, long offset_reduce_milliseconds) {
         final File source = new File(downloadlink.getFileOutput());
 
         BufferedWriter dest;
@@ -195,39 +200,36 @@ public class BrOnlineDe extends PluginForHost {
             boolean offsetSet = false;
             for (final String info : matches) {
                 dest.write(counter++ + lineseparator);
+                final String startString = new Regex(info, "begin=\"(\\d{2}:\\d{2}:\\d{2}\\.\\d{3})\"").getMatch(0);
+                final String endString = new Regex(info, "end=\"(\\d{2}:\\d{2}:\\d{2}\\.\\d{3})\"").getMatch(0);
                 final Regex startInfo = new Regex(info, "begin=\"(\\d{2})(:\\d{2}:\\d{2})\\.(\\d{3})\"");
                 final Regex endInfo = new Regex(info, "end=\"(\\d{2})(:\\d{2}:\\d{2})\\.(\\d{3})\"");
                 final String start_hours_source_string = startInfo.getMatch(0);
                 final String end_hours_source_string = endInfo.getMatch(0);
                 final int start_hours_source = Integer.parseInt(start_hours_source_string);
-                final int end_hours_source = Integer.parseInt(end_hours_source_string);
-                String start;
-                String end;
+                // final int end_hours_source = Integer.parseInt(end_hours_source_string);
+                long start_milliseconds = TimeFormatter.getMilliSeconds(startString, "HH:mm:ss.SSS", Locale.GERMANY);
+                long end_milliseconds = TimeFormatter.getMilliSeconds(endString, "HH:mm:ss.SSS", Locale.GERMANY);
                 if (start_hours_source > 0 && counter == 2 && !offsetSet) {
                     /* Auto correct offset */
-                    offset_reduce_hours = start_hours_source * (-1);
-                    start = df.format(start_hours_source - offset_reduce_hours);
-                    end = df.format(end_hours_source - offset_reduce_hours);
+                    offset_reduce_milliseconds = start_milliseconds;
                     offsetSet = true;
-                } else if (start_hours_source == 0 && counter == 2 && !offsetSet && offset_reduce_hours != 0) {
-                    /* Given offset is wrong --> Correct that */
-                    start = df.format(start_hours_source);
-                    end = df.format(end_hours_source);
-                    offset_reduce_hours = 0;
-                    offsetSet = true;
-                } else if (offset_reduce_hours != 0) {
-                    /* Correct offset via given offset_reduce_hours */
-                    start = df.format(start_hours_source - offset_reduce_hours);
-                    end = df.format(end_hours_source - offset_reduce_hours);
-                    offsetSet = true;
-                } else {
-                    /* Offset correction not needed */
-                    start = df.format(start_hours_source);
-                    end = df.format(end_hours_source);
                 }
-                start += startInfo.getMatch(1) + "," + startInfo.getMatch(2);
-                end += endInfo.getMatch(1) + "," + endInfo.getMatch(2);
-                dest.write(start + " --> " + end + lineseparator);
+                if (start_hours_source == 0 && counter == 2 && !offsetSet && offset_reduce_milliseconds != 0) {
+                    /* Given offset is wrong --> Correct that */
+                    offset_reduce_milliseconds = 0;
+                    offsetSet = true;
+                } else if (offset_reduce_milliseconds != 0) {
+                    /* Correct offset via given offset_reduce_hours */
+                    start_milliseconds -= offset_reduce_milliseconds;
+                    end_milliseconds -= offset_reduce_milliseconds;
+                    offsetSet = true;
+                }
+                final DateFormat output_date_format = new SimpleDateFormat("hh:mm:ss,SSS");
+                final String start_formatted = output_date_format.format(start_milliseconds);
+                final String end_formatted = output_date_format.format(end_milliseconds);
+
+                dest.write(start_formatted + " --> " + end_formatted + lineseparator);
 
                 final String[][] texts = new Regex(info, "<tt:span style=\"([A-Za-z0-9]+)\">([^<>\"]*?)</tt:span>").getMatches();
                 String text = "";

@@ -54,10 +54,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowtv.de" }, urls = { "https?://(www\\.)?nowtv\\.(?:de|ch)/(?:rtl|vox|rtl2|rtlnitro|superrtl|ntv)/[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 3 })
-public class RTLnowDe extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "nowtv.de" }, urls = { "https?://(?:www\\.)?nowtv\\.(?:de|ch)/(?:rtl|vox|rtl2|rtlnitro|superrtl|ntv)/[a-z0-9\\-]+/.+" }, flags = { 3 })
+public class NowtvDe extends PluginForHost {
 
-    public RTLnowDe(final PluginWrapper wrapper) {
+    public NowtvDe(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
     }
@@ -103,7 +103,16 @@ public class RTLnowDe extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("nowtv.ch/", "nowtv.de/"));
+        /* First lets get our source url and remove the unneeded '/player' part which is usually at the end of our url. */
+        final String url_source = link.getDownloadURL().replace("/player", "");
+        final Regex sourceregex = new Regex(url_source, "nowtv\\.(?:de|ch)/([^/]+)/([a-z0-9\\-]+)");
+        final String name_tvstation = sourceregex.getMatch(0);
+        final String name_series = sourceregex.getMatch(1);
+        /* Find the name of the series which is usually at the end of our URL. */
+        final String name_episode = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
+        final String newlink = "http://www.nowtv.de/" + name_tvstation + "/" + name_series + "/" + name_episode;
+        link.setUrlDownload(newlink);
+        link.setContentUrl(newlink);
     }
 
     /* Thx https://github.com/bromix/plugin.video.rtl-now.de/blob/master/resources/lib/rtlinteractive/client.py */
@@ -219,6 +228,7 @@ public class RTLnowDe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setConstants(null, downloadLink);
         setBrowserExclusive();
+        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0");
         String filename = "";
         final String addedlink = downloadLink.getDownloadURL();
         final String urlpart = getURLPart(downloadLink);
