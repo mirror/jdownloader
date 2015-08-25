@@ -62,7 +62,7 @@ public class VKontakteRu extends PluginForDecrypt {
     public VKontakteRu(PluginWrapper wrapper) {
         super(wrapper);
         try {
-            Browser.setRequestIntervalLimitGlobal("vk.com", 20, 70, 2000);
+            Browser.setRequestIntervalLimitGlobal("vk.com", 50, 70, 2000);
         } catch (final Throwable e) {
         }
     }
