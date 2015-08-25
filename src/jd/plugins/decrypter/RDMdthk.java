@@ -30,6 +30,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -52,8 +53,10 @@ public class RDMdthk extends PluginForDecrypt {
     private static final String                 Q_BEST                = "Q_BEST";
     private static final String                 Q_HTTP_ONLY           = "Q_HTTP_ONLY";
     private static final String                 Q_SUBTITLES           = "Q_SUBTITLES";
+    private static final String                 FASTLINKCHECK         = "FASTLINKCHECK";
     private boolean                             BEST                  = false;
-    private boolean                             HTTP_ONLY             = false;
+    private boolean                             HTTP_ONLY             = true;
+    private boolean                             FASTLINKCHECK_boolean = false;
     private static final String                 EXCEPTION_LINKOFFLINE = "EXCEPTION_LINKOFFLINE";
 
     /* Constants */
@@ -92,6 +95,7 @@ public class RDMdthk extends PluginForDecrypt {
         cfg = SubConfiguration.getConfig("ard.de");
         BEST = cfg.getBooleanProperty(Q_BEST, false);
         HTTP_ONLY = cfg.getBooleanProperty(Q_HTTP_ONLY, false);
+        FASTLINKCHECK_boolean = cfg.getBooleanProperty(FASTLINKCHECK, false);
         grab_subtitle = cfg.getBooleanProperty(Q_SUBTITLES, false);
         boolean offline = false;
         String fsk = null;
@@ -202,7 +206,7 @@ public class RDMdthk extends PluginForDecrypt {
         if (subtitleLink != null && !subtitleLink.startsWith("http://")) {
             subtitleLink = "http://www.ardmediathek.de" + subtitleLink;
         }
-        int t = 0;
+        int streaming_type = 0;
 
         final String extension = ".mp4";
         final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
@@ -224,29 +228,44 @@ public class RDMdthk extends PluginForDecrypt {
              * "fix" that. Happens e.g. for documentId: 30102036
              */
             int quality = ((Number) streammap.get("_quality")).intValue();
-            if (streammap.get("_stream") instanceof ArrayList) {
-                final ArrayList<Object> streamArray = (ArrayList) streammap.get("_stream");
-                directlink = (String) streamArray.get(0);
-                /* Add the sub-type stream as current quality (in case user wants that) */
-                if (!userWantsQuality(quality)) {
-                    continue;
+            final Object stream_o = streammap.get("_stream");
+            long filesize_max = -1;
+
+            if (!userWantsQuality(quality)) {
+                continue;
+            }
+
+            if (stream_o instanceof ArrayList) {
+                /*
+                 * Array with even more qualities? Find the best - usually every array consists of max 2 entries so this should not take
+                 * that much time. In total we will then always have (max) 4 qualities.
+                 */
+                final ArrayList<Object> streamArray = (ArrayList) stream_o;
+                int counter = 0;
+                long filesize_current = 0;
+                URLConnectionAdapter con;
+                for (final Object stream_single_o : streamArray) {
+                    final String directlink_temp = (String) stream_single_o;
+                    if (counter == 0) {
+                        /* Make sure that, whatever happens, we get an http url! */
+                        directlink = directlink_temp;
+                    }
+                    try {
+                        con = br.openHeadConnection(directlink_temp);
+                        filesize_current = con.getLongContentLength();
+                        if (filesize_current > filesize_max) {
+                            filesize_max = filesize_current;
+                            directlink = directlink_temp;
+                        }
+                    } catch (final Throwable e) {
+                    }
+                    counter++;
                 }
-                addQuality(network, title, extension, false, (String) streamArray.get(1), quality, t, parameter);
-                // /* Move current quality one up to correct this */
-                quality++;
             } else {
                 directlink = (String) streammap.get("_stream");
             }
             // rtmp --> hds or rtmp
             final boolean isRTMP = (server != null && !server.equals("") && server.startsWith("rtmp://")) && !directlink.startsWith("http");
-            /* Skip HDS */
-            if (directlink.endsWith("manifest.f4m")) {
-                continue;
-            }
-            /* Skip unneeded playlists */
-            if ("default".equals(network) && directlink.endsWith("m3u")) {
-                continue;
-            }
             /* Server needed for rtmp links */
             if (!directlink.startsWith("http://") && isEmpty(server)) {
                 continue;
@@ -255,19 +274,23 @@ public class RDMdthk extends PluginForDecrypt {
             if (isRTMP) {
                 directlink = server + "@" + directlink.split("\\?")[0];
             }
-            /* Skip rtmp streams if user wants http only */
-            if (isRTMP && HTTP_ONLY) {
+            // /* Skip rtmp streams if user wants http only */
+            // if (isRTMP && HTTP_ONLY) {
+            // continue;
+            // }
+            if (!isHTTPUrl(directlink)) {
                 continue;
             }
 
-            if (!userWantsQuality(Integer.valueOf(quality))) {
-                continue;
-            }
-
-            addQuality(network, title, extension, isRTMP, directlink, quality, t, parameter);
+            addQuality(network, title, extension, isRTMP, directlink, quality, streaming_type, filesize_max);
         }
         findBEST();
         return;
+    }
+
+    private boolean isHTTPUrl(final String directlink) {
+        final boolean isHTTPUrl = directlink.startsWith("http") && !directlink.endsWith("m3u") && !directlink.endsWith("manifest.f4m");
+        return isHTTPUrl;
     }
 
     private boolean userWantsQuality(final int quality) {
@@ -378,7 +401,7 @@ public class RDMdthk extends PluginForDecrypt {
                 continue;
             }
 
-            addQuality(network, title, extension, isRTMP, directlink, quality, t, parameter);
+            addQuality(network, title, extension, isRTMP, directlink, quality, t, -1);
         }
         findBEST();
         return;
@@ -454,20 +477,20 @@ public class RDMdthk extends PluginForDecrypt {
     }
 
     @SuppressWarnings("deprecation")
-    private void addQuality(final String network, final String title, final String extension, final boolean isRTMP, final String url, final int quality_int, final int t, final String orig_link) {
+    private void addQuality(final String network, final String title, final String extension, final boolean isRTMP, final String url, final int quality_int, final int streaming_type, final long filesize) {
         final String fmt = getFMT(quality_int);
         final String quality_part = fmt.toUpperCase(Locale.ENGLISH) + "-" + network;
         final String plain_name = title + "@" + quality_part;
         final String full_name = plain_name + extension;
 
-        String linkid = plain_name + "_" + t;
+        String linkid = plain_name + "_" + streaming_type;
         final DownloadLink link = createDownloadlink("http://ardmediathekdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
         /* RTMP links have no filesize anyways --> No need to check them in host plugin */
         if (isRTMP) {
             link.setAvailable(true);
         }
         link.setFinalFileName(full_name);
-        link.setContentUrl(orig_link);
+        link.setContentUrl(this.parameter);
         link.setLinkID(linkid);
         if (this.date != null) {
             link.setProperty("date", this.date);
@@ -479,23 +502,30 @@ public class RDMdthk extends PluginForDecrypt {
         link.setProperty("plain_name", plain_name);
         link.setProperty("plain_network", network);
         link.setProperty("directQuality", Integer.toString(quality_int));
-        link.setProperty("streamingType", t);
-        link.setProperty("mainlink", orig_link);
+        link.setProperty("streamingType", streaming_type);
+        link.setProperty("mainlink", this.parameter);
+        if (FASTLINKCHECK_boolean) {
+            link.setAvailable(true);
+        }
+        if (filesize > -1) {
+            link.setDownloadSize(filesize);
+            link.setAvailable(true);
+        }
 
         /* Add subtitle link for every quality so players will automatically find it */
         if (grab_subtitle && subtitleLink != null && !isEmpty(subtitleLink)) {
-            linkid = plain_name + "_subtitle_" + t;
+            linkid = plain_name + "_subtitle_" + streaming_type;
             final String subtitle_filename = plain_name + ".xml";
             final DownloadLink dl_subtitle = createDownloadlink("http://ardmediathekdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
             /* JD2 only */
-            dl_subtitle.setContentUrl(orig_link);
+            dl_subtitle.setContentUrl(this.parameter);
             dl_subtitle.setLinkID(linkid);
             dl_subtitle.setAvailable(true);
             dl_subtitle.setFinalFileName(subtitle_filename);
             dl_subtitle.setProperty("directURL", subtitleLink);
             dl_subtitle.setProperty("directName", subtitle_filename);
             dl_subtitle.setProperty("streamingType", "subtitle");
-            dl_subtitle.setProperty("mainlink", orig_link);
+            dl_subtitle.setProperty("mainlink", this.parameter);
             newRet.add(dl_subtitle);
         }
 
