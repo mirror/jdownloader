@@ -228,6 +228,7 @@ public class HitFileNet extends PluginForHost {
         requestFileInformation(downloadLink);
         setBrowserExclusive();
         br = new Browser();
+        dupe.clear();
         prepareBrowser(UA);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -247,6 +248,12 @@ public class HitFileNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage("/download/free/" + fileID);
+        if (br.getHttpConnection().getCompleteContentLength() < 200) {
+            final String redirect = br.getRegex("window\\.location\\.href\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
+            if (redirect != null) {
+                br.getPage(redirect);
+            }
+        }
         simulateBrowser();
         if (br.containsHTML(HTML_FILE_OFFLINE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -748,11 +755,11 @@ public class HitFileNet extends PluginForHost {
         final AtomicInteger requestS = new AtomicInteger(0);
         final ArrayList<String> links = new ArrayList<String>();
 
-        String[] l1 = new Regex(br, "\\s+(?:src|href)=(\"|')(.*?)\\1").getColumn(1);
+        String[] l1 = new Regex(br, "\\s+(?:src)=(\"|')(.*?)\\1").getColumn(1);
         if (l1 != null) {
             links.addAll(Arrays.asList(l1));
         }
-        l1 = new Regex(br, "\\s+(?:src|href)=(?!\"|')([^\\s]+)").getColumn(0);
+        l1 = new Regex(br, "\\s+(?:src)=(?!\"|')([^\\s]+)").getColumn(0);
         if (l1 != null) {
             links.addAll(Arrays.asList(l1));
         }
