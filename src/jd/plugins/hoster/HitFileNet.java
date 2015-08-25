@@ -53,7 +53,7 @@ import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(download/free/)?[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
 
     /* Settings */
@@ -258,19 +258,15 @@ public class HitFileNet extends PluginForHost {
         if (br.containsHTML(HTML_FILE_OFFLINE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().equals(downloadLink.getDownloadURL().replace("www.", ""))) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
+        if (StringUtils.equalsIgnoreCase(br.getRedirectLocation(), downloadLink.getDownloadURL().replace("www.", "")) || br.containsHTML("<div class=\"free-limit-note\">\\s*Limit reached for free download of this file\\.")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
                 }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
             }
-            logger.warning("Unexpected redirect!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
         }
 
         if (!(br.containsHTML(HTML_RECAPTCHATEXT) || br.containsHTML(HTML_CAPTCHATEXT))) {
