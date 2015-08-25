@@ -64,7 +64,7 @@ public class HitFileNet extends PluginForHost {
     private static final String  HTML_RECAPTCHATEXT  = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
     private static final String  HTML_CAPTCHATEXT    = "hitfile\\.net/captcha/";
     /* Website will say something like "Searching file..." which means that it is offline. */
-    public static final String   HTML_FILE_OFFLINE   = "class=\"code\\-404\"";
+    public static final String   HTML_FILE_OFFLINE   = "class=\"code\\-404\"|<h1>Searching for the file\\.\\.\\.Please wait… </h1>";
     private static final String  MAINPAGE            = "http://hitfile.net";
     public static Object         LOCK                = new Object();
     private static final String  BLOCKED             = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
