@@ -487,35 +487,40 @@ public class LinkCrawler {
     }
 
     public java.util.List<CrawledLink> find(String text, String url, final boolean allowDeep) {
-        final int generation = this.getCrawlerGeneration(true);
-        final HtmlParserResultSet resultSet = new HtmlParserResultSet() {
-            private final HashSet<CharSequence> fastResults = new HashSet<CharSequence>();
+        final HtmlParserResultSet resultSet;
+        if (Thread.currentThread() instanceof LinkCrawlerThread) {
+            final int generation = this.getCrawlerGeneration(true);
+            resultSet = new HtmlParserResultSet() {
+                private final HashSet<CharSequence> fastResults = new HashSet<CharSequence>();
 
-            @Override
-            public boolean add(HtmlParserCharSequence e) {
-                final boolean ret = super.add(e);
-                if (ret && !e.contains("...")) {
-                    fastResults.add(e);
-                    final CrawledLink crawledLink = crawledLinkFactorybyURL(e.toString());
-                    crawledLink.setCrawlDeep(allowDeep);
-                    final ArrayList<CrawledLink> crawledLinks = new ArrayList<CrawledLink>(1);
-                    crawledLinks.add(crawledLink);
-                    crawl(generation, crawledLinks);
-                }
-                return ret;
-            };
-
-            @Override
-            protected LinkedHashSet<String> exportResults() {
-                final LinkedHashSet<String> ret = new LinkedHashSet<String>();
-                for (HtmlParserCharSequence result : this.getResults()) {
-                    if (!fastResults.contains(result)) {
-                        ret.add(result.toString());
+                @Override
+                public boolean add(HtmlParserCharSequence e) {
+                    final boolean ret = super.add(e);
+                    if (ret && !e.contains("...")) {
+                        fastResults.add(e);
+                        final CrawledLink crawledLink = crawledLinkFactorybyURL(e.toString());
+                        crawledLink.setCrawlDeep(allowDeep);
+                        final ArrayList<CrawledLink> crawledLinks = new ArrayList<CrawledLink>(1);
+                        crawledLinks.add(crawledLink);
+                        crawl(generation, crawledLinks);
                     }
+                    return ret;
+                };
+
+                @Override
+                protected LinkedHashSet<String> exportResults() {
+                    final LinkedHashSet<String> ret = new LinkedHashSet<String>();
+                    for (HtmlParserCharSequence result : this.getResults()) {
+                        if (!fastResults.contains(result)) {
+                            ret.add(result.toString());
+                        }
+                    }
+                    return ret;
                 }
-                return ret;
-            }
-        };
+            };
+        } else {
+            resultSet = new HtmlParserResultSet();
+        }
         final String[] possibleLinks = HTMLParser.getHttpLinks(text, url, resultSet);
         if (possibleLinks != null && possibleLinks.length > 0) {
             final List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
