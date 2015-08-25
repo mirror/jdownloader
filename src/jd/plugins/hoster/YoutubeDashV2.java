@@ -179,7 +179,8 @@ public class YoutubeDashV2 extends PluginForHost {
 
         @Override
         public long getCurrent() {
-            return chunkOffset + ((DownloadInterface) progress.getProgressSource()).getTotalLinkBytesLoadedLive();
+            final long ret = chunkOffset + ((DownloadInterface) progress.getProgressSource()).getTotalLinkBytesLoadedLive();
+            return ret;
         }
 
         @Override
@@ -907,8 +908,8 @@ public class YoutubeDashV2 extends PluginForHost {
             // _JDT._.CountryIPBlockException_createCandidateResult(), 1 * 24 * 60 * 60 * 100l);
             // }
             if (StringUtils.equalsIgnoreCase(vid.error, "This video is unavailable.") || StringUtils.equalsIgnoreCase(vid.error,/*
-                                                                                                                                 * 15.12.2014
-                                                                                                                                 */"This video is not available.")) {
+             * 15.12.2014
+             */"This video is not available.")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.CountryIPBlockException_createCandidateResult());
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, vid.error);
@@ -1024,14 +1025,17 @@ public class YoutubeDashV2 extends PluginForHost {
             request = new GetRequest(urls.video);
             dashName = getDashVideoFileName(downloadLink);
             dashChunksProperty = DASH_VIDEO_CHUNKS;
-
             chunkOffset = 0;
         } else {
             request = new GetRequest(urls.audio);
             dashName = getDashAudioFileName(downloadLink);
             dashChunksProperty = DASH_AUDIO_CHUNKS;
-
-            chunkOffset = data.getDashVideoSize();
+            final YoutubeVariantInterface variant = getVariant(downloadLink);
+            if (variant.getType() == YoutubeVariantInterface.DownloadType.DASH_AUDIO) {
+                chunkOffset = 0;
+            } else {
+                chunkOffset = data.getDashVideoSize();
+            }
         }
         {
             // scope just to highlight the jd2 code
@@ -1159,14 +1163,10 @@ public class YoutubeDashV2 extends PluginForHost {
             @Override
             public void setLinkStatus(int finished) {
                 if (isVideoStream) {
-
                     data.setDashVideoFinished(LinkStatus.FINISHED == finished);
-
                 } else {
                     data.setDashAudioFinished(LinkStatus.FINISHED == finished);
-
                 }
-
             }
 
             @Override
@@ -1174,7 +1174,6 @@ public class YoutubeDashV2 extends PluginForHost {
                 if (isVideoStream) {
                     if (length >= 0) {
                         data.setDashVideoSize(length);
-
                     } else {
                         data.setDashVideoSize(-1);
                     }
@@ -1326,7 +1325,6 @@ public class YoutubeDashV2 extends PluginForHost {
                 @Override
                 public long getBytesLoaded() {
                     if (data.isDashVideoFinished()) {
-
                         return super.getBytesLoaded() + data.getDashVideoSize();
                     } else {
                         return super.getBytesLoaded();
@@ -1364,14 +1362,13 @@ public class YoutubeDashV2 extends PluginForHost {
                     }
                 }, null);
 
-                String videoStreamPath = getVideoStreamPath(downloadLink);
+                final String videoStreamPath = getVideoStreamPath(downloadLink);
                 if (videoStreamPath != null && new File(videoStreamPath).exists()) {
                     data.setDashVideoFinished(true);
 
                 }
                 YoutubeVariantInterface variant = getVariant(downloadLink);
                 boolean loadVideo = !data.isDashVideoFinished();
-
                 if (videoStreamPath == null || variant.getType() == YoutubeVariantInterface.DownloadType.DASH_AUDIO) {
                     /* Skip video if just audio should be downloaded */
                     loadVideo = false;
@@ -1390,11 +1387,12 @@ public class YoutubeDashV2 extends PluginForHost {
                     }
                 }
                 /* videoStream is finished */
-                if (getAudioStreamPath(downloadLink) != null && new File(getAudioStreamPath(downloadLink)).exists()) {
+                final String audioStreamPath = getAudioStreamPath(downloadLink);
+                if (audioStreamPath != null && new File(audioStreamPath).exists()) {
                     data.setDashAudioFinished(true);
                 }
                 boolean loadAudio = !data.isDashAudioFinished();
-                loadAudio |= !(new File(getAudioStreamPath(downloadLink)).exists() && new File(getAudioStreamPath(downloadLink)).length() > 0);
+                loadAudio |= !(new File(audioStreamPath).exists() && new File(audioStreamPath).length() > 0);
                 if (loadAudio) {
                     /* audioStream not finished yet, resume/download it */
                     Boolean ret = downloadDashStream(downloadLink, data, false);
@@ -1405,7 +1403,7 @@ public class YoutubeDashV2 extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                if (new File(getAudioStreamPath(downloadLink)).exists() && !new File(downloadLink.getFileOutput()).exists()) {
+                if (new File(audioStreamPath).exists() && !new File(downloadLink.getFileOutput()).exists()) {
                     /* audioStream also finished */
                     /* Do we need an exception here? If a Video is downloaded it is always finished before the audio part. TheCrap */
 
@@ -1416,19 +1414,19 @@ public class YoutubeDashV2 extends PluginForHost {
                             downloadLink.addPluginProgress(progress);
                             String codec = variant.getiTagVideo().getCodecVideo();
                             if (codec.equalsIgnoreCase("vp9") || codec.equalsIgnoreCase("vp8") || variant.toString().startsWith("WEBM")) {
-                                if (ffmpeg.muxToWebm(progress, downloadLink.getFileOutput(), videoStreamPath, getAudioStreamPath(downloadLink))) {
+                                if (ffmpeg.muxToWebm(progress, downloadLink.getFileOutput(), videoStreamPath, audioStreamPath)) {
                                     downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                                     new File(videoStreamPath).delete();
-                                    new File(getAudioStreamPath(downloadLink)).delete();
+                                    new File(audioStreamPath).delete();
                                 } else {
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
 
                                 }
                             } else {
-                                if (ffmpeg.muxToMp4(progress, downloadLink.getFileOutput(), videoStreamPath, getAudioStreamPath(downloadLink))) {
+                                if (ffmpeg.muxToMp4(progress, downloadLink.getFileOutput(), videoStreamPath, audioStreamPath)) {
                                     downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                                     new File(videoStreamPath).delete();
-                                    new File(getAudioStreamPath(downloadLink)).delete();
+                                    new File(audioStreamPath).delete();
                                 } else {
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
 
@@ -1449,9 +1447,9 @@ public class YoutubeDashV2 extends PluginForHost {
                                 try {
                                     downloadLink.addPluginProgress(progress);
 
-                                    if (ffmpeg.generateAac(progress, downloadLink.getFileOutput(), getAudioStreamPath(downloadLink))) {
+                                    if (ffmpeg.generateAac(progress, downloadLink.getFileOutput(), audioStreamPath)) {
                                         downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                        new File(getAudioStreamPath(downloadLink)).delete();
+                                        new File(audioStreamPath).delete();
                                     } else {
                                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
 
@@ -1466,9 +1464,9 @@ public class YoutubeDashV2 extends PluginForHost {
                                 try {
                                     downloadLink.addPluginProgress(progress);
 
-                                    if (ffmpeg.generateM4a(progress, downloadLink.getFileOutput(), getAudioStreamPath(downloadLink))) {
+                                    if (ffmpeg.generateM4a(progress, downloadLink.getFileOutput(), audioStreamPath)) {
                                         downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                        new File(getAudioStreamPath(downloadLink)).delete();
+                                        new File(audioStreamPath).delete();
                                     } else {
                                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
 
@@ -1484,9 +1482,9 @@ public class YoutubeDashV2 extends PluginForHost {
                                 try {
                                     downloadLink.addPluginProgress(progress);
 
-                                    if (ffmpeg.generateOggAudio(progress, downloadLink.getFileOutput(), getAudioStreamPath(downloadLink))) {
+                                    if (ffmpeg.generateOggAudio(progress, downloadLink.getFileOutput(), audioStreamPath)) {
                                         downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
-                                        new File(getAudioStreamPath(downloadLink)).delete();
+                                        new File(audioStreamPath).delete();
                                     } else {
                                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, _GUI._.YoutubeDash_handleFree_error_());
 

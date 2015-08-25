@@ -11,6 +11,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
+import jd.gui.swing.jdgui.interfaces.View;
 import jd.plugins.DownloadLink;
 import jd.plugins.download.DownloadInterface;
 
@@ -20,11 +21,14 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.gui.KeyObserver;
+import org.jdownloader.gui.event.GUIEventSender;
+import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class EnabledAction extends CustomizableTableContextAppAction {
+public class EnabledAction extends CustomizableTableContextAppAction implements GUIListener {
     /**
      *
      */
@@ -50,6 +54,10 @@ public class EnabledAction extends CustomizableTableContextAppAction {
     @Override
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
+        updateStateAndLabelAndIcon();
+    }
+
+    private void updateStateAndLabelAndIcon() {
         final SelectionInfo<?, ?> selectionInfo = getSelection();
         if (selectionInfo != null) {
             switch (state = getState(selectionInfo)) {
@@ -76,10 +84,24 @@ public class EnabledAction extends CustomizableTableContextAppAction {
         }
     }
 
+    private boolean metaCtrl = false;
+
     public EnabledAction() {
         super();
         setSmallIcon(getCheckBoxedIcon("select", true, true));
         setName(_GUI._.EnabledAction_EnabledAction_disable());
+        GUIEventSender.getInstance().addListener(this, true);
+        metaCtrl = KeyObserver.getInstance().isMetaDown(true) || KeyObserver.getInstance().isControlDown(true);
+    }
+
+    @Override
+    public void onKeyModifier(int parameter) {
+        if (KeyObserver.getInstance().isControlDown(false) || KeyObserver.getInstance().isMetaDown(false)) {
+            metaCtrl = true;
+        } else {
+            metaCtrl = false;
+        }
+        updateStateAndLabelAndIcon();
     }
 
     private State getState(final SelectionInfo<?, ?> selection) {
@@ -87,14 +109,19 @@ public class EnabledAction extends CustomizableTableContextAppAction {
             return State.ALL_DISABLED;
         }
         Boolean first = null;
-        for (Object a : selection.getChildren()) {
+        final List<?> children = selection.getChildren();
+        for (Object a : children) {
             AbstractNode node = (AbstractNode) a;
             if (first == null) {
                 first = node.isEnabled();
             } else if (node.isEnabled() != first) {
                 if (selection.getRawContext() != null) {
                     node = selection.getRawContext();
-                    return node.isEnabled() ? State.MIXED_ENABLE : State.MIXED_DISABLE;
+                    if (metaCtrl) {
+                        return node.isEnabled() ? State.MIXED_DISABLE : State.MIXED_ENABLE;
+                    } else {
+                        return node.isEnabled() ? State.MIXED_ENABLE : State.MIXED_DISABLE;
+                    }
                 } else {
                     break;
                 }
@@ -116,7 +143,6 @@ public class EnabledAction extends CustomizableTableContextAppAction {
                 final boolean enable = lState.enable;
                 if (!enable) {
                     int count = 0;
-
                     long i = 0;
                     if (DownloadWatchDog.getInstance().isRunning()) {
                         for (Object a : lSelection.getChildren()) {
@@ -182,6 +208,10 @@ public class EnabledAction extends CustomizableTableContextAppAction {
                 }
             });
         }
+    }
+
+    @Override
+    public void onGuiMainTabSwitch(View oldView, View newView) {
     }
 
 }

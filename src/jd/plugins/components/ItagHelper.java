@@ -452,17 +452,28 @@ public class ItagHelper {
     }
 
     public void loadStreamInfo() throws IOException {
-        FFprobe ffprobe = new FFprobe();
-
+        final FFprobe ffprobe = new FFprobe();
         file = Application.getResource("tmp/ytdev/stream_" + itag + "_" + vid.videoID + ".dat");
         if (!file.exists()) {
-            URLConnectionAdapter con = br.openGetConnection(url);
-            file.getParentFile().mkdirs();
-            IO.readStreamToOutputStream(-1, con.getInputStream(), new FileOutputStream(file), true);
-
-            con.disconnect();
+            final URLConnectionAdapter con = br.openGetConnection(url);
+            FileOutputStream fos = null;
+            try {
+                file.getParentFile().mkdirs();
+                fos = new FileOutputStream(file);
+                IO.readStreamToOutputStream(-1, con.getInputStream(), fos, true);
+            } finally {
+                try {
+                    fos.close();
+                } catch (final Throwable ignore) {
+                }
+                try {
+                    if (con != null) {
+                        con.disconnect();
+                    }
+                } catch (final Throwable ignore) {
+                }
+            }
         }
-
         streamInfo = ffprobe.getStreamInfo(file);
     }
 }
