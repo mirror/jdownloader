@@ -580,12 +580,15 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             }
             watchDog.detach(this, returnState);
         } finally {
-            if (ps != null && hook != null) {
-                ps.removeSelectProxyByUrlHook(hook);
+            try {
+                if (ps != null && hook != null) {
+                    ps.removeSelectProxyByUrlHook(hook);
+                }
+                task.reopen();
+                task.close();
+            } finally {
+                finalizeProcessingPlugin();
             }
-            task.reopen();
-            task.close();
-            finalizeProcessingPlugin();
         }
     }
 
