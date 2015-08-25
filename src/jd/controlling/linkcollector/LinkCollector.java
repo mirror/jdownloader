@@ -1103,9 +1103,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -1222,7 +1222,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             clearCrawledLinkReferences(link);
         } else {
             if (org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR.DO_LINK_CHECK.isEnabled()) {
-                QUEUE.add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
+                QUEUE.add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.LOW) {
 
                     @Override
                     protected Void run() throws RuntimeException {
@@ -1243,7 +1243,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     }
                 });
             } else {
-                QUEUE.add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
+                QUEUE.add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.LOW) {
 
                     @Override
                     protected Void run() throws RuntimeException {
@@ -1287,7 +1287,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             if (!addGenericVariant(link.getDownloadLink())) {
                 return;
             }
-            QUEUE.add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
+            QUEUE.add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.LOW) {
 
                 @Override
                 protected Void run() throws RuntimeException {
