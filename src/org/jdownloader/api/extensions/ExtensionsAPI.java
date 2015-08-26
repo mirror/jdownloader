@@ -1,5 +1,7 @@
 package org.jdownloader.api.extensions;
 
+import java.util.List;
+
 import org.appwork.remoteapi.RemoteAPIInterface;
 import org.appwork.remoteapi.annotations.ApiNamespace;
 
@@ -13,4 +15,6 @@ public interface ExtensionsAPI extends RemoteAPIInterface {
     public void setEnabled(String classname, boolean b);
 
     public void install(String id);
+
+    List<ExtensionAPIStorable> list(ExtensionQueryStorable query);
 }
