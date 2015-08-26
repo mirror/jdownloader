@@ -83,6 +83,7 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.io.J7FileList;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -2342,7 +2343,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         }
                         if (!autoExtensionLearning) {
                             try {
-                                Dialog.getInstance().showConfirmDialog(0, _GUI._.AddLinksAction_actionPerformed_deep_title(), _GUI._.AddLinksAction_actionPerformed_deep_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
+                                final ConfirmDialog dialog = new ConfirmDialog(0, _GUI._.AddLinksAction_actionPerformed_deep_title(), _GUI._.AddLinksAction_actionPerformed_deep_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
+                                dialog.show().throwCloseExceptions();
                             } catch (DialogNoAnswerException e) {
                                 e.printStackTrace();
                                 if (!e.isCausedByDontShowAgain()) {
