@@ -162,6 +162,7 @@ PasteLinksAction_getTranslationForDeepDecryptEnabled=Duboka Dekripcija
 PauseDownloadsAction_getHideIfDownloadsAreStoppedTranslation=Sakrij ako su download-i pokrenuti
 PluginForHost_handle_ffmpeg_conversion_failed=FFmpeg™ nije uspio
 Plugin_requestLogins_message=Potrebna je autentifikacija!
+PriorityAction_getTranslationForForceMode=Prisili promjenu prioriteta
 ProxyController_updateProxy_proxy_auth_required_msg=Za konekciju na %s1 je potrebna proxy autentifikacija
 ProxyController_updateProxy_proxy_auth_required_title=Potrebna je proxy autentifikacija!
 RemoveAction_actionPerformed_rly_msg=Stvarno izbrisati sva selektovana pravila?
