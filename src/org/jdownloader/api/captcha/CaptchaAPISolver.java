@@ -101,7 +101,6 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         super(new CaptchaAPIManualRemoteSolverService(), 0);
         eventSender = new CaptchaAPISolverEventSender();
         config = JsonConfig.create(CaptchaMyJDownloaderRemoteSolverSettings.class);
-
         eventPublisher = new CaptchaAPIEventPublisher();
         ChallengeResponseController.getInstance().getEventSender().addListener(this);
     }
@@ -115,18 +114,17 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     }
 
     public List<CaptchaJob> list() {
-
-        java.util.List<CaptchaJob> ret = new ArrayList<CaptchaJob>();
+        final List<CaptchaJob> ret = new ArrayList<CaptchaJob>();
         if (!isEnabled()) {
             return ret;
         }
-        for (SolverJob<?> entry : listJobs()) {
+        for (final SolverJob<?> entry : listJobs()) {
             if (entry.isDone()) {
                 continue;
             }
             if (entry.getChallenge() instanceof ImageCaptchaChallenge) {
-                CaptchaJob job = new CaptchaJob();
-                Challenge<?> challenge = entry.getChallenge();
+                final CaptchaJob job = new CaptchaJob();
+                final Challenge<?> challenge = entry.getChallenge();
                 Class<?> cls = challenge.getClass();
                 while (cls != null && StringUtils.isEmpty(job.getType())) {
                     job.setType(cls.getSimpleName());
@@ -139,19 +137,18 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
                 job.setCreated(entry.getChallenge().getCreated());
                 ret.add(job);
             }
-
         }
         return ret;
     }
 
     public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id) throws InternalApiException, InvalidCaptchaIDException {
-        SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
+        final SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
         if (job == null || job.isDone()) {
             throw new InvalidCaptchaIDException();
         }
         try {
-            Challenge<?> challenge = job.getChallenge();
-            OutputStream out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), true);
+            final Challenge<?> challenge = job.getChallenge();
+            final OutputStream out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), true);
             try {
                 final HashMap<String, Object> captchaResponseData = new HashMap<String, Object>();
                 captchaResponseData.put("data", challenge.getAPIStorable());
@@ -174,57 +171,44 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     }
 
     public boolean isJobDone(final SolverJob<?> job) {
-
-        if (!isMyJDownloaderActive()) {
-            return true;
-            // if (job.areDone(DialogBasicCaptchaSolver.getInstance(), DialogClickCaptchaSolver.getInstance())) return true;
+        if (isMyJDownloaderActive()) {
+            synchronized (map) {
+                return !map.containsKey(job);
+            }
         }
-
-        synchronized (map) {
-            return !map.containsKey(job);
-        }
-
+        return false;
     }
 
     @Override
     public void enqueue(SolverJob<Object> job) {
-
         if (!isMyJDownloaderActive()) {
             job.setSolverDone(this);
-            return;
+        } else {
+            super.enqueue(job);
         }
-
-        super.enqueue(job);
-
     }
 
     private boolean isMyJDownloaderActive() {
-        return MyJDownloaderController.getInstance().isConnected();
+        return MyJDownloaderController.getInstance().isActive();
     }
 
     @SuppressWarnings("unchecked")
     public boolean solve(long id, String result) throws InvalidCaptchaIDException, InvalidChallengeTypeException {
         // the current webinterface sends an empty result when the user clicks on refresh
-        if (StringUtils.isEmpty(result)) {
-            //
+        if (StringUtils.isEmpty(result)) { //
             return skip(id, SkipRequest.REFRESH);
-
         }
-        SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
+        final SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
         if (job == null || job.isDone()) {
             throw new InvalidCaptchaIDException();
         }
-
-        Challenge<?> challenge = job.getChallenge();
-        AbstractResponse<?> ret = challenge.parseAPIAnswer(result, this);
+        final Challenge<?> challenge = job.getChallenge();
+        final AbstractResponse<?> ret = challenge.parseAPIAnswer(result, this);
         if (ret != null) {
             ((SolverJob<Object>) job).addAnswer((AbstractResponse<Object>) ret);
-
         } else {
             throw new InvalidChallengeTypeException(challenge.getClass().getName());
-
         }
-
         return true;
     }
 
@@ -235,14 +219,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
 
     @SuppressWarnings("static-access")
     public boolean skip(long id, SkipRequest type) throws InvalidCaptchaIDException {
-        // SolverJob<?> job = ChallengeResponseController.getInstance().getJobById(id);
-        // if (job == null || !(job.getChallenge() instanceof ImageCaptchaChallenge) || job.isDone()) { throw new
-        // RemoteAPIException(CaptchaAPI.Error.NOT_AVAILABLE); }
-        //
-        // // ImageCaptchaChallenge<?> challenge = (ImageCaptchaChallenge<?>) job.getChallenge();
-        // job.kill();
-
-        SolverJob<Object> job = (SolverJob<Object>) ChallengeResponseController.getInstance().getJobById(id);
+        final SolverJob<Object> job = (SolverJob<Object>) ChallengeResponseController.getInstance().getJobById(id);
         if (job == null) {
             throw new InvalidCaptchaIDException();
         }
@@ -251,64 +228,36 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
     }
 
     public void kill(SolverJob<Object> job) {
-
         super.kill(job);
-
         MyJDownloaderController.getInstance().pushCaptchaFlag(true);
     }
 
     @Override
     public CaptchaJob getCaptchaJob(long id) {
-        SolverJob<?> entry = ChallengeResponseController.getInstance().getJobById(id);
+        final SolverJob<?> entry = ChallengeResponseController.getInstance().getJobById(id);
         if (entry == null) {
             return null;
         }
-
-        CaptchaJob ret = new CaptchaJob();
-        Challenge<?> challenge = entry.getChallenge();
+        final CaptchaJob ret = new CaptchaJob();
+        final Challenge<?> challenge = entry.getChallenge();
         Class<?> cls = challenge.getClass();
         while (cls != null && StringUtils.isEmpty(ret.getType())) {
             ret.setType(cls.getSimpleName());
             cls = cls.getSuperclass();
         }
-
         ret.setID(entry.getChallenge().getId().getID());
         ret.setHoster(entry.getChallenge().getHost());
         ret.setCaptchaCategory(entry.getChallenge().getTypeID());
         ret.setExplain(entry.getChallenge().getExplain());
-        DownloadLink link = entry.getChallenge().getDownloadLink();
+        final DownloadLink link = entry.getChallenge().getDownloadLink();
         if (link != null) {
             ret.setLink(link.getUniqueID().getID());
         }
         return ret;
     }
 
-    // public void captchaTodo(CaptchaHandler controller) {
-    // sendEvent(controller, "new");
-    // }
-    //
-    // public void captchaFinish(CaptchaHandler controller) {
-    // sendEvent(controller, "expired");
-    // }
-    //
-    // private void sendEvent(CaptchaHandler controller, String type) {
-    // BasicCaptchaDialogHandler entry = controller.getDialog();
-    // if (entry != null) {
-    // CaptchaJob job = new CaptchaJob();
-    // job.setType(entry.getCaptchaController().getCaptchaType());
-    // job.setID(entry.getID().getID());
-    // job.setHoster(entry.getHost().getTld());
-    // HashMap<String, Object> data = new HashMap<String, Object>();
-    // data.put("message", type);
-    // data.put("data", job);
-    // RemoteAPIController.getInstance().getEventsapi().publishEvent(new EventsAPIEvent("captcha", data), null);
-    // }
-    //
-    // }
-
     @Override
     public void onNewJobAnswer(SolverJob<?> job, AbstractResponse<?> response) {
-
     }
 
     @Override
@@ -329,20 +278,16 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
                 MyJDownloaderController.getInstance().pushCaptchaFlag(false);
             }
         }
-
     }
 
     protected void dispose(SolverJob<?> job) {
-        JobRunnable<Object> suc = null;
+        final JobRunnable<Object> suc;
         synchronized (map) {
             suc = map.remove(job);
-
         }
-
         if (suc != null) {
             suc.fireDoneAndAfterSolveEvents();
         }
-
     }
 
     @Override
@@ -360,9 +305,7 @@ public class CaptchaAPISolver extends ChallengeSolver<Object> implements Captcha
         } else {
             if (job.areDone(DialogBasicCaptchaSolver.getInstance(), DialogClickCaptchaSolver.getInstance(), BrowserSolver.getInstance())) {
                 // dialogs and jac is done. let's kill this one,
-
                 dispose(job);
-
             }
         }
     }
