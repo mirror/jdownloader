@@ -307,14 +307,14 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
     @Override
     public void addLinks(final AddLinksQueryStorable query) {
+        add(query);
+    }
 
-        LinkCollector lc = LinkCollector.getInstance();
+    public static void add(final AddLinksQueryStorable query) {
         Priority p = Priority.DEFAULT;
-
         try {
             p = Priority.valueOf(query.getPriority().name());
-        } catch (Throwable e) {
-            logger.log(e);
+        } catch (Throwable ignore) {
         }
         final Priority fp = p;
         LinkCollectingJob lcj = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD, null/* add useragent? */), query.getLinks());
@@ -368,8 +368,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
         if (StringUtils.isNotEmpty(query.getDestinationFolder()) || StringUtils.isNotEmpty(query.getPackageName())) {
             lcj.setCrawledLinkModifierPostPackagizer(modifier);
         }
-        lc.addCrawlerJob(lcj);
-
+        LinkCollector.getInstance().getAddLinksThread(lcj, null).start();
     }
 
     @Override
@@ -552,18 +551,24 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
 
     @Override
     public void addContainer(String type, String content) {
-        String fileName = null;
+        loadContainer(type, content);
+    }
+
+    public static void loadContainer(String type, String content) {
+        final String fileName;
         if ("DLC".equalsIgnoreCase(type)) {
             fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".dlc";
         } else if ("RSDF".equalsIgnoreCase(type)) {
             fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".rsdf";
         } else if ("CCF".equalsIgnoreCase(type)) {
             fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".ccf";
+        } else {
+            return;
         }
         if (fileName != null) {
             try {
-                File tmp = Application.getTempResource(fileName);
-                byte[] write = IO.readStream(-1, getInputStream(content));
+                final File tmp = Application.getTempResource(fileName);
+                final byte[] write = IO.readStream(-1, getInputStream(content));
                 IO.writeToFile(tmp, write);
                 LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD), tmp.toURI().toString()));
             } catch (IOException e) {

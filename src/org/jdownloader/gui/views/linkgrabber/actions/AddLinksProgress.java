@@ -7,10 +7,6 @@ import java.awt.Point;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.JComponent;
@@ -19,29 +15,18 @@ import javax.swing.Timer;
 
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
-import jd.controlling.linkcrawler.LinkCrawlerRule;
-import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.IconedProcessIndicator;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.Plugin;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.locator.RememberRelativeDialogLocator;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
@@ -132,104 +117,18 @@ public class AddLinksProgress extends AbstractDialog<Object> {
     }
 
     public Thread getAddLinksDialogThread(final LinkCollectingJob job, final AtomicReference<LinkCrawler> lcReference) {
-        return new Thread("AddLinksDialog:" + job.getOrigin().getOrigin()) {
-
-            private final HashSet<String> autoExtensionLearnBlackList = new HashSet<String>();
-            {
-                autoExtensionLearnBlackList.add("shtml");
-                autoExtensionLearnBlackList.add("phtml");
-                autoExtensionLearnBlackList.add("html");
-                autoExtensionLearnBlackList.add("htm");
-                autoExtensionLearnBlackList.add("php");
-                autoExtensionLearnBlackList.add("js");
-                autoExtensionLearnBlackList.add("css");
-            }
+        return new Thread("AddLinksDialogThread:" + job.getOrigin().getOrigin()) {
 
             public void run() {
-                final Thread currentThread = Thread.currentThread();
-                LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(job);
-                if (lcReference != null) {
-                    lcReference.set(lc);
-                }
                 try {
-                    if (lc != null) {
-                        lc.waitForCrawling();
-                        if (!job.isDeepAnalyse() && lc.getProcessedLinksCounter() == 0 && lc.getUnhandledLinksFoundCounter() > 0) {
-                            final List<CrawledLink> unhandledLinks = new ArrayList<CrawledLink>(lc.getUnhandledLinks());
-                            final LinkOrigin origin = job.getOrigin().getOrigin();
-                            for (CrawledLink unhandledLink : unhandledLinks) {
-                                unhandledLink.setCrawlDeep(true);
-                            }
-                            final String[] origins = LinkCrawler.getConfig().getAutoLearnExtensionOrigins();
-                            final boolean autoExtensionLearning;
-                            if (origins != null && unhandledLinks.size() == 1) {
-                                autoExtensionLearning = Arrays.asList(origins).contains(origin.name());
-                            } else {
-                                autoExtensionLearning = false;
-                            }
-                            if (!autoExtensionLearning) {
-                                try {
-                                    Dialog.getInstance().showConfirmDialog(0, _GUI._.AddLinksAction_actionPerformed_deep_title(), _GUI._.AddLinksAction_actionPerformed_deep_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
-                                } catch (DialogNoAnswerException e) {
-                                    e.printStackTrace();
-                                    if (!e.isCausedByDontShowAgain()) {
-                                        return;
-                                    }
-                                }
-                            }
-                            lc = LinkCollector.getInstance().addCrawlerJob(unhandledLinks, job);
-                            if (lcReference != null) {
-                                lcReference.set(lc);
-                            }
-                            if (lc != null) {
-                                if (autoExtensionLearning) {
-                                    final LinkCrawlerDeepInspector defaultDeepInspector = lc.defaultDeepInspector();
-                                    lc.setDeepInspector(new LinkCrawlerDeepInspector() {
-
-                                        @Override
-                                        public List<CrawledLink> deepInspect(LinkCrawler lc, Browser br, URLConnectionAdapter urlConnection, CrawledLink link) throws Exception {
-                                            if (urlConnection.getRequest().getLocation() == null && urlConnection.getResponseCode() == 200) {
-                                                if (!StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text")) {
-                                                    final String url = urlConnection.getRequest().getUrl();
-                                                    final String fileName = Plugin.extractFileNameFromURL(url);
-                                                    final String fileExtension = Files.getExtension(fileName);
-                                                    if (StringUtils.isNotEmpty(fileExtension) && !autoExtensionLearnBlackList.contains(fileExtension)) {
-                                                        boolean add = true;
-                                                        for (LinkCrawlerRule rule : LinkCrawler.listLinkCrawlerRules()) {
-                                                            if (RULE.DIRECTHTTP.equals(rule.getRule()) && rule.matches(url)) {
-                                                                add = false;
-                                                                break;
-                                                            }
-                                                        }
-                                                        if (add) {
-                                                            final LinkCrawlerRule rule = new LinkCrawlerRule();
-                                                            rule.setName("Learned file extension:" + fileExtension);
-                                                            rule.setPattern("(?i).*\\." + fileExtension + "($|\\?.*$)");
-                                                            rule.setRule(RULE.DIRECTHTTP);
-                                                            LinkCrawler.addLinkCrawlerRule(rule);
-                                                        }
-                                                        try {
-                                                            urlConnection.disconnect();
-                                                        } catch (Throwable e) {
-                                                        }
-                                                        return lc.find("directhttp://" + url, null, false);
-                                                    }
-                                                }
-                                            }
-                                            return defaultDeepInspector.deepInspect(lc, br, urlConnection, link);
-                                        }
-                                    });
-                                }
-                                lc.waitForCrawling();
-                            }
-                        }
-                    }
+                    final Thread thread = LinkCollector.getInstance().getAddLinksThread(job, lcReference);
+                    thread.run();
                 } finally {
                     if (isInitialized()) {
                         new EDTRunner() {
                             @Override
                             protected void runInEDT() {
-                                dispose(currentThread);
+                                dispose();
                             }
                         };
                     }
@@ -267,13 +166,6 @@ public class AddLinksProgress extends AbstractDialog<Object> {
             }
         }
         super.setReturnmask(b);
-    }
-
-    public void dispose(Thread thread) {
-        if (thread != null) {
-            thread.interrupt();
-        }
-        dispose();
     }
 
     @Override

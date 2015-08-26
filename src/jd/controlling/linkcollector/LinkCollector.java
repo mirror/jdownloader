@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,6 +22,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 
@@ -39,17 +41,23 @@ import jd.controlling.linkcrawler.CrawledLinkProperty;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackage.TYPE;
 import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.controlling.linkcrawler.LinkCrawlerFilter;
 import jd.controlling.linkcrawler.LinkCrawlerHandler;
+import jd.controlling.linkcrawler.LinkCrawlerRule;
+import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
 import jd.controlling.linkcrawler.PackageInfo;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.controlling.packagecontroller.PackageController;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
@@ -66,6 +74,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.Queue;
@@ -77,6 +86,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.controlling.FileCreationManager;
@@ -2294,6 +2304,101 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
             });
         }
+    }
+
+    public Thread getAddLinksThread(final LinkCollectingJob job, final AtomicReference<LinkCrawler> lcReference) {
+        return new Thread("AddLinksThread:" + job.getOrigin().getOrigin()) {
+
+            private final HashSet<String> autoExtensionLearnBlackList = new HashSet<String>();
+            {
+                autoExtensionLearnBlackList.add("shtml");
+                autoExtensionLearnBlackList.add("phtml");
+                autoExtensionLearnBlackList.add("html");
+                autoExtensionLearnBlackList.add("htm");
+                autoExtensionLearnBlackList.add("php");
+                autoExtensionLearnBlackList.add("js");
+                autoExtensionLearnBlackList.add("css");
+            }
+
+            public void run() {
+                LinkCrawler lc = LinkCollector.getInstance().addCrawlerJob(job);
+                if (lcReference != null) {
+                    lcReference.set(lc);
+                }
+                if (lc != null) {
+                    lc.waitForCrawling();
+                    if (!job.isDeepAnalyse() && lc.getProcessedLinksCounter() == 0 && lc.getUnhandledLinksFoundCounter() > 0) {
+                        final List<CrawledLink> unhandledLinks = new ArrayList<CrawledLink>(lc.getUnhandledLinks());
+                        final LinkOrigin origin = job.getOrigin().getOrigin();
+                        for (CrawledLink unhandledLink : unhandledLinks) {
+                            unhandledLink.setCrawlDeep(true);
+                        }
+                        final String[] origins = LinkCrawler.getConfig().getAutoLearnExtensionOrigins();
+                        final boolean autoExtensionLearning;
+                        if (origins != null && unhandledLinks.size() == 1) {
+                            autoExtensionLearning = Arrays.asList(origins).contains(origin.name());
+                        } else {
+                            autoExtensionLearning = false;
+                        }
+                        if (!autoExtensionLearning) {
+                            try {
+                                Dialog.getInstance().showConfirmDialog(0, _GUI._.AddLinksAction_actionPerformed_deep_title(), _GUI._.AddLinksAction_actionPerformed_deep_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
+                            } catch (DialogNoAnswerException e) {
+                                e.printStackTrace();
+                                if (!e.isCausedByDontShowAgain()) {
+                                    return;
+                                }
+                            }
+                        }
+                        lc = LinkCollector.getInstance().addCrawlerJob(unhandledLinks, job);
+                        if (lcReference != null) {
+                            lcReference.set(lc);
+                        }
+                        if (lc != null) {
+                            if (autoExtensionLearning) {
+                                final LinkCrawlerDeepInspector defaultDeepInspector = lc.defaultDeepInspector();
+                                lc.setDeepInspector(new LinkCrawlerDeepInspector() {
+
+                                    @Override
+                                    public List<CrawledLink> deepInspect(LinkCrawler lc, Browser br, URLConnectionAdapter urlConnection, CrawledLink link) throws Exception {
+                                        if (urlConnection.getRequest().getLocation() == null && urlConnection.getResponseCode() == 200) {
+                                            if (!StringUtils.containsIgnoreCase(urlConnection.getContentType(), "text")) {
+                                                final String url = urlConnection.getRequest().getUrl();
+                                                final String fileName = Plugin.extractFileNameFromURL(url);
+                                                final String fileExtension = Files.getExtension(fileName);
+                                                if (StringUtils.isNotEmpty(fileExtension) && !autoExtensionLearnBlackList.contains(fileExtension)) {
+                                                    boolean add = true;
+                                                    for (LinkCrawlerRule rule : LinkCrawler.listLinkCrawlerRules()) {
+                                                        if (RULE.DIRECTHTTP.equals(rule.getRule()) && rule.matches(url)) {
+                                                            add = false;
+                                                            break;
+                                                        }
+                                                    }
+                                                    if (add) {
+                                                        final LinkCrawlerRule rule = new LinkCrawlerRule();
+                                                        rule.setName("Learned file extension:" + fileExtension);
+                                                        rule.setPattern("(?i).*\\." + fileExtension + "($|\\?.*$)");
+                                                        rule.setRule(RULE.DIRECTHTTP);
+                                                        LinkCrawler.addLinkCrawlerRule(rule);
+                                                    }
+                                                    try {
+                                                        urlConnection.disconnect();
+                                                    } catch (Throwable e) {
+                                                    }
+                                                    return lc.find("directhttp://" + url, null, false);
+                                                }
+                                            }
+                                        }
+                                        return defaultDeepInspector.deepInspect(lc, br, urlConnection, link);
+                                    }
+                                });
+                            }
+                            lc.waitForCrawling();
+                        }
+                    }
+                }
+            }
+        };
     }
 
     public static void requestDeleteLinks(final List<CrawledLink> nodesToDelete, final boolean containsOnline, final String string, final boolean byPassDialog, final boolean isCancelLinkcrawlerJobs, final boolean isResetTableSorter, final boolean isClearSearchFilter, final boolean isClearFilteredLinks) {
