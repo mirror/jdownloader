@@ -570,7 +570,8 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 final File tmp = Application.getTempResource(fileName);
                 final byte[] write = IO.readStream(-1, getInputStream(content));
                 IO.writeToFile(tmp, write);
-                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD), tmp.toURI().toString()));
+                LinkCollectingJob job = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD), tmp.toURI().toString());
+                LinkCollector.getInstance().getAddLinksThread(job, null).start();
             } catch (IOException e) {
                 e.printStackTrace();
             }
