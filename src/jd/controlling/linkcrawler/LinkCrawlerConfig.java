@@ -51,7 +51,7 @@ public interface LinkCrawlerConfig extends ConfigInterface {
     @AboutConfig
     boolean isLinkCrawlerRulesEnabled();
 
-    @DefaultStringArrayValue({ "ADD_LINKS_DIALOG", "PASTE_LINKS_ACTION" })
+    @DefaultStringArrayValue({ "ADD_LINKS_DIALOG", "PASTE_LINKS_ACTION", "MYJD" })
     @AboutConfig
     String[] getAutoLearnExtensionOrigins();
 

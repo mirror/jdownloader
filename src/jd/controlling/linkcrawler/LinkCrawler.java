@@ -457,7 +457,7 @@ public class LinkCrawler {
             if (checkStartNotify(generation)) {
                 try {
                     if (insideCrawlerPlugin()) {
-                        final List<CrawledLink> links = find(text, url, allowDeep);
+                        final List<CrawledLink> links = find(text, url, allowDeep, true);
                         crawl(generation, links);
                     } else {
                         if (checkStartNotify(generation)) {
@@ -473,7 +473,7 @@ public class LinkCrawler {
 
                                 @Override
                                 void crawling() {
-                                    java.util.List<CrawledLink> links = find(text, url, allowDeep);
+                                    java.util.List<CrawledLink> links = find(text, url, allowDeep, true);
                                     crawl(getGeneration(), links);
                                 }
                             });
@@ -487,8 +487,12 @@ public class LinkCrawler {
     }
 
     public java.util.List<CrawledLink> find(String text, String url, final boolean allowDeep) {
+        return find(text, url, allowDeep, false);
+    }
+
+    protected java.util.List<CrawledLink> find(String text, String url, final boolean allowDeep, final boolean allowInstantCrawl) {
         final HtmlParserResultSet resultSet;
-        if (Thread.currentThread() instanceof LinkCrawlerThread) {
+        if (allowInstantCrawl && Thread.currentThread() instanceof LinkCrawlerThread) {
             final int generation = this.getCrawlerGeneration(true);
             resultSet = new HtmlParserResultSet() {
                 private final HashSet<CharSequence> fastResults = new HashSet<CharSequence>();
@@ -1307,7 +1311,7 @@ public class LinkCrawler {
     }
 
     protected Boolean distributeEmbeddedLink(final int generation, final String url, final CrawledLink source) {
-        final ArrayList<CrawledLink> embeddedLinks = new ArrayList<CrawledLink>();
+        final LinkedHashSet<String> possibleEmbeddedLinks = new LinkedHashSet<String>();
         try {
             final String queryString = new Regex(source.getURL(), "\\?(.+)$").getMatch(0);
             if (StringUtils.isNotEmpty(queryString)) {
@@ -1328,44 +1332,53 @@ public class LinkCrawler {
                                 possibleURLs = URLDecoder.decode(possibleURLs, "UTF-8");
                             }
                             if (HTMLParser.getProtocol(possibleURLs) != null) {
-                                final List<CrawledLink> links = find(possibleURLs, null, false);
-                                embeddedLinks.addAll(links);
+                                possibleEmbeddedLinks.add(possibleURLs);
                             }
                         }
                     } catch (final Throwable e) {
                         LogController.CL().log(e);
                     }
                 }
-            } else if (StringUtils.contains(source.getURL(), "aHR0c") || StringUtils.contains(source.getURL(), "ZnRwOi")) {
-                String base64 = new Regex(source.getURL(), "(aHR0c[0-9a-zA-Z\\+\\/=]+)").getMatch(0);// http
+            }
+            if (StringUtils.contains(source.getURL(), "aHR0c") || StringUtils.contains(source.getURL(), "ZnRwOi")) {
+                String base64 = new Regex(source.getURL(), "(aHR0c[0-9a-zA-Z\\+\\/=]+(%3D){0,2})").getMatch(0);// http
                 if (base64 == null) {
-                    base64 = new Regex(source.getURL(), "(ZnRwOi[0-9a-zA-Z\\+\\/=]+)").getMatch(0);// ftp
+                    base64 = new Regex(source.getURL(), "(ZnRwOi[0-9a-zA-Z\\+\\/=]+(%3D){0,2})").getMatch(0);// ftp
                 }
                 if (base64 != null) {
+                    if (base64.contains("%3D")) {
+                        base64 = URLDecoder.decode(base64, "UTF-8");
+                    }
                     String possibleURLs = new String(Base64.decode(base64), "UTF-8");
                     if (HTMLParser.getProtocol(possibleURLs) == null) {
                         possibleURLs = URLDecoder.decode(possibleURLs, "UTF-8");
                     }
                     if (HTMLParser.getProtocol(possibleURLs) != null) {
-                        final List<CrawledLink> links = find(possibleURLs, null, false);
-                        embeddedLinks.addAll(links);
+                        possibleEmbeddedLinks.add(possibleURLs);
                     }
                 }
             }
         } catch (final Throwable e) {
             LogController.CL().log(e);
         }
-        if (embeddedLinks.size() > 0) {
-            final boolean singleDest = embeddedLinks.size() == 1;
-            final String[] sourceURLs = getAndClearSourceURLs(source);
-            final CrawledLinkModifier sourceLinkModifier = source.getCustomCrawledLinkModifier();
-            source.setCustomCrawledLinkModifier(null);
-            source.setBrokenCrawlerHandler(null);
-            for (final CrawledLink embeddedLink : embeddedLinks) {
-                forwardCrawledLinkInfos(source, embeddedLink, sourceLinkModifier, sourceURLs, singleDest);
+        if (possibleEmbeddedLinks.size() > 0) {
+            final ArrayList<CrawledLink> embeddedLinks = new ArrayList<CrawledLink>();
+            for (final String possibleURL : possibleEmbeddedLinks) {
+                final List<CrawledLink> links = find(possibleURL, null, false);
+                embeddedLinks.addAll(links);
             }
-            crawl(generation, embeddedLinks);
-            return true;
+            if (embeddedLinks.size() > 0) {
+                final boolean singleDest = embeddedLinks.size() == 1;
+                final String[] sourceURLs = getAndClearSourceURLs(source);
+                final CrawledLinkModifier sourceLinkModifier = source.getCustomCrawledLinkModifier();
+                source.setCustomCrawledLinkModifier(null);
+                source.setBrokenCrawlerHandler(null);
+                for (final CrawledLink embeddedLink : embeddedLinks) {
+                    forwardCrawledLinkInfos(source, embeddedLink, sourceLinkModifier, sourceURLs, singleDest);
+                }
+                crawl(generation, embeddedLinks);
+                return true;
+            }
         }
         return null;
     }

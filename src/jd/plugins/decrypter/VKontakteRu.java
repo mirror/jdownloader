@@ -62,7 +62,7 @@ public class VKontakteRu extends PluginForDecrypt {
     public VKontakteRu(PluginWrapper wrapper) {
         super(wrapper);
         try {
-            Browser.setRequestIntervalLimitGlobal("vk.com", 50, 70, 2000);
+            Browser.setRequestIntervalLimitGlobal("vk.com", 50, 40, 2000);
         } catch (final Throwable e) {
         }
     }
@@ -1749,7 +1749,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
             }
             if (br.containsHTML("You tried to load the same page more than once in one second")) {
-                Thread.sleep(1000);
+                Thread.sleep(2000);
                 continue;
             } else {
                 break;

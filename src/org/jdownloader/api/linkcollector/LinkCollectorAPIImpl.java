@@ -1,31 +1,21 @@
 package org.jdownloader.api.linkcollector;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
 import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.CrawledPackageView;
-import jd.controlling.linkcrawler.PackageInfo;
 import jd.controlling.packagecontroller.AbstractNodeVisitor;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.plugins.DownloadLink;
 
 import org.appwork.remoteapi.APIQuery;
-import org.appwork.utils.Application;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
+import org.jdownloader.api.linkcollector.v2.AddLinksQueryStorable;
 import org.jdownloader.api.linkcollector.v2.LinkCollectorAPIImplV2;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -263,58 +253,14 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     }
 
     private Boolean addLinks(String links, final String finalPackageName, String extractPassword, final String downloadPassword, final String destinationFolder, final boolean autostart) {
-        LinkCollector lc = LinkCollector.getInstance();
-        LinkCollectingJob lcj = new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD, null), links);
-        HashSet<String> extPws = null;
-        if (StringUtils.isNotEmpty(extractPassword)) {
-            extPws = new HashSet<String>();
-            extPws.add(extractPassword);
-        }
-        final HashSet<String> finalExtPws = extPws;
-        final CrawledLinkModifier modifier = new CrawledLinkModifier() {
-
-            @Override
-            public void modifyCrawledLink(CrawledLink link) {
-                if (finalExtPws != null && finalExtPws.size() > 0) {
-                    link.getArchiveInfo().getExtractionPasswords().addAll(finalExtPws);
-                }
-                if (StringUtils.isNotEmpty(finalPackageName)) {
-                    PackageInfo packageInfo = link.getDesiredPackageInfo();
-                    if (packageInfo == null) {
-                        packageInfo = new PackageInfo();
-                    }
-                    packageInfo.setName(finalPackageName);
-                    packageInfo.setIgnoreVarious(true);
-                    packageInfo.setUniqueId(null);
-                    link.setDesiredPackageInfo(packageInfo);
-                }
-                if (StringUtils.isNotEmpty(destinationFolder)) {
-                    PackageInfo packageInfo = link.getDesiredPackageInfo();
-                    if (packageInfo == null) {
-                        packageInfo = new PackageInfo();
-                    }
-                    packageInfo.setDestinationFolder(destinationFolder);
-                    packageInfo.setIgnoreVarious(true);
-                    packageInfo.setUniqueId(null);
-                    link.setDesiredPackageInfo(packageInfo);
-                }
-                DownloadLink dlLink = link.getDownloadLink();
-                if (dlLink != null) {
-                    if (StringUtils.isNotEmpty(downloadPassword)) {
-                        dlLink.setDownloadPassword(downloadPassword);
-                    }
-                }
-                if (autostart) {
-                    link.setAutoConfirmEnabled(true);
-                    link.setAutoStartEnabled(true);
-                }
-            }
-        };
-        lcj.setCrawledLinkModifierPrePackagizer(modifier);
-        if (StringUtils.isNotEmpty(finalPackageName) || StringUtils.isNotEmpty(destinationFolder)) {
-            lcj.setCrawledLinkModifierPostPackagizer(modifier);
-        }
-        lc.addCrawlerJob(lcj);
+        final AddLinksQueryStorable query = new AddLinksQueryStorable();
+        query.setAutostart(autostart);
+        query.setDestinationFolder(destinationFolder);
+        query.setDownloadPassword(downloadPassword);
+        query.setLinks(links);
+        query.setPackageName(finalPackageName);
+        query.setExtractPassword(extractPassword);
+        LinkCollectorAPIImplV2.add(query);
         return true;
     }
 
@@ -565,23 +511,6 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
     @Override
     public void addContainer(String type, String content) {
-        String fileName = null;
-        if ("DLC".equalsIgnoreCase(type)) {
-            fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".dlc";
-        } else if ("RSDF".equalsIgnoreCase(type)) {
-            fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".rsdf";
-        } else if ("CCF".equalsIgnoreCase(type)) {
-            fileName = "linkcollectorDLCAPI" + System.nanoTime() + ".ccf";
-        }
-        if (fileName != null) {
-            try {
-                File tmp = Application.getTempResource(fileName);
-                byte[] write = IO.readStream(-1, LinkCollectorAPIImplV2.getInputStream(content));
-                IO.writeToFile(tmp, write);
-                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(new LinkOriginDetails(LinkOrigin.MYJD), tmp.toURI().toString()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        LinkCollectorAPIImplV2.loadContainer(type, content);
     }
 }
