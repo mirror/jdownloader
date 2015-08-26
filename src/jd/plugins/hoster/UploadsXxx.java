@@ -80,7 +80,7 @@ public class UploadsXxx extends PluginForHost {
     private static Object        LOCK              = new Object();
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
+    private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 1;
     private static String        MAINPAGE          = "http://storbit.net/";
 
@@ -389,35 +389,35 @@ public class UploadsXxx extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
-                                                      put("PREMIUM", "Premium User");
-                                                      put("FREE", "Free (Registered) User");
-                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
-                                                      put("LOGIN_ERROR", "StorBit.net/Uploads.xxx/Streambit.tv: Login Error");
-                                                      put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
-                                                      put("NO_TRAFFIC", "No traffic left");
-                                                      put("DOWNLOAD_LIMIT", "You can only download 1 file per 60 minutes");
-                                                      put("CAPTCHA_ERROR", "Wrong Captcha code in 5 trials OR final download link not found!");
-                                                      put("FINAL_LINK_ERROR", "Plugin Error: final download link is invalid");
-                                                  }
-                                              };
+        {
+            put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
+            put("PREMIUM", "Premium User");
+            put("FREE", "Free (Registered) User");
+            put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
+            put("LOGIN_ERROR", "StorBit.net/Uploads.xxx/Streambit.tv: Login Error");
+            put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
+            put("NO_TRAFFIC", "No traffic left");
+            put("DOWNLOAD_LIMIT", "You can only download 1 file per 60 minutes");
+            put("CAPTCHA_ERROR", "Wrong Captcha code in 5 trials OR final download link not found!");
+            put("FINAL_LINK_ERROR", "Plugin Error: final download link is invalid");
+        }
+    };
 
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-                                                  {
-                                                      put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
-                                                      put("PREMIUM", "Użytkownik Premium");
-                                                      put("FREE", "Użytkownik zarejestrowany (darmowy)");
-                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
-                                                      put("LOGIN_ERROR", "StorBit.net/Uploads.xxx/Streambit.tv: Błąd logowania");
-                                                      put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
-                                                      put("NO_TRAFFIC", "Brak dostępnego transferu");
-                                                      put("DOWNLOAD_LIMIT", "Można pobrać maksymalnie 1 plik na 60 minut");
-                                                      put("CAPTCHA_ERROR", "Wprowadzono 5-krotnie nieprawiłowy kod Captcha LUB nie można określić linku pobierania!");
-                                                      put("FINAL_LINK_ERROR", "Błąd wtyczki: finalny link pobierania jest nieprawidłowy");
+        {
+            put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
+            put("PREMIUM", "Użytkownik Premium");
+            put("FREE", "Użytkownik zarejestrowany (darmowy)");
+            put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
+            put("LOGIN_ERROR", "StorBit.net/Uploads.xxx/Streambit.tv: Błąd logowania");
+            put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
+            put("NO_TRAFFIC", "Brak dostępnego transferu");
+            put("DOWNLOAD_LIMIT", "Można pobrać maksymalnie 1 plik na 60 minut");
+            put("CAPTCHA_ERROR", "Wprowadzono 5-krotnie nieprawiłowy kod Captcha LUB nie można określić linku pobierania!");
+            put("FINAL_LINK_ERROR", "Błąd wtyczki: finalny link pobierania jest nieprawidłowy");
 
-                                                  }
-                                              };
+        }
+    };
 
     /**
      * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
