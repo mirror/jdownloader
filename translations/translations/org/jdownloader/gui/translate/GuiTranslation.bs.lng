@@ -1330,6 +1330,7 @@ YoutubeHelper_getDescription_variantid=PromjenljivID. npr. 'mp4_128kbit_aac'
 YoutubeHelper_getDescription_videoCodec=Video Kodek (npr. H264)
 YoutubeHelper_getDescription_videonumber=Broj Playlist-e. *videobroj* ili npr. *videobroj[000]*
 YoutubeVariantInterface_getLabel_audio=Audio
+YoutubeVariantInterface_getLabel_description=Opis Videa
 YoutubeVariantInterface_getLabel_image=Slike:
 YoutubeVariantInterface_getLabel_subtitles=Prijevodi
 YoutubeVariantInterface_getLabel_video=Video
