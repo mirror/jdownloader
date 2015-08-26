@@ -162,6 +162,7 @@ PasteLinksAction_getTranslationForDeepDecryptEnabled=Decriptazione Profonda
 PauseDownloadsAction_getHideIfDownloadsAreStoppedTranslation=Nascondi se i download non sono avviati
 PluginForHost_handle_ffmpeg_conversion_failed=FFmpeg™ fallito
 Plugin_requestLogins_message=Autenticazione obbligatoria!
+PriorityAction_getTranslationForForceMode=Forza modifica priorità
 ProxyController_updateProxy_proxy_auth_required_msg=L'autenticazione è richiesta dal proxy per potersi connettere a %s1
 ProxyController_updateProxy_proxy_auth_required_title=L'autenticazione proxy è necessaria!
 RemoveAction_actionPerformed_rly_msg=Eliminare tutte le regole selezionate?
