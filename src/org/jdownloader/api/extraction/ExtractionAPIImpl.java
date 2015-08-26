@@ -79,7 +79,7 @@ public class ExtractionAPIImpl implements ExtractionAPI {
                         final HashMap<String, ArchiveFileStatus> extractionStates = new HashMap<String, ArchiveFileStatus>();
                         for (ArchiveFile file : archive.getArchiveFiles()) {
                             DummyArchiveFile da = new DummyArchiveFile(file);
-                            if (da.isIncomplete()) {
+                            if (Boolean.TRUE.equals(da.isIncomplete())) {
                                 if (da.isMissing()) {
                                     extractionStates.put(file.getName(), ArchiveFileStatus.MISSING);
                                 } else {
