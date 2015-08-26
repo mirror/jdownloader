@@ -15,12 +15,15 @@ import jd.gui.swing.jdgui.interfaces.View;
 import jd.plugins.DownloadLink;
 import jd.plugins.download.DownloadInterface;
 
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
@@ -28,11 +31,36 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
 
-public class EnabledAction extends CustomizableTableContextAppAction implements GUIListener {
+public class EnabledAction extends CustomizableTableContextAppAction implements GUIListener, ActionContext {
     /**
      *
      */
     private static final long serialVersionUID = -1733286276459073749L;
+
+    public static enum EnableActionMode implements LabelInterface {
+
+        ENABLE() {
+            @Override
+            public String getLabel() {
+                return _GUI._.EnabledAction_EnabledAction_enable();
+            }
+        },
+
+        DISABLE() {
+            @Override
+            public String getLabel() {
+                return _GUI._.EnabledAction_EnabledAction_disable();
+            }
+        },
+
+        AUTO();
+
+        @Override
+        public String getLabel() {
+            return this.name();
+        }
+
+    }
 
     enum State {
         ALL_ENABLED(false, getCheckBoxedIcon("select", true, true)),
@@ -60,31 +88,52 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
     private void updateStateAndLabelAndIcon() {
         final SelectionInfo<?, ?> selectionInfo = getSelection();
         if (selectionInfo != null) {
+            // final EnableActionMode mode = getMode();
             switch (state = getState(selectionInfo)) {
             case MIXED_DISABLE:
                 setSmallIcon(state.icon);
                 setName(_GUI._.EnabledAction_EnabledAction_disable());
+                // setEnabled(true);
                 break;
             case MIXED_ENABLE:
                 setSmallIcon(state.icon);
                 setName(_GUI._.EnabledAction_EnabledAction_enable());
+                // setEnabled(true);
                 break;
             case ALL_DISABLED:
                 setSmallIcon(state.icon);
                 setName(_GUI._.EnabledAction_EnabledAction_enable());
+                // setEnabled(!EnableActionMode.DISABLE.equals(mode));
                 break;
             case ALL_ENABLED:
                 setSmallIcon(state.icon);
                 setName(_GUI._.EnabledAction_EnabledAction_disable());
+                // setEnabled(!EnableActionMode.ENABLE.equals(mode));
                 break;
             }
         } else {
             setSmallIcon(State.MIXED_ENABLE.icon);
             setName(_GUI._.EnabledAction_EnabledAction_empty());
+            // setEnabled(true);
         }
     }
 
-    private boolean metaCtrl = false;
+    private boolean          metaCtrl = false;
+
+    private EnableActionMode mode     = EnableActionMode.AUTO;
+
+    @Customizer()
+    public EnableActionMode getMode() {
+        return mode;
+    }
+
+    public void setMode(EnableActionMode mode) {
+        if (mode == null) {
+            this.mode = EnableActionMode.AUTO;
+        } else {
+            this.mode = mode;
+        }
+    }
 
     public EnabledAction() {
         super();
