@@ -79,7 +79,6 @@ public abstract class ChallengeSolver<T> {
     public List<SolverJob<T>> listJobs() {
         synchronized (map) {
             return new ArrayList<SolverJob<T>>(map.keySet());
-
         }
 
     }
@@ -88,11 +87,9 @@ public abstract class ChallengeSolver<T> {
         synchronized (map) {
             return !map.containsKey(job);
         }
-
     }
 
     public void enqueue(SolverJob<T> job) {
-
         JobRunnable<T> jr;
         jr = new JobRunnable<T>(this, job);
         synchronized (map) {
@@ -141,13 +138,15 @@ public abstract class ChallengeSolver<T> {
 
         }, new ThreadPoolExecutor.AbortPolicy()) {
             protected void afterExecute(Runnable r, Throwable t) {
-                super.afterExecute(r, t);
-                if (r instanceof JobRunnable) {
-                    synchronized (map) {
-                        map.remove(((JobRunnable<?>) r).getJob());
+                try {
+                    super.afterExecute(r, t);
+                } finally {
+                    if (r instanceof JobRunnable) {
+                        synchronized (map) {
+                            map.remove(((JobRunnable<?>) r).getJob());
+                        }
                     }
                 }
-
             }
 
             @Override

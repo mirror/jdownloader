@@ -301,7 +301,7 @@ public class MyJDownloaderConnectThread extends Thread {
     }
 
     public boolean isConnected() {
-        return connected.get() == MyJDownloaderConnectionStatus.CONNECTED;
+        return connected.get() == MyJDownloaderConnectionStatus.CONNECTED && isAlive();
     }
 
     private DeviceConnectionStatus handleResponse(final MyJDownloaderConnectionResponse response, final SessionInfoWrapper currentSession) {

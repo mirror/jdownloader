@@ -1114,9 +1114,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     *
+     * 
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     *
+     * 
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -1237,19 +1237,22 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                     @Override
                     protected Void run() throws RuntimeException {
-
-                        /* avoid additional linkCheck when linkID already exists */
-                        /* update dupeCheck map */
-                        final String id = link.getLinkID();
-                        final CrawledLink existing = getCrawledLinkByLinkID(id);
-                        if (existing != null) {
-                            /* clear references */
-                            logger.info("Filtered Dupe: " + id);
+                        if (info != null && info.getCollectingID() != getCollectingID()) {
                             clearCrawledLinkReferences(link);
-                            eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
-                            return null;
+                        } else {
+                            /* avoid additional linkCheck when linkID already exists */
+                            /* update dupeCheck map */
+                            final String id = link.getLinkID();
+                            final CrawledLink existing = getCrawledLinkByLinkID(id);
+                            if (existing != null) {
+                                /* clear references */
+                                logger.info("Filtered Dupe: " + id);
+                                clearCrawledLinkReferences(link);
+                                eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, link, QueuePriority.NORM));
+                                return null;
+                            }
+                            linkChecker.check(link);
                         }
-                        linkChecker.check(link);
                         return null;
                     }
                 });
@@ -1258,14 +1261,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
                     @Override
                     protected Void run() throws RuntimeException {
-                        applyJobCrawledLinkModifier(link, true);
-                        final PackagizerInterface pc = getPackagizer();
-                        if (pc != null) {
-                            /* run packagizer on un-checked link */
-                            pc.runByUrl(link);
+                        if (info != null && info.getCollectingID() != getCollectingID()) {
+                            clearCrawledLinkReferences(link);
+                        } else {
+                            applyJobCrawledLinkModifier(link, true);
+                            final PackagizerInterface pc = getPackagizer();
+                            if (pc != null) {
+                                /* run packagizer on un-checked link */
+                                pc.runByUrl(link);
+                            }
+                            applyJobCrawledLinkModifier(link, false);
+                            addCrawledLink(link);
                         }
-                        applyJobCrawledLinkModifier(link, false);
-                        addCrawledLink(link);
                         return null;
                     }
                 });

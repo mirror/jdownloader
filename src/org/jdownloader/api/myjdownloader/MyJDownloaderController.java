@@ -49,6 +49,11 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
         return lThread != null && lThread.isAlive() && lThread.isConnected();
     }
 
+    public boolean isActive() {
+        final MyJDownloaderConnectThread lThread = getConnectThread();
+        return lThread != null && lThread.isAlive();
+    }
+
     public MyJDownloaderConnectionStatus getConnectionStatus() {
         final MyJDownloaderConnectThread lThread = getConnectThread();
         if (lThread != null) {
