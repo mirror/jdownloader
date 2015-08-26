@@ -46,12 +46,12 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
                     }
                 } else {
                     if (value.getArchiveFile() == null) {
-                        if (value.isMissing() || value.isIncomplete()) {
+                        if (value.isMissing() || Boolean.TRUE.equals(value.isIncomplete())) {
                             return T._.file_exists_not();
                         }
                         return T._.unknown_tt();
                     } else {
-                        if (value.isMissing() || value.isIncomplete()) {
+                        if (value.isMissing() || Boolean.TRUE.equals(value.isIncomplete())) {
                             return T._.offline_tt();
                         }
                         if (value.getOnlineStatus() == AvailableStatus.TRUE) {
@@ -83,7 +83,7 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
                 if (value.getOnlineStatus() == AvailableStatus.TRUE) {
                     return online;
                 }
-                if (value.isMissing() || value.isIncomplete()) {
+                if (value.isMissing() || Boolean.TRUE.equals(value.isIncomplete())) {
                     return offline;
                 }
                 return unknown;
@@ -94,7 +94,7 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
                 if (value.getOnlineStatus() == AvailableStatus.TRUE) {
                     return T._.online();
                 }
-                if (value.isMissing() || value.isIncomplete()) {
+                if (value.isMissing() || Boolean.TRUE.equals(value.isIncomplete())) {
                     return T._.offline();
                 }
                 return T._.unknown();
@@ -105,7 +105,7 @@ public class DummyArchiveContentsTableModel extends ExtTableModel<DummyArchiveFi
                 if (value.getOnlineStatus() == AvailableStatus.TRUE) {
                     return T._.online_tt();
                 }
-                if (value.isMissing() || value.isIncomplete()) {
+                if (value.isMissing() || Boolean.TRUE.equals(value.isIncomplete())) {
                     return T._.offline_tt();
                 }
                 return T._.unknown_tt();

@@ -28,7 +28,7 @@ public class DummyArchiveContentsTable extends BasicJDTable<DummyArchiveFile> {
 
             @Override
             public boolean doHighlight(ExtTable<?> extTable, int row) {
-                DummyArchiveFile e = getModel().getObjectbyRow(row);
+                final DummyArchiveFile e = getModel().getObjectbyRow(row);
                 return e.isMissing();
             }
         });
@@ -36,8 +36,8 @@ public class DummyArchiveContentsTable extends BasicJDTable<DummyArchiveFile> {
 
             @Override
             public boolean doHighlight(ExtTable<?> extTable, int row) {
-                DummyArchiveFile e = getModel().getObjectbyRow(row);
-                return e.isIncomplete() && !e.isLocalFileAvailable();
+                final DummyArchiveFile e = getModel().getObjectbyRow(row);
+                return Boolean.TRUE.equals(e.isIncomplete()) && !e.isLocalFileAvailable();
             }
         });
 
@@ -45,7 +45,7 @@ public class DummyArchiveContentsTable extends BasicJDTable<DummyArchiveFile> {
 
             @Override
             public boolean doHighlight(ExtTable<?> extTable, int row) {
-                DummyArchiveFile e = getModel().getObjectbyRow(row);
+                final DummyArchiveFile e = getModel().getObjectbyRow(row);
                 return e.isLocalFileAvailable();
             }
         });

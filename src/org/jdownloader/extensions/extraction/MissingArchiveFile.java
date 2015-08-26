@@ -10,7 +10,7 @@ public class MissingArchiveFile implements ArchiveFile {
     private final String filePath;
 
     @Override
-    public boolean isComplete() {
+    public Boolean isComplete() {
         return false;
     }
 

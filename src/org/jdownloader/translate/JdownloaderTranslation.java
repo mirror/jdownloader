@@ -747,6 +747,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Simple single rename (table)" })
     String RenameAction_getTranslationForSimpleMode();
 
+    @Default(lngs = { "en" }, values = { "Force change of priority" })
+    String PriorityAction_getTranslationForForceMode();
+
     @Default(lngs = { "en" }, values = { "Key Modifier to toggle 'Bypass Rly? Dialog'" })
     String ByPassDialogSetup_getTranslationForByPassDialogToggleModifier();
 

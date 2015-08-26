@@ -2,7 +2,6 @@ package org.jdownloader.gui.views.components.packagetable.context;
 
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
-import java.util.List;
 
 import jd.controlling.TaskQueue;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -10,55 +9,115 @@ import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.interfaces.View;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.controlling.contextmenu.ActionContext;
 import org.jdownloader.controlling.contextmenu.CustomizableTableContextAppAction;
+import org.jdownloader.controlling.contextmenu.Customizer;
+import org.jdownloader.gui.KeyObserver;
+import org.jdownloader.gui.event.GUIEventSender;
+import org.jdownloader.gui.event.GUIListener;
+import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
+import org.jdownloader.translate._JDT;
 
-public abstract class AbstractPriorityActionEntry<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> {
+public abstract class AbstractPriorityActionEntry<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends CustomizableTableContextAppAction<PackageType, ChildrenType> implements GUIListener, ActionContext {
 
     /**
      *
      */
     private static final long serialVersionUID = 1L;
     private final Priority    priority;
+    private volatile boolean  metaCtrl         = false;
 
     public AbstractPriorityActionEntry(Priority priority) {
         super();
         setName(priority._());
         setSmallIcon(priority.loadIcon(18));
         this.priority = priority;
+        GUIEventSender.getInstance().addListener(this, true);
+        metaCtrl = KeyObserver.getInstance().isMetaDown(true) || KeyObserver.getInstance().isControlDown(true);
+    }
 
+    @Override
+    public void onKeyModifier(int parameter) {
+        if (KeyObserver.getInstance().isControlDown(false) || KeyObserver.getInstance().isMetaDown(false)) {
+            metaCtrl = true;
+        } else {
+            metaCtrl = false;
+        }
+    }
+
+    private boolean forceMode = false;
+
+    public static String getTranslationForForceMode() {
+        return _JDT._.PriorityAction_getTranslationForForceMode();
+    }
+
+    @Customizer(link = "#getTranslationForForceMode")
+    public boolean isForceMode() {
+        return forceMode;
+    }
+
+    public void setForceMode(boolean forceMode) {
+        this.forceMode = forceMode;
+    }
+
+    @Override
+    public void onGuiMainTabSwitch(View oldView, View newView) {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (getSelection().isEmpty()) {
+        final SelectionInfo<PackageType, ChildrenType> selection = getSelection();
+        if (selection.isEmpty()) {
             return;
         }
-        final List<AbstractNode> finalSelection = new ArrayList<AbstractNode>(getSelection().getRawSelection());
+        final boolean finalMetaCtrl = forceMode ? !metaCtrl : metaCtrl;
         TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
             @Override
             protected Void run() throws RuntimeException {
                 boolean linkGrabber = false;
                 boolean downloadList = false;
-                for (AbstractNode l : finalSelection) {
-                    if (l instanceof CrawledLink) {
+                final ArrayList<AbstractPackageNode> forcePriority = new ArrayList<AbstractPackageNode>();
+                for (final AbstractNode node : selection.getRawSelection()) {
+                    if (node instanceof CrawledLink) {
                         linkGrabber = true;
-                        ((CrawledLink) l).setPriority(priority);
-                    } else if (l instanceof DownloadLink) {
+                        ((CrawledLink) node).setPriority(priority);
+                    } else if (node instanceof DownloadLink) {
                         downloadList = true;
-                        ((DownloadLink) l).setPriorityEnum(priority);
-                    } else if (l instanceof CrawledPackage) {
+                        ((DownloadLink) node).setPriorityEnum(priority);
+                    } else if (node instanceof CrawledPackage) {
                         linkGrabber = true;
-                        ((CrawledPackage) l).setPriorityEnum(priority);
-                    } else if (l instanceof FilePackage) {
+                        if (finalMetaCtrl) {
+                            forcePriority.add((AbstractPackageNode) node);
+                        }
+                        ((CrawledPackage) node).setPriorityEnum(priority);
+                    } else if (node instanceof FilePackage) {
                         downloadList = true;
-                        ((FilePackage) l).setPriorityEnum(priority);
+                        if (finalMetaCtrl) {
+                            forcePriority.add((AbstractPackageNode) node);
+                        }
+                        ((FilePackage) node).setPriorityEnum(priority);
+                    }
+                }
+                for (final AbstractPackageNode node : forcePriority) {
+                    final boolean readL = node.getModifyLock().readLock();
+                    try {
+                        for (final Object child : node.getChildren()) {
+                            if (child instanceof CrawledLink) {
+                                ((CrawledLink) child).setPriority(priority);
+                            } else if (child instanceof DownloadLink) {
+                                ((DownloadLink) child).setPriorityEnum(priority);
+                            }
+                        }
+                    } finally {
+                        node.getModifyLock().readUnlock(readL);
                     }
                 }
                 if (linkGrabber) {

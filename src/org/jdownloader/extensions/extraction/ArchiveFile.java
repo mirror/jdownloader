@@ -6,7 +6,7 @@ import org.jdownloader.controlling.FileCreationManager;
 
 public interface ArchiveFile {
 
-    public boolean isComplete();
+    public Boolean isComplete();
 
     public String getFilePath();
 

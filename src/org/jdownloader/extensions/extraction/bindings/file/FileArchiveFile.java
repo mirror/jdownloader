@@ -30,7 +30,7 @@ public class FileArchiveFile implements ArchiveFile {
         return file;
     }
 
-    public boolean isComplete() {
+    public Boolean isComplete() {
         return exists();
     }
 
