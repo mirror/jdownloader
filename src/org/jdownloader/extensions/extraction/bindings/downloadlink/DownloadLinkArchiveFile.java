@@ -92,16 +92,16 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     }
 
     @Override
-    public boolean isComplete() {
+    public Boolean isComplete() {
         if (isFileArchiveFileExists() && exists()) {
-            return true;
+            return Boolean.TRUE;
         }
         for (DownloadLink downloadLink : getDownloadLinks()) {
             if ((SkipReason.FILE_EXISTS.equals(downloadLink.getSkipReason()) || FinalLinkState.FAILED_EXISTS.equals(downloadLink.getFinalLinkState()) || FinalLinkState.CheckFinished(downloadLink.getFinalLinkState()))) {
-                return true;
+                return Boolean.TRUE;
             }
         }
-        return false;
+        return Boolean.FALSE;
     }
 
     public String getFilePath() {

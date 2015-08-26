@@ -38,7 +38,7 @@ public class DummyArchive {
         if (e.isMissing()) {
             missingCount++;
         }
-        if (e.isIncomplete()) {
+        if (Boolean.TRUE.equals(e.isIncomplete())) {
             incompleteCount++;
         }
     }

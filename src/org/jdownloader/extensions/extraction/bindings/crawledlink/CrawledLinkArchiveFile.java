@@ -80,19 +80,25 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
         return false;
     }
 
-    public boolean isComplete() {
+    public Boolean isComplete() {
         if (isFileArchiveFileExists() && exists()) {
-            return true;
+            return Boolean.TRUE;
         }
-        for (CrawledLink downloadLink : getLinks()) {
-            switch (downloadLink.getLinkState()) {
-            case ONLINE:
-                return true;
-            default:
-                break;
+        for (final CrawledLink crawledLink : getLinks()) {
+            final DownloadLink downloadLink = crawledLink.getDownloadLink();
+            if (downloadLink != null) {
+                switch (downloadLink.getAvailableStatus()) {
+                case TRUE:
+                    return Boolean.TRUE;
+                case UNCHECKABLE:
+                case UNCHECKED:
+                    return null;
+                default:
+                    break;
+                }
             }
         }
-        return false;
+        return Boolean.FALSE;
     }
 
     public String toString() {

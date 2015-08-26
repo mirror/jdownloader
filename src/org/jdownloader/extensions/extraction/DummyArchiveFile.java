@@ -18,8 +18,16 @@ public class DummyArchiveFile {
         return archiveFile;
     }
 
-    public boolean isIncomplete() {
-        return archiveFile == null || !archiveFile.isComplete();
+    public Boolean isIncomplete() {
+        if (archiveFile == null) {
+            return Boolean.TRUE;
+        } else {
+            final Boolean complete = archiveFile.isComplete();
+            if (complete == null) {
+                return null;
+            }
+            return complete.booleanValue() ? Boolean.FALSE : Boolean.TRUE;
+        }
     }
 
     public boolean isMissing() {
