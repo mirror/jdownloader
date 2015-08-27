@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Scanner;
 import java.util.TimeZone;
 
@@ -42,8 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "br-online.de" }, urls = { "http://brdecrypted\\-online\\.de/\\?format=(mp4|xml)\\&quality=\\d+x\\d+\\&hash=[a-z0-9]+" }, flags = { 0 })
 public class BrOnlineDe extends PluginForHost {
@@ -207,8 +204,8 @@ public class BrOnlineDe extends PluginForHost {
                 // final String end_hours_source_string = endInfo.getMatch(0);
                 final int start_hours_source = Integer.parseInt(start_hours_source_string);
                 // final int end_hours_source = Integer.parseInt(end_hours_source_string);
-                long start_milliseconds = TimeFormatter.getMilliSeconds(startString, "HH:mm:ss.SSS", Locale.GERMANY);
-                long end_milliseconds = TimeFormatter.getMilliSeconds(endString, "HH:mm:ss.SSS", Locale.GERMANY);
+                long start_milliseconds = timeStringToMilliseconds(startString);
+                long end_milliseconds = timeStringToMilliseconds(endString);
                 if (start_hours_source > 0 && counter == 2 && !offsetSet) {
                     /* Auto correct offset */
                     offset_reduce_milliseconds = start_milliseconds;
@@ -260,6 +257,16 @@ public class BrOnlineDe extends PluginForHost {
         source.delete();
 
         return true;
+    }
+
+    public static long timeStringToMilliseconds(final String timeString) {
+        final Regex timeRegex = new Regex(timeString, "(\\d{2}):(\\d{2}):(\\d{2})\\.(\\d{3})");
+        final String timeHours = timeRegex.getMatch(0);
+        final String timeMinutes = timeRegex.getMatch(1);
+        final String timeSeconds = timeRegex.getMatch(2);
+        final String timeMilliseconds = timeRegex.getMatch(3);
+        final long timeMillisecondsComplete = Long.parseLong(timeHours) * 60 * 60 * 1000 + Long.parseLong(timeMinutes) * 60 * 1000 + Long.parseLong(timeSeconds) * 1000 + Long.parseLong(timeMilliseconds);
+        return timeMillisecondsComplete;
     }
 
     @Override

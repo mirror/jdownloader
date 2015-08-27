@@ -92,6 +92,8 @@ public class NowtvDe extends PluginForHost {
     private static final String           RTMPTYPE_VERY_OLD            = "^\\d+/.+\\.flv$";
     private static final String           RTMPTYPE_NEW                 = "^\\d+/.+\\.f4v$";
 
+    private static final String           TYPE_GENERAL_ALRIGHT         = "https?://(?:www\\.)?nowtv\\.(?:de|ch)/[^/]+/[a-z0-9\\-]+/[^/]+";
+
     private Document                      doc;
     private static final boolean          ALLOW_RTMP_TO_HDS_WORKAROUND = true;
     private static final boolean          ALLOW_HLS                    = true;
@@ -104,15 +106,21 @@ public class NowtvDe extends PluginForHost {
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* First lets get our source url and remove the unneeded '/player' part which is usually at the end of our url. */
-        final String url_source = link.getDownloadURL().replace("/player", "");
-        final Regex sourceregex = new Regex(url_source, "nowtv\\.(?:de|ch)/([^/]+)/([a-z0-9\\-]+)");
-        final String name_tvstation = sourceregex.getMatch(0);
-        final String name_series = sourceregex.getMatch(1);
-        /* Find the name of the series which is usually at the end of our URL. */
-        final String name_episode = new Regex(link.getDownloadURL(), "/([^/]+)$").getMatch(0);
-        final String newlink = "http://www.nowtv.de/" + name_tvstation + "/" + name_series + "/" + name_episode;
-        link.setUrlDownload(newlink);
-        link.setContentUrl(newlink);
+        if (!link.getDownloadURL().matches(TYPE_GENERAL_ALRIGHT)) {
+            /* We have no supported url --> Fix eventually existing issues */
+            String url_source = link.getDownloadURL();
+            final String rubbish = new Regex(link.getDownloadURL(), "(/(?:preview|player)(?:.+)?)").getMatch(0);
+            if (rubbish != null) {
+                url_source = url_source.replace(rubbish, "");
+            }
+            final Regex sourceregex = new Regex(url_source, "nowtv\\.(?:de|ch)/([^/]+)/([a-z0-9\\-]+)");
+            final String name_tvstation = sourceregex.getMatch(0);
+            final String name_series = sourceregex.getMatch(1);
+            /* Find the name of the series which is usually at the end of our URL. */
+            final String name_episode = new Regex(url_source, "/([^/]+)$").getMatch(0);
+            final String newlink = "http://www.nowtv.de/" + name_tvstation + "/" + name_series + "/" + name_episode;
+            link.setUrlDownload(newlink);
+        }
     }
 
     /* Thx https://github.com/bromix/plugin.video.rtl-now.de/blob/master/resources/lib/rtlinteractive/client.py */
@@ -434,6 +442,7 @@ public class NowtvDe extends PluginForHost {
 
             rtmp.setPlayPath(rtmp_playpath);
             rtmp.setPageUrl(pageURL);
+            /* Other possible player: http://cdn.static-fra.de/now/PlayerApp.swf */
             rtmp.setSwfVfy("http://cdn.static-fra.de/now/vodplayer.swf");
             rtmp.setFlashVer("WIN 14,0,0,145");
             rtmp.setApp(rtmp_app);

@@ -37,7 +37,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1gold.de", "sixx.de" }, urls = { "http://(www\\.)?prosieben\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://www\\.prosiebenmaxx\\.de/[^<>\"\\']*?videos?/[\\w\\-]+", "http://(www\\.)?the\\-voice\\-of\\-germany\\.de/video/[\\w\\-]+", "http://(www\\.)?kabeleins\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(www\\.)?sat1\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(www\\.)?sat1gold\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(www\\.)?sixx\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+" }, flags = { 32, 32, 32, 32, 32, 32, 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1gold.de", "sixx.de", "7tv.de" }, urls = { "http://(?:www\\.)?prosieben\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://www\\.prosiebenmaxx\\.de/[^<>\"\\']*?videos?/[\\w\\-]+", "http://(?:www\\.)?the\\-voice\\-of\\-germany\\.de/video/[\\w\\-]+", "http://(?:www\\.)?kabeleins\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(?:www\\.)?sat1\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(?:www\\.)?sat1gold\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(?:www\\.)?sixx\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(?:www\\.)?7tv\\.de/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32 })
 public class ProSevenDe extends PluginForHost {
 
     /** Other domains: proxieben.at (redirects to .de) */

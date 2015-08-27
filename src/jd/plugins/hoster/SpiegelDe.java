@@ -31,18 +31,23 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de", "spiegel.tv" }, urls = { "http://cdn\\d+\\.spiegel\\.de/images/image[^<>\"/]+|http://(www\\.)?spiegel\\.de/video/(embedurl/)?[a-z0-9\\-_]*?video\\-[a-z0-9\\-_]*?\\.html", "http://(www\\.)?spiegel\\.tv/(#/)?filme/[a-z0-9\\-]+/" }, flags = { 0, 0 })
+import org.jdownloader.downloader.hls.HLSDownloader;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de", "spiegel.tv" }, urls = { "http://cdn\\d+\\.spiegel\\.de/images/image[^<>\"/]+|http://(?:www\\.)?spiegel\\.de/video/(?:embedurl/)?[a-z0-9\\-_]*?video\\-[a-z0-9\\-_]*?\\.html", "http://(?:www\\.)?spiegel\\.tv/(?:#/)?filme/[a-z0-9\\-]+/" }, flags = { 0, 0 })
 public class SpiegelDe extends PluginForHost {
 
-    private final Pattern       pattern_supported_image          = Pattern.compile("http://cdn\\d+\\.spiegel\\.de/images/image[^<>\"/]+");
-    private final Pattern       pattern_supported_video          = Pattern.compile("http://(www\\.|m\\.)?spiegel\\.de/video/.+");
-    private final Pattern       pattern_supported_video_mobile   = Pattern.compile("http://m\\.spiegel\\.de/video/media/video\\-\\d+\\.html");
-    private final Pattern       pattern_supported_spiegeltvfilme = Pattern.compile("http://(www\\.)?spiegel\\.tv/(#/)?filme/[a-z0-9\\-]+/");
+    private final Pattern        pattern_supported_image          = Pattern.compile("http://cdn\\d+\\.spiegel\\.de/images/image[^<>\"/]+");
+    private final Pattern        pattern_supported_video          = Pattern.compile("http://(www\\.|m\\.)?spiegel\\.de/video/.+");
+    private final Pattern        pattern_supported_video_mobile   = Pattern.compile("http://m\\.spiegel\\.de/video/media/video\\-\\d+\\.html");
+    private final Pattern        pattern_supported_spiegeltvfilme = Pattern.compile("http://(www\\.)?spiegel\\.tv/(#/)?filme/[a-z0-9\\-]+/");
 
-    private static final String spiegeltvfilme_rtmp_app          = "schnee_vod/flashmedia/";
-    private static final String spiegeltvfilme_apihost           = "http://spiegeltv-ivms2-restapi.s3.amazonaws.com";
+    private static final String  spiegeltvfilme_rtmp_app          = "schnee_vod/flashmedia/";
+    private static final String  spiegeltvfilme_apihost           = "http://spiegeltv-ivms2-restapi.s3.amazonaws.com";
 
-    private String              DLLINK                           = null;
+    private static final boolean rtmpe_supported                  = false;
+    private static final boolean prefer_hls                       = true;
+
+    private String               DLLINK                           = null;
 
     /*
      * Important for pattern_supported_video: Way to get mobile versions of videos: Use a mobile UA - Video site:
@@ -230,27 +235,39 @@ public class SpiegelDe extends PluginForHost {
             } else {
                 scalefactor = "4x3";
             }
-            final String rtmpurl = "rtmp://mf.schneevonmorgen.c.nmdn.net/" + spiegeltvfilme_rtmp_app;
-            final String playpath = "mp4:" + uuid + "_spiegeltv_0500_" + scalefactor + ".m4v";
-
-            try {
-                dl = new RTMPDownload(this, downloadLink, rtmpurl);
-            } catch (final NoClassDefFoundError e) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
+            /* In case rtmp doesn't work, rtmpe might be needed */
+            final String url_rtmp;
+            if (rtmpe_supported) {
+                url_rtmp = "rtmpe://mf.schneevonmorgen.c.nmdn.net/" + spiegeltvfilme_rtmp_app;
+            } else {
+                url_rtmp = "rtmp://mf.schneevonmorgen.c.nmdn.net/" + spiegeltvfilme_rtmp_app;
             }
-            /* Setup rtmp connection */
-            jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-            rtmp.setPageUrl(this.br.getURL());
-            rtmp.setUrl(rtmpurl);
-            rtmp.setPlayPath(playpath);
-            rtmp.setApp(spiegeltvfilme_rtmp_app);
-            /* Make sure we're using the correct protocol! */
-            rtmp.setProtocol(0);
-            rtmp.setFlashVer("WIN 16,0,0,296");
-            /* SWFvfy can also be used here - doesn't matter! */
-            rtmp.setSwfUrl("http://prod-static.spiegel.tv/frontend-069.swf");
-            rtmp.setResume(true);
-            ((RTMPDownload) dl).startDownload();
+            final String playpath = "mp4:" + uuid + "_spiegeltv_0500_" + scalefactor + ".m4v";
+            final String url_hls = "http://m3u8.schneevonmorgen.com/schnee_vod/_definst_/" + playpath + "/playlist.m3u8";
+            if (prefer_hls) {
+                checkFFmpeg(downloadLink, "Download a HLS Stream");
+                dl = new HLSDownloader(downloadLink, br, url_hls);
+                dl.startDownload();
+            } else {
+                try {
+                    dl = new RTMPDownload(this, downloadLink, url_rtmp);
+                } catch (final NoClassDefFoundError e) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
+                }
+                /* Setup rtmp connection */
+                jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+                rtmp.setPageUrl(this.br.getURL());
+                rtmp.setUrl(url_rtmp);
+                rtmp.setPlayPath(playpath);
+                rtmp.setApp(spiegeltvfilme_rtmp_app);
+                /* Make sure we're using the correct protocol! */
+                rtmp.setProtocol(0);
+                rtmp.setFlashVer("WIN 16,0,0,296");
+                /* SWFvfy can also be used here - doesn't matter! */
+                rtmp.setSwfUrl("http://prod-static.spiegel.tv/frontend-069.swf");
+                rtmp.setResume(true);
+                ((RTMPDownload) dl).startDownload();
+            }
         }
     }
 
