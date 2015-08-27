@@ -500,7 +500,7 @@ public class LinkCrawler {
                 @Override
                 public boolean add(HtmlParserCharSequence e) {
                     final boolean ret = super.add(e);
-                    if (ret && !e.contains("...")) {
+                    if (ret && (!e.contains("...") && !e.equals(getBaseURL()))) {
                         fastResults.add(e);
                         final CrawledLink crawledLink = crawledLinkFactorybyURL(e.toString());
                         crawledLink.setCrawlDeep(allowDeep);

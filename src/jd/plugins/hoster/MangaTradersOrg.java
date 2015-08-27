@@ -137,7 +137,7 @@ public class MangaTradersOrg extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return 5;
     }
 
     @Override
