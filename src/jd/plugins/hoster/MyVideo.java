@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -60,7 +58,14 @@ public class MyVideo extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("myvideo.at/", "myvideo.de/").replaceFirst("fromDecrypter", "http"));
     }
 
-    /* HbbTV also available */
+    /*
+     * HbbTV also available. TODO: Implement new way, also containing HLS- and HTTP urls e.g.v
+     * https://mls.myvideo.de/mvas/videos/12014104/sources
+     * ?access_token=MVKolibri&client_location=http://www.myvideo.de/serien/new-girl/highlights
+     * /staffel-3-folge-19-gags-m-12021823&client_name
+     * =kolibri-2.3.0&client_id=dfae319031c31d6c782c0c3cfb8abf17d1e7743e8b&server_id=e7431c165522d6189abced952fe134cc2c0e964e
+     * &ids=2,0,4,7,1&callback=_player1_mvas0
+     */
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {

@@ -155,6 +155,10 @@ public class WdrDeDecrypt extends PluginForDecrypt {
             final SubConfiguration cfg = SubConfiguration.getConfig("wdr.de");
             final boolean grab_subtitle = cfg.getBooleanProperty(Q_SUBTITLES, false);
 
+            /*
+             * Possible json "API" e.g. http://www1.wdr.de/mediathek/video/sendungen/videokoelnerlichter112.html
+             * http://deviceids-medstdp-id1.wdr.de/ondemand/76/760987.js
+             */
             String player_link = br.getRegex("\\&#039;mcUrl\\&#039;:\\&#039;(/[^<>\"]*?\\.json)").getMatch(0);
             if (player_link == null) {
                 player_link = br.getRegex("class=\"videoLink\" >[\t\n\r ]+<a href=\"(/[^<>\"]*?)\"").getMatch(0);
@@ -200,18 +204,31 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            int counter = 0;
-            for (final String single_quality_string : qualities) {
-                final String final_url = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/" + region + "/" + fsk_url + "/" + single_quality_string + ".mp4";
+            for (int counter = 0; counter <= 1; counter++) {
+                String final_url = "http://http-ras.wdr.de/CMS2010/mdb/ondemand/" + region + "/" + fsk_url + "/";
+                final String single_quality_string_correct;
                 String resolution;
                 String quality_name;
                 if (counter == 0) {
+                    /* If we got 4 qualities, pick the best 2 only */
+                    if (qualities.length == 4) {
+                        single_quality_string_correct = qualities[1];
+                    } else {
+                        single_quality_string_correct = qualities[counter];
+                    }
                     resolution = "960x544";
                     quality_name = "Q_MEDIUM";
                 } else {
+                    /* If we got 4 qualities, pick the best 2 only */
+                    if (qualities.length == 4) {
+                        single_quality_string_correct = qualities[3];
+                    } else {
+                        single_quality_string_correct = qualities[counter];
+                    }
                     resolution = "512x288";
                     quality_name = "Q_LOW";
                 }
+                final_url += single_quality_string_correct + ".mp4";
                 final String final_video_name = date_formatted + "_wdr_" + plain_name + "_" + resolution + ".mp4";
                 final DownloadLink dl_video = createDownloadlink("http://wdrdecrypted.de/?format=mp4&quality=" + resolution + "&hash=" + JDHash.getMD5(parameter));
                 dl_video.setProperty("mainlink", parameter);
@@ -226,7 +243,6 @@ public class WdrDeDecrypt extends PluginForDecrypt {
                 }
                 best_map.put(quality_name, dl_video);
                 newRet.add(dl_video);
-                counter++;
             }
 
             ArrayList<String> selected_qualities = new ArrayList<String>();
