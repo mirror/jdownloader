@@ -39,7 +39,7 @@ public class TwitterCom extends PornEmbedParser {
         super(wrapper);
     }
 
-    private static final String TYPE_VIDEO     = "https://twitter\\.com/i/cards/tfw/v1/\\d+";
+    private static final String TYPE_CARD     = "https://twitter\\.com/i/cards/tfw/v1/\\d+";
     private static final String TYPE_USER_ALL  = "https?://(www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/media";
     private static final String TYPE_USER_POST = "https?://(www\\.)?twitter\\.com/status/\\d+.*?";
     private static final String TYPE_REDIRECT  = "https?://t\\.co/[a-zA-Z0-9]+";
@@ -89,13 +89,13 @@ public class TwitterCom extends PornEmbedParser {
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
-        if (parameter.matches(TYPE_VIDEO)) {
+        if (parameter.matches(TYPE_CARD)) {
             status_id = new Regex(parameter, "(\\d+)$").getMatch(0);
             /* First check for external urls */
             decryptedLinks.addAll(this.findEmbedUrls(null));
             String externID = this.br.getRegex("u\\-linkClean js\\-openLink\" href=\"(https?://t\\.co/[^<>\"]*?)\"").getMatch(0);
             if (externID == null) {
-                externID = this.br.getRegex("\"card_url\"[\t\n\r ]*?:[\t\n\r ]*?\"(https[^<>\"]*?)\"").getMatch(0);
+                externID = this.br.getRegex("\"card_url\"[\t\n\r ]*?:[\t\n\r ]*?\"(https?[^<>\"]*?)\"").getMatch(0);
             }
             if (externID != null) {
                 decryptedLinks.add(this.createDownloadlink(externID));
