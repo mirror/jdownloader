@@ -36,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "playvid.com" }, urls = { "https?://(www\\.)?playvids?.com/(?:watch(?:\\?v=|/)|embed/|v/)[A-Za-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "https?://(www\\.)?playvids?.com/(?:watch(?:\\?v=|/)|embed/|v/)[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class PlayVidComDecrypter extends PluginForDecrypt {
 
     public PlayVidComDecrypter(PluginWrapper wrapper) {
@@ -48,25 +48,22 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
     private String                        PARAMETER      = null;
 
     /** Settings stuff */
-    private static final String           FASTLINKCHECK  = "FASTLINKCHECK";
-    private static final String           ALLOW_BEST     = "ALLOW_BEST";
-    private static final String           ALLOW_360P     = "ALLOW_360P";
-    private static final String           ALLOW_480P     = "ALLOW_480P";
-    private static final String           ALLOW_720P     = "ALLOW_720";
+    private static final String FASTLINKCHECK = "FASTLINKCHECK";
+    private static final String ALLOW_BEST    = "ALLOW_BEST";
+    private static final String ALLOW_360P    = "ALLOW_360P";
+    private static final String ALLOW_480P    = "ALLOW_480P";
+    private static final String ALLOW_720P    = "ALLOW_720";
 
     @SuppressWarnings({ "static-access", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        PARAMETER = new Regex(param.toString(), "https?://").getMatch(-1) + "playvid.com/watch/" + new Regex(param.toString(), "([A-Za-z0-9\\-]+)$").getMatch(0);
+        PARAMETER = new Regex(param.toString(), "https?://").getMatch(-1) + "playvid.com/watch/" + new Regex(param.toString(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
         br.setFollowRedirects(true);
         // Log in if possible to get 720p quality
         getUserLogin(false);
         br.getPage(PARAMETER);
         if (br.containsHTML("Video not found<|class=\"play\\-error\"|class=\"error\\-sorry\"") || br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink dl = createDownloadlink("http://playviddecrypted.com/" + System.currentTimeMillis());
-            dl.setFinalFileName(new Regex(PARAMETER, "\\?v=([A-Za-z0-9\\-]+)").getMatch(0));
-            dl.setProperty("offline", true);
-            decryptedLinks.add(dl);
+            decryptedLinks.add(createOfflinelink(PARAMETER));
             return decryptedLinks;
         }
         /* Decrypt start */
