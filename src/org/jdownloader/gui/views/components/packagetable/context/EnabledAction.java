@@ -145,12 +145,15 @@ public class EnabledAction extends CustomizableTableContextAppAction implements 
 
     @Override
     public void onKeyModifier(int parameter) {
+        final boolean before = metaCtrl;
         if (KeyObserver.getInstance().isControlDown(false) || KeyObserver.getInstance().isMetaDown(false)) {
             metaCtrl = true;
         } else {
             metaCtrl = false;
         }
-        updateStateAndLabelAndIcon();
+        if (before != metaCtrl) {
+            updateStateAndLabelAndIcon();
+        }
     }
 
     private State getState(final SelectionInfo<?, ?> selection) {

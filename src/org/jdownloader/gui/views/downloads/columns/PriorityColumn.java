@@ -30,26 +30,31 @@ import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.columns.ExtComboColumn;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.images.IconIO;
 import org.jdownloader.controlling.Priority;
-import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.BadgeIcon;
 import org.jdownloader.images.NewTheme;
 
 public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
-    private Icon              imgPriorityS;
-    private Icon              imgPriority1;
-    private Icon              imgPriority2;
-    private Icon              imgPriority3;
-    private String            strPriorityS;
-    private String            strPriority1;
-    private String            strPriority2;
-    private String            strPriority3;
-    private Icon              imgPriorityDefault;
+    private final Icon        imgPriorityS;
+    private final Icon        imgPriority1;
+    private final Icon        imgPriority2;
+    private final Icon        imgPriority3;
+    private final String      strPriorityS;
+    private final String      strPriority1;
+    private final String      strPriority2;
+    private final String      strPriority3;
+    private final Icon        imgPriority0;
+    private final Icon        imgPriority0_1;
+    private final Icon        imgPriority0_S;
+    private final Icon        imgPriority0_2;
+    private final Icon        imgPriority0_3;
 
     public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
@@ -78,13 +83,17 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
     }
 
     public PriorityColumn() {
-
         super(_GUI._.PriorityColumn_PriorityColumn(), new DefaultComboBoxModel<Priority>(Priority.values()));
         imgPriorityS = NewTheme.I().getIcon("prio_-1", 16);
-        imgPriorityDefault = NewTheme.I().getIcon(IconKey.ICON_PRIO_0, 16);
+        imgPriority0 = NewTheme.I().getIcon("prio_0", 16);
         imgPriority1 = NewTheme.I().getIcon("prio_1", 16);
         imgPriority2 = NewTheme.I().getIcon("prio_2", 16);
         imgPriority3 = NewTheme.I().getIcon("prio_3", 16);
+        imgPriority0_S = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriorityS, 12, 12), 4, 2);
+        imgPriority0_1 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority1, 12, 12), 4, 2);
+        imgPriority0_2 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority2, 12, 12), 4, 2);
+        imgPriority0_3 = new BadgeIcon(imgPriority0, IconIO.getScaledInstance(imgPriority3, 12, 12), 4, 2);
+
         rendererField.setHorizontalTextPosition(SwingConstants.RIGHT);
         strPriorityS = _GUI._.gui_treetable_tooltip_priority_1();
         strPriority1 = _GUI._.gui_treetable_tooltip_priority1();
@@ -122,14 +131,6 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
         return false;
     }
 
-    // /**
-    // * Sets max width to 30. overwrite to set other maxsizes
-    // */
-    // @Override
-    // public int getMaxWidth() {
-    // return 30;
-    // }
-
     @Override
     public int getMinWidth() {
         return 35;
@@ -165,7 +166,7 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
     public void configureRendererComponent(AbstractNode value, boolean isSelected, boolean hasFocus, int row, int column) {
         super.configureRendererComponent(value, isSelected, hasFocus, row, column);
         rendererField.setText("");
-        rendererField.setIcon(getPriorityIcon(value));
+        rendererField.setIcon(getIconByPriority(value));
     }
 
     @Override
@@ -187,11 +188,6 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
         return true;
     }
 
-    protected Icon getPriorityIcon(AbstractNode value) {
-        final Priority p = getPriority(value);
-        return getIconByPriority(p);
-    }
-
     /**
      * @param p
      * @return
@@ -200,7 +196,7 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
         switch (p) {
         case DEFAULT:
         default:
-            return imgPriorityDefault;
+            return imgPriority0;
         case LOWER:
             return imgPriorityS;
         case HIGH:
@@ -210,6 +206,51 @@ public class PriorityColumn extends ExtComboColumn<AbstractNode, Priority> {
         case HIGHEST:
             return imgPriority3;
         }
+    }
+
+    protected Icon getInheritedIconByPriority(Priority p) {
+        switch (p) {
+        case DEFAULT:
+        default:
+            return imgPriority0;
+        case LOWER:
+            return imgPriority0_S;
+        case HIGH:
+            return imgPriority0_1;
+        case HIGHER:
+            return imgPriority0_2;
+        case HIGHEST:
+            return imgPriority0_3;
+        }
+    }
+
+    protected Icon getIconByPriority(AbstractNode value) {
+        if (value instanceof DownloadLink) {
+            final DownloadLink link = ((DownloadLink) value);
+            final Priority ret = link.getPriorityEnum();
+            if (Priority.DEFAULT.equals(ret)) {
+                final FilePackage parent = link.getFilePackage();
+                if (parent != null) {
+                    return getInheritedIconByPriority(parent.getPriorityEnum());
+                }
+            }
+            return getIconByPriority(ret);
+        } else if (value instanceof CrawledLink) {
+            final CrawledLink link = ((CrawledLink) value);
+            final Priority ret = link.getPriority();
+            if (Priority.DEFAULT.equals(ret)) {
+                final CrawledPackage parent = link.getParentNode();
+                if (parent != null) {
+                    return getInheritedIconByPriority(parent.getPriorityEnum());
+                }
+            }
+            return getIconByPriority(ret);
+        } else if (value instanceof FilePackage) {
+            return getIconByPriority(((FilePackage) value).getPriorityEnum());
+        } else if (value instanceof CrawledPackage) {
+            return getIconByPriority(((CrawledPackage) value).getPriorityEnum());
+        }
+        return imgPriority0;
     }
 
     private Priority getPriority(AbstractNode value) {
