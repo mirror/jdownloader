@@ -44,11 +44,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final PluginForHost hostplugin = JDUtilities.getPluginForHost("instagram.com");
+        boolean logged_in = false;
         final Account aa = AccountController.getInstance().getValidAccount(hostplugin);
         if (aa != null) {
             /* Login whenever possible */
             try {
                 jd.plugins.hoster.InstaGramCom.login(this.br, aa, false);
+                logged_in = true;
             } catch (final Throwable e) {
             }
         }
@@ -66,7 +68,15 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
         final boolean isPrivate = ((Boolean) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/user/is_private")).booleanValue();
-        if (isPrivate) {
+
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(username_url);
+
+        String nextid = (String) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor");
+        final String maxid = (String) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/__get_params/max_id");
+        ArrayList<Object> resource_data_list = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/nodes");
+        final long count = DummyScriptEnginePlugin.toLong(DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/count"), -1);
+        if (isPrivate && !logged_in && count != -1 && resource_data_list == null) {
             logger.info("Cannot parse url as profile is private");
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
@@ -75,13 +85,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (id_owner == null) {
             return null;
         }
-
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(username_url);
-
-        String nextid = (String) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/page_info/end_cursor");
-        final String maxid = (String) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/__get_params/max_id");
-        ArrayList<Object> resource_data_list = (ArrayList) DummyScriptEnginePlugin.walkJson(entries, "entry_data/ProfilePage/{0}/user/media/nodes");
 
         int page = 0;
         do {
@@ -126,6 +129,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 dl._setFilePackage(fp);
                 dl.setAvailable(true);
                 dl.setName(filename);
+                if (isPrivate) {
+                    /*
+                     * Without account, private urls look exactly the same as offline urls --> Save private status for better host plugin
+                     * errorhandling.
+                     */
+                    dl.setProperty("private_url", true);
+                }
                 decryptedLinks.add(dl);
                 distribute(dl);
             }

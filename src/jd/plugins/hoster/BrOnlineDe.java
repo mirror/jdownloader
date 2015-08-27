@@ -22,11 +22,11 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Scanner;
+import java.util.TimeZone;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -194,7 +194,6 @@ public class BrOnlineDe extends PluginForHost {
                     color_codes.put(color_info[0], color_info[1]);
                 }
             }
-            final DecimalFormat df = new DecimalFormat("00");
             /* empty subtitle|subtitle with text */
             final String[] matches = new Regex(xmlContent, "(<tt:p xml:id=\"sub(?:title)?\\d+\".*?(?:end=\"\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\" />|</tt:p>))").getColumn(0);
             boolean offsetSet = false;
@@ -203,9 +202,9 @@ public class BrOnlineDe extends PluginForHost {
                 final String startString = new Regex(info, "begin=\"(\\d{2}:\\d{2}:\\d{2}\\.\\d{3})\"").getMatch(0);
                 final String endString = new Regex(info, "end=\"(\\d{2}:\\d{2}:\\d{2}\\.\\d{3})\"").getMatch(0);
                 final Regex startInfo = new Regex(info, "begin=\"(\\d{2})(:\\d{2}:\\d{2})\\.(\\d{3})\"");
-                final Regex endInfo = new Regex(info, "end=\"(\\d{2})(:\\d{2}:\\d{2})\\.(\\d{3})\"");
+                // final Regex endInfo = new Regex(info, "end=\"(\\d{2})(:\\d{2}:\\d{2})\\.(\\d{3})\"");
                 final String start_hours_source_string = startInfo.getMatch(0);
-                final String end_hours_source_string = endInfo.getMatch(0);
+                // final String end_hours_source_string = endInfo.getMatch(0);
                 final int start_hours_source = Integer.parseInt(start_hours_source_string);
                 // final int end_hours_source = Integer.parseInt(end_hours_source_string);
                 long start_milliseconds = TimeFormatter.getMilliSeconds(startString, "HH:mm:ss.SSS", Locale.GERMANY);
@@ -225,7 +224,9 @@ public class BrOnlineDe extends PluginForHost {
                     end_milliseconds -= offset_reduce_milliseconds;
                     offsetSet = true;
                 }
-                final DateFormat output_date_format = new SimpleDateFormat("hh:mm:ss,SSS");
+                final DateFormat output_date_format = new SimpleDateFormat("HH:mm:ss,SSS");
+                /* Important or we will always have one hour too much! */
+                output_date_format.setTimeZone(TimeZone.getTimeZone("GMT"));
                 final String start_formatted = output_date_format.format(start_milliseconds);
                 final String end_formatted = output_date_format.format(end_milliseconds);
 

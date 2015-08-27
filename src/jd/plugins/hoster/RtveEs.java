@@ -35,12 +35,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "http://(www\\.)?rtve\\.es/alacarta/(audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "http://(www\\.)?rtve\\.es/(?:alacarta/(audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?|infantil/serie/[^/]+/video/[^/]+/\\d+/)" }, flags = { 0 })
 public class RtveEs extends PluginForHost {
 
-    private String DLURL       = null;
-    private String BLOWFISHKEY = "eWVMJmRhRDM=";
-    private String dl_now_now  = null;
+    private static final String TYPE_NORMAL = "http://(?:www\\.)?rtve\\.es/alacarta/(?:audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(?:\\?modl=COMTS)?";
+    private static final String TYPE_SERIES = "http://(?:www\\.)?rtve\\.es/infantil/serie/[^/]+/video/[^/]+/\\d+/";
+
+    private String              DLURL       = null;
+    private String              BLOWFISHKEY = "eWVMJmRhRDM=";
+    private String              dl_now_now  = null;
 
     public RtveEs(PluginWrapper wrapper) {
         super(wrapper);
@@ -136,6 +139,9 @@ public class RtveEs extends PluginForHost {
         String filename = br.getRegex("<h1><span title=\"([^\"]+)").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=\"last\">([^<]+)").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("id=\"videoPageTitle\">([^<>\"]*?)<").getMatch(0);
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

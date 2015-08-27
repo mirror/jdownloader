@@ -22,6 +22,7 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -41,6 +42,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "instagram.com" }, urls = { "https?://(?:www\\.)?(?:instagram\\.com|instagr\\.am)/p/[A-Za-z0-9_-]+" }, flags = { 2 })
 public class InstaGramCom extends PluginForHost {
 
+    @SuppressWarnings("deprecation")
     public InstaGramCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://instagram.com/accounts/login/");
@@ -68,13 +70,34 @@ public class InstaGramCom extends PluginForHost {
     private static final String  MAINPAGE           = "http://instagram.com";
     private static Object        LOCK               = new Object();
 
+    private boolean              is_private_url     = false;
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        /*
+         * Decrypter can set this status - basically to be able to handfle private urls correctly in host plugin in case users' account gets
+         * disabled for whatever reason.
+         */
+        is_private_url = downloadLink.getBooleanProperty("private_url", false);
+        boolean is_logged_in = false;
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa != null) {
+            try {
+                login(this.br, aa, false);
+                is_logged_in = true;
+            } catch (final Throwable e) {
+            }
+        }
+        if (this.is_private_url && !is_logged_in) {
+            downloadLink.getLinkStatus().setStatusText("Login required to download this content");
+            return AvailableStatus.UNCHECKABLE;
+        }
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Oops, an error occurred") || br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            /* This will also happen if a user tries to access private urls without being logged in! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         DLLINK = br.getRegex("\"video_url\":\"(http[^<>\"]*?)\"").getMatch(0);
@@ -123,6 +146,9 @@ public class InstaGramCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (this.is_private_url) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
         handleDownload(downloadLink);
     }
 
