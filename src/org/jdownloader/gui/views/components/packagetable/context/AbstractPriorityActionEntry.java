@@ -21,6 +21,7 @@ import org.jdownloader.controlling.contextmenu.Customizer;
 import org.jdownloader.gui.KeyObserver;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
@@ -37,19 +38,31 @@ public abstract class AbstractPriorityActionEntry<PackageType extends AbstractPa
 
     public AbstractPriorityActionEntry(Priority priority) {
         super();
-        setName(priority._());
-        setSmallIcon(priority.loadIcon(18));
         this.priority = priority;
         GUIEventSender.getInstance().addListener(this, true);
         metaCtrl = KeyObserver.getInstance().isMetaDown(true) || KeyObserver.getInstance().isControlDown(true);
+        updateStateAndLabelAndIcon();
+        setSmallIcon(priority.loadIcon(18));
     }
 
     @Override
     public void onKeyModifier(int parameter) {
+        final boolean before = metaCtrl;
         if (KeyObserver.getInstance().isControlDown(false) || KeyObserver.getInstance().isMetaDown(false)) {
             metaCtrl = true;
         } else {
             metaCtrl = false;
+        }
+        if (before != metaCtrl) {
+            updateStateAndLabelAndIcon();
+        }
+    }
+
+    private void updateStateAndLabelAndIcon() {
+        if (isForceMode() && !metaCtrl || metaCtrl) {
+            setName(priority._() + " " + _GUI._.system_download_triggerfileexists_overwrite());
+        } else {
+            setName(priority._());
         }
     }
 
