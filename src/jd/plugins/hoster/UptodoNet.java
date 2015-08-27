@@ -41,15 +41,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptodo.net" }, urls = { "https?://(www\\.)?uptodo\\.net/[A-Za-z0-9]+" }, flags = { 2 })
 public class UptodoNet extends PluginForHost {
@@ -61,7 +58,7 @@ public class UptodoNet extends PluginForHost {
 
     // For sites which use this script: http://www.yetishare.com/
     // YetiShareBasic Version 0.5.8-psp
-    // mods:
+    // mods: available_CHECK_OVER_INFO_PAGE = false, no filesize, filename regex
     // limit-info: premium untested, set FREE account limits
     // protocol: no https
     // captchatype: null, solvemedia, reCaptchaV1, reCaptchaV2
@@ -82,7 +79,7 @@ public class UptodoNet extends PluginForHost {
     private static final boolean supportshttps                                = false;
     private static final boolean supportshttps_FORCED                         = false;
     /* In case there is no information when accessing the main link */
-    private static final boolean available_CHECK_OVER_INFO_PAGE               = true;
+    private static final boolean available_CHECK_OVER_INFO_PAGE               = false;
     private static final boolean useOldLoginMethod                            = false;
     /* Known errors */
     private static final String  url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
@@ -154,18 +151,13 @@ public class UptodoNet extends PluginForHost {
             if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\"")) || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
-            filename = fInfo.getMatch(0);
-            filesize = fInfo.getMatch(1);
-            if (filesize == null) {
-                filesize = br.getRegex("(\\d+(?:,\\d+)?(\\.\\d+)? (?:KB|MB|GB))").getMatch(0);
-            }
+            final String remainingTraffic = br.getRegex("<strong>([^<>\"]*?)</strong>[\t\n\r ]+transferu").getMatch(0);
+            filename = br.getRegex("heading-1[^<>]+?>([^<>]+?)<").getMatch(0);
         }
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(Encoding.htmlDecode(filename).trim());
-        link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -237,7 +229,7 @@ public class UptodoNet extends PluginForHost {
                         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, continue_link, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, resume, maxchunks);
                     } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                         logger.info("Detected captcha method \"solvemedia\" for this host");
-                       
+
                         final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                         if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
                             sm.setSecure(true);
@@ -407,7 +399,7 @@ public class UptodoNet extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     *
+     * 
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
@@ -624,10 +616,9 @@ public class UptodoNet extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.MFScripts_YetiShare;
-	}
-
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.MFScripts_YetiShare;
+    }
 
 }
