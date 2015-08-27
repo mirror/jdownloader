@@ -126,7 +126,7 @@ public class StreaminTo extends antiDDoSForHost {
         br.setFollowRedirects(true);
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:|<Title>Watch </Title>)").matches() || !br.getURL().matches("https?://(www\\.)?streamin\\.to/[a-z0-9]{12}")) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:|<Title>Watch </Title>|<b>File Deleted\\.</b>)").matches() || !br.getURL().matches("https?://(www\\.)?streamin\\.to/[a-z0-9]{12}")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {

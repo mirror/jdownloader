@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -51,6 +53,10 @@ public class KeezMoviesComDecrypter extends PornEmbedParser {
         String filename = br.getRegex("<span class=\"fn\" style=\"display:none\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) \\- KeezMovies\\.com</title>").getMatch(0);
+        }
+        if (filename != null) {
+            // cleanup
+            filename = StringUtils.startsWithCaseInsensitive(StringUtils.trim(filename), "http") ? null : filename;
         }
         decryptedLinks.addAll(findEmbedUrls(filename));
         if (!decryptedLinks.isEmpty()) {

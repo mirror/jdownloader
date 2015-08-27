@@ -424,7 +424,7 @@ public class TurboBitNet extends PluginForHost {
                     break;
                 } else {
                     if (i + 1 == retry) {
-                        // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
                     continue;
                 }

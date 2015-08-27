@@ -10,6 +10,8 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
+import jd.utils.JDUtilities;
 
 public abstract class PornEmbedParser extends antiDDoSForDecrypt {
 
@@ -35,6 +37,8 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
     public final ArrayList<DownloadLink> findEmbedUrls(String title) throws IOException {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final Browser brdecrypt = br.cloneBrowser();
+        // use plugin regex where possible... this means less maintaince required.
+        Plugin plugin = null;
         // xvideos.com 1
         String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
         // xvideos.com 2
@@ -134,6 +138,13 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
         externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf\".*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("https://www.tnaflix.com/embedding_player/" + externID));
+            return decryptedLinks;
+        }
+        /* tnaflix.com, other */
+        plugin = JDUtilities.getPluginForHost("tnaflix.com");
+        externID = br.getRegex(plugin.getSupportedLinks()).getMatch(-1);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         externID = br.getRegex("metacafe\\.com/fplayer/(\\d+)/").getMatch(0);
@@ -416,7 +427,10 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("\"(https?://(?:www\\.)?pornstarnetwork\\.com/video/embed\\?id=\\d+[^<>\"]*?)\"").getMatch(0);
+        // pornstar
+        plugin = JDUtilities.getPluginForHost("pornstarnetwork.com");
+        externID = br.getRegex(plugin.getSupportedLinks()).getMatch(-1);
+
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
@@ -432,7 +446,7 @@ public abstract class PornEmbedParser extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         // isharemybitch.com #1
-        externID = br.getRegex("\"(https?://(?:www\\.)?isharemybitch\\.com/flvPlayer\\.swf\\?settings=[^<>\"]*?)\"").getMatch(0);
+        externID = br.getRegex("(\"|')(https?://(?:www\\.)?isharemybitch\\.com/flvPlayer\\.swf\\?settings=[^<>\"]*?)\"").getMatch(0);
         // isharemybitch.com #2
         if (externID == null) {
             externID = br.getRegex("\"(https?://(?:www\\.)?share\\-image\\.com/gallery/[^<>\"]*?)\"").getMatch(0);
