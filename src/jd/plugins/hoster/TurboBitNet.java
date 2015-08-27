@@ -21,16 +21,24 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -39,6 +47,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
@@ -56,10 +65,6 @@ import jd.plugins.SiteType.SiteTemplate;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
 
 //When adding new domains here also add them to the turbobit.net decrypter (TurboBitNetFolder)
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbobit\\.net|upload\\.mskvn\\.by|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.uz|xrfiles\\.ru|turbobax\\.net|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|freefo\\.ru|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|vipgfx\\.net|turbovit\\.com\\.ua|turboot\\.ru|filez\\.ninja|kilofile\\.com)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
@@ -283,10 +288,13 @@ public class TurboBitNet extends PluginForHost {
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
+        br = new Browser();
+        dupe.clear();
         prepBrowser(br, userAgent.get());
         String dllink = downloadLink.getDownloadURL();
         sleep(2500, downloadLink);
-        getPage(dllink);
+        br.getPage(dllink);
+        simulateBrowser();
         if (br.containsHTML("('File not found\\. Probably it was deleted)") || br.containsHTML(HitFileNet.HTML_FILE_OFFLINE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -303,11 +311,27 @@ public class TurboBitNet extends PluginForHost {
         }
         String downloadUrl = null, waittime = null;
         String id = getFUID(downloadLink);
-        getPage("/download/free/" + id);
+        br.getPage("/download/free/" + id);
+        if (br.getHttpConnection().getCompleteContentLength() < 200) {
+            final String redirect = br.getRegex("window\\.location\\.href\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
+            if (redirect != null) {
+                br.getPage(redirect);
+            }
+        }
+        simulateBrowser();
         if (br.containsHTML(HitFileNet.HTML_FILE_OFFLINE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-
+        if (StringUtils.equalsIgnoreCase(br.getRedirectLocation(), downloadLink.getDownloadURL().replace("www.", "")) || br.containsHTML("<div class=\"free-limit-note\">\\s*Limit reached for free download of this file\\.")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+        }
         Form captchaform = null;
         final Form[] allForms = br.getForms();
         if (allForms != null && allForms.length != 0) {
@@ -344,6 +368,9 @@ public class TurboBitNet extends PluginForHost {
             logger.warning("captchaform equals null!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (StringUtils.equalsIgnoreCase(captchaform.getAction(), "#")) {
+            captchaform.setAction(br.getURL());
+        }
         if (br.containsHTML(RECAPTCHATEXT)) {
             logger.info("Handling Re Captcha");
             final String theId = new Regex(br.toString(), "challenge\\?k=(.*?)\"").getMatch(0);
@@ -373,9 +400,10 @@ public class TurboBitNet extends PluginForHost {
             if (captchaUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            for (int i = 1; i <= 2; i++) {
+            final int retry = 2;
+            for (int i = 0; i < retry; i++) {
                 String captchaCode;
-                if (!getPluginConfig().getBooleanProperty("JAC", false) || i == 2) {
+                if (!getPluginConfig().getBooleanProperty("JAC", false) || i == retry - 1) {
                     captchaCode = getCaptchaCode("turbobit.net.disabled", captchaUrl, downloadLink);
                 } else if (captchaUrl.contains("/basic/")) {
                     logger.info("Handling basic captchas");
@@ -388,16 +416,24 @@ public class TurboBitNet extends PluginForHost {
                     logger.warning(msg);
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA, msg);
                 }
-                captchaform.put("captcha_response", captchaCode);
+                captchaform.put("captcha_response", Encoding.urlEncode(captchaCode));
+                final Browser br = this.br.cloneBrowser();
                 br.submitForm(captchaform);
                 if (br.getRegex(CAPTCHAREGEX).getMatch(0) == null) {
+                    this.br = br;
                     break;
+                } else {
+                    if (i + 1 == retry) {
+                        // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    continue;
                 }
             }
             if (br.getRegex(CAPTCHAREGEX).getMatch(0) != null || br.containsHTML(RECAPTCHATEXT)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
+        simulateBrowser();
         // Ticket Time
         String ttt = parseImageUrl(br.getRegex(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(null)).getMatch(0), true);
         int maxWait = 9999, realWait = 0;
@@ -527,6 +563,7 @@ public class TurboBitNet extends PluginForHost {
         // Future redirects at this point! We want to catch them and not process in order to get the MD5sum! example url structure
         // http://s\\d{2}.turbobit.ru:\\d+/download.php?name=FILENAME.FILEEXTENTION&md5=793379e72eef01ed1fa3fec91eff5394&fid=b5w4jikojflm&uid=free&speed=59&till=1356198536&trycount=1&ip=YOURIP&sid=60193f81464cca228e7bb240a0c39130&browser=201c88fd294e46f9424f724b0d1a11ff&did=800927001&sign=7c2e5d7b344b4a205c71c18c923f96ab
         br.getPage(downloadUrl);
+        downloadUrl = br.getRedirectLocation() != null ? br.getRedirectLocation() : br.getURL();
         final String md5sum = new Regex(downloadUrl, "md5=([a-f0-9]{32})").getMatch(0);
         if (md5sum != null) {
             downloadLink.setMD5Hash(md5sum);
@@ -581,13 +618,6 @@ public class TurboBitNet extends PluginForHost {
         return fuid;
     }
 
-    private void getPage(String dllink) throws Exception {
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getPage(dllink);
-    }
-
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         // support for public premium links
@@ -598,7 +628,7 @@ public class TurboBitNet extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         sleep(2000, link);
-        getPage(link.getDownloadURL());
+        br.getPage(link.getDownloadURL());
         String dllink = null;
         final String[] mirrors = br.getRegex("('|\")(http://([a-z0-9\\.]+)?turbobit\\.net//?download/redirect/.*?)\\1").getColumn(1);
         if (mirrors == null || mirrors.length == 0) {
@@ -784,7 +814,7 @@ public class TurboBitNet extends PluginForHost {
     private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
 
     private Browser prepBrowser(final Browser prepBr, String UA) {
-        br.setCookie(MAINPAGE, "JD", "1");
+        // br.setCookie(MAINPAGE, "JD", "1");
         if (UA == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
@@ -837,7 +867,7 @@ public class TurboBitNet extends PluginForHost {
                 }
                 // lets set a new agent
                 prepBrowser(br, null);
-                getPage(MAINPAGE);
+                br.getPage(MAINPAGE);
                 br.postPage("/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=Sign+in");
                 // Check for stupid login captcha
                 if (br.containsHTML(">Limit of login attempts exceeded") || br.containsHTML(">Please enter the captcha")) {
@@ -948,11 +978,15 @@ public class TurboBitNet extends PluginForHost {
             if (br.containsHTML("(<div class=\"code-404\">404</div>|Файл не найден\\. Возможно он был удален\\.<br|File( was)? not found\\.|It could possibly be deleted\\.)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String fileName = br.getRegex("<title>[ \t\r\n]+(Download|Datei downloaden) (.*?)\\. Free download without registration from TurboBit\\.net").getMatch(1);
+            final String filenameSize = "<title>\\s*(?:Download\\s+file|Datei\\s+downloaden)\\s*(.*?)\\s*\\(([\\d\\.,]+\\s*[BMGTP]{1,2})\\)\\s*\\|\\s*TurboBit\\.net";
+            String fileName = br.getRegex(filenameSize).getMatch(0);
             if (fileName == null) {
-                fileName = br.getRegex("<span class='file-icon.*?'>(.*?)</span>").getMatch(0);
+                fileName = br.getRegex("<span class=(\"|')file-title\\1[^>]*>(.*?)</span>").getMatch(1);
             }
-            String fileSize = br.getRegex("class=\"file-size\">([^<>\"]*?)<").getMatch(0);
+            String fileSize = br.getRegex(filenameSize).getMatch(1);
+            if (fileSize == null) {
+                br.getRegex("class=\"file-size\">([^<>\"]*?)<").getMatch(0);
+            }
             if (fileName == null) {
                 if (br.containsHTML("Our service is currently unavailable in your country.")) {
                     downloadLink.getLinkStatus().setStatusText("Our service is currently unavailable in your country.");
@@ -1051,6 +1085,69 @@ public class TurboBitNet extends PluginForHost {
             return true;
         }
         return false;
+    }
+
+    private LinkedHashSet<String> dupe = new LinkedHashSet<String>();
+
+    private void simulateBrowser() throws InterruptedException {
+        // dupe.clear();
+
+        final AtomicInteger requestQ = new AtomicInteger(0);
+        final AtomicInteger requestS = new AtomicInteger(0);
+        final ArrayList<String> links = new ArrayList<String>();
+
+        String[] l1 = new Regex(br, "\\s+(?:src)=(\"|')(.*?)\\1").getColumn(1);
+        if (l1 != null) {
+            links.addAll(Arrays.asList(l1));
+        }
+        l1 = new Regex(br, "\\s+(?:src)=(?!\"|')([^\\s]+)").getColumn(0);
+        if (l1 != null) {
+            links.addAll(Arrays.asList(l1));
+        }
+        for (final String link : links) {
+            // lets only add links related to this hoster.
+            final String correctedLink = Request.getLocation(link, br.getRequest());
+            if (this.getHost().equals(Browser.getHost(correctedLink)) && !correctedLink.endsWith(this.getHost() + "/") && !correctedLink.contains(".html") && !correctedLink.equals(br.getURL()) && !correctedLink.contains("/captcha/")) {
+                if (dupe.add(correctedLink)) {
+
+                    final Thread simulate = new Thread("SimulateBrowser") {
+
+                        public void run() {
+                            final Browser rb = br.cloneBrowser();
+                            rb.getHeaders().put("Cache-Control", null);
+                            // open get connection for images, need to confirm
+                            if (correctedLink.matches(".+\\.png.*")) {
+                                rb.getHeaders().put("Accept", "image/webp,*/*;q=0.8");
+                            } else if (correctedLink.matches(".+\\.js.*")) {
+                                rb.getHeaders().put("Accept", "*/*");
+                            } else if (correctedLink.matches(".+\\.css.*")) {
+                                rb.getHeaders().put("Accept", "text/css,*/*;q=0.1");
+                            }
+                            URLConnectionAdapter con = null;
+                            try {
+                                requestQ.getAndIncrement();
+                                con = rb.openGetConnection(correctedLink);
+                            } catch (final Exception e) {
+                            } finally {
+                                try {
+                                    con.disconnect();
+                                } catch (final Exception e) {
+                                }
+                                requestS.getAndIncrement();
+                            }
+                            return;
+                        }
+
+                    };
+                    simulate.start();
+                    Thread.sleep(100);
+
+                }
+            }
+        }
+        while (requestQ.get() != requestS.get()) {
+            Thread.sleep(1000);
+        }
     }
 
     @Override
