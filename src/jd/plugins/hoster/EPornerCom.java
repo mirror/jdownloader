@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eporner.com" }, urls = { "http://(www\\.)?eporner\\.com/hd\\-porn/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "eporner.com" }, urls = { "http://(www\\.)?eporner\\.com/hd\\-porn/\\d+(/[^/]+)?" }, flags = { 0 })
 public class EPornerCom extends PluginForHost {
 
     public String DLLINK = null;
@@ -49,19 +49,9 @@ public class EPornerCom extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -69,6 +59,18 @@ public class EPornerCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?) \\- EPORNER Free HD Porn Tube</title>").getMatch(0);
+        if (filename == null) {
+            /* Filename inside url */
+            filename = new Regex(downloadLink.getDownloadURL(), "eporner\\.com/hd\\-porn/\\d+/(.+)").getMatch(0);
+            if (filename != null) {
+                /* url filename --> Nicer url filename */
+                filename = filename.replace("-", " ");
+            }
+        }
+        if (filename == null) {
+            /* linkid inside url */
+            filename = new Regex(downloadLink.getDownloadURL(), "eporner\\.com/hd\\-porn/(\\d+)").getMatch(0);
+        }
         final String correctedBR = br.toString().replace("\\", "");
         String continueLink = new Regex(correctedBR, "(\"|\\')(/config\\d+/\\d+/[0-9a-f]+(/)?)(\"|\\')").getMatch(1);
         if (continueLink == null || filename == null) {
@@ -81,7 +83,7 @@ public class EPornerCom extends PluginForHost {
             DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
         }
         if (DLLINK == null) {
-            DLLINK = br.getRegex("file: \"(https?://[^<>\"]*?)\"").getMatch(0);
+            DLLINK = br.getRegex("file:[\r\n\r ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
         }
         if (DLLINK == null || "http://download.eporner.com/na.flv".equalsIgnoreCase(DLLINK)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -93,7 +95,7 @@ public class EPornerCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -106,6 +108,17 @@ public class EPornerCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

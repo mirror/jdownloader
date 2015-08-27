@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myspass.de" }, urls = { "http://(?:www\\.)?myspass\\.de/(?:myspass/)?shows/(?:tv|web)shows/[a-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myspass.de", "tvtotal.prosieben.de" }, urls = { "http://(?:www\\.)?myspass\\.de/(?:myspass/)?shows/(?:tv|web)shows/[a-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+", "http://tvtotal\\.prosieben\\.de/videos/.*?/\\d+/" }, flags = { 0, 0 })
 public class MySpassDe extends PluginForHost {
 
     public MySpassDe(PluginWrapper wrapper) {
@@ -55,7 +55,7 @@ public class MySpassDe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)/?$").getMatch(0);
         downloadLink.setLinkID(fid);
         br.getPage("http://www.myspass.de/myspass/includes/apps/video/getvideometadataxml.php?id=" + fid + "&0." + System.currentTimeMillis());
         if (br.containsHTML("<url_flv><\\!\\[CDATA\\[\\]\\]></url_flv>")) {
