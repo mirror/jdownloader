@@ -57,6 +57,7 @@ public class OpenDriveCom extends PluginForHost {
 
     private static final boolean use_api = true;
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -158,11 +159,9 @@ public class OpenDriveCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(false);
-                br.getPage("https://www.opendrive.com/login/box");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getPage("https://www.opendrive.com/login?ajax=1&action=do_login&login_username=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "login_value") == null) {
+                this.br.setFollowRedirects(true);
+                this.br.postPage("https://www.opendrive.com/login", "action=od_login&remember_me=on&login_username=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()));
+                if (!this.br.containsHTML("\"user-controls-menu\"")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // Save cookies
@@ -181,6 +180,7 @@ public class OpenDriveCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -191,13 +191,15 @@ public class OpenDriveCom extends PluginForHost {
             throw e;
         }
         br.getPage("https://www.opendrive.com/settings");
-        if (!br.containsHTML("<span>Personal Account</span>")) {
-            ai.setStatus("Unsupported Accounttype");
-            account.setValid(false);
-            return ai;
+        if (!br.containsHTML(">Personal account<")) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
         }
         account.setValid(true);
-        ai.setStatus("Premium User");
+        ai.setStatus("Premium account");
         return ai;
     }
 

@@ -161,6 +161,9 @@ public class DevilShareNet extends PluginForHost {
             }
         } else {
             br.getPage(dwnlURL);
+            if (this.br.containsHTML(">File Not Found")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
 
             String[][] fileInfo = new Regex(br, "<div class=\"large-12\" id=\"download\">[ \t\n\r\f]+?<h1>(.*)</h1>[ \t\n\r\f]+?<span> (.* [TGM]B)</span>[ \t\n\r\f]<div class=\"clear\"></div>").getMatches();
             if (fileInfo == null) {
@@ -588,7 +591,7 @@ public class DevilShareNet extends PluginForHost {
     /*
      * *
      * Wrapper<br/> Tries to return value of key from JSon response, from default 'br' Browser.
-     *
+     * 
      * @author raztoki
      */
     private String getJson(final String key) {
@@ -628,39 +631,39 @@ public class DevilShareNet extends PluginForHost {
     }
 
     private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-        {
-            put("USE_API", "Use API (recommended!)");
-            put("INVALID_LOGIN", "Can't find Login Form");
-            put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
-            put("PREMIUM", "Premium User");
-            put("FREE", "Free (Registered) User");
-            put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
-            put("LOGIN_ERROR", "DevilShare.Net: Login Error");
-            put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
-            put("NO_TRAFFIC", "No traffic left");
-            put("DOWNLOAD_LIMIT", "You can only download 1 file per 15 minutes");
-            put("CAPTCHA_ERROR", "Wrong Captcha code in 3 trials!");
-            put("NO_FREE_SLOTS", "No free slots for downloading this file");
-        }
-    };
+                                                  {
+                                                      put("USE_API", "Use API (recommended!)");
+                                                      put("INVALID_LOGIN", "Can't find Login Form");
+                                                      put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
+                                                      put("PREMIUM", "Premium User");
+                                                      put("FREE", "Free (Registered) User");
+                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
+                                                      put("LOGIN_ERROR", "DevilShare.Net: Login Error");
+                                                      put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
+                                                      put("NO_TRAFFIC", "No traffic left");
+                                                      put("DOWNLOAD_LIMIT", "You can only download 1 file per 15 minutes");
+                                                      put("CAPTCHA_ERROR", "Wrong Captcha code in 3 trials!");
+                                                      put("NO_FREE_SLOTS", "No free slots for downloading this file");
+                                                  }
+                                              };
 
     private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-        {
-            put("USE_API", "Używaj API (zalecane!)");
-            put("INVALID_LOGIN", "Nie znaleziono formularza logowania!");
-            put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
-            put("PREMIUM", "Użytkownik Premium");
-            put("FREE", "Użytkownik zarejestrowany (darmowy)");
-            put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
-            put("LOGIN_ERROR", "DevilShare.Net: Błąd logowania");
-            put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
-            put("NO_TRAFFIC", "Brak dostępnego transferu");
-            put("DOWNLOAD_LIMIT", "Można pobrać maksymalnie 1 plik na 15 minut");
-            put("CAPTCHA_ERROR", "Wprowadzono 3-krotnie nieprawiłowy kod Captcha!");
-            put("NO_FREE_SLOTS", "Brak wolnych slotów do pobrania tego pliku");
+                                                  {
+                                                      put("USE_API", "Używaj API (zalecane!)");
+                                                      put("INVALID_LOGIN", "Nie znaleziono formularza logowania!");
+                                                      put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
+                                                      put("PREMIUM", "Użytkownik Premium");
+                                                      put("FREE", "Użytkownik zarejestrowany (darmowy)");
+                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
+                                                      put("LOGIN_ERROR", "DevilShare.Net: Błąd logowania");
+                                                      put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
+                                                      put("NO_TRAFFIC", "Brak dostępnego transferu");
+                                                      put("DOWNLOAD_LIMIT", "Można pobrać maksymalnie 1 plik na 15 minut");
+                                                      put("CAPTCHA_ERROR", "Wprowadzono 3-krotnie nieprawiłowy kod Captcha!");
+                                                      put("NO_FREE_SLOTS", "Brak wolnych slotów do pobrania tego pliku");
 
-        }
-    };
+                                                  }
+                                              };
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USE_API, JDL.L("plugins.hoster.DevilShareNet.useAPI", getPhrase("USE_API"))).setDefaultValue(default_USE_API));
