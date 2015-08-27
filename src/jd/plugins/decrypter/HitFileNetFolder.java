@@ -44,8 +44,8 @@ public class HitFileNetFolder extends PluginForDecrypt {
         if (!br.getURL().equals(parameter)) {
             br.getPage(parameter);
         }
-        if (br.containsHTML(">There are no any files in this folder<|>Searching file\\.\\.\\.Please wait|>Please wait, searching file")) {
-            logger.info("Link offline: " + parameter);
+        if (br.containsHTML(">There are no any files in this folder<|" + jd.plugins.hoster.HitFileNet.HTML_FILE_OFFLINE)) {
+            decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String fpName = br.getRegex("class=\\'folder\\-big\\'><img src=\\'/js/lib/grid/icon/folder\\.png\\'>([^<>\"\\']+)</div>").getMatch(0);
