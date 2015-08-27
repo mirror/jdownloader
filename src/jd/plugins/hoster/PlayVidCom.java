@@ -261,12 +261,18 @@ public class PlayVidCom extends PluginForHost {
         if (dllink != null) {
             try {
                 final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                URLConnectionAdapter con = null;
+                try {
+                    con = br2.openGetConnection(dllink);
+                    if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                        downloadLink.setProperty(property, Property.NULL);
+                        dllink = null;
+                    }
+                } finally {
+                    if (con != null) {
+                        con.disconnect();
+                    }
                 }
-                con.disconnect();
             } catch (Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
                 dllink = null;
