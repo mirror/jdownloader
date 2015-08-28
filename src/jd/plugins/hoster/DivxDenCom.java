@@ -37,9 +37,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxden.com" }, urls = { "http://(www\\.)?(divxden|vidxden)\\.(com|to)/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxden.com" }, urls = { "http://(?:www\\.)?(?:divxden|vidxden)\\.(com|to)/(?:embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class DivxDenCom extends PluginForHost {
 
     private String              brbefore      = "";
@@ -52,6 +51,7 @@ public class DivxDenCom extends PluginForHost {
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -61,7 +61,7 @@ public class DivxDenCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
-        if (brbefore.contains("No such file") || brbefore.contains("No such user exist") || brbefore.contains("File not found") || brbefore.contains(">File Not Found<") || (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/404.html"))) {
+        if (brbefore.contains("No such file") || brbefore.contains("No such user exist") || brbefore.contains("File not found") || brbefore.contains(">File Not Found<") || (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/404.html")) || this.br.getHttpConnection().getResponseCode() == 404) {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

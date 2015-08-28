@@ -218,6 +218,10 @@ public class BrOnlineDe extends PluginForHost {
                 } else if (offset_reduce_milliseconds != 0) {
                     /* Correct offset via given offset_reduce_hours */
                     start_milliseconds -= offset_reduce_milliseconds;
+                    /* Errorhandling for negative start values - should not happen with end values */
+                    if (start_milliseconds < 0) {
+                        start_milliseconds = 0;
+                    }
                     end_milliseconds -= offset_reduce_milliseconds;
                     offsetSet = true;
                 }
