@@ -243,8 +243,13 @@ public class SpiegelDe extends PluginForHost {
                 url_rtmp = "rtmp://mf.schneevonmorgen.c.nmdn.net/" + spiegeltvfilme_rtmp_app;
             }
             final String playpath = "mp4:" + uuid + "_spiegeltv_0500_" + scalefactor + ".m4v";
-            final String url_hls = "http://m3u8.schneevonmorgen.com/schnee_vod/_definst_/" + playpath + "/playlist.m3u8";
+            /*
+             * Also possible: "http://sptv-vod.dcp.adaptive.level3.net/" + playpath + ".m3u8" (usually the'schneevonmorgen.com' URLs
+             * redirect to such URLs)
+             */
+            String url_hls = "http://m3u8.schneevonmorgen.com/schnee_vod/_definst_/" + playpath + "/playlist.m3u8";
             if (prefer_hls) {
+                this.br.setFollowRedirects(true);
                 checkFFmpeg(downloadLink, "Download a HLS Stream");
                 dl = new HLSDownloader(downloadLink, br, url_hls);
                 dl.startDownload();
