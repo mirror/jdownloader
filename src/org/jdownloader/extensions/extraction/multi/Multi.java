@@ -359,7 +359,7 @@ public class Multi extends IExtraction {
         if (!ret) {
             logger.info("Unsupported SevenZipJBinding|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
         }
-        return false;
+        return ret;
     }
 
     @Override
