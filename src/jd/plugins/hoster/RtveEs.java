@@ -133,7 +133,7 @@ public class RtveEs extends PluginForHost {
         br.setFollowRedirects(true);
         String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
-        if (br.containsHTML("La página solicitada no está disponible por haber cambiado la dirección \\(URL\\) o no existir\\.")) {
+        if (br.containsHTML("La página solicitada no está disponible por haber cambiado la dirección \\(URL\\) o no existir\\.|id=\"errorndispo\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1><span title=\"([^\"]+)").getMatch(0);
