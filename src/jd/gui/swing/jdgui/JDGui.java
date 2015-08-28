@@ -1427,7 +1427,6 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             public Object edtRun() {
                 switch (panel) {
                 case DOWNLOADLIST:
-                    //
                     JDGui.this.mainTabbedPane.setSelectedComponent(JDGui.this.downloadView);
                     break;
                 case LINKGRABBER:
@@ -1435,6 +1434,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
                     break;
                 default:
                     JDGui.this.mainTabbedPane.setSelectedComponent(JDGui.this.downloadView);
+                    break;
                 }
                 return null;
             }

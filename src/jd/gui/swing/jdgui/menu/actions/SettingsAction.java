@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.JDGui.Panels;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
@@ -42,8 +43,13 @@ public class SettingsAction extends CustomizableAppAction {
     @Override
     public void actionPerformed(ActionEvent e) {
         // AccountManagerSettings
-        JsonConfig.create(GraphicalUserInterfaceSettings.class).setConfigViewVisible(true);
-        JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+        final GraphicalUserInterfaceSettings settings = JsonConfig.create(GraphicalUserInterfaceSettings.class);
+        if (settings.isConfigViewVisible() == false) {
+            settings.setConfigViewVisible(true);
+            JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
+        } else {
+            settings.setConfigViewVisible(false);
+            JDGui.getInstance().requestPanel(Panels.DOWNLOADLIST);
+        }
     }
-
 }
