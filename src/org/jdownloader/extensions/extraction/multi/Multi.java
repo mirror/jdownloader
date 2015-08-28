@@ -52,6 +52,7 @@ import org.appwork.utils.ReusableByteArrayOutputStream;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.ARCHFamily;
+import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
@@ -271,8 +272,7 @@ public class Multi extends IExtraction {
         return SevenZip.isInitializedSuccessfully();
     }
 
-    @Override
-    public boolean isAvailable(ExtractionExtension extractionExtension) {
+    private boolean hasLibrarySupport(ExtractionExtension extractionExtension) {
         final String customLibID = System.getProperty("sevenzipLibID");
         if (StringUtils.isNotEmpty(customLibID)) {
             if (initLibrary(customLibID)) {
@@ -282,59 +282,84 @@ public class Multi extends IExtraction {
                 return true;
             }
             return false;
-        }
-        switch (CrossSystem.OS.getFamily()) {
-        case BSD:
-            /* Unsure if this works at all */
-        case LINUX:
-            switch (CrossSystem.getARCHFamily()) {
-            case ARM:
-                final LinkedHashSet<String> libIDs = new LinkedHashSet<String>();
-                final String lastWorkingLibID = extractionExtension.getSettings().getLastWorkingLibID();
-                if (StringUtils.isNotEmpty(lastWorkingLibID)) {
-                    libIDs.add(lastWorkingLibID);
-                    extractionExtension.getSettings().setLastWorkingLibID(null);
-                    extractionExtension.getSettings()._getStorageHandler().write();
-                }
-                if (useARMPiLibrary()) {
-                    libIDs.add("Linux-armpi");
-                    libIDs.add("Linux-armpi2");
-                } else {
-                    libIDs.add("Linux-arm2");
-                    libIDs.add("Linux-arm");
-                    libIDs.add("Linux-arm3");
-                }
-                for (final String libID : libIDs) {
-                    if (initLibrary(libID)) {
-                        extractionExtension.getSettings().setLastWorkingLibID(libID);
-                        return true;
+        } else {
+            final OperatingSystem os = CrossSystem.getOS();
+            switch (os.getFamily()) {
+            case BSD:
+                switch (os) {
+                case FREEBSD:
+                    switch (CrossSystem.getARCHFamily()) {
+                    case X86:
+                        if (Application.is64BitJvm()) {
+                            return initLibrary("FreeBSD-amd64");
+                        } else {
+                            return initLibrary("FreeBSD-i386");
+                        }
+                    default:
+                        return false;
                     }
+                default:
+                    return false;
                 }
-                return false;
-            case X86:
+            case LINUX:
+                switch (CrossSystem.getARCHFamily()) {
+                case ARM:
+                    final LinkedHashSet<String> libIDs = new LinkedHashSet<String>();
+                    final String lastWorkingLibID = extractionExtension.getSettings().getLastWorkingLibID();
+                    if (StringUtils.isNotEmpty(lastWorkingLibID)) {
+                        libIDs.add(lastWorkingLibID);
+                        extractionExtension.getSettings().setLastWorkingLibID(null);
+                        extractionExtension.getSettings()._getStorageHandler().write();
+                    }
+                    if (useARMPiLibrary()) {
+                        libIDs.add("Linux-armpi");
+                        libIDs.add("Linux-armpi2");
+                    } else {
+                        libIDs.add("Linux-arm2");
+                        libIDs.add("Linux-arm");
+                        libIDs.add("Linux-arm3");
+                    }
+                    for (final String libID : libIDs) {
+                        if (initLibrary(libID)) {
+                            extractionExtension.getSettings().setLastWorkingLibID(libID);
+                            return true;
+                        }
+                    }
+                    return false;
+                case X86:
+                    if (Application.is64BitJvm()) {
+                        return initLibrary("Linux-amd64");
+                    } else {
+                        return initLibrary("Linux-i386");
+                    }
+                default:
+                    return false;
+                }
+            case MAC:
                 if (Application.is64BitJvm()) {
-                    return initLibrary("Linux-amd64");
+                    return initLibrary("Mac-x86_64");
                 } else {
-                    return initLibrary("Linux-i386");
+                    return initLibrary("Mac-i386");
+                }
+            case WINDOWS:
+                if (Application.is64BitJvm()) {
+                    return initLibrary("Windows-amd64");
+                } else {
+                    return initLibrary("Windows-x86");
                 }
             default:
                 return false;
             }
-        case MAC:
-            if (Application.is64BitJvm()) {
-                return initLibrary("Mac-x86_64");
-            } else {
-                return initLibrary("Mac-i386");
-            }
-        case WINDOWS:
-            if (Application.is64BitJvm()) {
-                return initLibrary("Windows-amd64");
-            } else {
-                return initLibrary("Windows-x86");
-            }
-        default:
-            return false;
         }
+    }
+
+    @Override
+    public boolean isAvailable(ExtractionExtension extractionExtension) {
+        final boolean ret = hasLibrarySupport(extractionExtension);
+        if (!ret) {
+            logger.info("Unsupported SevenZipJBinding|OS_FAM=" + CrossSystem.getOSFamily() + "|OS=" + CrossSystem.getOS() + "|64Bit_JVM=" + Application.is64BitJvm() + "|64Bit_ARCH=" + CrossSystem.is64BitArch());
+        }
+        return false;
     }
 
     @Override
@@ -916,25 +941,25 @@ public class Multi extends IExtraction {
                     if (signatureString.length() >= 24) {
                         /*
                          * 0x0001 Volume attribute (archive volume)
-                         * 
+                         *
                          * 0x0002 Archive comment present RAR 3.x uses the separate comment block and does not set this flag.
-                         * 
+                         *
                          * 0x0004 Archive lock attribute
-                         * 
+                         *
                          * 0x0008 Solid attribute (solid archive)
-                         * 
+                         *
                          * 0x0010 New volume naming scheme ('volname.partN.rar')
-                         * 
+                         *
                          * 0x0020 Authenticity information present RAR 3.x does not set this flag.
-                         * 
+                         *
                          * 0x0040 Recovery record present
-                         * 
+                         *
                          * 0x0080 Block headers are encrypted
                          */
                         final String headerBitFlags1 = "" + signatureString.charAt(20) + signatureString.charAt(21);
                         /*
                          * 0x0100 FIRST Volume
-                         * 
+                         *
                          * 0x0200 EncryptedVerion
                          */
                         final String headerBitFlags2 = "" + signatureString.charAt(22) + signatureString.charAt(23);
