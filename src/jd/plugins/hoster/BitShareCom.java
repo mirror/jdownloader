@@ -64,6 +64,7 @@ public class BitShareCom extends PluginForHost {
     /* In case we know that the host does not work at the moment or for a longer period of time. */
     private static final boolean static_under_maintenance = true;
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload("http://bitshare.com/?f=" + new Regex(link.getDownloadURL(), "([a-z0-9]{8})$").getMatch(0));
         // /files/uid are not valid without files/uid/filename

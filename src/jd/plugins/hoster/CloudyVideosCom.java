@@ -46,50 +46,50 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudyvideos.com" }, urls = { "https?://(www\\.)?cloudyvideos\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class CloudyVideosCom extends PluginForHost {
 
-    private String               correctedBR                  = "";
-    private String               passCode                     = null;
-    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private String               correctedBR                     = "";
+    private String               passCode                        = null;
+    private static final String  PASSWORDTEXT                    = "<br><b>Passwor(d|t):</b> <input";
     // primary website url, take note of redirects
-    private static final String  COOKIE_HOST                  = "http://cloudyvideos.com";
-    private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String  COOKIE_HOST                     = "http://cloudyvideos.com";
+    private static final String  NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String  NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(cloudyvideos\\.com)";
+    private static final String  DOMAINS                         = "(cloudyvideos\\.com)";
     /* Linktypes */
-    private static final String  TYPE_NORMAL                  = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
-    private static final String  TYPE_EMBED                   = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
-    private static final String  MAINTENANCE                  = ">\\s*This server is in maintenance mode";
-    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean VIDEOHOSTER                  = false;
-    private static final boolean SUPPORTSHTTPS                = false;
-    private static final boolean SUPPORTSHTTPS_FORCED         = false;
+    private static final String  TYPE_NORMAL                     = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
+    private static final String  TYPE_EMBED                      = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
+    private static final String  MAINTENANCE                     = ">\\s*This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT             = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private static final String  ALLWAIT_SHORT                   = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String  PREMIUMONLY1                    = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String  PREMIUMONLY2                    = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean VIDEOHOSTER                     = false;
+    private static final boolean SUPPORTSHTTPS                   = false;
+    private static final boolean SUPPORTSHTTPS_FORCED            = false;
     /* Workaround for serverside MESS! */
-    private static final boolean SPECIAL_HANDLING             = true;
+    private static final boolean SPECIAL_HANDLING_availablecheck = true;
+    private static final boolean SPECIAL_HANDLING_download       = false;
     // Connection stuff
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = -2;
-    private static final int     FREE_MAXDOWNLOADS            = 1;
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME                     = true;
+    private static final int     FREE_MAXCHUNKS                  = -2;
+    private static final int     FREE_MAXDOWNLOADS               = 1;
+    private static final boolean ACCOUNT_FREE_RESUME             = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS          = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS       = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME          = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger totalMaxSimultanFreeDownload    = new AtomicInteger(FREE_MAXDOWNLOADS);
     // don't touch the following!
-    private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static Object        LOCK                         = new Object();
-    private String               fuid                         = null;
+    private static AtomicInteger maxFree                         = new AtomicInteger(1);
+    private static AtomicInteger maxPrem                         = new AtomicInteger(1);
+    private static Object        LOCK                            = new Object();
+    private String               fuid                            = null;
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.4.4
@@ -164,9 +164,12 @@ public class CloudyVideosCom extends PluginForHost {
         prepBrowser(br);
         setFUID(link);
         final String[] fileInfo = new String[3];
-        if (SPECIAL_HANDLING) {
+        if (SPECIAL_HANDLING_availablecheck) {
             getPage("http://cloudyvideos.com/embed-" + this.fuid + ".html");
             fileInfo[0] = new Regex(correctedBR, "size:14px;font-family:arial;\"><b>(?!watch)([^<>\"]*?)</b></p>").getMatch(0);
+            if (fileInfo[0] == null) {
+                fileInfo[0] = new Regex(correctedBR, "<b>Watch Online</b></p>[\t\n\r ]+<p style=\"[^<>\"]*?\"><b>(?:Watch )?([^<>\"]*?)</b>").getMatch(0);
+            }
             if (fileInfo[0] == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -254,7 +257,7 @@ public class CloudyVideosCom extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({ "unused", "deprecation" })
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
@@ -264,7 +267,10 @@ public class CloudyVideosCom extends PluginForHost {
         if (dllink == null) {
             dllink = getDllink();
         }
-        if (SPECIAL_HANDLING) {
+        if (SPECIAL_HANDLING_download) {
+            if (!SPECIAL_HANDLING_availablecheck) {
+                getPage("http://cloudyvideos.com/embed-" + this.fuid + ".html");
+            }
             final Form dlForm = this.br.getForm(0);
             if (dlForm == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -309,6 +315,9 @@ public class CloudyVideosCom extends PluginForHost {
         }
         // Fourth, continue like normal.
         if (dllink == null) {
+            if (SPECIAL_HANDLING_availablecheck || SPECIAL_HANDLING_download) {
+                getPage(downloadLink.getDownloadURL());
+            }
             checkErrors(downloadLink, false);
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
@@ -424,7 +433,7 @@ public class CloudyVideosCom extends PluginForHost {
                     dlForm.put("adcopy_response", "manual_challenge");
                 } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
                     logger.info("Detected captcha method \"keycaptca\"");
-                    String result = handleCaptchaChallenge(getDownloadLink(),new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
+                    String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
                     if (result == null) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
@@ -887,9 +896,9 @@ public class CloudyVideosCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }

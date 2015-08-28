@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "auengine.com" }, urls = { "http://(www\\.)?auengine\\.(?:com|io)/(embed\\.php\\?file=.+|embed/[a-zA-Z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "auengine.com" }, urls = { "http://(www\\.)?auengine\\.(?:com|io)/(embed\\.php\\?file=.+|embed/[a-zA-Z0-9]+)" }, flags = { 0 })
 public class AuEngineCom extends PluginForHost {
 
     // raztoki embed video player template.
@@ -49,9 +49,11 @@ public class AuEngineCom extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        this.br.setFollowRedirects(true);
         // Offline links should also have nice filenames
         final String offlineFilename = new Regex(downloadLink.getDownloadURL(), "auengine\\.(?:com|io)/embed\\.php\\?file=(.+)").getMatch(0);
         if (offlineFilename != null) {
@@ -91,13 +93,13 @@ public class AuEngineCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.urlDecode(dllink, false);
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(dllink);
+                con = br2.openHeadConnection(dllink);
             } catch (final Throwable e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
