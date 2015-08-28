@@ -14,20 +14,13 @@ import java.util.TimerTask;
 
 import javax.imageio.ImageIO;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
-import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.APIQuery;
 import org.appwork.remoteapi.RemoteAPI;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.remoteapi.exceptions.InternalApiException;
+import org.appwork.storage.config.ValidationException;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.api.jdanywhere.api.interfaces.IDashboardApi;
@@ -38,12 +31,20 @@ import org.jdownloader.api.toolbar.JDownloaderToolBarAPIImpl;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
-public class DashboardApi implements IDashboardApi {
-    PollingAPIImpl            plAPI      = new PollingAPIImpl();
-    JDownloaderToolBarAPIImpl tbAPI      = new JDownloaderToolBarAPIImpl();
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
+import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
-    LinkedList<Integer>       _speedList = new LinkedList<Integer>(Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
-    Timer                     timer      = new Timer();
+public class DashboardApi implements IDashboardApi {
+    PollingAPIImpl            plAPI = new PollingAPIImpl();
+    JDownloaderToolBarAPIImpl tbAPI = new JDownloaderToolBarAPIImpl();
+
+    LinkedList<Integer> _speedList = new LinkedList<Integer>(Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    Timer               timer      = new Timer();
 
     public DashboardApi() {
         timer.scheduleAtFixedRate(new TimerTask() {
@@ -223,8 +224,14 @@ public class DashboardApi implements IDashboardApi {
      */
     @Override
     public boolean setLimitspeed(int speed) {
-        org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.setValue(speed);
-        return true;
+
+        boolean returnValue = true;
+        try {
+            org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.setValue(speed);
+        } catch (final ValidationException e) {
+            returnValue = false;
+        }
+        return returnValue;
     }
 
     /*
@@ -234,8 +241,13 @@ public class DashboardApi implements IDashboardApi {
      */
     @Override
     public boolean activateLimitspeed(boolean activate) {
-        org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.setValue(activate);
-        return true;
+        boolean returnValue = true;
+        try {
+            org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.setValue(activate);
+        } catch (final ValidationException e) {
+            returnValue = false;
+        }
+        return returnValue;
     }
 
     // returns the SpeedMeter from UI without the DownloadSpeed / AverageSpeed
@@ -316,33 +328,63 @@ public class DashboardApi implements IDashboardApi {
     }
 
     public boolean setMaxDL(int value) {
-        org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.setValue(value);
-        return true;
+        boolean returnValue = true;
+        try {
+            org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.setValue(value);
+        } catch (final ValidationException e) {
+            returnValue = false;
+        }
+        return returnValue;
     }
 
     public boolean setMaxConDL(int value) {
-        org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_CHUNKS_PER_FILE.setValue(value);
-        return true;
+        boolean returnValue = true;
+        try {
+            org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_CHUNKS_PER_FILE.setValue(value);
+        } catch (final ValidationException e) {
+            returnValue = false;
+        }
+        return returnValue;
     }
 
     public boolean setMaxConHost(int value) {
-        org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.setValue(value);
-        return true;
+        boolean returnValue = true;
+        try {
+            org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.setValue(value);
+        } catch (final ValidationException e) {
+            returnValue = false;
+        }
+        return returnValue;
     }
 
     public boolean activateMaxConHost(boolean value) {
-        org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.setValue(value);
-        return true;
+        boolean returnValue = true;
+        try {
+            org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.setValue(value);
+        } catch (final ValidationException e) {
+            returnValue = false;
+        }
+        return returnValue;
     }
 
     public boolean activateReconnect(boolean value) {
-        CFG_RECONNECT.AUTO_RECONNECT_ENABLED.setValue(value);
-        return true;
+        boolean returnValue = true;
+        try {
+            CFG_RECONNECT.AUTO_RECONNECT_ENABLED.setValue(value);
+        } catch (final ValidationException e) {
+            returnValue = false;
+        }
+        return returnValue;
     }
 
     public boolean activatePremium(boolean value) {
-        org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.setValue(value);
-        return true;
+        boolean returnValue = true;
+        try {
+            org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.setValue(value);
+        } catch (final ValidationException e) {
+            returnValue = false;
+        }
+        return returnValue;
     }
 
 }
