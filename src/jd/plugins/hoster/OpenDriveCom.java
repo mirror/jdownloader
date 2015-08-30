@@ -50,12 +50,13 @@ public class OpenDriveCom extends PluginForHost {
         return "https://www.opendrive.com/terms";
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         /* Avoid https because of old 0.9.581 Stable & this host does not force https (maybe only for login) */
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
     }
 
-    private static final boolean use_api = true;
+    private static final boolean use_api = false;
 
     @SuppressWarnings("deprecation")
     @Override

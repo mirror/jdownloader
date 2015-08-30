@@ -51,7 +51,7 @@ public class NosUploadCom extends PluginForHost {
     // private static final String PASSWORDTEXT = "<br><b>Passwor(d|t):</b> <input";
     private static final String PASSWORDTEXT        = "<strong>Passwor(d|t):</strong> <input";
     private static final String COOKIE_HOST         = "http://nosupload.com";
-    private static final String MAINTENANCE         = ">This server is in maintenance mode";
+    private static final String MAINTENANCE         = ">This server is in maintenance mode|>The website is under maintenance";
     private static final String MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String PREMIUMONLY1        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
@@ -102,7 +102,7 @@ public class NosUploadCom extends PluginForHost {
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (correctedBR.contains(MAINTENANCE)) {
+        if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
@@ -447,7 +447,7 @@ public class NosUploadCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
         }
-        if (correctedBR.contains(MAINTENANCE)) {
+        if (new Regex(correctedBR, MAINTENANCE).matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
         }
     }
@@ -560,9 +560,10 @@ public class NosUploadCom extends PluginForHost {
         }
         return false;
     }
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }
