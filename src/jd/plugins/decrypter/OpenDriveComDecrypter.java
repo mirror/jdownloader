@@ -30,7 +30,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opendrive.com" }, urls = { "https?://(www\\.)?opendrive\\.com/folders\\?[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opendrive.com" }, urls = { "https?://(www\\.)?opendrive\\.com/folders\\?[A-Za-z0-9]+|https?://od\\.lk/fl/[A-Za-z0-9]+" }, flags = { 0 })
 public class OpenDriveComDecrypter extends PluginForDecrypt {
 
     public OpenDriveComDecrypter(PluginWrapper wrapper) {
@@ -39,14 +39,12 @@ public class OpenDriveComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        /* Avoid https because of old 0.9.581 Stable & this host does not force https (maybe only for login) */
-        final String parameter = param.toString().replace("https://", "http://");
+        final String parameter = param.toString().replace("http://", "https://");
+        this.br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getURL().contains("?e=")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
+        if (br.getURL().contains("?e=") || this.br.getHttpConnection().getResponseCode() == 404) {
+            final DownloadLink offline = this.createOfflinelink(parameter);
             offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
@@ -55,15 +53,15 @@ public class OpenDriveComDecrypter extends PluginForDecrypt {
             fpName = parameter.substring(parameter.lastIndexOf("?") + 1);
         }
         // div class="grid-file one-item draggable "
-        final String[] info = br.getRegex("<div class=\"grid\\-file one\\-item draggable \"(.*?)</small>[\t\n\r ]+</div>").getColumn(0);
+        final String[] info = br.getRegex("<div class=\"grid\\-item item file\\-item(.*?class=\"file\\-size\">[^<>\"]*?<)").getColumn(0);
         if (info == null || info.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         for (final String singleinfo : info) {
             final String fid = new Regex(singleinfo, "id=\"file\\-([A-Za-z0-9\\-_]+)\"").getMatch(0);
-            final String filename = new Regex(singleinfo, "class=\"editable\\-file\" title=\"([^<>\"]*?)\"").getMatch(0);
-            final String filesize = new Regex(singleinfo, "<small>(.+)").getMatch(0);
+            final String filename = new Regex(singleinfo, "data\\-filename=\"([^<>\"]*?)\"").getMatch(0);
+            final String filesize = new Regex(singleinfo, "class=\"file\\-size\">([^<>\"]*?)<").getMatch(0);
             if (fid == null || filename == null || filesize == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

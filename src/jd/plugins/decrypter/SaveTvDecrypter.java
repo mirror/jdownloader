@@ -43,6 +43,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.SaveTv;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
@@ -71,14 +72,8 @@ public class SaveTvDecrypter extends PluginForDecrypt {
 
     /* Decrypter constants */
     private static final int             ENTRIES_PER_REQUEST                 = 1000;
+    /* Max time in which save.tv recordings are saved inside a users' account. */
     private static final long            TELECAST_ID_EXPIRE_TIME             = 32 * 24 * 60 * 60 * 1000l;
-
-    /* Property / Filename constants */
-    public static final String           QUALITY_PARAM                       = "quality";
-    public static final String           QUALITY_LQ                          = "LQ";
-    public static final String           QUALITY_HQ                          = "HQ";
-    public static final String           QUALITY_HD                          = "HD";
-    public static final String           EXTENSION                           = ".mp4";
 
     /* Decrypter variables */
     final ArrayList<DownloadLink>        decryptedLinks                      = new ArrayList<DownloadLink>();
@@ -274,9 +269,9 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             }
         }
 
-        /* Save on account to display in account information */
+        /* Save on account to display information in account information. */
         totalLinksNum = temp_telecastIDs.size();
-        acc.setProperty("acc_count_telecast_ids", Integer.toString(totalLinksNum));
+        acc.setProperty(SaveTv.PROPERTY_acc_count_telecast_ids, Integer.toString(totalLinksNum));
         final BigDecimal bd = new BigDecimal((double) totalLinksNum / ENTRIES_PER_REQUEST);
         requestCount = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
 
@@ -326,7 +321,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
             return;
         }
         /* Save on account to display in account information */
-        acc.setProperty("acc_count_telecast_ids", totalLinks);
+        acc.setProperty(SaveTv.PROPERTY_acc_count_telecast_ids, totalLinks);
         totalLinksNum = Integer.parseInt(totalLinks);
         final BigDecimal bd = new BigDecimal((double) totalLinksNum / ENTRIES_PER_REQUEST);
         requestCount = bd.setScale(0, BigDecimal.ROUND_UP).intValue();
@@ -661,7 +656,7 @@ public class SaveTvDecrypter extends PluginForDecrypt {
         final long crawl_duration = System.currentTimeMillis() - time_crawl_started;
         String message = "\r\n";
         message += "Dauer des Crawlvorganges: " + TimeFormatter.formatMilliSeconds(crawl_duration, 0);
-        message += "\r\n\r\nGenervt von diesen Info-Dialogen? In den Plugin Einstellung kannst du sie deaktivieren ;)";
+        message += "\r\n\r\nGenervt von diesen Info-Dialogen? In den Plugin Einstellungen kannst du sie deaktivieren ;)";
         return message;
     }
 

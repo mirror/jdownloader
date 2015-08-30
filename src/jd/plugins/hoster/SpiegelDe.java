@@ -249,6 +249,7 @@ public class SpiegelDe extends PluginForHost {
              */
             String url_hls = "http://m3u8.schneevonmorgen.com/schnee_vod/_definst_/" + playpath + "/playlist.m3u8";
             if (prefer_hls) {
+                /* Needed as .m3u8 URL redirects to other server / other .m3u8 URL */
                 this.br.setFollowRedirects(true);
                 checkFFmpeg(downloadLink, "Download a HLS Stream");
                 dl = new HLSDownloader(downloadLink, br, url_hls);

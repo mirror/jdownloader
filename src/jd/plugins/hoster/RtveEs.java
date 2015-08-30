@@ -136,12 +136,15 @@ public class RtveEs extends PluginForHost {
         if (br.containsHTML("La página solicitada no está disponible por haber cambiado la dirección \\(URL\\) o no existir\\.|id=\"errorndispo\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h1><span title=\"([^\"]+)").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("class=\"last\">([^<]+)").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("id=\"videoPageTitle\">([^<>\"]*?)<").getMatch(0);
+        String filename = null;
+        if (downloadLink.getDownloadURL().matches(TYPE_SERIES)) {
+            final Regex finfo = new Regex(downloadLink.getDownloadURL(), "rtve.es/infantil/serie/([^/]+)/video/([^/]+)/");
+            filename = finfo.getMatch(0) + " - " + finfo.getMatch(1);
+        } else {
+            filename = br.getRegex("<h1><span title=\"([^\"]+)").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("class=\"last\">([^<]+)").getMatch(0);
+            }
         }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
