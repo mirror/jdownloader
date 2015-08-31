@@ -162,6 +162,7 @@ PasteLinksAction_getTranslationForDeepDecryptEnabled=Djup dektyptering
 PauseDownloadsAction_getHideIfDownloadsAreStoppedTranslation=Dölj om nerladdningar inte pågår
 PluginForHost_handle_ffmpeg_conversion_failed=FFmpeg misslyckades
 Plugin_requestLogins_message=Autentisering krävs!
+PriorityAction_getTranslationForForceMode=Tvinga byte av prioritet
 ProxyController_updateProxy_proxy_auth_required_msg=Proxy autentisering krävs för att ansluta till %s1
 ProxyController_updateProxy_proxy_auth_required_title=Proxy autentisering krävs!
 RemoveAction_actionPerformed_rly_msg=Ta bort alla valda regler??
