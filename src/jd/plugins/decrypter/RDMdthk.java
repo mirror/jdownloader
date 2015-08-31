@@ -46,38 +46,41 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class RDMdthk extends PluginForDecrypt {
 
     /* Settings */
-    private static final String                 Q_LOW                 = "Q_LOW";
-    private static final String                 Q_MEDIUM              = "Q_MEDIUM";
-    private static final String                 Q_HIGH                = "Q_HIGH";
-    private static final String                 Q_HD                  = "Q_HD";
-    private static final String                 Q_BEST                = "Q_BEST";
-    private static final String                 Q_HTTP_ONLY           = "Q_HTTP_ONLY";
-    private static final String                 Q_SUBTITLES           = "Q_SUBTITLES";
-    private static final String                 FASTLINKCHECK         = "FASTLINKCHECK";
-    private boolean                             BEST                  = false;
-    private boolean                             HTTP_ONLY             = true;
-    private boolean                             FASTLINKCHECK_boolean = false;
-    private static final String                 EXCEPTION_LINKOFFLINE = "EXCEPTION_LINKOFFLINE";
+    private static final String                 Q_LOW                          = "Q_LOW";
+    private static final String                 Q_MEDIUM                       = "Q_MEDIUM";
+    private static final String                 Q_HIGH                         = "Q_HIGH";
+    private static final String                 Q_HD                           = "Q_HD";
+    private static final String                 Q_BEST                         = "Q_BEST";
+    private static final String                 Q_HTTP_ONLY                    = "Q_HTTP_ONLY";
+    private static final String                 Q_SUBTITLES                    = "Q_SUBTITLES";
+    private static final String                 FASTLINKCHECK                  = "FASTLINKCHECK";
+    private boolean                             BEST                           = false;
+    private boolean                             HTTP_ONLY                      = true;
+    private boolean                             FASTLINKCHECK_boolean          = false;
+    private static final String                 EXCEPTION_LINKOFFLINE          = "EXCEPTION_LINKOFFLINE";
 
     /* Constants */
-    private static final String                 AGE_RESTRICTED        = "(Diese Sendung ist für Jugendliche unter \\d+ Jahren nicht geeignet\\. Der Clip ist deshalb nur von \\d+ bis \\d+ Uhr verfügbar\\.)";
-    private static final String                 type_unsupported      = "http://(www\\.)?ardmediathek\\.de/(tv/live\\?kanal=\\d+|dossiers/.*)";
-    private static final String                 type_invalid          = "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/(download|livestream).+";
-    private static final String                 type_ard_mediathek    = "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/.+";
-    private static final String                 type_ardvideo         = "http://www\\.daserste\\.de/.+";
-    private static final String                 type_rbb_mediathek    = "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+";
-    private SubConfiguration                    cfg                   = null;
+    private static final String                 AGE_RESTRICTED                 = "(Diese Sendung ist für Jugendliche unter \\d+ Jahren nicht geeignet\\. Der Clip ist deshalb nur von \\d+ bis \\d+ Uhr verfügbar\\.)";
+    private static final String                 type_unsupported               = "http://(www\\.)?ardmediathek\\.de/(tv/live\\?kanal=\\d+|dossiers/.*)";
+    private static final String                 type_invalid                   = "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/(download|livestream).+";
+    private static final String                 type_ard_mediathek             = "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/.+";
+    private static final String                 type_ardvideo                  = "http://www\\.daserste\\.de/.+";
+    private static final String                 type_rbb_mediathek             = "http://(?:www\\.)?mediathek\\.rbb\\-online\\.de/tv/[^<>\"]+documentId=\\d+[^<>\"/]+bcastId=\\d+";
+    private SubConfiguration                    cfg                            = null;
 
     /* Variables */
-    private final ArrayList<DownloadLink>       newRet                = new ArrayList<DownloadLink>();
-    private final HashMap<String, DownloadLink> bestMap               = new HashMap<String, DownloadLink>();
-    private String                              subtitleLink          = null;
-    private boolean                             grab_subtitle         = false;
-    private String                              parameter             = null;
-    private String                              title                 = null;
-    private String                              date                  = null;
-    private String                              date_formatted        = null;
-    ArrayList<DownloadLink>                     decryptedLinks        = new ArrayList<DownloadLink>();
+    private final ArrayList<DownloadLink>       newRet                         = new ArrayList<DownloadLink>();
+    private final HashMap<String, DownloadLink> bestMap                        = new HashMap<String, DownloadLink>();
+    private String                              subtitleLink                   = null;
+    private boolean                             grab_subtitle                  = false;
+    private String                              parameter                      = null;
+    private String                              title                          = null;
+    private String                              date                           = null;
+    private String                              date_formatted                 = null;
+    ArrayList<DownloadLink>                     decryptedLinks                 = new ArrayList<DownloadLink>();
+
+    private long                                existingQualityNum             = 0;
+    private long                                selectedAndAvailableQualityNum = 0;
 
     public RDMdthk(final PluginWrapper wrapper) {
         super(wrapper);
@@ -131,6 +134,12 @@ public class RDMdthk extends PluginForDecrypt {
             } catch (final Exception x) {
             }
             throw e;
+        }
+
+        if (existingQualityNum > 0 && selectedAndAvailableQualityNum == 0) {
+            logger.info("User selected qualities that are not available --> Returning offline link");
+            decryptedLinks.add(getOffline(parameter));
+            return decryptedLinks;
         }
 
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
@@ -231,6 +240,7 @@ public class RDMdthk extends PluginForDecrypt {
             final Object stream_o = streammap.get("_stream");
             long filesize_max = -1;
 
+            existingQualityNum++;
             if (!userWantsQuality(quality)) {
                 continue;
             }
@@ -283,6 +293,75 @@ public class RDMdthk extends PluginForDecrypt {
             }
 
             addQuality(network, title, extension, isRTMP, directlink, quality, streaming_type, filesize_max);
+            selectedAndAvailableQualityNum++;
+        }
+        findBEST();
+        return;
+    }
+
+    /* INFORMATION: network = akamai or limelight == RTMP */
+    private void decryptDasersteVideo() throws IOException, DecrypterException {
+        final String xml_URL = parameter.replace(".html", "~playerXml.xml");
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(xml_URL);
+        if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().equals("application/xml")) {
+            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
+        }
+        this.date = getXML("broadcastDate");
+        title = getXML("shareTitle");
+        if (this.title == null || this.date == null) {
+            throw new DecrypterException("Decrypter broken");
+        }
+        title = Encoding.htmlDecode(title).trim();
+        title = encodeUnicode(title);
+        this.date_formatted = formatDateDasErste(this.date);
+        title = this.date_formatted + "_daserste_" + title;
+        /* TODO: Implement this */
+        subtitleLink = null;
+        int t = 0;
+
+        final String extension = ".mp4";
+        final String[] mediaStreamArray = br.getRegex("(<asset type=\".*?</asset>)").getColumn(0);
+
+        for (final String stream : mediaStreamArray) {
+            existingQualityNum++;
+            final String assettype = new Regex(stream, "<asset type=\"([^<>\"]*?)\">").getMatch(0);
+            final String server = null;
+            final String network = "default";
+            final int quality = this.convertASSETTYPEtoQuality(assettype);
+            // rtmp --> hds or rtmp
+            String directlink = getXML(stream, "fileName");
+            final boolean isRTMP = (server != null && !server.equals("") && server.startsWith("rtmp://")) && !directlink.startsWith("http");
+            /* Skip HDS */
+            if (directlink.endsWith("manifest.f4m")) {
+                continue;
+            }
+            /* Skip unneeded playlists */
+            if ("default".equals(network) && directlink.endsWith("m3u")) {
+                continue;
+            }
+            /* Server needed for rtmp links */
+            if (!directlink.startsWith("http://") && isEmpty(server)) {
+                continue;
+            }
+
+            directlink += "@";
+            // rtmp t=?
+            if (isRTMP) {
+                directlink = server + "@" + directlink.split("\\?")[0];
+            }
+            /* Skip rtmp streams if user wants http only */
+            if (isRTMP && HTTP_ONLY) {
+                continue;
+            }
+
+            if (!userWantsQuality(Integer.valueOf(quality))) {
+                continue;
+            }
+
+            addQuality(network, title, extension, isRTMP, directlink, quality, t, -1);
+            selectedAndAvailableQualityNum++;
         }
         findBEST();
         return;
@@ -339,72 +418,6 @@ public class RDMdthk extends PluginForDecrypt {
             break;
         }
         return fmt;
-    }
-
-    /* INFORMATION: network = akamai or limelight == RTMP */
-    private void decryptDasersteVideo() throws IOException, DecrypterException {
-        final String xml_URL = parameter.replace(".html", "~playerXml.xml");
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(xml_URL);
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getHttpConnection().getContentType().equals("application/xml")) {
-            throw new DecrypterException(EXCEPTION_LINKOFFLINE);
-        }
-        this.date = getXML("broadcastDate");
-        title = getXML("shareTitle");
-        if (this.title == null || this.date == null) {
-            throw new DecrypterException("Decrypter broken");
-        }
-        title = Encoding.htmlDecode(title).trim();
-        title = encodeUnicode(title);
-        this.date_formatted = formatDateDasErste(this.date);
-        title = this.date_formatted + "_daserste_" + title;
-        /* TODO: Implement this */
-        subtitleLink = null;
-        int t = 0;
-
-        final String extension = ".mp4";
-        final String[] mediaStreamArray = br.getRegex("(<asset type=\".*?</asset>)").getColumn(0);
-
-        for (final String stream : mediaStreamArray) {
-            final String assettype = new Regex(stream, "<asset type=\"([^<>\"]*?)\">").getMatch(0);
-            final String server = null;
-            final String network = "default";
-            final int quality = this.convertASSETTYPEtoQuality(assettype);
-            // rtmp --> hds or rtmp
-            String directlink = getXML(stream, "fileName");
-            final boolean isRTMP = (server != null && !server.equals("") && server.startsWith("rtmp://")) && !directlink.startsWith("http");
-            /* Skip HDS */
-            if (directlink.endsWith("manifest.f4m")) {
-                continue;
-            }
-            /* Skip unneeded playlists */
-            if ("default".equals(network) && directlink.endsWith("m3u")) {
-                continue;
-            }
-            /* Server needed for rtmp links */
-            if (!directlink.startsWith("http://") && isEmpty(server)) {
-                continue;
-            }
-
-            directlink += "@";
-            // rtmp t=?
-            if (isRTMP) {
-                directlink = server + "@" + directlink.split("\\?")[0];
-            }
-            /* Skip rtmp streams if user wants http only */
-            if (isRTMP && HTTP_ONLY) {
-                continue;
-            }
-
-            if (!userWantsQuality(Integer.valueOf(quality))) {
-                continue;
-            }
-
-            addQuality(network, title, extension, isRTMP, directlink, quality, t, -1);
-        }
-        findBEST();
-        return;
     }
 
     /* Converts asset-type Strings from daserste.de video to the same Integer values used for their Mediathek * */

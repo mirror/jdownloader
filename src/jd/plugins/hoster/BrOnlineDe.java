@@ -206,8 +206,12 @@ public class BrOnlineDe extends PluginForHost {
                 // final int end_hours_source = Integer.parseInt(end_hours_source_string);
                 long start_milliseconds = timeStringToMilliseconds(startString);
                 long end_milliseconds = timeStringToMilliseconds(endString);
-                if (start_hours_source > 0 && counter == 2 && !offsetSet) {
-                    /* Auto correct offset */
+                if (start_hours_source >= 9 && counter == 2 && !offsetSet) {
+                    /* 1st case - correct offset hardcoded 10 hours */
+                    offset_reduce_milliseconds = 10 * 60 * 60 * 1000l;
+                    offsetSet = true;
+                } else if (start_hours_source > 0 && counter == 2 && !offsetSet) {
+                    /* 2nd case - correct offset dynamically */
                     offset_reduce_milliseconds = start_milliseconds;
                     offsetSet = true;
                 }

@@ -36,26 +36,26 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "weltderwunder.de" }, urls = { "http://weltderwunder\\.dedecrypted\\d+" }, flags = { 2 })
 public class WeltderwunderDe extends PluginForHost {
 
-    /** INFORMATION: On problems in the future, check our their Apps: http://www.weltderwunder.de/footer/spalte-3/mobile-smart-tv-apps/ */
+    /** INFORMATION: On problems in the future, check out their Apps: http://www.weltderwunder.de/footer/spalte-3/mobile-smart-tv-apps/ */
     public static LinkedHashMap<String, String[]> formats = new LinkedHashMap<String, String[]>() {
-                                                              {
-                                                                  /*
-                                                                   * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec,
-                                                                   * audioBitrate
-                                                                   */
-                                                                  /*
-                                                                   * Video-bitrates and resultions here are not exact as they vary. Correct
-                                                                   * values will be in the filenames!
-                                                                   */
-                                                                  put("4_4_2", new String[] { "AVC", "400", "480x270", "AAC LC", "64" });
-                                                                  put("6_6_3", new String[] { "AVC", "600", "640x360", "AAC LC", "64" });
-                                                                  put("9_6_3", new String[] { "AVC", "900", "640x360", "AAC LC", "64" });
-                                                                  put("1_6_3", new String[] { "AVC", "1370", "680x380", "AAC LC", "128" });
-                                                                  put("1_1_5", new String[] { "AVC", "1500", "1024x570", "AAC LC", "128" });
-                                                                  put("2_1_5", new String[] { "AVC", "2400", "1024x570", "AAC LC", "128" });
+        {
+            /*
+             * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec,
+             * audioBitrate
+             */
+            /*
+             * Video-bitrates and resultions here are not exact as they vary. Correct
+             * values will be in the filenames!
+             */
+            put("4_4_2", new String[] { "AVC", "400", "480x270", "AAC LC", "64" });
+            put("6_6_3", new String[] { "AVC", "600", "640x360", "AAC LC", "64" });
+            put("9_6_3", new String[] { "AVC", "900", "640x360", "AAC LC", "64" });
+            put("1_6_3", new String[] { "AVC", "1370", "680x380", "AAC LC", "128" });
+            put("1_1_5", new String[] { "AVC", "1500", "1024x570", "AAC LC", "128" });
+            put("2_1_5", new String[] { "AVC", "2400", "1024x570", "AAC LC", "128" });
 
-                                                              }
-                                                          };
+        }
+    };
 
     private String                                DLLINK  = null;
 
