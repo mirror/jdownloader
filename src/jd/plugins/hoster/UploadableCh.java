@@ -172,13 +172,6 @@ public class UploadableCh extends PluginForHost {
                 json.cloneBrowser().getPage("/now.php");
             }
             br.postPage(postLink, "downloadLink=wait");
-            if (StringUtils.endsWithCaseInsensitive(br.getRedirectLocation(), "/account.php") && account != null) {
-                br.getPage(br.getRedirectLocation());
-                if (br.containsHTML("<div>For security measures, we ask you to update your password\\.</div>")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Service provider asks that you update your passsword.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown error! Please report to JDownloader Development Team.");
-            }
             int wait = 90;
             final String waittime = br.getRegex("\"waitTime\":(\\d+)").getMatch(0);
             if (waittime != null) {
@@ -292,15 +285,17 @@ public class UploadableCh extends PluginForHost {
                             br.setCookie(MAINPAGE, key, value);
                         }
                         // lets do a check!
-                        br.getPage("/");
-                        if (!isNotLoggedIn()) {
+                        final Browser test = br.cloneBrowser();
+                        test.setFollowRedirects(false);
+                        test.getPage("/");
+                        if (!isNotLoggedIn(test, account)) {
                             return ai;
                         }
                     }
                 }
                 br.setFollowRedirects(false);
                 br.postPage("http://www.uploadable.ch/login.php", "autoLogin=on&action__login=normalLogin&userName=" + Encoding.urlEncode(account.getUser()) + "&userPassword=" + Encoding.urlEncode(account.getPass()));
-                if (isNotLoggedIn()) {
+                if (isNotLoggedIn(br, account)) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -349,7 +344,19 @@ public class UploadableCh extends PluginForHost {
         }
     }
 
-    private boolean isNotLoggedIn() {
+    private void doesPasswordNeedChanging(final Browser br, final Account account) throws IOException, PluginException {
+        // test to confirm that user password doesn't need changing
+        if (StringUtils.endsWithCaseInsensitive(br.getRedirectLocation(), "/account.php")) {
+            br.getPage(br.getRedirectLocation());
+            if (br.containsHTML("<div>For security measures, we ask you to update your password\\.</div>")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Service provider asks that you update your passsword.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown error! Please report to JDownloader Development Team.");
+        }
+    }
+
+    private boolean isNotLoggedIn(final Browser br, final Account account) throws IOException, PluginException {
+        doesPasswordNeedChanging(br, account);
         return br.getCookie(MAINPAGE, "autologin") == null || StringUtils.containsIgnoreCase(br.getCookie(MAINPAGE, "autologin"), "deleted") || !br.containsHTML("class=\"icon logout\"");
     }
 
