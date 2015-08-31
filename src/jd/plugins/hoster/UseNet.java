@@ -254,12 +254,16 @@ public class UseNet extends PluginForHost {
             throw new NoGateWayException(selector, "No Gateway or Proxy Found");
         }
         return list;
-
     }
 
     @Override
     public String getHost(DownloadLink link, Account account) {
         return super.getHost(link, account);
+    }
+
+    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    public boolean allowHandle(final DownloadLink downloadLink, final PluginForHost plugin) {
+        return downloadLink.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
     @Override
