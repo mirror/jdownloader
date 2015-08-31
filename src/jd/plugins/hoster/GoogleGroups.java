@@ -33,14 +33,14 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "googlegroups.com" }, urls = { "http://[\\w\\.]*?googlegroups.com/web/.*" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "googlegroups.com" }, urls = { "http://[\\w\\.]*?googlegroups\\.com/web/.*" }, flags = { 0 })
 public class GoogleGroups extends PluginForHost {
-    
+
     public GoogleGroups(PluginWrapper wrapper) {
         super(wrapper);
         // TODO Auto-generated constructor stub
     }
-    
+
     // @Override
     public boolean checkLinks(DownloadLink[] urls) {
         br.setCookiesExclusive(true);
@@ -49,16 +49,17 @@ public class GoogleGroups extends PluginForHost {
         for (DownloadLink downloadLink : urls) {
             String subd = downloadLink.getDownloadURL().substring(7, downloadLink.getDownloadURL().indexOf(".googlegroups.com"));
             ArrayList<DownloadLink> link = map.get(subd);
-            if (link != null)
+            if (link != null) {
                 link.add(downloadLink);
-            else {
+            } else {
                 link = new ArrayList<DownloadLink>(1);
                 link.add(downloadLink);
                 map.put(subd, link);
             }
         }
-        for (DownloadLink l : urls)
+        for (DownloadLink l : urls) {
             l.setAvailable(false);
+        }
         for (Entry<String, ArrayList<DownloadLink>> entry : map.entrySet()) {
             try {
                 br.getPage("http://groups.google.com/group/" + entry.getKey() + "/files");
@@ -68,14 +69,16 @@ public class GoogleGroups extends PluginForHost {
                     na = na.replaceFirst("googlegroups.com/web/.*", "googlegroups.com/web/") + URLEncoder.encode(na.replaceFirst("http://.*?\\.googlegroups.com/web/", ""), "UTF-8");
                     for (String[] strings : infos) {
                         if (strings[0].contains(na) || downloadLink.getName().equals(strings[1])) {
-                            
+
                             downloadLink.setAvailable(true);
                             downloadLink.setFinalFileName(strings[1]);
                             downloadLink.setDownloadSize(SizeFormatter.getSize(strings[2]));
                             break;
                         }
                     }
-                    if (downloadLink.getDownloadSize() < 1) downloadLink.setName(downloadLink.getDownloadURL().replaceFirst("\\?gda=.*", "").replaceFirst("googlegroups.com/web/", ""));
+                    if (downloadLink.getDownloadSize() < 1) {
+                        downloadLink.setName(downloadLink.getDownloadURL().replaceFirst("\\?gda=.*", "").replaceFirst("googlegroups.com/web/", ""));
+                    }
                 }
             } catch (IOException e) {
                 // TODO Auto-generated catch block
@@ -85,22 +88,22 @@ public class GoogleGroups extends PluginForHost {
         }
         return true;
     }
-    
+
     // @Override
     public String getAGBLink() {
         return "http://groups.google.com/intl/de/googlegroups/terms_of_service3.html";
     }
-    
+
     // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     // @Override
     /*
      * public String getVersion() { return getVersion("$Revision$"); }
      */
-    
+
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -111,33 +114,37 @@ public class GoogleGroups extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, na);
         dl.startDownload();
     }
-    
+
     // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         checkLinks(new DownloadLink[] { downloadLink });
-        if (getAvailableStatus(downloadLink) == AvailableStatus.FALSE) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (getAvailableStatus(downloadLink) == AvailableStatus.FALSE) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return getAvailableStatus(downloadLink);
     }
-    
+
     private AvailableStatus getAvailableStatus(DownloadLink link) {
         try {
             final Field field = link.getClass().getDeclaredField("availableStatus");
             field.setAccessible(true);
             Object ret = field.get(link);
-            if (ret != null && ret instanceof AvailableStatus) return (AvailableStatus) ret;
+            if (ret != null && ret instanceof AvailableStatus) {
+                return (AvailableStatus) ret;
+            }
         } catch (final Throwable e) {
         }
         return AvailableStatus.UNCHECKED;
     }
-    
+
     // @Override
     public void reset() {
     }
-    
+
     // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-    
+
     // @Override
     public void resetPluginGlobals() {
     }

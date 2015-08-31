@@ -41,8 +41,8 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flyfiles.net" }, urls = { "https?://(www\\.)?flyfiles\\.net/[a-z0-9]{10}" }, flags = { 2 })
-public class FileFilesNet extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyfiles.net" }, urls = { "https?://(www\\.)?flyfiles\\.net/[a-z0-9]{10}" }, flags = { 2 })
+public class FlyFilesNet extends PluginForHost {
 
     private static final String HOST     = "http://flyfiles.net";
     private static Object       LOCK     = new Object();
@@ -63,7 +63,7 @@ public class FileFilesNet extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
     }
 
-    public FileFilesNet(PluginWrapper wrapper) {
+    public FlyFilesNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(HOST + "/");
     }
@@ -100,12 +100,23 @@ public class FileFilesNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        final String fid = new Regex(downloadLink.getDownloadURL(), "net/(.*)").getMatch(0);
         String dllink = (checkDirectLink(downloadLink, "directlink"));
         if (dllink == null) {
             requestFileInformation(downloadLink);
-            br.postPage(HOST + "/", "getDownLink=" + new Regex(downloadLink.getDownloadURL(), "net/(.*)").getMatch(0));
+            String captchaurl = this.br.getRegex("\"(/captcha/[^<>\"]*?)\"").getMatch(0);
+            if (captchaurl != null) {
+                final String code = this.getCaptchaCode(captchaurl, downloadLink);
+                br.postPage(HOST + "/", "getDownLink=" + fid + "&captcha_value=" + Encoding.urlEncode(code));
+                if (this.br.containsHTML("#downlinkCaptcha\\|0")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+            } else {
+                br.postPage(HOST + "/", "getDownLink=" + fid);
+            }
             // they don't show any info about limits or waits. You seem to just
             // get '#' instead of link.
             if (br.containsHTML("#downlink\\|#")) {
@@ -260,7 +271,7 @@ public class FileFilesNet extends PluginForHost {
         }
 
         int maxChunks = 0;
-        if (link.getBooleanProperty(FileFilesNet.NOCHUNKS, false)) {
+        if (link.getBooleanProperty(FlyFilesNet.NOCHUNKS, false)) {
             maxChunks = 1;
         }
 
@@ -279,16 +290,16 @@ public class FileFilesNet extends PluginForHost {
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(FileFilesNet.NOCHUNKS, false) == false) {
-                    link.setProperty(FileFilesNet.NOCHUNKS, Boolean.valueOf(true));
+                if (link.getBooleanProperty(FlyFilesNet.NOCHUNKS, false) == false) {
+                    link.setProperty(FlyFilesNet.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         } catch (final PluginException e) {
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(FileFilesNet.NOCHUNKS, false) == false) {
-                link.setProperty(FileFilesNet.NOCHUNKS, Boolean.valueOf(true));
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(FlyFilesNet.NOCHUNKS, false) == false) {
+                link.setProperty(FlyFilesNet.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             throw e;
