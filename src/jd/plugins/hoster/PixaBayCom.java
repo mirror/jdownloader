@@ -261,8 +261,8 @@ public class PixaBayCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("https://pixabay.com/en/accounts/login/", "next=%2Fen%2Fservice%2Fterms%2F&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (!this.br.containsHTML("/accounts/photos/\"")) {
+                br.postPage("https://pixabay.com/en/accounts/login/", "next=%2Fen%2Faccounts%2Fmedia%2F&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (!this.br.containsHTML("/accounts/logout/\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
