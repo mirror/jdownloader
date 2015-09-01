@@ -248,7 +248,7 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
     @Override
     protected void saveFilename(String text) {
-        DownloadWatchDog.getInstance().renameLink(currentLink, filename.getText());
+        DownloadWatchDog.getInstance().renameLink(currentLink, text);
 
     }
 
@@ -259,7 +259,7 @@ public class DownloadLinkPropertiesPanel extends AbstractNodePropertiesPanel imp
 
     @Override
     protected void savePackageName(String text) {
-        currentPackage.setName(packagename.getText());
+        currentPackage.setName(text);
     }
 
     @Override

@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -24,11 +25,12 @@ import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.http.RandomUserAgent;
 import jd.parser.Regex;
-import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rlslog.net" }, urls = { "http://(www\\.)?rlslog\\.net/.+/(.+/)?#comments" }, flags = { 0 })
 public class Rlslg extends PluginForDecrypt {
@@ -41,20 +43,21 @@ public class Rlslg extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> passwords;
         String parameter = param.toString().replace("#comments", "");
         br.getHeaders().put("User-Agent", ua);
         br.getPage(parameter);
         String directComment = new Regex(param.toString(), "http://[\\w\\.]*?rlslog\\.net/.+/.+/#comments|/.+/#comments|/.+/.*?#(comment\\-\\d+)").getMatch(0);
         if (directComment != null) {
             String comment = br.getRegex(Pattern.compile("<li class=.*? id=.*?" + directComment + ".*?>(.*?)</li>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-            passwords = HTMLParser.findPasswords(comment);
+            final Set<String> pws = PasswordUtils.getPasswords(comment);
             String[] links = new Regex(comment, "rel=\"nofollow\">(.*?)</a>", Pattern.CASE_INSENSITIVE).getColumn(0);
             if (links != null) {
                 for (String link : links) {
                     if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
                         DownloadLink dLink = createDownloadlink(link);
-                        if (passwords != null && passwords.size() > 0) dLink.setSourcePluginPasswordList(passwords);
+                        if (pws != null && pws.size() > 0) {
+                            dLink.setSourcePluginPasswordList(new ArrayList<String>(pws));
+                        }
                         decryptedLinks.add(dLink);
                     }
                 }
@@ -65,22 +68,28 @@ public class Rlslg extends PluginForDecrypt {
             String comment_pages[] = br.getRegex("class=\\'page\\-numbers\\' href=\\'(http://(www\\.)?rlslog\\.net/.*?)\\'").getColumn(0);
             if (comment_pages != null && comment_pages.length != 0) {
                 for (String page : comment_pages) {
-                    if (!pages.contains(page)) pages.add(page);
+                    if (!pages.contains(page)) {
+                        pages.add(page);
+                    }
                 }
             }
             progress.setRange(pages.size());
             for (String page : pages) {
                 // Don't enter first page as it is already entered
-                if (!page.equals(param.toString())) br.getPage(page.replace("#comments", ""));
+                if (!page.equals(param.toString())) {
+                    br.getPage(page.replace("#comments", ""));
+                }
                 String comments[] = br.getRegex(Pattern.compile("<div class=('|\")commenttext('|\")>(.*?)</div>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getColumn(2);
                 for (String comment : comments) {
-                    passwords = HTMLParser.findPasswords(comment);
+                    final Set<String> pws = PasswordUtils.getPasswords(comment);
                     String[] links = new Regex(comment, "rel=\"nofollow\">(.*?)</a>", Pattern.CASE_INSENSITIVE).getColumn(0);
                     if (links != null && links.length != 0) {
                         for (String link : links) {
                             if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
                                 DownloadLink dLink = createDownloadlink(link);
-                                if (passwords != null && passwords.size() > 0) dLink.setSourcePluginPasswordList(passwords);
+                                if (pws != null && pws.size() > 0) {
+                                    dLink.setSourcePluginPasswordList(new ArrayList<String>(pws));
+                                }
                                 decryptedLinks.add(dLink);
                             }
                         }

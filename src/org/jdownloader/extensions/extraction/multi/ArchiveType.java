@@ -1356,7 +1356,7 @@ public enum ArchiveType {
                     final Archive archive = link.createArchive();
                     archive.setName(fileNameParts[0]);
                     archive.setArchiveType(archiveType);
-                    archive.setArchiveID(archiveType.name() + fileNameParts[0] + archiveType.buildIDPattern(fileNameParts, isMultiPart));
+                    archive.setArchiveID(archiveType.name() + "|" + fileNameParts[0] + archiveType.buildIDPattern(fileNameParts, isMultiPart));
                     final ArrayList<ArchiveFile> sortedArchiveFiles = new ArrayList<ArchiveFile>();
                     final int minimumParts = Math.max(archiveType.getMinimumNeededPartIndex(), highestPartNumber);
                     for (int partIndex = archiveType.getFirstPartIndex(); partIndex <= minimumParts; partIndex++) {

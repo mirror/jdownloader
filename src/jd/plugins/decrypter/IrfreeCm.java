@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -24,11 +25,12 @@ import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "irfree.com" }, urls = { "http://(www\\.)?irfree\\.(com|eu)/.+/.*" }, flags = { 0 })
 public class IrfreeCm extends PluginForDecrypt {
@@ -41,7 +43,6 @@ public class IrfreeCm extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> passwords;
         br.setFollowRedirects(true);
         String parameter = param.toString().replace("irfree.eu/", "irfree.com/");
         if (parameter.matches(INVALIDLINKS) || parameter.contains("rss.xml") || parameter.endsWith(".xml")) {
@@ -53,7 +54,7 @@ public class IrfreeCm extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        passwords = HTMLParser.findPasswords(br.toString());
+        final Set<String> pws = PasswordUtils.getPasswords(br.toString());
         String[] links = new Regex(br.toString(), "href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE).getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -61,10 +62,14 @@ public class IrfreeCm extends PluginForDecrypt {
         }
         for (String link : links) {
             final String crypted = new Regex(link, "irfree\\.com/engine/go\\.php\\?url=([^<>\"]*?)\"").getMatch(0);
-            if (crypted != null) link = Encoding.Base64Decode(Encoding.htmlDecode(crypted));
+            if (crypted != null) {
+                link = Encoding.Base64Decode(Encoding.htmlDecode(crypted));
+            }
             if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link, true)) {
                 DownloadLink dLink = createDownloadlink(link);
-                if (passwords != null && passwords.size() > 0) dLink.setSourcePluginPasswordList(passwords);
+                if (pws != null && pws.size() > 0) {
+                    dLink.setSourcePluginPasswordList(new ArrayList<String>(pws));
+                }
                 decryptedLinks.add(dLink);
             }
         }

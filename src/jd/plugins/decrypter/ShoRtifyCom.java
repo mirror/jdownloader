@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,6 +29,8 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sho.rtify.com" }, urls = { "http://(www\\.)?sho\\.rtify\\.com/\\d+" }, flags = { 0 })
 public class ShoRtifyCom extends PluginForDecrypt {
@@ -48,13 +51,19 @@ public class ShoRtifyCom extends PluginForDecrypt {
             for (int i = 0; i <= 3; i++) {
                 br2 = br.cloneBrowser();
                 Form pwform = br2.getFormbyKey("thePassword");
-                if (pwform == null) return decryptedLinks;
+                if (pwform == null) {
+                    return decryptedLinks;
+                }
                 String pw = getUserInput(null, param);
                 pwform.put("thePassword", pw);
                 br2.submitForm(pwform);
-                if (!br2.containsHTML("Sorry, the password you entered was incorrect.")) break;
+                if (!br2.containsHTML("Sorry, the password you entered was incorrect.")) {
+                    break;
+                }
             }
-            if (br2.containsHTML("Sorry, the password you entered was incorrect.")) throw new DecrypterException(DecrypterException.PASSWORD);
+            if (br2.containsHTML("Sorry, the password you entered was incorrect.")) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
             plaintxt = br2.getRegex("<textarea.*?>(.*?)</textarea>").getMatch(0);
         } else {
             plaintxt = br.getRegex("<textarea.*?>(.*?)</textarea>").getMatch(0);
@@ -71,14 +80,18 @@ public class ShoRtifyCom extends PluginForDecrypt {
             logger.info("Quitting, no links found for link: " + parameter);
             return decryptedLinks;
         }
-        ArrayList<String> pws = HTMLParser.findPasswords(plaintxt);
+        final Set<String> pws = PasswordUtils.getPasswords(plaintxt);
         logger.info("Found " + links.length + " links in total.");
 
         DownloadLink dl;
         for (String elem : links) {
-            if (elem.contains("sho.rtify.com")) continue;
+            if (elem.contains("sho.rtify.com")) {
+                continue;
+            }
             decryptedLinks.add(dl = createDownloadlink(elem));
-            if (pws != null && pws.size() > 0) dl.setSourcePluginPasswordList(pws);
+            if (pws != null && pws.size() > 0) {
+                dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
+            }
         }
 
         return decryptedLinks;

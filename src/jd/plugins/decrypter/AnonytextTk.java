@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,6 +28,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 /**
  * NOTE: <br />
@@ -64,7 +67,7 @@ public class AnonytextTk extends PluginForDecrypt {
             logger.info("Could not find 'plaintxt' : " + parameter);
             return null;
         }
-        final ArrayList<String> pws = HTMLParser.findPasswords(plaintxt);
+        final Set<String> pws = PasswordUtils.getPasswords(plaintxt);
         final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links == null || links.length == 0) {
             logger.info("Found no links[] from 'plaintxt' : " + parameter);
@@ -75,7 +78,7 @@ public class AnonytextTk extends PluginForDecrypt {
             if (!this.canHandle(link)) {
                 final DownloadLink dl = createDownloadlink(link);
                 if (pws != null && pws.size() > 0) {
-                    dl.setSourcePluginPasswordList(pws);
+                    dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
                 }
                 decryptedLinks.add(dl);
             }

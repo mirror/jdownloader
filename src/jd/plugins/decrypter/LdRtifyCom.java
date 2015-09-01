@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -27,6 +28,8 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ld.rtify.com" }, urls = { "http://(www\\.)?ld\\.rtify\\.com/\\d+" }, flags = { 0 })
 public class LdRtifyCom extends PluginForDecrypt {
@@ -45,29 +48,43 @@ public class LdRtifyCom extends PluginForDecrypt {
         if (br.containsHTML("Enter the password")) {
             for (int i = 0; i <= 3; i++) {
                 Form pwform = br.getFormbyKey("password");
-                if (pwform == null) return decryptedLinks;
+                if (pwform == null) {
+                    return decryptedLinks;
+                }
                 String pw = getUserInput(null, param);
                 pwform.put("password", pw);
                 br.submitForm(pwform);
-                if (!br.containsHTML("Enter the password")) break;
+                if (!br.containsHTML("Enter the password")) {
+                    break;
+                }
             }
-            if (br.containsHTML("Enter the password")) throw new DecrypterException(DecrypterException.PASSWORD);
+            if (br.containsHTML("Enter the password")) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
         }
 
         plaintxt = br.getRegex("<pre.*?>(.*?)</pre>").getMatch(0);
-        if (plaintxt == null) return decryptedLinks;
+        if (plaintxt == null) {
+            return decryptedLinks;
+        }
 
         // Find all those links
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
-        if (links == null || links.length == 0) return null;
-        ArrayList<String> pws = HTMLParser.findPasswords(plaintxt);
+        if (links == null || links.length == 0) {
+            return null;
+        }
+        final Set<String> pws = PasswordUtils.getPasswords(plaintxt);
         logger.info("Found " + links.length + " links in total.");
 
         DownloadLink dl;
         for (String elem : links) {
-            if (elem.contains("ld.rtify.com")) continue;
+            if (elem.contains("ld.rtify.com")) {
+                continue;
+            }
             decryptedLinks.add(dl = createDownloadlink(elem));
-            if (pws != null && pws.size() > 0) dl.setSourcePluginPasswordList(pws);
+            if (pws != null && pws.size() > 0) {
+                dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
+            }
         }
 
         return decryptedLinks;
