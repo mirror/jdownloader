@@ -458,7 +458,7 @@ public enum SplitType {
                 final Archive archive = link.createArchive();
                 archive.setName(fileNameParts[0]);
                 archive.setSplitType(splitType);
-                archive.setArchiveID(splitType.name() + fileNameParts[0] + splitType.buildIDPattern(fileNameParts));
+                archive.setArchiveID(splitType.name() + "|" + fileNameParts[0] + splitType.buildIDPattern(fileNameParts));
                 final ArrayList<ArchiveFile> sortedArchiveFiles = new ArrayList<ArchiveFile>();
                 final int minimumParts = Math.max(splitType.getMinimumNeededPartIndex(), highestPartNumber);
                 for (int partIndex = splitType.getFirstPartIndex(); partIndex <= minimumParts; partIndex++) {

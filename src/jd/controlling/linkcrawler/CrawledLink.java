@@ -286,9 +286,13 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         if (StringUtils.equals(name, this.name)) {
             return;
         }
-        if (link != null && link instanceof DownloadLink) {
-            if (StringUtils.equals(name, ((DownloadLink) link).getName())) {
+        final DownloadLink link = getDownloadLink();
+        if (link != null) {
+            if (StringUtils.equals(name, link.getName())) {
                 name = null;
+            }
+            if (StringUtils.equals(name, this.name)) {
+                return;
             }
         }
         if (name != null) {

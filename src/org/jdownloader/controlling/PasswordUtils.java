@@ -28,7 +28,9 @@ public class PasswordUtils {
     }
 
     public static HashSet<String> getPasswords(String data) {
-        if (data == null) { return new HashSet<String>(); }
+        if (data == null) {
+            return new HashSet<String>();
+        }
         final HashSet<String> ret = new HashSet<String>();
         // data = data.replaceAll("(?s)<!-- .*? -->", "").replaceAll("(?s)<script .*?>.*?</script>", "").replaceAll("(?s)<.*?>",
         // "").replaceAll("Spoiler:", "").replaceAll("(no.{0,2}|kein.{0,8}|ohne.{0,8}|nicht.{0,8})(pw|passwort|password|pass)",
@@ -68,6 +70,7 @@ public class PasswordUtils {
                 ret.add(pass);
             }
         }
+        ret.remove("</span>");// dirty workaround
         return ret;
 
     }

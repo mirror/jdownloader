@@ -18,16 +18,18 @@ package jd.controlling;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
-import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 /**
  * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage an (unter Umständen auch mehrere) Plugins Die gefundenen
  * Treffer werden ausgeschnitten.
- * 
+ *
  * @author astaldo
  */
 public class DistributeData {
@@ -39,7 +41,7 @@ public class DistributeData {
 
     /**
      * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll. Die übergebenen Daten werden durch einen URLDecoder geschickt.
-     * 
+     *
      * @param data
      *            Daten, die verteilt werden sollen
      */
@@ -61,8 +63,7 @@ public class DistributeData {
 
     @Deprecated
     public ArrayList<DownloadLink> findLinks() {
-        final ArrayList<String> foundPasswords = new ArrayList<String>();
-        foundPasswords.addAll(HTMLParser.findPasswords(data));
+        final Set<String> pws = PasswordUtils.getPasswords(data);
         final LinkCrawler lc = LinkCrawler.newInstance();
         lc.crawl(data);
         lc.waitForCrawling();
@@ -75,16 +76,15 @@ public class DistributeData {
                     dl = new DownloadLink(null, null, null, url, true);
                 }
             }
-            if (dl != null) {
+            if (dl != null && pws != null && pws.size() > 0) {
                 List<String> oldList = dl.getSourcePluginPasswordList();
                 if (oldList != null && oldList.size() > 0) {
-                    oldList = new ArrayList<String>(oldList);
-                    oldList.addAll(foundPasswords);
-                    dl.setSourcePluginPasswordList(foundPasswords);
+                    final ArrayList<String> newList = new ArrayList<String>(oldList);
+                    newList.removeAll(pws);
+                    newList.addAll(pws);
+                    dl.setSourcePluginPasswordList(newList);
                 } else {
-                    if (foundPasswords.size() > 0) {
-                        dl.setSourcePluginPasswordList(foundPasswords);
-                    }
+                    dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
                 }
                 ret.add(dl);
             }

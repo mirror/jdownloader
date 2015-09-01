@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -25,6 +26,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 /**
  * NOTE: <br />
@@ -56,7 +59,7 @@ public class PasteMyId extends PluginForDecrypt {
             return decryptedLinks;
         }
         // this needs to happen before cleanups
-        final ArrayList<String> pws = HTMLParser.findPasswords(plaintxt);
+        final Set<String> pws = PasswordUtils.getPasswords(plaintxt);
 
         // some cleanup, remove all tags
         plaintxt = plaintxt.replaceFirst("<div[^>]+>\\s*Parsed[^<]+</div>", "");
@@ -72,7 +75,7 @@ public class PasteMyId extends PluginForDecrypt {
             if (!this.canHandle(link)) {
                 final DownloadLink dl = createDownloadlink(link);
                 if (pws != null && pws.size() > 0) {
-                    dl.setSourcePluginPasswordList(pws);
+                    dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
                 }
                 decryptedLinks.add(dl);
             }

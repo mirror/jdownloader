@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -28,6 +29,8 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pasted.co" }, urls = { "https?://(?:www\\.)?(?:tinypaste\\.com|tny\\.cz|pasted\\.co)/(?!tools|terms|api|contact|login|register|press)([0-9a-z]+|.*?id=[0-9a-z]+)" }, flags = { 0 })
 public class Tnypst extends PluginForDecrypt {
@@ -83,7 +86,7 @@ public class Tnypst extends PluginForDecrypt {
         if (links == null || links.length == 0) {
             return decryptedLinks;
         }
-        ArrayList<String> pws = HTMLParser.findPasswords(br.toString());
+        final Set<String> pws = PasswordUtils.getPasswords(br.toString());
         for (String element : links) {
             /* prevent recursion */
             if (element.matches("(?i-).+" + domains + ".+")) {
@@ -91,7 +94,7 @@ public class Tnypst extends PluginForDecrypt {
             }
             final DownloadLink dl = createDownloadlink(element);
             if (pws != null && pws.size() > 0) {
-                dl.setSourcePluginPasswordList(pws);
+                dl.setSourcePluginPasswordList(new ArrayList<String>(pws));
             }
             decryptedLinks.add(dl);
         }

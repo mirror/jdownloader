@@ -17,14 +17,16 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+
+import org.jdownloader.controlling.PasswordUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "newzfind.com" }, urls = { "http://[\\w\\.]*?newzfind\\.com/(video|music|games|software|mac|graphics|unix|magazines|e-books|xxx|other)/.+" }, flags = { 0 })
 public class NwzFndCm extends PluginForDecrypt {
@@ -38,14 +40,15 @@ public class NwzFndCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        ArrayList<String> passwords = HTMLParser.findPasswords(br.getPage(parameter));
-
+        final Set<String> pws = PasswordUtils.getPasswords(br.getPage(parameter));
         br.getPage("http://newzfind.com/ajax/links.html?a=" + parameter.substring(parameter.lastIndexOf("/") + 1));
         String links[] = br.getRegex("<link title=\"(.*?)\"").getColumn(0);
         progress.setRange(links.length);
         for (String element : links) {
             DownloadLink dl_link = createDownloadlink(element);
-            if (passwords != null && passwords.size() > 0) dl_link.setSourcePluginPasswordList(passwords);
+            if (pws != null && pws.size() > 0) {
+                dl_link.setSourcePluginPasswordList(new ArrayList<String>(pws));
+            }
             decryptedLinks.add(dl_link);
             progress.increase(1);
         }

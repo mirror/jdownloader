@@ -20,11 +20,11 @@ import org.appwork.utils.ModifyLock;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.BooleanStatus;
-import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.settings.GeneralSettings;
@@ -210,7 +210,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
     }
 
     private String getIDFromFile(CrawledLinkArchiveFile file) {
-        for (CrawledLink link : file.getLinks()) {
+        for (final CrawledLink link : file.getLinks()) {
             final String id = link.getDownloadLink().getArchiveID();
             if (id != null) {
                 return id;
@@ -223,7 +223,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
     public void onArchiveFinished(Archive archive) {
         String id = getID();
         if (id == null) {
-            for (ArchiveFile af : archive.getArchiveFiles()) {
+            for (final ArchiveFile af : archive.getArchiveFiles()) {
                 if (af instanceof CrawledLinkArchiveFile) {
                     id = getIDFromFile((CrawledLinkArchiveFile) af);
                 }
@@ -233,7 +233,10 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
             }
         }
         if (id == null) {
-            id = DownloadLinkArchiveFactory.createUniqueAlltimeID();
+            id = archive.getArchiveID();
+        }
+        if (id == null) {
+            id = Long.toString(new UniqueAlltimeID().getID());
         }
         final LinkedHashSet<String> pws = new LinkedHashSet<String>();
         // link

@@ -19,6 +19,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -31,7 +32,6 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     public static final String DOWNLOADLINK_KEY_EXTRACTEDPATH = "EXTRACTEDPATH";
 
     private String             id;
-    private static long        LAST_USED_TIMESTAMP;
 
     public DownloadLinkArchiveFactory(DownloadLink link) {
         super(link);
@@ -239,7 +239,10 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
             }
         }
         if (id == null) {
-            id = createUniqueAlltimeID();
+            id = archive.getArchiveID();
+        }
+        if (id == null) {
+            id = Long.toString(new UniqueAlltimeID().getID());
         }
         for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
             if (archiveFile instanceof DownloadLinkArchiveFile) {
@@ -248,15 +251,6 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 }
             }
         }
-    }
-
-    public synchronized static String createUniqueAlltimeID() {
-        long time = System.currentTimeMillis();
-        if (time == LAST_USED_TIMESTAMP) {
-            time++;
-        }
-        LAST_USED_TIMESTAMP = time;
-        return time + "";
     }
 
     @Override

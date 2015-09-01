@@ -117,7 +117,10 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
     @Override
     protected List<Archive> loadArchives() {
         final ArrayList<CrawledLink> children = new ArrayList<CrawledLink>();
-        children.add(currentLink);
+        final CrawledLink lCurrentLink = currentLink;
+        if (lCurrentLink != null) {
+            children.add(lCurrentLink);
+        }
         return ArchiveValidator.getArchivesFromPackageChildren(children);
     }
 
@@ -252,7 +255,7 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     @Override
     protected void saveFilename(String text) {
-        currentLink.setName(filename.getText());
+        currentLink.setName(text);
     }
 
     @Override
@@ -262,7 +265,7 @@ public class LinkPropertiesPanel extends AbstractNodePropertiesPanel implements 
 
     @Override
     protected void savePackageName(String text) {
-        currentPackage.setName(packagename.getText());
+        currentPackage.setName(text);
     }
 
     @Override
