@@ -196,7 +196,6 @@ public class JetDebridCom extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = newBrowser();
-        final boolean forceNewLinkGeneration = true;
 
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
@@ -229,11 +228,14 @@ public class JetDebridCom extends PluginForHost {
         this.setConstants(account, link);
 
         String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
-        if (dllink == null || forceNewLinkGeneration) {
+        if (dllink == null) {
             /* request creation of downloadlink */
             br.setFollowRedirects(true);
             this.postAPISafe("http://jetdebrid.com/index.php?rand=0." + System.currentTimeMillis(), "urllist=" + Encoding.urlEncode(link.getDownloadURL()) + "&captcha=none&");
             dllink = br.getRegex("(https?://[a-z0-9\\-]+\\.jetdebrid\\.com/dl/[^<>\"\\']+)").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("href='(https?://.*?/get/.*?)'").getMatch(0);
+            }
             if (dllink == null) {
                 logger.warning("Final downloadlink is null");
                 handleErrorRetries("dllinknull", 10, 10 * 60 * 1000l);
@@ -243,22 +245,26 @@ public class JetDebridCom extends PluginForHost {
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        final String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            final Browser br2 = br.cloneBrowser();
+            URLConnectionAdapter con = null;
             try {
-                final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openHeadConnection(dllink);
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getResponseCode() == 404 || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                    return null;
                 }
-                con.disconnect();
+                return dllink;
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
-        return dllink;
+        return null;
     }
 
     /**
