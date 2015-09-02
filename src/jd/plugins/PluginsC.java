@@ -22,10 +22,10 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.nutils.Formatter;
 
-import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -37,7 +37,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -54,13 +54,13 @@ import org.jdownloader.translate._JDT;
 
 public abstract class PluginsC {
 
-    private Pattern     pattern;
+    private final Pattern pattern;
 
-    private String      name;
+    private final String  name;
 
-    private long        version;
+    private final long    version;
 
-    protected LogSource logger = LogController.TRASH;
+    protected LogSource   logger = LogController.TRASH;
 
     public LogSource getLogger() {
         return logger;
@@ -76,35 +76,32 @@ public abstract class PluginsC {
     public PluginsC(String name, String pattern, String rev) {
         this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
         this.name = name;
+        long version = -1;
         try {
             version = Formatter.getRevision(rev);
         } catch (Throwable e) {
             logger.log(e);
             version = -1;
         }
+        this.version = version;
     }
 
-    private static final int         STATUS_NOTEXTRACTED     = 0;
-
-    private static final int         STATUS_ERROR_EXTRACTING = 1;
-
-    protected ArrayList<CrawledLink> cls                     = new ArrayList<CrawledLink>();
+    protected ArrayList<CrawledLink> cls             = new ArrayList<CrawledLink>();
 
     protected String                 md5;
     protected byte[]                 k;
 
-    private int                      status                  = STATUS_NOTEXTRACTED;
-    protected boolean                askFileDeletion         = true;
+    private boolean                  askFileDeletion = true;
 
     public abstract ContainerStatus callDecryption(File file) throws Exception;
 
     // @Override
     public synchronized boolean canHandle(final String data) {
-        if (data == null) {
-            return false;
+        if (data != null) {
+            final String match = new Regex(data, this.getSupportedLinks()).getMatch(-1);
+            return match != null && match.equalsIgnoreCase(data);
         }
-        final String match = new Regex(data, this.getSupportedLinks()).getMatch(-1);
-        return match != null && match.equalsIgnoreCase(data);
+        return false;
     }
 
     public String createContainerString(ArrayList<DownloadLink> downloadLinks) {
@@ -131,17 +128,6 @@ public abstract class PluginsC {
     public abstract String[] encrypt(String plain);
 
     /**
-     * Diese Methode liefert eine URL zurück, von der aus der Download gestartet werden kann
-     *
-     * @param downloadLink
-     *            Der DownloadLink, dessen URL zurückgegeben werden soll
-     * @return Die URL als String
-     */
-    public synchronized String extractDownloadURL(final DownloadLink downloadLink) {
-        throw new WTFException("TODO: this should not happen at the moment");
-    }
-
-    /**
      * Liefert alle in der Containerdatei enthaltenen Dateien als DownloadLinks zurück.
      *
      * @param filename
@@ -156,57 +142,82 @@ public abstract class PluginsC {
         return askFileDeletion;
     }
 
-    public synchronized void initContainer(File file, final byte[] bs) throws IOException {
-        if (file == null || !file.exists() || !file.isFile()) {
-            return;
-        }
-
+    public synchronized void initContainer(final CrawledLink source, final File file, final byte[] key) throws IOException {
         if (cls == null || cls.size() == 0) {
             logger.info("Init Container");
-            if (bs != null) {
-                k = bs;
+            if (key != null) {
+                k = key;
             }
             try {
                 callDecryption(file);
-                if (askFileDeletion() == false) {
-                    FileCreationManager.getInstance().delete(file, null);
-                } else if (cls.size() > 0 && askFileDeletion()) {
-                    switch (JsonConfig.create(GeneralSettings.class).getDeleteContainerFilesAfterAddingThemAction()) {
-                    case ASK_FOR_DELETE:
-                        final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.AddContainerAction_delete_container_title(), _JDT._.AddContainerAction_delete_container_msg(file.toString()), NewTheme.I().getIcon("help", 32), _GUI._.lit_yes(), _GUI._.lit_no()) {
-                            public String getDontShowAgainKey() {
-                                return null;
-                            }
-                        };
-                        final ConfirmDialogInterface s = UIOManager.I().show(ConfirmDialogInterface.class, d);
-                        s.throwCloseExceptions();
-                        if (s.getCloseReason() == CloseReason.OK) {
-                            FileCreationManager.getInstance().delete(file, null);
-                            if (s.isDontShowAgainSelected()) {
-                                JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DELETE);
-                            }
-                        } else {
-                            if (s.isDontShowAgainSelected()) {
-                                JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DONT_DELETE);
-                            }
-                        }
-                        break;
-                    case DELETE:
-                        FileCreationManager.getInstance().delete(file, null);
-                        break;
-                    case DONT_DELETE:
-
-                    }
+                if (isDeleteContainer(source, file)) {
+                    deleteContainer(source, file);
                 }
-                // doDecryption(filename);
-            } catch (DialogClosedException e) {
             } catch (Throwable e) {
                 logger.log(e);
             }
         }
     }
 
-    public ArrayList<CrawledLink> decryptContainer(CrawledLink source) {
+    protected void deleteContainer(final CrawledLink source, final File file) {
+        try {
+            if (askFileDeletion() == false) {
+                FileCreationManager.getInstance().delete(file, null);
+            } else if (cls.size() > 0 && askFileDeletion()) {
+                switch (JsonConfig.create(GeneralSettings.class).getDeleteContainerFilesAfterAddingThemAction()) {
+                case ASK_FOR_DELETE:
+                    final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.AddContainerAction_delete_container_title(), _JDT._.AddContainerAction_delete_container_msg(file.toString()), NewTheme.I().getIcon("help", 32), _GUI._.lit_yes(), _GUI._.lit_no()) {
+                        public String getDontShowAgainKey() {
+                            return null;
+                        }
+                    };
+                    final ConfirmDialogInterface s = UIOManager.I().show(ConfirmDialogInterface.class, d);
+                    s.throwCloseExceptions();
+                    if (s.getCloseReason() == CloseReason.OK) {
+                        FileCreationManager.getInstance().delete(file, null);
+                        if (s.isDontShowAgainSelected()) {
+                            JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DELETE);
+                        }
+                    } else {
+                        if (s.isDontShowAgainSelected()) {
+                            JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DONT_DELETE);
+                        }
+                    }
+                    break;
+                case DELETE:
+                    FileCreationManager.getInstance().delete(file, null);
+                    break;
+                case DONT_DELETE:
+
+                }
+            }
+        } catch (DialogNoAnswerException e) {
+            logger.log(e);
+        }
+    }
+
+    protected boolean isDeleteContainer(final CrawledLink link, File file) {
+        final String tmp = Application.getTempResource("").getAbsolutePath();
+        final String rel = Files.getRelativePath(tmp, file.getAbsolutePath());
+        if (rel == null) {
+            final LinkOriginDetails origin = link.getOrigin();
+            if (origin != null) {
+                switch (origin.getOrigin()) {
+                case CLIPBOARD:
+                    return false;
+                default:
+                    break;
+                }
+            }
+        } else {
+            final CrawledLink origin = link.getOriginLink();
+            logger.fine("Do not ask - just delete: " + origin.getURL());
+            askFileDeletion = false;
+        }
+        return true;
+    }
+
+    public ArrayList<CrawledLink> decryptContainer(final CrawledLink source) {
         if (source.getURL() == null) {
             return null;
         }
@@ -228,15 +239,7 @@ public abstract class PluginsC {
                             askFileDeletion = false;
                         }
                     }
-                    if (askFileDeletion) {
-                        final String tmp = Application.getTempResource("").getAbsolutePath();
-                        final String rel = Files.getRelativePath(tmp, file.getAbsolutePath());
-                        if (rel != null) {
-                            logger.fine("Do not ask - just delete: " + origin.getURL());
-                            askFileDeletion = false;
-                        }
-                    }
-                    initContainer(file, null);
+                    initContainer(source, file, null);
                     retLinks = getContainedDownloadlinks();
                 }
             } else {

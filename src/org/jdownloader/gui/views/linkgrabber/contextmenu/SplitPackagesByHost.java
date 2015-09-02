@@ -28,7 +28,7 @@ import org.jdownloader.translate._JDT;
 public class SplitPackagesByHost extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements ActionContext {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 2636706677433058054L;
 
@@ -93,7 +93,12 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<Crawl
                 if (isMergePackages() && finalSelecction.getPackageViews().size() > 1) {
                     if (isAskForNewDownloadFolderAndPackageName()) {
                         try {
-                            final NewPackageDialog d = new NewPackageDialog(finalSelecction);
+                            final NewPackageDialog d = new NewPackageDialog(finalSelecction) {
+                                @Override
+                                public String getDontShowAgainKey() {
+                                    return "ABSTRACTDIALOG_DONT_SHOW_AGAIN_" + SplitPackagesByHost.this.getClass().getSimpleName();
+                                }
+                            };
 
                             Dialog.getInstance().showDialog(d);
 

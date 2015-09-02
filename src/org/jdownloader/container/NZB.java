@@ -76,15 +76,15 @@ public class NZB extends PluginsC {
         private boolean                             isyEnc            = false;
         private final Comparator<UsenetFileSegment> segmentComparator = new Comparator<UsenetFileSegment>() {
 
-                                                                          public int compare(int x, int y) {
-                                                                              return (x < y) ? -1 : ((x == y) ? 0 : 1);
-                                                                          }
+            public int compare(int x, int y) {
+                return (x < y) ? -1 : ((x == y) ? 0 : 1);
+            }
 
-                                                                          @Override
-                                                                          public int compare(UsenetFileSegment o1, UsenetFileSegment o2) {
-                                                                              return compare(o1.getIndex(), o2.getIndex());
-                                                                          }
-                                                                      };
+            @Override
+            public int compare(UsenetFileSegment o1, UsenetFileSegment o2) {
+                return compare(o1.getIndex(), o2.getIndex());
+            }
+        };
 
         private NZBSAXHandler(ArrayList<DownloadLink> downloadLinks) {
             this.downloadLinks = downloadLinks;
@@ -241,7 +241,7 @@ public class NZB extends PluginsC {
 
     @Override
     public boolean hideLinks() {
-        return false;
+        return true;
     }
 
 }
