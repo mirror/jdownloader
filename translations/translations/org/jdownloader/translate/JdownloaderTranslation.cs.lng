@@ -162,6 +162,7 @@ PasteLinksAction_getTranslationForDeepDecryptEnabled=Hloubkové dešifrování
 PauseDownloadsAction_getHideIfDownloadsAreStoppedTranslation=Skrýt, pokud stahování nejsou spuštěna
 PluginForHost_handle_ffmpeg_conversion_failed=FFmpeg™ selhalo
 Plugin_requestLogins_message=Je vyžadováno ověření!
+PriorityAction_getTranslationForForceMode=Vynutit změnu priority
 ProxyController_updateProxy_proxy_auth_required_msg=Je vyžadováno ověření proxy pro připojení k %s1
 ProxyController_updateProxy_proxy_auth_required_title=Je vyžadováno ověření proxy!
 RemoveAction_actionPerformed_rly_msg=Opravdu odstranit všechna vybraná pravidla?
