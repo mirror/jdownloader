@@ -69,10 +69,11 @@ public class SmzdRcks extends antiDDoSForDecrypt {
         getPage(parameter);
         final String rcID = br.getRegex("challenge\\?k=([^\"]+)").getMatch(0);
         // Form[] forms = br.getForms();
-        final DirectHTTP.Recaptcha rc = DirectHTTP.getReCaptcha(br);
+        final DirectHTTP.Recaptcha rc = DirectHTTP.getReCaptcha(br.cloneBrowser());
         rc.setId(rcID);
         rc.load();
         String secretKey = null;
+        Browser ajax = br.cloneBrowser();
         for (int i = 0; i <= 15; i++) {
             if (isAbort()) {
                 return decryptedLinks;
@@ -99,10 +100,12 @@ public class SmzdRcks extends antiDDoSForDecrypt {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             // waittime is not evaluated
             // Thread.sleep(15000);
-            submitForm(rcForm);
-            secretKey = getJson("secretKey");
+            submitForm(ajax, rcForm);
+            secretKey = getJson(ajax, "secretKey");
             if (StringUtils.isNotEmpty(secretKey)) {
                 break;
+            } else {
+                rc.reload();
             }
 
         }
