@@ -28,7 +28,6 @@ public class NewPackageDialog extends AbstractDialog<Object> {
     public NewPackageDialog(SelectionInfo<?, ?> selection) {
         super(0, _GUI._.NewPackageDialog_NewPackageDialog_(), null, null, null);
         this.selection = selection;
-
     }
 
     protected int getPreferredWidth() {

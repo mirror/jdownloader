@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.parser.Regex;
 import jd.plugins.ContainerStatus;
-import jd.plugins.DownloadLink;
 import jd.plugins.PluginsC;
 
 import org.appwork.utils.StringUtils;
@@ -231,10 +230,6 @@ public class C extends PluginsC {
     }
 
     public String[] encrypt(String plain) {
-        return null;
-    }
-
-    public String extractDownloadURL(DownloadLink downloadLink) {
         return null;
     }
 

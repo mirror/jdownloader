@@ -94,7 +94,12 @@ public class MergeToPackageAction extends CustomizableTableContextAppAction<File
         }
         try {
             final SelectionInfo<FilePackage, DownloadLink> sel = getSelection();
-            final NewPackageDialog d = new NewPackageDialog(sel);
+            final NewPackageDialog d = new NewPackageDialog(sel) {
+                @Override
+                public String getDontShowAgainKey() {
+                    return "ABSTRACTDIALOG_DONT_SHOW_AGAIN_" + MergeToPackageAction.this.getClass().getSimpleName();
+                }
+            };
             if (isLastPathDefault()) {
                 List<String> paths = DownloadPathHistoryManager.getInstance().listPaths((String[]) null);
                 if (paths != null && paths.size() > 0) {

@@ -1,9 +1,15 @@
 package jd.gui.swing.dialog;
 
 import java.awt.event.ActionEvent;
+import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.NetworkInterface;
 import java.net.URL;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
 
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -14,6 +20,7 @@ import javax.swing.event.CaretListener;
 
 import jd.controlling.ClipboardMonitoring;
 import jd.controlling.ClipboardMonitoring.ClipboardContent;
+import jd.controlling.TaskQueue;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.proxy.PacProxySelectorImpl;
 import jd.controlling.proxy.SingleBasicProxySelectorImpl;
@@ -27,6 +34,7 @@ import org.appwork.swing.components.ExtTextField;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -39,6 +47,7 @@ import org.jdownloader.updatev2.InternetConnectionSettings;
 public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> implements CaretListener {
 
     private JComboBox       cmbType;
+    private JComboBox       cmbNetIf;
     private ExtTextField    txtHost;
     private JTextField      txtPort;
     private JTextField      txtUser;
@@ -48,6 +57,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
     private JLabel          lblPass;
     private JLabel          lblPort;
     private JLabel          lblHost;
+    private JLabel          lblNetIf;
     private DelayedRunnable delayer;
 
     public ProxyDialog() {
@@ -58,6 +68,34 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
     protected int getPreferredWidth() {
         // TODO Auto-generated method stub
         return 350;
+    }
+
+    private static class NetIfSelection {
+        private final String name;
+
+        public String getName() {
+            return name;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        private final String displayName;
+
+        private NetIfSelection(final String name, final String displayName) {
+            this.name = name;
+            this.displayName = displayName;
+        }
+
+        @Override
+        public String toString() {
+            if (StringUtils.isNotEmpty(getDisplayName())) {
+                return getName() + "|(" + getDisplayName() + ")";
+            } else {
+                return getName();
+            }
+        }
     }
 
     @Override
@@ -125,7 +163,36 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
             clipboardTxt = content.getContent();
         }
         set(clipboardTxt);
+        panel.add(lblNetIf = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_netif()));
+        panel.add(cmbNetIf = new JComboBox(new NetIfSelection[] { new NetIfSelection("-", "") }), "spanx");
+        cmbNetIf.setVisible(false);
+        cmbNetIf.addActionListener(this);
+        lblNetIf.setVisible(false);
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
+            @Override
+            protected Void run() throws RuntimeException {
+                try {
+                    final Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
+                    final HashSet<NetIfSelection> netIfs = new HashSet<NetIfSelection>();
+                    netIfs.add(new NetIfSelection("-", ""));
+                    for (final NetworkInterface netint : Collections.list(nets)) {
+                        netIfs.add(new NetIfSelection(netint.getName(), netint.getDisplayName()));
+                    }
+                    new EDTRunner() {
+
+                        @Override
+                        protected void runInEDT() {
+                            cmbNetIf.setModel(new DefaultComboBoxModel<NetIfSelection>(netIfs.toArray(new NetIfSelection[0])));
+                            cmbNetIf.setSelectedItem("-");
+                        }
+                    };
+                } catch (IOException e) {
+                    LogController.GL.log(e);
+                }
+                return null;
+            }
+        });
         return panel;
     }
 
@@ -183,7 +250,17 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
 
     @Override
     public void actionPerformed(final ActionEvent e) {
-        if (e.getSource() == cmbType) {
+        if (e.getSource() == cmbNetIf && cmbType.getSelectedIndex() == 3) {
+            final Object selection = cmbNetIf.getSelectedItem();
+            if (selection instanceof NetIfSelection) {
+                final NetIfSelection netIfSelection = (NetIfSelection) selection;
+                if ("-".equals(netIfSelection.getName())) {
+                    txtHost.setText("");
+                } else {
+                    txtHost.setText(netIfSelection.getName());
+                }
+            }
+        } else if (e.getSource() == cmbType) {
 
             switch (cmbType.getSelectedIndex()) {
             case 0:
@@ -194,6 +271,8 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                 lblUser.setVisible(true);
                 txtUser.setVisible(true);
                 lblPort.setVisible(true);
+                cmbNetIf.setVisible(false);
+                lblNetIf.setVisible(false);
                 lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostport());
                 if (StringUtils.isEmpty(txtPort.getText())) {
                     txtPort.setText("8080");
@@ -207,6 +286,8 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                 lblUser.setVisible(true);
                 txtUser.setVisible(true);
                 lblPort.setVisible(true);
+                cmbNetIf.setVisible(false);
+                lblNetIf.setVisible(false);
                 lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostport());
                 if (StringUtils.isEmpty(txtPort.getText())) {
                     txtPort.setText("1080");
@@ -220,6 +301,8 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                 lblUser.setVisible(true);
                 txtUser.setVisible(true);
                 lblPort.setVisible(true);
+                cmbNetIf.setVisible(false);
+                lblNetIf.setVisible(false);
                 lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_hostport());
                 if (StringUtils.isEmpty(txtPort.getText())) {
                     txtPort.setText("1080");
@@ -233,6 +316,8 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                 lblUser.setVisible(false);
                 txtUser.setVisible(false);
                 lblPort.setVisible(false);
+                cmbNetIf.setVisible(true);
+                lblNetIf.setVisible(true);
                 lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_local());
                 break;
 
@@ -247,6 +332,8 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                 lblPort.setVisible(false);
                 lblUser.setVisible(true);
                 txtUser.setVisible(true);
+                cmbNetIf.setVisible(false);
+                lblNetIf.setVisible(false);
                 lblHost.setText(_GUI._.jd_gui_swing_dialog_ProxyDialog_pac_url());
 
                 break;
@@ -256,6 +343,8 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                 lblUser.setVisible(true);
                 txtUser.setVisible(true);
                 lblPort.setVisible(true);
+                cmbNetIf.setVisible(false);
+                lblNetIf.setVisible(false);
                 if (StringUtils.isEmpty(txtPort.getText())) {
                     txtPort.setText("1080");
                 }

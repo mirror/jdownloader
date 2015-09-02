@@ -97,7 +97,12 @@ public class SplitPackagesByHost extends CustomizableTableContextAppAction<FileP
                     if (isAskForNewDownloadFolderAndPackageName()) {
 
                         try {
-                            final NewPackageDialog d = new NewPackageDialog(finalSelection);
+                            final NewPackageDialog d = new NewPackageDialog(finalSelection) {
+                                @Override
+                                public String getDontShowAgainKey() {
+                                    return "ABSTRACTDIALOG_DONT_SHOW_AGAIN_" + SplitPackagesByHost.this.getClass().getSimpleName();
+                                }
+                            };
 
                             Dialog.getInstance().showDialog(d);
 
