@@ -12,7 +12,8 @@ public enum AudioBitrate implements MediaQualityInterface {
     KBIT_64(64, 1000),
     KBIT_96(96, 1000),
 
-    KBIT_32_ESTIMATED(31, 1000);
+    KBIT_32_ESTIMATED(31, 1000),
+    KBIT_12(12, 1000);
     private double rating = -1;
 
     private AudioBitrate(double rating, double modifier) {
