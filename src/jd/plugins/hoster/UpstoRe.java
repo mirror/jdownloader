@@ -17,13 +17,19 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
+import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -42,6 +48,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upstore.net", "upsto.re" }, urls = { "http://(www\\.)?(upsto\\.re|upstore\\.net)/[A-Za-z0-9]+", "ejnz905rj5o0jt69pgj50ujz0zhDELETE_MEew7th59vcgzh59prnrjhzj0" }, flags = { 2, 0 })
 public class UpstoRe extends antiDDoSForHost {
 
@@ -50,6 +59,7 @@ public class UpstoRe extends antiDDoSForHost {
         if ("upstore.net".equals(getHost())) {
             this.enablePremium("http://upstore.net/premium/");
         }
+        this.setConfigElements();
     }
 
     @Override
@@ -67,9 +77,21 @@ public class UpstoRe extends antiDDoSForHost {
         return super.rewriteHost(host);
     }
 
-    private static Object LOCK         = new Object();
-    private final String  MAINPAGE     = "http://upstore.net";
-    private final String  INVALIDLINKS = "http://(www\\.)?(upsto\\.re|upstore\\.net)/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
+    /* Constants (limits) */
+    private static final long              FREE_RECONNECTWAIT    = 1 * 60 * 60 * 1000L;
+    private static Object                  LOCK                  = new Object();
+    private final String                   MAINPAGE              = "http://upstore.net";
+    private final String                   INVALIDLINKS          = "http://(www\\.)?(upsto\\.re|upstore\\.net)/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
+
+    private static String[]                IPCHECK               = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private final String                   EXPERIMENTALHANDLING  = "EXPERIMENTALHANDLING";
+    private Pattern                        IPREGEX               = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicReference<String> lastIP                = new AtomicReference<String>();
+    private static AtomicReference<String> currentIP             = new AtomicReference<String>();
+    private static HashMap<String, Long>   blockedIPsMap         = new HashMap<String, Long>();
+    private static Object                  CTRLLOCK              = new Object();
+    private String                         PROPERTY_LASTIP       = "UPSTORE_PROPERTY_LASTIP";
+    private static final String            PROPERTY_LASTDOWNLOAD = "UPSTORE_lastdownload_timestamp";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("upsto.re/", "upstore.net/"));
@@ -122,9 +144,20 @@ public class UpstoRe extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        currentIP.set(this.getIP());
+        synchronized (CTRLLOCK) {
+            /* Load list of saved IPs + timestamp of last download */
+            final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
+            if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
+                blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+            }
+        }
+        long lastdownload = 0;
+        long passedTimeSinceLastDl = 0;
         String dllink = checkDirectLink(downloadLink, "freelink");
         if (dllink == null) {
             final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
@@ -145,6 +178,29 @@ public class UpstoRe extends antiDDoSForHost {
             // Same server error (displayed differently) also exists for premium users
             if (br.containsHTML(">Server with file not found<")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            }
+            /**
+             * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
+             */
+            if (this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
+                /*
+                 * The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime
+                 * later!
+                 */
+                synchronized (CTRLLOCK) {
+                    blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
+                    setIP(downloadLink, null);
+                }
+                /*
+                 * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if
+                 * he tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN
+                 * download using the same free accounts after performing a reconnect!
+                 */
+                lastdownload = getPluginSavedLastDownloadTimestamp();
+                passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
+                if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
+                }
             }
             // Waittime can be skipped
             final long timeBefore = System.currentTimeMillis();
@@ -195,6 +251,11 @@ public class UpstoRe extends antiDDoSForHost {
             sleep(3000l, downloadLink);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        /* The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later! */
+        synchronized (CTRLLOCK) {
+            blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
+            setIP(downloadLink, null);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("not found")) {
@@ -527,6 +588,97 @@ public class UpstoRe extends antiDDoSForHost {
             }
         }
         return dllink;
+    }
+
+    @SuppressWarnings("deprecation")
+    private boolean setIP(final DownloadLink link, final Account account) throws PluginException {
+        synchronized (IPCHECK) {
+            if (currentIP.get() != null && !new Regex(currentIP.get(), IPREGEX).matches()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (ipChanged(link) == false) {
+                // Static IP or failure to reconnect! We don't change lastIP
+                logger.warning("Your IP hasn't changed since last download");
+                return false;
+            } else {
+                String lastIP = currentIP.get();
+                link.setProperty(PROPERTY_LASTIP, lastIP);
+                UpstoRe.lastIP.set(lastIP);
+                getPluginConfig().setProperty(PROPERTY_LASTIP, lastIP);
+                logger.info("LastIP = " + lastIP);
+                return true;
+            }
+        }
+    }
+
+    private long getPluginSavedLastDownloadTimestamp() {
+        long lastdownload = 0;
+        synchronized (blockedIPsMap) {
+            final Iterator<Entry<String, Long>> it = blockedIPsMap.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, Long> ipentry = it.next();
+                final String ip = ipentry.getKey();
+                final long timestamp = ipentry.getValue();
+                if (System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT) {
+                    /* Remove old entries */
+                    it.remove();
+                }
+                if (ip.equals(currentIP.get())) {
+                    lastdownload = timestamp;
+                }
+            }
+        }
+        return lastdownload;
+    }
+
+    private boolean ipChanged(final DownloadLink link) throws PluginException {
+        String currIP = null;
+        if (currentIP.get() != null && new Regex(currentIP.get(), IPREGEX).matches()) {
+            currIP = currentIP.get();
+        } else {
+            currIP = getIP();
+        }
+        if (currIP == null) {
+            return false;
+        }
+        String lastIP = link.getStringProperty(PROPERTY_LASTIP, null);
+        if (lastIP == null) {
+            lastIP = UpstoRe.lastIP.get();
+        }
+        if (lastIP == null) {
+            lastIP = this.getPluginConfig().getStringProperty(PROPERTY_LASTIP, null);
+        }
+        return !currIP.equals(lastIP);
+    }
+
+    private String getIP() throws PluginException {
+        Browser ip = new Browser();
+        String currentIP = null;
+        ArrayList<String> checkIP = new ArrayList<String>(Arrays.asList(IPCHECK));
+        Collections.shuffle(checkIP);
+        for (String ipServer : checkIP) {
+            if (currentIP == null) {
+                try {
+                    ip.getPage(ipServer);
+                    currentIP = ip.getRegex(IPREGEX).getMatch(0);
+                    if (currentIP != null) {
+                        break;
+                    }
+                } catch (Throwable e) {
+                }
+            }
+        }
+        if (currentIP == null) {
+            logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return currentIP;
+    }
+
+    private final boolean default_eh = false;
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, "Activate reconnect workaround for freeusers: Prevents having to enter additional captchas in between downloads.").setDefaultValue(default_eh));
     }
 
     @Override

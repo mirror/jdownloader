@@ -33,7 +33,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "colafile.com" }, urls = { "http://(www\\.)?colafile\\.com/file/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "colayun.com", "colafile.com" }, urls = { "http://(www\\.)?(?:colafile|colayun)\\.com/file/\\d+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32424" }, flags = { 0, 0 })
 public class ColaFileCom extends PluginForHost {
 
     public ColaFileCom(PluginWrapper wrapper) {
@@ -42,12 +42,29 @@ public class ColaFileCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.colafile.com/";
+        return "http://www.colayun.com/";
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        if ("colafile.com".equals(getHost())) {
+            if (host == null || "colafile.com".equals(host)) {
+                return "colayun.com";
+            }
+        }
+        return super.rewriteHost(host);
+    }
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("colafile.com/", "colayun.com/"));
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        /* Correct old urls */
+        correctDownloadLink(link);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
@@ -100,11 +117,11 @@ public class ColaFileCom extends PluginForHost {
             if (uid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getPage("http://www.colafile.com/ajax.php?action=check_down&file_id=" + fid + "&_=" + System.currentTimeMillis());
+            br.getPage("/ajax.php?action=check_down&file_id=" + fid + "&_=" + System.currentTimeMillis());
             if (br.containsHTML("down_disabled\\(\\);")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
-            br.getPage("http://www.colafile.com/ajax.php?action=downaddress&file_id=" + fid);
+            br.getPage("/ajax.php?action=downaddress&file_id=" + fid);
             dllink = br.getRegex("downloadFile\\(\"(http[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -1,6 +1,5 @@
 package jd.plugins;
 
-
 /**
  * used for defining template types. Use by testclass
  *
@@ -11,6 +10,11 @@ public class SiteType {
 
     public static enum SiteTemplate {
 
+        /**
+         * Sold on: <a href="http://www.digitaldutch.com/arles/">digitaldutch.com</a><br />
+         * examples <a href="http:/palcomix.com/">palcomix.com</a>
+         */
+        ArlesImageWebPageCreator,
         /**
          * <a href="http://gempixel.com/project/premium-url-shortener/">Premium URL Shortener</a><br />
          * sold on <a href="http://codecanyon.net/item/premium-url-shortener/3688135">codecanyon.net</a><br />
