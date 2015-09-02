@@ -24,12 +24,15 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornhub.com" }, urls = { "https?://(www\\.|[a-z]{2}\\.)?pornhub\\.com/(view_video\\.php\\?viewkey=[a-z0-9]+|embed/[a-z0-9]+|embed_player\\.php\\?id=\\d+)" }, flags = { 0 })
@@ -45,12 +48,18 @@ public class PornHubCom extends PluginForDecrypt {
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         /* Load sister-host plugin */
-        JDUtilities.getPluginForHost(DOMAIN);
+        final PluginForHost pornhubHosterPlugin = JDUtilities.getPluginForHost(DOMAIN);
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = jd.plugins.hoster.PornHubCom.correctAddedURL(param.toString());
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
-        final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.PornHubCom.formats;
         br.setFollowRedirects(true);
+        final Account aa = AccountController.getInstance().getValidAccount(pornhubHosterPlugin);
+        if (aa != null) {
+            try {
+                jd.plugins.hoster.PornHubCom.login(this.br, aa, false);
+            } catch (final Throwable e) {
+            }
+        }
         try {
             br.getPage(parameter);
         } catch (final Throwable e) {

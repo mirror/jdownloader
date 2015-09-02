@@ -224,7 +224,8 @@ public class WankozCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://www.wankoz.com/login.php", "x=0&y=0&action=login&username=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+                this.br.getPage("http://www.wankoz.com/login.php");
+                this.br.postPage("/login.php", "x=0&y=0&action=login&username=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 if (!br.containsHTML(">Logout</a>") || br.containsHTML("class=\"message_error\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);

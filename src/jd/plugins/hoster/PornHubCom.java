@@ -132,7 +132,7 @@ public class PornHubCom extends PluginForHost {
             final Account aa = AccountController.getInstance().getValidAccount(this);
             if (aa != null) {
                 try {
-                    this.login(aa, false);
+                    this.login(this.br, aa, false);
                 } catch (final Throwable e) {
                 }
             }
@@ -170,9 +170,9 @@ public class PornHubCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void getVideoLinkAccount() {
-        dlUrl = this.br.getRegex("class=\"downloadBtn greyButton\" (target=\"_blank\")? href=\"(http[^<>\"]*?)\"").getMatch(1);
-    }
+    // private void getVideoLinkAccount() {
+    // dlUrl = this.br.getRegex("class=\"downloadBtn greyButton\" (target=\"_blank\")? href=\"(http[^<>\"]*?)\"").getMatch(1);
+    // }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static LinkedHashMap<String, String> getVideoLinksFree(final Browser br) throws Exception {
@@ -316,7 +316,7 @@ public class PornHubCom extends PluginForHost {
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -339,8 +339,8 @@ public class PornHubCom extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 br.getPage("http://www.pornhub.com/");
-                final String login_key = this.br.getRegex("id=\"login_key\" value=\"([^<>\"]*?)\"").getMatch(0);
-                final String login_hash = this.br.getRegex("id=\"login_hash\" value=\"([^<>\"]*?)\"").getMatch(0);
+                final String login_key = br.getRegex("id=\"login_key\" value=\"([^<>\"]*?)\"").getMatch(0);
+                final String login_hash = br.getRegex("id=\"login_hash\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (login_key == null || login_hash == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -380,7 +380,7 @@ public class PornHubCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            login(this.br, account, true);
         } catch (PluginException e) {
             account.setValid(false);
             throw e;

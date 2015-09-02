@@ -46,11 +46,15 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // they have subdomains like userprofile.minus.com/
         String parameter = param.toString().replace("dev.min", "min").replace("min.us/", "minus.com/");
+        /*
+         * 2015-09-02 -psp-: wtf please verify the 4 lines below - they will definitly make this fail:
+         * http://frontalspy.minus.com/mCQMjf78hqVOv
+         */
         // image is downloadable and we can no longer seem to convert it back to standard link -raztoki 20150511
-        if (parameter.matches("(?i).+/[A-Za-z0-9]{2,}((?:_[a-z]{1,2})?\\.(?:bmp|png|jpe?g|gif))?")) {
-            decryptedLinks.add(createDownloadlink("directhttp://" + parameter));
-            return decryptedLinks;
-        }
+        // if (parameter.matches("(?i).+/[A-Za-z0-9]{2,}((?:_[a-z]{1,2})?\\.(?:bmp|png|jpe?g|gif))?")) {
+        // decryptedLinks.add(createDownloadlink("directhttp://" + parameter));
+        // return decryptedLinks;
+        // }
 
         // ignore trash here... uses less memory allocations
         if (parameter.matches(INVALIDLINKS) || parameter.matches(INVALIDLINKS2)) {
