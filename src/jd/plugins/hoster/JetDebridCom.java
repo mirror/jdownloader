@@ -168,7 +168,7 @@ public class JetDebridCom extends PluginForHost {
         if (!resume) {
             maxChunks = 1;
         }
-        link.setProperty(NICE_HOSTproperty + "directlink", dllink);
+        link.setProperty(NICE_HOSTproperty + "directlink", Property.NULL);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
         if (dl.getConnection().getResponseCode() == 416) {
             logger.info("Resume impossible, disabling it for the next try");
@@ -176,7 +176,7 @@ public class JetDebridCom extends PluginForHost {
             link.setProperty(JetDebridCom.NORESUME, Boolean.valueOf(true));
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("json")) {
+        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getContentType().contains("json") || dl.getConnection().getLongContentLength() < 0) {
             br.followConnection();
             updatestatuscode();
             handleAPIErrors(this.br);
@@ -184,6 +184,7 @@ public class JetDebridCom extends PluginForHost {
         }
         try {
             controlSlot(+1);
+            link.setProperty(NICE_HOSTproperty + "directlink", dllink);
             this.dl.startDownload();
         } finally {
             // remove usedHost slot from hostMap
