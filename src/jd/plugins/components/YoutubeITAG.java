@@ -12,7 +12,6 @@ import jd.plugins.components.youtube.VideoContainer;
 import jd.plugins.components.youtube.VideoResolution;
 
 public enum YoutubeITAG {
-
     DASH_AUDIO_128K_AAC(140, null, null, "AAC", "128kbit", AudioCodec.AAC, AudioBitrate.KBIT_128),
     // DASH_AUDIO_48K_OPUS(249, null, null, "Opus", "38kbit", YoutubeITAG.OPUS_48),
     DASH_AUDIO_128K_WEBM(171, null, null, "Vorbis", "128kbit", AudioCodec.VORBIS, AudioBitrate.KBIT_128),
@@ -75,6 +74,8 @@ public enum YoutubeITAG {
     FLV_VIDEO_480P_H264_AUDIO_AAC(35, "H264", "480p", "AAC", "128kbit", VideoResolution.P_480, VideoContainer.FLV, VideoCodec.H264),
     FLV_VIDEO_HIGH_270P_H263_AUDIO_MP3(6, "Sorenson H.263", "270p", "MP3", "64kbit", VideoResolution.P_270, VideoContainer.FLV, VideoCodec.H263, AudioCodec.MP3, AudioBitrate.KBIT_64),
     FLV_VIDEO_LOW_240P_H263_AUDIO_MP3(5, "Sorenson H.263", "240p", "MP3", "64kbit", VideoResolution.P_240, VideoContainer.FLV, VideoCodec.H263, AudioCodec.MP3, AudioBitrate.KBIT_64),
+    // we do not need such a bad itag. Ignore the variants
+    THREEGP4_ITAG13_H263_144P_15FPS_AMRNB_12KBIT(13, "h263", "144p", "AMRNB", "12kbit", VideoResolution.P_144, VideoContainer.THREEGP, VideoCodec.H263, AudioCodec.AMRNB, AudioBitrate.KBIT_12),
     // fake id
     IMAGE_HQ(10002, "jpg", "480x360", null, null, ImageQuality.HIGH),
     // fake id
