@@ -251,7 +251,7 @@ public class JetDebridCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getResponseCode() == 404 || con.getLongContentLength() == -1) {
+                if (con.getContentType().contains("html") || con.getResponseCode() != 200 || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     return null;
                 }
