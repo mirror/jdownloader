@@ -259,6 +259,7 @@ public class ItagHelper {
         mapping.put("aac", "aac");
         mapping.put("Google VP9", "vp9");
         mapping.put("Google VP8", "vp8");
+        mapping.put("H.263 / H.263-1996, H.263+ / H.263-1998 / H.263 version 2", "h263");
 
         mapping.put("mp3", "mp3");
         mapping.put("Opus", "Opus");
@@ -270,7 +271,7 @@ public class ItagHelper {
         mapping.put("3gp6", "3gp");
         mapping.put("FLV (Flash Video)", "flv");
         mapping.put("FLV / Sorenson Spark / Sorenson H.263 (Flash Video)", "Sorenson H263");
-
+        mapping.put("AMR-NB (Adaptive Multi-Rate NarrowBand)", "AMRNB");
     }
 
     public Object get(Object name) {
@@ -293,7 +294,7 @@ public class ItagHelper {
                 String itagName = "";
                 String itagID = itag;
                 if (streamInfo.getStreams().size() < 2) {
-                    // dasch
+                    // dash
                     String quality = "";
                     if ("VIDEO".equals(streamInfo.getStreams().get(0).getCodec_type().toUpperCase(Locale.ENGLISH))) {
                         Stream video = streamInfo.getStreams().get(0);
@@ -357,8 +358,19 @@ public class ItagHelper {
                     itagName += "_" + audioBitrate + "KBIT";
                     // MP4_VIDEO_720P_H264_AUDIO_AAC(22, "H264", "720p", "AAC", "192kbit", 720.4 + YoutubeITAG.AAC_192),
                     itagName = upper(itagName);
+
+                    // YoutubeITAG.VIDEO_RESOLUTION_144P + YoutubeITAG.VIDEO_CODEC_H263 + YoutubeITAG.AUDIO_CODEC_AMRNB_12
                     String quality = "YoutubeITAG.VIDEO_RESOLUTION_" + getVideoResolution(video) + "P + YoutubeITAG.VIDEO_CODEC_" + upper(get(video.getCodec_long_name()).toString()) + " + YoutubeITAG.AUDIO_CODEC_" + upper(get(audio.getCodec_long_name())) + "_" + get(audioBitrate);
-                    notify(itagName + "(" + itagID + ",\"" + get(video.getCodec_long_name()) + "\",\"" + res + "p\",\"" + get(audio.getCodec_long_name()) + "\",\"" + get(audioBitrate) + "kbit\"," + quality + "),");
+                    String not = itagName + "(" + itagID + ",\"" + get(video.getCodec_long_name()) + "\",\"" + res + "p\",\"" + get(audio.getCodec_long_name()) + "\",\"" + get(audioBitrate) + "kbit\",";
+                    // VideoResolution.P_240, VideoContainer.FLV, VideoCodec.H263, AudioCodec.MP3, AudioBitrate.KBIT_64
+                    not += "VideoResolution.P_" + getVideoResolution(video) + ", ";
+                    not += "VideoContainer.P_" + upper(getContainerName()) + ", ";
+                    not += "VideoCodec." + upper(get(video.getCodec_long_name()).toString()) + ", ";
+                    not += "AudioCodec." + upper(get(audio.getCodec_long_name())) + ", ";
+                    not += "AudioBitrate.KBIT_" + audioBitrate;
+
+                    not += "),";
+                    notify(not);
                     // Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE, "New Youtube ITag Found!",
                     // JSonStorage.serializeToJson(query) + "\r\n" + JSonStorage.serializeToJson(streamInfo));
 
@@ -388,7 +400,7 @@ public class ItagHelper {
         } catch (Throwable e) {
             bps = (int) ((file.length() / Double.parseDouble(streamInfo.getFormat().getDuration())) * 8);
         }
-        return bps / (8 * 1000) * 8;
+        return bps / 1000;
     }
 
     public int getFPS(Stream video) {
