@@ -177,7 +177,9 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                     final HashSet<NetIfSelection> netIfs = new HashSet<NetIfSelection>();
                     netIfs.add(new NetIfSelection("-", ""));
                     for (final NetworkInterface netint : Collections.list(nets)) {
-                        netIfs.add(new NetIfSelection(netint.getName(), netint.getDisplayName()));
+                        if (netint.isUp() && !netint.isLoopback()) {
+                            netIfs.add(new NetIfSelection(netint.getName(), netint.getDisplayName()));
+                        }
                     }
                     new EDTRunner() {
 
