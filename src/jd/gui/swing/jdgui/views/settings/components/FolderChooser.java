@@ -139,8 +139,6 @@ public class FolderChooser extends PathChooser implements SettingsComponent {
         if (file == null) {
             return null;
         }
-        DownloadPathHistoryManager.getInstance().add(file.getAbsolutePath());
-
         return file.getAbsolutePath();
     }
 

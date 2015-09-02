@@ -39,6 +39,10 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> imp
         super.add(packageName);
     }
 
+    private void superadd(String packageName) {
+        super.add(packageName);
+    }
+
     private final AtomicInteger saveEvent = new AtomicInteger(0);
 
     @Override
@@ -104,7 +108,7 @@ public class DownloadPathHistoryManager extends HistoryManager<DownloadPath> imp
                         for (int i = list.size() - 1; i >= 0; i--) {
                             final Object item = list.get(i);
                             if (item != null && item instanceof DownloadPath) {
-                                add(((DownloadPath) item).getName());
+                                superadd(((DownloadPath) item).getName());
                             }
                         }
                     }

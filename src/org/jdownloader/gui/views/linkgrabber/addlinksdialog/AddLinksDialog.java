@@ -392,8 +392,8 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
         destination.setQuickSelectionList(DownloadPathHistoryManager.getInstance().listPaths(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
 
-        String latest = config.getLatestDownloadDestinationFolder();
-        if (latest == null || !config.isUseLastDownloadDestinationAsDefault()) {
+        final String latest = config.getLatestDownloadDestinationFolder();
+        if (!config.isUseLastDownloadDestinationAsDefault() || StringUtils.isEmpty(latest)) {
             destination.setFile(new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()));
         } else {
             destination.setFile(new File(latest));
