@@ -65,7 +65,7 @@ import org.jdownloader.statistics.StatsManager.CollectionName;
 /**
  * TODO: Remove after next big update of core to use the public static methods!
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\w\\.:\\-@]*/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|apk|bin|bmp|bat|bz2|cbr|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|load|lha|lzh|m2ts|m4v|m4a|md5|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|oga|ogg|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|wav|wmv|wma|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_[_a-z]{2})(\\.\\d{1,4})?(?=\\?|$|\"|\r|\n))" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DirectHTTP", "http links" }, urls = { "directhttp://.+", "https?viajd://[\\w\\.:\\-@]*/.*\\.((jdeatme|3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|apk|bin|bmp|bat|bz2|cbr|cab|cbz|ccf|chm|cr2|cso|cue|cpio|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gpg|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpe?g|load|lha|lzh|m2ts|m4v|m4a|md5|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|mv|mws|nfo|npk|oga|ogg|ogv|otrkey|par2|pak|pkg|png|pdf|pptx?|ppsx?|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|sfx|swf|swc|tar\\.(gz|bz2|xz)|tar|tgz|tiff?|ts|txt|viv|vivo|vob|vtt|webm|wav|wmv|wma|xla|xls|xpi|xtm|zeno|zip|[r-z]\\d{2}|_[_a-z]{2}|\\d{1,4}$)(\\.\\d{1,4})?(?=\\?|$|\"|\r|\n))" }, flags = { 2, 0 })
 public class DirectHTTP extends PluginForHost {
 
     public static class Recaptcha {
@@ -771,9 +771,9 @@ public class DirectHTTP extends PluginForHost {
                     } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
                         urlConnection = br.openHeadConnection(getDownloadURL(downloadLink));
                         if (urlConnection.getResponseCode() == 404 /*
-                         * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
-                         * "must-revalidate") && urlConnection.getHeaderField("Via") != null
-                         */) {
+                                                                    * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
+                                                                    * "must-revalidate") && urlConnection.getHeaderField("Via") != null
+                                                                    */) {
                             urlConnection.disconnect();
                             urlConnection = br.openGetConnection(getDownloadURL(downloadLink));
                         } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
