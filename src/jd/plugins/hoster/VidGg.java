@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidgg.to", "vid.gg" }, urls = { "http://(www\\.)?vid\\.gg/(video/|embed\\?id=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidgg.to", "vid.gg" }, urls = { "http://(?:www\\.)?(?:vid\\.gg|vidgg\\.to)/(?:video/|embed\\?id=)[a-z0-9]+", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0, 0 })
 public class VidGg extends PluginForHost {
 
     private static final String DOMAIN = "vidgg.to";
