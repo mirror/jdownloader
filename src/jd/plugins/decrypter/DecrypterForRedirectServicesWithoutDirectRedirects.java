@@ -20,6 +20,7 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import jd.PluginWrapper;
@@ -364,7 +365,6 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                 if (nextUrl == null) {
                     return null;
                 }
-                nextUrl = !nextUrl.startsWith("http") ? "http://www.icefilms.info" + nextUrl : nextUrl;
                 getPage(nextUrl);
                 if (br.containsHTML(">no sources<")) {
                     logger.info("Link offline: " + parameter);
@@ -372,32 +372,34 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends antiDDoS
                 }
                 final String sec = br.getRegex("f\\.lastChild\\.value=\"(\\w+)\"").getMatch(0);
                 final String t = br.getRegex("&t=(\\d+)\"").getMatch(0);
-                String url = br.getRegex("\"POST\",\"(.*?)\"").getMatch(0);
+                final String url = br.getRegex("\"POST\",\"(.*?)\"").getMatch(0);
                 if (sec == null || t == null || url == null) {
                     return null;
                 }
-                url = url.startsWith("http") ? url : "http://www.icefilms.info" + url;
                 String[] results = br.getRegex("(<a rel=\\d+.*?</a>)").getColumn(0);
                 if (results == null || results.length == 0) {
                     return null;
                 }
+                final String ss = br.getRegex("var s\\s*=\\s*(\\d+)").getMatch(0);
+                int s = ss != null ? (Integer.parseInt(ss) + 1) : 10000;
+                final String mm = br.getRegex(",\\s*m=\\s*(\\d+)").getMatch(0);
+                final int m = mm != null ? Integer.parseInt(mm) : 10000;
                 for (String result : results) {
                     final String id = new Regex(result, "onclick=\'go\\((\\d+)").getMatch(0);
                     // continue when we can't find go value!
                     if (id == null) {
                         continue;
                     }
-                    final int s = (int) (1 + Math.random() * 20);
-                    final int m = (int) (1 + Math.random() * 250);
                     Browser br2 = br.cloneBrowser();
-                    postPage(br2, url, "id=" + id + "&s=" + String.valueOf(s) + "&iqs=&url=&m=-" + String.valueOf(m) + "&cap=&sec=" + sec + "&t=" + t);
+                    br2.getHeaders().put("Accept", "*/*");
+                    postPage(br2, url.substring(0, url.indexOf("?")) + "?s=" + id + "&t=" + t, "&id=" + id + "&s=" + ++s + "&iqs=&url=&m=" + (m + 1 + new Random().nextInt(1000)) + "&cap= &sec=" + sec + "&t=" + t);
                     final String link = Encoding.htmlDecode(br2.getRegex("url=(.*?)$").getMatch(0));
                     // continues on link failure.. not all mirrors are live.
                     if (link != null) {
                         decryptedLinks.add(createDownloadlink(link));
                     }
                     // small pause to prevent high loads
-                    Thread.sleep(1500);
+                    Thread.sleep(500);
                 }
                 return decryptedLinks;
             } else if (parameter.contains("q32.ru/")) {
