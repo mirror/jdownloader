@@ -1717,6 +1717,7 @@ jd_gui_swing_dialog_ProxyDialog_direct=Přímé
 jd_gui_swing_dialog_ProxyDialog_hostport=Hostitel a port:
 jd_gui_swing_dialog_ProxyDialog_http=HTTP
 jd_gui_swing_dialog_ProxyDialog_local=IP/síťové rozhraní
+jd_gui_swing_dialog_ProxyDialog_netif=RozhraniSite:
 jd_gui_swing_dialog_ProxyDialog_pac=Automatická Proxy.pac
 jd_gui_swing_dialog_ProxyDialog_pac_url=URL Proxy.pac
 jd_gui_swing_dialog_ProxyDialog_password=Heslo:
