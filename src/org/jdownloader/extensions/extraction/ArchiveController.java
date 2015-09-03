@@ -11,6 +11,7 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
+import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
@@ -76,7 +77,7 @@ public class ArchiveController {
     }
 
     protected File getPathByID(String id) {
-        return Application.getResource("cfg/archives/v2_" + id + ".json");
+        return Application.getResource("cfg/archives/v2_" + Hash.getSHA256(id) + ".json");
     }
 
     public ArchiveSettings getArchiveSettings(ArchiveFactory archiveFactory) {
