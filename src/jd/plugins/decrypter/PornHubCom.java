@@ -43,7 +43,9 @@ public class PornHubCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String DOMAIN = "pornhub.com";
+    private static final String DOMAIN         = "pornhub.com";
+    private static final String BEST_ONLY      = jd.plugins.hoster.PornHubCom.BEST_ONLY;
+    private static final String FAST_LINKCHECK = jd.plugins.hoster.PornHubCom.FAST_LINKCHECK;
 
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -52,6 +54,8 @@ public class PornHubCom extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = jd.plugins.hoster.PornHubCom.correctAddedURL(param.toString());
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
+        final boolean bestonly = cfg.getBooleanProperty(BEST_ONLY, false);
+        final boolean fastlinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(pornhubHosterPlugin);
         if (aa != null) {
@@ -94,6 +98,10 @@ public class PornHubCom extends PluginForDecrypt {
 
         final LinkedHashMap<String, String> foundLinks_all = jd.plugins.hoster.PornHubCom.getVideoLinksFree(this.br);
 
+        if (foundLinks_all == null) {
+            return null;
+        }
+
         final Iterator<Entry<String, String>> it = foundLinks_all.entrySet().iterator();
         while (it.hasNext()) {
             final Entry<String, String> next = it.next();
@@ -108,8 +116,15 @@ public class PornHubCom extends PluginForDecrypt {
                 dl.setProperty("mainlink", parameter);
                 dl.setFinalFileName(final_filename);
                 dl.setContentUrl(parameter);
-                dl.setAvailable(true);
+                if (fastlinkcheck) {
+                    dl.setAvailable(true);
+                }
                 decryptedLinks.add(dl);
+            }
+            if (bestonly) {
+                /* Our LinkedHashMap is already in the right order so best = first entry --> Step out of the loop */
+                logger.info("User wants best-only");
+                break;
             }
         }
 
@@ -122,6 +137,11 @@ public class PornHubCom extends PluginForDecrypt {
 
     private DownloadLink getDecryptDownloadlink() {
         return this.createDownloadlink("http://pornhubdecrypted" + new Random().nextInt(1000000000));
+    }
+
+    /* For testing */
+    public int getMaxConcurrentProcessingInstances() {
+        return 2;
     }
 
     /**

@@ -31,13 +31,13 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "docs.google.com" }, urls = { "https?://(www\\.)?(docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|(docs|drive)\\.google\\.com/folderview\\?[a-z0-9\\-_=\\&]+)" }, flags = { 0 })
-public class DocsGoogleCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(www\\.)?(docs\\.google\\.com/folder/d/[a-zA-Z0-9\\-_]+|(docs|drive)\\.google\\.com/folderview\\?[a-z0-9\\-_=\\&]+)" }, flags = { 0 })
+public class GoogleDrive extends PluginForDecrypt {
 
     /**
      * @author raztoki
      * */
-    public DocsGoogleCom(PluginWrapper wrapper) {
+    public GoogleDrive(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -60,7 +60,7 @@ public class DocsGoogleCom extends PluginForDecrypt {
         String parameter = param.toString();
 
         PluginForHost plugin = JDUtilities.getPluginForHost("docs.google.com");
-        ((jd.plugins.hoster.DocsGoogleCom) plugin).prepBrowser(br);
+        ((jd.plugins.hoster.GoogleDrive) plugin).prepBrowser(br);
 
         int retry = 0;
         do {
