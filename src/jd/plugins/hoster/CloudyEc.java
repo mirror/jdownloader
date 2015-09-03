@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudy.ec" }, urls = { "http://(?:www\\.)?cloudy\\.ec/v/[a-z0-9]+" }, flags = { 0 })
 public class CloudyEc extends PluginForHost {
@@ -185,6 +186,11 @@ public class CloudyEc extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.Unknown_VideoHosting;
     }
 
 }

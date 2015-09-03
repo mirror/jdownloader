@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -29,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "someimage.com" }, urls = { "https?://someimage\\.com/([^<>\"]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "someimage.com" }, urls = { "https?://someimage\\.com/([^<>\"]+)" }, flags = { 0 })
 public class SomeImageCom extends PluginForHost {
 
     public SomeImageCom(PluginWrapper wrapper) {
@@ -41,8 +40,9 @@ public class SomeImageCom extends PluginForHost {
         return "https://someimage.com/tos";
     }
 
-    private int    MAXCHUNKSFORFREE = 1;
-    private String MAINPAGE         = "http://someimage.com";
+    private int MAXCHUNKSFORFREE = 1;
+
+    // private String MAINPAGE = "http://someimage.com";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
@@ -100,15 +100,10 @@ public class SomeImageCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
-
     @Override
     public void reset() {
     }
 
-    /*
-     * @Override public int getMaxSimultanFreeDownloadNum() { return 1; }
-     */
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }

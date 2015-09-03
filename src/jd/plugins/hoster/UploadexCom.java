@@ -58,18 +58,18 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailyuploads.net" }, urls = { "https?://(www\\.)?dailyuploads\\.net/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class DailyuploadsNet extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadex.com" }, urls = { "https?://(www\\.)?uploadex\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+public class UploadexCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
     private String                         passCode                     = null;
     private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://dailyuploads.net";
+    private static final String            COOKIE_HOST                  = "http://uploadex.com";
     private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(dailyuploads\\.net)";
+    private static final String            DOMAINS                      = "(uploadex\\.com)";
     /* Linktypes */
     private static final String            TYPE_NORMAL                  = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
     private static final String            TYPE_EMBED                   = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
@@ -83,8 +83,8 @@ public class DailyuploadsNet extends PluginForHost {
     private static final boolean           VIDEOHOSTER                  = false;
     private static final boolean           VIDEOHOSTER_2                = false;
 
-    private static final boolean           SUPPORTSHTTPS                = false;
-    private static final boolean           SUPPORTSHTTPS_FORCED         = false;
+    private static final boolean           SUPPORTSHTTPS                = true;
+    private static final boolean           SUPPORTSHTTPS_FORCED         = true;
     private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
     private final boolean                  ENABLE_RANDOM_UA             = false;
     private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
@@ -95,14 +95,14 @@ public class DailyuploadsNet extends PluginForHost {
     private static final int               WAITSECONDSFORCED            = 5;
     /* Connection stuff */
     private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = -2;
-    private static final int               FREE_MAXDOWNLOADS            = 1;
+    private static final int               FREE_MAXCHUNKS               = 0;
+    private static final int               FREE_MAXDOWNLOADS            = 20;
     private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = -2;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
     private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
     private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
@@ -114,8 +114,8 @@ public class DailyuploadsNet extends PluginForHost {
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.8.8
     // Tags: Script, template
-    // mods:
-    // limit-info: premium untested, set FREE account limits
+    // mods: scanInfo[other filename RegEx]
+    // limit-info:
     // protocol: no https
     // captchatype: null
     // other:
@@ -151,7 +151,7 @@ public class DailyuploadsNet extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public DailyuploadsNet(PluginWrapper wrapper) {
+    public UploadexCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -271,6 +271,10 @@ public class DailyuploadsNet extends PluginForHost {
                     }
                 }
             }
+        }
+        if (fileInfo[0] == null) {
+            /* Link of the box without filesize */
+            fileInfo[0] = new Regex(correctedBR, "class=\"dfilename\">([^<>\"]*?)</span>").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);

@@ -58,12 +58,18 @@ public class SiteType {
          * Mirrors</a>
          */
         Qooy_Mirrors,
-
+        /**
+         * Script used by some image hosting sites. <a href="http:/damimage.com/">damimage.com</a>. Not sure what to call this script.
+         */
+        Unknown_ImageHosting,
         /**
          * the template that supports mirror stack type sites.. Not sure what to call this script.
          */
         Unknown_MirrorStack,
-
+        /**
+         * Script used by some video hosting sites. <a href="http:/cloudy.ec/">cloudy.ec</a>. Not sure what to call this script.
+         */
+        Unknown_VideoHosting,
         /**
          * Turbobit hosted sites. <a href="http://turbobit.net/">turbobit.net</a>
          */

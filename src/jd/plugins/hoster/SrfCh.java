@@ -75,35 +75,60 @@ public class SrfCh extends PluginForHost {
         final String videoid = new Regex(downloadLink.getDownloadURL(), "\\?id=([A-Za-z0-9\\-]+)").getMatch(0);
         final String channelname = convertDomainPartToShortChannelName(domainpart);
         this.br.getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/play/" + videoid + ".xml");
-        final String hls_master = this.br.getRegex("<url quality=\"(?:HD|SD)\">(http[^<>\"]*?\\.m3u8)</url>").getMatch(0);
-        if (hls_master == null) {
+        final String url_hls_master = this.br.getRegex("<url quality=\"(?:HD|SD)\">(http[^<>\"]*?\\.m3u8)</url>").getMatch(0);
+        final String url_rtmp = this.br.getRegex("<url quality=\"(?:HD|HQ|MQ|SQ|SD)\">(rtmpe?://[^<>\"]*?\\.flv)</url>").getMatch(0);
+        if (url_hls_master == null && url_rtmp == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.br.getPage(hls_master);
-        final String[] medias = this.br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
-        if (medias == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String url_hls = null;
-        long bandwidth_highest = 0;
-        for (final String media : medias) {
-            final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
-            final long bandwidth_temp = Long.parseLong(bw);
-            if (bandwidth_temp > bandwidth_highest) {
-                bandwidth_highest = bandwidth_temp;
-                url_hls = new Regex(media, "https?://[^\r\n]+").getMatch(-1);
+        /* Prefer hls over rtmp but sometimes only one of both is available. */
+        if (url_hls_master != null) {
+            logger.info("Downloading hls");
+            this.br.getPage(url_hls_master);
+            final String[] medias = this.br.getRegex("#EXT-X-STREAM-INF([^\r\n]+[\r\n]+[^\r\n]+)").getColumn(-1);
+            if (medias == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            String url_hls = null;
+            long bandwidth_highest = 0;
+            for (final String media : medias) {
+                final String bw = new Regex(media, "BANDWIDTH=(\\d+)").getMatch(0);
+                final long bandwidth_temp = Long.parseLong(bw);
+                if (bandwidth_temp > bandwidth_highest) {
+                    bandwidth_highest = bandwidth_temp;
+                    url_hls = new Regex(media, "https?://[^\r\n]+").getMatch(-1);
+                }
+            }
+            if (url_hls == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            try {
+            } catch (final Throwable e) {
+                this.br.getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/" + videoid + "/clicked.xml");
+            }
+            checkFFmpeg(downloadLink, "Download a HLS Stream");
+            dl = new HLSDownloader(downloadLink, br, url_hls);
+            dl.startDownload();
+        } else {
+            logger.info("Downloading rtmp");
+            final String app = "ondemand";
+            final String playpath = new Regex(url_rtmp, app + "/" + "(.+)\\.flv$").getMatch(0);
+            try {
+                dl = new RTMPDownload(this, downloadLink, url_rtmp);
+            } catch (final NoClassDefFoundError e) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDownload class missing");
+            }
+            /* Setup rtmp connection */
+            jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            rtmp.setPageUrl(downloadLink.getDownloadURL());
+            rtmp.setUrl(url_rtmp);
+            rtmp.setPlayPath(playpath);
+            rtmp.setApp("ondemand");
+            rtmp.setFlashVer("WIN 18,0,0,232");
+            /* Hash is wrong (static) but server will accept it anyways so good enough for us now :) */
+            rtmp.setSwfUrl("http://tp.srgssr.ch/assets/lib/srg-technical-player/f2ff86c6a1f230060e46122086a7326f-player.swf");
+            rtmp.setResume(true);
+            ((RTMPDownload) dl).startDownload();
         }
-        if (url_hls == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        try {
-        } catch (final Throwable e) {
-            this.br.getPage("http://il.srgssr.ch/integrationlayer/1.0/ue/" + channelname + "/video/" + videoid + "/clicked.xml");
-        }
-        checkFFmpeg(downloadLink, "Download a HLS Stream");
-        dl = new HLSDownloader(downloadLink, br, url_hls);
-        dl.startDownload();
     }
 
     private String convertDomainPartToShortChannelName(final String input) {

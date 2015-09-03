@@ -19,39 +19,45 @@ package jd.plugins.hoster;
 import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.GoogleHelper;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "docs.google.com" }, urls = { "https?://(www\\.)?(docs|drive)\\.google\\.com/((leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|file/d/[A-Za-z0-9\\-_]+)" }, flags = { 0 })
-public class DocsGoogleCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "docs.google.com" }, urls = { "https?://(www\\.)?(docs|drive)\\.google\\.com/((leaf|open|uc)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+|file/d/[A-Za-z0-9\\-_]+)" }, flags = { 2 })
+public class GoogleDrive extends PluginForHost {
 
-    public DocsGoogleCom(PluginWrapper wrapper) {
+    public GoogleDrive(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("https://accounts.google.com/signup");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://support.google.com/drive/bin/answer.py?hl=en_GB&answer=2450387";
+        return "https://support.google.com/drive/answer/2450387?hl=en-GB";
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return FREE_MAXDOWNLOADS;
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) throws PluginException {
         String id = getID(link);
         if (id == null) {
@@ -61,8 +67,14 @@ public class DocsGoogleCom extends PluginForHost {
         }
     }
 
-    private static final String NOCHUNKS     = "NOCHUNKS";
-    private boolean             pluginloaded = false;
+    private static final String  NOCHUNKS          = "NOCHUNKS";
+    private boolean              pluginloaded      = false;
+    private boolean              privatefile       = false;
+
+    /* Connection stuff */
+    private static final boolean FREE_RESUME       = true;
+    private static final int     FREE_MAXCHUNKS    = 0;
+    private static final int     FREE_MAXDOWNLOADS = 20;
 
     private String getID(DownloadLink downloadLink) {
         // known url formats
@@ -104,17 +116,31 @@ public class DocsGoogleCom extends PluginForHost {
         return pbr;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        privatefile = false;
         this.setBrowserExclusive();
-        prepBrowser(br);
-        try {
-            br.getPage("https://docs.google.com/leaf?id=" + getID(link));
-        } catch (final BrowserException e) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa != null) {
+            try {
+                this.login(aa);
+            } catch (final Throwable e) {
+            }
         }
-        if (br.containsHTML("<p class=\"error\\-caption\">Sorry, we are unable to retrieve this document\\.</p>")) {
+        prepBrowser(br);
+        br.getPage("https://docs.google.com/leaf?id=" + getID(link));
+        if (br.containsHTML("<p class=\"error\\-caption\">Sorry, we are unable to retrieve this document\\.</p>") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.getURL().contains("accounts.google.com/")) {
+            link.getLinkStatus().setStatusText("You are missing the rights to download this file");
+            privatefile = true;
+            return AvailableStatus.TRUE;
+        }
+        String jsredirect = this.br.getRegex("var url = \\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (jsredirect != null) {
+            final String url_gdrive = "https://drive.google.com/file/d/" + getID(link) + "/view?ddrp=1";
+            this.br.getPage(url_gdrive);
         }
         String filename = br.getRegex("'title': '([^<>\"]*?)'").getMatch(0);
         if (filename == null) {
@@ -122,7 +148,7 @@ public class DocsGoogleCom extends PluginForHost {
         }
         final String size = br.getRegex("\"sizeInBytes\":(\\d+),").getMatch(0);
         if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setName(filename.trim());
         if (size != null) {
@@ -135,6 +161,13 @@ public class DocsGoogleCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    private void doFree(final DownloadLink downloadLink) throws Exception {
+        if (privatefile) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
         br.setFollowRedirects(false);
         String dllink = null;
         String streamLink = null;
@@ -196,7 +229,7 @@ public class DocsGoogleCom extends PluginForHost {
         }
         boolean resume = true;
         int maxChunks = 0;
-        if (downloadLink.getBooleanProperty(DocsGoogleCom.NOCHUNKS, false) || !resume) {
+        if (downloadLink.getBooleanProperty(GoogleDrive.NOCHUNKS, false) || !resume) {
             maxChunks = 1;
         }
         br.setFollowRedirects(true);
@@ -217,20 +250,56 @@ public class DocsGoogleCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
-                if (downloadLink.getBooleanProperty(DocsGoogleCom.NOCHUNKS, false) == false) {
-                    downloadLink.setProperty(DocsGoogleCom.NOCHUNKS, Boolean.valueOf(true));
+                if (downloadLink.getBooleanProperty(GoogleDrive.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(GoogleDrive.NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         } catch (final PluginException e) {
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(DocsGoogleCom.NOCHUNKS, false) == false) {
-                downloadLink.setProperty(DocsGoogleCom.NOCHUNKS, Boolean.valueOf(true));
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && downloadLink.getBooleanProperty(GoogleDrive.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(GoogleDrive.NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             throw e;
         }
+    }
+
+    private boolean login(final Account account) throws Exception {
+        final GoogleHelper helper = new GoogleHelper(this.br);
+        return helper.login(account);
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account);
+        } catch (final Exception e) {
+            ai.setStatus(e.getMessage());
+            account.setValid(false);
+            return ai;
+        }
+        ai.setUnlimitedTraffic();
+        account.setType(AccountType.FREE);
+        /* free accounts cannot have captchas */
+        account.setConcurrentUsePossible(true);
+        ai.setStatus("Registered (free) user");
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        doFree(link);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return FREE_MAXDOWNLOADS;
     }
 
     private String unescape(final String s) {

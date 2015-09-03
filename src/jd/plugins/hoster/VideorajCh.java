@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videoraj.ch" }, urls = { "http://(www\\.)?videoraj\\.ch/(v/|embed\\.php\\?id=)[a-z0-9]+" }, flags = { 0 })
 public class VideorajCh extends PluginForHost {
@@ -178,6 +179,11 @@ public class VideorajCh extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.Unknown_VideoHosting;
     }
 
 }

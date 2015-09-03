@@ -74,6 +74,8 @@ public class PornHubCom extends PluginForHost {
 
                                                                                 }
                                                                             };
+    public static final String                    BEST_ONLY                 = "BEST_ONLY";
+    public static final String                    FAST_LINKCHECK            = "FAST_LINKCHECK";
 
     @SuppressWarnings("deprecation")
     public PornHubCom(final PluginWrapper wrapper) {
@@ -553,10 +555,8 @@ public class PornHubCom extends PluginForHost {
     }
 
     private void setConfigElements() {
-        /* Currently not needed as we get the filesize from the XML */
-        // getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK,
-        // JDL.L("plugins.hoster.WeltderwunderDe.FastLinkcheck",
-        // "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(false));
+        final ConfigEntry best = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), BEST_ONLY, JDL.L("plugins.hoster.PornHubCom.BestOnly", "Always only grab the best resolution available?")).setDefaultValue(false);
+        getConfig().addEntry(best);
         final Iterator<Entry<String, String[]>> it = formats.entrySet().iterator();
         while (it.hasNext()) {
             /*
@@ -592,9 +592,10 @@ public class PornHubCom extends PluginForHost {
             if (usertext.endsWith(" ")) {
                 usertext = usertext.substring(0, usertext.lastIndexOf(" "));
             }
-            final ConfigEntry vidcfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), internalname, JDL.L("plugins.hoster.PornHubCom.ALLOW_" + internalname, usertext)).setDefaultValue(true);
+            final ConfigEntry vidcfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), internalname, JDL.L("plugins.hoster.PornHubCom.ALLOW_" + internalname, usertext)).setDefaultValue(true).setEnabledCondidtion(best, false);
             getConfig().addEntry(vidcfg);
         }
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, JDL.L("plugins.hoster.PornHubCom.FastLinkcheck", "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.")).setDefaultValue(false));
     }
 
     @Override

@@ -30,6 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "movshare.net", "epornik.com" }, urls = { "http://(www\\.)?movshare\\.net/video/[a-z0-9]+|http://embed\\.movshare\\.net/embed\\.php\\?v=[a-z0-9]+", "http://(www\\.)?epornik\\.com/video/[a-z0-9]+" }, flags = { 0, 0 })
 public class MovShareNet extends PluginForHost {
@@ -236,6 +237,11 @@ public class MovShareNet extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.Unknown_VideoHosting;
     }
 
 }
