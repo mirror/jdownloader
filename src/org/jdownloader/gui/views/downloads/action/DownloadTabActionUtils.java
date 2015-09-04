@@ -39,12 +39,28 @@ public class DownloadTabActionUtils {
                 }
                 boolean byPassDialog2 = byPassDialog;
                 WarnLevel level = WarnLevel.LOW;
-                if (agg.getBytesLoaded() > 0 && mode == DeleteFileOptions.REMOVE_LINKS_AND_DELETE_FILES) {
-                    level = WarnLevel.SEVERE;
-                } else if (agg.getBytesLoaded() > 0 && mode == DeleteFileOptions.REMOVE_LINKS_AND_RECYCLE_FILES) {
-                    level = WarnLevel.NORMAL;
-                } else if (agg.getFinishedCount() != agg.getTotalCount()) {
-                    level = WarnLevel.NORMAL;
+                switch (mode) {
+                case REMOVE_LINKS_AND_DELETE_FILES:
+                    if (agg.getBytesLoaded() > 0) {
+                        level = WarnLevel.SEVERE;
+                    } else {
+                        level = WarnLevel.NORMAL;
+                    }
+                    break;
+                case REMOVE_LINKS_AND_RECYCLE_FILES:
+                    if (agg.getBytesLoaded() > 0) {
+                        level = WarnLevel.SEVERE;
+                    } else if (agg.getFinishedCount() != agg.getTotalCount()) {
+                        level = WarnLevel.NORMAL;
+                    }
+                    break;
+                case REMOVE_LINKS_ONLY:
+                    if (agg.getBytesLoaded() > 0) {
+                        level = WarnLevel.NORMAL;
+                    } else if (agg.getFinishedCount() != agg.getTotalCount()) {
+                        level = WarnLevel.NORMAL;
+                    }
+                    break;
                 }
                 if (!JDGui.bugme(level)) {
                     byPassDialog2 = true;

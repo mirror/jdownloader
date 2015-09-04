@@ -1,7 +1,7 @@
 package jd.plugins;
 
 import jd.http.Browser;
-import jd.plugins.SiteType.SiteTemplate;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 public class SiteTester {
 

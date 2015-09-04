@@ -1,4 +1,4 @@
-package jd.plugins;
+package jd.plugins.components;
 
 /**
  * used for defining template types. Use by testclass
