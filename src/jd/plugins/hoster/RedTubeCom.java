@@ -90,7 +90,7 @@ public class RedTubeCom extends PluginForHost {
             fileName = br.getRegex("<title>(.*?) (-|\\|) RedTube[^<]+</title>").getMatch(0);
         }
         br.setFollowRedirects(true);
-        dlink = br.getRegex("html5_vid.*?source src=\"(http.*?)(\"|%3D%22)").getMatch(0);
+        dlink = br.getRegex("source src=\"(http.*?)(\"|%3D%22)").getMatch(0);
         if (dlink == null) {
             dlink = br.getRegex("flv_h264_url=(http.*?)(\"|%3D%22)").getMatch(0);
         }
