@@ -1,7 +1,6 @@
 package org.jdownloader.extensions.extraction;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -11,6 +10,7 @@ import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
+import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
@@ -27,9 +27,9 @@ public class ArchiveController {
         return ArchiveController.INSTANCE;
     }
 
-    private HashMap<String, ArchiveSettings> map;
-    private TypeRef<ArchiveSettings>         typeRef;
-    private LogSource                        logger;
+    private final HashMap<String, ArchiveSettings> map;
+    private final TypeRef<ArchiveSettings>         typeRef;
+    private final LogSource                        logger;
 
     /**
      * Create a new instance of ArchiveController. This is a singleton class. Access the only existing instance by using
@@ -68,46 +68,50 @@ public class ArchiveController {
                         logger.info("Save " + path);
                         IO.secureWrite(path, JSonStorage.serializeToJson(e.getValue()).getBytes("UTF-8"));
                     }
-                } catch (Exception e1) {
+                } catch (Throwable e1) {
                     logger.log(e1);
                 }
             }
         }
     }
 
-    protected File getPathByID(String id) {
-        return Application.getResource("cfg/archives/v2_" + id + ".json");
+    protected File getPathByID(String internalID) {
+        return Application.getResource("cfg/archives/v2_" + internalID + ".json");
     }
 
     public ArchiveSettings getArchiveSettings(final String id, final BooleanStatus defaultAutoExtract) {
-        synchronized (map) {
-            ArchiveSettings ret = map.get(id);
-            if (ret != null) {
+        if (id != null) {
+            synchronized (map) {
+                final String internalID = Hash.getSHA256(id);
+                ArchiveSettings ret = map.get(internalID);
+                if (ret != null) {
+                    return ret;
+                }
+                ret = createSettingsObject(id);
+                final BooleanStatus defaultAuto = BooleanStatus.get(defaultAutoExtract);
+                if (BooleanStatus.UNSET.equals(ret.getAutoExtract()) && !ret.getAutoExtract().equals(defaultAuto)) {
+                    /* only set AutoExtract value when it is UNSET */
+                    ret.setAutoExtract(defaultAuto);
+                }
+                map.put(internalID, ret);
                 return ret;
             }
-            ret = createSettingsObject(id);
-            final BooleanStatus defaultAuto = BooleanStatus.get(defaultAutoExtract);
-            if (BooleanStatus.UNSET.equals(ret.getAutoExtract()) && !ret.getAutoExtract().equals(defaultAuto)) {
-                /* only set AutoExtract value when it is UNSET */
-                ret.setAutoExtract(defaultAuto);
-            }
-            map.put(id, ret);
-            return ret;
         }
+        return null;
     }
 
     private ArchiveSettings createSettingsObject(String id) {
         try {
-            File path = getPathByID(id);
+            final File path = getPathByID(id);
             if (path.exists()) {
-                ArchiveSettings instance = JSonStorage.restoreFromString(IO.readFileToString(path), typeRef);
+                final ArchiveSettings instance = JSonStorage.restoreFromString(IO.readFileToString(path), typeRef);
                 instance.assignController(this);
                 return instance;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
+            logger.log(e);
         }
-        ArchiveSettings instance = new ArchiveSettings();
+        final ArchiveSettings instance = new ArchiveSettings();
         instance.assignController(this);
         return instance;
     }
