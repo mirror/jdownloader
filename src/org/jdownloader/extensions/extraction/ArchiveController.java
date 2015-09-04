@@ -86,9 +86,10 @@ public class ArchiveController {
                 return ret;
             }
             ret = createSettingsObject(id);
-            if (BooleanStatus.UNSET.equals(ret.getAutoExtract()) && !ret.getAutoExtract().equals(defaultAutoExtract)) {
+            final BooleanStatus defaultAuto = BooleanStatus.get(defaultAutoExtract);
+            if (BooleanStatus.UNSET.equals(ret.getAutoExtract()) && !ret.getAutoExtract().equals(defaultAuto)) {
                 /* only set AutoExtract value when it is UNSET */
-                ret.setAutoExtract(BooleanStatus.get(defaultAutoExtract));
+                ret.setAutoExtract(defaultAuto);
             }
             map.put(id, ret);
             return ret;
