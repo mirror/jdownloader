@@ -75,7 +75,10 @@ public class OpenDirectoryAction extends CustomizableTableContextAppAction<FileP
             }
             final File lDirectory = getDirectory(directory);
             if (lDirectory != null && lDirectory.exists()) {
+                directory = lDirectory;
                 return true;
+            } else {
+                directory = null;
             }
         }
         return false;
