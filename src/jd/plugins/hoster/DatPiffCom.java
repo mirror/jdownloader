@@ -20,14 +20,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -102,6 +101,17 @@ public class DatPiffCom extends PluginForHost {
             filename = br.getRegex("<span>Download Track<em>([^<>\"]*?)</em>").getMatch(0);
         }
         if (filename == null) {
+            final String downloadButton = br.getRegex("(?-s)iframe src=\"(https?://.*?embed/.*?/\\?downloadbutton=\\d+)").getMatch(0);
+            if (downloadButton != null) {
+                filename = br.getRegex("property=\"og:url\" content=\".*?\\.com/(.*?)\\.\\d+\\.html?").getMatch(0);
+                if (filename != null) {
+                    filename = filename + ".zip";
+                }
+                link.setName(Encoding.htmlDecode(filename.trim()));
+                return AvailableStatus.TRUE;
+            }
+        }
+        if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!link.getDownloadURL().contains(".php?id=")) {
@@ -125,59 +135,72 @@ public class DatPiffCom extends PluginForHost {
             if (br.containsHTML(CURRENTLYUNAVAILABLE)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, CURRENTLYUNAVAILABLETEXT, 3 * 60 * 60 * 1000l);
             }
-            // whole mixtape
-            String action = br.getRegex("id=\"loginform\" action=\"(/[^<>\"]*?)\"").getMatch(0);
-            if (action == null) {
-                action = br.getRegex("<form action=\"(/[^<>\"]*?)\"").getMatch(0);
-            }
-            if (action == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-
-            for (int i = 1; i <= 3; i++) {
-                String id = br.getRegex("name=\"id\" value=\"([^<>\"]*?)\"").getMatch(0);
-                if (id == null) {
-                    id = new Regex(downloadLink.getDownloadURL(), "\\.php\\?id=(.+)").getMatch(0);
-                }
-                if (id == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                String postData = "id=" + id + "&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100);
-                if (br.containsHTML("solvemedia\\.com/papi/")) {
-                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                    File cf = null;
-                    try {
-                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    } catch (final Exception e) {
-                        if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
-                        }
-                        throw e;
+            String downloadButton = br.getRegex("(?-s)iframe src=\"(https?://.*?embed/.*?/\\?downloadbutton=\\d+)").getMatch(0);
+            if (downloadButton != null) {
+                br.getPage(downloadButton);
+                downloadButton = br.getRegex("(?-s)downloadbutton\" href=\"(https?://.*?download\\?id=\\d+)").getMatch(0);
+                if (downloadButton != null) {
+                    br.getPage(downloadButton);
+                    final Form form = br.getForm(0);
+                    if (form != null) {
+                        br.setFollowRedirects(false);
+                        br.submitForm(form);
+                        br.setFollowRedirects(true);
+                        dllink = br.getRedirectLocation();
                     }
-                    final String code = getCaptchaCode(cf, downloadLink);
-                    final String chid = sm.getChallenge(code);
-                    postData += "&cmd=downloadsolve&adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + Encoding.urlEncode(chid);
                 }
-                br.postPage(action, postData);
-                dllink = br.getRedirectLocation();
-                if (dllink == null) {
+            }
+            if (dllink == null) {
+                // whole mixtape
+                String action = br.getRegex("id=\"loginform\" action=\"(/[^<>\"]*?)\"").getMatch(0);
+                if (action == null) {
+                    action = br.getRegex("<form action=\"(/[^<>\"]*?)\"").getMatch(0);
+                }
+                if (action == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (dllink.matches("https?://(www\\.)?datpiff\\.com/pop\\-mixtape\\-download\\.php\\?id=[A-Za-z0-9]+")) {
-                    br.getPage(dllink);
-                    continue;
+                for (int i = 1; i <= 3; i++) {
+                    String id = br.getRegex("name=\"id\" value=\"([^<>\"]*?)\"").getMatch(0);
+                    if (id == null) {
+                        id = new Regex(downloadLink.getDownloadURL(), "\\.php\\?id=(.+)").getMatch(0);
+                    }
+                    if (id == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    String postData = "id=" + id + "&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100);
+                    if (br.containsHTML("solvemedia\\.com/papi/")) {
+                        final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                        final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                        File cf = null;
+                        try {
+                            cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                        } catch (final Exception e) {
+                            if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                                throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                            }
+                            throw e;
+                        }
+                        final String code = getCaptchaCode(cf, downloadLink);
+                        final String chid = sm.getChallenge(code);
+                        postData += "&cmd=downloadsolve&adcopy_response=" + Encoding.urlEncode(code) + "&adcopy_challenge=" + Encoding.urlEncode(chid);
+                    }
+                    br.postPage(action, postData);
+                    dllink = br.getRedirectLocation();
+                    if (dllink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    if (dllink.matches("https?://(www\\.)?datpiff\\.com/pop\\-mixtape\\-download\\.php\\?id=[A-Za-z0-9]+")) {
+                        br.getPage(dllink);
+                        continue;
+                    }
+                    break;
                 }
-                break;
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (dllink.matches("https?://(www\\.)?datpiff\\.com/pop\\-mixtape\\-download\\.php\\?id=[A-Za-z0-9]+")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
@@ -193,23 +216,27 @@ public class DatPiffCom extends PluginForHost {
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
+        final String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
+            URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                con = br2.openGetConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
+                    return null;
                 }
-                con.disconnect();
+                return dllink;
             } catch (final Exception e) {
                 downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
+            } finally {
+                if (con != null) {
+                    con.disconnect();
+                }
             }
         }
-        return dllink;
+        return null;
     }
 
     @Override
