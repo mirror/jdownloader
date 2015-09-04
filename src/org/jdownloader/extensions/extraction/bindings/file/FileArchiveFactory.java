@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Application;
-import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
@@ -26,6 +25,7 @@ import org.jdownloader.settings.GeneralSettings;
 public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactory {
 
     private final Archive origin;
+    private String        archiveID = null;
 
     public FileArchiveFactory(File archiveStartFile) {
         this(archiveStartFile, null);
@@ -162,17 +162,18 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
     }
 
     @Override
-    public String getID() {
-        return Hash.getMD5(getFolder() + "/" + getName());
-    }
-
-    @Override
     public void onArchiveFinished(Archive archive) {
+        archiveID = archive.getArchiveID();
     }
 
     @Override
     public BooleanStatus getDefaultAutoExtract() {
         return BooleanStatus.UNSET;
+    }
+
+    @Override
+    public String getArchiveID() {
+        return archiveID;
     }
 
 }

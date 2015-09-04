@@ -104,7 +104,7 @@ public class RarStreamer implements Runnable {
     }
 
     public String getID() {
-        return "extract" + archive.getFactory().getID();
+        return "extract" + archive.getArchiveID();
     }
 
     public void openArchive() throws ExtractionException, DialogClosedException, DialogCanceledException, InterruptedException {

@@ -80,11 +80,7 @@ public class ArchiveController {
         return Application.getResource("cfg/archives/v2_" + Hash.getSHA256(id) + ".json");
     }
 
-    public ArchiveSettings getArchiveSettings(ArchiveFactory archiveFactory) {
-        return getArchiveSettings(archiveFactory.getID(), archiveFactory.getDefaultAutoExtract());
-    }
-
-    private ArchiveSettings getArchiveSettings(String id, BooleanStatus defaultAutoExtract) {
+    public ArchiveSettings getArchiveSettings(final String id, final BooleanStatus defaultAutoExtract) {
         synchronized (map) {
             ArchiveSettings ret = map.get(id);
             if (ret != null) {

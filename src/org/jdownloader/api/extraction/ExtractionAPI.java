@@ -15,6 +15,8 @@ public interface ExtractionAPI extends RemoteAPIInterface {
 
     public List<ArchiveStatusStorable> getArchiveInfo(final long[] linkIds, final long[] packageIds);
 
+    public List<ArchiveStatusStorable> getQueue();
+
     public Boolean cancelExtraction(long archiveId);
 
 }

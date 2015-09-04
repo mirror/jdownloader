@@ -115,7 +115,7 @@ public class Archive {
         return factory;
     }
 
-    public Archive(ArchiveFactory link) {
+    public Archive(final ArchiveFactory link) {
         factory = link;
         archives = new CopyOnWriteArrayList<ArchiveFile>();
         crcError = new CopyOnWriteArrayList<ArchiveFile>();
@@ -243,7 +243,7 @@ public class Archive {
     }
 
     public ArchiveSettings getSettings() {
-        return ArchiveController.getInstance().getArchiveSettings(this.getFactory());
+        return ArchiveController.getInstance().getArchiveSettings(getArchiveID(), getFactory().getDefaultAutoExtract());
     }
 
     public ArchiveFile getArchiveFileByPath(String filename) {
@@ -272,7 +272,7 @@ public class Archive {
     }
 
     public File getExtractLogFile() {
-        return getArchiveLogFileById(getFactory().getID());
+        return getArchiveLogFileById(getArchiveID());
     }
 
     public static File getArchiveLogFileById(String id) {
