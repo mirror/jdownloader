@@ -113,6 +113,7 @@ public interface MyJDownloaderSettings extends ConfigInterface {
 
     public void setManualLocalPort(int port);
 
+    @AboutConfig
     @DefaultIntValue(0)
     public int getLastLocalPort();
 
