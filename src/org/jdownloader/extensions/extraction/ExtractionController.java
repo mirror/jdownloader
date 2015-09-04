@@ -40,6 +40,7 @@ import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.IfFileExistsAction;
@@ -92,6 +93,12 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private Item                      currentActiveItem;
     private final ExtractionProgress  extractionProgress;
     protected final FileBytesCache    fileBytesCache;
+
+    private final UniqueAlltimeID     uniqueID              = new UniqueAlltimeID();
+
+    public UniqueAlltimeID getUniqueID() {
+        return uniqueID;
+    }
 
     public FileBytesCache getFileBytesCache() {
         return fileBytesCache;
@@ -193,7 +200,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     public Void run() {
         // let's write an info file. and delete if after extraction. this why we have infosfiles if the extraction crashes jd
         final ArchiveFile firstArchiveFile = archive.getArchiveFiles().get(0);
-        crashLog = new ExtractLogFileWriter(archive.getName(), firstArchiveFile.getFilePath(), archive.getFactory().getID()) {
+        crashLog = new ExtractLogFileWriter(archive.getName(), firstArchiveFile.getFilePath(), archive.getArchiveID()) {
             @Override
             public void write(String string) {
                 super.write(string);

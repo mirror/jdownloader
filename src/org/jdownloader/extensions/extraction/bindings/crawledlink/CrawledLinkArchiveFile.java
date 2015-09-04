@@ -169,11 +169,12 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
 
     @Override
     public void setArchive(Archive archive) {
-        if (archive != null && archive.getFactory() != null) {
-            for (CrawledLink link : getLinks()) {
+        if (archive != null) {
+            final String archiveID = archive.getArchiveID();
+            for (final CrawledLink link : getLinks()) {
                 final DownloadLink dlLink = link.getDownloadLink();
                 if (dlLink != null) {
-                    dlLink.setArchiveID(archive.getFactory().getID());
+                    dlLink.setArchiveID(archiveID);
                     dlLink.setPartOfAnArchive(Boolean.TRUE);
                 }
             }
@@ -182,7 +183,7 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
 
     @Override
     public void setPartOfAnArchive(Boolean b) {
-        for (CrawledLink link : getLinks()) {
+        for (final CrawledLink link : getLinks()) {
             final DownloadLink dlLink = link.getDownloadLink();
             if (dlLink != null) {
                 dlLink.setPartOfAnArchive(b);

@@ -6,7 +6,26 @@ import org.appwork.storage.Storable;
 
 public class ArchiveStatusStorable implements Storable {
 
-    private String                             archiveId   = null;
+    private String           archiveId        = null;
+    private long             controllerId     = -1;
+    private ControllerStatus controllerStatus = ControllerStatus.NA;
+
+    public ControllerStatus getControllerStatus() {
+        return controllerStatus;
+    }
+
+    public void setControllerStatus(ControllerStatus controllerStatus) {
+        this.controllerStatus = controllerStatus;
+    }
+
+    public long getControllerId() {
+        return controllerId;
+    }
+
+    public void setControllerId(long controllerId) {
+        this.controllerId = controllerId;
+    }
+
     private String                             archiveName = null;
     private HashMap<String, ArchiveFileStatus> states      = null;
 
@@ -52,6 +71,12 @@ public class ArchiveStatusStorable implements Storable {
         COMPLETE,
         INCOMPLETE,
         MISSING;
+    }
+
+    public static enum ControllerStatus {
+        RUNNING,
+        QUEUED,
+        NA
     }
 
 }

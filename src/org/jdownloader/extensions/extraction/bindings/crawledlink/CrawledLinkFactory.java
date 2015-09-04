@@ -20,7 +20,6 @@ import org.appwork.utils.ModifyLock;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -30,6 +29,8 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.settings.GeneralSettings;
 
 public class CrawledLinkFactory extends CrawledLinkArchiveFile implements ArchiveFactory {
+
+    private String archiveID = null;
 
     public CrawledLinkFactory(CrawledLink l) {
         super(l);
@@ -193,57 +194,15 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         }
     }
 
-    private String id;
-
-    @Override
-    public String getID() {
-        if (id != null) {
-            return id;
-        }
-        synchronized (this) {
-            if (id != null) {
-                return id;
-            }
-            id = getIDFromFile(this);
-        }
-        return id;
-    }
-
-    private String getIDFromFile(CrawledLinkArchiveFile file) {
-        for (final CrawledLink link : file.getLinks()) {
-            final String id = link.getDownloadLink().getArchiveID();
-            if (id != null) {
-                return id;
-            }
-        }
-        return null;
-    }
-
     @Override
     public void onArchiveFinished(Archive archive) {
-        String id = getID();
-        if (id == null) {
-            for (final ArchiveFile af : archive.getArchiveFiles()) {
-                if (af instanceof CrawledLinkArchiveFile) {
-                    id = getIDFromFile((CrawledLinkArchiveFile) af);
-                }
-                if (id != null) {
-                    break;
-                }
-            }
-        }
-        if (id == null) {
-            id = archive.getArchiveID();
-        }
-        if (id == null) {
-            id = Long.toString(new UniqueAlltimeID().getID());
-        }
+        archiveID = archive.getArchiveID();
         final LinkedHashSet<String> pws = new LinkedHashSet<String>();
         // link
-        for (ArchiveFile af : archive.getArchiveFiles()) {
+        for (final ArchiveFile af : archive.getArchiveFiles()) {
             if (af instanceof CrawledLinkArchiveFile) {
-                for (CrawledLink link : ((CrawledLinkArchiveFile) af).getLinks()) {
-                    link.getDownloadLink().setArchiveID(id);
+                for (final CrawledLink link : ((CrawledLinkArchiveFile) af).getLinks()) {
+                    link.getDownloadLink().setArchiveID(archiveID);
                     if (link.hasArchiveInfo()) {
                         pws.addAll(link.getArchiveInfo().getExtractionPasswords());
                     }
@@ -274,6 +233,11 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
             return first.getArchiveInfo().getAutoExtract();
         }
         return BooleanStatus.UNSET;
+    }
+
+    @Override
+    public String getArchiveID() {
+        return archiveID;
     }
 
 }

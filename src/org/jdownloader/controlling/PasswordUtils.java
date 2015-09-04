@@ -1,10 +1,12 @@
 package org.jdownloader.controlling;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -70,7 +72,17 @@ public class PasswordUtils {
                 ret.add(pass);
             }
         }
-        ret.remove("</span>");// dirty workaround
+        final Iterator<String> it = ret.iterator();
+        while (it.hasNext()) {
+            final String next = it.next();
+            if (StringUtils.isEmpty(next)) {
+                it.remove();
+            } else if (next.startsWith("</span")) {
+                it.remove();
+            } else if (next.startsWith("<span")) {
+                it.remove();
+            }
+        }
         return ret;
 
     }

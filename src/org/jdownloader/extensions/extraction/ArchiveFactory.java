@@ -38,9 +38,9 @@ public interface ArchiveFactory extends ArchiveFile {
 
     Archive createArchive();
 
-    File toFile(String path);
+    String getArchiveID();
 
-    String getID();
+    File toFile(String path);
 
     void onArchiveFinished(Archive archive);
 

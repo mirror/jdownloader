@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
@@ -458,7 +459,7 @@ public enum SplitType {
                 final Archive archive = link.createArchive();
                 archive.setName(fileNameParts[0]);
                 archive.setSplitType(splitType);
-                archive.setArchiveID(splitType.name() + "|" + fileNameParts[0] + splitType.buildIDPattern(fileNameParts));
+                archive.setArchiveID(Hash.getSHA256(splitType.name() + "|" + fileNameParts[0] + splitType.buildIDPattern(fileNameParts)));
                 final ArrayList<ArchiveFile> sortedArchiveFiles = new ArrayList<ArchiveFile>();
                 final int minimumParts = Math.max(splitType.getMinimumNeededPartIndex(), highestPartNumber);
                 for (int partIndex = splitType.getFirstPartIndex(); partIndex <= minimumParts; partIndex++) {

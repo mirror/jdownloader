@@ -275,10 +275,11 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     }
 
     @Override
-    public void setArchive(Archive archive) {
-        if (archive != null && archive.getFactory() != null) {
+    public void setArchive(final Archive archive) {
+        if (archive != null) {
+            final String archiveID = archive.getArchiveID();
             for (final DownloadLink downloadLink : getDownloadLinks()) {
-                downloadLink.setArchiveID(archive.getFactory().getID());
+                downloadLink.setArchiveID(archiveID);
                 downloadLink.setPartOfAnArchive(Boolean.TRUE);
             }
         }

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -58,7 +59,7 @@ public class ArchieveOrg extends PluginForDecrypt {
             fsize += "b";
             fina.setDownloadSize(SizeFormatter.getSize(fsize));
             fina.setAvailable(true);
-            fina.setFinalFileName(filename);
+            fina.setFinalFileName(Encoding.urlDecode(filename, false));
             decryptedLinks.add(fina);
         }
         final FilePackage fp = FilePackage.getInstance();

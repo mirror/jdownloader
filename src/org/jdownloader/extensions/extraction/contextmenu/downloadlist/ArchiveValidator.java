@@ -126,7 +126,7 @@ public class ArchiveValidator {
                     }
                 } else if (child instanceof ArchiveFactory) {
                     final ArchiveFactory af = ((ArchiveFactory) child);
-                    if (Boolean.FALSE.equals(af.isPartOfAnArchive()) || (archiveIDs != null && archiveIDs.contains(af.getID()))) {
+                    if (Boolean.FALSE.equals(af.isPartOfAnArchive()) || (archiveIDs != null && archiveIDs.contains(af.getArchiveID()))) {
                         //
                         continue buildLoop;
                     }

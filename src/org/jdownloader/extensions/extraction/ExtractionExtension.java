@@ -171,7 +171,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      */
     public synchronized ExtractionController addToQueue(final Archive archive, boolean forceAskForUnknownPassword) {
         // check if we have this archive already in queue.
-        for (ExtractionController ec : extractionQueue.getJobs()) {
+        for (final ExtractionController ec : extractionQueue.getJobs()) {
             final Archive eca = ec.getArchive();
             if (eca == archive || StringUtils.equals(eca.getArchiveID(), archive.getArchiveID())) {
                 return ec;
@@ -622,11 +622,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      *
      * @param activeValue
      */
-    public boolean cancel(ExtractionController activeValue) {
-        boolean wasInProgress = getJobQueue().isInProgress(activeValue);
-        boolean ret = getJobQueue().remove(activeValue);
+    public boolean cancel(final ExtractionController controller) {
+        final boolean wasInProgress = getJobQueue().isInProgress(controller);
+        final boolean ret = getJobQueue().remove(controller);
         if (wasInProgress) {
-            fireEvent(new ExtractionEvent(activeValue, ExtractionEvent.Type.CLEANUP));
+            fireEvent(new ExtractionEvent(controller, ExtractionEvent.Type.CLEANUP));
         }
         return ret;
     }
@@ -954,7 +954,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             final Archive archive = getExistingArchive(dlink);
             if (archive != null) {
                 if (asker instanceof ExtractionController) {
-                    ExtractionController ec = (ExtractionController) asker;
+                    final ExtractionController ec = (ExtractionController) asker;
                     if (ec.getArchive() == archive || StringUtils.equals(ec.getArchive().getArchiveID(), archive.getArchiveID())) {
                         ret.add(dlink);
                         continue;

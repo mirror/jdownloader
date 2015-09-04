@@ -8,15 +8,17 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.extraction.ArchiveStatusStorable.ArchiveFileStatus;
+import org.jdownloader.api.extraction.ArchiveStatusStorable.ControllerStatus;
 import org.jdownloader.api.utils.PackageControllerUtils;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.DummyArchive;
-import org.jdownloader.extensions.extraction.DummyArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.MissingArchiveFile;
 import org.jdownloader.extensions.extraction.contextmenu.downloadlist.ArchiveValidator;
 import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.gui.views.SelectionInfo;
@@ -33,7 +35,10 @@ public class ExtractionAPIImpl implements ExtractionAPI {
 
     @Override
     public void addArchivePassword(String password) {
-        ExtractionExtension.getInstance().addPassword(password);
+        final ExtractionExtension extension = ArchiveValidator.EXTENSION;
+        if (extension != null) {
+            extension.addPassword(password);
+        }
     }
 
     @Override
@@ -44,20 +49,14 @@ public class ExtractionAPIImpl implements ExtractionAPI {
             final SelectionInfo<FilePackage, DownloadLink> selection = packageControllerUtils.getSelectionInfo(linkIds, packageIds);
             if (selection != null && !selection.isEmpty()) {
                 final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(selection.getChildren());
-                if (archives != null && !archives.isEmpty()) {
-                    for (Archive archive : archives) {
-                        final String archiveId = archive.getFactory().getID();
-                        try {
-                            final DummyArchive da = extension.createDummyArchive(archive);
-                            if (da.isComplete()) {
-                                extension.addToQueue(archive, true);
-                                ret.put(archiveId, true);
-                            } else {
-                                ret.put(archiveId, false);
-                            }
-                        } catch (CheckException e) {
-                            ret.put(archiveId, false);
+                for (final Archive archive : archives) {
+                    try {
+                        final DummyArchive da = extension.createDummyArchive(archive);
+                        if (da.isComplete()) {
+                            final ExtractionController controller = extension.addToQueue(archive, true);
+                            ret.put(controller.getUniqueID().toString(), true);
                         }
+                    } catch (CheckException e) {
                     }
                 }
             }
@@ -72,24 +71,21 @@ public class ExtractionAPIImpl implements ExtractionAPI {
             final SelectionInfo<FilePackage, DownloadLink> selection = packageControllerUtils.getSelectionInfo(linkIds, packageIds);
             if (selection != null && !selection.isEmpty()) {
                 final List<Archive> archives = ArchiveValidator.getArchivesFromPackageChildren(selection.getChildren());
-                if (archives != null && !archives.isEmpty()) {
-                    for (Archive archive : archives) {
-                        final String archiveId = archive.getFactory().getID();
-                        final String archiveName = archive.getName();
-                        final HashMap<String, ArchiveFileStatus> extractionStates = new HashMap<String, ArchiveFileStatus>();
-                        for (ArchiveFile file : archive.getArchiveFiles()) {
-                            DummyArchiveFile da = new DummyArchiveFile(file);
-                            if (Boolean.TRUE.equals(da.isIncomplete())) {
-                                if (da.isMissing()) {
-                                    extractionStates.put(file.getName(), ArchiveFileStatus.MISSING);
+                if (archives.size() > 0) {
+                    final List<ExtractionController> jobs = extension.getJobQueue().getJobs();
+                    for (final Archive archive : archives) {
+                        final ArchiveStatusStorable archiveStatus = new ArchiveStatusStorable(archive.getArchiveID(), archive.getName(), getArchiveFileStatusMap(archive));
+                        for (final ExtractionController controller : jobs) {
+                            if (StringUtils.equals(controller.getArchive().getArchiveID(), archive.getArchiveID())) {
+                                archiveStatus.setControllerId(controller.getUniqueID().getID());
+                                if (controller.gotStarted()) {
+                                    archiveStatus.setControllerStatus(ControllerStatus.RUNNING);
                                 } else {
-                                    extractionStates.put(file.getName(), ArchiveFileStatus.INCOMPLETE);
+                                    archiveStatus.setControllerStatus(ControllerStatus.QUEUED);
                                 }
-                            } else {
-                                extractionStates.put(file.getName(), ArchiveFileStatus.COMPLETE);
+                                break;
                             }
                         }
-                        ArchiveStatusStorable archiveStatus = new ArchiveStatusStorable(archiveId, archiveName, extractionStates);
                         ret.add(archiveStatus);
                     }
                 }
@@ -98,20 +94,56 @@ public class ExtractionAPIImpl implements ExtractionAPI {
         return ret;
     }
 
+    private HashMap<String, ArchiveFileStatus> getArchiveFileStatusMap(final Archive archive) {
+        final HashMap<String, ArchiveFileStatus> extractionStates = new HashMap<String, ArchiveFileStatus>();
+        for (final ArchiveFile file : archive.getArchiveFiles()) {
+            if (file instanceof MissingArchiveFile) {
+                extractionStates.put(file.getName(), ArchiveFileStatus.MISSING);
+            } else {
+                if (Boolean.TRUE.equals(file.isComplete())) {
+                    extractionStates.put(file.getName(), ArchiveFileStatus.COMPLETE);
+                } else {
+                    extractionStates.put(file.getName(), ArchiveFileStatus.INCOMPLETE);
+                }
+            }
+        }
+        return extractionStates;
+    }
+
     @Override
-    public Boolean cancelExtraction(long archiveId) {
+    public Boolean cancelExtraction(final long controllerID) {
         final ExtractionExtension extension = ArchiveValidator.EXTENSION;
         if (extension != null) {
             final List<ExtractionController> jobs = extension.getJobQueue().getJobs();
-            if (jobs != null && !jobs.isEmpty()) {
-                final String archiveID = Long.toString(archiveId);
+            if (jobs != null) {
                 for (final ExtractionController controller : jobs) {
-                    if (archiveID.equals(controller.getArchive().getFactory().getID())) {
+                    if (controller.getUniqueID().getID() == controllerID) {
                         return extension.cancel(controller);
                     }
                 }
             }
         }
         return false;
+    }
+
+    @Override
+    public List<ArchiveStatusStorable> getQueue() {
+        final List<ArchiveStatusStorable> ret = new ArrayList<ArchiveStatusStorable>();
+        final ExtractionExtension extension = ArchiveValidator.EXTENSION;
+        if (extension != null) {
+            final List<ExtractionController> jobs = extension.getJobQueue().getJobs();
+            for (final ExtractionController controller : jobs) {
+                final Archive archive = controller.getArchive();
+                final ArchiveStatusStorable archiveStatus = new ArchiveStatusStorable(archive.getArchiveID(), archive.getName(), getArchiveFileStatusMap(archive));
+                archiveStatus.setControllerId(controller.getUniqueID().getID());
+                if (controller.gotStarted()) {
+                    archiveStatus.setControllerStatus(ControllerStatus.RUNNING);
+                } else {
+                    archiveStatus.setControllerStatus(ControllerStatus.QUEUED);
+                }
+                ret.add(archiveStatus);
+            }
+        }
+        return ret;
     }
 }

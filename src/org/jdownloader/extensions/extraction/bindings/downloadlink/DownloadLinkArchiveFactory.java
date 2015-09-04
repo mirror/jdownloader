@@ -19,7 +19,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -30,8 +29,7 @@ import org.jdownloader.settings.GeneralSettings;
 public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implements ArchiveFactory {
 
     public static final String DOWNLOADLINK_KEY_EXTRACTEDPATH = "EXTRACTEDPATH";
-
-    private String             id;
+    private String             archiveID                      = null;
 
     public DownloadLinkArchiveFactory(DownloadLink link) {
         super(link);
@@ -200,54 +198,12 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     }
 
     @Override
-    public String getID() {
-        if (id != null) {
-            return id;
-        }
-        synchronized (this) {
-            if (id != null) {
-                return id;
-            }
-            id = getIDFromFile(this);
-        }
-        return id;
-    }
-
-    private String getIDFromFile(DownloadLinkArchiveFile file) {
-        if (file != null) {
-            for (final DownloadLink downloadLink : file.getDownloadLinks()) {
-                final String id = downloadLink.getArchiveID();
-                if (id != null) {
-                    return id;
-                }
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public void onArchiveFinished(Archive archive) {
-        String id = getID();
-        if (id == null) {
-            for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
-                if (archiveFile instanceof DownloadLinkArchiveFactory) {
-                    id = getIDFromFile((DownloadLinkArchiveFactory) archiveFile);
-                }
-                if (id != null) {
-                    break;
-                }
-            }
-        }
-        if (id == null) {
-            id = archive.getArchiveID();
-        }
-        if (id == null) {
-            id = Long.toString(new UniqueAlltimeID().getID());
-        }
+    public void onArchiveFinished(final Archive archive) {
+        archiveID = archive.getArchiveID();
         for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
             if (archiveFile instanceof DownloadLinkArchiveFile) {
                 for (final DownloadLink downloadLink : ((DownloadLinkArchiveFile) archiveFile).getDownloadLinks()) {
-                    downloadLink.setArchiveID(id);
+                    downloadLink.setArchiveID(archiveID);
                 }
             }
         }
@@ -256,6 +212,11 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     @Override
     public BooleanStatus getDefaultAutoExtract() {
         return BooleanStatus.UNSET;
+    }
+
+    @Override
+    public String getArchiveID() {
+        return archiveID;
     }
 
 }
