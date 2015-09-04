@@ -26,7 +26,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.SiteType.SiteTemplate;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 //When adding new domains here also add them to the hosterplugin (TurboBitNet)
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(www\\.)?(wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbobit\\.net|upload\\.mskvn\\.by|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.uz|xrfiles\\.ru|turbobax\\.net|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|freefo\\.ru|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|vipgfx\\.net|turbovit\\.com\\.ua|turboot\\.ru|filez\\.ninja|kilofile\\.com)/download/folder/\\d+" }, flags = { 0 })

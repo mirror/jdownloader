@@ -31,7 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.SiteType.SiteTemplate;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "palcomix.com" }, urls = { "http://(www\\.)?palcomix\\.com/[^/]+/imagepages/image\\d+\\.html" }, flags = { 0 })
 public class PalcomixCom extends PluginForHost {

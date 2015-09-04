@@ -27,7 +27,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.SiteType.SiteTemplate;
+import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 
 // DEV NOTES:

@@ -31,7 +31,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.SiteType.SiteTemplate;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadbb.co" }, urls = { "http://(www\\.)?uploadbb\\.co/(v/)?[A-Za-z0-9]+" }, flags = { 0 })
 public class UploadbbCo extends PluginForHost {

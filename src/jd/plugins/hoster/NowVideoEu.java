@@ -42,7 +42,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.SiteType.SiteTemplate;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
