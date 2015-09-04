@@ -43,19 +43,41 @@ public class OpenDirectoryAction extends CustomizableTableContextAppAction<FileP
 
     public void actionPerformed(ActionEvent e) {
         if (isEnabled()) {
-            if (file == null) {
-                CrossSystem.openFile(directory);
-            } else {
+            if (file != null) {
                 CrossSystem.showInExplorer(file);
+            } else {
+                CrossSystem.openFile(getDirectory(directory));
             }
         }
     }
 
-    @Override
-    public boolean isEnabled() {
-        final File lDirectory = directory;
-        final File lFile = file;
-        return CrossSystem.isOpenFileSupported() && ((lDirectory != null && lDirectory.exists()) || (lFile != null && lFile.exists()));
+    private File getDirectory(File directory) {
+        if (directory != null) {
+            if (directory.exists()) {
+                return directory;
+            }
+            directory = directory.getParentFile();
+            if (directory != null && directory.exists()) {
+                return directory;
+            }
+        }
+        return null;
     }
 
+    @Override
+    public boolean isEnabled() {
+        if (CrossSystem.isOpenFileSupported()) {
+            final File lFile = file;
+            if (lFile != null && lFile.exists()) {
+                return true;
+            } else {
+                file = null;
+            }
+            final File lDirectory = getDirectory(directory);
+            if (lDirectory != null && lDirectory.exists()) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
