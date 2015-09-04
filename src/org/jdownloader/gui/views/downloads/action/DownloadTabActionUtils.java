@@ -56,7 +56,7 @@ public class DownloadTabActionUtils {
                     break;
                 case REMOVE_LINKS_ONLY:
                     if (agg.getBytesLoaded() > 0) {
-                        level = WarnLevel.NORMAL;
+                        level = WarnLevel.SEVERE;
                     } else if (agg.getFinishedCount() != agg.getTotalCount()) {
                         level = WarnLevel.NORMAL;
                     }
