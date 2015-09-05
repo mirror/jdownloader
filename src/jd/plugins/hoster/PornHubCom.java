@@ -104,7 +104,8 @@ public class PornHubCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        dlUrl = null;
+        String source_url = downloadLink.getStringProperty("mainlink");
+        final String quality = downloadLink.getStringProperty("quality", null);
         final String fid;
         if (downloadLink.getDownloadURL().matches(type_photo)) {
             fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
@@ -120,9 +121,16 @@ public class PornHubCom extends PluginForHost {
             }
             downloadLink.setFinalFileName(fid + dlUrl.substring(dlUrl.lastIndexOf(".")));
         } else {
-            final String source_url = downloadLink.getStringProperty("mainlink");
-            final String filename = downloadLink.getStringProperty("decryptedfilename", null);
+            String filename = downloadLink.getStringProperty("decryptedfilename", null);
             dlUrl = downloadLink.getStringProperty("directlink", null);
+            if (dlUrl == null) {
+                // Handle links that were grabbed before decrypter exist
+                source_url = downloadLink.getDownloadURL();
+                br.setFollowRedirects(true);
+                br.getPage(source_url);
+                dlUrl = br.getRegex("480p = \'(http://[^\']*?)\'").getMatch(0);
+                filename = getSiteTitle(br);
+            }
             if (source_url == null || filename == null || dlUrl == null) {
                 /* Maybe old links - this should not happen! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -155,19 +163,29 @@ public class PornHubCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         /* E.g. for private videos, we do not get a downloadlink here. */
-        if (dlUrl != null) {
-            try {
-                if (!openConnection(this.br, dlUrl).getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
-                    return AvailableStatus.TRUE;
-                }
-            } finally {
-                try {
-                    br.getHttpConnection().disconnect();
-                } catch (final Throwable e) {
+        try {
+            if (!openConnection(this.br, dlUrl).getContentType().contains("html")) {
+                if (this.br.getHttpConnection().getResponseCode() == 400) {
+                    br.getPage(source_url);
+                    dlUrl = br.getRegex(quality + "p = \'(http://[^\']*?)\'").getMatch(0);
                 }
             }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (openConnection(this.br, dlUrl).getContentType().contains("html")) {
+                if (this.br.getHttpConnection().getResponseCode() == 401) {
+                    br.getPage(source_url);
+                    dlUrl = br.getRegex(quality + "p = \'(http://[^\']*?)\'").getMatch(0);
+                }
+            }
+            if (!openConnection(this.br, dlUrl).getContentType().contains("html")) {
+                downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
+                return AvailableStatus.TRUE;
+            }
+        } finally {
+            try {
+                br.getHttpConnection().disconnect();
+            } catch (final Throwable e) {
+                logger.info("e: " + e);
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -415,7 +433,7 @@ public class PornHubCom extends PluginForHost {
 
     /**
      * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
-     *
+     * 
      * @see <a
      *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
      */
