@@ -311,12 +311,17 @@ public class StiahnitoSk extends PluginForHost {
                 final String filedownloadbutton = br.getURL() + "?download=1&iframe_view=popup+download_iframe_detail_popup";
                 br.getPage(filedownloadbutton);
                 dllink = br.getRedirectLocation();
+                if (dllink != null && dllink.contains("view=")) {
+                    br.getPage(dllink);
+                    dllink = br.getRegex("launchFullDownload\\('(https?://.*?)'").getMatch(0);
+                }
             }
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = dllink.replaceAll("\\\\", "");
         }
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");

@@ -384,42 +384,46 @@ public class HellShareCom extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             br.setFollowRedirects(false);
             final String filedownloadbutton = br.getURL() + "?do=fileDownloadButton-showDownloadWindow";
-            URLConnectionAdapter con = openConnection(this.br, filedownloadbutton);
-            if (con.getContentType().contains("html")) {
-                br.followConnection();
-                dllink = br.getRedirectLocation();
-                if (dllink == null) {
-                    dllink = getJson("redirect");
-                }
-                if (dllink == null) {
-                    if (br.containsHTML("button\\-download\\-full\\-nocredit")) {
-                        logger.info("not enough credits to download");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    }
-                    if (br.containsHTML("Daily limit exceeded")) {
-                        logger.info("hellshare: Daily limit exceeded!");
-                        UserIO.getInstance().requestMessageDialog(0, "Hellshare.com Premium Error", "Daily limit exceeded!\r\nPremium disabled, will continue downloads as Free User");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                        // throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily limit exceeded!");
-                    }
-                    // Hellshare Premium sharing not allowed!
-                    if (br.containsHTML("HellShare not allowed to share the login information to the accounts\\.")) {
-                        UserIO.getInstance().requestMessageDialog(0, "Hellshare.com Premium Error", "HellShare not allowed to share the login information to the accounts!");
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    }
-                    if (this.br.toString().length() < 30) {
-                        /* E.g. empty page */
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
-                    }
-                    logger.warning("dllink (premium) is null...");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            } else {
-                dllink = filedownloadbutton;
-            }
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br.openGetConnection(filedownloadbutton);
+                if (con.getContentType().contains("html")) {
+                    br.followConnection();
+                    dllink = br.getRedirectLocation();
+                    if (dllink == null) {
+                        dllink = getJson("redirect");
+                    }
+                    if (dllink == null) {
+                        if (br.containsHTML("button\\-download\\-full\\-nocredit")) {
+                            logger.info("not enough credits to download");
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        }
+                        if (br.containsHTML("Daily limit exceeded")) {
+                            logger.info("hellshare: Daily limit exceeded!");
+                            UserIO.getInstance().requestMessageDialog(0, "Hellshare.com Premium Error", "Daily limit exceeded!\r\nPremium disabled, will continue downloads as Free User");
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                            // throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily limit exceeded!");
+                        }
+                        // Hellshare Premium sharing not allowed!
+                        if (br.containsHTML("HellShare not allowed to share the login information to the accounts\\.")) {
+                            UserIO.getInstance().requestMessageDialog(0, "Hellshare.com Premium Error", "HellShare not allowed to share the login information to the accounts!");
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        }
+                        if (this.br.toString().length() < 30) {
+                            /* E.g. empty page */
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+                        }
+                        logger.warning("dllink (premium) is null...");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                } else {
+                    dllink = filedownloadbutton;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
             dllink = dllink.replaceAll("\\\\", "");
         }
