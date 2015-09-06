@@ -19,6 +19,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.gui.UserIO;
 import jd.http.Browser;
@@ -124,12 +125,21 @@ public class PornHubCom extends PluginForHost {
             String filename = downloadLink.getStringProperty("decryptedfilename", null);
             dlUrl = downloadLink.getStringProperty("directlink", null);
             if (dlUrl == null) {
-                // Handle links that were grabbed before decrypter exist
+                // Handle links that were grabbed before decrypter exist (20150831)
                 source_url = downloadLink.getDownloadURL();
                 br.setFollowRedirects(true);
                 br.getPage(source_url);
-                dlUrl = br.getRegex("480p = \'(http://[^\']*?)\'").getMatch(0);
-                filename = getSiteTitle(br);
+                String[] qualities = { "720", "480", "240" };
+                final SubConfiguration cfg = SubConfiguration.getConfig("pornhub.com");
+                for (String qualityInfo : qualities) {
+                    if (cfg.getBooleanProperty(qualityInfo, true)) {
+                        dlUrl = br.getRegex(qualityInfo + "p = \'(http://[^\']*?)\'").getMatch(0);
+                        filename = getSiteTitle(br) + "." + qualityInfo + "p.mp4";
+                    }
+                    if (dlUrl != null) {
+                        break;
+                    }
+                }
             }
             if (source_url == null || filename == null || dlUrl == null) {
                 /* Maybe old links - this should not happen! */
