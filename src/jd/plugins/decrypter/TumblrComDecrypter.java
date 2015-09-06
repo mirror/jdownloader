@@ -190,12 +190,13 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                     br.getPage(externID);
                     externID = br.getRedirectLocation();
                 }
+                externID = externID.replace("#_=_", "");
                 final DownloadLink dl = createDownloadlink(externID);
                 String extension = externID.substring(externID.lastIndexOf("."));
                 /* Correct regexed extension */
                 extension = new Regex(extension, "(\\.[a-z0-9]+)").getMatch(0);
                 if (extension == null) {
-                    extension = ".mp4";
+                    extension = ".mp4"; // DirectHTTP
                 }
                 dl.setFinalFileName(fpName + extension);
                 decryptedLinks.add(dl);
