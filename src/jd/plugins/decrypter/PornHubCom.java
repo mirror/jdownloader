@@ -56,7 +56,8 @@ public class PornHubCom extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         final boolean bestonly = cfg.getBooleanProperty(BEST_ONLY, false);
         final boolean fastlinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
-        br.setFollowRedirects(true);
+        this.br.setFollowRedirects(true);
+        jd.plugins.hoster.PornHubCom.prepBr(this.br);
         final Account aa = AccountController.getInstance().getValidAccount(pornhubHosterPlugin);
         if (aa != null) {
             try {
@@ -67,6 +68,7 @@ public class PornHubCom extends PluginForDecrypt {
         try {
             br.getPage(parameter);
         } catch (final Throwable e) {
+            e.printStackTrace();
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }

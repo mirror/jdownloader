@@ -39,8 +39,10 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String INVALIDLINKS  = "https?://([a-zA-Z0-9]+\\.)?(minus\\.com|min\\.us)/(directory|explore|httpsmobile|pref|recent|search|smedia|uploads|mobile|app)";
-    private final String INVALIDLINKS2 = "https?://(www\\.)?blog\\.(minus\\.com|min\\.us)/.+";
+    private final String       INVALIDLINKS  = "https?://([a-zA-Z0-9]+\\.)?(minus\\.com|min\\.us)/(directory|explore|httpsmobile|pref|recent|search|smedia|uploads|mobile|app)";
+    private final String       INVALIDLINKS2 = "https?://(www\\.)?blog\\.(minus\\.com|min\\.us)/.+";
+
+    public static final String TYPE_DIRECT   = "https?://i\\.minus\\.com/[^<>\"/]+\\.[A-Za-z]{3,5}";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -55,6 +57,13 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         // decryptedLinks.add(createDownloadlink("directhttp://" + parameter));
         // return decryptedLinks;
         // }
+
+        final String fid = new Regex(parameter, "minus\\.com/(.+)").getMatch(0);
+
+        if (parameter.matches(TYPE_DIRECT)) {
+            decryptedLinks.add(createDownloadlink(parameter.replace("minus.com/", "minusdecrypted.com/")));
+            return decryptedLinks;
+        }
 
         // ignore trash here... uses less memory allocations
         if (parameter.matches(INVALIDLINKS) || parameter.matches(INVALIDLINKS2)) {
@@ -103,6 +112,9 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         String fpName = br.getRegex("<title>(.*?) \\- Minus</title>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("var gallerydata = \\{.+ \"name\": \"([^\"]+)").getMatch(0);
+        }
+        if (fpName == null) {
+            fpName = fid;
         }
         if (fpName == null) {
             logger.warning("Decrypter broken for link: " + parameter);

@@ -22,8 +22,6 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,6 +35,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "openload.co", "openload.io" }, urls = { "https?://(?:www\\.)?openload\\.(?:io|co)/(?:f|embed)/[A-Za-z0-9_\\-]+", "/null/void" }, flags = { 2, 0 })
 public class OpenLoadIo extends antiDDoSForHost {
@@ -63,25 +63,25 @@ public class OpenLoadIo extends antiDDoSForHost {
 
     /* Constants */
     /* Status 20.06.15: free API seems to be broken, returns response 500 when usually it should return final downloadurl */
-    private static final boolean enable_api_free = false;
-    private static final String  api_base        = "https://api.openload.co/1";
+    private static final boolean          enable_api_free              = false;
+    private static final String           api_base                     = "https://api.openload.co/1";
 
     /* Connection stuff */
-    private static final boolean          FREE_RESUME       = true;
-    private static final int              FREE_MAXCHUNKS    = 0;
-    private static final int              FREE_MAXDOWNLOADS = 20;
-    private int                           api_responsecode  = 0;
-    private LinkedHashMap<String, Object> api_data          = null;
+    private static final boolean          FREE_RESUME                  = true;
+    private static final int              FREE_MAXCHUNKS               = 0;
+    private static final int              FREE_MAXDOWNLOADS            = 20;
+    private int                           api_responsecode             = 0;
+    private LinkedHashMap<String, Object> api_data                     = null;
 
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean          ACCOUNT_FREE_RESUME          = true;
+    private static final int              ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private static final int              ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean          ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int              ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int              ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     /* don't touch the following! */
-    private static AtomicInteger maxPrem = new AtomicInteger(1);
+    private static AtomicInteger          maxPrem                      = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
@@ -91,7 +91,7 @@ public class OpenLoadIo extends antiDDoSForHost {
 
     /*
      * Using API: http://docs.ol1.apiary.io/
-     *
+     * 
      * TODO: Check if we can use the mass linkchecker with this API. Add account support, get an API key and use that as well.
      */
     @SuppressWarnings({ "unchecked" })
@@ -315,7 +315,8 @@ public class OpenLoadIo extends antiDDoSForHost {
         }
         ai.setUnlimitedTraffic();
         /* At the moment we only support free accounts */
-        if (account.getBooleanProperty("free", false) || true) {
+        if (true) {
+            account.setProperty("free", true);
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
@@ -350,9 +351,13 @@ public class OpenLoadIo extends antiDDoSForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        if (account.getBooleanProperty("free", false)) {
+        final boolean premium_not_yet_supported = true;
+        if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
+            if (premium_not_yet_supported) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             String dllink = this.checkDirectLink(link, "premium_directlink");
             if (dllink == null) {
                 getPage(link.getDownloadURL());

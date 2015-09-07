@@ -48,7 +48,7 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
      * Returns the annotations names array
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "imagefolks.com", "pixup.us", "imgcandy.net", "imgnext.com", "hosturimage.com", "img.yt", "imgtube.net", "damimage.com" };
+        return new String[] { "imagefolks.com", "pixup.us", "imgcandy.net", "imgnext.com", "hosturimage.com", "img.yt", "imgtube.net", "damimage.com", "imgstudio.org" };
     }
 
     /**
@@ -83,7 +83,9 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
             decryptedLinks.add(createOfflinelink(parameter));
             return decryptedLinks;
         }
-        br.postPage(br.getURL(), "imgContinue=Continue+to+image+...+");
+        if (this.br.containsHTML("imgContinue")) {
+            br.postPage(br.getURL(), "imgContinue=Continue+to+image+...+");
+        }
         final String finallink = br.getRegex("(\\'|\")(http://(www\\.)?" + Pattern.quote(Browser.getHost(parameter)) + "(/upload/big/|/uploads/images/)[^<>\"]*?)\\1").getMatch(1);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);

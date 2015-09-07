@@ -53,7 +53,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filenuke.com" }, urls = { "https?://(www\\.)?filenuke\\.com/([a-z0-9]{12}|f/[A-Za-z0-9]+)" }, flags = { 2 })
-public class FileNukeCom extends PluginForHost {
+public class FileNukeCom extends antiDDoSForHost {
 
     private String               correctedBR                  = "";
     private static final String  COOKIE_HOST                  = "http://filenuke.com";
@@ -181,7 +181,7 @@ public class FileNukeCom extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             String free = new Regex(correctedBR, "href=\"([^\"]+)\">Free<").getMatch(0);
-            br.getPage(free);
+            getPage(free);
             dllink = br.getRegex("lnk234 = \'(http://[^\']+)\'").getMatch(0);
         }
         boolean force_premiumonly = false;
@@ -416,18 +416,18 @@ public class FileNukeCom extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(String page) throws Exception {
-        br.getPage(page);
+    protected void getPage(final String page) throws Exception {
+        super.getPage(page);
         correctBR();
     }
 
-    private void postPage(String page, String postdata) throws Exception {
-        br.postPage(page, postdata);
+    protected void postPage(final String page, final String postdata) throws Exception {
+        super.postPage(page, postdata);
         correctBR();
     }
 
-    private void sendForm(Form form) throws Exception {
-        br.submitForm(form);
+    private void sendForm(final Form form) throws Exception {
+        super.submitForm(form);
         correctBR();
     }
 
@@ -610,13 +610,13 @@ public class FileNukeCom extends PluginForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
@@ -629,7 +629,7 @@ public class FileNukeCom extends PluginForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
      * error.
-     * 
+     *
      * @param dl
      *            : The DownloadLink
      * @param error
@@ -742,7 +742,7 @@ public class FileNukeCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage(COOKIE_HOST + "/auth/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                postPage(COOKIE_HOST + "/auth/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(COOKIE_HOST, "scheck") == null || br.getCookie(COOKIE_HOST, "sess") == null) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -780,7 +780,7 @@ public class FileNukeCom extends PluginForHost {
             directlinkproperty = "freelink2";
             dllink = checkDirectLink(downloadLink, directlinkproperty);
             if (dllink == null) {
-                br.getPage(downloadLink.getDownloadURL());
+                getPage(downloadLink.getDownloadURL());
                 this.specialWayPost();
                 dllink = new Regex(correctedBR, "\"(/f/(?:download/)?[A-Za-z0-9]+[^<>\"]*?)\"").getMatch(0);
                 if (dllink == null) {
@@ -850,25 +850,9 @@ public class FileNukeCom extends PluginForHost {
     }
 
     /**
-     * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
-     * @param s
-     *            Imported String to match against.
-     * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
-     * @author raztoki
-     * */
-    private boolean inValidate(final String s) {
-        if (s == null || s != null && (s.matches("[\r\n\t ]+") || s.equals(""))) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
-     * 
+     *
      * @version 0.2
      * @author raztoki
      * @author psp
@@ -938,9 +922,10 @@ public class FileNukeCom extends PluginForHost {
         }
         return false;
     }
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }
