@@ -1717,6 +1717,7 @@ jd_gui_swing_dialog_ProxyDialog_direct=Diretto
 jd_gui_swing_dialog_ProxyDialog_hostport=Host/porta:
 jd_gui_swing_dialog_ProxyDialog_http=HTTP
 jd_gui_swing_dialog_ProxyDialog_local=IP/InterfacciaRete
+jd_gui_swing_dialog_ProxyDialog_netif=Scheda di rete:
 jd_gui_swing_dialog_ProxyDialog_pac=Proxy.pac automatico
 jd_gui_swing_dialog_ProxyDialog_pac_url=URL proxy.pac
 jd_gui_swing_dialog_ProxyDialog_password=Password:
