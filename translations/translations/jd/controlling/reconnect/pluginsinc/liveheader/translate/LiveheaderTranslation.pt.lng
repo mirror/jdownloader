@@ -45,6 +45,7 @@ RouterSendAction_RouterSendAction_=Opções de Compartilhamento
 RouterSendAction_actionPerformed_msg2=Necessitamos de ajuda para melhorar a nossa base de dados.\nPor favor contribua para o 'Projecto JD' e envie-nos o seu script de conexão.\nEste assistente irá guiá-lo por todos os passos necessários.
 RouterSendAction_actionPerformed_title=Compartilhar Opções de Conexão
 SearchScriptAction=Procurar Base de Dados do Script
+avg_time=Tempo médio de reconexão
 confirm_success_title=Funcionou?
 details=Detalhes
 gui_btn_abort=Abortar
