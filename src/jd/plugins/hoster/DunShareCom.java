@@ -65,7 +65,7 @@ public class DunShareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"error\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"error\"") || !this.br.containsHTML("class=\"wrapper-content title-page\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<td><b>File Name:</b></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);

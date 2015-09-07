@@ -130,7 +130,7 @@ public class GoogleDrive extends PluginForHost {
         }
         prepBrowser(br);
         br.getPage("https://docs.google.com/leaf?id=" + getID(link));
-        if (br.containsHTML("<p class=\"error\\-caption\">Sorry, we are unable to retrieve this document\\.</p>") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.containsHTML("<p class=\"error\\-caption\">Sorry, we are unable to retrieve this document\\.</p>") || this.br.getHttpConnection().getResponseCode() == 403 || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.getURL().contains("accounts.google.com/")) {
             link.getLinkStatus().setStatusText("You are missing the rights to download this file");

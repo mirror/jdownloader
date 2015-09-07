@@ -71,7 +71,7 @@ public class UploadsunCom extends PluginForHost {
     private static final boolean supportshttps                                = false;
     private static final boolean supportshttps_FORCED                         = false;
     /* In case there is no information when accessing the main link */
-    private static final boolean available_CHECK_OVER_INFO_PAGE               = true;
+    private static final boolean available_CHECK_OVER_INFO_PAGE               = false;
     private static final boolean useOldLoginMethod                            = false;
     /* Known errors */
     private static final String  url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
@@ -86,7 +86,7 @@ public class UploadsunCom extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean free_RESUME                                  = true;
-    private static final int     free_MAXCHUNKS                               = 0;
+    private static final int     free_MAXCHUNKS                               = 1;
     private static final int     free_MAXDOWNLOADS                            = 20;
     private static final boolean account_FREE_RESUME                          = true;
     private static final int     account_FREE_MAXCHUNKS                       = 0;

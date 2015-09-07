@@ -124,7 +124,7 @@ public class SrfCh extends PluginForHost {
             rtmp.setPlayPath(playpath);
             rtmp.setApp("ondemand");
             rtmp.setFlashVer("WIN 18,0,0,232");
-            /* Hash is wrong (static) but server will accept it anyways so good enough for us now :) */
+            /* Hash is wrong (static) but server will accept it anyways so good enough for us for now :) */
             rtmp.setSwfUrl("http://tp.srgssr.ch/assets/lib/srg-technical-player/f2ff86c6a1f230060e46122086a7326f-player.swf");
             rtmp.setResume(true);
             ((RTMPDownload) dl).startDownload();

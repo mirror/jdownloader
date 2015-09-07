@@ -82,7 +82,7 @@ public class OpenDriveCom extends PluginForHost {
         } else {
             logger.info("NOT using API");
             br.getPage(link.getDownloadURL());
-            if (br.containsHTML("(>File not found<|>or access limited<)")) {
+            if (br.containsHTML("(>File not found<|>or access limited<|List file info failed)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Regex fInfo = br.getRegex("<h1 class=\"filename\">([^<>\"]*?)  \\((\\d+(\\.\\d+)? [A-Za-z]+)\\)</h1>");

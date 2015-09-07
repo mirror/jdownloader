@@ -40,17 +40,23 @@ public class OpenDriveComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("http://", "https://");
+        final String folderid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
         this.br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getURL().contains("?e=") || this.br.getHttpConnection().getResponseCode() == 404) {
             final DownloadLink offline = this.createOfflinelink(parameter);
-            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
+            offline.setFinalFileName("folder_offline_" + folderid);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        } else if (this.br.containsHTML("class=\"lightbox warning-lightbox private-folder-warning\"")) {
+            final DownloadLink offline = this.createOfflinelink(parameter);
+            offline.setFinalFileName("folder_is_private_" + folderid);
             decryptedLinks.add(offline);
             return decryptedLinks;
         }
         String fpName = br.getRegex("class=\"selected root\\-folder\" href=\"/folders\\?[A-Za-z0-9]+\" title=\"([^<>\"]*?)\"").getMatch(0);
         if (fpName == null) {
-            fpName = parameter.substring(parameter.lastIndexOf("?") + 1);
+            fpName = folderid;
         }
         // div class="grid-file one-item draggable "
         final String[] info = br.getRegex("<div class=\"grid\\-item item file\\-item(.*?class=\"file\\-size\">[^<>\"]*?<)").getColumn(0);

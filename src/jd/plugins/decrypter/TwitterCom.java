@@ -39,7 +39,7 @@ public class TwitterCom extends PornEmbedParser {
         super(wrapper);
     }
 
-    private static final String TYPE_CARD     = "https://twitter\\.com/i/cards/tfw/v1/\\d+";
+    private static final String TYPE_CARD      = "https://twitter\\.com/i/cards/tfw/v1/\\d+";
     private static final String TYPE_USER_ALL  = "https?://(www\\.)?twitter\\.com/[A-Za-z0-9_\\-]+/media";
     private static final String TYPE_USER_POST = "https?://(www\\.)?twitter\\.com/status/\\d+.*?";
     private static final String TYPE_REDIRECT  = "https?://t\\.co/[a-zA-Z0-9]+";
@@ -102,12 +102,12 @@ public class TwitterCom extends PornEmbedParser {
                 return decryptedLinks;
             }
             if (decryptedLinks.isEmpty()) {
-                String dllink = br.getRegex("playlist\\&quot;:\\[\\{\\&quot;source\\&quot;:\\&quot;(https[^<>\"]*?\\.webm)").getMatch(0);
+                String dllink = br.getRegex("playlist\\&quot;:\\[\\{\\&quot;source\\&quot;:\\&quot;(https[^<>\"]*?\\.(?:webm|mp4))").getMatch(0);
                 if (dllink == null) {
                     return null;
                 }
                 dllink = dllink.replace("\\", "");
-                final String filename = status_id + "_" + new Regex(dllink, "([^/]+\\.webm)$").getMatch(0);
+                final String filename = status_id + "_" + new Regex(dllink, "([^/]+\\.[a-z0-9]+)$").getMatch(0);
                 final DownloadLink dl = this.createDownloadlink(dllink);
                 dl.setProperty("decryptedfilename", filename);
                 dl.setName(filename);
