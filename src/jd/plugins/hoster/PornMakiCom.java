@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornmaki.com" }, urls = { "http://(www\\.)?pornmaki\\.com/video/[A-Za-z0-9\\-_]+\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pornmaki.com" }, urls = { "http://(www\\.)?pornmaki\\.com/video/[A-Za-z0-9\\-_]+\\d+\\.html" }, flags = { 0 })
 public class PornMakiCom extends PluginForHost {
 
     public PornMakiCom(PluginWrapper wrapper) {
@@ -50,6 +50,7 @@ public class PornMakiCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
@@ -83,7 +84,7 @@ public class PornMakiCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = br2.openHeadConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

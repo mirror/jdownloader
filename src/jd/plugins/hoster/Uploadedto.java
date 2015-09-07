@@ -883,6 +883,7 @@ public class Uploadedto extends PluginForHost {
                 account.setProperty(PROPERTY_LASTDOWNLOAD, System.currentTimeMillis());
             } else {
                 blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
+                getPluginConfig().setProperty(PROPERTY_LASTIP, blockedIPsMap);
             }
             setIP(downloadLink, account);
         }

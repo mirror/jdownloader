@@ -35,24 +35,24 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.com", "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.\\-]*?\\.)?((daoifolder|yapapka|rusfolder|ifolder)\\.(com|net|ru|su)|files\\.metalarea\\.org)/(files/)?\\d+", "IFOLDERISNOWRUSFOLDER", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0, 0 })
-public class IfolderRu extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rusfolder.com", "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.\\-]*?\\.)?((daoifolder|yapapka|rusfolder|ifolder)\\.(com|net|ru|su)|files\\.metalarea\\.org)/(files/)?\\d+", "IFOLDERISNOWRUSFOLDER", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0, 0 })
+public class RusfolderCom extends PluginForHost {
 
-    private String       ua          = null;
+    private String       ua                     = null;
 
-    private final String passWarning = ">Владелец файла установил пароль для скачивания\\.<";
-    private final String PWTEXT      = "Введите пароль:<br";
+    private final String HTML_passWarning       = ">Владелец файла установил пароль для скачивания\\.<";
+    private final String HTML_PASSWORDPROTECTED = "Введите пароль:<br";
 
-    private final String CAPTEXT     = "/random/images/";
+    private final String HTML_CAPTCHA           = "/random/images/|id=\"reklamper\\-captcha\"";
 
     /**
      * sets primary domain to be used throughout JDownloader!
-     * 
+     *
      * @author raztoki
      */
-    private final String primaryHost = "rusfolder.com";
+    private final String primaryHost            = "rusfolder.com";
 
-    public IfolderRu(PluginWrapper wrapper) {
+    public RusfolderCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -102,7 +102,7 @@ public class IfolderRu extends PluginForHost {
             br.setDebug(true);
             String passCode = null;
             // prevents captcha if user doesn't set dl password here....
-            if (br.containsHTML(passWarning)) {
+            if (br.containsHTML(HTML_passWarning)) {
                 passCode = downloadLink.getStringProperty("pass", null);
                 if ("".equals(passCode) || passCode == null) {
                     passCode = getUserInput(null, downloadLink);
@@ -155,31 +155,71 @@ public class IfolderRu extends PluginForHost {
             } else {
                 logger.warning("second watchad equals null");
             }
-            if (!br.containsHTML(CAPTEXT)) {
+            if (!br.containsHTML(HTML_CAPTCHA)) {
                 logger.warning("Browser doesn't contain the captcha-text");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final Browser brc = this.br.cloneBrowser();
+            boolean newCaptcha = true;
             for (int retry = 1; retry <= 5; retry++) {
                 Form captchaForm = br.getFormbyProperty("name", "form1");
-                String captchaurl = "/random/images/?session=";
                 String ints_session = br.getRegex("tag\\.value = \"(.*?)\"").getMatch(0);
-                if (captchaForm == null || captchaurl == null) {
+                String captchaurl = null;
+                String captchacode = null;
+                if (captchaForm == null) {
                     logger.warning("captchaForm or captchaurl or ints_session equals null, stopping...");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                captchaurl += captchaForm.getInputField("session").getValue();
-                captchaForm.put("ints_session", ints_session);
+                if (newCaptcha) {
+                    String reklamper_id = this.br.getRegex("\\'reklamper_challenge_field\\' => \\'([^<>\"\\']*?)\\',").getMatch(0);
+                    if (reklamper_id == null) {
+                        /* 2015-09-07 */
+                        reklamper_id = "5f770356-df1b-9922-915e-16e223e16b10";
+                    }
+                    if (retry == 1) {
+                        brc.getPage("http://api.reklamper.com/get/" + reklamper_id + "&captchaConfig=%7B%22name%22%3A%22reklamper-captcha%22%2C%22domain%22%3A%22rusfolder.net%22%7D&r=0." + System.currentTimeMillis());
+                    } else {
+                        brc.getPage("http://api.reklamper.com/reload/" + reklamper_id + "/callback/reklamperCaptcha.callback?r=0." + System.currentTimeMillis());
+                    }
+                    brc.getRequest().setHtmlCode(brc.toString().replace("\\", ""));
+                    captchaurl = brc.getRegex("(api\\.reklamper\\.com/image/[^/]+)").getMatch(0);
+                    if (captchaurl == null) {
+                        logger.warning("Failed to find captchaurl");
+                    }
+                    if (captchaurl != null) {
+                        captchaurl = "http://" + captchaurl;
+                    }
+                    /* Captcha */
+                    // try {
+                    // // jd2
+                    // org.jdownloader.captcha.v2.solver.jac.JACSolver.getInstance().setMethodTrustThreshold(this, "ifolder.ru", 70);
+                    // } catch (Throwable e) {
+                    //
+                    // }
+                    captchacode = getCaptchaCode("ifolder.ru", captchaurl, downloadLink);
+                    captchaForm.put("confirmed_number", "");
+                    captchaForm.put("reklamper-captcha", captchacode);
+                } else {
+                    /* Old captcha */
+                    captchaurl = "/random/images/?session=";
+                    captchaurl += captchaForm.getInputField("session").getValue();
+                    /* Captcha */
+                    // try {
+                    // // jd2
+                    // org.jdownloader.captcha.v2.solver.jac.JACSolver.getInstance().setMethodTrustThreshold(this, "ifolder.ru", 70);
+                    // } catch (Throwable e) {
+                    //
+                    // }
+                    captchacode = getCaptchaCode("ifolder.ru", captchaurl, downloadLink);
+                    captchaForm.put("confirmed_number", captchacode);
+                    captchaForm.put("adverigo-input", "");
+                }
+                if (ints_session != null) {
+                    /* This should usually exist! */
+                    captchaForm.put("ints_session", ints_session);
+                }
                 captchaForm.remove("adverigo_captcha");
                 captchaForm.setAction(this.br.getURL());
-                /* Captcha */
-                // try {
-                // // jd2
-                // org.jdownloader.captcha.v2.solver.jac.JACSolver.getInstance().setMethodTrustThreshold(this, "ifolder.ru", 70);
-                // } catch (Throwable e) {
-                //
-                // }
-                String captchaCode = getCaptchaCode("ifolder.ru", captchaurl, downloadLink);
-                captchaForm.put("confirmed_number", captchaCode);
                 /* this hoster checks content encoding */
                 captchaForm.setEncoding("application/x-www-form-urlencoded");
                 String specialParam = br.getRegex("var s=[\t\n\r ]*?\\'([^<>\"]*?)\\';").getMatch(0);
@@ -199,22 +239,21 @@ public class IfolderRu extends PluginForHost {
                 } else {
                     logger.info("Specialstuff is null, this could cause trouble...");
                 }
-                captchaForm.put("adverigo-input", "");
                 try {
                     br.submitForm(captchaForm);
                 } catch (Exception e) {
                     e.printStackTrace();
                     br.submitForm(captchaForm);
                 }
-                if (!br.containsHTML(CAPTEXT)) {
+                if (!br.containsHTML(HTML_CAPTCHA)) {
                     break;
                 }
             }
-            if (br.containsHTML(CAPTEXT)) {
+            if (br.containsHTML(HTML_CAPTCHA)) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             /* Is the file password protected ? */
-            if (br.containsHTML(PWTEXT)) {
+            if (br.containsHTML(HTML_PASSWORDPROTECTED)) {
                 final int repeat = 3;
                 for (int passwordRetry = 0; passwordRetry <= repeat; passwordRetry++) {
                     logger.info("This file is password protected");
@@ -226,7 +265,7 @@ public class IfolderRu extends PluginForHost {
                     }
                     String postData = "session=" + session + "&file_id=" + fileID + "&action=1&pswd=" + Encoding.urlEncode(passCode);
                     br.postPage(br.getURL(), postData);
-                    if (!br.containsHTML(PWTEXT)) {
+                    if (!br.containsHTML(HTML_PASSWORDPROTECTED)) {
                         break;
                     } else if (passwordRetry + 1 != repeat) {
                         logger.info("DownloadPW wrong!");

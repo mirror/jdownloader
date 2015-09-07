@@ -78,20 +78,21 @@ public class UpstoRe extends antiDDoSForHost {
     }
 
     /* Constants (limits) */
-    private static final long              FREE_RECONNECTWAIT    = 1 * 60 * 60 * 1000L;
-    private static Object                  LOCK                  = new Object();
-    private final String                   MAINPAGE              = "http://upstore.net";
-    private final String                   INVALIDLINKS          = "http://(www\\.)?(upsto\\.re|upstore\\.net)/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
+    private static final long              FREE_RECONNECTWAIT            = 1 * 60 * 60 * 1000L;
+    private static final long              FREE_RECONNECTWAIT_ADDITIONAL = 60 * 1000l;
+    private static Object                  LOCK                          = new Object();
+    private final String                   MAINPAGE                      = "http://upstore.net";
+    private final String                   INVALIDLINKS                  = "http://(www\\.)?(upsto\\.re|upstore\\.net)/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
 
-    private static String[]                IPCHECK               = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private final String                   EXPERIMENTALHANDLING  = "EXPERIMENTALHANDLING";
-    private Pattern                        IPREGEX               = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static AtomicReference<String> lastIP                = new AtomicReference<String>();
-    private static AtomicReference<String> currentIP             = new AtomicReference<String>();
-    private static HashMap<String, Long>   blockedIPsMap         = new HashMap<String, Long>();
-    private static Object                  CTRLLOCK              = new Object();
-    private String                         PROPERTY_LASTIP       = "UPSTORE_PROPERTY_LASTIP";
-    private static final String            PROPERTY_LASTDOWNLOAD = "UPSTORE_lastdownload_timestamp";
+    private static String[]                IPCHECK                       = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private final String                   EXPERIMENTALHANDLING          = "EXPERIMENTALHANDLING";
+    private Pattern                        IPREGEX                       = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicReference<String> lastIP                        = new AtomicReference<String>();
+    private static AtomicReference<String> currentIP                     = new AtomicReference<String>();
+    private static HashMap<String, Long>   blockedIPsMap                 = new HashMap<String, Long>();
+    private static Object                  CTRLLOCK                      = new Object();
+    private String                         PROPERTY_LASTIP               = "UPSTORE_PROPERTY_LASTIP";
+    private static final String            PROPERTY_LASTDOWNLOAD         = "UPSTORE_lastdownload_timestamp";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("upsto.re/", "upstore.net/"));
@@ -116,6 +117,7 @@ public class UpstoRe extends antiDDoSForHost {
         return prepBr;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -144,7 +146,7 @@ public class UpstoRe extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "deprecation" })
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
@@ -183,14 +185,6 @@ public class UpstoRe extends antiDDoSForHost {
              * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached!
              */
             if (this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, default_eh)) {
-                /*
-                 * The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime
-                 * later!
-                 */
-                synchronized (CTRLLOCK) {
-                    blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
-                    setIP(downloadLink, null);
-                }
                 /*
                  * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if
                  * he tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN
@@ -231,6 +225,7 @@ public class UpstoRe extends antiDDoSForHost {
             }
             postPage(downloadLink.getDownloadURL(), "free=Get+download+link&hash=" + fid + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
             if (br.containsHTML("limit for today|several files recently")) {
+                setDownloadStarted(downloadLink, 0);
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
             }
             dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
@@ -240,7 +235,9 @@ public class UpstoRe extends antiDDoSForHost {
             if (dllink == null) {
                 final String reconnectWait = br.getRegex("Please wait (\\d+) minutes before downloading next file").getMatch(0);
                 if (reconnectWait != null) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 60 * 1001l);
+                    final long waitmillis = Long.parseLong(reconnectWait) * 60 * 1000l;
+                    setDownloadStarted(downloadLink, waitmillis);
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitmillis + FREE_RECONNECTWAIT_ADDITIONAL);
                 }
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -252,10 +249,7 @@ public class UpstoRe extends antiDDoSForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         /* The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later! */
-        synchronized (CTRLLOCK) {
-            blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
-            setIP(downloadLink, null);
-        }
+        setDownloadStarted(downloadLink, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("not found")) {
@@ -265,6 +259,31 @@ public class UpstoRe extends antiDDoSForHost {
         }
         downloadLink.setProperty("freelink", dllink);
         dl.startDownload();
+    }
+
+    @SuppressWarnings("deprecation")
+    private void setDownloadStarted(final DownloadLink dl, final long remaining_reconnect_wait) throws PluginException {
+        synchronized (CTRLLOCK) {
+            final long timestamp_download_started;
+            if (remaining_reconnect_wait > 0) {
+                /*
+                 * FREE_RECONNECTWAIT minus remaining wait = We know when the user started his download - we want to get the timestamp. Add
+                 * 1 minute to make sure that we wait long enough!
+                 */
+                long timePassed = FREE_RECONNECTWAIT - remaining_reconnect_wait - FREE_RECONNECTWAIT_ADDITIONAL;
+                /* Errorhandling for invalid values */
+                if (timePassed < 0) {
+                    timePassed = 0;
+                }
+                timestamp_download_started = System.currentTimeMillis() - timePassed;
+            } else {
+                /* Nothing given unknown starttime, wrong inputvalue 'remaining_reconnect_wait' or user has started the download just now. */
+                timestamp_download_started = System.currentTimeMillis();
+            }
+            blockedIPsMap.put(currentIP.get(), timestamp_download_started);
+            setIP(dl, null);
+            getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
+        }
     }
 
     @SuppressWarnings("unchecked")

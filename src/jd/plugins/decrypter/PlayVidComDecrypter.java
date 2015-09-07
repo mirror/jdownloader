@@ -48,11 +48,11 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
     private String                        PARAMETER      = null;
 
     /** Settings stuff */
-    private static final String FASTLINKCHECK = "FASTLINKCHECK";
-    private static final String ALLOW_BEST    = "ALLOW_BEST";
-    private static final String ALLOW_360P    = "ALLOW_360P";
-    private static final String ALLOW_480P    = "ALLOW_480P";
-    private static final String ALLOW_720P    = "ALLOW_720";
+    private static final String           FASTLINKCHECK  = "FASTLINKCHECK";
+    private static final String           ALLOW_BEST     = "ALLOW_BEST";
+    private static final String           ALLOW_360P     = "ALLOW_360P";
+    private static final String           ALLOW_480P     = "ALLOW_480P";
+    private static final String           ALLOW_720P     = "ALLOW_720";
 
     @SuppressWarnings({ "static-access", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -127,6 +127,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    @SuppressWarnings("deprecation")
     private DownloadLink getVideoDownloadlink(final String qualityValue) {
         String directlink = FOUNDQUALITIES.get(qualityValue);
         if (directlink != null) {
@@ -137,6 +138,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
             dl.setProperty("qualityvalue", qualityValue);
             dl.setProperty("mainlink", PARAMETER);
             dl.setProperty("directname", fname);
+            dl.setLinkID(fname);
             dl.setFinalFileName(fname);
             dl.setContentUrl(PARAMETER);
             if (SubConfiguration.getConfig("playvid.com").getBooleanProperty(FASTLINKCHECK, false)) {
