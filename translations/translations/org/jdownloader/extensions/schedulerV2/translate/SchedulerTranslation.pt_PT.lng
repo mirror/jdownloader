@@ -1,4 +1,4 @@
-action_Reconnect=Reconectar
+action_Reconnect=Reconetar
 action_captcha_none=Nenhum
 action_captcha_service=Serviço
 action_disableAccount=Desativar conta de utilizador
@@ -57,7 +57,7 @@ timeformat_repeats_hourly=Hora, em %s1 minutos
 timeformat_repeats_interval=A cada %s1 hora e %s2 minutos
 timeformat_repeats_specificDays=Dias: %s1 e %s2
 timeformat_repeats_weekly=Semanal, em %s1 e %s2
-title=Agendador
+title=Agenda
 weekday_short_friday=Sexta
 weekday_short_monday=Segunda
 weekday_short_saturday=Sábado
