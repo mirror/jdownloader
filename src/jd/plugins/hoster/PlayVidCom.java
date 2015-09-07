@@ -41,7 +41,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "playvid.com" }, urls = { "http://playviddecrypted\\.com/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "http://playviddecrypted\\.com/\\d+" }, flags = { 2 })
 public class PlayVidCom extends PluginForHost {
 
     public PlayVidCom(PluginWrapper wrapper) {
@@ -71,16 +71,15 @@ public class PlayVidCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        // finalfilename approach is old but we need to keep it for users who still have old links in JD
-        String filename = downloadLink.getFinalFileName();
-        if (filename == null) {
-            filename = downloadLink.getStringProperty("directname", null);
-        }
+        String filename = downloadLink.getStringProperty("directname", null);
         DLLINK = checkDirectLink(downloadLink, "directlink");
+        DLLINK = null;
         if (DLLINK == null) {
             if (downloadLink.getStringProperty("mainlink", null) == null) {
+                /* Errorhandling for old links */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            /* Refresh directlink */
             br.getPage(downloadLink.getStringProperty("mainlink", null));
             final String videosource = getVideosource(this.br);
             if (videosource == null) {
@@ -95,7 +94,7 @@ public class PlayVidCom extends PluginForHost {
         // In case the link redirects to the finallink
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(DLLINK);
+            con = br.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
