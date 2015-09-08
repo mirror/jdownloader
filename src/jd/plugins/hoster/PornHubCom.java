@@ -176,9 +176,10 @@ public class PornHubCom extends PluginForHost {
         }
         setBrowserExclusive();
         br.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
         try {
-            URLConnectionAdapter con = openConnection(this.br, dlUrl);
-            if (isVideo && !con.getContentType().contains("html") && this.br.getHttpConnection().getResponseCode() == 400) {
+            con = openConnection(this.br, dlUrl);
+            if (isVideo && !con.getContentType().contains("html") && con.getResponseCode() == 400) {
                 if (fresh_directurls == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -187,9 +188,11 @@ public class PornHubCom extends PluginForHost {
                     logger.warning("Failed to get fresh directurl");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                con.disconnect();
                 /* Last chance */
                 con = openConnection(this.br, dlUrl);
-                if (con.getContentType().contains("html") && this.br.getHttpConnection().getResponseCode() == 401) {
+                if (con.getContentType().contains("html") && con.getResponseCode() == 401) {
+                    con.disconnect();
                     br.getPage(source_url);
                     this.dlUrl = fresh_directurls.get(quality);
                     if (this.dlUrl == null) {
@@ -207,7 +210,7 @@ public class PornHubCom extends PluginForHost {
             return AvailableStatus.TRUE;
         } finally {
             try {
-                br.getHttpConnection().disconnect();
+                con.disconnect();
             } catch (final Throwable e) {
                 logger.info("e: " + e);
             }
