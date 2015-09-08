@@ -343,7 +343,7 @@ public class PremiumizatorCom extends PluginForHost {
         // this.getAPISafe("/deb_hosters.php");
         this.getAPISafe("http://premiumizator.com/");
         ArrayList<String> supportedhostslist = new ArrayList();
-        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
+        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc", "eu" };
         final String[] crippledHosts = br.getRegex("hosters\\-icons/([^<>\"]*?)\\.png").getColumn(0);
         for (final String crippledhost : crippledHosts) {
             if (crippledhost.equals("filecloud")) {
