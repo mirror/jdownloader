@@ -36,7 +36,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.translate._GUI;
@@ -166,7 +165,8 @@ public abstract class PluginsC {
             } else if (cls.size() > 0 && askFileDeletion()) {
                 switch (JsonConfig.create(GeneralSettings.class).getDeleteContainerFilesAfterAddingThemAction()) {
                 case ASK_FOR_DELETE:
-                    final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _JDT._.AddContainerAction_delete_container_title(), _JDT._.AddContainerAction_delete_container_msg(file.toString()), NewTheme.I().getIcon("help", 32), _GUI._.lit_yes(), _GUI._.lit_no()) {
+                    final ConfirmDialog d = new ConfirmDialog(0, _JDT._.AddContainerAction_delete_container_title(), _JDT._.AddContainerAction_delete_container_msg(file.toString()), NewTheme.I().getIcon("help", 32), _GUI._.lit_yes(), _GUI._.lit_no()) {
+                        @Override
                         public String getDontShowAgainKey() {
                             return null;
                         }
