@@ -22,7 +22,13 @@ public class SiteType {
          *
          */
         GemPixel_PremiumURLShortener,
-
+        /**
+         * Script used by some image hosting sites. <a href="http:/damimage.com/">damimage.com</a>. <br />
+         * Can be bought e.g. from here: <a href="http://codecanyon.net/item/imgshot-image-hosting-script/2558257"
+         * >http://codecanyon.net/item/imgshot-image-hosting-script/2558257</a>.<br />
+         * Demo: <a href="http://imgshot.com/">imgshot.com</a>
+         */
+        ImageHosting_ImgShot,
         /**
          * Should cover all given templates.<br />
          * <a href="http://sibsoft.net/xfilesharing.html">XFileSharing<a><br />
@@ -58,10 +64,6 @@ public class SiteType {
          * Mirrors</a>
          */
         Qooy_Mirrors,
-        /**
-         * Script used by some image hosting sites. <a href="http:/damimage.com/">damimage.com</a>. Not sure what to call this script.
-         */
-        Unknown_ImageHosting,
         /**
          * the template that supports mirror stack type sites.. Not sure what to call this script.
          */

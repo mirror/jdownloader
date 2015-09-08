@@ -62,8 +62,8 @@ public class OpenLoadIo extends antiDDoSForHost {
     }
 
     /* Constants */
-    /* Status 20.06.15: free API seems to be broken, returns response 500 when usually it should return final downloadurl */
-    private static final boolean          enable_api_free              = false;
+    /* Status 2015-09-08: free API working again, site-handling remains broken! */
+    private static final boolean          enable_api_free              = true;
     private static final String           api_base                     = "https://api.openload.co/1";
 
     /* Connection stuff */
@@ -91,7 +91,7 @@ public class OpenLoadIo extends antiDDoSForHost {
 
     /*
      * Using API: http://docs.ol1.apiary.io/
-     * 
+     *
      * TODO: Check if we can use the mass linkchecker with this API. Add account support, get an API key and use that as well.
      */
     @SuppressWarnings({ "unchecked" })
@@ -141,7 +141,6 @@ public class OpenLoadIo extends antiDDoSForHost {
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         final String fid = getFID(downloadLink);
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        dllink = null;
         if (dllink == null) {
             String ticket;
             String waittime;

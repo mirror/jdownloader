@@ -48,7 +48,7 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
      * Returns the annotations names array
      */
     public static String[] getAnnotationNames() {
-        return new String[] { "imagefolks.com", "pixup.us", "imgcandy.net", "imgnext.com", "hosturimage.com", "img.yt", "imgtube.net", "damimage.com", "imgstudio.org" };
+        return new String[] { "imagefolks.com", "pixup.us", "imgcandy.net", "imgnext.com", "hosturimage.com", "img.yt", "imgupload.yt", "imgtube.net", "damimage.com", "imgstudio.org", "imgshot.com" };
     }
 
     /**
@@ -103,7 +103,7 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
 
     @Override
     public SiteTemplate siteTemplateType() {
-        return SiteTemplate.Unknown_ImageHosting;
+        return SiteTemplate.ImageHosting_ImgShot;
     }
 
 }

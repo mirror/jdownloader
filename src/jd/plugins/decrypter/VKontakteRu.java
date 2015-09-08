@@ -51,7 +51,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink).+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(?:www\\.|m\\.)?(?:vk\\.com|vkontakte\\.ru|vkontakte\\.com)/(?!doc[\\d\\-]+_[\\d\\-]+|picturelink|audiolink|videolink).+" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /** TODO: Note: PATTERN_VIDEO_SINGLE links should all be decryptable without account but this is not implemented (yet) */
@@ -1946,7 +1946,7 @@ public class VKontakteRu extends PluginForDecrypt {
      */
     private void prepCryptedLink() {
         /* Correct encoding, domain and protocol. */
-        CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(CRYPTEDLINK_ORIGINAL).replaceAll("vkontakte\\.(ru|com)/", "vk.com/");
+        CRYPTEDLINK_ORIGINAL = Encoding.htmlDecode(CRYPTEDLINK_ORIGINAL).replaceAll("(m\\.)?(vkontakte|vk)\\.(ru|com)/", "vk.com/");
         /* We cannot simply remove all parameters which we usually don't need because...we do sometimes need em! */
         if (this.CRYPTEDLINK_ORIGINAL.matches(PATTERN_VIDEO_ALBUM_WITH_UNKNOWN_PARAMS)) {
             this.CRYPTEDLINK_ORIGINAL = removeParamsFromURL(CRYPTEDLINK_ORIGINAL);
@@ -1959,6 +1959,10 @@ public class VKontakteRu extends PluginForDecrypt {
                     this.CRYPTEDLINK_ORIGINAL = this.CRYPTEDLINK_ORIGINAL.replace(unwantedData, "");
                 }
             }
+        }
+        final String wall_id = new Regex(this.CRYPTEDLINK_ORIGINAL, "\\?w=(wall(\\-)?\\d+_\\d+)").getMatch(0);
+        if (wall_id != null) {
+            this.CRYPTEDLINK_ORIGINAL = "http://vk.com/" + wall_id;
         }
         this.CRYPTEDLINK_FUNCTIONAL = this.CRYPTEDLINK_ORIGINAL;
     }
