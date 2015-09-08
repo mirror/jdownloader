@@ -18,9 +18,16 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -33,24 +40,22 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rusfolder.com", "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.\\-]*?\\.)?((daoifolder|yapapka|rusfolder|ifolder)\\.(com|net|ru|su)|files\\.metalarea\\.org)/(files/)?\\d+", "IFOLDERISNOWRUSFOLDER", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0, 0 })
 public class RusfolderCom extends PluginForHost {
 
-    private String       ua                     = null;
+    private String ua = null;
 
     private final String HTML_passWarning       = ">Владелец файла установил пароль для скачивания\\.<";
     private final String HTML_PASSWORDPROTECTED = "Введите пароль:<br";
 
-    private final String HTML_CAPTCHA           = "/random/images/|id=\"reklamper\\-captcha\"";
+    private final String HTML_CAPTCHA = "/random/images/|id=\"reklamper\\-captcha\"";
 
     /**
      * sets primary domain to be used throughout JDownloader!
      *
      * @author raztoki
      */
-    private final String primaryHost            = "rusfolder.com";
+    private final String primaryHost = "rusfolder.com";
 
     public RusfolderCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -86,6 +91,7 @@ public class RusfolderCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        br = new Browser();
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
@@ -159,10 +165,26 @@ public class RusfolderCom extends PluginForHost {
                 logger.warning("Browser doesn't contain the captcha-text");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final Browser brc = this.br.cloneBrowser();
             boolean newCaptcha = true;
+            final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            String result = null;
+            try {
+                engine.eval("function abc(){ var d = new Date().getTime(); return 'xxxxxxxx-xxxx-yxxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = (d + Math.random()*16)%16 | 0; d = Math.floor(d/16); return (c=='x' ? r : (r&0x7|0x8)).toString(16); }); }");
+                engine.eval("var res = abc()");
+                result = (String) engine.get("res");
+            } catch (final Exception e) {
+                e.printStackTrace();
+            }
+            if (result == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             for (int retry = 1; retry <= 5; retry++) {
+                final Browser brc = this.br.cloneBrowser();
                 Form captchaForm = br.getFormbyProperty("name", "form1");
+                if (captchaForm != null && captchaForm.getAction() == null) {
+                    captchaForm.setAction(br.getURL());
+                }
                 String ints_session = br.getRegex("tag\\.value = \"(.*?)\"").getMatch(0);
                 String captchaurl = null;
                 String captchacode = null;
@@ -171,15 +193,11 @@ public class RusfolderCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (newCaptcha) {
-                    String reklamper_id = this.br.getRegex("\\'reklamper_challenge_field\\' => \\'([^<>\"\\']*?)\\',").getMatch(0);
-                    if (reklamper_id == null) {
-                        /* 2015-09-07 */
-                        reklamper_id = "5f770356-df1b-9922-915e-16e223e16b10";
-                    }
+                    br.setCookie(this.getHost(), "_cpathca", result);
                     if (retry == 1) {
-                        brc.getPage("http://api.reklamper.com/get/" + reklamper_id + "&captchaConfig=%7B%22name%22%3A%22reklamper-captcha%22%2C%22domain%22%3A%22rusfolder.net%22%7D&r=0." + System.currentTimeMillis());
+                        brc.getPage("http://api.reklamper.com/get/" + result + "&captchaConfig=%7B%22name%22%3A%22reklamper-captcha%22%2C%22domain%22%3A%22rusfolder.net%22%7D&r=0." + System.currentTimeMillis());
                     } else {
-                        brc.getPage("http://api.reklamper.com/reload/" + reklamper_id + "/callback/reklamperCaptcha.callback?r=0." + System.currentTimeMillis());
+                        brc.getPage("http://api.reklamper.com/reload/" + result + "/callback/reklamperCaptcha.callback?r=0." + System.currentTimeMillis());
                     }
                     brc.getRequest().setHtmlCode(brc.toString().replace("\\", ""));
                     captchaurl = brc.getRegex("(api\\.reklamper\\.com/image/[^/]+)").getMatch(0);
@@ -196,9 +214,9 @@ public class RusfolderCom extends PluginForHost {
                     // } catch (Throwable e) {
                     //
                     // }
-                    captchacode = getCaptchaCode("ifolder.ru", captchaurl, downloadLink);
+                    captchacode = getCaptchaCode(captchaurl, downloadLink);
                     captchaForm.put("confirmed_number", "");
-                    captchaForm.put("reklamper-captcha", captchacode);
+                    captchaForm.put("reklamper-captcha", Encoding.urlEncode(captchacode));
                 } else {
                     /* Old captcha */
                     captchaurl = "/random/images/?session=";
@@ -211,7 +229,7 @@ public class RusfolderCom extends PluginForHost {
                     //
                     // }
                     captchacode = getCaptchaCode("ifolder.ru", captchaurl, downloadLink);
-                    captchaForm.put("confirmed_number", captchacode);
+                    captchaForm.put("confirmed_number", Encoding.urlEncode(captchacode));
                     captchaForm.put("adverigo-input", "");
                 }
                 if (ints_session != null) {
@@ -239,18 +257,24 @@ public class RusfolderCom extends PluginForHost {
                 } else {
                     logger.info("Specialstuff is null, this could cause trouble...");
                 }
+                // should only have two cookies here, our cookie code is shite
+                Browser cbr = new Browser();
+                cbr.setFollowRedirects(br.isFollowingRedirects());
+                cookieCleanup(br, cbr);
                 try {
-                    br.submitForm(captchaForm);
+                    cbr.submitForm(captchaForm);
                 } catch (Exception e) {
                     e.printStackTrace();
-                    br.submitForm(captchaForm);
+                    cbr.submitForm(captchaForm);
                 }
-                if (!br.containsHTML(HTML_CAPTCHA)) {
+                if (!cbr.containsHTML(HTML_CAPTCHA)) {
+                    br.getRequest().setHtmlCode(cbr.toString());
                     break;
                 }
-            }
-            if (br.containsHTML(HTML_CAPTCHA)) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (retry + 1 == 5) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                continue;
             }
             /* Is the file password protected ? */
             if (br.containsHTML(HTML_PASSWORDPROTECTED)) {
@@ -306,6 +330,15 @@ public class RusfolderCom extends PluginForHost {
         }
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
+    }
+
+    private void cookieCleanup(final Browser iport, final Browser export) {
+        final Cookies current = iport.getCookies(this.getHost());
+        for (final Cookie c : current.getCookies()) {
+            if ("lsid".equalsIgnoreCase(c.getKey()) || "_cpathca".equalsIgnoreCase(c.getKey())) {
+                export.setCookie(iport.getURL(), c.getKey(), c.getValue());
+            }
+        }
     }
 
     private String getFUID(DownloadLink downloadLink) {
