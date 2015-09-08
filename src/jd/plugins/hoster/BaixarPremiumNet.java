@@ -100,7 +100,7 @@ public class BaixarPremiumNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // now let's get a list of all supported hosts:
-        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc" };
+        final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc", "eu" };
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final String[] crippledHosts = hoststext.split(", ");
         for (String crippledhost : crippledHosts) {
