@@ -58,7 +58,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otakushare.com" }, urls = { "https?://(www\\.)?otakushare\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otakushare.com" }, urls = { "https?://(www\\.)?otakushare\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class OtakushareCom extends PluginForHost {
 
     private String                         correctedBR                  = "";
@@ -153,7 +153,7 @@ public class OtakushareCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     public OtakushareCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @SuppressWarnings("deprecation")

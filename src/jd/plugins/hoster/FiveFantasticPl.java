@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "5fantastic.pl" }, urls = { "http://(?:www\\.)?5fantastic\\.pl/[^/]+/\\d+[^/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "5fantastic.pl" }, urls = { "http://(?:www\\.)?5fantastic\\.pl/[^/]+/\\d+[^/]+" }, flags = { 0 })
 public class FiveFantasticPl extends PluginForHost {
     private static Object LOCK           = new Object();
     private String        HOSTER         = "http://www.5fantastic.pl";
@@ -77,6 +77,7 @@ public class FiveFantasticPl extends PluginForHost {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getHeaders().put("Accept-Encoding", "gzip, deflate, lzma, sdch");
+        this.br.setAllowedResponseCodes(400);
         final String downloadUrl = link.getDownloadURL();
 
         try {
@@ -104,6 +105,16 @@ public class FiveFantasticPl extends PluginForHost {
 
             logger.severe("FiveFantastic: trying to get page for link: " + downloadUrl + ",  got error: " + errorMessage);
             throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("ERROR") + errorMessage);
+        }
+
+        /* Search page --> File offline */
+        if (this.br.containsHTML("bliczna/wyszukaj\\.png")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+
+        /* DB issue / offline */
+        if (this.br.getHttpConnection().getResponseCode() == 400) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
         if (br.containsHTML("Plik jest plikiem prywatnym.")) {

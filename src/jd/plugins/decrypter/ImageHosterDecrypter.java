@@ -40,7 +40,7 @@ names = { "image2you.ru", "picsee.net", "pichost.me", "imagecurl.com", "otofotki
 urls = { "http://(?:www\\.)?image2you\\.ru/\\d+/\\d+/", "http://(www\\.)?picsee\\.net/\\d{4}-\\d{2}-\\d{2}/.*?\\.html", "http://(www\\.)?pichost\\.me/\\d+", "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "http://img\\d+\\.otofotki\\.pl/[A-Za-z0-9\\-_]+\\.jpg\\.html", "http://bigimage\\.cz/image/\\d+\\.html", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "http://(www\\.)?imgserve\\.net/img\\-[a-z0-9]+\\.html", "http://(www\\.)?pic4you\\.ru/\\d+/\\d+/", "http://(www\\.)?tuspics\\.net/[a-z0-9]{12}", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?postim(age|g)\\.org/image/[a-z0-9]+", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?(img\\d+|serve)\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+",
         "http://[\\w\\.]*imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+", "https?://(www\\.)?9gag\\.com/gag/\\d+" },
 
-flags = { 0 })
+        flags = { 0 })
 public class ImageHosterDecrypter extends PluginForDecrypt {
 
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
@@ -59,11 +59,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             /* Error handling */
             if (br.containsHTML("The gallery you are looking for")) {
                 logger.info("Link offline: " + parameter);
-                try {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             if (br.containsHTML("Image not found|>Image violated our terms of service|>The requested image could not be located|>The image has been deleted")) {
@@ -274,11 +270,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                 logger.info("Can't decrypt link, server is currently in maintenance mode: " + parameter);
                 return decryptedLinks;
             } else if (br.containsHTML("(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)")) {
-                try {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                } catch (final Throwable e) {
-                    /* Not available in old 0.9.581 Stable */
-                }
+                decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
             finalfilename = br.getRegex("class=\"dotted\\-header\"><span>([^<>\"]*?)</span>").getMatch(0);
@@ -288,6 +280,10 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             finallink = br.getRegex("\"(http://s\\d+\\.pic4you\\.ru/[^<>\"]+\\-thumb\\.[A-Za-z]+)\"").getMatch(0);
             if (finallink != null) {
                 finallink = finallink.replace("-thumb", "");
+            }
+            if (this.br.getRedirectLocation() != null) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
             }
         } else if (parameter.contains("imgserve.net/")) {
             // uses cloudflare.... will cause issues in high load situations without dedicated plugin with antiddos methods.
