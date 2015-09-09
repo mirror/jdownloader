@@ -8,13 +8,17 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.api.extraction.ArchiveStatusStorable.ArchiveFileStatus;
 import org.jdownloader.api.extraction.ArchiveStatusStorable.ControllerStatus;
 import org.jdownloader.api.utils.PackageControllerUtils;
 import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.ArchiveController;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.ArchiveSettings;
+import org.jdownloader.extensions.extraction.BooleanStatus;
 import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
@@ -74,7 +78,7 @@ public class ExtractionAPIImpl implements ExtractionAPI {
                 if (archives.size() > 0) {
                     final List<ExtractionController> jobs = extension.getJobQueue().getJobs();
                     for (final Archive archive : archives) {
-                        final ArchiveStatusStorable archiveStatus = new ArchiveStatusStorable(archive.getArchiveID(), archive.getName(), getArchiveFileStatusMap(archive));
+                        final ArchiveStatusStorable archiveStatus = new ArchiveStatusStorable(archive, getArchiveFileStatusMap(archive));
                         for (final ExtractionController controller : jobs) {
                             if (StringUtils.equals(controller.getArchive().getArchiveID(), archive.getArchiveID())) {
                                 archiveStatus.setControllerId(controller.getUniqueID().getID());
@@ -145,5 +149,64 @@ public class ExtractionAPIImpl implements ExtractionAPI {
             }
         }
         return ret;
+    }
+
+    @Override
+    public List<ArchiveSettingsAPIStorable> getArchiveSettings(String[] archiveIds) throws BadParameterException {
+        List<ArchiveSettingsAPIStorable> ret = new ArrayList<ArchiveSettingsAPIStorable>();
+        final ExtractionExtension extension = ArchiveValidator.EXTENSION;
+        if (extension != null && archiveIds != null) {
+            for (String archiveId : archiveIds) {
+                ArchiveSettings settings = ArchiveController.getInstance().getArchiveSettings(archiveId, null);
+                ret.add(createStorable(archiveId, settings));
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public Boolean setArchiveSettings(final String archiveId, final ArchiveSettingsAPIStorable remoteSettings) throws BadParameterException {
+        if (remoteSettings == null) {
+            throw new BadParameterException("settings == null");
+        }
+        if (StringUtils.isEmpty(archiveId)) {
+            throw new BadParameterException("invalid archive id");
+        }
+        final ArchiveSettings localSettings = ArchiveController.getInstance().getArchiveSettings(archiveId, null);
+        if (localSettings != null) {
+            if (remoteSettings.getAutoExtract() != null) {
+                localSettings.setAutoExtract(BooleanStatus.convert(remoteSettings.getAutoExtract()));
+            }
+            if (remoteSettings.getRemoveDownloadLinksAfterExtraction() != null) {
+                localSettings.setRemoveDownloadLinksAfterExtraction(BooleanStatus.convert(remoteSettings.getRemoveDownloadLinksAfterExtraction()));
+            }
+            if (remoteSettings.getRemoveFilesAfterExtraction() != null) {
+                localSettings.setRemoveFilesAfterExtraction(BooleanStatus.convert(remoteSettings.getRemoveFilesAfterExtraction()));
+            }
+            if (!StringUtils.isEmpty(remoteSettings.getExtractPath())) {
+                localSettings.setExtractPath(remoteSettings.getExtractPath());
+            }
+            if (!StringUtils.isEmpty(remoteSettings.getFinalPassword())) {
+                localSettings.setFinalPassword(remoteSettings.getFinalPassword());
+            }
+            if (remoteSettings.getPasswords() != null) {
+                localSettings.setPasswords(remoteSettings.getPasswords());
+            }
+            return true;
+        } else {
+            throw new BadParameterException("unknown archive id");
+        }
+    }
+
+    private ArchiveSettingsAPIStorable createStorable(final String archiveId, final ArchiveSettings settings) {
+        ArchiveSettingsAPIStorable storable = new ArchiveSettingsAPIStorable();
+        storable.setArchiveId(archiveId);
+        storable.setAutoExtract(BooleanStatus.convert(settings.getAutoExtract()));
+        storable.setExtractPath(settings.getExtractPath());
+        storable.setFinalPassword(settings.getFinalPassword());
+        storable.setPasswords(settings.getPasswords());
+        storable.setRemoveDownloadLinksAfterExtraction(BooleanStatus.convert(settings.getRemoveDownloadLinksAfterExtraction()));
+        storable.setRemoveFilesAfterExtraction(BooleanStatus.convert(settings.getRemoveFilesAfterExtraction()));
+        return storable;
     }
 }

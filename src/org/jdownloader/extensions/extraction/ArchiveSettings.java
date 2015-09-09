@@ -16,7 +16,7 @@ public class ArchiveSettings implements Storable {
     private String                       extractPath;
     private String                       finalPassword;
     private IfFileExistsAction           ifFileExistsAction                 = null;
-    private CopyOnWriteArrayList<String> passwords;
+    private CopyOnWriteArrayList<String> passwords                          = new CopyOnWriteArrayList<String>();
     private BooleanStatus                removeDownloadLinksAfterExtraction = BooleanStatus.UNSET;
     private BooleanStatus                removeFilesAfterExtraction         = BooleanStatus.UNSET;
     private boolean                      needsSaving                        = false;
@@ -134,7 +134,7 @@ public class ArchiveSettings implements Storable {
     }
 
     public static final TypeRef<ArchiveSettings> TYPEREF = new TypeRef<ArchiveSettings>() {
-                                                         };
+    };
 
     public boolean needsSaving() {
         return needsSaving;

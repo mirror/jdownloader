@@ -352,8 +352,37 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
         return false;
     }
 
-    public void cleanup(long[] linkIds, long[] pkgIds, CleanupActionOptions.Action action, CleanupActionOptions.Mode mode, CleanupActionOptions.SelectionType selectionType) throws BadParameterException {
-        SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(linkIds, pkgIds);
+    public boolean setDownloadPassword(final long[] linkIds, final long[] pkgIds, final String pass) throws BadParameterException {
+        final SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(linkIds, pkgIds);
+        final List<ChildType> children = selection.getChildren();
+        if (children.isEmpty()) {
+            throw new BadParameterException("empty selection");
+        } else {
+            for (final ChildType child : children) {
+                if (child instanceof DownloadLink) {
+                    ((DownloadLink) child).setDownloadPassword(pass);
+                } else if (child instanceof CrawledLink) {
+                    ((CrawledLink) child).getDownloadLink().setDownloadPassword(pass);
+                }
+            }
+            return true;
+        }
+    }
+
+    /**
+     * Executes cleanup actions on a selection
+     *
+     * @param linkIds
+     * @param pkgIds
+     * @param action
+     * @param mode
+     * @param selectionType
+     * @return true if nodes were removed
+     * @throws BadParameterException
+     */
+
+    public boolean cleanup(final long[] linkIds, final long[] pkgIds, final CleanupActionOptions.Action action, final CleanupActionOptions.Mode mode, final CleanupActionOptions.SelectionType selectionType) throws BadParameterException {
+        final SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(linkIds, pkgIds);
         if (selection.isEmpty()) {
             throw new BadParameterException("empty selection");
         } else {
@@ -371,7 +400,7 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
                 // TODO: implement after remote views were implemented
                 throw new BadParameterException("SelectionType UNSELECTED not yet supported");
             case NONE:
-                return;
+                return false;
             }
             if (nodesToDelete.size() > 0) {
                 packageController.removeChildren(nodesToDelete);
@@ -388,8 +417,10 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
                         break;
                     }
                 }
+                return true;
             }
         }
+        return false;
     }
 
     public boolean shouldDeleteLink(CleanupActionOptions.Action action, ChildType ct) {
