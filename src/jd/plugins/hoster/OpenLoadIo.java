@@ -91,7 +91,7 @@ public class OpenLoadIo extends antiDDoSForHost {
 
     /*
      * Using API: http://docs.ol1.apiary.io/
-     *
+     * 
      * TODO: Check if we can use the mass linkchecker with this API. Add account support, get an API key and use that as well.
      */
     @SuppressWarnings({ "unchecked" })
@@ -122,7 +122,10 @@ public class OpenLoadIo extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Trust API */
-        link.setFinalFileName(filename);
+        // Check filename from decrypter first, if any
+        if (link.getFinalFileName() == null) {
+            link.setFinalFileName(filename);
+        }
         link.setDownloadSize(Long.parseLong(filesize));
         link.setSha1Hash(sha1);
         return AvailableStatus.TRUE;
@@ -283,7 +286,7 @@ public class OpenLoadIo extends antiDDoSForHost {
                     }
                 }
                 postPage("/login", "_csrf=" + Encoding.urlEncode(csrftoken) + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1");
-                if (!this.br.containsHTML("href=\"/logout\"")) {
+                if (!br.containsHTML(">Logout<")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
