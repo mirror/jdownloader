@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -30,11 +29,10 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -43,6 +41,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
+
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "https?://(www\\.)?(shahid\\.mbc\\.net/(media/video|ar/episode)/\\d+(/\\w+)?|bluefishtv\\.com/Store/[_a-zA-Z]+/\\d+/.*)" }, flags = { 0 })
 public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
@@ -187,9 +187,10 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
             } catch (Throwable e) {
                 /* fallback */
                 ByteArrayOutputStream result = null;
+                URLConnectionAdapter con = null;
                 try {
-                    URL url = new URL(req);
-                    InputStream input = url.openStream();
+                    con = br.openGetConnection(req);
+                    final InputStream input = con.getInputStream();
                     result = new ByteArrayOutputStream();
                     try {
                         int amount = 0;
@@ -210,6 +211,11 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                     }
                 } catch (Throwable e4) {
                     next = false;
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e2) {
+                    }
                 }
             }
 

@@ -27,6 +27,7 @@ import jd.nutils.Screen;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.URLStream;
 import org.appwork.utils.locale._AWU;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -65,14 +66,15 @@ class SliderCaptchaDialog extends AbstractDialog<String> {
 
         download = new Thread("Captcha download") {
             public void run() {
-                InputStream stream = null;
                 try {
                     if (images < 0) {
                         image = new BufferedImage[imageUrls.length];
                         for (int i = 0; i < image.length; i++) {
                             sleep(50);
+                            InputStream stream = null;
                             try {
-                                image[i] = ImageIO.read(stream = imageUrls[i].openStream());
+                                stream = URLStream.openStream(imageUrls[i]);
+                                image[i] = ImageIO.read(stream);
                                 bar.setValue(i + 1);
                             } finally {
                                 try {
@@ -83,8 +85,10 @@ class SliderCaptchaDialog extends AbstractDialog<String> {
                         }
                     } else {
                         image = new BufferedImage[images];
+                        InputStream stream = null;
                         try {
-                            BufferedImage tmpImage = ImageIO.read(stream = imageUrls[0].openStream());
+                            stream = URLStream.openStream(imageUrls[0]);
+                            BufferedImage tmpImage = ImageIO.read(stream);
                             int w = tmpImage.getWidth();
                             int h = tmpImage.getHeight() / images;
                             for (int i = 0; i < image.length; i++) {

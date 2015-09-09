@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -35,6 +34,8 @@ import javax.xml.xpath.XPathFactory;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -336,17 +337,17 @@ public class GameOneDeA extends PluginForDecrypt {
     }
 
     private XPath xmlParser(final String linkurl) throws Exception {
+        URLConnectionAdapter con = null;
         try {
-            final URL url = new URL(linkurl);
-            final InputStream stream = url.openStream();
+            con = new Browser().openGetConnection(linkurl);
             final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             final XPath xPath = XPathFactory.newInstance().newXPath();
             try {
-                doc = parser.parse(new ReplacerInputStream(stream));
+                doc = parser.parse(new ReplacerInputStream(con.getInputStream()));
                 return xPath;
             } finally {
                 try {
-                    stream.close();
+                    con.disconnect();
                 } catch (final Throwable e) {
                 }
             }

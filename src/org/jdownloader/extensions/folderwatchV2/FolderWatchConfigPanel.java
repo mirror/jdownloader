@@ -44,7 +44,7 @@ public class FolderWatchConfigPanel extends ExtensionConfigPanel<FolderWatchExte
             final ClassCache cc = ClassCache.getClassCache(CrawlJobStorable.class);
             CrawlJobStorable example = new CrawlJobStorable();
             StringBuilder sb = new StringBuilder();
-            sb.append(new String(IO.readStream(-1, url.openStream()), "UTF-8"));
+            sb.append(new String(IO.readURL(url), "UTF-8"));
             sb.append("\r\n\r\n### Available Fields:\r\n");
             for (Setter s : cc.getSetter()) {
                 try {

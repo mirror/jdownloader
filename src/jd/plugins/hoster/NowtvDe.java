@@ -17,8 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -35,6 +33,7 @@ import javax.xml.xpath.XPathFactory;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -672,17 +671,17 @@ public class NowtvDe extends PluginForHost {
     }
 
     private XPath xmlParser(final String linkurl) throws Exception {
+        URLConnectionAdapter con = null;
         try {
-            final URL url = new URL(linkurl);
-            final InputStream stream = url.openStream();
+            con = new Browser().openGetConnection(linkurl);
             final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             final XPath xPath = XPathFactory.newInstance().newXPath();
             try {
-                doc = parser.parse(stream);
+                doc = parser.parse(con.getInputStream());
                 return xPath;
             } finally {
                 try {
-                    stream.close();
+                    con.disconnect();
                 } catch (final Throwable e) {
                 }
             }

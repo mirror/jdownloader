@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +35,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -66,7 +66,7 @@ public class TapeTv extends PluginForHost {
 
         /**
          * Replacing & to {@literal &amp;} in InputStreams
-         * 
+         *
          * @author mhaller
          * @see <a href="http://stackoverflow.com/a/4588005">http://stackoverflow.com/a/4588005</a>
          */
@@ -76,7 +76,9 @@ public class TapeTv extends PluginForHost {
 
         @Override
         public int read() throws IOException {
-            if (!backBuf.isEmpty()) { return backBuf.pop(); }
+            if (!backBuf.isEmpty()) {
+                return backBuf.pop();
+            }
             int first = in.read();
             if (first == '&') {
                 peekAndReplace();
@@ -109,7 +111,9 @@ public class TapeTv extends PluginForHost {
 
         public static String getPlainData(String sec, String enc, String secVersion) {
 
-            if (keyMap == null) initKeyMap(sec);
+            if (keyMap == null) {
+                initKeyMap(sec);
+            }
             String key = keyMap.get(secVersion);
             enc = enc.replaceAll("\n", "");
             if (key != null) {
@@ -175,7 +179,9 @@ public class TapeTv extends PluginForHost {
                 // http://www.tape.tv/musikvideos/Artist/title --> hoster handling
                 // http://www.tape.tv/musikvideos/Artist --> decrypter handling
                 String contentXML = "/tapeMVC/tape/channel/artist;?telly=tapetv&artistId=";
-                if (new Regex(currentUrl, "http://(www\\.)?tape\\.tv/(musikvideos/[\\w\\-]+/[\\w\\-]+|vid/\\d+)").matches()) contentXML = "/tapeMVC/tape/channel/deeplink;?telly=tapetv&videoId=";
+                if (new Regex(currentUrl, "http://(www\\.)?tape\\.tv/(musikvideos/[\\w\\-]+/[\\w\\-]+|vid/\\d+)").matches()) {
+                    contentXML = "/tapeMVC/tape/channel/deeplink;?telly=tapetv&videoId=";
+                }
 
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     sourceLink.setAvailable(false);
@@ -216,7 +222,9 @@ public class TapeTv extends PluginForHost {
                             }
                             if (quality.size() > 0) {
                                 String key = quality.get("qualityName");
-                                if ("streamToken".equals(n.getNodeName())) key = "streamToken";
+                                if ("streamToken".equals(n.getNodeName())) {
+                                    key = "streamToken";
+                                }
                                 if (key != null) {
                                     quality.put(n.getNodeName(), n.getFirstChild().getNodeValue());
                                     HashMap<String, String> valueMap = new HashMap<String, String>(quality);
@@ -251,7 +259,9 @@ public class TapeTv extends PluginForHost {
                             quality = new HashMap<String, String>(qualitys.get(q));
                             String actualQ = q.toLowerCase(Locale.ENGLISH);
                             if ("streamToken".equals(q)) {
-                                if (streamToken == null) streamToken = Decrypt.getPlainData(quality.get("sec"), quality.get("streamToken"), quality.get("secVersion"));
+                                if (streamToken == null) {
+                                    streamToken = Decrypt.getPlainData(quality.get("sec"), quality.get("streamToken"), quality.get("secVersion"));
+                                }
                                 continue;
                             }
                             /* best selection is done at the end */
@@ -288,7 +298,9 @@ public class TapeTv extends PluginForHost {
                             }
 
                             String streamUrl = Decrypt.getPlainData(quality.get("sec"), quality.get("url"), quality.get("secVersion"));
-                            if (streamUrl == null) continue;
+                            if (streamUrl == null) {
+                                continue;
+                            }
                             streamUrl = streamUrl.replace(".tape.tv/", ".tapetv/");
                             if (!streamUrl.contains(".tapetv/")) {
                                 logger.warning("Decrypter broken for link \"" + sourceLink.getDownloadURL() + "\" and quality \"" + q + "\"");
@@ -299,12 +311,18 @@ public class TapeTv extends PluginForHost {
                             fpName = musicVideo.get("artist");
                             String title = fpName + " - " + musicVideo.get("title").replaceAll("\\(|\\)", "--") + "@" + q + ".mp4";
 
-                            if (musicVideo.get("title").startsWith("Anmoderation")) continue;
+                            if (musicVideo.get("title").startsWith("Anmoderation")) {
+                                continue;
+                            }
 
                             final DownloadLink link = new DownloadLink(this, title, getHost(), sourceLink.getDownloadURL(), true);
                             link.setAvailable(true);
                             link.setFinalFileName(title);
-                           try{/*JD2 only*/link.setContentUrl(sourceLink.getBrowserUrl());}catch(Throwable e){/*Stable*/ link.setBrowserUrl(sourceLink.getBrowserUrl());}
+                            try {/* JD2 only */
+                                link.setContentUrl(sourceLink.getBrowserUrl());
+                            } catch (Throwable e) {/* Stable */
+                                link.setBrowserUrl(sourceLink.getBrowserUrl());
+                            }
                             link.setProperty("directURL", streamUrl);
                             link.setProperty("directName", title);
                             link.setProperty("LINKDUPEID", "tapetv" + ID + title + q);
@@ -317,10 +335,18 @@ public class TapeTv extends PluginForHost {
                         if (bestQuality) {
                             /* only keep best quality */
                             DownloadLink keep = bestMap.get("hd");
-                            if (keep == null) keep = bestMap.get("sd");
-                            if (keep == null) keep = bestMap.get("high");
-                            if (keep == null) keep = bestMap.get("medium");
-                            if (keep == null) keep = bestMap.get("low");
+                            if (keep == null) {
+                                keep = bestMap.get("sd");
+                            }
+                            if (keep == null) {
+                                keep = bestMap.get("high");
+                            }
+                            if (keep == null) {
+                                keep = bestMap.get("medium");
+                            }
+                            if (keep == null) {
+                                keep = bestMap.get("low");
+                            }
                             if (keep != null) {
                                 newTmpRet.clear();
                                 bestMap.clear();
@@ -328,10 +354,14 @@ public class TapeTv extends PluginForHost {
                             }
                         }
                         musicVideo.clear();
-                        if (contentXML.contains("channel/deeplink")) break;
+                        if (contentXML.contains("channel/deeplink")) {
+                            break;
+                        }
                     }
 
-                    if (newRet.size() > 0) newTmpRet = newRet;
+                    if (newRet.size() > 0) {
+                        newTmpRet = newRet;
+                    }
 
                     if (newTmpRet.size() > 0) {
                         /*
@@ -387,7 +417,9 @@ public class TapeTv extends PluginForHost {
     }
 
     private void download(final DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getStringProperty("directURL", null) == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (downloadLink.getStringProperty("directURL", null) == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String stream[] = downloadLink.getStringProperty("directURL").split("@");
         if (stream[0].startsWith("rtmp")) {
             downloadLink.setProperty("FLVFIXER", true);
@@ -405,13 +437,21 @@ public class TapeTv extends PluginForHost {
         } else {
             br.setFollowRedirects(true);
             final String dllink = stream[0];
-            if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            if (dllink.startsWith("mms")) throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol (mms://) not supported!");
-            if (dllink.startsWith("rtsp")) throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol (rtsp://) not supported!");
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (dllink.startsWith("mms")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol (mms://) not supported!");
+            }
+            if (dllink.startsWith("rtsp")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Protocol (rtsp://) not supported!");
+            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
-                if (dl.getConnection().getResponseCode() == 403) throw new PluginException(LinkStatus.ERROR_FATAL, "This Content is not longer available!");
+                if (dl.getConnection().getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "This Content is not longer available!");
+                }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
@@ -427,16 +467,24 @@ public class TapeTv extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
             String mediaUrl = br.getRegex("Flashvars\\.mediaURL\\s+?=\\s+?\"([^\"]+)\"").getMatch(0);
 
-            if (br.containsHTML("(>Dieser Beitrag ist leider.*?nicht \\(mehr\\) verf&uuml;gbar|>Das Video ist in diesem Format.*?aktuell leider nicht verf&uuml;gbar)") || mediaUrl == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("(>Dieser Beitrag ist leider.*?nicht \\(mehr\\) verf&uuml;gbar|>Das Video ist in diesem Format.*?aktuell leider nicht verf&uuml;gbar)") || mediaUrl == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.getPage(mediaUrl);
             String app = br.getRegex("<param name=\"app\" value=\"([^\"]+)\"").getMatch(0);
             String host = br.getRegex("<param name=\"host\" value=\"([^\"]+)\"").getMatch(0);
 
-            if (app == null && host == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (!host.startsWith("rtmp://")) host = "rtmp://" + host;
+            if (app == null && host == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!host.startsWith("rtmp://")) {
+                host = "rtmp://" + host;
+            }
             String q = downloadLink.getStringProperty("directQuality", "high");
             String newUrl[] = br.getRegex("<video dur=\"([\\d:]+)\" paramGroup=\"gl\\-vod\\-rtmp\" src=\"([^\"]+)\" system\\-bitrate=\"(\\d+)\">[^<]+<param name=\"quality\" value=\"" + q + "\"").getRow(0);
-            if (newUrl == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (newUrl == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             downloadLink.setProperty("directURL", host + "@" + app + "@" + newUrl[1]);
         }
         return AvailableStatus.TRUE;
@@ -455,15 +503,15 @@ public class TapeTv extends PluginForHost {
     }
 
     private void xmlParser(final String linkurl) throws Exception {
+        URLConnectionAdapter con = null;
         try {
-            final URL url = new URL(linkurl);
-            final InputStream stream = url.openStream();
+            con = new Browser().openGetConnection(linkurl);
             final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             try {
-                doc = parser.parse(new ReplacerInputStream(stream));
+                doc = parser.parse(new ReplacerInputStream(con.getInputStream()));
             } finally {
                 try {
-                    stream.close();
+                    con.disconnect();
                 } catch (final Throwable e) {
                 }
             }
