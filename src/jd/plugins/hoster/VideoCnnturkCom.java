@@ -16,15 +16,14 @@
 
 package jd.plugins.hoster;
 
-import java.io.InputStream;
-import java.net.URL;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -54,8 +53,12 @@ public class VideoCnnturkCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
-        if (br.containsHTML("class=\"mdm err html\"") || br.getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if ("http://video.cnnturk.com/".equals(br.getURL())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("class=\"mdm err html\"") || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if ("http://video.cnnturk.com/".equals(br.getURL())) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
         final String xmlUrl = br.getRegex("\"FlashPlayerConfigUrl\": \"(http://[^<>\"]*?)\"").getMatch(0);
         String filename = null, server = null, playPath = null;
@@ -67,13 +70,19 @@ public class VideoCnnturkCom extends PluginForHost {
                 playPath = xPath.evaluate("/VideoRoot/Video/Url", doc);
             } catch (final Throwable e) {
             }
-            if (filename == null || server == null || playPath == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null || server == null || playPath == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             filename = Encoding.htmlDecode(filename.trim()) + ".mp4";
             DLLINK = server + "@" + playPath;
         } else {
             filename = br.getRegex("<title>([^<>]*?) CNN TÜRK?</title>").getMatch(0);
-            if (filename == null) filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename == null) {
+                filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            }
+            if (filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             filename = Encoding.htmlDecode(filename.trim()).replace("\"", "'");
             final String itemID = br.getRegex("itemId: \\'([a-z0-9]+)\\'").getMatch(0);
             if (itemID != null) {
@@ -84,10 +93,14 @@ public class VideoCnnturkCom extends PluginForHost {
                 final String playerURL = "http://video.cnnturk.com/actions/Video/NetDVideoPlayer?year=" + urlinfo.getMatch(0) + "&category=" + urlinfo.getMatch(1) + "&month=" + urlinfo.getMatch(2) + "&day=" + urlinfo.getMatch(3) + "&name=" + urlinfo.getMatch(4) + "&height=360";
                 br.setFollowRedirects(true);
                 br.getPage(playerURL);
-                if (br.getRequest().getHttpConnection().getResponseCode() == 404) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 DLLINK = br.getRegex("path: \\'([^<>\"]*?)\\'").getMatch(0);
             }
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLLINK == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             if (DLLINK.contains(".mp4")) {
                 filename = filename + ".mp4";
             } else {
@@ -134,7 +147,9 @@ public class VideoCnnturkCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (SEGMENTSTREAM) throw new PluginException(LinkStatus.ERROR_FATAL, "Download impossible: Cannot download segmented streams");
+        if (SEGMENTSTREAM) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Download impossible: Cannot download segmented streams");
+        }
         download(downloadLink);
     }
 
@@ -162,17 +177,17 @@ public class VideoCnnturkCom extends PluginForHost {
     }
 
     private XPath xmlParser(final String linkurl) throws Exception {
+        URLConnectionAdapter con = null;
         try {
-            final URL url = new URL(linkurl);
-            final InputStream stream = url.openStream();
+            con = new Browser().openGetConnection(linkurl);
             final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             final XPath xPath = XPathFactory.newInstance().newXPath();
             try {
-                doc = parser.parse(stream);
+                doc = parser.parse(con.getInputStream());
                 return xPath;
             } finally {
                 try {
-                    stream.close();
+                    con.disconnect();
                 } catch (final Throwable e) {
                 }
             }

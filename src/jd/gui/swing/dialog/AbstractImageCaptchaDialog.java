@@ -27,6 +27,7 @@ import javax.swing.Timer;
 import jd.captcha.utils.GifDecoder;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.URLStream;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
 import org.appwork.utils.logging.Log;
@@ -66,7 +67,8 @@ public abstract class AbstractImageCaptchaDialog extends AbstractCaptchaDialog<O
     public static Image[] getGifImages(URL url) {
         InputStream stream = null;
         try {
-            return getGifImages(stream = url.openStream());
+            stream = URLStream.openStream(url);
+            return getGifImages(stream);
         } catch (IOException e) {
             Log.exception(e);
         } finally {

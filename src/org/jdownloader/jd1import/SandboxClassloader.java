@@ -17,6 +17,7 @@ import jd.plugins.FilePackage;
 import org.appwork.utils.Files;
 import org.appwork.utils.Files.Handler;
 import org.appwork.utils.IO;
+import org.appwork.utils.URLStream;
 
 public final class SandboxClassloader extends ClassLoader {
     protected final File jars[];
@@ -82,7 +83,7 @@ public final class SandboxClassloader extends ClassLoader {
             };
             InputStream is = null;
             try {
-                is = url.openStream();
+                is = URLStream.openStream(url);
                 IO.readStream(-1, is, byteStream, true);
             } catch (IOException e) {
                 throw new ClassNotFoundException("Missing:" + className, e);

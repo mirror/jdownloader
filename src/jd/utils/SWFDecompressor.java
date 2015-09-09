@@ -2,8 +2,10 @@ package jd.utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.zip.Inflater;
+
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 
 /**
  * Saved from the old grooveshark plugin
@@ -18,26 +20,19 @@ public class SWFDecompressor {
     }
 
     public byte[] decompress(String s) { // ~2000ms
-        byte[] buffer = new byte[512];
-        InputStream input = null;
-        ByteArrayOutputStream result = null;
         byte[] enc = null;
-
+        URLConnectionAdapter con = null;
         try {
-            URL url = new URL(s);
-            input = url.openStream(); // ~500ms
-            result = new ByteArrayOutputStream();
-
+            con = new Browser().openGetConnection(s);
+            final InputStream input = con.getInputStream();
+            final ByteArrayOutputStream result = new ByteArrayOutputStream();
             try {
+                final byte[] buffer = new byte[512];
                 int amount;
                 while ((amount = input.read(buffer)) != -1) { // ~1500ms
                     result.write(buffer, 0, amount);
                 }
             } finally {
-                try {
-                    input.close();
-                } catch (Throwable e) {
-                }
                 try {
                     result.close();
                 } catch (Throwable e2) {
@@ -45,7 +40,13 @@ public class SWFDecompressor {
                 enc = result.toByteArray();
             }
         } catch (Throwable e3) {
+            e3.getStackTrace();
             return null;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
         }
         return uncompress(enc);
     }

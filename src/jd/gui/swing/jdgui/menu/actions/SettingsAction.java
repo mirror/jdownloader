@@ -44,12 +44,13 @@ public class SettingsAction extends CustomizableAppAction {
     public void actionPerformed(ActionEvent e) {
         // AccountManagerSettings
         final GraphicalUserInterfaceSettings settings = JsonConfig.create(GraphicalUserInterfaceSettings.class);
-        if (settings.isConfigViewVisible() == false) {
+        if (settings.isConfigViewVisible() == false || ConfigurationView.class != JDGui.getInstance().getCurrentView().getClass()) {
             settings.setConfigViewVisible(true);
             JDGui.getInstance().setContent(ConfigurationView.getInstance(), true);
         } else {
             settings.setConfigViewVisible(false);
             JDGui.getInstance().requestPanel(Panels.DOWNLOADLIST);
+            ConfigurationView.getInstance().close();
         }
     }
 }

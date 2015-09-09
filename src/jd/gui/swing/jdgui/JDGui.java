@@ -1441,6 +1441,15 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         }.start();
     }
 
+    public View getCurrentView() {
+        return new EDTHelper<View>() {
+            @Override
+            public View edtRun() {
+                return mainTabbedPane.getSelectedView();
+            }
+        }.getReturnValue();
+    }
+
     public void setClosingHandler(MainFrameClosingHandler closingHandler) {
         this.closingHandler = closingHandler;
     }

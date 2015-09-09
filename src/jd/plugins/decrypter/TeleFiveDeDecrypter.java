@@ -20,7 +20,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -36,6 +35,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -61,26 +61,19 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
         }
 
         public byte[] decompress(String s) { // ~2000ms
-            byte[] buffer = new byte[512];
-            InputStream input = null;
-            ByteArrayOutputStream result = null;
             byte[] enc = null;
-
+            URLConnectionAdapter con = null;
             try {
-                URL url = new URL(s);
-                input = url.openStream(); // ~500ms
-                result = new ByteArrayOutputStream();
-
+                con = new Browser().openGetConnection(s);
+                final InputStream input = con.getInputStream();
+                final ByteArrayOutputStream result = new ByteArrayOutputStream();
                 try {
+                    final byte[] buffer = new byte[512];
                     int amount;
                     while ((amount = input.read(buffer)) != -1) { // ~1500ms
                         result.write(buffer, 0, amount);
                     }
                 } finally {
-                    try {
-                        input.close();
-                    } catch (Throwable e) {
-                    }
                     try {
                         result.close();
                     } catch (Throwable e2) {
@@ -90,6 +83,11 @@ public class TeleFiveDeDecrypter extends PluginForDecrypt {
             } catch (Throwable e3) {
                 e3.getStackTrace();
                 return null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
             return uncompress(enc);
         }
