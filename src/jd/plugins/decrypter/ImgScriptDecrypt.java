@@ -103,7 +103,7 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
 
     @Override
     public SiteTemplate siteTemplateType() {
-        return SiteTemplate.ImageHosting_ImgShot;
+        return null; // SiteTemplate.ImageHosting_ImgShot;
     }
 
 }
