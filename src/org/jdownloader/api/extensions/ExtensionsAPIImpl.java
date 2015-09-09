@@ -25,7 +25,7 @@ public class ExtensionsAPIImpl implements ExtensionsAPI {
     }
 
     @Override
-    public void install(final String id) {
+    public boolean install(final String id) {
 
         new Thread("Install Extension") {
             public void run() {
@@ -50,7 +50,7 @@ public class ExtensionsAPIImpl implements ExtensionsAPI {
                 }
             }
         }.start();
-
+        return true;
     }
 
     @Override
@@ -132,9 +132,14 @@ public class ExtensionsAPIImpl implements ExtensionsAPI {
     }
 
     @Override
-    public void setEnabled(String id, boolean b) {
+    public boolean setEnabled(String id, boolean b) {
         LazyExtension lazy = ExtensionController.getInstance().getExtension(id);
-        ExtensionController.getInstance().setEnabled(lazy, b);
+        if (lazy == null) {
+            return false;
+        } else {
+            ExtensionController.getInstance().setEnabled(lazy, b);
+            return true;
+        }
     }
 
 }

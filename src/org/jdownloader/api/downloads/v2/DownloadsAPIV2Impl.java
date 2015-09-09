@@ -622,6 +622,11 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     }
 
     @Override
+    public boolean setDownloadPassword(final long[] linkIds, final long[] packageIds, final String pass) throws BadParameterException {
+        return packageControllerUtils.setDownloadPassword(linkIds, packageIds, pass);
+    }
+
+    @Override
     public void cleanup(final long[] linkIds, final long[] packageIds, final CleanupActionOptions.Action action, final CleanupActionOptions.Mode mode, final CleanupActionOptions.SelectionType selectionType) throws BadParameterException {
         packageControllerUtils.cleanup(linkIds, packageIds, action, mode, selectionType);
     }

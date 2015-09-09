@@ -12,9 +12,9 @@ public interface ExtensionsAPI extends RemoteAPIInterface {
 
     public boolean isEnabled(String classname);
 
-    public void setEnabled(String classname, boolean b);
+    public boolean setEnabled(String classname, boolean b);
 
-    public void install(String id);
+    public boolean install(String id);
 
     List<ExtensionAPIStorable> list(ExtensionQueryStorable query);
 }

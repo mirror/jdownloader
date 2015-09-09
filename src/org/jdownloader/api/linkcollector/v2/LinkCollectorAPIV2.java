@@ -64,4 +64,8 @@ public interface LinkCollectorAPIV2 extends RemoteAPIInterface {
 
     void setDownloadDirectory(String directory, long[] packageIds) throws BadParameterException;
 
+    boolean setDownloadPassword(long[] linkIds, long[] packageIds, String pass) throws BadParameterException;
+
+    boolean clearList();
+
 }

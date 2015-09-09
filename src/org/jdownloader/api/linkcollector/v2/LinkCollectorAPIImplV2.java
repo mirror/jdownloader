@@ -631,4 +631,15 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
     public void cleanup(final long[] linkIds, final long[] packageIds, final CleanupActionOptions.Action action, final CleanupActionOptions.Mode mode, final CleanupActionOptions.SelectionType selectionType) throws BadParameterException {
         packageControllerUtils.cleanup(linkIds, packageIds, action, mode, selectionType);
     }
+
+    @Override
+    public boolean clearList() {
+        LinkCollector.getInstance().clear();
+        return true;
+    }
+
+    @Override
+    public boolean setDownloadPassword(final long[] linkIds, final long[] packageIds, final String pass) throws BadParameterException {
+        return packageControllerUtils.setDownloadPassword(linkIds, packageIds, pass);
+    }
 }

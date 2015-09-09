@@ -3,12 +3,14 @@ package org.jdownloader.api.extraction;
 import java.util.HashMap;
 
 import org.appwork.storage.Storable;
+import org.jdownloader.extensions.extraction.Archive;
 
 public class ArchiveStatusStorable implements Storable {
 
     private String           archiveId        = null;
     private long             controllerId     = -1;
     private ControllerStatus controllerStatus = ControllerStatus.NA;
+    private String           type             = null;
 
     public ControllerStatus getControllerStatus() {
         return controllerStatus;
@@ -43,6 +45,17 @@ public class ArchiveStatusStorable implements Storable {
         this.archiveName = name;
     }
 
+    public ArchiveStatusStorable(Archive archive, HashMap<String, ArchiveFileStatus> states) {
+        this.setStates(states);
+        this.setArchiveId(archive.getArchiveID());
+        this.setArchiveName(archive.getName());
+        if (archive.getArchiveType() != null) {
+            this.setType(archive.getArchiveType().name());
+        } else if (archive.getSplitType() != null) {
+            this.setType(archive.getSplitType().name());
+        }
+    }
+
     public String getArchiveId() {
         return archiveId;
     }
@@ -65,6 +78,14 @@ public class ArchiveStatusStorable implements Storable {
 
     public void setStates(HashMap<String, ArchiveFileStatus> states) {
         this.states = states;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String archiveType) {
+        this.type = archiveType;
     }
 
     public static enum ArchiveFileStatus {

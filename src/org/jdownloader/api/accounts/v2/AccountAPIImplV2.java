@@ -50,10 +50,10 @@ public class AccountAPIImplV2 implements AccountAPIV2 {
                 continue;
             }
             AccountAPIStorableV2 accas = new AccountAPIStorableV2(acc);
+            accas.setErrorType(enumToString(acc.getError()));
 
             if (queryParams.isError()) {
                 accas.setErrorString(acc.getErrorString());
-                accas.setErrorType(enumToString(acc.getError()));
             }
             if (queryParams.isUserName()) {
                 accas.setUsername(acc.getUser());
