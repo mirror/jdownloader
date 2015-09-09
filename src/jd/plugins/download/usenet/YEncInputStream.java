@@ -136,6 +136,9 @@ public class YEncInputStream extends InputStream {
      */
     @Override
     public synchronized int read() throws IOException {
+        if (readBufferLength > 0) {
+            return readSingleBuffer();
+        }
         final byte[] readB = new byte[1];
         while (true) {
             final int read = read(readB, 0, 1);
@@ -147,6 +150,14 @@ public class YEncInputStream extends InputStream {
         }
     }
 
+    private final int readSingleBuffer() throws IOException {
+        final int ret = readBuffer[readBufferIndex++] & 0xff;
+        if (readBufferIndex == readBufferLength) {
+            readBufferLength = 0;
+        }
+        return ret;
+    }
+
     private final byte[] readBuffer       = new byte[1024];
     private int          readBufferLength = 0;
     private int          readBufferIndex  = 0;
@@ -156,6 +167,19 @@ public class YEncInputStream extends InputStream {
      */
     @Override
     public synchronized int read(final byte[] b, final int off, final int len) throws IOException {
+        if (readBufferLength > 0) {
+            final int cpyLen = Math.min(len, readBufferLength - readBufferIndex);
+            if (cpyLen == 1) {
+                return readSingleBuffer();
+            } else {
+                System.arraycopy(readBuffer, readBufferIndex, b, off, cpyLen);
+                readBufferIndex += cpyLen;
+                if (readBufferIndex == readBufferLength) {
+                    readBufferLength = 0;
+                }
+                return cpyLen;
+            }
+        }
         if (eof) {
             return -1;
         } else {
@@ -204,7 +228,35 @@ public class YEncInputStream extends InputStream {
     }
 
     private final int readBuffer(final byte[] b, final int off, final int len) throws IOException {
-        throw new IOException("FIX ME");
+        readBufferIndex = 0;
+        readBufferLength = 0;
+        // prefill readBuffer array with =yend
+        if (yEncMarker_Index == 1) {
+            readBuffer[off] = (byte) '=';
+        } else if (yEncMarker_Index == 2) {
+            readBuffer[off] = (byte) '=';
+            readBuffer[off + 1] = (byte) 'y';
+        } else if (yEncMarker_Index == 3) {
+            readBuffer[off] = (byte) '=';
+            readBuffer[off + 1] = (byte) 'y';
+            readBuffer[off + 2] = (byte) 'e';
+        } else if (yEncMarker_Index == 4) {
+            readBuffer[off] = (byte) '=';
+            readBuffer[off + 1] = (byte) 'y';
+            readBuffer[off + 2] = (byte) 'e';
+            readBuffer[off + 3] = (byte) 'n';
+        }
+        final int read = getInputStream().read(readBuffer, yEncMarker_Index, readBuffer.length - yEncMarker_Index);
+        if (read == -1) {
+            throw new EOFException("incomplete yenc stream");
+        } else {
+            final int decoded = yEncDecoder(readBuffer, 0, read + yEncMarker_Index);
+            if (decoded > 0) {
+                readBufferLength = decoded;
+                return read(b, off, len);
+            }
+            return decoded;
+        }
     }
 
     private int     yEncMarker_Index          = 0;
