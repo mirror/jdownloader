@@ -37,7 +37,7 @@ import jd.utils.JDUtilities;
 names = { "mirrorcop.com", "multiupfile.com", "multfile.com", "maxmirror.com", "indirbindir.biz", "exoshare.com", "go4up.com", "uploadonall.com", "directmirror.com", "nextdown.net", "qooy.com", "uploader.ro", "uploadmirrors.com", "megaupper.com", "shrta.com", "1filesharing.com" },
 
 urls = { "http://(www\\.)?mirrorcop\\.com/downloads/[A-Z0-9]+", "http://(www\\.)?multiupfile\\.com/f/[a-f0-9]+", "http://(www\\.)?multfile\\.com/files/[0-9A-Za-z]{1,15}", "http://(www\\.)?maxmirror\\.com/download/[0-9A-Z]{8}", "http://(www\\.)?indirbindir\\.biz/files/[0-9A-Z]{8}", "http://(www\\.)?(exoshare\\.com|multi\\.la)/(download\\.php\\?uid=|s/)[A-Z0-9]{8}", "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{1,15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}",
-"http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}" },
+        "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}" },
 
 flags = { 0 })
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
@@ -110,7 +110,6 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         } else if (parameter.contains("go4up.com/")) {
             getPage(br, parameter);
             if (br.containsHTML(">File not Found<")) {
-                logger.info("Link offline: " + parameter);
                 decryptedLinks.add(createOfflinelink(parameter));
                 return decryptedLinks;
             }
@@ -119,6 +118,13 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             // if (br.containsHTML("golink")) br.postPage(br.getURL(), "golink=Access+Links");
             getPage(br, "http://go4up.com/download/gethosts/" + id + "/" + filename);
             br.getRequest().setHtmlCode(br.toString().replaceAll("\\\\/", "/").replaceAll("\\\\\"", "\""));
+            final String urls[] = this.br.getRegex("\"link\":\"(.*?)\",\"button\"").getColumn(0);
+            final String urls_broken[] = this.br.getRegex("\"link\":\"(File currently in queue\\.|Error occured)\"").getColumn(0);
+            if (urls.length == urls_broken.length) {
+                /* No ne of these mirrors was successfully uploaded --> Link offline! */
+                decryptedLinks.add(createOfflinelink(parameter));
+                return decryptedLinks;
+            }
         } else if (parameter.matches("(?i).+multiupfile\\.com/.+")) {
             // use standard page, status.php doesn't exist
             // br.getHeaders().put("Accept-Encoding", "identity");

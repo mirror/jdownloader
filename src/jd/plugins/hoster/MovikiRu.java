@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moviki.ru" }, urls = { "http://(www\\.)?moviki\\.ru/(embed|videos)/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "moviki.ru" }, urls = { "http://(www\\.)?moviki\\.ru/(embed|videos)/\\d+(.+)?" }, flags = { 0 })
 public class MovikiRu extends PluginForHost {
 
     public MovikiRu(PluginWrapper wrapper) {
@@ -45,8 +45,11 @@ public class MovikiRu extends PluginForHost {
         return "http://www.moviki.ru/terms.php";
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload("http://www.moviki.ru/videos/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/x/");
+        final String vid = new Regex(link.getDownloadURL(), "moviki\\.ru/[^/]+/(\\d+)").getMatch(0);
+        link.setUrlDownload("http://www.moviki.ru/videos/" + vid + "/x/");
+        link.setLinkID(vid);
     }
 
     @Override
@@ -54,9 +57,13 @@ public class MovikiRu extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("404.php") || br.containsHTML(">window\\.location=\\'/404\\.php\\'")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("404.php") || br.containsHTML(">window\\.location=\\'/404\\.php\\'")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("class=\"block_header\">([^<>\"]*?)<").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         filename = Encoding.htmlDecode(filename.trim());
         if (br.containsHTML("Это личное видео пользователя <a")) {
             downloadLink.getLinkStatus().setStatusText("Private video!");
@@ -64,10 +71,14 @@ public class MovikiRu extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         DLLINK = br.getRegex("video_url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (ext == null || ext.length() > 5) {
+            ext = ".mp4";
+        }
         ext = ext.replace("/", "");
         downloadLink.setFinalFileName(filename + ext);
         final Browser br2 = br.cloneBrowser();
@@ -76,14 +87,15 @@ public class MovikiRu extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = br2.openHeadConnection(DLLINK);
             } catch (final SocketTimeoutException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -100,7 +112,9 @@ public class MovikiRu extends PluginForHost {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
-                if (e instanceof PluginException) throw (PluginException) e;
+                if (e instanceof PluginException) {
+                    throw (PluginException) e;
+                }
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Private video!");
         }

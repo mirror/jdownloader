@@ -931,7 +931,7 @@ public class CloudSixMe extends antiDDoSForHost {
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
-            login(account, true);
+            login(account, false);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
@@ -1009,7 +1009,13 @@ public class CloudSixMe extends antiDDoSForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(COOKIE_HOST, key, value);
                         }
-                        return;
+                        /* Verify cookies - also works as a workaround for (cloudflare) login captchas. */
+                        this.br.getPage(COOKIE_HOST);
+                        if (!this.br.containsHTML("cloudsix\\.me/\\?op=registration\"")) {
+                            return;
+                        }
+                        /* Remove cookies / headers */
+                        this.br = new Browser();
                     }
                 }
                 br.setFollowRedirects(true);

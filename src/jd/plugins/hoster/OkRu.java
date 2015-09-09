@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ok.ru" }, urls = { "http://(www\\.|m\\.)?ok\\.ru/(?:video|videoembed)/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "http://okdecrypted\\d+" }, flags = { 0 })
 public class OkRu extends PluginForHost {
 
     public OkRu(PluginWrapper wrapper) {
@@ -52,7 +52,24 @@ public class OkRu extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
 
-    private String DLLINK = null;
+    private String               DLLINK            = null;
+
+    public static void prepBR(final Browser br) {
+        /* Use mobile website to get http urls. */
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile");
+        br.setFollowRedirects(true);
+    }
+
+    public static boolean isOffline(final Browser br) {
+        if (br.containsHTML("class=\"empty\"") || br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        }
+        /* Offline or private video */
+        if (br.containsHTML(">Access to this video has been restricted") || br.getURL().contains("/main/st.redirect/")) {
+            return true;
+        }
+        return false;
+    }
 
     @Override
     public String getAGBLink() {
@@ -60,25 +77,24 @@ public class OkRu extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("http://m.", "http://www.").replace("/videoembed/", "/video/"));
-    }
-
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         DLLINK = null;
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        /* Use mobile website to get http urls. */
-        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Linux; U; Android 2.2.1; en-us; Nexus One Build/FRG83) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("class=\"empty\"") || br.getHttpConnection().getResponseCode() == 404) {
+        prepBR(this.br);
+        String mainlink = downloadLink.getStringProperty("mainlink", null);
+        if (mainlink == null) {
+            /* Leave this in for older URLs added <= rev 31219 */
+            mainlink = downloadLink.getDownloadURL();
+        }
+        br.getPage(mainlink);
+        /* Offline or private video */
+        if (isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("class=\"mvtitle clamp __2\">([^<>\"]*?)</div").getMatch(0);
         if (filename == null) {
-            filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
+            filename = new Regex(mainlink, "(\\d+)$").getMatch(0);
         }
         DLLINK = br.getRegex("embedVPlayer\\(this,\\&#39;(http[^<>\"]*?)\\&#39;,\\&#39;").getMatch(0);
         if (DLLINK == null) {

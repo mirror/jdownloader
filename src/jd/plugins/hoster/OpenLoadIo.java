@@ -16,14 +16,19 @@
 
 package jd.plugins.hoster;
 
+import java.awt.Color;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -36,7 +41,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.accounts.AccountFactory;
+import org.jdownloader.plugins.accounts.EditAccountPanel;
+import org.jdownloader.plugins.accounts.Notifier;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "openload.co", "openload.io" }, urls = { "https?://(?:www\\.)?openload\\.(?:io|co)/(?:f|embed)/[A-Za-z0-9_\\-]+", "/null/void" }, flags = { 2, 0 })
 public class OpenLoadIo extends antiDDoSForHost {
@@ -64,6 +75,7 @@ public class OpenLoadIo extends antiDDoSForHost {
     /* Constants */
     /* Status 2015-09-08: free API working again, site-handling remains broken! */
     private static final boolean          enable_api_free              = true;
+    private static final boolean          enable_api_login             = true;
     private static final String           api_base                     = "https://api.openload.co/1";
 
     /* Connection stuff */
@@ -89,8 +101,13 @@ public class OpenLoadIo extends antiDDoSForHost {
         link.setUrlDownload("https://openload.co/f" + link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/")));
     }
 
+    @Override
+    public AccountFactory getAccountFactory() {
+        return new OpenLoadIoAccountFactory();
+    }
+
     /*
-     * Using API: http://docs.ol1.apiary.io/
+     * Using API: https://openload.co/api
      * 
      * TODO: Check if we can use the mass linkchecker with this API. Add account support, get an API key and use that as well.
      */
@@ -103,7 +120,7 @@ public class OpenLoadIo extends antiDDoSForHost {
             link.setName(fid);
         }
         this.setBrowserExclusive();
-        getPage(api_base + "/file/info?file=" + fid);
+        getPageAPI(api_base + "/file/info?file=" + fid);
         api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         api_data = (LinkedHashMap<String, Object>) api_data.get("result");
         api_data = (LinkedHashMap<String, Object>) api_data.get(fid);
@@ -122,10 +139,7 @@ public class OpenLoadIo extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Trust API */
-        // Check filename from decrypter first, if any
-        if (link.getFinalFileName() == null) {
-            link.setFinalFileName(filename);
-        }
+        link.setFinalFileName(filename);
         link.setDownloadSize(Long.parseLong(filesize));
         link.setSha1Hash(sha1);
         return AvailableStatus.TRUE;
@@ -137,18 +151,18 @@ public class OpenLoadIo extends antiDDoSForHost {
         if (api_responsecode == 403) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Private files can only be downloaded by their owner/uploader");
         }
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink", null);
     }
 
     @SuppressWarnings({ "deprecation", "unchecked" })
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty, final Account account) throws Exception, PluginException {
         final String fid = getFID(downloadLink);
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             String ticket;
             String waittime;
             if (enable_api_free) {
-                getPage(api_base + "/file/dlticket?file=" + fid);
+                getPageAPI(api_base + "/file/dlticket?file=" + fid + "&" + getAPILoginString(account));
                 api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 api_data = (LinkedHashMap<String, Object>) api_data.get("result");
                 ticket = (String) api_data.get("ticket");
@@ -162,7 +176,7 @@ public class OpenLoadIo extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
-                getPage(api_base + "/file/dl?file=" + fid + "&ticket=" + Encoding.urlEncode(ticket) + "&captcha_response=null");
+                getPageAPI(api_base + "/file/dl?file=" + fid + "&ticket=" + Encoding.urlEncode(ticket) + "&captcha_response=null&" + getAPILoginString(account));
                 api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 api_data = (LinkedHashMap<String, Object>) api_data.get("result");
                 dllink = (String) api_data.get("url");
@@ -253,59 +267,70 @@ public class OpenLoadIo extends antiDDoSForHost {
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
-            final boolean followsRedirect = br.isFollowingRedirects();
-            try {
-                // Load cookies
-                br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(MAINPAGE, key, value);
+            if (enable_api_login) {
+                getPageAPI(api_base + "/account/info?" + getAPILoginString(account));
+            } else {
+                final boolean followsRedirect = br.isFollowingRedirects();
+                try {
+                    // Load cookies
+                    br.setCookiesExclusive(true);
+                    final Object ret = account.getProperty("cookies", null);
+                    boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                    if (acmatch) {
+                        acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                    }
+                    if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                        final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                        if (account.isValid()) {
+                            for (final Entry<String, String> cookieEntry : cookies.entrySet()) {
+                                final String key = cookieEntry.getKey();
+                                final String value = cookieEntry.getValue();
+                                br.setCookie(MAINPAGE, key, value);
+                            }
+                            return;
                         }
-                        return;
                     }
-                }
-                br.setFollowRedirects(true);
-                getPage("https://openload.co/login");
-                final String csrftoken = br.getRegex("name=\"csrf\\-token\" content=\"([^<>\"]*?)\"").getMatch(0);
-                if (csrftoken == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    br.setFollowRedirects(true);
+                    if (!account.getUser().matches(".+@.+\\..+")) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail adress in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
-                }
-                postPage("/login", "_csrf=" + Encoding.urlEncode(csrftoken) + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1");
-                if (!br.containsHTML(">Logout<")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    getPage("https://openload.co/login");
+                    final String csrftoken = br.getRegex("name=\"csrf\\-token\" content=\"([^<>\"]*?)\"").getMatch(0);
+                    if (csrftoken == null) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
                     }
+                    postPage("/login", "_csrf=" + Encoding.urlEncode(csrftoken) + "&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=0&LoginForm%5BrememberMe%5D=1");
+                    if (!this.br.containsHTML("class=\"status normal\"")) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                    account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                    account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                    account.setProperty("cookies", fetchCookies(this.getHost()));
+                } catch (final PluginException e) {
+                    account.setProperty("cookies", Property.NULL);
+                    throw e;
+                } finally {
+                    br.setFollowRedirects(followsRedirect);
                 }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", fetchCookies(this.getHost()));
-            } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                throw e;
-            } finally {
-                br.setFollowRedirects(followsRedirect);
             }
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
@@ -325,6 +350,25 @@ public class OpenLoadIo extends antiDDoSForHost {
             account.setMaxSimultanDownloads(maxPrem.get());
             account.setConcurrentUsePossible(true);
             ai.setStatus("Free Account");
+            if (enable_api_login) {
+                final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                final LinkedHashMap<String, Object> result = (LinkedHashMap<String, Object>) entries.get("result");
+                final LinkedHashMap<String, Object> traffic = (LinkedHashMap<String, Object>) result.get("traffic");
+                /* TODO: Use these values correctly, then activate premium API usage */
+                final String signup_at = (String) result.get("signup_at");
+                final Long storage_left = DummyScriptEnginePlugin.toLong(result.get("storage_left"), -1);
+                // final Long storage_used = DummyScriptEnginePlugin.toLong(result.get("storage_used"), -1);
+                final Long traffic_left = DummyScriptEnginePlugin.toLong(traffic.get("left"), -1);
+                // final Long traffic_used_24h = DummyScriptEnginePlugin.toLong(traffic.get("used_24h"), -1);
+                ai.setCreateTime(TimeFormatter.getMilliSeconds(signup_at, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+                ai.setUsedSpace(storage_left);
+                if (traffic_left == -1) {
+                    ai.setUnlimitedTraffic();
+                } else {
+                    ai.setTrafficLeft(traffic_left);
+                }
+
+            }
         } else {
             final String expire = br.getRegex("").getMatch(0);
             if (expire == null) {
@@ -355,7 +399,7 @@ public class OpenLoadIo extends antiDDoSForHost {
         br.setFollowRedirects(false);
         final boolean premium_not_yet_supported = true;
         if (account.getType() == AccountType.FREE) {
-            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink", account);
         } else {
             if (premium_not_yet_supported) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -380,10 +424,162 @@ public class OpenLoadIo extends antiDDoSForHost {
         }
     }
 
+    private void getPageAPI(final String url) throws Exception {
+        super.getPage(url);
+        final String status = getJson("status");
+        if ("400".equals(status)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "API error 400");
+        } else if ("403".equals(status)) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        } else if ("404".equals(status) || "451".equals(status)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (status != null && status.startsWith("5")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "API error " + status);
+        }
+    }
+
+    /**
+     * If !enable_api_login this will act as if account == null as we cannot use the API download methods (which we use anyways) with
+     * invalid logindata. As long as we stick to the API there should never be any major issues!
+     */
+    private String getAPILoginString(final Account account) {
+        final String loginstring;
+        if (account != null && enable_api_login) {
+            loginstring = "login=" + Encoding.urlEncode(account.getUser()) + "&key=" + Encoding.urlEncode(account.getPass());
+        } else {
+            loginstring = "login=&key=";
+        }
+        return loginstring;
+    }
+
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return maxPrem.get();
+    }
+
+    public static class OpenLoadIoAccountFactory extends AccountFactory {
+
+        public static class OpenLoadIoPanel extends MigPanel implements EditAccountPanel {
+            /**
+             *
+             */
+            private static final long serialVersionUID = 1L;
+
+            private final String      IDHELP           = "Enter your FTP Username/API Login";
+            private final String      PINHELP          = "Enter your FTP Password/API Key";
+
+            private String getPassword() {
+                if (this.pass == null) {
+                    return null;
+                }
+                if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
+                    return null;
+                }
+                return new String(this.pass.getPassword());
+            }
+
+            private String getUsername() {
+                if (IDHELP.equals(this.name.getText())) {
+                    return null;
+                }
+                return this.name.getText();
+            }
+
+            private ExtTextField      name;
+
+            ExtPasswordField          pass;
+
+            private volatile Notifier notifier = null;
+            private static String     EMPTYPW  = "                 ";
+            private final JLabel      idLabel;
+
+            public OpenLoadIoPanel() {
+                super("ins 0, wrap 2", "[][grow,fill]", "");
+                final String lang = System.getProperty("user.language");
+                String usertext_finddata;
+                String usertext_uid;
+                if ("de".equalsIgnoreCase(lang)) {
+                    usertext_finddata = "Klicke hier um dein API loginname- und Passwort zu sehen:\r\n";
+                    usertext_uid = "FTP Username/API Login";
+                } else {
+                    usertext_finddata = "Click here to find your FTP Username/API Login AND FTP Password/API Key:\r\n";
+                    usertext_uid = "FTP Username/API Login";
+                }
+                add(new JLabel(usertext_finddata));
+                add(new JLink("https://openload.co/account"));
+                add(idLabel = new JLabel(usertext_uid));
+                add(this.name = new ExtTextField() {
+
+                    @Override
+                    public void onChanged() {
+                        if (notifier != null) {
+                            notifier.onNotify();
+                        }
+                    }
+
+                });
+
+                name.setHelpText(IDHELP);
+
+                add(new JLabel("FTP Password/API Key:"));
+                add(this.pass = new ExtPasswordField() {
+
+                    @Override
+                    public void onChanged() {
+                        if (notifier != null) {
+                            notifier.onNotify();
+                        }
+                    }
+
+                }, "");
+                pass.setHelpText(PINHELP);
+            }
+
+            @Override
+            public JComponent getComponent() {
+                return this;
+            }
+
+            @Override
+            public void setAccount(Account defaultAccount) {
+                if (defaultAccount != null) {
+                    name.setText(defaultAccount.getUser());
+                    pass.setText(defaultAccount.getPass());
+                }
+            }
+
+            @Override
+            public boolean validateInputs() {
+                final String userName = getUsername();
+                if (userName == null) {
+                    idLabel.setForeground(Color.RED);
+                    return false;
+                }
+                idLabel.setForeground(Color.BLACK);
+                return getPassword() != null;
+            }
+
+            @Override
+            public void setNotifyCallBack(Notifier notifier) {
+                this.notifier = notifier;
+            }
+
+            @Override
+            public Account getAccount() {
+                return new Account(getUsername(), getPassword());
+            }
+        }
+
+        @Override
+        public EditAccountPanel getPanel() {
+            return new OpenLoadIoPanel();
+        }
+
     }
 
     @Override
