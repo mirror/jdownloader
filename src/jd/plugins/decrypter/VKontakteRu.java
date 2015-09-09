@@ -36,6 +36,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -100,6 +101,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private boolean                 vkwall_grabvideo;
     private boolean                 vkwall_grablink;
     private boolean                 vkwall_grabdocs;
+    private boolean                 vkwall_graburlsinsideposts;
 
     /* Some supported url patterns */
     private static final String     PATTERN_SHORT                           = "https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+";
@@ -217,14 +219,7 @@ public class VKontakteRu extends PluginForDecrypt {
         vkwall_grabvideo = cfg.getBooleanProperty(VKWALL_GRAB_VIDEO, false);
         vkwall_grablink = cfg.getBooleanProperty(VKWALL_GRAB_LINK, false);
         vkwall_grabdocs = cfg.getBooleanProperty(VKWALL_GRAB_DOCS, false);
-        if (vkwall_grabalbums == false && vkwall_grabphotos == false && vkwall_grabaudio == false && vkwall_grabvideo == false && vkwall_grablink == false && vkwall_grabdocs == false) {
-            vkwall_grabalbums = true;
-            vkwall_grabphotos = true;
-            vkwall_grabaudio = true;
-            vkwall_grabvideo = true;
-            vkwall_grablink = true;
-            vkwall_grabdocs = true;
-        }
+        vkwall_graburlsinsideposts = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_URLS_INSIDE_POSTS, jd.plugins.hoster.VKontakteRuHoster.default_WALL_ALLOW_lookforurlsinsidewallposts);
 
         prepBrowser(br);
         prepCryptedLink();
@@ -1139,6 +1134,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String wall_list_id = wall_ID + "_" + id;
         /* URL to show this post. */
         final String wall_single_post_url = "https://vk.com/" + wall_list_id;
+        final String post_text = (String) entry.get("text");
 
         List<Map<String, Object>> attachments = (List<Map<String, Object>>) entry.get("attachments");
         if (attachments == null) {
@@ -1264,6 +1260,16 @@ public class VKontakteRu extends PluginForDecrypt {
                 // catches casting errors etc.
                 getLogger().info(attachment + "");
                 getLogger().log(ee);
+            }
+        }
+
+        /* Check if user wants to add urls inside the posted text */
+        if (vkwall_graburlsinsideposts && post_text != null) {
+            final String[] post_text_urls = HTMLParser.getHttpLinks(post_text, null);
+            if (post_text_urls != null) {
+                for (final String posted_url : post_text_urls) {
+                    this.decryptedLinks.add(this.createDownloadlink(posted_url));
+                }
             }
         }
 
