@@ -72,6 +72,7 @@ public class TheVideoMe extends antiDDoSForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean VIDEOHOSTER_2                = true;
+    private static final boolean VIDEOHOSTER_3                = true;
     private static final boolean SUPPORTSHTTPS                = false;
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = true;
@@ -97,7 +98,7 @@ public class TheVideoMe extends antiDDoSForHost {
     // limit-info:
     // protocol: no https
     // captchatype: null
-    // other: VIDEOHOSTER_2-hanbdling only works for "official" videos, returns "in conversion stage" error for all others - does not
+    // other: VIDEOHOSTER_2-handling only works for "official" videos, returns "in conversion stage" error for all others - does not
     // matter, we try anyways
 
     @Override
@@ -210,7 +211,7 @@ public class TheVideoMe extends antiDDoSForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({ "unused", "deprecation", "static-access" })
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
@@ -220,13 +221,13 @@ public class TheVideoMe extends antiDDoSForHost {
         if (dllink == null) {
             dllink = getDllink();
         }
-        /* Do not use dllinks found right here - they won't work! */
+        /* Do not use dllinks found right here - they won't work for this videohost!!! */
         dllink = null;
+        final Browser brv = br.cloneBrowser();
         /* Third, do they provide video hosting? */
         if (dllink == null && VIDEOHOSTER) {
             try {
                 logger.info("Trying to get link via vidembed");
-                final Browser brv = br.cloneBrowser();
                 brv.getPage("/vidembed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
@@ -255,6 +256,35 @@ public class TheVideoMe extends antiDDoSForHost {
             if (dllink == null) {
                 /* If failed, go back to the beginning */
                 getPage(downloadLink.getDownloadURL());
+            }
+        }
+        if (dllink == null && VIDEOHOSTER_3) {
+            try {
+                brv.getPage("/download/" + fuid);
+                brv.getPage("/cgi-bin/index_dl.cgi?op=get_vid_versions&file_code=" + fuid);
+                final Regex videoinfo = brv.getRegex("onclick=\"download_video\\(\\'([a-z0-9]+)\\',\\'([^<>\"\\']*?)\\',\\'([^<>\"\\']*?)\\'");
+                final String vid = videoinfo.getMatch(0);
+                final String q = videoinfo.getMatch(1);
+                final String dlid = videoinfo.getMatch(2);
+                if (vid == null || q == null || dlid == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                for (int i = 0; i <= 3; i++) {
+                    brv.getPage("http://thevideo.me/download/" + vid + "/" + q + "/" + dlid);
+                    dllink = this.getDllink(brv.toString());
+                    if (dllink == null) {
+                        dllink = brv.getRegex("\"(https?://[^<>\"]+\\.thevideo\\.[^/]+/[^<>\"]*?)\"").getMatch(0);
+                    }
+                    if (dllink != null) {
+                        logger.info("VIDEOHOSTER_3 handling: success!");
+                        break;
+                    } else {
+                        logger.warning("VIDEOHOSTER_3 handling failed --> Trying again");
+                    }
+                    this.sleep(3000, downloadLink);
+                }
+            } catch (final Throwable e) {
+                logger.warning("VIDEOHOSTER_3 handling failed");
             }
         }
         /* Fourth, continue like normal */
@@ -484,13 +514,13 @@ public class TheVideoMe extends antiDDoSForHost {
     /**
      * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
      * which allows the next singleton download to start, or at least try.
-     * 
+     *
      * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
      * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
      * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
      * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
      * minimal harm to downloading as slots are freed up soon as current download begins.
-     * 
+     *
      * @param controlFree
      *            (+1|-1)
      */
@@ -523,11 +553,15 @@ public class TheVideoMe extends antiDDoSForHost {
     }
 
     public String getDllink() {
+        return getDllink(correctedBR);
+    }
+
+    public String getDllink(final String source) {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(source, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
-                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                final String cryptedScripts[] = new Regex(source, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                     for (String crypted : cryptedScripts) {
                         dllink = decodeDownloadLink(crypted);
@@ -541,7 +575,7 @@ public class TheVideoMe extends antiDDoSForHost {
         if (dllink == null) {
             final String[] qualities = { "1080p", "720p", "480p", "360p", "240p" };
             for (final String quality : qualities) {
-                dllink = new Regex(correctedBR, "\\'" + quality + "\\', \\'file\\' : \\'(http[^<>\"]*?)\\'").getMatch(0);
+                dllink = new Regex(source, "\\'" + quality + "\\', \\'file\\' : \\'(http[^<>\"]*?)\\'").getMatch(0);
                 if (dllink != null) {
                     break;
                 }
@@ -549,7 +583,7 @@ public class TheVideoMe extends antiDDoSForHost {
         }
         if (dllink == null) {
             /* Sometimes used for streaming */
-            dllink = new Regex(correctedBR, "file:[\t\n\r ]*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
+            dllink = new Regex(source, "file:[\t\n\r ]*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
         }
         return dllink;
     }
@@ -641,7 +675,7 @@ public class TheVideoMe extends antiDDoSForHost {
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
-     * 
+     *
      * @param key
      * @param value
      * @return
@@ -668,7 +702,7 @@ public class TheVideoMe extends antiDDoSForHost {
     /**
      * This fixes filenames from all xfs modules: file hoster, audio/video streaming (including transcoded video), or blocked link checking
      * which is based on fuid.
-     * 
+     *
      * @version 0.2
      * @author raztoki
      */
@@ -857,7 +891,7 @@ public class TheVideoMe extends antiDDoSForHost {
     /**
      * Is intended to handle out of date errors which might occur seldom by re-tring a couple of times before throwing the out of date
      * error.
-     * 
+     *
      * @param dl
      *            : The DownloadLink
      * @param error
