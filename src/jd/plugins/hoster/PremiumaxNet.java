@@ -23,6 +23,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,10 +41,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PremiumaxNet extends antiDDoSForHost {
@@ -99,8 +99,8 @@ public class PremiumaxNet extends antiDDoSForHost {
     private static final String                                       NICE_HOST          = "premiumax.net";
     private static final String                                       NICE_HOSTproperty  = "premiumaxnet";
 
-    private Account                                                   currAcc            = null;
-    private DownloadLink                                              currDownloadLink   = null;
+    private Account      currAcc          = null;
+    private DownloadLink currDownloadLink = null;
 
     public PremiumaxNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -225,7 +225,9 @@ public class PremiumaxNet extends antiDDoSForHost {
                 postPage("/direct_link.html?rand=0." + System.currentTimeMillis(), "captcka=&key=indexKEY&urllist=" + Encoding.urlEncode(link.getDownloadURL()));
                 dllink = br.getRegex("\"(https?://(www\\.)?premiumax\\.net/dl/[a-z0-9]+/?)\"").getMatch(0);
                 if (dllink == null) {
-                    if (br.containsHTML("temporary problem")) {
+                    if (br.getHttpConnection().getResponseCode() == 500) {
+                        handleErrorRetries("500 Internal Server Error", 20, 5 * 60 * 1000l);
+                    } else if (br.containsHTML("temporary problem")) {
                         logger.info("Current hoster is temporarily not available via premiumax.net -> Disabling it");
                         tempUnavailableHoster(60 * 60 * 1000l, "Temporary MultiHoster issue (Disabled Host)");
                     } else if (br.containsHTML("You do not have the rights to download from")) {
@@ -246,6 +248,10 @@ public class PremiumaxNet extends antiDDoSForHost {
                     } else if (br.toString().equalsIgnoreCase("nginx error")) {
                         dumpAccountSessionInfo();
                         throw new PluginException(LinkStatus.ERROR_RETRY);
+                    } else if (br.containsHTML(">\\s*Our [\\w\\-\\.]+ account has reach bandwidth limit\\s*<")) {
+                        // global issue
+                        this.currAcc = null;
+                        tempUnavailableHoster(1 * 60 * 60 * 1000l, "Multihoster has no download traffic for " + link.getHost());
                     } else {
                         // final failover! dllink == null
                         handleErrorRetries("dllinknullerror", 50, 5 * 60 * 1000l);
