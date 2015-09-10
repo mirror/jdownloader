@@ -16,14 +16,22 @@
 
 package jd.plugins;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.config.Property;
 import jd.controlling.AccountController;
+import jd.http.Cookie;
+import jd.http.Cookies;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 
@@ -48,8 +56,51 @@ public class Account extends Property {
     public static final String  PROPERTY_TEMP_DISABLED_TIMEOUT = "PROPERTY_TEMP_DISABLED_TIMEOUT";
     public static final String  PROPERTY_REFRESH_TIMEOUT       = "PROPERTY_REFRESH_TIMEOUT";
 
+    private static final String COOKIE_STORAGE                 = "COOKIE_STORAGE";
+
     public boolean isConcurrentUsePossible() {
         return concurrentUsePossible;
+    }
+
+    public synchronized void saveCookies(final Cookies cookies, final String ID) {
+        final String validation = Hash.getSHA256(getUser() + ":" + getPass());
+        final List<CookieStorable> cookieStorables = new ArrayList<CookieStorable>();
+        for (final Cookie cookie : cookies.getCookies()) {
+            cookieStorables.add(new CookieStorable(cookie));
+        }
+        setProperty(COOKIE_STORAGE, validation);
+        final String storageID = ":" + ID;
+        setProperty(COOKIE_STORAGE + storageID, JSonStorage.toString(cookieStorables));
+    }
+
+    public synchronized void clearCookies(final String ID) {
+        removeProperty(COOKIE_STORAGE);
+        final String storageID = ":" + ID;
+        removeProperty(COOKIE_STORAGE + storageID);
+    }
+
+    public synchronized Cookies loadCookies(final String ID) {
+        final String validation = Hash.getSHA256(getUser() + ":" + getPass());
+        final String storageID = ":" + ID;
+        if (StringUtils.equals(getStringProperty(COOKIE_STORAGE), validation)) {
+            final String cookieStorables = getStringProperty(COOKIE_STORAGE + storageID);
+            if (StringUtils.isNotEmpty(cookieStorables)) {
+                try {
+                    final List<CookieStorable> cookies = JSonStorage.restoreFromString(cookieStorables, new TypeRef<ArrayList<CookieStorable>>() {
+                    }, null);
+                    final Cookies ret = new Cookies();
+                    for (final CookieStorable storable : cookies) {
+                        ret.add(storable._restore());
+                    }
+                    return ret;
+                } catch (Throwable e) {
+                    LogController.CL().log(e);
+                }
+            }
+        }
+        removeProperty(COOKIE_STORAGE);
+        removeProperty(COOKIE_STORAGE + storageID);
+        return null;
     }
 
     /**
@@ -91,7 +142,7 @@ public class Account extends Property {
     }
 
     /**
-     * 
+     *
      * @param string
      * @return
      */
@@ -108,7 +159,7 @@ public class Account extends Property {
     }
 
     /**
-     * 
+     *
      * @param user
      * @param pass
      */
@@ -123,7 +174,7 @@ public class Account extends Property {
 
     /**
      * -1 = unlimited, 0 = use deprecated getMaxSimultanPremiumDownloadNum/getMaxSimultanFreeDownloadNum,>1 = use this
-     * 
+     *
      * @since JD2
      * */
     public void setMaxSimultanDownloads(int max) {
@@ -204,7 +255,7 @@ public class Account extends Property {
     /**
      * The expire Date of a premiumaccount. if the account is not a premiumaccount any more, this timestamp points to the last valid expire
      * date. it can be used to check when an account has expired
-     * 
+     *
      * @param validUntil
      */
     private void setValidPremiumUntil(long validUntil) {
@@ -213,12 +264,12 @@ public class Account extends Property {
 
     /**
      * this method returns for how long this account will be (or has been) a premium account
-     * 
+     *
      * The expire Date of a premiumaccount. if the account is not a premiumaccount any more, this timestamp points to the last valid expire
      * date. it can be used to check when an account has expired
-     * 
+     *
      * @param validUntil
-     * 
+     *
      * @return
      */
     public long getValidPremiumUntil() {
@@ -460,7 +511,7 @@ public class Account extends Property {
 
     /**
      * JD2 Code!
-     * 
+     *
      * @since JD2
      */
     public void setType(AccountType type) {
