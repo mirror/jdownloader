@@ -89,6 +89,8 @@ public class SpiegelDe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws PluginException, IOException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        /* Offline urls should also have nice filenames! */
+        downloadLink.setName(getURLFilename(downloadLink));
         String filename = null;
         if (new Regex(downloadLink.getDownloadURL(), pattern_supported_video).matches()) {
             /* pattern_supported_video links can redirect to pattern_supported_spiegeltvfilme */
@@ -192,6 +194,21 @@ public class SpiegelDe extends PluginForHost {
         filename = encodeUnicode(filename);
         downloadLink.setFinalFileName(filename);
         return AvailableStatus.TRUE;
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getURLFilename(final DownloadLink dl) {
+        final String urlfilename;
+        if (new Regex(dl.getDownloadURL(), pattern_supported_spiegeltvfilme).matches()) {
+            urlfilename = new Regex(dl.getDownloadURL(), "filme/([a-z0-9\\-]+)/$").getMatch(0);
+        } else if (new Regex(dl.getDownloadURL(), pattern_supported_video).matches() || new Regex(dl.getDownloadURL(), pattern_supported_video_mobile).matches()) {
+            final String videoid = new Regex(dl.getDownloadURL(), "video\\-(\\d+)").getMatch(0);
+            urlfilename = videoid;
+        } else {
+            /* For type pattern_supported_image */
+            urlfilename = new Regex(dl.getDownloadURL(), "spiegel\\.de/images/(image[^<>\"/]+)").getMatch(0);
+        }
+        return urlfilename;
     }
 
     @SuppressWarnings("deprecation")

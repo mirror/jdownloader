@@ -102,6 +102,8 @@ public class VKontakteRu extends PluginForDecrypt {
     private boolean                 vkwall_grablink;
     private boolean                 vkwall_grabdocs;
     private boolean                 vkwall_graburlsinsideposts;
+    private String                  vkwall_graburlsinsideposts_regex;
+    private String                  vkwall_graburlsinsideposts_regex_default;
 
     /* Some supported url patterns */
     private static final String     PATTERN_SHORT                           = "https?://(www\\.)?vk\\.cc/[A-Za-z0-9]+";
@@ -130,7 +132,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_WALL_LOOPBACK_LINK              = "https?://(www\\.)?vk\\.com/wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+";
     private static final String     PATTERN_WALL_POST_LINK                  = "https?://(www\\.)?vk\\.com/wall(\\-)?\\d+_\\d+";
     private static final String     PATTERN_PUBLIC_LINK                     = "https?://(www\\.)?vk\\.com/public\\d+";
-    private static final String     PATTERN_CLUB_LINK                       = "https?://(www\\.)?vk\\.com/club\\d+";
+    private static final String     PATTERN_CLUB_LINK                       = "https?://(www\\.)?vk\\.com/club\\d+.*?";
     private static final String     PATTERN_EVENT_LINK                      = "https?://(www\\.)?vk\\.com/event\\d+";
     private static final String     PATTERN_ID_LINK                         = "https?://(www\\.)?vk\\.com/id\\d+";
     private static final String     PATTERN_DOCS                            = "https?://(www\\.)?vk\\.com/docs\\?oid=\\-\\d+";
@@ -220,6 +222,8 @@ public class VKontakteRu extends PluginForDecrypt {
         vkwall_grablink = cfg.getBooleanProperty(VKWALL_GRAB_LINK, false);
         vkwall_grabdocs = cfg.getBooleanProperty(VKWALL_GRAB_DOCS, false);
         vkwall_graburlsinsideposts = cfg.getBooleanProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_URLS_INSIDE_POSTS, jd.plugins.hoster.VKontakteRuHoster.default_WALL_ALLOW_lookforurlsinsidewallposts);
+        vkwall_graburlsinsideposts_regex_default = jd.plugins.hoster.VKontakteRuHoster.default_VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX;
+        vkwall_graburlsinsideposts_regex = cfg.getStringProperty(jd.plugins.hoster.VKontakteRuHoster.VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX, vkwall_graburlsinsideposts_regex_default);
 
         prepBrowser(br);
         prepCryptedLink();
@@ -273,7 +277,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 String newLink = CRYPTEDLINK_FUNCTIONAL;
                 if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_PUBLIC_LINK) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_CLUB_LINK) || CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_EVENT_LINK)) {
                     /* group and club links --> wall links */
-                    newLink = MAINPAGE + "/wall-" + new Regex(CRYPTEDLINK_FUNCTIONAL, "((\\-)?\\d+)$").getMatch(0);
+                    newLink = MAINPAGE + "/wall-" + new Regex(CRYPTEDLINK_FUNCTIONAL, "vk\\.com/[a-z0-9]+((\\-)?\\d+)").getMatch(0);
                 } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_ID_LINK)) {
                     /* Change id links -> albums links */
                     newLink = MAINPAGE + "/albums" + new Regex(CRYPTEDLINK_FUNCTIONAL, "(\\d+)$").getMatch(0);
@@ -1268,7 +1272,24 @@ public class VKontakteRu extends PluginForDecrypt {
             final String[] post_text_urls = HTMLParser.getHttpLinks(post_text, null);
             if (post_text_urls != null) {
                 for (final String posted_url : post_text_urls) {
-                    this.decryptedLinks.add(this.createDownloadlink(posted_url));
+                    boolean add_url = true;
+                    try {
+                        add_url = posted_url.matches(vkwall_graburlsinsideposts_regex);
+                        logger.info("User-Defined wall-post-url-RegEx seems to be correct");
+                    } catch (final Throwable e) {
+                        logger.warning("User-Defined wall-post-url-RegEx seems to be wrong");
+                        /* Probably user entered invalid RegEx --> Fallback to default RegEx */
+                        add_url = posted_url.matches(vkwall_graburlsinsideposts_regex_default);
+                    }
+                    if (add_url) {
+                        if (!posted_url.contains("vk.com/")) {
+                            logger.info("WTF url: " + posted_url);
+                        }
+                        logger.info("ADDING url: " + posted_url);
+                        this.decryptedLinks.add(this.createDownloadlink(posted_url));
+                    } else {
+                        logger.info("NOT ADDING url: " + posted_url);
+                    }
                 }
             }
         }

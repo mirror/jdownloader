@@ -80,6 +80,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String VKWALL_GRAB_LINK                      = "VKWALL_GRAB_LINK";
     public static final String  VKWALL_GRAB_DOCS                      = "VKWALL_GRAB_DOCS";
     public static final String  VKWALL_GRAB_URLS_INSIDE_POSTS         = "VKWALL_GRAB_URLS_INSIDE_POSTS";
+    public static final String  VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX   = "VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX";
     private static final String VKVIDEO_USEIDASPACKAGENAME            = "VKVIDEO_USEIDASPACKAGENAME";
     private static final String VKAUDIOS_USEIDASPACKAGENAME           = "VKAUDIOS_USEIDASPACKAGENAME";
     private static final String VKPHOTO_CORRECT_FINAL_LINKS           = "VKPHOTO_CORRECT_FINAL_LINKS";
@@ -272,7 +273,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         * 
+                         *
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
                         this.postPageSafe(aa, link, "https://vk.com/audio", getAudioAlbumPostString(this.mainlink, this.ownerID));
@@ -972,6 +973,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final boolean default_WALL_ALLOW_links                      = false;
     private static final boolean default_WALL_ALLOW_documents                  = true;
     public static final boolean  default_WALL_ALLOW_lookforurlsinsidewallposts = false;
+    public static final String   default_VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX   = ".+";
     private static final boolean default_VKVIDEO_USEIDASPACKAGENAME            = false;
     private static final boolean default_VKAUDIO_USEIDASPACKAGENAME            = false;
     private static final boolean default_VKPHOTO_CORRECT_FINAL_LINKS           = false;
@@ -1004,7 +1006,10 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_VIDEO, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckvideo", "Grab video links ('vk.com/video')?")).setDefaultValue(default_WALL_ALLOW_video));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_LINK, JDL.L("plugins.hoster.vkontakteruhoster.wallchecklink", "Grab links?\r\nA link is e.g. a hyperlink inside a users' wall post.")).setDefaultValue(default_WALL_ALLOW_links));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_DOCS, JDL.L("plugins.hoster.vkontakteruhoster.wallcheckdocs", "Grab documents?")).setDefaultValue(default_WALL_ALLOW_documents));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_URLS_INSIDE_POSTS, JDL.L("plugins.hoster.vkontakteruhoster.wallcheck_look_for_urls_inside_posts", "Grab URLs inside wall posts?")).setDefaultValue(default_WALL_ALLOW_lookforurlsinsidewallposts));
+        final ConfigEntry cfg_graburlsinsideposts = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKWALL_GRAB_URLS_INSIDE_POSTS, JDL.L("plugins.hoster.vkontakteruhoster.wallcheck_look_for_urls_inside_posts", "Grab URLs inside wall posts?")).setDefaultValue(default_WALL_ALLOW_lookforurlsinsidewallposts);
+        this.getConfig().addEntry(cfg_graburlsinsideposts);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX, JDL.L("plugins.hoster.vkontakteruhoster.regExForUrlsInsideWallPosts", "RegEx for URLs from inside wall posts (black-/whitelist): ")).setDefaultValue(default_VKWALL_GRAB_URLS_INSIDE_POSTS_REGEX).setEnabledCondidtion(cfg_graburlsinsideposts, true));
+
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Settings for 'vk.com/video' links:"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKVIDEO_USEIDASPACKAGENAME, JDL.L("plugins.hoster.vkontakteruhoster.videoUseIdAsPackagename", "Use video-ID as packagename ('videoXXXX_XXXX' or 'video-XXXX_XXXX')?")).setDefaultValue(default_VKVIDEO_USEIDASPACKAGENAME));

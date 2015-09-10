@@ -504,10 +504,10 @@ public class OpenLoadIo extends antiDDoSForHost {
                 String usertext_finddata;
                 String usertext_uid;
                 if ("de".equalsIgnoreCase(lang)) {
-                    usertext_finddata = "Klicke hier um dein API loginname- und Passwort zu sehen:\r\n";
+                    usertext_finddata = "<html>Klicke hier und dann auf \"User Settings\" um dein API loginname- und Passwort zu sehen:<br/></html>";
                     usertext_uid = "FTP Username/API Login";
                 } else {
-                    usertext_finddata = "Click here to find your FTP Username/API Login AND FTP Password/API Key:\r\n";
+                    usertext_finddata = "<html>Click here and then on \"User Settings\"  to find your FTP Username/API Login AND FTP Password/API Key:<br/></html>";
                     usertext_uid = "FTP Username/API Login";
                 }
                 add(new JLabel(usertext_finddata));
