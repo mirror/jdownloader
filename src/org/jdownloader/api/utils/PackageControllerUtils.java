@@ -27,6 +27,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.FileCreationManager.DeleteOption;
 import org.jdownloader.gui.packagehistorycontroller.DownloadPathHistoryManager;
+import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.SelectionInfo.PackageView;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
@@ -328,28 +329,27 @@ public class PackageControllerUtils<PackageType extends AbstractPackageNode<Chil
         return nameFactory;
     }
 
-    public boolean setDownloadDirectory(final String directory, long[] packageIds) {
+    public void setDownloadDirectory(final String directory, long[] packageIds) {
         final SelectionInfo<PackageType, ChildType> selection = getSelectionInfo(new long[] {}, packageIds);
         for (PackageView<PackageType, ChildType> pkg : selection.getPackageViews()) {
             if (pkg.isPackageSelected()) {
                 final PackageType pt = pkg.getPackage();
+                final String finalDirectory = directory.replaceAll(DownloadFolderChooserDialog.PACKAGETAG, pt.getName());
                 if (pt instanceof FilePackage) {
-                    DownloadWatchDog.getInstance().setDownloadDirectory((FilePackage) pt, directory);
+                    DownloadWatchDog.getInstance().setDownloadDirectory((FilePackage) pt, finalDirectory);
                     DownloadPathHistoryManager.getInstance().add(directory);
                 } else if (pt instanceof CrawledPackage) {
                     pt.getControlledBy().getQueue().add(new QueueAction<Void, RuntimeException>() {
                         @Override
                         protected Void run() throws RuntimeException {
-                            ((CrawledPackage) pt).setDownloadFolder(directory);
+                            ((CrawledPackage) pt).setDownloadFolder(finalDirectory);
                             DownloadPathHistoryManager.getInstance().add(directory);
                             return null;
                         }
                     });
                 }
             }
-            return true;
         }
-        return false;
     }
 
     public boolean setDownloadPassword(final long[] linkIds, final long[] pkgIds, final String pass) throws BadParameterException {
