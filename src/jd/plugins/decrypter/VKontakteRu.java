@@ -666,7 +666,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String oid = ids[0];
         final String id = ids[1];
         apiGetPageSafe(getProtocoll() + "vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
-        if (br.containsHTML(jd.plugins.hoster.VKontakteRuHoster.HTML_VIDEO_NO_ACCESS) || br.containsHTML(jd.plugins.hoster.VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS)) {
+        if (br.containsHTML(jd.plugins.hoster.VKontakteRuHoster.HTML_VIDEO_NO_ACCESS) || br.containsHTML(jd.plugins.hoster.VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS) || this.br.toString().length() < 150) {
             throw new DecrypterException(EXCEPTION_LINKOFFLINE);
         }
         try {

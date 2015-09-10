@@ -206,9 +206,14 @@ public class VesselCom extends PluginForHost {
                 br.setAllowedResponseCodes(400);
                 br.getPage("https://www.vessel.com/");
                 prepBRAPI(br);
-                // br.setCookie(MAINPAGE, "device_id", "6ca51ec2fc776db9b250f967327ab0c6");
-                // br.setCookie(MAINPAGE, "session_id", "9699a5ff7fba9af966dd6400eb546ca7");
+                // br.setCookie(MAINPAGE, "device_id", "f195cbafff11d9b83ce4cb07590e0735");
+                // br.setCookie(MAINPAGE, "session_id", "a5c8be2f221bcb72590ef8c03252c50c");
+                // br.setCookie(MAINPAGE, "_ga", "GA1.2.160339541.1436797816");
+                // br.setCookie(MAINPAGE, "signup_flow", "0");
+                // br.setCookie(MAINPAGE, "_gat", "1");
+                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 // br.getPage("https://www.vessel.com/api/account/plan_price?track_id=339");
+                // br.getPage("https://www.vessel.com/api/content/items?type=tag&tag_type=category&sort=title");
                 br.postPageRaw("https://www.vessel.com/api/account/login", "{\"user_key\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\",\"type\":\"password\",\"client_id\":\"web\"}");
                 if (br.getHttpConnection().getResponseCode() == 403) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {

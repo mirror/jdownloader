@@ -493,6 +493,9 @@ public class BitShareCom extends PluginForHost {
         link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
         prepBR();
         String filename = null, filesize = null;
+        if (static_under_maintenance) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (useApi) {
             // code to test for http://svn.jdownloader.org/issues/59965. download always fails in chrome and jd after recaptcha. will
             // redirect to homepage.
