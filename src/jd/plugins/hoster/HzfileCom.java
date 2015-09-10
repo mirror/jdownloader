@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2013  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -58,8 +58,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hzfile.com" }, urls = { "https?://(www\\.)?hzfile\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
+public class HzfileCom extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
     private static final String            HTML_PASSWORDPROTECTED        = "<br><b>Passwor(d|t):</b> <input";
@@ -67,11 +67,11 @@ public class XFileSharingProBasic extends PluginForHost {
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                   = "http://ForDevsToPlayWith.com";
+    private static final String            COOKIE_HOST                   = "http://hzfile.com";
     private static final String            NICE_HOST                     = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String            NICE_HOSTproperty             = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                       = "(ForDevsToPlayWith\\.com)";
+    private static final String            DOMAINS                       = "(hzfile\\.com)";
     /*
      * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
      * check for imagehost final downloadlinks.
@@ -96,12 +96,12 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final int               WAITSECONDSMAX                = 100;
     private static final int               WAITSECONDSFORCED             = 5;
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                   = true;
-    private static final int               FREE_MAXCHUNKS                = 0;
-    private static final int               FREE_MAXDOWNLOADS             = 20;
-    private static final boolean           ACCOUNT_FREE_RESUME           = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS        = 0;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS     = 20;
+    private static final boolean           FREE_RESUME                   = false;
+    private static final int               FREE_MAXCHUNKS                = 1;
+    private static final int               FREE_MAXDOWNLOADS             = 1;
+    private static final boolean           ACCOUNT_FREE_RESUME           = false;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS        = 1;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS     = 1;
     private static final boolean           ACCOUNT_PREMIUM_RESUME        = true;
     private static final int               ACCOUNT_PREMIUM_MAXCHUNKS     = 0;
     private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS  = 20;
@@ -131,7 +131,7 @@ public class XFileSharingProBasic extends PluginForHost {
     // XfileSharingProBasic Version 2.7.0.1
     // Tags: Script, template
     // mods:
-    // limit-info:
+    // limit-info: free (+ free account) download not possible, set default limits
     // protocol: no https
     // captchatype: null 4dignum solvemedia recaptcha
     // other:
@@ -167,9 +167,9 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public HzfileCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     @SuppressWarnings({ "deprecation", "unused" })
@@ -437,6 +437,8 @@ public class XFileSharingProBasic extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
+                download1.remove("method_free");
+                download1.put("method_free", "Free Download >>");
                 /* end of backward compatibility */
                 submitForm(download1);
                 checkErrors(downloadLink, false);
