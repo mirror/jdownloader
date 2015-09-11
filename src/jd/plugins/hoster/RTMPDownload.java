@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.URL;
 
 import jd.network.rtmp.RtmpDump;
-import jd.network.rtmp.url.CustomUrlStreamHandlerFactory;
 import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
@@ -21,9 +20,6 @@ import jd.plugins.download.RAFDownload;
  *
  */
 public class RTMPDownload extends RAFDownload {
-    static {
-        URL.setURLStreamHandlerFactory(new CustomUrlStreamHandlerFactory());
-    }
 
     protected final RtmpUrlConnection rtmpConnection;
 
@@ -38,7 +34,7 @@ public class RTMPDownload extends RAFDownload {
         this.plg = plugin;
         this.dLink = downloadLink;
         url = new URL(rtmpURL);
-        rtmpConnection = (RtmpUrlConnection) url.openConnection();
+        rtmpConnection = new RtmpUrlConnection(url);
     }
 
     public RtmpUrlConnection getRtmpConnection() {
