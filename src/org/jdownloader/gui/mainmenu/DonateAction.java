@@ -1,12 +1,14 @@
 package org.jdownloader.gui.mainmenu;
 
 import java.awt.event.ActionEvent;
+import java.io.IOException;
 
 import jd.http.Browser;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
 import org.appwork.utils.encoding.URLEncode;
@@ -23,9 +25,9 @@ import org.jdownloader.statistics.StatsManager;
 public class DonateAction extends CustomizableAppAction {
     public static String SERVER = "https://payments.appwork.org/";
     static {
-        // if (!Application.isJared(null)) {
-        // SERVER = "https://payments.appwork.org/test/";
-        // }
+        if (!Application.isJared(null)) {
+            SERVER = "https://payments.appwork.org/test/";
+        }
     }
 
     public DonateAction() {
@@ -60,7 +62,7 @@ public class DonateAction extends CustomizableAppAction {
                 DonationDetails details = null;
                 try {
                     Browser br = new Browser();
-                    String json = br.getPage(SERVER + "payment/getDonationScreenDetails?" + TranslationFactory.getDesiredLanguage() + "&button");
+                    String json = getPage(br, "getDonationScreenDetails", TranslationFactory.getDesiredLanguage(), "button");
                     details = JSonStorage.restoreFromString(json, DonationDetails.TYPEREF);
                 } catch (Throwable e) {
                     final Throwable oe = e;
@@ -116,5 +118,19 @@ public class DonateAction extends CustomizableAppAction {
 
         }
 
+    }
+
+    public static String getPage(Browser br, String method, Object... params) throws IOException {
+        StringBuilder url = new StringBuilder();
+        url.append(SERVER).append("payment/").append(method);
+        if (params != null && params.length > 0) {
+
+            for (int i = 0; i < params.length; i++) {
+                url.append(i > 0 ? "&" : "?");
+                url.append(JSonStorage.serializeToJson(params[i]));
+            }
+        }
+
+        return br.getPage(url.toString());
     }
 }

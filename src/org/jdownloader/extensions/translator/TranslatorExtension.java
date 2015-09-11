@@ -81,9 +81,9 @@ import org.tmatesoft.svn.core.wc.SVNRevision;
 
 /**
  * Extensionclass. NOTE: All extensions have to follow the namescheme to end with "Extension" and have to extend AbstractExtension
- * 
+ *
  * @author thomas
- * 
+ *
  */
 public class TranslatorExtension extends AbstractExtension<TranslatorConfig, TranslatorTranslation> implements MenuExtenderHandler {
     /**
@@ -269,7 +269,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     /**
-     * 
+     *
      * @return {@link #translations}
      */
     public java.util.List<TLocale> getTranslations() {
@@ -327,7 +327,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     /**
      * Loads the given language
-     * 
+     *
      * @param locale
      * @param doRevisionCheck
      *            TODO
@@ -373,6 +373,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                             }
 
                         } catch (SVNException e2) {
+                            logger.log(e2);
                             Files.deleteRecursiv(Application.getResource("translations/custom"));
                             long rev = s.getRevisionNoException(Application.getResource("translations/custom"));
                             long newRev = s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
@@ -451,7 +452,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     /**
-     * 
+     *
      * @return {@link #translationEntries}
      */
     public java.util.List<TranslateEntry> getTranslationEntries() {
@@ -459,7 +460,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     /**
-     * 
+     *
      * @return {@link #loaded}
      */
     public TLocale getLoadedLocale() {

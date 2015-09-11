@@ -144,6 +144,7 @@ public class DonationDialog extends AbstractDialog<Object> {
                     try {
                         // createDonation&String1&String2&double1&boolean1&HashMap1&String[]1&String3
                         String json = br.getPage(DonateAction.SERVER + "payment/createDonation?" + toQuery(provider, cCode, amt, recurringValue, custom, list, noteText));
+
                         transactionID = JSonStorage.restoreFromString(json, TypeRef.STRING);
 
                         StatsManager.I().track("/donation/button/redirect");
