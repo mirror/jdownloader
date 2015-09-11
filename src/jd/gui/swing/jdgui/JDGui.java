@@ -924,41 +924,33 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         mainFrame.addWindowListener(new WindowListener() {
 
             public void windowActivated(WindowEvent e) {
-                System.out.println("WIndow windowActivated " + e);
-                new Exception().printStackTrace();
+
             }
 
             public void windowClosed(WindowEvent e) {
-                System.out.println("WIndow windowClosed " + e);
-                new Exception().printStackTrace();
+
             }
 
             public void windowClosing(WindowEvent e) {
-                System.out.println("WIndow windowClosing " + e);
-                new Exception().printStackTrace();
+
             }
 
             public void windowDeactivated(WindowEvent e) {
-                System.out.println("WIndow windowDeactivated " + e);
-                new Exception().printStackTrace();
+
             }
 
             public void windowDeiconified(WindowEvent e) {
-                System.out.println("WIndow windowDeiconified " + e);
-                new Exception().printStackTrace();
+
                 UpdateController.getInstance().setGuiToFront(mainFrame);
 
             }
 
             public void windowIconified(WindowEvent e) {
 
-                System.out.println("WIndow windowIconified " + e);
-                new Exception().printStackTrace();
             }
 
             public void windowOpened(WindowEvent e) {
-                System.out.println("WIndow windowOpened " + e);
-                new Exception().printStackTrace();
+
                 UpdateController.getInstance().setGuiToFront(mainFrame);
 
             }
