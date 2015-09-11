@@ -644,9 +644,11 @@ public class JDGui implements UpdaterListener, OwnerFinder {
 
             @Override
             public void windowClosing(WindowEvent e) {
+                System.out.println("WIndow Closing " + e);
                 if (e.getComponent() == getMainFrame()) {
 
                     if (closingHandler != null) {
+                        System.out.println("Close Handler");
                         closingHandler.windowClosing(e);
                         return;
                     }
@@ -938,7 +940,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             }
 
             public void windowDeiconified(WindowEvent e) {
-
+                System.out.println("WIndow windowDeiconified " + e);
                 UpdateController.getInstance().setGuiToFront(mainFrame);
 
             }
@@ -948,7 +950,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             }
 
             public void windowOpened(WindowEvent e) {
-
+                System.out.println("WIndow windowOpened " + e);
                 UpdateController.getInstance().setGuiToFront(mainFrame);
 
             }

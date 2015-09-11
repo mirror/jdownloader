@@ -943,10 +943,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Source URL %s1" })
     String FilterRule_toString_source(String string);
 
-    @Default(lngs = { "en" }, values = { ",\r\n%s1" })
-    String FilterRule_toString_comma2(String string);
+    @Default(lngs = { "en" }, values = { ", \r\n%s1" })
+    String FilterRule_toString_comma3(String string);
 
-    @Default(lngs = { "en" }, values = { " and \r\n%s1" })
+    @Default(lngs = { "en" }, values = { "and \r\n%s1" })
     String FilterRule_toString_and2(String string);
 
     @Default(lngs = { "en" }, values = { "Filter Links if, " })
@@ -6057,5 +6057,8 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Video Description" })
     String YoutubeVariantInterface_getLabel_description();
+
+    @Default(lngs = { "en" }, values = { "Please add as much information as possible. If you want us to answer, please add your email address as well." })
+    String DonateFeedback_reportFailed_title_message_email();
 
 }
