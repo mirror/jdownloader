@@ -81,6 +81,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.IOErrorHandler;
+import org.appwork.utils.JarHandlerWorkaround;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
@@ -130,9 +131,7 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class SecondLevelLaunch {
     static {
-
         statics();
-
     }
 
     private static LogSource                 LOG;
@@ -261,6 +260,7 @@ public class SecondLevelLaunch {
     }
 
     public static void statics() {
+        JarHandlerWorkaround.init();
         /**
          * The sorting algorithm used by java.util.Arrays.sort and (indirectly) by java.util.Collections.sort has been replaced. The new
          * sort implementation may throw an IllegalArgumentException if it detects a Comparable that violates the Comparable contract. The

@@ -89,7 +89,6 @@ public class Main {
         org.appwork.utils.Application.getRoot(jd.SecondLevelLaunch.class);
         try {
             copySVNtoHome();
-
         } catch (Throwable e) {
             e.printStackTrace();
         }
