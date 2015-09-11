@@ -28,6 +28,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,17 +51,11 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "https?://\\w+\\.(?:real\\-debrid\\.com|rdb\\.so|rdeb\\.io)/dl?/\\w+/.+" }, flags = { 2 })
-public class RealDebridCom extends PluginForHost {
+public class RealDebridCom extends antiDDoSForHost {
 
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2 (but disabled with interfaceVersion 3)
@@ -75,8 +74,8 @@ public class RealDebridCom extends PluginForHost {
     private static final long                              UNKNOWN_ERROR_RETRY_3 = 20;
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap    = new HashMap<Account, HashMap<String, Long>>();
 
-    private final String                                   hash1                 = "23764902a26fbd6345d3cc3533d1d5eb";
-    private final String                                   hash2                 = "058c09bc934061efe763c4712649091f";
+    private final String hash1 = "23764902a26fbd6345d3cc3533d1d5eb";
+    private final String hash2 = "058c09bc934061efe763c4712649091f";
 
     public RealDebridCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -466,20 +465,19 @@ public class RealDebridCom extends PluginForHost {
             } else if (br.containsHTML("\"error\":2,")) {
                 // from rd
                 // 2: Free account, come back at happy hours
-                logger.info("It's not happy hour, free account, you need premium!.");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "It's not happy hour, free account, you need premium!.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else if (br.containsHTML("\"error\":3,")) {
                 // {"error":3,"message":"Ein dedicated Server wurde erkannt, es ist dir nicht erlaubt Links zu generieren"}
                 // dedicated server is detected, it does not allow you to generate links
-                logger.info("Dedicated server detected, account disabled");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Dedicated server detected, account disabled", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else if (br.containsHTML("\"error\":4,")) {
                 // {"error":4,"message":"This hoster is not included in our free offer"}
                 // {"error":4,"message":"Unsupported link format or unsupported hoster"}
                 logger.info("Unsupported link format or unsupported hoster");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             } else if (br.containsHTML("\"error\":5,")) {
-                // {"error":5,"message":"Non sei utente premium, puoi utilizzare il servizio premium gratuito solo durante la fascia oraria \"Happy Hours\". Aggiorna il tuo Account acquistando il servizio premium."}
+                // {"error":5,"message":"Non sei utente premium, puoi utilizzare il servizio premium gratuito solo durante la fascia oraria
+                // \"Happy Hours\". Aggiorna il tuo Account acquistando il servizio premium."}
                 /* no happy hour */
                 logger.info("It's not happy hour, free account, you need premium!.");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
@@ -488,9 +486,7 @@ public class RealDebridCom extends PluginForHost {
                 // {"error":6,"message":"Daily limit exceeded."}
                 errNoHosterTrafficLeft(account, link);
             } else if (br.containsHTML("error\":7,")) {
-                // {"error":7,"message":"F\u00fcr den Hoster ist kein Server vorhanden."}
-                // Für den Hoster ist kein Server vorhanden.
-                tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+                // {"error":7,"message":"F\u00fcr den Hoster ist kein Server vorhanden."} // Für den Hoster ist kein Server vorhanden. tempUnavailableHoster(account, link, 60 * 60 * 1000l);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             } else if (br.containsHTML("error\":10,")) {
                 logger.info("File's hoster is in maintenance. Try again later");
@@ -801,68 +797,6 @@ public class RealDebridCom extends PluginForHost {
             return false;
         }
         return false;
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
 }
