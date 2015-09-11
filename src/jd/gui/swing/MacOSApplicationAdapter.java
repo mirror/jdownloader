@@ -337,6 +337,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
         if (System.getProperty("debug", null) != null) {
             //
+            mainFrame.setVisible(true);
             mainFrame.setState(Frame.NORMAL);
             return;
         }
