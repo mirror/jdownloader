@@ -336,7 +336,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         final JFrame mainFrame = swingGui.getMainFrame();
 
         if (System.getProperty("debug", null) != null) {
-
+            //
             mainFrame.setState(Frame.NORMAL);
             return;
         }
