@@ -16,7 +16,6 @@
 
 package jd.gui.swing;
 
-import java.awt.Frame;
 import java.awt.Image;
 import java.io.File;
 import java.util.HashMap;
@@ -335,12 +334,6 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         }
         final JFrame mainFrame = swingGui.getMainFrame();
 
-        if (System.getProperty("debug", null) != null) {
-            //
-            mainFrame.setVisible(true);
-            mainFrame.setState(Frame.NORMAL);
-            return;
-        }
         if (!mainFrame.isVisible()) {
 
             WindowManager.getInstance().setVisible(mainFrame, true, FrameState.OS_DEFAULT);
