@@ -924,19 +924,19 @@ public class JDGui implements UpdaterListener, OwnerFinder {
         mainFrame.addWindowListener(new WindowListener() {
 
             public void windowActivated(WindowEvent e) {
-
+                System.out.println("WIndow windowActivated " + e);
             }
 
             public void windowClosed(WindowEvent e) {
-
+                System.out.println("WIndow windowClosed " + e);
             }
 
             public void windowClosing(WindowEvent e) {
-
+                System.out.println("WIndow windowClosing " + e);
             }
 
             public void windowDeactivated(WindowEvent e) {
-
+                System.out.println("WIndow windowDeactivated " + e);
             }
 
             public void windowDeiconified(WindowEvent e) {
@@ -946,7 +946,7 @@ public class JDGui implements UpdaterListener, OwnerFinder {
             }
 
             public void windowIconified(WindowEvent e) {
-
+                System.out.println("WIndow windowIconified " + e);
             }
 
             public void windowOpened(WindowEvent e) {
