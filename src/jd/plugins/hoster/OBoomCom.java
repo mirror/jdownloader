@@ -212,7 +212,7 @@ public class OBoomCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from String source.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String source, final String key) {
@@ -222,7 +222,7 @@ public class OBoomCom extends PluginForHost {
     /**
      * Wrapper<br/>
      * Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
+     *
      * @author raztoki
      * */
     private String getJson(final String key) {
@@ -488,6 +488,9 @@ public class OBoomCom extends PluginForHost {
         if (br.containsHTML("403,\"(abused|blocked|deleted)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (br.containsHTML("404,\"ticket")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download ticket invalid", 1 * 60 * 1000l);
+        }
         if (br.containsHTML("410,\"(abused|blocked|deleted)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -499,9 +502,6 @@ public class OBoomCom extends PluginForHost {
         }
         if (br.containsHTML("503,\"download")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download currently unavailable", 15 * 60 * 1000l);
-        }
-        if (br.containsHTML("404,\"ticket")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download ticket invalid", 1 * 60 * 1000l);
         }
         if (br.containsHTML("509,\"bandwidth limit exceeded")) {
             if (account != null) {
@@ -532,6 +532,8 @@ public class OBoomCom extends PluginForHost {
                 }
             }
             throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else if (br.containsHTML("400,\"auth") || br.containsHTML("403,\"token") || br.containsHTML("404,\"token") || br.containsHTML("403,\"resume") || br.containsHTML("421,\"connections")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error authentification failed (?)", 1 * 60 * 1000l);
         }
     }
 
