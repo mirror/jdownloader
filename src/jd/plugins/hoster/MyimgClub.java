@@ -80,7 +80,7 @@ public class MyimgClub extends PluginForHost {
     private static final boolean           SUPPORTS_AVAILABLECHECK_ALT   = true;
     private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE = false;
     private static final boolean           ENABLE_RANDOM_UA              = false;
-    private static final boolean           ENABLE_HTML_FILESIZE_CHECK    = true;
+    private static final boolean           ENABLE_HTML_FILESIZE_CHECK    = false;
     /* Waittime stuff */
     private static final boolean           WAITFORCED                    = false;
     private static final int               WAITSECONDSMIN                = 3;

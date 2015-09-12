@@ -46,9 +46,8 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "exashare.com" }, urls = { "https?://(www\\.)?exashare\\.com/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "exashare.com" }, urls = { "https?://(?:www\\.)?(?:exashare\\.com|dowed\\.info)/((vid)?embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class ExaShareCom extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -59,14 +58,15 @@ public class ExaShareCom extends PluginForHost {
     private static final String  NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
     private static final String  NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     // domain names used within download links.
-    private static final String  DOMAINS                      = "(exashare\\.com)";
+    private static final String  DOMAINS                      = "(exashare\\.com|dowed\\.info)";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
-    private static final boolean VIDEOHOSTER_2                = true;
+    private static final boolean VIDEOHOSTER_2                = false;
+    private static final boolean VIDEOHOSTER_3                = true;
     private static final boolean SUPPORTSHTTPS                = false;
     // Connection stuff
     private static final boolean FREE_RESUME                  = true;
@@ -276,6 +276,28 @@ public class ExaShareCom extends PluginForHost {
                 getPage(downloadLink.getDownloadURL());
             }
         }
+        if (dllink == null && VIDEOHOSTER_3) {
+            /* Modified VIDEOHOSTER_2 code */
+            try {
+                logger.info("Trying to get link via embed");
+                final String embed_access = "http://dowed.info/embed-" + fuid + "-962x540.html";
+                /* Either access 'embed_access' url two times or simply set the correct Referer. */
+                this.br.getHeaders().put("Referer", embed_access);
+                getPage(embed_access);
+                dllink = getDllink();
+                if (dllink == null) {
+                    logger.info("Failed to get link via embed because: " + br.toString());
+                } else {
+                    logger.info("Successfully found link via embed");
+                }
+            } catch (final Throwable e) {
+                logger.info("Failed to get link via embed");
+            }
+            if (dllink == null) {
+                /* If failed, go back to the beginning */
+                getPage(downloadLink.getDownloadURL());
+            }
+        }
         // Fourth, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false);
@@ -396,7 +418,7 @@ public class ExaShareCom extends PluginForHost {
                     dlForm.put("adcopy_response", "manual_challenge");
                 } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
                     logger.info("Detected captcha method \"keycaptca\"");
-                    String result = handleCaptchaChallenge(getDownloadLink(),new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
+                    String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
                     if (result == null) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
@@ -507,7 +529,7 @@ public class ExaShareCom extends PluginForHost {
         // remove custom rules first!!! As html can change because of generic cleanup rules.
 
         // generic cleanup
-        regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
+        // regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
 
@@ -524,23 +546,40 @@ public class ExaShareCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "file: \"(http://[^<>\"]*?)\"").getMatch(0);
+            /* Video - get highest quality */
+            final String[] qualities = { "720p HD", "360p SD" };
+            for (final String quality : qualities) {
+                dllink = new Regex(correctedBR, "file: \"(https?://[^<>\"]*?)\",[\t\n\r ]+label: \"" + quality + "\"").getMatch(0);
+                if (dllink != null) {
+                    break;
+                }
             }
+        }
 
-            if (dllink == null) {
-                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                if (cryptedScripts != null && cryptedScripts.length != 0) {
-                    for (String crypted : cryptedScripts) {
-                        dllink = decodeDownloadLink(crypted);
-                        if (dllink != null) {
-                            break;
-                        }
+        if (dllink == null) {
+            /* Video - get any quality */
+            dllink = new Regex(correctedBR, "file: \"(https?://[^<>\"]*?)\"").getMatch(0);
+        }
+
+        if (dllink == null) {
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + DOMAINS + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+        }
+        if (dllink == null) {
+            dllink = new Regex(correctedBR, "file: \"(http://[^<>\"]*?)\"").getMatch(0);
+        }
+
+        if (dllink == null) {
+            final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+            if (cryptedScripts != null && cryptedScripts.length != 0) {
+                for (String crypted : cryptedScripts) {
+                    dllink = decodeDownloadLink(crypted);
+                    if (dllink != null) {
+                        break;
                     }
                 }
             }
         }
+
         return dllink;
     }
 
@@ -854,9 +893,9 @@ public class ExaShareCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }

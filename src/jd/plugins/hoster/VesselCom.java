@@ -25,8 +25,6 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,34 +49,37 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vessel.com" }, urls = { "http://vessel\\.comdecrypted\\d+" }, flags = { 2 })
 public class VesselCom extends antiDDoSForHost {
 
     /** Settings stuff */
-    private static final String FAST_LINKCHECK = "FAST_LINKCHECK";
+    private static final String                   FAST_LINKCHECK               = "FAST_LINKCHECK";
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 0;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
+    private static final boolean                  FREE_RESUME                  = true;
+    private static final int                      FREE_MAXCHUNKS               = 0;
+    private static final int                      FREE_MAXDOWNLOADS            = 20;
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
     // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final int                      ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     /* don't touch the following! */
-    private static AtomicInteger maxPrem = new AtomicInteger(1);
+    private static AtomicInteger                  maxPrem                      = new AtomicInteger(1);
 
     /*
      * Available via HLS only: 144-64k,720-1500k, 720-3000k --> Basically lower qualities and some in between the http qualities so we're
      * not really missing anything by not downloading them.
      */
-    public static LinkedHashMap<String, String[]> formats = new LinkedHashMap<String, String[]>() {
+    public static LinkedHashMap<String, String[]> formats                      = new LinkedHashMap<String, String[]>() {
         {
             /*
-             * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate
+             * Format-name:videoCodec, videoBitrate,
+             * videoResolution, audioCodec, audioBitrate
              */
             put("mp4-216-250K", new String[] { "AVC", "250", "384x216", "AAC LC-SBR", "32" });
             put("mp4-360-500K", new String[] { "AVC", "500", "640x360", "AAC LC", "128" });
@@ -89,7 +90,7 @@ public class VesselCom extends antiDDoSForHost {
         }
     };
 
-    private String DLLINK = null;
+    private String                                DLLINK                       = null;
 
     @SuppressWarnings("deprecation")
     public VesselCom(final PluginWrapper wrapper) {
@@ -120,13 +121,7 @@ public class VesselCom extends antiDDoSForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                if (isJDStable()) {
-                    /* @since JD2 */
-                    con = br.openHeadConnection(DLLINK);
-                } else {
-                    /* Not supported in old 0.9.581 Stable */
-                    con = br.openGetConnection(DLLINK);
-                }
+                con = br.openHeadConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -142,10 +137,6 @@ public class VesselCom extends antiDDoSForHost {
             } catch (final Throwable e) {
             }
         }
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
@@ -232,11 +223,10 @@ public class VesselCom extends antiDDoSForHost {
                 final String name = plan != null ? (String) plan.get("name") : null;
 
                 if (!"vip".equalsIgnoreCase(name) || !is_paid) {
-                    final String lang = System.getProperty("user.language");
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
                 final String jsonCookie = "{\"first_name\":\"" + first_name + "\",\"last_name\":\"" + last_name + "\",\"username\":\"" + username + "\",\"gender\":\"" + gender + "\",\"birth_date\":\"" + birth_date + "\",\"ga_id\":\"" + ga_id + "\",\"parrot_id\":\"" + parrot_id + "\",\"status\":\"" + status + "\",\"plan\":{\"id\":" + id + "}}";
