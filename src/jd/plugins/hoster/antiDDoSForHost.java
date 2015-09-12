@@ -287,7 +287,7 @@ public abstract class antiDDoSForHost extends PluginForHost {
      * @throws IOException
      * @throws PluginException
      */
-    private void readConnection(final URLConnectionAdapter con, final Browser ibr) throws IOException, PluginException {
+    public void readConnection(final URLConnectionAdapter con, final Browser ibr) throws IOException, PluginException {
         InputStream is = null;
         try {
             /* beta */

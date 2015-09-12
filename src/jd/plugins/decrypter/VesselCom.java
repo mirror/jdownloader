@@ -31,9 +31,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vessel.com" }, urls = { "https?://www\\.vessel\\.com/news/videos/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vessel.com" }, urls = { "https?://www\\.vessel\\.com/(?:news/)?videos/[A-Za-z0-9\\-]+" }, flags = { 0 })
 public class VesselCom extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
@@ -47,23 +48,26 @@ public class VesselCom extends PluginForDecrypt {
 
     @SuppressWarnings({ "deprecation", "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final PluginForHost plugin = JDUtilities.getPluginForHost("vessel.com");
+        br = ((jd.plugins.hoster.VesselCom) plugin).newBrowser();
+        // login isn't always needed
         /* Load sister-host plugin and get account */
         final Account aa = AccountController.getInstance().getValidAccount(JDUtilities.getPluginForHost(DOMAIN));
         if (aa == null) {
             logger.info("Cannot decrypt anything without account");
-            return decryptedLinks;
+            // return decryptedLinks;
+        } else {
+            ((jd.plugins.hoster.VesselCom) plugin).login(this.br, aa, false);
         }
-        jd.plugins.hoster.VesselCom.login(this.br, aa, false);
         final String parameter = param.toString();
         String vid = null;
         String title = null;
         String description = null;
-        String cdn_server = null;
         ArrayList<Object> ressourcelist = null;
         LinkedHashMap<String, Object> entries = null;
         final LinkedHashMap<String, String[]> formats = jd.plugins.hoster.VesselCom.formats;
-        final String nicehost = new Regex(parameter, "http://(?:www\\.)?([^/]+)").getMatch(0);
+        final String nicehost = new Regex(parameter, "https?://(?:www\\.)?([^/]+)").getMatch(0);
         final String decryptedhost = "http://" + nicehost + "decrypted";
         final SubConfiguration cfg = SubConfiguration.getConfig(DOMAIN);
         final boolean fastLinkcheck = cfg.getBooleanProperty(FAST_LINKCHECK, false);
@@ -80,14 +84,13 @@ public class VesselCom extends PluginForDecrypt {
         if (vid == null) {
             return null;
         }
-        br.postPageRaw("https://www.vessel.com/api/view/items/" + vid, "{\"client\":\"web\",\"refresh\":true}");
+        ((jd.plugins.hoster.VesselCom) plugin).postPageRaw(br, "https://www.vessel.com/api/view/items/" + vid, "{\"client\":\"web\",\"refresh\":true}");
         entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, "assets/{1}/sources");
+        ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.walkJson(entries, "assets/{2}/sources");
         title = (String) entries.get("title");
         title = encodeUnicode(title);
-        cdn_server = new Regex((String) entries.get("contentLoc"), "(http://[^<>\"]*)/m/.+").getMatch(0);
         description = (String) entries.get("short_description");
-        if (title == null || cdn_server == null) {
+        if (title == null) {
             return null;
         }
         final FilePackage fp = FilePackage.getInstance();

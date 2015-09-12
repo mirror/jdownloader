@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,7 +35,7 @@ import jd.plugins.FilePackage;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "abc.net.au" }, urls = { "https?://(www\\.)?abc\\.net\\.au/news/[\\d\\-]+/[^/]+/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "abc.net.au" }, urls = { "https?://(?:www\\.)?abc\\.net\\.au/news/\\d{4}-\\d{2}-\\d{2}/[\\w\\-]+/\\d+" }, flags = { 0 })
 public class AbcNtAu extends antiDDoSForDecrypt {
 
     public AbcNtAu(PluginWrapper wrapper) {
@@ -48,6 +49,7 @@ public class AbcNtAu extends antiDDoSForDecrypt {
         final String[][] results = br.getRegex("inline(Video|Audio)Data\\.push\\((.*?)\\);").getMatches();
         if (results != null) {
             for (final String[] result : results) {
+                final HashMap<Integer, DownloadLink> abc = new HashMap<Integer, DownloadLink>();
                 String urlPattern = null;
                 final ArrayList<Integer> qual = new ArrayList<Integer>();
                 String[] result_array = getJsonResultsFromArray(result[1]);
@@ -55,14 +57,13 @@ public class AbcNtAu extends antiDDoSForDecrypt {
                     for (final String results_a : result_array) {
                         final String url = getJson(results_a, "url");
                         // if video
-                        if ("Video".equalsIgnoreCase(result[0])) {
+                        final boolean isVideo = "Video".equalsIgnoreCase(result[0]);
+                        final String q = new Regex(url, "(\\d+)k\\.mp4").getMatch(0);
+                        if (isVideo && q != null) {
                             // get qual
-                            final String q = new Regex(url, "(\\d+)k\\.mp4").getMatch(0);
-                            if (q != null) {
-                                qual.add(Integer.parseInt(q));
-                                if (urlPattern == null) {
-                                    urlPattern = url;
-                                }
+                            qual.add(Integer.parseInt(q));
+                            if (urlPattern == null) {
+                                urlPattern = url;
                             }
                         }
                         final String size = getJson(results_a, "fileSize");
@@ -72,7 +73,11 @@ public class AbcNtAu extends antiDDoSForDecrypt {
                                 dl.setVerifiedFileSize(Long.parseLong(size));
                             }
                             dl.setAvailableStatus(AvailableStatus.TRUE);
-                            decryptedLinks.add(dl);
+                            if (isVideo && q != null) {
+                                abc.put(Integer.parseInt(q), dl);
+                            } else {
+                                decryptedLinks.add(dl);
+                            }
                         }
                     }
                 }
@@ -86,6 +91,17 @@ public class AbcNtAu extends antiDDoSForDecrypt {
                         }
                     }
                 }
+                // only add best
+                if (!abc.isEmpty()) {
+                    final int[] k = new int[] { 1000, 512, 256 };
+                    for (final int kk : k) {
+                        if (abc.containsKey(kk)) {
+                            decryptedLinks.add(abc.get(kk));
+                            break;
+                        }
+                    }
+                }
+
             }
         }
         // lets look for external links? youtube etc.
