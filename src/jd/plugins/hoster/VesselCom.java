@@ -16,12 +16,16 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -32,7 +36,10 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.Request;
+import jd.http.RequestHeader;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -42,40 +49,36 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vessel.com" }, urls = { "http://vessel\\.comdecrypted\\d+" }, flags = { 2 })
-public class VesselCom extends PluginForHost {
+public class VesselCom extends antiDDoSForHost {
 
     /** Settings stuff */
-    private static final String                   FAST_LINKCHECK               = "FAST_LINKCHECK";
+    private static final String FAST_LINKCHECK = "FAST_LINKCHECK";
 
     /* Connection stuff */
-    private static final boolean                  FREE_RESUME                  = true;
-    private static final int                      FREE_MAXCHUNKS               = 0;
-    private static final int                      FREE_MAXDOWNLOADS            = 20;
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = 0;
+    private static final int     FREE_MAXDOWNLOADS            = 20;
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
     // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
     // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
     // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private static final int                      ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
     /* don't touch the following! */
-    private static AtomicInteger                  maxPrem                      = new AtomicInteger(1);
+    private static AtomicInteger maxPrem = new AtomicInteger(1);
 
     /*
      * Available via HLS only: 144-64k,720-1500k, 720-3000k --> Basically lower qualities and some in between the http qualities so we're
      * not really missing anything by not downloading them.
      */
-    public static LinkedHashMap<String, String[]> formats                      = new LinkedHashMap<String, String[]>() {
+    public static LinkedHashMap<String, String[]> formats = new LinkedHashMap<String, String[]>() {
         {
             /*
-             * Format-name:videoCodec, videoBitrate,
-             * videoResolution, audioCodec, audioBitrate
+             * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate
              */
             put("mp4-216-250K", new String[] { "AVC", "250", "384x216", "AAC LC-SBR", "32" });
             put("mp4-360-500K", new String[] { "AVC", "500", "640x360", "AAC LC", "128" });
@@ -86,7 +89,7 @@ public class VesselCom extends PluginForHost {
         }
     };
 
-    private String                                DLLINK                       = null;
+    private String DLLINK = null;
 
     @SuppressWarnings("deprecation")
     public VesselCom(final PluginWrapper wrapper) {
@@ -109,17 +112,10 @@ public class VesselCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
-        // final String mainlink = link.getStringProperty("mainlink", null);
-        // br.getPage(mainlink);
-        // if (br.getHttpConnection().getResponseCode() == 404) {
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // }
         final Account aa = AccountController.getInstance().getValidAccount(this);
-        if (aa == null) {
-            link.getLinkStatus().setStatusText("Account needed to check links");
-            return AvailableStatus.UNCHECKABLE;
+        if (aa != null) {
+            login(this.br, aa, false);
         }
-        login(this.br, aa, false);
         DLLINK = link.getStringProperty("directlink", null);
         URLConnectionAdapter con = null;
         try {
@@ -181,7 +177,7 @@ public class VesselCom extends PluginForHost {
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
-    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -205,16 +201,8 @@ public class VesselCom extends PluginForHost {
                 br.setFollowRedirects(false);
                 br.setAllowedResponseCodes(400);
                 br.getPage("https://www.vessel.com/");
-                prepBRAPI(br);
-                // br.setCookie(MAINPAGE, "device_id", "f195cbafff11d9b83ce4cb07590e0735");
-                // br.setCookie(MAINPAGE, "session_id", "a5c8be2f221bcb72590ef8c03252c50c");
-                // br.setCookie(MAINPAGE, "_ga", "GA1.2.160339541.1436797816");
-                // br.setCookie(MAINPAGE, "signup_flow", "0");
-                // br.setCookie(MAINPAGE, "_gat", "1");
                 br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                // br.getPage("https://www.vessel.com/api/account/plan_price?track_id=339");
-                // br.getPage("https://www.vessel.com/api/content/items?type=tag&tag_type=category&sort=title");
-                br.postPageRaw("https://www.vessel.com/api/account/login", "{\"user_key\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\",\"type\":\"password\",\"client_id\":\"web\"}");
+                postPageRaw(br, "https://www.vessel.com/api/account/login", "{\"user_key\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\",\"type\":\"password\",\"client_id\":\"web\"}");
                 if (br.getHttpConnection().getResponseCode() == 403) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -225,7 +213,7 @@ public class VesselCom extends PluginForHost {
                 final LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 final LinkedHashMap<String, Object> user = (LinkedHashMap<String, Object>) entries.get("user");
                 final LinkedHashMap<String, Object> customer = (LinkedHashMap<String, Object>) entries.get("customer");
-                final LinkedHashMap<String, Object> plan = (LinkedHashMap<String, Object>) customer.get("plan");
+                final LinkedHashMap<String, Object> plan = customer != null ? (LinkedHashMap<String, Object>) customer.get("plan") : null;
 
                 final String user_token = (String) entries.get("user_token");
                 final String parrot_id = (String) entries.get("parrot_id");
@@ -237,13 +225,13 @@ public class VesselCom extends PluginForHost {
                 final String gender = (String) user.get("gender");
                 final String birth_date = (String) user.get("birth_date");
 
-                final String status = (String) customer.get("status");
-                final boolean is_paid = ((Boolean) customer.get("is_paid")).booleanValue();
+                final String status = customer != null ? (String) customer.get("status") : null;
+                final boolean is_paid = customer == null ? false : ((Boolean) customer.get("is_paid")).booleanValue();
 
-                final String id = Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(plan.get("id"), -1));
-                final String name = (String) plan.get("name");
+                final String id = plan != null ? Long.toString(jd.plugins.hoster.DummyScriptEnginePlugin.toLong(plan.get("id"), -1)) : null;
+                final String name = plan != null ? (String) plan.get("name") : null;
 
-                if (!name.equals("vip") || !is_paid) {
+                if (!"vip".equalsIgnoreCase(name) || !is_paid) {
                     final String lang = System.getProperty("user.language");
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -270,17 +258,12 @@ public class VesselCom extends PluginForHost {
         }
     }
 
-    public static void prepBRAPI(final Browser br) {
-        br.getHeaders().put("Accept-Encoding", "gzip, deflate");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-    }
-
     @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(this.br, account, true);
+            login(newBrowser(), account, true);
         } catch (PluginException e) {
             account.setValid(false);
             throw e;
@@ -375,6 +358,84 @@ public class VesselCom extends PluginForHost {
             }
             final ConfigEntry vidcfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), internalname, JDL.L("plugins.hoster.VesselCom.ALLOW_" + internalname, usertext)).setDefaultValue(true);
             getConfig().addEntry(vidcfg);
+        }
+    }
+
+    /**
+     * We have to reinvent the wheel. With the help of @Override openPostConnection created us openRequestConnection in postRaw format.
+     *
+     * @author raztoki
+     * @return
+     */
+    public Browser newBrowser() {
+        Browser nbr = new Browser() {
+
+            /**
+             * overrides openPostConnection and turns it into openPostRawConnection
+             *
+             * @author raztoki
+             */
+            @Override
+            public URLConnectionAdapter openPostConnection(final String url, final String post) throws IOException {
+                return this.openRequestConnection(this.createPostRawRequest(url, post));
+            }
+
+            /**
+             * creates new Post Raw Request! merge components from JD2 Browser stripped of Appwork references.
+             *
+             * @author raztoki
+             * @param url
+             * @param post
+             * @return
+             * @throws MalformedURLException
+             */
+            public Request createPostRawRequest(final String url, final String post) throws MalformedURLException {
+                final PostRequest request = new PostRequest(this.getURL(url));
+                request.setPostDataString(post);
+
+                String requestContentType = null;
+                final RequestHeader lHeaders = this.getHeaders();
+                if (lHeaders != null) {
+                    final String browserContentType = lHeaders.remove("Content-Type");
+                    if (requestContentType == null) {
+                        requestContentType = browserContentType;
+                    }
+                }
+                if (requestContentType == null) {
+                    requestContentType = "application/json";
+                }
+                request.setContentType(requestContentType);
+                return request;
+            }
+
+        };
+        return nbr;
+    }
+
+    protected static Object REQUESTLOCK = new Object();
+
+    /**
+     * general handling postPage requests! It's stable compliant with various response codes. It then passes to error handling!
+     *
+     * @param ibr
+     * @param url
+     * @param arg
+     * @param account
+     * @author raztoki
+     * @throws Exception
+     */
+    public void postPageRaw(final Browser ibr, final String url, final String arg) throws Exception {
+        URLConnectionAdapter con = null;
+        synchronized (REQUESTLOCK) {
+            try {
+                con = ibr.openPostConnection(url, arg);
+                readConnection(con, ibr);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
         }
     }
 
