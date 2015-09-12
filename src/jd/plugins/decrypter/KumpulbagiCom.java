@@ -139,7 +139,10 @@ public class KumpulbagiCom extends PluginForDecrypt {
 
             decryptedLinks.add(dl);
         } else {
-            final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            String fpName = br.getRegex("scrollTop\">([^<>\"]*?)</a>").getMatch(0);
+            if (fpName == null) {
+                fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            }
             int lastpage = 1;
             int tempmaxpage = 0;
             do {
@@ -170,7 +173,7 @@ public class KumpulbagiCom extends PluginForDecrypt {
                     linkinfo = br.getRegex("(<li data-file-id=.*?)</li>").getColumn(0);
                 }
                 if (linkinfo == null || linkinfo.length == 0) {
-                    linkinfo = br.getRegex("(<div class=\"list_row\".*?class=\"desc\")").getColumn(0);
+                    linkinfo = br.getRegex("(<div class=\"list_row\".*?class=\"desc\")").getColumn(0); // <===
                 }
                 if (linkinfo == null || linkinfo.length == 0 || fpName == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
@@ -203,10 +206,8 @@ public class KumpulbagiCom extends PluginForDecrypt {
                         return null;
                     }
                     filesize = Encoding.htmlDecode(filesize).trim();
-                    String filename = new Regex(lnkinfo, "/([^<>\"/]*?)\" class=\"downloadAction\"").getMatch(0);
-                    if (filename == null) {
-                        filename = new Regex(lnkinfo, "title=\"([^<>\"]*?)\">").getMatch(0);
-                    }
+                    // String filename = new Regex(lnkinfo, "/([^<>\"/]*?)\" class=\"downloadAction\"").getMatch(0);
+                    String filename = new Regex(lnkinfo, "data-action-before=\"preview\">([^<>]+?)<").getMatch(0);
                     if (filename == null) {
                         filename = new Regex(content_url, "/([^<>\"/]+)$").getMatch(0);
                     }
