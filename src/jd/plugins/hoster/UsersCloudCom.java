@@ -147,6 +147,7 @@ public class UsersCloudCom extends PluginForHost {
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
                 link.setFinalFileName(getFileNameFromHeader(con));
+                link.setProperty("freelink", link.getDownloadURL());
                 return AvailableStatus.TRUE;
             }
         } finally {
