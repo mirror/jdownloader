@@ -28,12 +28,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+/**
+ * @author raztoki
+ */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "submanga.com" }, urls = { "http://(www\\.)?submanga\\.com/(c/\\d+|[\\w_\\-\\[\\]]+/\\d+/\\d+)" }, flags = { 0 })
 public class SubMangaCom extends PluginForDecrypt {
 
-    /**
-     * @author raztoki
-     */
     public SubMangaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -58,7 +58,7 @@ public class SubMangaCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         // We get the title
-        final String title = br.getRegex("<title>(.*?) -[^<]+ &mdash; submanga</title>").getMatch(0);
+        final String title = br.getRegex("<title>(.*?) (?:-|—|&mdash;)[^<]+ (?:-|—|&mdash;) submanga</title>").getMatch(0);
         if (title == null || title.length() == 0) {
             logger.warning("Title not found! : " + parameter);
             return null;
