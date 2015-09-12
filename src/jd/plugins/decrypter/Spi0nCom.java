@@ -38,25 +38,22 @@ public class Spi0nCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
         if (parameter.matches(INVALIDLINKS)) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            decryptedLinks.add(offline);
+            final DownloadLink dl = this.createOfflinelink(parameter);
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         br.getPage(parameter);
         if (!br.containsHTML("id=\"container\"") || !br.containsHTML("class=\"headline\"")) {
             logger.info("Link offline (no video on this page?!): " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            decryptedLinks.add(offline);
+            final DownloadLink dl = this.createOfflinelink(parameter);
+            decryptedLinks.add(dl);
             return decryptedLinks;
         } else if (br.containsHTML("Archives des catégorie:")) {
             logger.info("Link offline (invalid link!): " + parameter);
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            decryptedLinks.add(offline);
+            final DownloadLink dl = this.createOfflinelink(parameter);
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         final String[] regexes = new String[] { "\"((http:)?//(www\\.)?dailymotion\\.com/(embed/)?video/[^<>\"]*?)\"", "\"((https?:)?//(www\\.)?youtube\\.com/embed/[^<>\"/]+)\"", "\"(//player\\.vimeo\\.com/video/\\d+)" };
