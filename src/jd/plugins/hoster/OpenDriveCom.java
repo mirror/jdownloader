@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Cookie;
@@ -34,8 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opendrive.com" }, urls = { "https?://(www\\.)?([a-z0-9]+\\.)?opendrive\\.com/files\\?[A-Za-z0-9\\-_]+" }, flags = { 2 })
 public class OpenDriveCom extends PluginForHost {
@@ -88,14 +88,20 @@ public class OpenDriveCom extends PluginForHost {
             final Regex fInfo = br.getRegex("<h1 class=\"filename\">([^<>\"]*?)  \\((\\d+(\\.\\d+)? [A-Za-z]+)\\)</h1>");
             filename = fInfo.getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<div class=\"title bottom_border\"><span>([^<>\"]*?)</span>").getMatch(0);
+                filename = br.getRegex("<i class=\"fa fa-info\"></i>\\s*<h3>(.*?)</h3>").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("<title>OpenDrive \\- ([^<>\"]*?)b</title>").getMatch(0);
+                    filename = br.getRegex("<div class=\"title bottom_border\"><span>([^<>\"]*?)</span>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("<title>OpenDrive \\- ([^<>\"]*?)b</title>").getMatch(0);
+                    }
                 }
             }
             filesize = fInfo.getMatch(1);
             if (filesize == null) {
-                filesize = br.getRegex("class=\"file_info size fl\"><b>Size:</b><span>([^<>\"]*?)</span></div>").getMatch(0);
+                filesize = br.getRegex("Size\\s*:\\s*<b>(.*?)</b>").getMatch(0);
+                if (filesize == null) {
+                    filesize = br.getRegex("class=\"file_info size fl\"><b>Size:</b><span>([^<>\"]*?)</span></div>").getMatch(0);
+                }
             }
             if (filename == null || filesize == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -116,9 +122,12 @@ public class OpenDriveCom extends PluginForHost {
         if (use_api) {
             dllink = getJson("DirectLink");
         } else {
-            dllink = br.getRegex("<a class=\"download\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("\"(https?://(www\\.)?([a-z0-9]+\\.)?opendrive\\.com/api/v\\d+/download/file\\.json/[^<>\"]+)\"").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("\"(https?://(www\\.)?([a-z0-9]+\\.)?opendrive\\.com/files/[A-Za-z0-9\\-_]+/[^<>\"]*?)\"").getMatch(0);
+                dllink = br.getRegex("<a class=\"download\" href=\"(http[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("\"(https?://(www\\.)?([a-z0-9]+\\.)?opendrive\\.com/files/[A-Za-z0-9\\-_]+/[^<>\"]*?)\"").getMatch(0);
+                }
             }
         }
         if (dllink == null) {
