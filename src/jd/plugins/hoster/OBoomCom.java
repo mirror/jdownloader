@@ -515,16 +515,17 @@ public class OBoomCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitTime) * 1000l);
         }
         if (/*
-             * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
-             * account != null &&
-             */
-        br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
+         * HAS NOTHING TODO WITH ACCOUNT SEE http://board.jdownloader.org/showthread.php?p=317616#post317616 jdlog://6507583568141/
+         * account != null &&
+         */
+                br.getRegex("421,\"connections\",(\\d+)").getMatch(0) != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already downloading?", 5 * 60 * 1000l);
         }
     }
 
     private void refreshTokenHandling(Map<String, String> usedInfos, Account account, final boolean freshInfos) throws PluginException {
-        if ((br.containsHTML("400,\"auth") || br.containsHTML("403,\"token") || br.containsHTML("404,\"token") || br.containsHTML("403,\"resume") || br.containsHTML("421,\"connections")) && freshInfos == false) {
+        final boolean auth_problem = br.containsHTML("400,\"auth") || br.containsHTML("403,\"token") || br.containsHTML("404,\"token") || br.containsHTML("403,\"resume") || br.containsHTML("421,\"connections");
+        if (auth_problem && freshInfos == false) {
             /* only retry on NON-fresh tokens */
             synchronized (ACCOUNTINFOS) {
                 if (ACCOUNTINFOS.get(account) == usedInfos) {
@@ -532,7 +533,7 @@ public class OBoomCom extends PluginForHost {
                 }
             }
             throw new PluginException(LinkStatus.ERROR_RETRY);
-        } else if (br.containsHTML("400,\"auth") || br.containsHTML("403,\"token") || br.containsHTML("404,\"token") || br.containsHTML("403,\"resume") || br.containsHTML("421,\"connections")) {
+        } else if (auth_problem) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error authentification failed (?)", 1 * 60 * 1000l);
         }
     }
