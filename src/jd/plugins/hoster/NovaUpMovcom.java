@@ -105,12 +105,13 @@ public class NovaUpMovcom extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("This file no longer exists on our servers|The file has failed to convert!") || br.getURL().contains("novamov.com/index.php")) {
+        if (br.containsHTML("This file no longer exists on our servers|The file has failed to convert!") || br.getURL().contains("novamov.com/index.php") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // onlinecheck für Videolinks
@@ -124,7 +125,13 @@ public class NovaUpMovcom extends PluginForHost {
                 // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
                 filename = filename.trim();
-                downloadLink.setFinalFileName(filename.replace(filename.substring(filename.length() - 4, filename.length()), "") + ".flv");
+                if (filename.length() > 4 && filename.contains(".")) {
+                    /* Remove old extension */
+                    filename = filename.replace(filename.substring(filename.length() - 4, filename.length()), "");
+                }
+                /* Add correct extension */
+                filename += ".flv";
+                downloadLink.setFinalFileName(filename);
             }
             if (br.containsHTML("error_msg=The video is being transfered")) {
                 downloadLink.getLinkStatus().setStatusText("Not downloadable at the moment, try again later...");

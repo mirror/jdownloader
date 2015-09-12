@@ -34,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "issuu.com" }, urls = { "http://issuudecrypted\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "issuu.com" }, urls = { "http://issuudecrypted\\.com/[a-z0-9\\-_\\.]+/docs/[a-z0-9\\-_]+" }, flags = { 2 })
 public class IssuuCom extends PluginForHost {
 
     public IssuuCom(PluginWrapper wrapper) {
@@ -47,19 +47,25 @@ public class IssuuCom extends PluginForHost {
         return "http://issuu.com/acceptterms";
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("issuudecrypted.com/", "issuu.com/"));
     }
 
     private String DOCUMENTID = null;
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">We can\\'t find what you\\'re looking for")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">We can\\'t find what you\\'re looking for")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         DOCUMENTID = br.getRegex("\"documentId\":\"([^<>\"]*?)\"").getMatch(0);
-        if (DOCUMENTID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DOCUMENTID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(link.getStringProperty("finalname", null));
         return AvailableStatus.TRUE;
     }
@@ -67,12 +73,7 @@ public class IssuuCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
-        }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
     private static final String MAINPAGE = "http://issuu.com";
@@ -86,7 +87,9 @@ public class IssuuCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch) {
+                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                }
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -157,7 +160,9 @@ public class IssuuCom extends PluginForHost {
         login(account, true);
         final String token = br.getCookie(MAINPAGE, "site.model.token");
         br.getPage("http://api.issuu.com/query?documentId=" + this.DOCUMENTID + "&username=" + Encoding.urlEncode(account.getUser()) + "&token=" + Encoding.urlEncode(token) + "&action=issuu.document.download&format=json&jsonCallback=_jqjsp&_" + System.currentTimeMillis() + "=");
-        if (br.containsHTML("\"message\":\"Document access denied\"")) throw new PluginException(LinkStatus.ERROR_FATAL, "This document is not downloadable");
+        if (br.containsHTML("\"message\":\"Document access denied\"")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This document is not downloadable");
+        }
         String dllink = br.getRegex("\"url\":\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
