@@ -28,9 +28,9 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3,
 
-names = { "anonym.to", "hiderefer.com", "blankrefer.com", "anon.click" },
+names = { "anonym.to", "hiderefer.com", "blankrefer.com", "anon.click", "lolinez.com", "nullrefer.com", "noreferer.link", "redirect.am", "relinker.org", "href.li" },
 
-urls = { "https?://[\\w\\.]*?anonym\\.to/\\?.+", "https?://[\\w\\.]*?hiderefer\\.com/\\?.+", "https?://[\\w\\.]*?blankrefer\\.com/\\?.+", "https?://[\\w\\.]*?anon\\.click/.+" },
+urls = { "https?://(?:www\\.)?anonym\\.to/\\?(.+)", "https?://(?:www\\.)?hiderefer\\.com/\\?(.+)", "https?://(?:www\\.)?blankrefer\\.com/\\?(.+)", "https?://(?:www\\.)?anon\\.click/(.+)", "https?://(?:www\\.)?lolinez\\.com/\\?(.+)", "https?://(?:www\\.)?nullrefer\\.com/\\?(.+)", "https?://(?:www\\.)?noreferer\\.link/\\?(.+)", "https?://(?:www\\.)?redirect\\.am/\\?(.+)", "https?://(?:www\\.)?relinker\\.org/(.+)", "https?://(?:www\\.)?href\\.li/\\?(.+)" },
 
 flags = { 0 })
 public class NnmT extends PluginForDecrypt {
@@ -43,10 +43,10 @@ public class NnmT extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        String url = new Regex(parameter, "https?://[^/]+/\\??(.+)").getMatch(0);
+        String url = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         // some allow www. or domain without any protocol prefixes.
-        if (!url.matches("^(?:https?|ftp)://.+$")) {
-            url = new Regex(parameter, "^https?://").getMatch(-1) + url;
+        if (!url.matches("(?i)^(?:https?|ftp)://.+$")) {
+            url = new Regex(parameter, "^(https?|ftp)://").getMatch(-1) + url;
         }
         links.add(createDownloadlink(url));
         return links;
