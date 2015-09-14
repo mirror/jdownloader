@@ -41,9 +41,9 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 /**
  * The Tablemodel defines all columns and renderers
- * 
+ *
  * @author thomas
- * 
+ *
  */
 public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
@@ -70,12 +70,13 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
                     public int getPriority(TranslateEntry e) {
                         int p = 100;
-                        if (e.isParameterInvalid())
+                        if (e.isParameterInvalid()) {
                             p = 10;
-                        else if (e.isMissing())
+                        } else if (e.isMissing()) {
                             p = 11;
-
-                        else if (e.isDefault()) p = 30;
+                        } else if (e.isDefault()) {
+                            p = 30;
+                        }
                         return p;
                     }
 
@@ -84,7 +85,9 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
                         final int w1 = getPriority(o1);
                         final int w2 = getPriority(o2);
-                        if (w1 == w2) { return 0; }
+                        if (w1 == w2) {
+                            return 0;
+                        }
                         if (this.getSortOrderIdentifier() == ExtColumn.SORT_ASC) {
                             return w1 > w2 ? -1 : 1;
                         } else {
@@ -331,10 +334,20 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
             @Override
             public boolean matchSearch(TranslateEntry object, Pattern pattern) {
                 boolean ret = super.matchSearch(object, pattern);
-                if (!ret) ret |= pattern.matcher(object.getCategory()).matches();
-                if (!ret) ret |= pattern.matcher(object.getDirect()).matches();
-                if (!ret) ret |= pattern.matcher(object.getFullKey()).matches();
-                if (!ret) if (object.getDescription() != null) ret |= pattern.matcher(object.getDescription()).matches();
+                if (!ret) {
+                    ret |= pattern.matcher(object.getCategory()).matches();
+                }
+                if (!ret) {
+                    ret |= pattern.matcher(object.getDirect()).matches();
+                }
+                if (!ret) {
+                    ret |= pattern.matcher(object.getFullKey()).matches();
+                }
+                if (!ret) {
+                    if (object.getDescription() != null) {
+                        ret |= pattern.matcher(object.getDescription()).matches();
+                    }
+                }
                 return ret;
             }
 
@@ -358,7 +371,9 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
             public void configureEditorComponent(final TranslateEntry value, final boolean isSelected, final int row, final int column) {
                 super.configureEditorComponent(value, isSelected, row, column);
-                if (value.isMissing()) editorField.setText("");
+                if (value.isMissing()) {
+                    editorField.setText("");
+                }
 
             }
 
@@ -370,7 +385,9 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
             @Override
             public String getStringValue(TranslateEntry value) {
-                if (value.isMissing()) return " - - - - - missing - - - - - ";
+                if (value.isMissing()) {
+                    return " - - - - - missing - - - - - ";
+                }
                 return value.getTranslation();
             }
         });
@@ -422,7 +439,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
     /**
      * refresh the tablemodel. for example if we load a new language
-     * 
+     *
      * @param extension
      */
     public void refresh(final TranslatorExtension extension) {
@@ -436,28 +453,30 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
     public void _fireTableStructureChanged(java.util.List<TranslateEntry> newtableData, final boolean refreshSort) {
 
         java.util.List<TranslateEntry> lst = new ArrayList<TranslateEntry>();
-        for (TranslateEntry e : newtableData) {
-            if (filter == null) {
-                lst.add(e);
-                continue;
-            }
-            for (Pattern p : filter) {
-                if (e.getDefault() != null && p.matcher(e.getDefault()).find()) {
+        if (newtableData != null) {
+            for (TranslateEntry e : newtableData) {
+                if (filter == null) {
                     lst.add(e);
-                    break;
+                    continue;
                 }
+                for (Pattern p : filter) {
+                    if (e.getDefault() != null && p.matcher(e.getDefault()).find()) {
+                        lst.add(e);
+                        break;
+                    }
 
-                if (p.matcher(e.getKey()).find()) {
-                    lst.add(e);
-                    break;
-                }
-                if (p.matcher(e.getCategory()).find()) {
-                    lst.add(e);
-                    break;
-                }
-                if (p.matcher(e.getTranslation()).find()) {
-                    lst.add(e);
-                    break;
+                    if (p.matcher(e.getKey()).find()) {
+                        lst.add(e);
+                        break;
+                    }
+                    if (p.matcher(e.getCategory()).find()) {
+                        lst.add(e);
+                        break;
+                    }
+                    if (p.matcher(e.getTranslation()).find()) {
+                        lst.add(e);
+                        break;
+                    }
                 }
             }
         }
