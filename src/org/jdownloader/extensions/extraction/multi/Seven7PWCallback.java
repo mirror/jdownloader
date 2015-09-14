@@ -66,7 +66,9 @@ public class Seven7PWCallback implements IArchiveExtractCallback, ICryptoGetText
 
     @Override
     public ISequentialOutStream getStream(int i, ExtractAskMode extractaskmode) throws SevenZipException {
-        if (passwordfound.get()) throw new SevenZipException("Password found");
+        if (passwordfound.get()) {
+            throw new SevenZipException("Password found");
+        }
         if (skipExtraction != null && skipExtraction == false && signatureOutStream.getWritten() == 0) {
             //
             throw new SevenZipException("Password wrong");
@@ -76,14 +78,19 @@ public class Seven7PWCallback implements IArchiveExtractCallback, ICryptoGetText
             skipExtraction = true;
             return null;
         }
-        String name = (String) inArchive.getProperty(i, PropID.PATH);
+        final String name = (String) inArchive.getProperty(i, PropID.PATH);
         if (StringUtils.isEmpty(name)) {
             skipExtraction = false;
             return null;
         }
+        final Boolean itemEncrypted = (Boolean) inArchive.getProperty(i, PropID.ENCRYPTED);
+        if (Boolean.FALSE.equals(itemEncrypted)) {
+            skipExtraction = true;
+            return null;
+        }
         skipExtraction = false;
         signatureOutStream.reset();
-        long size = (Long) inArchive.getProperty(i, PropID.SIZE);
+        final Long size = (Long) inArchive.getProperty(i, PropID.SIZE);
         signatureOutStream.setSignatureLength(name, size);
         return signatureOutStream;
     }
