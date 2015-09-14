@@ -99,7 +99,9 @@ public class MangaTradersOrg extends PluginForHost {
                         dl.setAvailable(true);
                     } finally {
                         try {
-                            con.disconnect();
+                            if (con != null) {
+                                con.disconnect();
+                            }
                         } catch (final Throwable t) {
                         }
                     }

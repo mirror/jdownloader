@@ -150,7 +150,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
 
                 @Override
                 public boolean isFolder() throws SevenZipException {
-                    return isFolder;
+                    return Boolean.TRUE.equals(isFolder);
                 }
 
                 @Override
@@ -175,7 +175,7 @@ public class Seven7ExtractCallback implements IArchiveExtractCallback, ICryptoGe
 
                 @Override
                 public boolean isEncrypted() throws SevenZipException {
-                    return itemEncrypted;
+                    return Boolean.TRUE.equals(itemEncrypted);
                 }
 
                 @Override

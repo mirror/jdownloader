@@ -3,6 +3,11 @@ package org.jdownloader.gui.views.downloads.columns;
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.Icon;
 import javax.swing.JComponent;
@@ -15,13 +20,19 @@ import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.proxy.PacProxySelectorImpl;
 import jd.controlling.proxy.ProxyController;
 import jd.controlling.proxy.SelectedProxy;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
 import jd.gui.swing.jdgui.GUIUtils;
+import jd.http.ProxySelectorInterface;
+import jd.http.Request;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.ToolTipController;
@@ -29,6 +40,7 @@ import org.appwork.swing.components.tooltips.TooltipPanel;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
@@ -133,7 +145,6 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             ToolTipController.getInstance().show(tt);
             return true;
         }
-        ;
 
         return false;
     }
@@ -267,6 +278,9 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
         return null;
     }
 
+    private static final AtomicLong               TASK      = new AtomicLong(0);
+    private static final ScheduledExecutorService SCHEDULER = DelayedRunnable.getNewScheduledExecutorService();
+
     private class ConnectionTooltip extends ExtTooltip {
 
         /**
@@ -322,9 +336,51 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     } else {
                         proxyString = proxy.toString();
                     }
-                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_getStringValue_connection(proxyString), proxy.isRemote() ? proxyConnection : directConnection, JLabel.LEADING));
+                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_getStringValue_connection(proxyString + " (000.000.000.000)"), proxy.isRemote() ? proxyConnection : directConnection, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+                    final HTTPProxy finalProxy = proxy;
+                    final JLabel finalLbl = lbl;
+                    final long taskID = TASK.incrementAndGet();
+                    SCHEDULER.execute(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            if (taskID == TASK.get()) {
+                                final List<HTTPProxy> proxies = new ArrayList<HTTPProxy>();
+                                proxies.add(finalProxy);
+                                final BalancedWebIPCheck ipCheck = new BalancedWebIPCheck(new ProxySelectorInterface() {
+
+                                    @Override
+                                    public boolean updateProxy(Request request, int retryCounter) {
+                                        return false;
+                                    }
+
+                                    @Override
+                                    public boolean reportConnectException(Request request, int retryCounter, IOException e) {
+                                        return false;
+                                    }
+
+                                    @Override
+                                    public List<HTTPProxy> getProxiesByUrl(String url) {
+                                        return proxies;
+                                    }
+                                });
+                                try {
+                                    final IP ip = ipCheck.getExternalIP();
+                                    new EDTRunner() {
+
+                                        @Override
+                                        protected void runInEDT() {
+                                            finalLbl.setText(_GUI._.ConnectionColumn_getStringValue_connection(proxyString + " (" + ip.getIP() + ")"));
+                                        }
+                                    };
+                                } catch (IPCheckException e1) {
+                                    e1.printStackTrace();
+                                }
+                            }
+                        }
+                    });
                 }
                 if (sdc.getAccount() != null && sdc.getAccount().getPlugin() != null) {
                     /* account in use? */

@@ -823,6 +823,10 @@ public class Multi extends IExtraction {
                     if (Boolean.TRUE.equals(isFolder)) {
                         continue;
                     }
+                    final Boolean itemEncrypted = (Boolean) inArchive.getProperty(i, PropID.ENCRYPTED);
+                    if (Boolean.FALSE.equals(itemEncrypted)) {
+                        continue;
+                    }
                     allItems.add(i);
                 }
                 int[] items = new int[allItems.size()];
@@ -851,8 +855,9 @@ public class Multi extends IExtraction {
                 }
                 for (final ISimpleInArchiveItem item : items) {
                     final Long size = item.getSize();
-                    final long packedSize = item.getPackedSize();
-                    if (item.isFolder() || size == null || (size == 0 && packedSize == 0)) {
+                    final Long packedSize = item.getPackedSize();
+                    final boolean isEncrypted = item.isEncrypted();
+                    if (isEncrypted == false || item.isFolder() || size == null || (size == 0 && (packedSize == null || packedSize == 0))) {
                         /*
                          * we also check for items with size ==0, they should have a packedsize>0
                          */

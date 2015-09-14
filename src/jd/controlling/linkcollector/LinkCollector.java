@@ -1114,9 +1114,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     /*
      * converts a CrawledPackage into a FilePackage
-     * 
+     *
      * if plinks is not set, then the original children of the CrawledPackage will get added to the FilePackage
-     * 
+     *
      * if plinks is set, then only plinks will get added to the FilePackage
      */
     private FilePackage createFilePackage(final CrawledPackage pkg, java.util.List<CrawledLink> plinks) {
@@ -1375,39 +1375,39 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         return true;
     }
 
-    public java.util.List<FilePackage> convert(final List<CrawledLink> links, final boolean removeLinks) {
+    public List<FilePackage> convert(final List<CrawledLink> links, final boolean removeLinks) {
         if (links == null || links.size() == 0) {
             return null;
         }
-        return QUEUE.addWait(new QueueAction<java.util.List<FilePackage>, RuntimeException>() {
+        return QUEUE.addWait(new QueueAction<List<FilePackage>, RuntimeException>() {
 
             @Override
-            protected java.util.List<FilePackage> run() throws RuntimeException {
-                java.util.List<FilePackage> ret = new ArrayList<FilePackage>();
-                HashMap<CrawledPackage, java.util.List<CrawledLink>> map = new HashMap<CrawledPackage, java.util.List<CrawledLink>>();
+            protected List<FilePackage> run() throws RuntimeException {
+                final List<FilePackage> ret = new ArrayList<FilePackage>();
+                final HashMap<CrawledPackage, List<CrawledLink>> map = new HashMap<CrawledPackage, List<CrawledLink>>();
                 if (removeLinks) {
                     cleanupMaps(links);
                 }
-                for (CrawledLink link : links) {
-                    CrawledPackage parent = link.getParentNode();
+                for (final CrawledLink link : links) {
+                    final CrawledPackage parent = link.getParentNode();
                     if (parent == null || parent.getControlledBy() != LinkCollector.this) {
                         logger.log(new Throwable("not controlled by this packagecontroller"));
                         continue;
                     }
-                    java.util.List<CrawledLink> pkg_links = map.get(parent);
+                    List<CrawledLink> pkg_links = map.get(parent);
                     if (pkg_links == null) {
                         pkg_links = new ArrayList<CrawledLink>();
                         map.put(parent, pkg_links);
                     }
                     pkg_links.add(link);
                 }
-                Iterator<Entry<CrawledPackage, java.util.List<CrawledLink>>> it = map.entrySet().iterator();
+                final Iterator<Entry<CrawledPackage, List<CrawledLink>>> it = map.entrySet().iterator();
                 while (it.hasNext()) {
-                    Entry<CrawledPackage, java.util.List<CrawledLink>> next = it.next();
+                    final Entry<CrawledPackage, List<CrawledLink>> next = it.next();
+                    ret.add(createFilePackage(next.getKey(), next.getValue()));
                     if (removeLinks) {
                         LinkCollector.this.removeChildren(next.getKey(), next.getValue(), true);
                     }
-                    ret.add(createFilePackage(next.getKey(), next.getValue()));
                 }
                 return ret;
             }
@@ -2437,7 +2437,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     level = WarnLevel.NORMAL;
                 }
                 if (!JDGui.bugme(level)) {
-
                     byPassDialog2 = true;
                 }
                 if (!byPassDialog2 && !CFG_GUI.CFG.isBypassAllRlyDeleteDialogsEnabled()) {
