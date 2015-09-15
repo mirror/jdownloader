@@ -135,7 +135,7 @@ public class AsscompactDe extends PluginForHost {
         rtmp.setPlayPath(url_playpath);
         rtmp.setPageUrl(url_iframe);
         rtmp.setSwfVfy("http://www.assfocus.de/[[IMPORT]]/players.edgesuite.net/flash/plugins/osmf/advanced-streaming-plugin/v2.5/osmf1.6/AkamaiAdvancedStreamingPlugin.swf");
-        rtmp.setFlashVer("WIN 18,0,0,194");
+        rtmp.setFlashVer("WIN 18,0,0,232");
         rtmp.setApp(rtmp_app);
         rtmp.setUrl(url_rtmp);
         rtmp.setResume(true);
