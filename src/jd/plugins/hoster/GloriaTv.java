@@ -72,7 +72,7 @@ public class GloriaTv extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getStringProperty("mainlink", null));
+        br.getPage(getMainlink(link));
         if (br.containsHTML("class=\"missing\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -215,7 +215,7 @@ public class GloriaTv extends PluginForHost {
         requestFileInformation(link);
         login(this.br, account, false);
         br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
+        br.getPage(getMainlink(link));
         if (account.getBooleanProperty("free", false)) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "free_directlink");
         } else {
@@ -260,6 +260,10 @@ public class GloriaTv extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    private String getMainlink(final DownloadLink dl) {
+        return dl.getStringProperty("mainlink", null);
     }
 
     @Override

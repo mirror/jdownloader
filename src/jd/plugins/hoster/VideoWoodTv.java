@@ -36,6 +36,7 @@ public class VideoWoodTv extends antiDDoSForHost {
         return "http://videowood.tv/terms-of-service";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("/video/", "/embed/"));
@@ -52,7 +53,10 @@ public class VideoWoodTv extends antiDDoSForHost {
             link.getLinkStatus().setStatusText("Host says 'This video is not ready yet'");
             return AvailableStatus.TRUE;
         }
-        final String filename = br.getRegex("title:\\s*(\"|')(.*?)\\1").getMatch(1);
+        String filename = br.getRegex("style=\"vertical-align: middle\">([^<>\"]*?)</span>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("title:\\s*(\"|')(.*?)\\1").getMatch(1);
+        }
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

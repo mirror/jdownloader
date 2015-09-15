@@ -255,6 +255,7 @@ public class MountFileNet extends PluginForHost {
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -262,9 +263,11 @@ public class MountFileNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            errorhandlingPremium();
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("http://mountfile.net/load/premium/", "js=1&hash=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+            errorhandlingPremium();
             String dllink = br.getRegex("\"ok\":\"(http:[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -277,6 +280,14 @@ public class MountFileNet extends PluginForHost {
             }
         }
         dl.startDownload();
+    }
+
+    private void errorhandlingPremium() throws PluginException {
+        if (this.br.containsHTML("you have reached a download limit for today")) {
+            /* 2015-09-15: daily downloadlimit = 20 GB */
+            logger.info("Daily downloadlimit reached");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
     }
 
     @Override
