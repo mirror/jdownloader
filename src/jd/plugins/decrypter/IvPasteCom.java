@@ -19,8 +19,13 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.areyouahuman.CaptchaHelperCrawlerPluginAreYouHuman;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -34,10 +39,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ivpaste.com" }, urls = { "http://(www\\.)?ivpaste\\.com/(v/|view\\.php\\?id=)[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ivpaste.com" }, urls = { "http://(www\\.)?ivpaste\\.com/(v/|view\\.php\\?id=)[A-Za-z0-9]+" }, flags = { 0 })
 public class IvPasteCom extends PluginForDecrypt {
 
     public IvPasteCom(PluginWrapper wrapper) {
@@ -47,8 +49,9 @@ public class IvPasteCom extends PluginForDecrypt {
     private static final String RECAPTCHAFAILED = "(The reCAPTCHA wasn\\'t entered correctly\\.|Go back and try it again\\.)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        br = new Browser();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final String parameter = param.toString();
         br.getPage(parameter);
         String ID = new Regex(parameter, "ivpaste\\.com/(v/|view\\.php\\?id=)([A-Za-z0-9]+)").getMatch(1);
         if (ID == null) {
@@ -69,18 +72,27 @@ public class IvPasteCom extends PluginForDecrypt {
         int i = 0;
         while (true) {
             i++;
-            if (br.containsHTML("pluscaptcha\\.com/")) {
-                if (i >= 5) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
-                }
+            final Form form = br.getFormbyActionRegex(".*?/p/" + ID);
+            if (form == null) {
+                break;
+            }
+            if (i >= 5) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+            if (form.containsHTML("pluscaptcha\\.com/") || /* ads captcha */ form.containsHTML("api\\.minteye\\.com/|api\\.adscaptcha\\.com/")) {
                 logger.info(i + "/3:Unsupported captchatype: " + parameter);
                 sleep(1000l, param);
                 br.getPage("http://ivpaste.com/p/" + ID);
-            } else if (br.containsHTML("api\\.recaptcha\\.net") || br.containsHTML("google\\.com/recaptcha/api/")) {
-                // they have recaptcha v2 also, ive seen 'im not a robot' in browser. -raztoki
-                if (i >= 5) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
-                }
+            } else if (form.containsHTML("areyouahuman\\.com/")) {
+                final String areweahuman = new CaptchaHelperCrawlerPluginAreYouHuman(this, br).getToken();
+                form.put("session_secret", Encoding.urlEncode(areweahuman));
+                form.put("soy_humano_btn", "Submit");
+                br.submitForm(form);
+            } else if (form.containsHTML("class=(\"|')g-recaptcha\\1") && form.containsHTML("google\\.com/recaptcha")) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                form.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                br.submitForm(form);
+            } else if (form.containsHTML("api\\.recaptcha\\.net") || form.containsHTML("google\\.com/recaptcha/api/")) {
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((jd.plugins.hoster.DirectHTTP) recplug).getReCaptcha(br);
                 String apiKey = br.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
@@ -90,7 +102,6 @@ public class IvPasteCom extends PluginForDecrypt {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                Form form = br.getForm(0);
                 rc.setForm(form);
                 rc.setId(apiKey);
                 rc.load();
@@ -101,11 +112,7 @@ public class IvPasteCom extends PluginForDecrypt {
                     br.getPage("http://ivpaste.com/p/" + ID);
                     continue;
                 }
-            } else if (br.containsHTML("KeyCAPTCHA code")) {
-                if (i >= 5) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
-                }
-
+            } else if (form.containsHTML("KeyCAPTCHA code")) {
                 String result = null;
                 if (auto < 3) {
                     auto++;
@@ -118,12 +125,7 @@ public class IvPasteCom extends PluginForDecrypt {
                     throw new DecrypterException(DecrypterException.CAPTCHA);
                 }
                 br.postPage(br.getURL(), "capcode=" + Encoding.urlEncode(result) + "&save=&save=");
-            } else if (br.containsHTML("solvemedia.com")) {
-                if (i >= 5) {
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
-                }
-                Form form = br.getForm(0);
-              
+            } else if (form.containsHTML("solvemedia\\.com")) {
                 org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                 File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                 String code = "";
@@ -134,6 +136,7 @@ public class IvPasteCom extends PluginForDecrypt {
                 form.put("adcopy_response", Encoding.urlEncode(code));
                 br.submitForm(form);
             } else {
+                // this logic is bad, unsupported captcha will result in premature breaking and plugin defect.
                 break;
             }
         }
