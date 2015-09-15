@@ -64,7 +64,11 @@ public class UseNet extends PluginForHost {
     }
 
     protected boolean supportsSSL() {
-        return false && (getAvailableSSLPorts().length > 0 && Application.getJavaVersion() >= Application.JAVA17);
+        return (getAvailableSSLPorts().length > 0 && Application.getJavaVersion() >= Application.JAVA17);
+    }
+
+    protected boolean useSSL() {
+        return Application.getJavaVersion() >= Application.JAVA17 && getPluginConfig().getBooleanProperty(USENET_PREFER_SSL, false) && getAvailableSSLPorts().length > 0;
     }
 
     protected int getPort(final String ID, int[] ports) {
@@ -74,6 +78,14 @@ public class UseNet extends PluginForHost {
         } else {
             return ports[index];
         }
+    }
+
+    protected String getUsername(final Account account) {
+        return account.getUser();
+    }
+
+    protected String getPassword(final Account account) {
+        return account.getPass();
     }
 
     protected Integer[] getPortSelection(int[] ports) {
@@ -136,8 +148,12 @@ public class UseNet extends PluginForHost {
         return 1;
     }
 
-    protected String getServerAdress() throws Exception {
+    protected String getServerAddress() throws Exception {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    protected String getSSLServerAddress() throws Exception {
+        return null;
     }
 
     protected int[] getAvailablePorts() {
@@ -162,7 +178,18 @@ public class UseNet extends PluginForHost {
         final SimpleUseNet client = new SimpleUseNet(proxies.get(0), getLogger());
         this.client.set(client);
         try {
-            client.connect(getServerAdress(), getPort(USENET_SELECTED_PORT, getAvailablePorts()), false, account.getUser(), account.getPass());
+            if (useSSL()) {
+                final String serverAddress;
+                final String sslServerAddress = getSSLServerAddress();
+                if (sslServerAddress != null) {
+                    serverAddress = sslServerAddress;
+                } else {
+                    serverAddress = getServerAddress();
+                }
+                client.connect(serverAddress, getPort(USENET_SELECTED_SSLPORT, getAvailableSSLPorts()), true, getUsername(account), getPassword(account));
+            } else {
+                client.connect(getServerAddress(), getPort(USENET_SELECTED_PORT, getAvailablePorts()), false, getUsername(account), getPassword(account));
+            }
         } catch (InvalidAuthException e) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
@@ -254,11 +281,6 @@ public class UseNet extends PluginForHost {
             throw new NoGateWayException(selector, "No Gateway or Proxy Found");
         }
         return list;
-    }
-
-    @Override
-    public String getHost(DownloadLink link, Account account) {
-        return super.getHost(link, account);
     }
 
     @Override

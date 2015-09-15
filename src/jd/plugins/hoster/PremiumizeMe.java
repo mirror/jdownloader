@@ -567,7 +567,7 @@ public class PremiumizeMe extends UseNet {
     }
 
     @Override
-    protected String getServerAdress() {
+    protected String getServerAddress() {
         return "usenet.premiumize.me";
     }
 

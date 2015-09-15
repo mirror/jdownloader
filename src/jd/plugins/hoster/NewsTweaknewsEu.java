@@ -29,6 +29,8 @@ public class NewsTweaknewsEu extends UseNet {
         return "http://www.tweaknews.eu/en/conditions";
     }
 
+    private final String USENET_USERNAME = "USENET_USERNAME";
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         setBrowserExclusive();
@@ -72,6 +74,12 @@ public class NewsTweaknewsEu extends UseNet {
                 }
             }
             account.saveCookies(br.getCookies(getHost()), "");
+            final String userName = br.getRegex("Username:</td>.*?<td>(.*?)</td>").getMatch(0);
+            if (userName != null) {
+                account.setProperty(USENET_USERNAME, userName);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final String packageType = br.getRegex("name\">Package:(.*?)</div>").getMatch(0);
             if (!StringUtils.contains(packageType, "Block Package")) {
                 // time limit
@@ -128,7 +136,12 @@ public class NewsTweaknewsEu extends UseNet {
     }
 
     @Override
-    protected String getServerAdress() {
+    protected String getUsername(Account account) {
+        return account.getStringProperty(USENET_USERNAME, account.getUser());
+    }
+
+    @Override
+    protected String getServerAddress() {
         return "news.tweaknews.eu";
     }
 

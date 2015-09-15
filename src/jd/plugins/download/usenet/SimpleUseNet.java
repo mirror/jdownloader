@@ -9,10 +9,15 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+
 import jd.http.SocketConnectionFactory;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.socketconnection.SocketConnection;
 import org.jdownloader.logging.LogController;
 
 public class SimpleUseNet {
@@ -61,7 +66,7 @@ public class SimpleUseNet {
      * rfc3977 nntp
      */
 
-    private final Socket socket;
+    private Socket socket = null;
 
     public static class CommandResponse {
         private final int responseCode;
@@ -97,9 +102,14 @@ public class SimpleUseNet {
     private final byte[]    CRLF         = "\r\n".getBytes();
 
     private final LogSource logger;
+    private final HTTPProxy proxy;
+
+    public HTTPProxy getProxy() {
+        return proxy;
+    }
 
     public SimpleUseNet(HTTPProxy proxy, LogSource logger) {
-        socket = SocketConnectionFactory.createSocket(proxy);
+        this.proxy = proxy;
         if (logger != null) {
             this.logger = logger;
         } else {
@@ -107,13 +117,59 @@ public class SimpleUseNet {
         }
     }
 
+    protected Socket createSocket() {
+        return SocketConnectionFactory.createSocket(getProxy());
+    }
+
     public synchronized void connect(String server, int port, boolean ssl, String username, String password) throws IOException {
         connect(new InetSocketAddress(server, port), ssl, username, password);
     }
 
-    public synchronized void connect(SocketAddress socketAddress, boolean ssl, String username, String password) throws IOException {
+    protected SSLSocketFactory getSSLSocketFactory() throws IOException {
+        return SocketConnection.getSSLSocketFactory(true);
+    }
+
+    protected boolean useSNIWorkaround() {
+        return false;
+    }
+
+    public synchronized void connect(SocketAddress socketAddress, final boolean ssl, String username, String password) throws IOException {
         try {
-            socket.connect(socketAddress);
+            if (!ssl) {
+                socket = createSocket();
+                socket.connect(socketAddress);
+            } else {
+                boolean useSNIWorkaround = useSNIWorkaround();
+                while (true) {
+                    socket = createSocket();
+                    socket.connect(socketAddress);
+                    try {
+                        final SSLSocketFactory sslSocketFactory = getSSLSocketFactory();
+                        final SSLSocket sslSocket;
+                        if (useSNIWorkaround) {
+                            /* wrong configured SNI at serverSide */
+                            sslSocket = (SSLSocket) sslSocketFactory.createSocket(socket, "", socket.getPort(), true);
+                        } else {
+                            final String hostName = SocketConnection.getHostName(socketAddress);
+                            if (hostName != null) {
+                                sslSocket = (SSLSocket) sslSocketFactory.createSocket(socket, hostName, socket.getPort(), true);
+                            } else {
+                                throw new IOException("no hostname for ssl available");
+                            }
+                        }
+                        sslSocket.startHandshake();
+                        socket = sslSocket;
+                        break;
+                    } catch (final IOException e) {
+                        silentDisconnect();
+                        if (useSNIWorkaround == false && e.getMessage().contains("unrecognized_name")) {
+                            useSNIWorkaround = true;
+                            continue;
+                        }
+                        throw e;
+                    }
+                }
+            }
             outputStream = socket.getOutputStream();
             inputStream = socket.getInputStream();
             final CommandResponse response = readCommandResponse(null);
@@ -155,19 +211,23 @@ public class SimpleUseNet {
                 // user/pass correct
                 return;
             case 481:
-                // user/pass incorrect
                 throw new InvalidAuthException();
+            case 502:
+                if (StringUtils.containsIgnoreCase(response.getMessage(), "Authentication Failed")) {
+                    // user/pass incorrect
+                    throw new InvalidAuthException();
+                }
             }
         }
         throw new UnknownResponseException(response);
     }
 
     private final ByteArrayOutputStream lineBuffer = new ByteArrayOutputStream() {
-        @Override
-        public synchronized byte[] toByteArray() {
-            return buf;
-        };
-    };
+                                                       @Override
+                                                       public synchronized byte[] toByteArray() {
+                                                           return buf;
+                                                       };
+                                                   };
 
     protected synchronized String readLine() throws IOException {
         return readLine(lineBuffer);

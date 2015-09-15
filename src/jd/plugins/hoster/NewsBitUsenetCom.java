@@ -68,7 +68,7 @@ public class NewsBitUsenetCom extends UseNet {
     }
 
     @Override
-    protected String getServerAdress() {
+    protected String getServerAddress() {
         return "news.bitusenet.com";
     }
 
