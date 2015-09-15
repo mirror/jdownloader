@@ -19,8 +19,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-
-import javax.swing.Icon;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -30,12 +29,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.TwentyOneMembersVariantInfo;
 import jd.plugins.hoster.TwentyOneMembersCom;
 
-import org.appwork.storage.Storable;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
 
 @DecrypterPlugin(revision = "$Revision: 20458 $", interfaceVersion = 2, names = { "21members.com" }, urls = { "http://(www\\.)?21members\\.com/members/scene/(info|photos)/\\d+/.+" }, flags = { 0 })
 public class TwntnMmbrsCm extends PluginForDecrypt {
@@ -44,195 +41,73 @@ public class TwntnMmbrsCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public static class TwentyOneMembersVariantInfo implements Storable, LinkVariant {
-        private String url;
-
-        public String getUrl() {
-            return url;
-        }
-
-        public void setUrl(String url) {
-            this.url = url;
-        }
-
-        public String getShortType() {
-            return shortType;
-        }
-
-        public void setShortType(String shortType) {
-            this.shortType = shortType;
-        }
-
-        private String shortType;
-
-        public TwentyOneMembersVariantInfo(/* Storable */) {
-        }
-
-        public TwentyOneMembersVariantInfo(String url, String shortType) {
-            this.url = url;
-
-            this.shortType = shortType;
-        }
-
-        @Override
-        public String _getUniqueId() {
-            return shortType;
-        }
-
-        public int _getQuality() {
-            if (StringUtils.equals("fullhd", shortType)) {
-                return 1000;
-            }
-            if (StringUtils.equals("hd", shortType)) {
-                return 999;
-            }
-            if (StringUtils.equals("hq", shortType)) {
-                return 998;
-            }
-            if (StringUtils.equals("phone480", shortType)) {
-                return 997;
-            }
-            if (StringUtils.equals("phone272", shortType)) {
-                return 996;
-            }
-            if (StringUtils.equals("ziph", shortType)) {
-                return 0;
-            }
-            if (StringUtils.equals("hiresh", shortType)) {
-                return 1;
-            }
-            return -1;
-        }
-
-        @Override
-        public String _getName() {
-            if (StringUtils.equals("fullhd", shortType)) {
-                return "FullHD 1080p Video";
-            }
-            if (StringUtils.equals("hd", shortType)) {
-                return "HD 720p Video";
-            }
-            if (StringUtils.equals("hq", shortType)) {
-                return "HQ 540p Video";
-            }
-            if (StringUtils.equals("phone480", shortType)) {
-                return "Phone 480p Video";
-            }
-            if (StringUtils.equals("phone272", shortType)) {
-                return "Phone 272p Video";
-            }
-            if (StringUtils.equals("ziph", shortType)) {
-                return "Low Quality Photos";
-            }
-            if (StringUtils.equals("hiresh", shortType)) {
-                return "High Quality Photos";
-            }
-            return shortType;
-        }
-
-        @Override
-        public Icon _getIcon() {
-            return null;
-        }
-
-        @Override
-        public String _getExtendedName() {
-            return shortType;
-        }
-
-        @Override
-        public String _getTooltipDescription() {
-            return shortType;
-        }
-
-        public String _getExtension() {
-            if (StringUtils.equals("ziph", shortType)) {
-                return "zip";
-            }
-            if (StringUtils.equals("hiresh", shortType)) {
-                return "zip";
-            }
-            return "mp4";
-        }
-
-        public boolean isPhoto() {
-            if (StringUtils.equals("ziph", shortType)) {
-                return true;
-            }
-            if (StringUtils.equals("hiresh", shortType)) {
-                return true;
-            }
-            return false;
-        }
-
-    }
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         if (!TwentyOneMembersCom.login(br)) {
             UIOManager.I().showErrorMessage("An active 21members.com account is required for " + parameter);
+            return decryptedLinks;
         }
-        String id = new Regex(parameter, "scene/(info|photos)/(\\d+)").getMatch(1);
+        final String id = new Regex(parameter, "scene/(info|photos)/(\\d+)").getMatch(1);
         br.getPage("http://21members.com/members/scene/info/" + id + "/");
-        ArrayList<TwentyOneMembersVariantInfo> variantInfos = TwentyOneMembersCom.parseVideoVariants(br);
-        if (variantInfos == null || variantInfos.size() == 0) {
+        final ArrayList<TwentyOneMembersVariantInfo> videoVariantInfos = TwentyOneMembersCom.parseVideoVariants(br);
+        if (videoVariantInfos == null || videoVariantInfos.size() == 0) {
             UIOManager.I().showErrorMessage("No access to " + parameter);
             return decryptedLinks;
         }
+        sortVariants(videoVariantInfos);
 
-        sortVariants(variantInfos);
-        String title = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
-        FilePackage fp = FilePackage.getInstance();
+        final String title = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        DownloadLink link = createDownloadlink("http://21members.com/dummy/file/" + id);
-        link.setProperty("title", title);
-        link.setProperty("id", id);
-        link.setVariantSupport(true);
-        fp.add(link);
-        link.setVariants(variantInfos);
 
-        TwentyOneMembersCom.setVariant(link, variantInfos.get(0));
-
-        decryptedLinks.add(link);
+        final DownloadLink videoDummy = createDownloadlink("http://21members.com/dummy/file/" + id);
+        videoDummy.setProperty("title", title);
+        videoDummy.setProperty("id", id);
+        videoDummy.setVariantSupport(true);
+        videoDummy.setVariants(videoVariantInfos);
+        TwentyOneMembersCom.setVariant(videoDummy, videoVariantInfos.get(0));
+        decryptedLinks.add(videoDummy);
 
         br.getPage("http://21members.com/members/scene/photos/" + id + "/");
-        variantInfos = TwentyOneMembersCom.parsePhotoVariants(br);
-        if (variantInfos == null || variantInfos.size() == 0) {
-            return decryptedLinks;
+        final ArrayList<TwentyOneMembersVariantInfo> photoVariantInfos = TwentyOneMembersCom.parsePhotoVariants(br);
+        if (photoVariantInfos != null && photoVariantInfos.size() > 0) {
+            sortVariants(photoVariantInfos);
+            final DownloadLink photoDummy = createDownloadlink("http://21members.com/dummy/file/" + id);
+            photoDummy.setProperty("title", title);
+            photoDummy.setProperty("id", id);
+            photoDummy.setVariantSupport(true);
+            photoDummy.setVariants(photoVariantInfos);
+            TwentyOneMembersCom.setVariant(photoDummy, photoVariantInfos.get(0));
+            decryptedLinks.add(photoDummy);
         }
-
-        link = createDownloadlink("http://21members.com/dummy/file/" + id);
-        link.setProperty("title", title);
-        link.setProperty("id", id);
-        link.setVariantSupport(true);
-
-        sortVariants(variantInfos);
-        link.setVariants(variantInfos);
-        fp.add(link);
-        TwentyOneMembersCom.setVariant(link, variantInfos.get(0));
         // TwentyOneMembersCom.update
-        decryptedLinks.add(link);
-
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 
     /**
      * @param variantInfos
      */
-    private void sortVariants(ArrayList<TwentyOneMembersVariantInfo> variantInfos) {
-        for (TwentyOneMembersVariantInfo v : variantInfos) {
-            v.setUrl(null);
-
-        }
-        Collections.sort(variantInfos, new Comparator<TwentyOneMembersVariantInfo>() {
-
-            @Override
-            public int compare(TwentyOneMembersVariantInfo o1, TwentyOneMembersVariantInfo o2) {
-                return new Integer(o2._getQuality()).compareTo(o1._getQuality());
+    private void sortVariants(final List<TwentyOneMembersVariantInfo> variantInfos) {
+        if (variantInfos != null) {
+            for (final TwentyOneMembersVariantInfo v : variantInfos) {
+                v.setUrl(null);
             }
-        });
+            if (variantInfos.size() > 1) {
+                Collections.sort(variantInfos, new Comparator<TwentyOneMembersVariantInfo>() {
+
+                    public int compare(int x, int y) {
+                        return (x < y) ? -1 : ((x == y) ? 0 : 1);
+                    }
+
+                    @Override
+                    public int compare(TwentyOneMembersVariantInfo o1, TwentyOneMembersVariantInfo o2) {
+                        return compare(o2._getQuality(), o1._getQuality());
+                    }
+                });
+            }
+        }
     }
 
     /* NO OVERRIDE!! */

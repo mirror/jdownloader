@@ -69,21 +69,30 @@ public class Account extends Property {
             cookieStorables.add(new CookieStorable(cookie));
         }
         setProperty(COOKIE_STORAGE, validation);
-        final String storageID = ":" + ID;
-        setProperty(COOKIE_STORAGE + storageID, JSonStorage.toString(cookieStorables));
+        final String COOKIE_STORAGE_ID = COOKIE_STORAGE + ":" + ID;
+        setProperty(COOKIE_STORAGE_ID, JSonStorage.toString(cookieStorables));
+        final String COOKIE_STORAGE_TIMESTAMP_ID = COOKIE_STORAGE + ":TS:" + ID;
+        setProperty(COOKIE_STORAGE_TIMESTAMP_ID, System.currentTimeMillis());
     }
 
     public synchronized void clearCookies(final String ID) {
         removeProperty(COOKIE_STORAGE);
-        final String storageID = ":" + ID;
-        removeProperty(COOKIE_STORAGE + storageID);
+        final String COOKIE_STORAGE_ID = COOKIE_STORAGE + ":" + ID;
+        removeProperty(COOKIE_STORAGE_ID);
+        final String COOKIE_STORAGE_TIMESTAMP_ID = COOKIE_STORAGE + ":TS:" + ID;
+        removeProperty(COOKIE_STORAGE_TIMESTAMP_ID);
+    }
+
+    public synchronized long getCookiesTimeStamp(final String ID) {
+        final String COOKIE_STORAGE_TIMESTAMP_ID = COOKIE_STORAGE + ":TS:" + ID;
+        return getLongProperty(COOKIE_STORAGE_TIMESTAMP_ID, -1);
     }
 
     public synchronized Cookies loadCookies(final String ID) {
         final String validation = Hash.getSHA256(getUser() + ":" + getPass());
-        final String storageID = ":" + ID;
         if (StringUtils.equals(getStringProperty(COOKIE_STORAGE), validation)) {
-            final String cookieStorables = getStringProperty(COOKIE_STORAGE + storageID);
+            final String COOKIE_STORAGE_ID = COOKIE_STORAGE + ":" + ID;
+            final String cookieStorables = getStringProperty(COOKIE_STORAGE_ID);
             if (StringUtils.isNotEmpty(cookieStorables)) {
                 try {
                     final List<CookieStorable> cookies = JSonStorage.restoreFromString(cookieStorables, new TypeRef<ArrayList<CookieStorable>>() {
@@ -98,8 +107,7 @@ public class Account extends Property {
                 }
             }
         }
-        removeProperty(COOKIE_STORAGE);
-        removeProperty(COOKIE_STORAGE + storageID);
+        clearCookies(ID);
         return null;
     }
 
