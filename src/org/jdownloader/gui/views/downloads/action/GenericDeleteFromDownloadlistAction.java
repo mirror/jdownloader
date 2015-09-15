@@ -286,14 +286,14 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
         if (isDeleteAll()) {
             switch (includedSelection.getSelectionType()) {
             case SELECTED:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all());
+                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected_all().trim());
                 break;
 
             case UNSELECTED:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_keep_selected());
+                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_keep_selected().trim());
                 break;
             default:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_all());
+                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_all().trim());
 
             }
 
@@ -301,14 +301,14 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
             switch (includedSelection.getSelectionType()) {
             case SELECTED:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected());
+                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_selected().trim());
                 break;
 
             case UNSELECTED:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_keep_unselected());
+                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object_keep_unselected().trim());
                 break;
             default:
-                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object());
+                sb.append(_GUI._.GenericDeleteSelectedToolbarAction_updateName_object().trim());
 
             }
 
@@ -316,53 +316,71 @@ public class GenericDeleteFromDownloadlistAction extends CustomizableAppAction i
 
             if (isDeleteDisabled()) {
                 if (!first) {
-                    sb.append(" & ");
+                    appendMissingSpace(sb);
+                    sb.append("&");
                 }
-                sb.append(_GUI._.lit_disabled());
+                appendMissingSpace(sb);
+                sb.append(_GUI._.lit_disabled().trim());
                 first = false;
             }
             if (isDeleteFailed()) {
                 if (!first) {
-                    sb.append(" & ");
+                    appendMissingSpace(sb);
+                    sb.append("&");
                 }
                 first = false;
-                sb.append(_GUI._.lit_failed());
+                appendMissingSpace(sb);
+                sb.append(_GUI._.lit_failed().trim());
             }
             if (isDeleteFinished()) {
                 if (!first) {
-                    sb.append(" & ");
+                    appendMissingSpace(sb);
+                    sb.append("&");
                 }
                 first = false;
-                sb.append(_GUI._.lit_finished());
+                appendMissingSpace(sb);
+                sb.append(_GUI._.lit_finished().trim());
             }
 
             if (isDeleteFinishedPackage()) {
                 if (!first) {
-                    sb.append(" & ");
+                    appendMissingSpace(sb);
+                    sb.append("&");
                 }
                 first = false;
-                sb.append(_GUI._.lit_finished_package());
+                appendMissingSpace(sb);
+                sb.append(_GUI._.lit_finished_package().trim());
             }
             if (isDeleteOffline()) {
                 if (!first) {
-                    sb.append(" & ");
+                    appendMissingSpace(sb);
+                    sb.append("&");
                 }
                 first = false;
-                sb.append(_GUI._.lit_offline());
+                appendMissingSpace(sb);
+                sb.append(_GUI._.lit_offline().trim());
             }
 
         }
         switch (getDeleteMode()) {
         case REMOVE_LINKS_AND_DELETE_FILES:
-            sb.append(_GUI._.deleteaction_and_delete_files());
+            appendMissingSpace(sb);
+            sb.append(_GUI._.deleteaction_and_delete_files().trim());
             break;
         case REMOVE_LINKS_AND_RECYCLE_FILES:
-            sb.append(_GUI._.deleteaction_and_recycle_files());
+            appendMissingSpace(sb);
+            sb.append(_GUI._.deleteaction_and_recycle_files().trim());
             break;
         case REMOVE_LINKS_ONLY:
             break;
         }
         return sb.toString();
+    }
+
+    private void appendMissingSpace(StringBuilder sb) {
+        if (sb.charAt(sb.length() - 1) != ' ') {
+            sb.append(" ");
+        }
     }
 
     protected DownloadsTable getTable() {
