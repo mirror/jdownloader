@@ -35,11 +35,6 @@ import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -65,6 +60,11 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
 
 //When adding new domains here also add them to the turbobit.net decrypter (TurboBitNetFolder)
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbobit\\.net|upload\\.mskvn\\.by|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.uz|xrfiles\\.ru|turbobax\\.net|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|freefo\\.ru|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|vipgfx\\.net|turbovit\\.com\\.ua|turboot\\.ru|filez\\.ninja|kilofile\\.com)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
@@ -113,6 +113,7 @@ public class TurboBitNet extends PluginForHost {
         if (urls == null || urls.length == 0) {
             return false;
         }
+        final ArrayList<DownloadLink> deepChecks = new ArrayList<DownloadLink>();
         try {
             final Browser br = new Browser();
             prepBrowser(br, null);
@@ -157,6 +158,9 @@ public class TurboBitNet extends PluginForHost {
                             final String name = fileInfo.getMatch(0);
                             dllink.setAvailable(true);
                             dllink.setFinalFileName(Encoding.htmlDecode(name.trim()));
+                            if (dllink.getKnownDownloadSize() < 0) {
+                                deepChecks.add(dllink);
+                            }
                         }
                     }
                 }
@@ -166,6 +170,13 @@ public class TurboBitNet extends PluginForHost {
             }
         } catch (final Exception e) {
             return false;
+        } finally {
+            for (final DownloadLink deepCheck : deepChecks) {
+                try {
+                    requestFileInformation_Web(deepCheck);
+                } catch (final Throwable e) {
+                }
+            }
         }
         return true;
     }
@@ -958,46 +969,56 @@ public class TurboBitNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         if (prefer_single_linkcheck_linkcheckpage) {
-            checkLinks(new DownloadLink[] { downloadLink });
-            if (!downloadLink.isAvailabilityStatusChecked()) {
-                return AvailableStatus.UNCHECKED;
-            }
-            if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            requestFileInformation_LinkCheck(downloadLink);
         } else {
-            // premium links should not open here, we will just return true
-            if (downloadLink.getDownloadURL().matches(premRedirectLinks)) {
-                return AvailableStatus.TRUE;
+            requestFileInformation_Web(downloadLink);
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    public AvailableStatus requestFileInformation_LinkCheck(final DownloadLink downloadLink) throws IOException, PluginException {
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) {
+            return AvailableStatus.UNCHECKED;
+        }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    public AvailableStatus requestFileInformation_Web(final DownloadLink downloadLink) throws IOException, PluginException {
+        // premium links should not open here, we will just return true
+        if (downloadLink.getDownloadURL().matches(premRedirectLinks)) {
+            return AvailableStatus.TRUE;
+        }
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        prepBrowser(br, userAgent.get());
+        br.setCookie(MAINPAGE + "/", "set_user_lang_change", "en");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("(<div class=\"code-404\">404</div>|Файл не найден\\. Возможно он был удален\\.<br|File( was)? not found\\.|It could possibly be deleted\\.)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String filenameSize = "<title>\\s*(?:Download\\s+file|Datei\\s+downloaden)\\s*(.*?)\\s*\\(([\\d\\.,]+\\s*[BMGTP]{1,2})\\)\\s*\\|\\s*TurboBit\\.net";
+        String fileName = br.getRegex(filenameSize).getMatch(0);
+        if (fileName == null) {
+            fileName = br.getRegex("<span class=(\"|')file-title\\1[^>]*>(.*?)</span>").getMatch(1);
+        }
+        String fileSize = br.getRegex(filenameSize).getMatch(1);
+        if (fileSize == null) {
+            br.getRegex("class=\"file-size\">([^<>\"]*?)<").getMatch(0);
+        }
+        if (fileName == null) {
+            if (br.containsHTML("Our service is currently unavailable in your country.")) {
+                downloadLink.getLinkStatus().setStatusText("Our service is currently unavailable in your country.");
+                return AvailableStatus.UNCHECKABLE;
             }
-            setBrowserExclusive();
-            br.setFollowRedirects(true);
-            prepBrowser(br, userAgent.get());
-            br.setCookie(MAINPAGE + "/", "set_user_lang_change", "en");
-            br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML("(<div class=\"code-404\">404</div>|Файл не найден\\. Возможно он был удален\\.<br|File( was)? not found\\.|It could possibly be deleted\\.)")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final String filenameSize = "<title>\\s*(?:Download\\s+file|Datei\\s+downloaden)\\s*(.*?)\\s*\\(([\\d\\.,]+\\s*[BMGTP]{1,2})\\)\\s*\\|\\s*TurboBit\\.net";
-            String fileName = br.getRegex(filenameSize).getMatch(0);
-            if (fileName == null) {
-                fileName = br.getRegex("<span class=(\"|')file-title\\1[^>]*>(.*?)</span>").getMatch(1);
-            }
-            String fileSize = br.getRegex(filenameSize).getMatch(1);
-            if (fileSize == null) {
-                br.getRegex("class=\"file-size\">([^<>\"]*?)<").getMatch(0);
-            }
-            if (fileName == null) {
-                if (br.containsHTML("Our service is currently unavailable in your country.")) {
-                    downloadLink.getLinkStatus().setStatusText("Our service is currently unavailable in your country.");
-                    return AvailableStatus.UNCHECKABLE;
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            downloadLink.setName(fileName.trim());
-            if (fileSize != null) {
-                downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize.trim().replace(",", ".").replace(" ", "")));
-            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setName(fileName.trim());
+        if (fileSize != null) {
+            downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize.trim().replace(",", ".").replace(" ", "")));
         }
         return AvailableStatus.TRUE;
     }
