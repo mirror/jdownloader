@@ -82,7 +82,9 @@ public class TwentyOneMembersCom extends PluginForHost {
 
     public boolean login(Browser br, Account account, final long trustCookiesAge) throws Exception {
         synchronized (account) {
+
             final boolean followRedirect = br.isFollowingRedirects();
+            br.setFollowRedirects(false);
             try {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
@@ -91,7 +93,7 @@ public class TwentyOneMembersCom extends PluginForHost {
                     if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trustCookiesAge) {
                         return true;
                     }
-                    br.setFollowRedirects(true);
+
                     br.getPage("http://21members.com/members/home/");
                     final String sidiCookie = br.getCookie(getHost(), "sidi");
                     if (sidiCookie != null) {
@@ -103,7 +105,7 @@ public class TwentyOneMembersCom extends PluginForHost {
                     }
                     account.clearCookies("");
                 }
-                br.setFollowRedirects(false);
+
                 br.getPage("http://21members.com/login");
                 final String relCaptchaUrl = br.getRegex("<span>Auth code\\:</span><img src='([^']+)\' .*?alt='captcha'").getMatch(0);
                 final Form login = br.getFormBySubmitvalue("Login");
