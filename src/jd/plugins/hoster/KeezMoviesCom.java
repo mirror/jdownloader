@@ -39,12 +39,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.K2SApi.JSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "keezmovies.com" }, urls = { "http://(www\\.)?(keezmovies\\.com/embed_player\\.php\\?v?id=\\d+|keezmoviesdecrypted\\.com/video/[\\w\\-]+)" }, flags = { 2 })
 public class KeezMoviesCom extends antiDDoSForHost {
 
-    private String DLLINK    = null;
-    private String FLASHVARS = null;
+    private String DLLINK         = null;
+    private String FLASHVARS      = null;
+    private String FLASHVARS_JSON = null;
 
     public KeezMoviesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -116,10 +118,10 @@ public class KeezMoviesCom extends antiDDoSForHost {
                 filename = br.getRegex("<h1 class=\"title_video_page\">([^<>\"]*?)</h1>").getMatch(0);
             }
             FLASHVARS = br.getRegex("<param name=\"flashvars\" value=\"(.*?)\"").getMatch(0);
-            if (FLASHVARS == null) {
+            FLASHVARS_JSON = br.getRegex("var flashvars\\s*=\\s*\\{(.*?)\\};").getMatch(0);
+            if (FLASHVARS == null && FLASHVARS_JSON == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-
             FLASHVARS = Encoding.htmlDecode(FLASHVARS);
             String isEncrypted = getValue("encrypted");
             if ("1".equals(isEncrypted) || Boolean.parseBoolean(isEncrypted)) {
@@ -312,7 +314,13 @@ public class KeezMoviesCom extends antiDDoSForHost {
     }
 
     private String getValue(String s) {
-        return new Regex(FLASHVARS, "\\&" + s + "=(.*?)(\\&|$)").getMatch(0);
+        if (FLASHVARS != null) {
+            return new Regex(FLASHVARS, "&" + s + "=(.*?)(&|$)").getMatch(0);
+        }
+        if (FLASHVARS_JSON != null) {
+            return JSonUtils.getJson(FLASHVARS_JSON, s);
+        }
+        return null;
     }
 
     @Override
