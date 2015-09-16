@@ -35,7 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "onedrive.live.com" }, urls = { "https?://(www\\.)?(onedrive\\.live\\.com/.+|skydrive\\.live\\.com/.+|(sdrv|1drv)\\.ms/[A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "https?://(www\\.)?(onedrive\\.live\\.com/.+|skydrive\\.live\\.com/.+|(sdrv|1drv)\\.ms/[A-Za-z0-9]+)" }, flags = { 0 })
 public class OneDriveLiveCom extends PluginForDecrypt {
 
     public OneDriveLiveCom(PluginWrapper wrapper) {
@@ -76,11 +76,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         long totalSize = 0;
         long totalCount = 0;
         long childCount = 0;
-        try {
-            br.setLoadLimit(br.getLoadLimit() * 2);
-        } catch (final Throwable e) {
-            /* Not available in JD1 */
-        }
+        br.setLoadLimit(br.getLoadLimit() * 2);
         final DownloadLink main = createDownloadlink("http://onedrivedecrypted.live.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
         try {
             if (parameter.matches(TYPE_SKYDRIVE_REDIRECT)) {
@@ -298,14 +294,8 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             }
         }
         dl.setProperty("plain_view_url", view_url);
-        try {
-            dl.setContentUrl(view_url);
-            dl.setLinkID(linkid);
-        } catch (final Throwable e) {
-            /* Not available in old 0.9.591 Stable */
-            dl.setBrowserUrl(view_url);
-            dl.setProperty("LINKDUPEID", linkid);
-        }
+        dl.setContentUrl(view_url);
+        dl.setLinkID(linkid);
         if (download_url != null) {
             dl.setProperty("plain_download_url", download_url);
         } else {
