@@ -18,7 +18,10 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -68,6 +71,7 @@ public class FaceBookComVideos extends PluginForHost {
     private boolean             accountNeeded         = false;
 
     private int                 MAXCHUNKS             = 0;
+    private boolean             is_private            = false;
 
     public FaceBookComVideos(final PluginWrapper wrapper) {
         super(wrapper);
@@ -75,6 +79,7 @@ public class FaceBookComVideos extends PluginForHost {
         setConfigElements();
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("facebookdecrypted.com/", "facebook.com/"));
         String thislink = link.getDownloadURL().replace("https://", "http://");
@@ -92,24 +97,68 @@ public class FaceBookComVideos extends PluginForHost {
         return false;
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unchecked" })
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        is_private = link.getBooleanProperty("is_private", false);
+        DLLINK = link.getStringProperty("directlink", null);
         link.setName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
         br.setCookie("http://www.facebook.com", "locale", "en_GB");
         br.setFollowRedirects(true);
         final String lid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null && aa.isValid()) {
-            login(aa, false, br);
+            login(aa, br);
             loggedIN = true;
         }
         String filename = null;
         URLConnectionAdapter con = null;
-        if (link.getDownloadURL().matches(TYPE_DOWNLOAD)) {
+        if (link.getDownloadURL().matches(TYPE_SINGLE_PHOTO) && is_private) {
+            accountNeeded = true;
+            if (!loggedIN) {
+                return AvailableStatus.UNCHECKABLE;
+            }
+            this.br.getPage(FACEBOOKMAINPAGE);
+            final String user = getUser(this.br);
+            final String image_id = getPICID(link);
+            final String thread_fbid = link.getStringProperty("thread_fbid", null);
+            final String tmp_postdata = "__user=" + user + "&__a=1&__dyn=" + jd.plugins.decrypter.FaceBookComGallery.getDyn() + "&__req=f&fb_dtsg=" + jd.plugins.decrypter.FaceBookComGallery.getfb_dtsg() + "&ttstamp=" + System.currentTimeMillis() + "&__rev=" + jd.plugins.decrypter.FaceBookComGallery.getRev(this.br);
+            this.br.postPage("https://www.facebook.com/ajax/messaging/attachments/sharedphotos.php?thread_id=" + thread_fbid + "&image_id=" + image_id, tmp_postdata);
+            final String json = this.br.getRegex("for \\(;;\\);(\\{.+)").getMatch(0);
+            if (json == null) {
+                /* No json? Probably our url is offline! */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "jsmods/require/{0}/{3}/{1}/query_results");
+            final Iterator<Entry<String, Object>> it_temp = entries.entrySet().iterator();
+            final String id_temp = it_temp.next().getKey();
+            final String walkstring = id_temp + "/message_images/edges/{0}/node/image1/uri";
+            final String finallink = (String) DummyScriptEnginePlugin.walkJson(entries, walkstring);
+            if (finallink == null) {
+                /* Something website-wise has changed! */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             MAXCHUNKS = 1;
             try {
                 DLLINK = link.getDownloadURL();
-                con = br.openGetConnection(link.getDownloadURL());
+                con = br.openHeadConnection(DLLINK);
+                if (!con.getContentType().contains("html")) {
+                    filename = Encoding.htmlDecode(getFileNameFromHeader(con));
+                    link.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        } else if (link.getDownloadURL().matches(TYPE_DOWNLOAD)) {
+            MAXCHUNKS = 1;
+            try {
+                DLLINK = link.getDownloadURL();
+                con = br.openGetConnection(DLLINK);
                 if (!con.getContentType().contains("html")) {
                     filename = Encoding.htmlDecode(getFileNameFromHeader(con));
                     link.setDownloadSize(con.getLongContentLength());
@@ -159,7 +208,7 @@ public class FaceBookComVideos extends PluginForHost {
                 DLLINK = br.getRegex("href=\"(https?://[^<>\"]*?(\\?|\\&amp;)dl=1)\"").getMatch(0);
                 // Try to find original quality link
                 final String setID = br.getRegex("\"set\":\"([^<>\"]*?)\"").getMatch(0);
-                final String user = getUser();
+                final String user = getUser(this.br);
                 final String ajaxpipe_token = getajaxpipeToken();
                 /*
                  * If no downloadlink is there, simply try to find the fullscreen link to the picture which is located on the "theatre view"
@@ -168,7 +217,7 @@ public class FaceBookComVideos extends PluginForHost {
                 if (setID != null && user != null && ajaxpipe_token != null && DLLINK == null) {
                     try {
                         logger.info("Trying to get original quality image");
-                        final String fbid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+                        final String fbid = getPICID(link);
                         final String data = "{\"type\":\"1\",\"fbid\":\"" + fbid + "\",\"set\":\"" + setID + "\",\"firstLoad\":true,\"ssid\":0,\"av\":\"0\"}";
                         final Browser br2 = br.cloneBrowser();
                         final String theaterView = "https://www.facebook.com/ajax/pagelet/generic.php/PhotoViewerInitPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipe_token + "&no_script_path=1&data=" + Encoding.urlEncode(data) + "&__user=" + user + "&__a=1&__dyn=7n8ajEyl2qm9udDgDxyF4EihUtCxO4p9GgSmEZ9LFwxBxCuUWdDx2ubhHximmey8OdUS8w&__req=jsonp_3&__rev=" + REV + "&__adt=3";
@@ -207,7 +256,6 @@ public class FaceBookComVideos extends PluginForHost {
                     // Usual part
                     DLLINK = partOne + partTwo;
                 }
-
                 try {
                     con = br.openGetConnection(DLLINK);
                     if (!con.getContentType().contains("html")) {
@@ -235,11 +283,16 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
+    private String getPICID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
+    }
+
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            login(account, true, br);
+            login(account, br);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
@@ -276,15 +329,8 @@ public class FaceBookComVideos extends PluginForHost {
             }
             dl.startDownload();
         } else {
-            if (accountNeeded) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by registered users");
+            if (accountNeeded && !this.loggedIN) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } else {
                 handleVideo(downloadLink);
             }
@@ -359,7 +405,7 @@ public class FaceBookComVideos extends PluginForHost {
     private static final String LOGINFAIL_ENGLISH = "\r\nMaybe invalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!\r\nNote that the Facebook login via JD will only work if there are no additional\r\nsecurity questions when logging in your account.\r\nCheck that and try again!";
 
     @SuppressWarnings("unchecked")
-    public void login(final Account account, final boolean force, Browser br) throws Exception {
+    public void login(final Account account, Browser br) throws Exception {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getHeaders().put("Accept-Encoding", "gzip, deflate");
@@ -373,7 +419,7 @@ public class FaceBookComVideos extends PluginForHost {
             if (acmatch) {
                 acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
             }
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+            if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                 final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                 if (cookies.containsKey("c_user") && cookies.containsKey("xs") && account.isValid()) {
                     for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
@@ -381,7 +427,12 @@ public class FaceBookComVideos extends PluginForHost {
                         final String value = cookieEntry.getValue();
                         br.setCookie(FACEBOOKMAINPAGE, key, value);
                     }
-                    return;
+                    br.getPage(FACEBOOKMAINPAGE);
+                    if (br.containsHTML("id=\"logoutMenu\"")) {
+                        return;
+                    }
+                    /* Get rid of old cookies / headers */
+                    br = new Browser();
                 }
             }
             br.setFollowRedirects(true);
@@ -616,16 +667,8 @@ public class FaceBookComVideos extends PluginForHost {
         return res;
     }
 
-    private String getUser() {
-        String user = br.getRegex("\"user\":\"(\\d+)\"").getMatch(0);
-        if (user == null) {
-            user = br.getRegex("detect_broken_proxy_cache\\(\"(\\d+)\", \"c_user\"\\)").getMatch(0);
-        }
-        // regex verified: 10.2.2014
-        if (user == null) {
-            user = br.getRegex("\\[(\\d+)\\,\"c_user\"").getMatch(0);
-        }
-        return user;
+    private static String getUser(final Browser br) {
+        return jd.plugins.decrypter.FaceBookComGallery.getUser(br);
     }
 
     private String getajaxpipeToken() {

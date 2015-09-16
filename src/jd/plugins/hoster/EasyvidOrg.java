@@ -19,9 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,17 +29,12 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -54,72 +47,109 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "faststore.org" }, urls = { "https?://(www\\.)?faststore\\.org/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
-public class FastStoreOrg extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easyvid.org" }, urls = { "https?://(www\\.)?easyvid\\.org/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+public class EasyvidOrg extends PluginForHost {
 
-    private String                         correctedBR                  = "";
-    private String                         passCode                     = null;
-    private static final String            PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    /* Some HTML code to identify different (error) states */
+    private static final String            HTML_PASSWORDPROTECTED        = "<br><b>Passwor(d|t):</b> <input";
+    private static final String            HTML_MAINTENANCE_MODE         = ">This server is in maintenance mode";
+
+    /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                  = "http://faststore.org";
-    private static final String            NICE_HOST                    = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty            = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String            COOKIE_HOST                   = "http://easyvid.org";
+    private static final String            NICE_HOST                     = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String            NICE_HOSTproperty             = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                      = "(faststore\\.org)";
-    private static final String            MAINTENANCE                  = ">This server is in maintenance mode";
-    private static final String            MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
-    private static final String            ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String            PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String            PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final boolean           VIDEOHOSTER                  = false;
-    private static final boolean           VIDEOHOSTER_2                = false;
-    private static final boolean           SUPPORTSHTTPS                = false;
-    private static final boolean           SUPPORTSHTTPS_FORCED         = false;
-    private static final boolean           SUPPORTS_ALT_AVAILABLECHECK  = true;
-    private static final boolean           ENABLE_HTML_FILESIZE_CHECK   = false;
-    private final boolean                  ENABLE_RANDOM_UA             = false;
-    private static AtomicReference<String> agent                        = new AtomicReference<String>(null);
+    private static final String            DOMAINS                       = "(easyvid\\.org)";
+    /*
+     * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
+     * check for imagehost final downloadlinks.
+     */
+    private static final boolean           AUDIOHOSTER                   = false;
+    /* If activated, checks if the video is directly available via "vidembed" --> Skips ALL waittimes- and captchas */
+    private static final boolean           VIDEOHOSTER                   = false;
+    /* If activated, checks if the video is directly available via "embed" --> Skips all waittimes & captcha in most cases */
+    private static final boolean           VIDEOHOSTER_2                 = true;
+    /* Enable this for imagehosts */
+    private static final boolean           IMAGEHOSTER                   = false;
+
+    private static final boolean           SUPPORTS_HTTPS                = false;
+    private static final boolean           SUPPORTS_HTTPS_FORCED         = false;
+    private static final boolean           SUPPORTS_AVAILABLECHECK_ALT   = false;
+    private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE = false;
+    private static final boolean           ENABLE_RANDOM_UA              = false;
+    private static final boolean           ENABLE_HTML_FILESIZE_CHECK    = false;
+    /* Waittime stuff */
+    private static final boolean           WAITFORCED                    = false;
+    private static final int               WAITSECONDSMIN                = 3;
+    private static final int               WAITSECONDSMAX                = 100;
+    private static final int               WAITSECONDSFORCED             = 5;
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = 1;
-    private static final int               FREE_MAXDOWNLOADS            = 1;
-    private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 1;
+    private static final boolean           FREE_RESUME                   = true;
+    private static final int               FREE_MAXCHUNKS                = -2;
+    private static final int               FREE_MAXDOWNLOADS             = 1;
+    private static final boolean           ACCOUNT_FREE_RESUME           = true;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS        = 0;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS     = 20;
+    private static final boolean           ACCOUNT_PREMIUM_RESUME        = true;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS     = 0;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS  = 20;
+
+    /* Linktypes */
+    private static final String            TYPE_EMBED                    = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
+    private static final String            TYPE_NORMAL                   = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
+    private static final String            USERTEXT_ALLWAIT_SHORT        = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String            USERTEXT_MAINTENANCE          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
+    private static final String            USERTEXT_PREMIUMONLY1         = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String            USERTEXT_PREMIUMONLY2         = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+
+    /* Used variables */
+    private String                         correctedBR                   = "";
+    private String                         fuid                          = null;
+    private String                         passCode                      = null;
+
+    private static AtomicReference<String> agent                         = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger           totalMaxSimultanFreeDownload  = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
-    private static AtomicInteger           maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger           maxPrem                      = new AtomicInteger(1);
-    private static Object                  LOCK                         = new Object();
-    private String                         fuid                         = null;
+    private static AtomicInteger           maxFree                       = new AtomicInteger(1);
+    private static AtomicInteger           maxPrem                       = new AtomicInteger(1);
+    private static Object                  LOCK                          = new Object();
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.6.6.7
+    // XfileSharingProBasic Version 2.7.0.1
     // Tags: Script, template
     // mods:
-    // limit-info: premium untested, set FREE limits
+    // limit-info:
     // protocol: no https
-    // captchatype: recaptcha
+    // captchatype: null 4dignum solvemedia recaptcha
     // other:
     // TODO: Add case maintenance + alternative filesize check
 
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/embed-", "/"));
-        /* link cleanup, but respect users protocol choosing or forced protocol */
-        if (!SUPPORTSHTTPS) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
-        } else if (SUPPORTSHTTPS && SUPPORTSHTTPS_FORCED) {
-            link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
+        final String fuid = getFUIDFromURL(link);
+        final String protocol;
+        /* link cleanup, prefer https if possible */
+        if (SUPPORTS_HTTPS || SUPPORTS_HTTPS_FORCED) {
+            protocol = "https://";
+        } else {
+            protocol = "http://";
         }
+        final String corrected_downloadurl = protocol + NICE_HOST + "/" + fuid;
+        if (link.getDownloadURL().matches(TYPE_EMBED)) {
+            final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
+            /* Make sure user gets the kind of content urls that he added to JD. */
+            try {
+                link.setContentUrl(url_embed);
+            } catch (final Throwable e) {
+                /* Not available in 0.9.581 Stable */
+            }
+        }
+        link.setUrlDownload(corrected_downloadurl);
     }
 
     @Override
@@ -127,12 +157,13 @@ public class FastStoreOrg extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public FastStoreOrg(PluginWrapper wrapper) {
+    @SuppressWarnings("deprecation")
+    public EasyvidOrg(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(COOKIE_HOST + "/premium.html");
+        // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({ "deprecation", "unused" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String[] fileInfo = new String[3];
@@ -146,30 +177,34 @@ public class FastStoreOrg extends PluginForHost {
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) {
-            fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-            if (fileInfo[0] != null) {
-                link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
-                return AvailableStatus.TRUE;
+        if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
+            if (SUPPORTS_AVAILABLECHECK_ABUSE) {
+                fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+                if (fileInfo[0] != null) {
+                    link.setName(Encoding.htmlDecode(fileInfo[0]).trim());
+                    return AvailableStatus.TRUE;
+                }
             }
-            link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
+            link.getLinkStatus().setStatusText(USERTEXT_MAINTENANCE);
             return AvailableStatus.UNCHECKABLE;
         }
         if (br.getURL().contains("/?op=login&redirect=")) {
             logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
-            link.getLinkStatus().setStatusText(PREMIUMONLY2);
+            link.getLinkStatus().setStatusText(USERTEXT_PREMIUMONLY2);
             try {
-                fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
-                if (br.containsHTML(">No such file<")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (SUPPORTS_AVAILABLECHECK_ABUSE) {
+                    fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
+                    if (br.containsHTML(">No such file<")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                 }
-                fileInfo[0] = altbr.getRegex("<b>Filename:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
-                if (SUPPORTS_ALT_AVAILABLECHECK) {
+                if (SUPPORTS_AVAILABLECHECK_ALT) {
                     altbr.postPage(COOKIE_HOST + "/?op=checkfiles", "op=checkfiles&process=Check+URLs&list=" + Encoding.urlEncode(link.getDownloadURL()));
                     fileInfo[1] = altbr.getRegex(">" + link.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatch(0);
                 }
                 /* 2nd offline check */
-                if ((SUPPORTS_ALT_AVAILABLECHECK && altbr.containsHTML("(>" + link.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) && fileInfo[0] == null) {
+                if ((SUPPORTS_AVAILABLECHECK_ALT && altbr.containsHTML("(>" + link.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>|" + this.fuid + " not found\\!</font>)")) && fileInfo[0] == null) {
+                    /* SUPPORTS_AVAILABLECHECK_ABUSE == false and-or could not find any filename. */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (fileInfo[0] != null || fileInfo[1] != null) {
                     /* We know the link is online, set all information we got */
@@ -192,6 +227,10 @@ public class FastStoreOrg extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         scanInfo(fileInfo);
+        /* Imagehosts often do not show any filenames, at least not on the first page plus they often have their abuse-url disabled. */
+        if (IMAGEHOSTER && fileInfo[0] == null) {
+            fileInfo[0] = this.fuid;
+        }
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -205,8 +244,7 @@ public class FastStoreOrg extends PluginForHost {
         }
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(fileInfo[0].trim());
-        if (fileInfo[1] == null && SUPPORTS_ALT_AVAILABLECHECK) {
-            // fileInfo contains wrong filesize
+        if (fileInfo[1] == null && SUPPORTS_AVAILABLECHECK_ALT) {
             /* Do alt availablecheck here but don't check availibility because we already know that the file must be online! */
             logger.info("Filesize not available, trying altAvailablecheck");
             try {
@@ -222,6 +260,9 @@ public class FastStoreOrg extends PluginForHost {
     }
 
     private String[] scanInfo(final String[] fileInfo) {
+        final String sharebox0 = "copy\\(this\\);.+>(.+) - ([\\d\\.]+ (?:B|KB|MB|GB))</a></textarea>[\r\n\t ]+</div>";
+        final String sharebox1 = "copy\\(this\\);.+\\](.+) - ([\\d\\.]+ (?:B|KB|MB|GB))\\[/URL\\]";
+
         /* standard traits from base page */
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + DOMAINS + "/" + fuid + "/(.*?)</font>").getMatch(2);
@@ -234,9 +275,9 @@ public class FastStoreOrg extends PluginForHost {
                         fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                         // next two are details from sharing box
                         if (fileInfo[0] == null) {
-                            fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
+                            fileInfo[0] = new Regex(correctedBR, sharebox0).getMatch(0);
                             if (fileInfo[0] == null) {
-                                fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                fileInfo[0] = new Regex(correctedBR, sharebox1).getMatch(0);
                                 if (fileInfo[0] == null) {
                                     /* Link of the box without filesize */
                                     fileInfo[0] = new Regex(correctedBR, "onFocus=\"copy\\(this\\);\">http://(www\\.)?" + DOMAINS + "/" + fuid + "/([^<>\"]*?)</textarea").getMatch(2);
@@ -252,8 +293,20 @@ public class FastStoreOrg extends PluginForHost {
                 fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
                 if (fileInfo[1] == null) {
                     fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                    // next two are details from sharing box
                     if (fileInfo[1] == null) {
-                        fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                        fileInfo[1] = new Regex(correctedBR, sharebox0).getMatch(1);
+                        if (fileInfo[1] == null) {
+                            fileInfo[1] = new Regex(correctedBR, sharebox1).getMatch(1);
+                            // generic failover#1
+                            if (fileInfo[1] == null) {
+                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                            }
+                            // generic failover#2
+                            if (fileInfo[1] == null) {
+                                fileInfo[1] = new Regex(correctedBR, "(\\d+(?:\\.\\d+)? ?(?:B(?:ytes?)?))").getMatch(0);
+                            }
+                        }
                     }
                 }
             }
@@ -275,17 +328,36 @@ public class FastStoreOrg extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
-    @SuppressWarnings({ "unused", "deprecation" })
+    @SuppressWarnings({ "unused", "deprecation", "static-access" })
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         passCode = downloadLink.getStringProperty("pass");
-        /* First, bring up saved final links */
+        /* 1, bring up saved final links */
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
-        /* Second, check for streaming/direct links on the first page */
+        /* 2, check for streaming/direct links on the first page */
         if (dllink == null) {
             dllink = getDllink();
         }
-        /* Third, do they provide video hosting? */
+        /* 3, do they provide audio hosting? */
+        if (dllink == null && AUDIOHOSTER && downloadLink.getName().endsWith(".mp3")) {
+            try {
+                logger.info("Trying to get link via mp3embed");
+                final Browser brv = br.cloneBrowser();
+                brv.getPage("/mp3embed-" + fuid);
+                dllink = brv.getRedirectLocation();
+                if (dllink == null) {
+                    dllink = brv.getRegex("flashvars=\"file=(https?://[^<>\"]*?\\.mp3)\"").getMatch(0);
+                }
+                if (dllink == null) {
+                    logger.info("Failed to get link via mp3embed because: " + br.toString());
+                } else {
+                    logger.info("Successfully found link via mp3embed");
+                }
+            } catch (final Throwable e) {
+                logger.info("Failed to get link via mp3embed");
+            }
+        }
+        /* 4, do they provide video hosting? */
         if (dllink == null && VIDEOHOSTER) {
             try {
                 logger.info("Trying to get link via vidembed");
@@ -293,7 +365,7 @@ public class FastStoreOrg extends PluginForHost {
                 brv.getPage("/vidembed-" + fuid);
                 dllink = brv.getRedirectLocation();
                 if (dllink == null) {
-                    logger.info("Failed to get link via embed because: " + br.toString());
+                    logger.info("Failed to get link via vidembed because: " + br.toString());
                 } else {
                     logger.info("Successfully found link via vidembed");
                 }
@@ -301,6 +373,7 @@ public class FastStoreOrg extends PluginForHost {
                 logger.info("Failed to get link via vidembed");
             }
         }
+        /* 5, do they provide video hosting #2? */
         if (dllink == null && VIDEOHOSTER_2) {
             try {
                 logger.info("Trying to get link via embed");
@@ -320,9 +393,28 @@ public class FastStoreOrg extends PluginForHost {
                 getPage(downloadLink.getDownloadURL());
             }
         }
-        /* Fourth, continue like normal */
-        if (dllink == null) {
+        /* 6, do we have an imagehost? */
+        if (dllink == null && IMAGEHOSTER) {
             checkErrors(downloadLink, false);
+            Form imghost_next_form = null;
+            do {
+                imghost_next_form = this.br.getFormbyKey("next");
+                if (imghost_next_form != null) {
+                    imghost_next_form.remove("method_premium");
+                    /* end of backward compatibility */
+                    submitForm(imghost_next_form);
+                    checkErrors(downloadLink, false);
+                    dllink = getDllink();
+                    /* For imagehosts, filenames are often not given until we can actually see/download the image! */
+                    final String image_filename = new Regex(correctedBR, "class=\"pic\" alt=\"([^<>\"]*?)\"").getMatch(0);
+                    if (image_filename != null) {
+                        downloadLink.setName(Encoding.htmlDecode(image_filename));
+                    }
+                }
+            } while (imghost_next_form != null);
+        }
+        /* 7, continue like normal */
+        if (dllink == null) {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
@@ -337,7 +429,7 @@ public class FastStoreOrg extends PluginForHost {
                     }
                 }
                 /* end of backward compatibility */
-                sendForm(download1);
+                submitForm(download1);
                 checkErrors(downloadLink, false);
                 dllink = getDllink();
             }
@@ -354,7 +446,7 @@ public class FastStoreOrg extends PluginForHost {
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
                 boolean skipWaittime = false;
-                if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
+                if (new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
                     password = true;
                     logger.info("The downloadlink seems to be password protected.");
                 }
@@ -454,7 +546,7 @@ public class FastStoreOrg extends PluginForHost {
                 if (!skipWaittime) {
                     waitTime(timeBefore, downloadLink);
                 }
-                sendForm(dlForm);
+                submitForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true);
                 dllink = getDllink();
@@ -508,7 +600,7 @@ public class FastStoreOrg extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = br2.openGetConnection(dllink);
+                con = openConnection(br2, dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -604,6 +696,7 @@ public class FastStoreOrg extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("unused")
     private String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
@@ -618,6 +711,23 @@ public class FastStoreOrg extends PluginForHost {
                         }
                     }
                 }
+            }
+        }
+        if (dllink == null) {
+            /* Sometimes used for streaming */
+            dllink = new Regex(correctedBR, "file:[\t\n\r ]*?\"(http[^<>\"]*?\\.(?:mp4|flv))\"").getMatch(0);
+        }
+        if (dllink == null && IMAGEHOSTER) {
+            /* Used for image-hosts */
+            dllink = new Regex(correctedBR, "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/img/[^<>\"\\']+)").getMatch(0);
+            if (dllink == null) {
+                dllink = new Regex(correctedBR, "(https?://[^/]+/img/\\d+/[^<>\"\\']+)").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = new Regex(correctedBR, "(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-\\.]+\\.)?" + DOMAINS + ")/i/\\d+/[^<>\"\\']+)").getMatch(0);
+            }
+            if (dllink == null) {
+                dllink = new Regex(correctedBR, "(https?://[^/]+/i/\\d+/[^<>\"\\']+)").getMatch(0);
             }
         }
         return dllink;
@@ -664,24 +774,40 @@ public class FastStoreOrg extends PluginForHost {
         correctBR();
     }
 
-    private void sendForm(final Form form) throws Exception {
+    private void submitForm(final Form form) throws Exception {
         br.submitForm(form);
         correctBR();
     }
 
+    /** Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails. */
+    @SuppressWarnings("unused")
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
+        int wait = 0;
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-        /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        /* Ticket Time */
+        String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(0);
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, "id=\"countdown_str\" style=\"[^<>\"]+\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
+        }
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, "id=\"countdown_str\">Wait <span id=\"[A-Za-z0-9]+\">(\\d+)</span>").getMatch(0);
+        }
         if (ttt != null) {
-            int wait = Integer.parseInt(ttt);
-            wait -= passedTime;
-            logger.info("[Seconds] Waittime on the page: " + ttt);
-            logger.info("[Seconds] Passed time: " + passedTime);
-            logger.info("[Seconds] Total time to wait: " + wait);
-            if (wait > 0) {
-                sleep(wait * 1000l, downloadLink);
+            wait = Integer.parseInt(ttt);
+            if (WAITFORCED && (wait >= WAITSECONDSMAX || wait <= WAITSECONDSMIN)) {
+                logger.warning("Wait exceeds max/min, using forced wait!");
+                wait = WAITSECONDSFORCED;
             }
+        } else if (WAITFORCED) {
+            int i = 0;
+            while (i <= WAITSECONDSMIN) {
+                i += new Random().nextInt(WAITSECONDSMIN);
+            }
+            wait = i;
+        }
+        wait -= passedTime;
+        if (wait > 0) {
+            sleep(wait * 1000l, downloadLink);
         }
     }
 
@@ -774,9 +900,13 @@ public class FastStoreOrg extends PluginForHost {
         downloadLink.setFinalFileName(FFN);
     }
 
-    @SuppressWarnings("deprecation")
     private void setFUID(final DownloadLink dl) {
-        fuid = new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+        fuid = getFUIDFromURL(dl);
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getFUIDFromURL(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
     }
 
     private String handlePassword(final Form pwform, final DownloadLink thelink) throws PluginException {
@@ -802,7 +932,7 @@ public class FastStoreOrg extends PluginForHost {
 
     private void checkErrors(final DownloadLink theLink, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
-            if (new Regex(correctedBR, PASSWORDTEXT).matches() && correctedBR.contains("Wrong password")) {
+            if (new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches() && correctedBR.contains("Wrong password")) {
                 /* handle password has failed in the past, additional try catching / resetting values */
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
@@ -852,7 +982,7 @@ public class FastStoreOrg extends PluginForHost {
                 logger.info("Detected waittime #2, waiting " + waittime + "milliseconds");
                 /* Not enough wait time to reconnect -> Wait short and retry */
                 if (waittime < 180000) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", ALLWAIT_SHORT), waittime);
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.allwait", USERTEXT_ALLWAIT_SHORT), waittime);
                 }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
             }
@@ -864,7 +994,7 @@ public class FastStoreOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         }
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
+        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download (?:larger|bigger) files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
@@ -876,7 +1006,7 @@ public class FastStoreOrg extends PluginForHost {
                         throw (PluginException) e;
                     }
                 }
-                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY1 + " " + filesizelimit);
+                throw new PluginException(LinkStatus.ERROR_FATAL, USERTEXT_PREMIUMONLY1 + " " + filesizelimit);
             } else {
                 logger.info("Only downloadable via premium");
                 try {
@@ -886,7 +1016,7 @@ public class FastStoreOrg extends PluginForHost {
                         throw (PluginException) e;
                     }
                 }
-                throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
+                throw new PluginException(LinkStatus.ERROR_FATAL, USERTEXT_PREMIUMONLY2);
             }
         } else if (br.getURL().contains("/?op=login&redirect=")) {
             logger.info("Only downloadable via premium");
@@ -897,10 +1027,10 @@ public class FastStoreOrg extends PluginForHost {
                     throw (PluginException) e;
                 }
             }
-            throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
+            throw new PluginException(LinkStatus.ERROR_FATAL, USERTEXT_PREMIUMONLY2);
         }
-        if (new Regex(correctedBR, MAINTENANCE).matches()) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_MAINTENANCE, 2 * 60 * 60 * 1000l);
         }
     }
 
@@ -942,199 +1072,225 @@ public class FastStoreOrg extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
-        final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
-        if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
-            /* free users it's provided by default */
-            ai.setUsedSpace(space[0] + " " + space[1]);
-        } else if ((space != null && space.length != 0) && space[0] != null) {
-            /* premium users the Mb value isn't provided for some reason... */
-            ai.setUsedSpace(space[0] + "Mb");
-        }
-        account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
-        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            availabletraffic.trim();
-            /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
-            if (!availabletraffic.startsWith("-")) {
-                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-            } else {
-                ai.setTrafficLeft(0);
-            }
+    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
+        URLConnectionAdapter con;
+        if (isJDStable()) {
+            con = br.openGetConnection(directlink);
         } else {
-            ai.setUnlimitedTraffic();
+            con = br.openHeadConnection(directlink);
         }
-        /* If the premium account is expired we'll simply accept it as a free account. */
-        final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
-        long expire_milliseconds = 0;
-        if (expire != null) {
-            expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
-        }
-        if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            account.setProperty("nopremium", true);
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Registered (free) account");
-        } else {
-            ai.setValidUntil(expire_milliseconds);
-            maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setProperty("nopremium", false);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
-            ai.setStatus("Premium account");
-        }
-        return ai;
+        return con;
     }
 
-    @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
-            try {
-                /* Load cookies */
-                br.setCookiesExclusive(true);
-                prepBrowser(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        return;
-                    }
-                }
-                br.setFollowRedirects(true);
-                getPage(COOKIE_HOST + "/login.html");
-                final Form loginform = br.getFormbyProperty("name", "FL");
-                if (loginform == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                sendForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                if (!br.getURL().contains("/?op=my_account")) {
-                    getPage("/?op=my_account");
-                }
-                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
-                    account.setProperty("nopremium", true);
-                } else {
-                    account.setProperty("nopremium", false);
-                }
-                /* Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-            } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                throw e;
-            }
-        }
+    private boolean isJDStable() {
+        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
-    @SuppressWarnings("deprecation")
-    @Override
-    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        passCode = downloadLink.getStringProperty("pass");
-        requestFileInformation(downloadLink);
-        login(account, false);
-        if (account.getBooleanProperty("nopremium")) {
-            requestFileInformation(downloadLink);
-            doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
-        } else {
-            String dllink = checkDirectLink(downloadLink, "premlink");
-            if (dllink == null) {
-                br.setFollowRedirects(false);
-                getPage(downloadLink.getDownloadURL());
-                dllink = getDllink();
-                if (dllink == null) {
-                    Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform != null && new Regex(correctedBR, PASSWORDTEXT).matches()) {
-                        passCode = handlePassword(dlform, downloadLink);
-                    }
-                    checkErrors(downloadLink, true);
-                    if (dlform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    sendForm(dlform);
-                    checkErrors(downloadLink, true);
-                    dllink = getDllink();
-                }
-            }
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
-                }
-                logger.warning("The final dllink seems not to be a file!");
-                br.followConnection();
-                correctBR();
-                checkServerErrors();
-                handlePluginBroken(downloadLink, "dllinknofile", 3);
-            }
-            fixFilename(downloadLink);
-            downloadLink.setProperty("premlink", dllink);
-            dl.startDownload();
-        }
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
-    }
+    // @SuppressWarnings("deprecation")
+    // @Override
+    // public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+    // final AccountInfo ai = new AccountInfo();
+    // /* reset maxPrem workaround on every fetchaccount info */
+    // maxPrem.set(1);
+    // try {
+    // login(account, true);
+    // } catch (final PluginException e) {
+    // account.setValid(false);
+    // throw e;
+    // }
+    // final String space[] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
+    // if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
+    // /* free users it's provided by default */
+    // ai.setUsedSpace(space[0] + " " + space[1]);
+    // } else if ((space != null && space.length != 0) && space[0] != null) {
+    // /* premium users the Mb value isn't provided for some reason... */
+    // ai.setUsedSpace(space[0] + "Mb");
+    // }
+    // account.setValid(true);
+    // final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+    // if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
+    // availabletraffic.trim();
+    // /* need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
+    // if (!availabletraffic.startsWith("-")) {
+    // ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+    // } else {
+    // ai.setTrafficLeft(0);
+    // }
+    // } else {
+    // ai.setUnlimitedTraffic();
+    // }
+    // /* If the premium account is expired we'll simply accept it as a free account. */
+    // final String expire = new Regex(correctedBR,
+    // "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+    // long expire_milliseconds = 0;
+    // if (expire != null) {
+    // expire_milliseconds = TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH);
+    // }
+    // if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
+    // maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
+    // account.setProperty("nopremium", true);
+    // try {
+    // account.setType(AccountType.FREE);
+    // account.setMaxSimultanDownloads(maxPrem.get());
+    // account.setConcurrentUsePossible(false);
+    // } catch (final Throwable e) {
+    // /* not available in old Stable 0.9.581 */
+    // }
+    // ai.setStatus("Registered (free) account");
+    // } else {
+    // ai.setValidUntil(expire_milliseconds);
+    // maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+    // account.setProperty("nopremium", false);
+    // try {
+    // account.setType(AccountType.PREMIUM);
+    // account.setMaxSimultanDownloads(maxPrem.get());
+    // account.setConcurrentUsePossible(true);
+    // } catch (final Throwable e) {
+    // /* not available in old Stable 0.9.581 */
+    // }
+    // ai.setStatus("Premium account");
+    // }
+    // return ai;
+    // }
+    //
+    // @SuppressWarnings("unchecked")
+    // private void login(final Account account, final boolean force) throws Exception {
+    // synchronized (LOCK) {
+    // try {
+    // /* Load cookies */
+    // br.setCookiesExclusive(true);
+    // prepBrowser(br);
+    // final Object ret = account.getProperty("cookies", null);
+    // boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name",
+    // Encoding.urlEncode(account.getUser())));
+    // if (acmatch) {
+    // acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+    // }
+    // if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+    // final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+    // if (account.isValid()) {
+    // for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+    // final String key = cookieEntry.getKey();
+    // final String value = cookieEntry.getValue();
+    // this.br.setCookie(COOKIE_HOST, key, value);
+    // }
+    // return;
+    // }
+    // }
+    // br.setFollowRedirects(true);
+    // getPage(COOKIE_HOST + "/login.html");
+    // final Form loginform = br.getFormbyProperty("name", "FL");
+    // if (loginform == null) {
+    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!",
+    // PluginException.VALUE_ID_PREMIUM_DISABLE);
+    // } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBłąd wtyczki, skontaktuj się z Supportem JDownloadera!",
+    // PluginException.VALUE_ID_PREMIUM_DISABLE);
+    // } else {
+    // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!",
+    // PluginException.VALUE_ID_PREMIUM_DISABLE);
+    // }
+    // }
+    // loginform.put("login", Encoding.urlEncode(account.getUser()));
+    // loginform.put("password", Encoding.urlEncode(account.getPass()));
+    // submitForm(loginform);
+    // if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+    // if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
+    // "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.",
+    // PluginException.VALUE_ID_PREMIUM_DISABLE);
+    // } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
+    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
+    // "\r\nBłędny użytkownik/hasło lub kod Captcha wymagany do zalogowania!\r\nUpewnij się, że prawidłowo wprowadziłes hasło i nazwę użytkownika. Dodatkowo:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź hasło i nazwę użytkownika ręcznie bez użycia opcji Kopiuj i Wklej.",
+    // PluginException.VALUE_ID_PREMIUM_DISABLE);
+    // } else {
+    // throw new PluginException(LinkStatus.ERROR_PREMIUM,
+    // "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.",
+    // PluginException.VALUE_ID_PREMIUM_DISABLE);
+    // }
+    // }
+    // if (!br.getURL().contains("/?op=my_account")) {
+    // getPage("/?op=my_account");
+    // }
+    // if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
+    // account.setProperty("nopremium", true);
+    // } else {
+    // account.setProperty("nopremium", false);
+    // }
+    // /* Save cookies */
+    // final HashMap<String, String> cookies = new HashMap<String, String>();
+    // final Cookies add = this.br.getCookies(COOKIE_HOST);
+    // for (final Cookie c : add.getCookies()) {
+    // cookies.put(c.getKey(), c.getValue());
+    // }
+    // account.setProperty("name", Encoding.urlEncode(account.getUser()));
+    // account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+    // account.setProperty("cookies", cookies);
+    // } catch (final PluginException e) {
+    // account.setProperty("cookies", Property.NULL);
+    // throw e;
+    // }
+    // }
+    // }
+    //
+    // @SuppressWarnings("deprecation")
+    // @Override
+    // public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+    // passCode = downloadLink.getStringProperty("pass");
+    // requestFileInformation(downloadLink);
+    // login(account, false);
+    // if (account.getBooleanProperty("nopremium")) {
+    // requestFileInformation(downloadLink);
+    // doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
+    // } else {
+    // String dllink = checkDirectLink(downloadLink, "premlink");
+    // if (dllink == null) {
+    // br.setFollowRedirects(false);
+    // getPage(downloadLink.getDownloadURL());
+    // dllink = getDllink();
+    // if (dllink == null) {
+    // Form dlform = br.getFormbyProperty("name", "F1");
+    // if (dlform != null && new Regex(correctedBR, HTML_PASSWORDPROTECTED).matches()) {
+    // passCode = handlePassword(dlform, downloadLink);
+    // }
+    // checkErrors(downloadLink, true);
+    // if (dlform == null) {
+    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    // }
+    // submitForm(dlform);
+    // checkErrors(downloadLink, true);
+    // dllink = getDllink();
+    // }
+    // }
+    // if (dllink == null) {
+    // logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    // }
+    // logger.info("Final downloadlink = " + dllink + " starting the download...");
+    // dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+    // if (dl.getConnection().getContentType().contains("html")) {
+    // if (dl.getConnection().getResponseCode() == 503) {
+    // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5
+    // * 60 * 1000l);
+    // }
+    // logger.warning("The final dllink seems not to be a file!");
+    // br.followConnection();
+    // correctBR();
+    // checkServerErrors();
+    // handlePluginBroken(downloadLink, "dllinknofile", 3);
+    // }
+    // fixFilename(downloadLink);
+    // downloadLink.setProperty("premlink", dllink);
+    // dl.startDownload();
+    // }
+    // }
+    //
+    // @Override
+    // public int getMaxSimultanPremiumDownloadNum() {
+    // /* workaround for free/premium issue on stable 09581 */
+    // return maxPrem.get();
+    // }
 
     @Override
     public void reset() {
@@ -1147,6 +1303,11 @@ public class FastStoreOrg extends PluginForHost {
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.SibSoft_XFileShare;
+    }
+
+    @Override
+    public Boolean siteTesterDisabled() {
+        return Boolean.TRUE;
     }
 
 }

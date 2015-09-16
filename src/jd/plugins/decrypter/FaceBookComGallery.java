@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -40,6 +43,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 import jd.plugins.hoster.K2SApi.JSonUtils;
 import jd.utils.JDUtilities;
 
@@ -55,27 +59,28 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private static final String     FACEBOOKMAINPAGE                = "http://www.facebook.com";
     private int                     DIALOGRETURN                    = -1;
 
-    private static final String     TYPE_FBSHORTLINK                = "http(s)?://(www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
+    private static final String     TYPE_FBSHORTLINK                = "http(s)?://(?:www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
     private static final String     TYPE_FB_REDIRECT_TO_EXTERN_SITE = "https?://l\\.facebook\\.com/l/[^/]+/.+";
-    private static final String     TYPE_SINGLE_PHOTO               = "http(s)?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+.*?";
-    private static final String     TYPE_SINGLE_VIDEO_MANY_TYPES    = "https?://(www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
-    private static final String     TYPE_SINGLE_VIDEO_EMBED         = "https?://(www\\.)?facebook\\.com/video/embed\\?video_id=\\d+";
-    private static final String     TYPE_SINGLE_VIDEO_VIDEOS        = "https?://(www\\.)?facebook\\.com/.+/videos.*?/\\d+.*?";
-    private static final String     TYPE_SET_LINK_PHOTO             = "http(s)?://(www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)o?a[0-9\\.]+(\\&type=\\d+)?";
-    private static final String     TYPE_SET_LINK_VIDEO             = "https?://(www\\.)?facebook\\.com/media/set/\\?set=vb\\.\\d+.*?";
-    private static final String     TYPE_ALBUMS_LINK                = "https?://(www\\.)?facebook\\.com/.+photos_albums";
-    private static final String     TYPE_PHOTOS_OF_LINK             = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of.*";
-    private static final String     TYPE_PHOTOS_ALL_LINK            = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all.*";
-    private static final String     TYPE_PHOTOS_STREAM_LINK         = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_stream.*";
-    private static final String     TYPE_PHOTOS_LINK                = "https?://(www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos.*";
-    private static final String     TYPE_GROUPS_PHOTOS              = "https?://(www\\.)?facebook\\.com/groups/\\d+/photos/";
-    private static final String     TYPE_GROUPS_FILES               = "https?://(www\\.)?facebook\\.com/groups/\\d+/files/";
-    private static final String     TYPE_PROFILE_PHOTOS             = "https?://(www\\.)?facebook\\.com/profile\\.php\\?id=\\d+\\&sk=photos\\&collection_token=[A-Z0-9%]+";
-    private static final String     TYPE_NOTES                      = "https?://(www\\.)?facebook\\.com/(notes/|note\\.php\\?note_id=).+";
+    private static final String     TYPE_SINGLE_PHOTO               = "http(s)?://(?:www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+.*?";
+    private static final String     TYPE_SINGLE_VIDEO_MANY_TYPES    = "https?://(?:www\\.)?facebook\\.com/(video/video|photo|video)\\.php\\?v=\\d+";
+    private static final String     TYPE_SINGLE_VIDEO_EMBED         = "https?://(?:www\\.)?facebook\\.com/video/embed\\?video_id=\\d+";
+    private static final String     TYPE_SINGLE_VIDEO_VIDEOS        = "https?://(?:www\\.)?facebook\\.com/.+/videos.*?/\\d+.*?";
+    private static final String     TYPE_SET_LINK_PHOTO             = "http(s)?://(?:www\\.)?facebook\\.com/(media/set/\\?set=|[^<>\"/]*?/media_set\\?set=)o?a[0-9\\.]+(\\&type=\\d+)?";
+    private static final String     TYPE_SET_LINK_VIDEO             = "https?://(?:www\\.)?facebook\\.com/media/set/\\?set=vb\\.\\d+.*?";
+    private static final String     TYPE_ALBUMS_LINK                = "https?://(?:www\\.)?facebook\\.com/.+photos_albums";
+    private static final String     TYPE_PHOTOS_OF_LINK             = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of.*";
+    private static final String     TYPE_PHOTOS_ALL_LINK            = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all.*";
+    private static final String     TYPE_PHOTOS_STREAM_LINK         = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_stream.*";
+    private static final String     TYPE_PHOTOS_LINK                = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos.*";
+    private static final String     TYPE_GROUPS_PHOTOS              = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/photos/";
+    private static final String     TYPE_GROUPS_FILES               = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/files/";
+    private static final String     TYPE_PROFILE_PHOTOS             = "https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+\\&sk=photos\\&collection_token=[A-Z0-9%]+";
+    private static final String     TYPE_NOTES                      = "https?://(?:www\\.)?facebook\\.com/(notes/|note\\.php\\?note_id=).+";
+    private static final String     TYPE_MESSAGE                    = "httpss?://(?:www\\.)?facebook\\.com/messages/.+";
 
     private static final int        MAX_LOOPS_GENERAL               = 150;
     private static final int        MAX_PICS_DEFAULT                = 5000;
-    public static final String      REV                             = "1496061";
+    public static final String      REV                             = "1938577";
 
     private static String           MAINPAGE                        = "http://www.facebook.com";
     private static final String     CRYPTLINK                       = "facebookdecrypted.com/";
@@ -83,7 +88,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     private static final String     CONTENTUNAVAILABLE              = ">Dieser Inhalt ist derzeit nicht verfügbar|>This content is currently unavailable<";
     private String                  PARAMETER                       = null;
-    private boolean                 fastLinkcheckPictures           = jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;                                              ;
+    private boolean                 fastLinkcheckPictures           = jd.plugins.hoster.FaceBookComVideos.FASTLINKCHECK_PICTURES_DEFAULT;                                                ;
     private boolean                 logged_in                       = false;
     private ArrayList<DownloadLink> decryptedLinks                  = null;
 
@@ -173,6 +178,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 decryptGroupsPhotos();
             } else if (parameter.matches(TYPE_NOTES)) {
                 decryptNotes();
+            } else if (parameter.matches(TYPE_MESSAGE)) {
+                decryptMessagePhotos();
             } else {
                 // Should never happen
                 logger.info("Unsupported linktype: " + PARAMETER);
@@ -207,7 +214,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
         String fpName = br.getRegex("<title id=\"pageTitle\">([^<>\"]*?)\\- Photos \\| Facebook</title>").getMatch(0);
         final String profileID = getProfileID();
-        final String user = getUser();
+        final String user = getUser(this.br);
         if (user == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
             throw new DecrypterException("Decrypter broken for link: " + PARAMETER);
@@ -279,7 +286,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
         final String profileID = getProfileID();
         String fpName = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
-        final String user = getUser();
+        final String user = getUser(this.br);
         final String token = br.getRegex("\"tab_count\":\\d+,\"token\":\"([^<>\"]*?)\"").getMatch(0);
         if (token == null || user == null || profileID == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
@@ -313,7 +320,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     logger.info("Returning already decrypted links anyways...");
                     break;
                 }
-                final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/TaggedPhotosAppCollectionPagelet?data=%7B%22collection_token%22%3A%22" + token + "%22%2C%22cursor%22%3A%22" + cursor + "%22%2C%22tab_key%22%3A%22photos_of%22%2C%22profile_id%22%3A" + profileID + "%2C%22overview%22%3Afalse%2C%22ftid%22%3Anull%2C%22order%22%3Anull%2C%22sk%22%3A%22photos%22%7D&__user=" + user + "&__a=1&__dyn=7n8ahyj2qmp5xl2u5F92Ke82e8w&__adt=" + i;
+                final String loadLink = MAINPAGE + "/ajax/pagelet/generic.php/TaggedPhotosAppCollectionPagelet?data=%7B%22collection_token%22%3A%22" + token + "%22%2C%22cursor%22%3A%22" + cursor + "%22%2C%22tab_key%22%3A%22photos_of%22%2C%22profile_id%22%3A" + profileID + "%2C%22overview%22%3Afalse%2C%22ftid%22%3Anull%2C%22order%22%3Anull%2C%22sk%22%3A%22photos%22%7D&__user=" + user + "&__a=1&__dyn=" + getDyn() + "&__adt=" + i;
                 br.getPage(loadLink);
                 links = br.getRegex("ajax\\\\/photos\\\\/hovercard\\.php\\?fbid=(\\d+)\\&").getColumn(0);
                 currentMaxPicCount = 40;
@@ -374,7 +381,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         } else {
             profileID = getProfileID();
         }
-        final String user = getUser();
+        final String user = getUser(this.br);
         final String totalPicCount = br.getRegex("data-medley-id=\"pagelet_timeline_medley_photos\">Photos<span class=\"_gs6\">(\\d+((,|\\.)\\d+)?)</span>").getMatch(0);
         if (user == null || profileID == null || ajaxpipeToken == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
@@ -512,7 +519,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             fpName = br.getRegex("class=\"fbPhotoAlbumTitle\">([^<>\"]*?)</h1>").getMatch(0);
         }
         final String ajaxpipeToken = getajaxpipeToken();
-        final String user = getUser();
+        final String user = getUser(this.br);
         String lastfirstID = "";
         if (ajaxpipeToken == null || user == null || type == null || setID == null) {
             logger.warning("Decrypter broken for link: " + PARAMETER);
@@ -587,8 +594,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
         String fpName = getPageTitle();
         final String url_username = new Regex(PARAMETER, "facebook\\.com/([^<>\"\\?/]+)").getMatch(0);
-        final String rev = getRev();
-        final String user = getUser();
+        final String rev = getRev(this.br);
+        final String user = getUser(this.br);
         final String dyn = getDyn();
         final String ajaxpipe_token = getajaxpipeToken();
         final String profileID = getProfileID();
@@ -737,8 +744,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     private void decryptGroupsPhotos() throws Exception {
         String fpName = getPageTitle();
-        final String rev = getRev();
-        final String user = getUser();
+        final String rev = getRev(this.br);
+        final String user = getUser(this.br);
         final String dyn = getDyn();
         final String totalPicCount = br.getRegex("data-medley-id=\"pagelet_timeline_medley_photos\">Photos<span class=\"_gs6\">(\\d+((,|\\.)\\d+)?)</span>").getMatch(0);
         final String ajaxpipe_token = getajaxpipeToken();
@@ -875,6 +882,42 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
     }
 
+    @SuppressWarnings("unchecked")
+    private void decryptMessagePhotos() throws Exception {
+        final String url_username = new Regex(this.PARAMETER, "/messages/(.+)").getMatch(0);
+        if (!this.logged_in) {
+            logger.info("Login required to decrypt photos of private messages");
+            return;
+        }
+        this.getpagefirsttime(this.PARAMETER);
+        final String thread_fbid = this.br.getRegex("" + url_username + "\",\"id\":\"fbid:(\\d+)\"").getMatch(0);
+        final String user = getUser(this.br);
+        if (thread_fbid == null || user == null) {
+            /* Probably offline url */
+            return;
+        }
+        final String postdata = "thread_id=" + thread_fbid + "&offset=0&limit=1000&__user=" + user + "&__a=1&__dyn=" + getDyn() + "&__req=19&fb_dtsg=" + getfb_dtsg() + "&ttstamp=" + System.currentTimeMillis() + "&__rev=" + getRev(this.br);
+        /* First find all image-IDs */
+        this.br.postPage("/ajax/messaging/attachments/sharedphotos.php", postdata);
+        /* Secondly access each image individually to find its' final URL and download it */
+        String json = this.br.getRegex("for \\(;;\\);(\\{.+)").getMatch(0);
+        if (json == null) {
+            this.decryptedLinks = null;
+            return;
+        }
+        LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+        entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "payload/imagesData");
+        final Iterator<Entry<String, Object>> it = entries.entrySet().iterator();
+        while (it.hasNext()) {
+            final Entry<String, Object> entry = it.next();
+            final String image_id = entry.getKey();
+            final DownloadLink dl = createPicDownloadlink(image_id);
+            dl.setProperty("is_private", true);
+            dl.setProperty("thread_fbid", thread_fbid);
+            this.decryptedLinks.add(dl);
+        }
+    }
+
     private void decryptNotes() throws Exception {
         final String html = br.getRegex("<div class=\"_4-u3 _5cla\">(.*?)class=\"commentable_item\"").getMatch(0);
         if (html == null) {
@@ -889,8 +932,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
     // TODO: Use this everywhere as it should work universal
     private void decryptPicsGeneral(String controller) throws Exception {
         String fpName = getPageTitle();
-        final String rev = getRev();
-        final String user = getUser();
+        final String rev = getRev(this.br);
+        final String user = getUser(this.br);
         final String dyn = getDyn();
         final String appcollection = br.getRegex("\"pagelet_timeline_app_collection_(\\d+:\\d+)(:\\d+)?\"").getMatch(0);
         final String profileID = getProfileID();
@@ -1036,11 +1079,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         final String final_link = "http://www." + CRYPTLINK + "photo.php?fbid=" + picID;
         final String real_link = "http://www.facebook.com/photo.php?fbid=" + picID;
         final DownloadLink dl = createDownloadlink(final_link);
-        try {
-            dl.setContentUrl(real_link);
-        } catch (final Throwable e) {
-            dl.setBrowserUrl(real_link);
-        }
+        dl.setContentUrl(real_link);
         if (!logged_in) {
             dl.setProperty("nologin", true);
         }
@@ -1060,10 +1099,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
         return br.getRegex("\"ajaxpipe_token\":\"([^<>\"]*?)\"").getMatch(0);
     }
 
-    private String getRev() {
+    public static String getRev(final Browser br) {
         String rev = br.getRegex("\"revision\":(\\d+)").getMatch(0);
         if (rev == null) {
-            rev = "1162685";
+            rev = REV;
         }
         return rev;
     }
@@ -1072,7 +1111,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         return br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
     }
 
-    private String getDyn() {
+    public static String getDyn() {
         return "7n8apij2qmumdDgDxyIJ3Ga58Ciq2W8GA8ABGeqheCu6po";
     }
 
@@ -1112,7 +1151,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
     }
 
-    private String getUser() {
+    public static String getUser(final Browser br) {
         String user = br.getRegex("\"user\":\"(\\d+)\"").getMatch(0);
         if (user == null) {
             user = br.getRegex("detect_broken_proxy_cache\\(\"(\\d+)\", \"c_user\"\\)").getMatch(0);
@@ -1122,6 +1161,10 @@ public class FaceBookComGallery extends PluginForDecrypt {
             user = br.getRegex("\\[(\\d+)\\,\"c_user\"").getMatch(0);
         }
         return user;
+    }
+
+    public static String getfb_dtsg() {
+        return "fb_dtsg";
     }
 
     /**
@@ -1174,7 +1217,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
         if (aa != null) {
             try {
-                ((jd.plugins.hoster.FaceBookComVideos) facebookPlugin).login(aa, false, this.br);
+                ((jd.plugins.hoster.FaceBookComVideos) facebookPlugin).login(aa, this.br);
                 // New account is valid, let's add it to the premium overview
                 if (addAcc) {
                     AccountController.getInstance().addAccount(facebookPlugin, aa);
@@ -1189,6 +1232,16 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
         return false;
         /** Login stuff end */
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     private void showFreeDialog() {
