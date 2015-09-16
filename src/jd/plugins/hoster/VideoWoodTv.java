@@ -16,6 +16,11 @@
 
 package jd.plugins.hoster;
 
+import java.util.HashMap;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -70,7 +75,25 @@ public class VideoWoodTv extends antiDDoSForHost {
         if (br.containsHTML("This video is not ready yet")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host says 'This video is not ready yet'", 30 * 60 * 1000l);
         }
-        final String dllink = br.getRegex("file:\\s*(\"|')(http.*?)\\1").getMatch(1);
+        String dllink = br.getRegex("file:\\s*(\"|')(http.*?)\\1").getMatch(1);
+        if (dllink == null) {
+            final String js = br.getRegex("eval\\((function\\(p,a,c,k,e,d\\)[^\r\n]+\\)\\))\\)").getMatch(0);
+            final ScriptEngineManager manager = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(null);
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            String result = null;
+            try {
+                engine.eval("var res = " + js);
+                result = (String) engine.get("res");
+            } catch (final Exception e) {
+                e.printStackTrace();
+            }
+            if (result == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // mp4 is under the second file, my simple jsonutils wont work well.
+            final HashMap<String, Object> entries = (HashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(result);
+            dllink = (String) entries.get("file");
+        }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
