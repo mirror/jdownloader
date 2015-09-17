@@ -200,6 +200,11 @@ public class LnkBcks extends antiDDoSForDecrypt {
                     try {
                         con = br2.openGetConnection(swf);
                     } catch (final Throwable t) {
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (final Throwable e) {
+                        }
                     }
                 }
                 final String adurl = new Regex(js, "AdUrl\\s*:\\s*('|\")(.*?)\\1").getMatch(1);
@@ -214,7 +219,7 @@ public class LnkBcks extends antiDDoSForDecrypt {
                 if (timeLeft > 0) {
                     sleep(timeLeft, param);
                 }
-                Browser br3 = br.cloneBrowser();
+                final Browser br3 = br.cloneBrowser();
                 br3.getHeaders().put("Accept", "*/*");
                 br3.getHeaders().put("Cache-Control", null);
                 br3.getPage("/intermission/loadTargetUrl?t=" + token + "&aK=" + authKey + "&a_b=false");
