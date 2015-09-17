@@ -43,6 +43,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "https?://((www\\.|[a-z]{2}\\.)?(twitchtv\\.com|twitch\\.tv)/(?!directory)[^<>/\"]+/((b|c|v)/\\d+|videos(\\?page=\\d+)?)|(www\\.)?twitch\\.tv/archive/archive_popout\\?id=\\d+)" }, flags = { 0 })
@@ -380,7 +381,11 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                     } catch (Exception e) {
                         dlink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                     }
-                    decryptedLinks.add(dlink);
+                    if (m3u8.contains("/chunked")) {
+                        decryptedLinks.add(dlink);
+                    } else {
+                        decryptedLinks.add(0, dlink);
+                    }
                 }
                 // because its too akward to know bitrate to p rating we online check, then confirm by ffprobe results
                 if (true) {
@@ -401,34 +406,52 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                     }
                     final boolean useBest = this.getPluginConfig().getBooleanProperty("useBest", true);
 
-                    for (final DownloadLink downloadLink : decryptedLinks) {
-                        // chunked and be 1080 outside of norm parmaeters and can have standard size entry also.. so a second 1080. We will
-                        // assume chunked is best (first one). entry one should be the best in this situation, but we must match against
-                        // user setting.
-                        final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
-                        if (desiredLinks.isEmpty() || !useBest) {
-                            // videos fall within ranges, not always right on the quality specified above.
-                            if (vidQual >= 1080) {
-                                if (q1080) {
-                                    desiredLinks.add(downloadLink);
-                                }
-                            } else if (vidQual <= 1080 && vidQual >= 720) {
-                                if (q720) {
-                                    desiredLinks.add(downloadLink);
-                                }
-                            } else if (vidQual <= 720 && vidQual >= 480) {
-                                if (q480) {
-                                    desiredLinks.add(downloadLink);
-                                }
-                            } else if (vidQual <= 480 && vidQual >= 360) {
-                                if (q360) {
-                                    desiredLinks.add(downloadLink);
-                                }
-                            } else if (vidQual <= 360 && vidQual >= 240) {
-                                if (q240) {
+                    boolean chunked = false;
+                    while (true) {
+                        if (q1080 && (desiredLinks.isEmpty() || !useBest)) {
+                            for (final DownloadLink downloadLink : decryptedLinks) {
+                                final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
+                                if (vidQual >= 1080 && StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked) {
                                     desiredLinks.add(downloadLink);
                                 }
                             }
+                        }
+                        if (q720 && (desiredLinks.isEmpty() || !useBest)) {
+                            for (final DownloadLink downloadLink : decryptedLinks) {
+                                final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
+                                if (vidQual < 1080 && vidQual >= 720 && StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked) {
+                                    desiredLinks.add(downloadLink);
+                                }
+                            }
+                        }
+                        if (q480 && (desiredLinks.isEmpty() || !useBest)) {
+                            for (final DownloadLink downloadLink : decryptedLinks) {
+                                final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
+                                if (vidQual < 720 && vidQual >= 480 && StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked) {
+                                    desiredLinks.add(downloadLink);
+                                }
+                            }
+                        }
+                        if (q360 && (desiredLinks.isEmpty() || !useBest)) {
+                            for (final DownloadLink downloadLink : decryptedLinks) {
+                                final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
+                                if (vidQual < 480 && vidQual >= 360 && StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked) {
+                                    desiredLinks.add(downloadLink);
+                                }
+                            }
+                        }
+                        if (q240 && (desiredLinks.isEmpty() || !useBest)) {
+                            for (final DownloadLink downloadLink : decryptedLinks) {
+                                final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
+                                if (vidQual < 360 && vidQual >= 240 && StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked) {
+                                    desiredLinks.add(downloadLink);
+                                }
+                            }
+                        }
+                        if (chunked == true) {
+                            break;
+                        } else {
+                            chunked = true;
                         }
                     }
                 }
