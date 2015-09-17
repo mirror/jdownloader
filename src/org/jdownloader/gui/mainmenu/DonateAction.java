@@ -1,9 +1,10 @@
 package org.jdownloader.gui.mainmenu;
 
 import java.awt.event.ActionEvent;
-import java.io.IOException;
+import java.io.File;
 
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.txtresource.TranslationFactory;
@@ -19,11 +20,13 @@ import org.jdownloader.controlling.contextmenu.CustomizableAppAction;
 import org.jdownloader.gui.donate.DonateFeedback;
 import org.jdownloader.gui.donate.DonationDetails;
 import org.jdownloader.gui.donate.DonationDialog;
+import org.jdownloader.gui.donate.PaymentProvider;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.statistics.StatsManager;
 
 public class DonateAction extends CustomizableAppAction {
-    public static String SERVER = "https://payments.appwork.org/";
+    protected static final long A_WEEK = 1 * 7 * 24 * 60 * 60 * 1000l;
+    public static String        SERVER = "https://payments.appwork.org/";
     static {
         if (!Application.isJared(null)) {
             SERVER = "https://payments.appwork.org/test/";
@@ -62,8 +65,36 @@ public class DonateAction extends CustomizableAppAction {
                 DonationDetails details = null;
                 try {
                     Browser br = new Browser();
-                    String json = getPage(br, "getDonationScreenDetails", TranslationFactory.getDesiredLanguage(), "button");
+                    File iconFolder = Application.getResource("tmp/donateicons/");
+
+                    String json = br.getPage(getUrl("payment", "getDonationScreenDetails", TranslationFactory.getDesiredLanguage(), "button"));
                     details = JSonStorage.restoreFromString(json, DonationDetails.TYPEREF);
+
+                    for (PaymentProvider p : details.getPaymentProvider()) {
+                        try {
+
+                            File file = new File(iconFolder, p.getLocaleName() + ".png");
+                            if (!file.exists() || (System.currentTimeMillis() - file.lastModified()) > A_WEEK) {
+                                URLConnectionAdapter con = br.openGetConnection(getUrl(p.getApi(), "getIcon", TranslationFactory.getDesiredLanguage(), "button"));
+                                try {
+                                    if (con.isOK()) {
+                                        file.delete();
+                                        Browser.download(file, con);
+                                    }
+                                } finally {
+                                    try {
+                                        con.disconnect();
+                                    } catch (Throwable e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+
+                        } catch (Throwable e) {
+                            e.printStackTrace();
+                        }
+                    }
+
                 } catch (Throwable e) {
                     final Throwable oe = e;
                     try {
@@ -120,9 +151,14 @@ public class DonateAction extends CustomizableAppAction {
 
     }
 
-    public static String getPage(Browser br, String method, Object... params) throws IOException {
+    /**
+     * @param method
+     * @param params
+     * @return
+     */
+    private static String getUrl(String namespace, String method, Object... params) {
         StringBuilder url = new StringBuilder();
-        url.append(SERVER).append("payment/").append(method);
+        url.append(SERVER).append(namespace).append("/").append(method);
         if (params != null && params.length > 0) {
 
             for (int i = 0; i < params.length; i++) {
@@ -130,7 +166,7 @@ public class DonateAction extends CustomizableAppAction {
                 url.append(JSonStorage.serializeToJson(params[i]));
             }
         }
-
-        return br.getPage(url.toString());
+        String u = url.toString();
+        return u;
     }
 }
