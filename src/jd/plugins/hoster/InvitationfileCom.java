@@ -48,7 +48,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
@@ -56,7 +55,6 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "invitationfile.com" }, urls = { "https?://(www\\.)?invitationfile\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 2 })
 public class InvitationfileCom extends PluginForHost {
@@ -476,7 +474,7 @@ public class InvitationfileCom extends PluginForHost {
                     skipWaittime = true;
                 } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
-                   
+
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                     File cf = null;
                     try {
@@ -493,7 +491,7 @@ public class InvitationfileCom extends PluginForHost {
                     dlForm.put("adcopy_response", "manual_challenge");
                 } else if (br.containsHTML("id=\"capcode\" name= \"capcode\"")) {
                     logger.info("Detected captcha method \"keycaptca\"");
-                    String result = handleCaptchaChallenge(getDownloadLink(),new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
+                    String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, br, getDownloadLink()).createChallenge(this));
                     if (result == null) {
                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                     }
@@ -616,6 +614,8 @@ public class InvitationfileCom extends PluginForHost {
                 agent.set(jd.plugins.hoster.MediafireCom.stringUserAgent());
             }
             br.getHeaders().put("User-Agent", agent.get());
+            /* Leave this in 2015-09-17 */
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0");
         }
     }
 
@@ -1037,7 +1037,7 @@ public class InvitationfileCom extends PluginForHost {
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
-            login(account, true);
+            login(account);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
@@ -1106,7 +1106,7 @@ public class InvitationfileCom extends PluginForHost {
     private String regexDaysLeft = ">Premium left time:</b></font></td>\\s*<td><b>(\\d+) Day</b>";
 
     @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    private void login(final Account account) throws Exception {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
@@ -1117,7 +1117,7 @@ public class InvitationfileCom extends PluginForHost {
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
@@ -1125,11 +1125,22 @@ public class InvitationfileCom extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(COOKIE_HOST, key, value);
                         }
-                        return;
+                        /* Try to re-use cookies as long as possible to avoid login issues! */
+                        getPage(COOKIE_HOST + "/account/info");
+                        if (this.br.getURL().contains("/account/info")) {
+                            return;
+                        }
+                        /* Remove old cookies & headers and perform a full login */
+                        this.br = new Browser();
+                        prepBrowser(this.br);
                     }
                 }
                 br.setFollowRedirects(true);
+                this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0");
+                getPage(COOKIE_HOST);
                 getPage(COOKIE_HOST + "/login");
+                // this.br.setCookie(COOKIE_HOST, "_ga", "GA1.2.1156451772.1442502423");
+                this.br.setCookie(COOKIE_HOST, "_gat", "1");
                 Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
                     loginform = br.getFormbyProperty("name", "login");
@@ -1145,9 +1156,9 @@ public class InvitationfileCom extends PluginForHost {
                 }
                 // this seems to be required
                 try {
-                    // br.cloneBrowser().openGetConnection("/app/asset/image/header_bg.png");
-                    // br.cloneBrowser().openGetConnection("/app/asset/image/logo.png");
-                    // br.cloneBrowser().openGetConnection("/app/asset/image/header_button_register.png");
+                    br.cloneBrowser().openGetConnection("/app/asset/image/header_bg.png");
+                    br.cloneBrowser().openGetConnection("/app/asset/image/logo.png");
+                    br.cloneBrowser().openGetConnection("/app/asset/image/header_button_register.png");
                     br.cloneBrowser().openGetConnection("/app/asset/stylesheet/style.css");
                     br.cloneBrowser().openGetConnection("/app/asset/javascript/jquery/jquery-1.7.1.min.js");
                     br.cloneBrowser().openGetConnection("/app/asset/javascript/common.js");
@@ -1155,11 +1166,13 @@ public class InvitationfileCom extends PluginForHost {
                 }
                 loginform.put("username", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
-                Thread.sleep(5357);
+                loginform.remove(null);
+                Thread.sleep(10000);
                 submitForm(loginform);
                 // they don't seem to set any premium cookies... they must attach to the PHPSESSID cookie
                 // if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
-                if (!br.getURL().endsWith("/account/info")) {
+                if (!br.getURL().endsWith("/account/info") || this.br.containsHTML(">Warning: No match for Username and/or Password")) {
+                    /* IMPORTANT: Host sometimes bans IPs - then every login attempt fails no matter whether logindata is valid or not! */
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername, Passwort oder login Captcha!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -1194,7 +1207,7 @@ public class InvitationfileCom extends PluginForHost {
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         passCode = downloadLink.getStringProperty("pass");
         requestFileInformation(downloadLink);
-        login(account, false);
+        login(account);
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
             doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
@@ -1254,9 +1267,9 @@ public class InvitationfileCom extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }

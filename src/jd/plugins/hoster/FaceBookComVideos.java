@@ -129,6 +129,12 @@ public class FaceBookComVideos extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            /**
+             * TODO: Change the walkString to only one:
+             * "jsmods/require/{0}/{3}/{1}/query_results/{1}/message_images/edges/{0}/node/image1/uri"
+             *
+             * Should work fine but needs to be tested first!
+             * */
             entries = (LinkedHashMap<String, Object>) DummyScriptEnginePlugin.walkJson(entries, "jsmods/require/{0}/{3}/{1}/query_results");
             final Iterator<Entry<String, Object>> it_temp = entries.entrySet().iterator();
             final String id_temp = it_temp.next().getKey();

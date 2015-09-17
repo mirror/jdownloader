@@ -27,15 +27,13 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 /**
  * @author raztoki
  * */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pururin.com" }, urls = { "http://(www\\.)?pururin\\.com/(gallery|thumbs)/\\d+/[a-z0-9\\-]+\\.html" }, flags = { 0 })
-public class PururinCom extends PluginForDecrypt {
+public class PururinCom extends antiDDoSForDecrypt {
 
     public PururinCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -121,17 +119,8 @@ public class PururinCom extends PluginForDecrypt {
 
     private PluginForHost plugin = null;
 
-    private void getPage(final String parameter) throws Exception {
-        if (plugin == null) {
-            plugin = JDUtilities.getPluginForHost("pururin.com");
-            if (plugin == null) {
-                throw new IllegalStateException("pururin.com hoster plugin not found!");
-            }
-            // set cross browser support
-            ((jd.plugins.hoster.PururinCom) plugin).setBrowser(br);
-        }
-        ((jd.plugins.hoster.PururinCom) plugin).getPage(parameter);
-
+    protected void getPage(final String parameter) throws Exception {
+        super.getPage(parameter);
     }
 
 }
