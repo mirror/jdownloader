@@ -34,6 +34,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -45,11 +46,19 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "5fantastic.pl" }, urls = { "http://(?:www\\.)?5fantastic\\.pl/[^/]+/\\d+[^/]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "5fantastic.pl" }, urls = { "http://(?:www\\.)?5fantastic\\.pl/[^/]+/\\d+\\-\\d+[^/]+" }, flags = { 0 })
 public class FiveFantasticPl extends PluginForHost {
-    private static Object LOCK           = new Object();
-    private String        HOSTER         = "http://www.5fantastic.pl";
-    private final String  FINAL_FILENAME = "FINAL_FILENAME";
+    private static Object        LOCK                         = new Object();
+    private String               HOSTER                       = "http://www.5fantastic.pl";
+    private final String         FINAL_FILENAME               = "FINAL_FILENAME";
+
+    /* Connection stuff */
+    private static final boolean FREE_RESUME                  = false;
+    private static final int     FREE_MAXCHUNKS               = 1;
+    private static final int     FREE_MAXDOWNLOADS            = -1;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
 
     public FiveFantasticPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -68,16 +77,20 @@ public class FiveFantasticPl extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), FINAL_FILENAME, JDL.L("plugins.hoster.5fantasticpl.finalfilename", getPhrase("FINAL_FILENAME"))).setDefaultValue(default_final_filename));
     }
 
+    private void prepBR(final Browser br) {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+        br.getHeaders().put("Accept-Encoding", "gzip, deflate, lzma, sdch");
+        br.setAllowedResponseCodes(400);
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0");
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
-        br.getHeaders().put("Accept-Encoding", "gzip, deflate, lzma, sdch");
-        this.br.setAllowedResponseCodes(400);
+        prepBR(this.br);
         final String downloadUrl = link.getDownloadURL();
 
         try {
@@ -178,15 +191,22 @@ public class FiveFantasticPl extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink != null) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         } else {
             Form freeform = this.br.getFormByInputFieldKeyValue("free", "true");
             if (freeform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.br.submitForm(freeform);
+            if (this.br.getURL().contains("error-08.html")) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            }
             this.br.cloneBrowser().getPage("/account/cookie");
             freeform = this.br.getFormByInputFieldKeyValue("free", "true");
+            if (this.br.getFormByInputFieldKeyValue("free", "false") != null) {
+                /* Hmmm either premiumonly-file or reconnect needed */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+            }
             if (freeform == null) {
                 String waitTime = new Regex(br, "Za darmo możesz pobierać tylko raz na godzinę, czekaj (\\d+) minut[y]*?, lub skorzystaj z PREMIUM").getMatch(0);
                 if (waitTime != null) {
@@ -203,7 +223,7 @@ public class FiveFantasticPl extends PluginForHost {
             this.sleep(seconds * 1001l, downloadLink);
             this.br.setFollowRedirects(true);
             // this.br.submitForm(freeform);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, freeform, false, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, freeform, FREE_RESUME, FREE_MAXCHUNKS);
         }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -217,6 +237,7 @@ public class FiveFantasticPl extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("directlink", dl.getConnection().getURL().toString());
+        fixFilename(downloadLink);
         dl.startDownload();
     }
 
@@ -226,7 +247,8 @@ public class FiveFantasticPl extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                con = br.openHeadConnection(dllink);
+                br2.setFollowRedirects(true);
+                con = br2.openHeadConnection(dllink);
                 if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                     downloadLink.setProperty(property, Property.NULL);
                     dllink = null;
@@ -246,28 +268,31 @@ public class FiveFantasticPl extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        boolean hours = false;
         try {
             login(account, true);
         } catch (final PluginException e) {
             throw e;
         }
 
-        String[][] trafficLimit = checkTrafficLimits(ai);
+        final String remaining_traffic_mb = getJson("PointsCount");
 
         account.setValid(true);
-        try {
-            account.setMaxSimultanDownloads(-1);
-            account.setConcurrentUsePossible(true);
-        } catch (final Throwable e) {
-            // not available in old Stable 0.9.581
-        }
+        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        account.setConcurrentUsePossible(true);
 
-        setAccountInfoStatusWithTraffic(ai, trafficLimit);
+        ai.setTrafficLeft(Long.parseLong(remaining_traffic_mb) * 1024 * 1024);
         // save property for checking availability of private files
         account.setProperty("Premium", "T");
+        /* Set account type based on traffic left - I have no idea whether there might be a better way to do this ... */
+        if (ai.getTrafficLeft() == 0) {
+            account.setType(AccountType.FREE);
+            ai.setStatus("Registered (free) account");
+        } else {
+            account.setType(AccountType.PREMIUM);
+            ai.setStatus("Premium account");
+        }
         return ai;
     }
 
@@ -279,6 +304,7 @@ public class FiveFantasticPl extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
+                prepBR(this.br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = user.equals(account.getStringProperty("name", user));
                 if (acmatch) {
@@ -316,8 +342,9 @@ public class FiveFantasticPl extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or login captcha!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
+                final String loggedin = getJson("IsLogged");
                 this.br.postPage("/account/user", "");
-                if (this.br.containsHTML("IsSubscription\":false")) {
+                if ("false".equals(loggedin)) {
                     /* Free accounts are not yet supported */
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -341,74 +368,24 @@ public class FiveFantasticPl extends PluginForHost {
         }
     }
 
-    String[][] checkTrafficLimits(AccountInfo ai) {
-        final String[][] limits = br.getRegex("<div id=\"ctl00_updpunktyint\">[ \t\n\r]+<div style=\".*?\">[ \t\n\r]+<span id=\".*?\" style=\".*?\">[ \t\n\r]+([0-9]+)[ \t\n\r]+</span>[ \t\n\r]+</div>[ \t\n\r]+</div>[ \t\n\r]+<div style=\".*?punkty /([A-Za-z]+) transferu</div>").getMatches();
-        // we can't set traffic left, because private files are downloaded without decreasing the traffic.
-        // Setting traffic left also decreases traffic for these files (incorrectly).
-        // Also low traffic left value prevents from downloading large files from user's own account - core check downloadlink length with
-        // traffic left and
-        // switches to Free if the file is larger than traffic left, but should use Premium without decreasing traffic
-        // Moved info about traffic left into account status, "no traffic left" is handled in handlePremium
-        /*
-         * if (limits.length != 0) { final String maxLimit = limits[0][0];
-         *
-         * final String unit = limits[0][1]; // ai.setTrafficMax(SizeFormatter.getSize(maxLimit + " " + unit));
-         * ai.setTrafficLeft(SizeFormatter.getSize(maxLimit + " " + unit));
-         *
-         * } else { ai.setTrafficLeft(0); }
-         */
-
-        ai.setUnlimitedTraffic();
-        return limits;
-    }
-
-    void setAccountInfoStatusWithTraffic(AccountInfo ai, String[][] trafficLimit) {
-        if (trafficLimit.length != 0) {
-            ai.setStatus(getPhrase("PREMIUM_USER") + " " + trafficLimit[0][0] + trafficLimit[0][1]);
-        } else {
-            ai.setStatus(getPhrase("PREMIUM_USER") + " 0MB");
-        }
-    }
-
     /** TODO: Fix premium download! */
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         login(account, true);
+        this.br.setFollowRedirects(true);
+        final String dllink = checkDirectLink(downloadLink, "directlink_account_premium");
+        if (dllink != null) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        } else {
+            this.br.getPage(downloadLink.getDownloadURL());
+            final String fileId = get_fileId(downloadLink);
+            final String userId = get_userId(downloadLink);
+            final String postData = "fileId=" + fileId + "&userId=" + userId + "&free=false";
 
-        AccountInfo ai = account.getAccountInfo();
-        String[][] trafficLimit = checkTrafficLimits(ai);
-        setAccountInfoStatusWithTraffic(ai, trafficLimit);
-        final String encodedLink = Encoding.urlEncode(downloadLink.getDownloadURL());
-        br.getPage(downloadLink.getDownloadURL());
-        String vsKey = br.getRegex("type=\"hidden\" name=\"vs_key\" id=\"vs_key\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (vsKey == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, this.br.getURL(), postData, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         }
-        vsKey = Encoding.urlEncode(vsKey);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getHeaders().put("X-MicrosoftAjax", "Delta=true");
-
-        // Get file
-        br.postPage(br.getURL(), "ctl00%24ScriptManager1=ctl00%24ctnMetryka%24metrykaPliku%24updLnkPobierz%7Cctl00%24ctnMetryka%24metrykaPliku%24lnkPobierz&ctl00_ScriptManager1_HiddenField=&__EVENTTARGET=ctl00%24ctnMetryka%24metrykaPliku%24lnkPobierz&__EVENTARGUMENT=&vs_key=" + vsKey + "&__VIEWSTATE=&ctl00%24hidSuwakStep=0&ctl00%24ctnMetryka%24metrykaPliku%24hidOcena=&ctl00%24ctnMetryka%24metrykaPliku%24inputPrzyjaznyLink=" + encodedLink + "&ctl00%24ctnMetryka%24metrykaPliku%24Komentarze%24txtKomentarz=&__ASYNCPOST=true&");
-        // Accept premium download and Get final link
-        br.postPage(br.getURL(), "ctl00%24ScriptManager1=ctl00%24ctnMetryka%24metrykaPliku%24updPobieraniePliku%7Cctl00%24ctnMetryka%24metrykaPliku%24lnkZgodaNaPobierzPlatna&ctl00_ScriptManager1_HiddenField=&vs_key=" + vsKey + "&__VIEWSTATE=&ctl00%24hidSuwakStep=0&ctl00%24ctnMetryka%24metrykaPliku%24hidOcena=&ctl00%24ctnMetryka%24metrykaPliku%24inputPrzyjaznyLink=" + encodedLink + "&ctl00%24ctnMetryka%24metrykaPliku%24Komentarze%24txtKomentarz=&__EVENTTARGET=ctl00%24ctnMetryka%24metrykaPliku%24lnkZgodaNaPobierzPlatna&__EVENTARGUMENT=&__ASYNCPOST=true&");
-
-        if (br.containsHTML("Przepraszamy, plik jest chwilowo niedostepny")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("TEMPORARY_UNAVAILABLE"), 60 * 1000L);
-        } else if (br.containsHTML("ZA MAŁO AKTYWNYCH PUNKTÓW.")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("NO_TRAFFIC_LEFT"), 5 * 60 * 1000l);
-
-        }
-        this.sleep(500, downloadLink);
-
-        final String dllink = br.getRegex("\"(https?://[a-z0-9]+\\.5fantastic\\.pl/[^<>\"]*?download\\.php\\?[^<>\"]*?)\" id=\"ctl00_ctnMetryka_metrykaPliku_lnkSciagnijPlik\">").getMatch(0);
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("jest aktualnie pobierany inny plik")) {
@@ -417,9 +394,36 @@ public class FiveFantasticPl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        downloadLink.setProperty("directlink_account_premium", dl.getConnection().getURL().toString());
+        fixFilename(downloadLink);
         dl.startDownload();
-        trafficLimit = checkTrafficLimits(ai);
-        setAccountInfoStatusWithTraffic(ai, trafficLimit);
+    }
+
+    @SuppressWarnings("deprecation")
+    private String get_userId(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "5fantastic\\.pl/klubowicze(?:\\-|/)(\\d+)\\-(\\d+).+").getMatch(0);
+    }
+
+    @SuppressWarnings("deprecation")
+    private String get_fileId(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "5fantastic\\.pl/klubowicze(?:\\-|/)(\\d+)\\-(\\d+).+").getMatch(1);
+    }
+
+    private void fixFilename(final DownloadLink dlink) {
+        /* Hoster tags filenames --> Remove that! */
+        String server_filename = getFileNameFromHeader(dl.getConnection());
+        server_filename = server_filename.replace("._5fantastic.pl_", "");
+        dlink.setFinalFileName(server_filename);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override

@@ -17,6 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -33,68 +36,83 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ted.com" }, urls = { "decrypted://decryptedtedcom\\.com/\\d+" }, flags = { 2 })
 public class TedCom extends PluginForHost {
 
-    private static final String CHECKFAST_VIDEOS                   = "CHECKFAST_VIDEOS";
-    private static final String CHECKFAST_MP3                      = "CHECKFAST_MP3";
-    private static final String CHECKFAST_SUBTITLES                = "CHECKFAST_SUBTITLES";
+    private static final String                   CHECKFAST_VIDEOS                   = "CHECKFAST_VIDEOS";
+    private static final String                   CHECKFAST_MP3                      = "CHECKFAST_MP3";
+    private static final String                   CHECKFAST_SUBTITLES                = "CHECKFAST_SUBTITLES";
 
-    private static final String GRAB_VIDEO_BEST                    = "GRAB_VIDEO_BEST";
-    private static final String GRAB_VIDEO_LOWRES                  = "GRAB_VIDEO_LOWRES";
-    private static final String GRAB_VIDEO_STANDARDRES             = "GRAB_VIDEO_STANDARDRES";
-    private static final String GRAB_VIDEO_HIGHRES                 = "GRAB_VIDEO_HIGHRES";
+    // private static final String GRAB_VIDEO_BEST = "GRAB_VIDEO_BEST";
 
-    private static final String GRAB_MP3                           = "GRAB_MP3";
-    private static final String GRAB_ALL_AVAILABLE_SUBTITLES       = "GRAB_ALL_AVAILABLE_SUBTITLES";
-    private static final String GRAB_SUBTITLE_ALBANIAN             = "GRAB_SUBTITLE_ALBANIAN";
-    private static final String GRAB_SUBTITLE_ARABIC               = "GRAB_SUBTITLE_ARABIC";
-    private static final String GRAB_SUBTITLE_ARMENIAN             = "GRAB_SUBTITLE_ARMENIAN";
-    private static final String GRAB_SUBTITLE_AZERBAIJANI          = "GRAB_SUBTITLE_AZERBAIJANI";
-    private static final String GRAB_SUBTITLE_BENGALI              = "GRAB_SUBTITLE_BENGALI";
-    private static final String GRAB_SUBTITLE_BULGARIAN            = "GRAB_SUBTITLE_BULGARIAN";
-    private static final String GRAB_SUBTITLE_CHINESE_SIMPLIFIED   = "GRAB_SUBTITLE_CHINESE_SIMPLIFIED";
-    private static final String GRAB_SUBTITLE_CHINESE_TRADITIONAL  = "GRAB_SUBTITLE_CHINESE_TRADITIONAL";
-    private static final String GRAB_SUBTITLE_CROATIAN             = "GRAB_SUBTITLE_CROATIAN";
-    private static final String GRAB_SUBTITLE_CZECH                = "GRAB_SUBTITLE_CZECH";
-    private static final String GRAB_SUBTITLE_DANISH               = "GRAB_SUBTITLE_DANISH";
-    private static final String GRAB_SUBTITLE_DUTCH                = "GRAB_SUBTITLE_DUTCH";
-    private static final String GRAB_SUBTITLE_ENGLISH              = "GRAB_SUBTITLE_ENGLISH";
-    private static final String GRAB_SUBTITLE_ESTONIAN             = "GRAB_SUBTITLE_ESTONIAN";
-    private static final String GRAB_SUBTITLE_FINNISH              = "GRAB_SUBTITLE_FINNISH";
-    private static final String GRAB_SUBTITLE_FRENCH               = "GRAB_SUBTITLE_FRENCH";
-    private static final String GRAB_SUBTITLE_GEORGIAN             = "GRAB_SUBTITLE_GEORGIAN";
-    private static final String GRAB_SUBTITLE_GERMAN               = "GRAB_SUBTITLE_GERMAN";
-    private static final String GRAB_SUBTITLE_GREEK                = "GRAB_SUBTITLE_GREEK";
-    private static final String GRAB_SUBTITLE_HEBREW               = "GRAB_SUBTITLE_HEBREW";
-    private static final String GRAB_SUBTITLE_HUNGARIAN            = "GRAB_SUBTITLE_HUNGARIAN";
-    private static final String GRAB_SUBTITLE_INDONESIAN           = "GRAB_SUBTITLE_INDONESIAN";
-    private static final String GRAB_SUBTITLE_ITALIAN              = "GRAB_SUBTITLE_ITALIAN";
-    private static final String GRAB_SUBTITLE_JAPANESE             = "GRAB_SUBTITLE_JAPANESE";
-    private static final String GRAB_SUBTITLE_KOREAN               = "GRAB_SUBTITLE_KOREAN";
-    private static final String GRAB_SUBTITLE_KURDISH              = "GRAB_SUBTITLE_KURDISH";
-    private static final String GRAB_SUBTITLE_LITHUANIAN           = "GRAB_SUBTITLE_LITHUANIAN";
-    private static final String GRAB_SUBTITLE_MACEDONIAN           = "GRAB_SUBTITLE_MACEDONIAN";
-    private static final String GRAB_SUBTITLE_MALAY                = "GRAB_SUBTITLE_MALAY";
-    private static final String GRAB_SUBTITLE_NORWEGIAN_BOKMAL     = "GRAB_SUBTITLE_NORWEGIAN_BOKMAL";
-    private static final String GRAB_SUBTITLE_PERSIAN              = "GRAB_SUBTITLE_PERSIAN";
-    private static final String GRAB_SUBTITLE_POLISH               = "GRAB_SUBTITLE_POLISH";
-    private static final String GRAB_SUBTITLE_PORTUGUESE           = "GRAB_SUBTITLE_PORTUGUESE";
-    private static final String GRAB_SUBTITLE_PORTUGUESE_BRAZILIAN = "GRAB_SUBTITLE_PORTUGUESE_BRAZILIAN";
-    private static final String GRAB_SUBTITLE_ROMANIAN             = "GRAB_SUBTITLE_ROMANIAN";
-    private static final String GRAB_SUBTITLE_RUSSIAN              = "GRAB_SUBTITLE_RUSSIAN";
-    private static final String GRAB_SUBTITLE_SERBIAN              = "GRAB_SUBTITLE_SERBIAN";
-    private static final String GRAB_SUBTITLE_SLOVAK               = "GRAB_SUBTITLE_SLOVAK";
-    private static final String GRAB_SUBTITLE_SLOVENIAN            = "GRAB_SUBTITLE_SLOVENIAN";
-    private static final String GRAB_SUBTITLE_SPANISH              = "GRAB_SUBTITLE_SPANISH";
-    private static final String GRAB_SUBTITLE_SWEDISH              = "GRAB_SUBTITLE_SWEDISH";
-    private static final String GRAB_SUBTITLE_THAI                 = "GRAB_SUBTITLE_THAI";
-    private static final String GRAB_SUBTITLE_TURKISH              = "GRAB_SUBTITLE_TURKISH";
-    private static final String GRAB_SUBTITLE_UKRAINIAN            = "GRAB_SUBTITLE_UKRAINIAN";
-    private static final String GRAB_SUBTITLE_VIETNAMESE           = "GRAB_SUBTITLE_VIETNAMESE";
+    private static final String                   GRAB_MP3                           = "GRAB_MP3";
+    private static final String                   GRAB_ALL_AVAILABLE_SUBTITLES       = "GRAB_ALL_AVAILABLE_SUBTITLES";
+    private static final String                   GRAB_SUBTITLE_ALBANIAN             = "GRAB_SUBTITLE_ALBANIAN";
+    private static final String                   GRAB_SUBTITLE_ARABIC               = "GRAB_SUBTITLE_ARABIC";
+    private static final String                   GRAB_SUBTITLE_ARMENIAN             = "GRAB_SUBTITLE_ARMENIAN";
+    private static final String                   GRAB_SUBTITLE_AZERBAIJANI          = "GRAB_SUBTITLE_AZERBAIJANI";
+    private static final String                   GRAB_SUBTITLE_BENGALI              = "GRAB_SUBTITLE_BENGALI";
+    private static final String                   GRAB_SUBTITLE_BULGARIAN            = "GRAB_SUBTITLE_BULGARIAN";
+    private static final String                   GRAB_SUBTITLE_CHINESE_SIMPLIFIED   = "GRAB_SUBTITLE_CHINESE_SIMPLIFIED";
+    private static final String                   GRAB_SUBTITLE_CHINESE_TRADITIONAL  = "GRAB_SUBTITLE_CHINESE_TRADITIONAL";
+    private static final String                   GRAB_SUBTITLE_CROATIAN             = "GRAB_SUBTITLE_CROATIAN";
+    private static final String                   GRAB_SUBTITLE_CZECH                = "GRAB_SUBTITLE_CZECH";
+    private static final String                   GRAB_SUBTITLE_DANISH               = "GRAB_SUBTITLE_DANISH";
+    private static final String                   GRAB_SUBTITLE_DUTCH                = "GRAB_SUBTITLE_DUTCH";
+    private static final String                   GRAB_SUBTITLE_ENGLISH              = "GRAB_SUBTITLE_ENGLISH";
+    private static final String                   GRAB_SUBTITLE_ESTONIAN             = "GRAB_SUBTITLE_ESTONIAN";
+    private static final String                   GRAB_SUBTITLE_FINNISH              = "GRAB_SUBTITLE_FINNISH";
+    private static final String                   GRAB_SUBTITLE_FRENCH               = "GRAB_SUBTITLE_FRENCH";
+    private static final String                   GRAB_SUBTITLE_GEORGIAN             = "GRAB_SUBTITLE_GEORGIAN";
+    private static final String                   GRAB_SUBTITLE_GERMAN               = "GRAB_SUBTITLE_GERMAN";
+    private static final String                   GRAB_SUBTITLE_GREEK                = "GRAB_SUBTITLE_GREEK";
+    private static final String                   GRAB_SUBTITLE_HEBREW               = "GRAB_SUBTITLE_HEBREW";
+    private static final String                   GRAB_SUBTITLE_HUNGARIAN            = "GRAB_SUBTITLE_HUNGARIAN";
+    private static final String                   GRAB_SUBTITLE_INDONESIAN           = "GRAB_SUBTITLE_INDONESIAN";
+    private static final String                   GRAB_SUBTITLE_ITALIAN              = "GRAB_SUBTITLE_ITALIAN";
+    private static final String                   GRAB_SUBTITLE_JAPANESE             = "GRAB_SUBTITLE_JAPANESE";
+    private static final String                   GRAB_SUBTITLE_KOREAN               = "GRAB_SUBTITLE_KOREAN";
+    private static final String                   GRAB_SUBTITLE_KURDISH              = "GRAB_SUBTITLE_KURDISH";
+    private static final String                   GRAB_SUBTITLE_LITHUANIAN           = "GRAB_SUBTITLE_LITHUANIAN";
+    private static final String                   GRAB_SUBTITLE_MACEDONIAN           = "GRAB_SUBTITLE_MACEDONIAN";
+    private static final String                   GRAB_SUBTITLE_MALAY                = "GRAB_SUBTITLE_MALAY";
+    private static final String                   GRAB_SUBTITLE_NORWEGIAN_BOKMAL     = "GRAB_SUBTITLE_NORWEGIAN_BOKMAL";
+    private static final String                   GRAB_SUBTITLE_PERSIAN              = "GRAB_SUBTITLE_PERSIAN";
+    private static final String                   GRAB_SUBTITLE_POLISH               = "GRAB_SUBTITLE_POLISH";
+    private static final String                   GRAB_SUBTITLE_PORTUGUESE           = "GRAB_SUBTITLE_PORTUGUESE";
+    private static final String                   GRAB_SUBTITLE_PORTUGUESE_BRAZILIAN = "GRAB_SUBTITLE_PORTUGUESE_BRAZILIAN";
+    private static final String                   GRAB_SUBTITLE_ROMANIAN             = "GRAB_SUBTITLE_ROMANIAN";
+    private static final String                   GRAB_SUBTITLE_RUSSIAN              = "GRAB_SUBTITLE_RUSSIAN";
+    private static final String                   GRAB_SUBTITLE_SERBIAN              = "GRAB_SUBTITLE_SERBIAN";
+    private static final String                   GRAB_SUBTITLE_SLOVAK               = "GRAB_SUBTITLE_SLOVAK";
+    private static final String                   GRAB_SUBTITLE_SLOVENIAN            = "GRAB_SUBTITLE_SLOVENIAN";
+    private static final String                   GRAB_SUBTITLE_SPANISH              = "GRAB_SUBTITLE_SPANISH";
+    private static final String                   GRAB_SUBTITLE_SWEDISH              = "GRAB_SUBTITLE_SWEDISH";
+    private static final String                   GRAB_SUBTITLE_THAI                 = "GRAB_SUBTITLE_THAI";
+    private static final String                   GRAB_SUBTITLE_TURKISH              = "GRAB_SUBTITLE_TURKISH";
+    private static final String                   GRAB_SUBTITLE_UKRAINIAN            = "GRAB_SUBTITLE_UKRAINIAN";
+    private static final String                   GRAB_SUBTITLE_VIETNAMESE           = "GRAB_SUBTITLE_VIETNAMESE";
+
+    public static LinkedHashMap<String, String[]> formats                            = new LinkedHashMap<String, String[]>() {
+                                                                                         {
+                                                                                             /*
+                                                                                              * Format-name:videoCodec, videoBitrate,
+                                                                                              * videoResolution, audioCodec, audioBitrate
+                                                                                              */
+                                                                                             put("64", new String[] { "AVC", "40", "320x180", "AAC LC", "24" });
+                                                                                             put("180", new String[] { "AVC", "145", "512x288", "AAC LC", "36" });
+                                                                                             put("320", new String[] { "AVC", "282", "512x288", "AAC LC", "40" });
+                                                                                             put("450", new String[] { "AVC", "404", "512x288", "AAC LC", "48" });
+                                                                                             put("600", new String[] { "AVC", "540", "640x360", "AAC LC", "64" });
+                                                                                             put("950", new String[] { "AVC", "852", "854x480", "AAC LC", "96" });
+                                                                                             put("1500", new String[] { "AVC", "1350", "1280x720", "AAC LC", "128" });
+
+                                                                                         }
+                                                                                     };
 
     public TedCom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("decrypted://", "http://"));
@@ -102,7 +120,7 @@ public class TedCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://zdf.de";
+        return "http://www.ted.com/about/our-organization/our-policies-terms/ted-com-terms-of-use";
     }
 
     private String DLLINK    = null;
@@ -114,7 +132,7 @@ public class TedCom extends PluginForHost {
         br.setFollowRedirects(true);
         DLLINK = link.getStringProperty("directlink", null);
         if (DLLINK == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if ("subtitle".equals(link.getStringProperty("type", null))) {
             maxChunks = 1;
@@ -174,12 +192,47 @@ public class TedCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video settings: "));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry best = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB_VIDEO_BEST, JDL.L("plugins.hoster.tedcom.video.grabbest", "Only grab the best available resolution")).setDefaultValue(false);
-        getConfig().addEntry(best);
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB_VIDEO_LOWRES, JDL.L("plugins.hoster.tedcom.video.grablowres", "Grab low-resolution?")).setDefaultValue(true).setEnabledCondidtion(best, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB_VIDEO_STANDARDRES, JDL.L("plugins.hoster.tedcom.video.grabstandardres", "Grab standard-resolution?")).setDefaultValue(true).setEnabledCondidtion(best, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB_VIDEO_HIGHRES, JDL.L("plugins.hoster.tedcom.video.grabhighres", "Grab high-resolution?")).setDefaultValue(true).setEnabledCondidtion(best, false));
+        // final ConfigEntry best = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB_VIDEO_BEST,
+        // JDL.L("plugins.hoster.tedcom.video.grabbest", "Only grab the best available resolution")).setDefaultValue(false);
+        // getConfig().addEntry(best);
+        final Iterator<Entry<String, String[]>> it = formats.entrySet().iterator();
+        while (it.hasNext()) {
+            /*
+             * Format-name:videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate
+             */
+            String usertext = "Load ";
+            final Entry<String, String[]> videntry = it.next();
+            final String internalname = videntry.getKey();
+            final String[] vidinfo = videntry.getValue();
+            final String videoCodec = vidinfo[0];
+            final String videoBitrate = vidinfo[1];
+            final String videoResolution = vidinfo[2];
+            final String audioCodec = vidinfo[3];
+            final String audioBitrate = vidinfo[4];
+            if (videoCodec != null) {
+                usertext += videoCodec + " ";
+            }
+            if (videoBitrate != null) {
+                usertext += videoBitrate + " ";
+            }
+            if (videoResolution != null) {
+                usertext += videoResolution + " ";
+            }
+            if (audioCodec != null || audioBitrate != null) {
+                usertext += "with audio ";
+                if (audioCodec != null) {
+                    usertext += audioCodec + " ";
+                }
+                if (audioBitrate != null) {
+                    usertext += audioBitrate;
+                }
+            }
+            if (usertext.endsWith(" ")) {
+                usertext = usertext.substring(0, usertext.lastIndexOf(" "));
+            }
+            final ConfigEntry vidcfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), internalname, JDL.L("plugins.hoster.TedCom.ALLOW_" + internalname, usertext)).setDefaultValue(true);
+            getConfig().addEntry(vidcfg);
+        }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRAB_MP3, JDL.L("plugins.hoster.tedcom.audio.grabmp3", "Grab MP3?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

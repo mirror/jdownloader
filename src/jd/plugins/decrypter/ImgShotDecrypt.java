@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {}, flags = {})
-public class ImgScriptDecrypt extends PluginForDecrypt {
+public class ImgShotDecrypt extends PluginForDecrypt {
 
     /**
      * Returns the annotations flags array
@@ -64,13 +64,14 @@ public class ImgScriptDecrypt extends PluginForDecrypt {
         return ret;
     }
 
-    public ImgScriptDecrypt(final PluginWrapper wrapper) {
+    public ImgShotDecrypt(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     // ImgScriptDecrypt_imgContinue Version: 1.0
     // Example url: http://imagehost.com/img-az09.html
     /* All of the above domains use the same script. Last checked version: 1.2 */
+    @SuppressWarnings("deprecation")
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
