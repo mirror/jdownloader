@@ -37,7 +37,7 @@ public class PasteBinCom extends PluginForDecrypt {
     private static final String type_invalid = "http://(www\\.)?pastebin\\.com/(languages|trends|signup|login|pro|profile|tools|archive|login\\.php|faq|search|settings|alerts|domains|contact|stats|etc|favicon|users|api|download|privacy|passmailer)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         if (parameter.matches(type_invalid)) {
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
@@ -52,7 +52,7 @@ public class PasteBinCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         /* Error handling for invalid links */
-        if (br.containsHTML("(Unknown paste ID|Unknown paste ID, it may have expired or been deleted)") || br.getURL().equals("http://pastebin.com/")) {
+        if (br.containsHTML("(Unknown paste ID|Unknown paste ID, it may have expired or been deleted)") || br.getURL().equals("http://pastebin.com/") || br.getHttpConnection().getResponseCode() == 404) {
             logger.info("Link offline: " + parameter);
             final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
             offline.setAvailable(false);
