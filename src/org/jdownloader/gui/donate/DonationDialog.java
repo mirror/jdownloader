@@ -13,7 +13,9 @@ import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.imageio.ImageIO;
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
@@ -35,8 +37,6 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.images.IconIO;
-import org.appwork.utils.images.Interpolation;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
@@ -51,7 +51,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.mainmenu.DonateAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.updatev2.gui.LAFOptions;
@@ -307,22 +306,21 @@ public class DonationDialog extends AbstractDialog<Object> {
             list.add(provider);
         }
         int selectTab = 0;
+        File iconFolder = Application.getResource("tmp/donateicons/");
         PaymentProvider defaultProvider = details.getPaymentProvider()[details.getDefaultProvider()];
         for (ArrayList<PaymentProvider> provider : mergedList) {
             Icon icon = null;
             StringBuilder label = new StringBuilder();
-            if ("paypal.com".equalsIgnoreCase(provider.get(0).getId())) {
-                icon = NewTheme.I().getIcon("logo/paypal_large", -1);
-                icon = IconIO.getScaledInstance(icon, (icon.getIconWidth() * 20) / icon.getIconHeight(), 20, Interpolation.BICUBIC);
-                icon = new AbstractIcon("logo/paypal_large", -1);
-            } else if ("coinbase.com".equalsIgnoreCase(provider.get(0).getId())) {
-                icon = new AbstractIcon("logo/bitcoin_large", -1);
-            } else if ("paysafecard.com".equalsIgnoreCase(provider.get(0).getId())) {
-                icon = new AbstractIcon("logo/paysafecard_large", -1);
-                // icon = NewTheme.I().getIcon("logo/paysafecard_large", -1);
-                // icon = IconIO.getScaledInstance(icon, (icon.getIconWidth() * 18) / icon.getIconHeight(), 18, Interpolation.BILINEAR);
-            } else {
-                label.append(provider.get(0).getId());
+            File file = new File(iconFolder, provider.get(0).getLocaleName() + ".png");
+
+            if (file.exists()) {
+
+                try {
+                    icon = new ImageIcon(ImageIO.read(file));
+
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
             }
             if (provider.contains(defaultProvider)) {
                 selectTab = tabbed.getTabCount();

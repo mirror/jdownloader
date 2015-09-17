@@ -3,7 +3,17 @@ package org.jdownloader.gui.donate;
 import org.appwork.storage.Storable;
 
 public class PaymentProvider implements Storable {
-    private String  id;
+    private String id;
+    private String api;
+
+    public String getApi() {
+        return api;
+    }
+
+    public void setApi(String api) {
+        this.api = api;
+    }
+
     private String  cCode;
     private String  cSymbol;
     private boolean recurring = false;
@@ -77,6 +87,15 @@ public class PaymentProvider implements Storable {
     }
 
     private double amtMax;
+    private String localeName;
+
+    public String getLocaleName() {
+        return localeName;
+    }
+
+    public void setLocaleName(String localeName) {
+        this.localeName = localeName;
+    }
 
     public PaymentProvider(/* Storable */) {
     }
