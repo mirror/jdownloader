@@ -28,7 +28,7 @@ public class DonateAction extends CustomizableAppAction {
     protected static final long A_WEEK = 1 * 7 * 24 * 60 * 60 * 1000l;
     public static String        SERVER = "https://payments.appwork.org/";
     static {
-        if (!Application.isJared(null)) {
+        if (!Application.isJared(null) && false) {
             SERVER = "https://payments.appwork.org/test/";
         }
     }

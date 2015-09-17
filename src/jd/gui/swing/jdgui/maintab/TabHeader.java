@@ -38,7 +38,7 @@ public class TabHeader extends JPanel implements CustomTabHeader {
     private Font              fontUnselected;
     private Font              fontSelected;
     private int               maxWidth;
-    private JLabel            labelIcon;
+    protected JLabel          labelIcon;
 
     public void setBounds(int x, int y, int width, int height) {
         // workaround to have proper pixel exact layouting of the tab header
