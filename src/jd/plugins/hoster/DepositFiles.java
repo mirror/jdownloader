@@ -33,6 +33,11 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,11 +65,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends antiDDoSForHost {
 
@@ -75,19 +75,19 @@ public class DepositFiles extends antiDDoSForHost {
     public static AtomicReference<String> MAINPAGE                 = new AtomicReference<String>();
     public static final String            DOMAINS                  = "(depositfiles\\.(com|org)|dfiles\\.(eu|ru))";
 
-    private String                        protocol                 = null;
+    private String protocol = null;
 
-    public String                         DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
-    private final Pattern                 FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
-    private final Pattern                 FILE_INFO_SIZE           = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
+    public String         DLLINKREGEX2   = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
+    private final Pattern FILE_INFO_NAME = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
+    private final Pattern FILE_INFO_SIZE = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
 
-    private static Object                 PREMLOCK                 = new Object();
-    private static Object                 LOCK                     = new Object();
+    private static Object PREMLOCK = new Object();
+    private static Object LOCK     = new Object();
 
-    private static AtomicInteger          simultanpremium          = new AtomicInteger(1);
-    private static AtomicBoolean          useAPI                   = new AtomicBoolean(true);
+    private static AtomicInteger simultanpremium = new AtomicInteger(1);
+    private static AtomicBoolean useAPI          = new AtomicBoolean(true);
 
-    private final String                  SETTING_SSL_CONNECTION   = "SSL_CONNECTION";
+    private final String SETTING_SSL_CONNECTION = "SSL_CONNECTION";
 
     // private final String SETTING_PREFER_SOLVEMEDIA = "SETTING_PREFER_SOLVEMEDIA";
 
@@ -461,7 +461,7 @@ public class DepositFiles extends antiDDoSForHost {
                 ajaxGetPage("/get_file.php?fid=" + fid);
 
                 // this changes each time you load page...
-                final String ck = ajax.getRegex("var ACPuzzleKey = '(.*?)';").getMatch(0);
+                final String ck = ajax.getRegex("ACPuzzleKey\\s*=\\s*('|\")(.*?)\\1").getMatch(1);
                 if (ck != null) {
                     // lets prefer solvemedia as it can be passed into CES/headless as browser not required
                     final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
