@@ -1273,4 +1273,9 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isAvailableColumnTextVisible();
 
     void setAvailableColumnTextVisible(boolean b);
+
+    @AboutConfig
+    String getDonationNotifyID();
+
+    void setDonationNotifyID(String id);
 }

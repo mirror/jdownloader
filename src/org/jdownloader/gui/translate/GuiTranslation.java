@@ -6061,4 +6061,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Please add as much information as possible. If you want us to answer, please add your email address as well." })
     String DonateFeedback_reportFailed_title_message_email();
 
+    @Default(lngs = { "en" }, values = { "We recently added new payment options. Both are driven by PayPal, but do not need an own PayPal account:\r\n * CreditCard\r\n * EVL/Bank Lastschrift (Germany only)\r\n\r\nThanks for supporting this project!" })
+    String donation_news();
+
+    @Default(lngs = { "en" }, values = { "New payment options available!" })
+    String donation_news_title();
+
 }
