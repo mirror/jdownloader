@@ -1136,7 +1136,6 @@ public class InvitationfileCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0");
                 getPage(COOKIE_HOST);
                 getPage(COOKIE_HOST + "/login");
                 // this.br.setCookie(COOKIE_HOST, "_ga", "GA1.2.1156451772.1442502423");
