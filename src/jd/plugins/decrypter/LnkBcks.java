@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -89,6 +90,7 @@ public class LnkBcks extends antiDDoSForDecrypt {
     private final String                   surveyLink = "To access the content, you must complete a quick survey\\.";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        br = new Browser();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // urls containing /link/ are no longer valid, but uid seems to be transferable.
         String parameter = param.toString().replace("/link/", "");
@@ -190,14 +192,32 @@ public class LnkBcks extends antiDDoSForDecrypt {
                 }
             } else {
                 final long authKey = Long.parseLong(l1) + Long.parseLong(l2);
-                Browser br2 = br.cloneBrowser();
-                br2.getPage("/director/?t=" + token);
+                final Browser br2 = br.cloneBrowser();
+                // swf
+                final String swf = new Regex(js, "SwfUrl\\s*:\\s*('|\")(.*?)\\1").getMatch(1);
+                if (swf != null) {
+                    URLConnectionAdapter con = null;
+                    try {
+                        con = br2.openGetConnection(swf);
+                    } catch (final Throwable t) {
+                    }
+                }
+                final String adurl = new Regex(js, "AdUrl\\s*:\\s*('|\")(.*?)\\1").getMatch(1);
+                if (adurl != null) {
+                    final Browser ads = br.cloneBrowser();
+                    try {
+                        ads.getPage(adurl);
+                    } catch (final Throwable t) {
+                    }
+                }
                 final long timeLeft = 5033 - (System.currentTimeMillis() - firstGet);
                 if (timeLeft > 0) {
                     sleep(timeLeft, param);
                 }
                 Browser br3 = br.cloneBrowser();
-                br3.getPage("/intermission/loadTargetUrl?t=" + token + "&aK=" + authKey);
+                br3.getHeaders().put("Accept", "*/*");
+                br3.getHeaders().put("Cache-Control", null);
+                br3.getPage("/intermission/loadTargetUrl?t=" + token + "&aK=" + authKey + "&a_b=false");
                 link = br3.getRegex("Url\":\"([^\"]+)").getMatch(0);
             }
         }
