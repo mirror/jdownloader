@@ -223,7 +223,7 @@ public class JetDebridCom extends PluginForHost {
                 logger.info("Performing full login to set individual host limits");
                 this.fetchAccountInfo(account);
             } else {
-                login(account, false);
+                login(account);
             }
         }
         this.setConstants(account, link);
@@ -300,7 +300,7 @@ public class JetDebridCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         br.setFollowRedirects(true);
 
-        this.login(account, true);
+        this.login(account);
 
         this.getAPISafe("/user_dashboard.php");
 
@@ -333,7 +333,7 @@ public class JetDebridCom extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    private void login(final Account account) throws Exception {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
@@ -344,7 +344,7 @@ public class JetDebridCom extends PluginForHost {
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
@@ -352,15 +352,38 @@ public class JetDebridCom extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(DOMAIN, key, value);
                         }
-                        return;
+                        this.br.getPage(DOMAIN + "index.php");
+                        if (this.br.containsHTML("logout\\.php\"")) {
+                            return;
+                        }
+                        /* Remove old cookies and headers */
+                        this.br = newBrowser();
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage(DOMAIN + "user_login_session.php");
-                final String userName = br.getRegex("name=\"(user_name.*?)\"").getMatch(0);
-                final String passWord = br.getRegex("name=\"(password.*?)\"").getMatch(0);
-                this.postAPISafe(DOMAIN + "user_login_session.php", "B1=Login&" + userName + "=" + Encoding.urlEncode(account.getUser()) + "&" + passWord + "=" + Encoding.urlEncode(account.getPass()));
-                if (this.br.getCookie(DOMAIN, "secureid") == null) {
+                /* For whatever reason we sometimes need one than more login attempt. */
+                boolean failed = true;
+                for (int i = 0; i <= 2; i++) {
+                    br.getPage(DOMAIN + "user_login_session.php");
+                    final String userName = br.getRegex("name=\"(user_name.*?)\"").getMatch(0);
+                    final String passWord = br.getRegex("name=\"(password.*?)\"").getMatch(0);
+                    if (userName == null || passWord == null) {
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        }
+                    }
+                    /* Important */
+                    Thread.sleep(3000l);
+                    this.postAPISafe("/user_login_session.php", "B1=Login&" + userName + "=" + Encoding.urlEncode(account.getUser()) + "&" + passWord + "=" + Encoding.urlEncode(account.getPass()));
+                    if (this.br.getCookie(DOMAIN, "secureid") != null) {
+                        failed = false;
+                        break;
+                    }
+                    this.br = newBrowser();
+                }
+                if (failed) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
