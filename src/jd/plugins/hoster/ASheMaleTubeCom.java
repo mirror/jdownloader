@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "smtbe.com" }, urls = { "http://(www\\.)?ashemaletube\\.com/videos/\\d+/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "smtbe.com" }, urls = { "http://(www\\.)?ashemaletube\\.com/videos/\\d+/[^/]+/" }, flags = { 0 })
 public class ASheMaleTubeCom extends PluginForHost {
 
     public String dllink = null;
@@ -38,7 +39,7 @@ public class ASheMaleTubeCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.ashemaletube.com/dmca.txt";
+        return "http://www.ashemaletube.com/tos.html";
     }
 
     @Override
@@ -46,8 +47,45 @@ public class ASheMaleTubeCom extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("(<title>aShemaleTube\\.com \\- Video Not Found</title>|>Video was not found</div>)") || this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("id=\"maincolumn2\">[\t\n\r ]*?<h1>([^<>/]+)</h1>").getMatch(0);
+        if (filename == null) {
+            /* Get filename from url */
+            filename = new Regex(downloadLink.getDownloadURL(), "/([^/]+)$").getMatch(0);
+        }
+        dllink = br.getRegex("\\'file\\'[\t\n\r ]*?:[\t\n\r ]*?\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://(?:www\\.)?[^/]+/key=.*?)\"").getMatch(0);
+        }
+        if (filename == null || dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        filename = filename.trim();
+        downloadLink.setFinalFileName(filename + ".mp4");
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openHeadConnection(dllink);
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            con.disconnect();
+        } catch (final Throwable e) {
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -55,26 +93,6 @@ public class ASheMaleTubeCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<title>aShemaleTube\\.com \\- Video Not Found</title>|>Video was not found</div>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1>([^<>/]+)</h1>").getMatch(0);
-        dllink = br.getRegex("\\'file\\': \"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?vipstreamservice\\.com/key=.*?)\"").getMatch(0);
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filename = filename.trim();
-        downloadLink.setFinalFileName(filename + ".flv");
-        URLConnectionAdapter con = br.openGetConnection(dllink);
-        if (!con.getContentType().contains("html"))
-            downloadLink.setDownloadSize(con.getLongContentLength());
-        else
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return AvailableStatus.TRUE;
     }
 
     @Override

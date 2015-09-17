@@ -11,9 +11,11 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.script.AbstractScriptEngine;
 import javax.script.Bindings;
@@ -483,9 +485,9 @@ public class DummyScriptEnginePlugin extends PluginForHost {
                 /*
                  * script may use Java primitive wrapper type objects (such as java.lang.Integer, java.lang.Boolean etc) explicitly. If we
                  * unwrap, then these script objects will become script primitive types. For example,
-                 * 
+                 *
                  * var x = new java.lang.Double(3.0); print(typeof x);
-                 * 
+                 *
                  * will print 'number'. We don't want that to happen.
                  */
                 Object obj = njb.unwrap();
@@ -1237,24 +1239,43 @@ public class DummyScriptEnginePlugin extends PluginForHost {
         LinkedHashMap<String, Object> tmp_linkedmap = null;
         HashMap<String, Object> tmp_map = null;
         ArrayList<Object> tmp_list = null;
+        int crawlentry_number = 0;
 
         try {
             for (final String crawlpart : crawlparts) {
-                if (currentObject instanceof LinkedHashMap) {
+                final String crawlpart_crawlnumber = new Regex(crawlpart, "\\{(\\d+)\\}").getMatch(0);
+                if (crawlpart_crawlnumber != null) {
+                    crawlentry_number = Integer.parseInt(crawlpart_crawlnumber);
+                }
+                if (currentObject instanceof LinkedHashMap && crawlpart_crawlnumber != null) {
+                    /*
+                     * Get Object from LinkedHashMap from desired position - this is a rare case but good to have it covered here in this
+                     * way!
+                     */
+                    tmp_linkedmap = (LinkedHashMap<String, Object>) currentObject;
+                    currentObject = tmp_linkedmap.get(crawlpart);
+                    final Iterator<Entry<String, Object>> it = tmp_linkedmap.entrySet().iterator();
+                    int position = 0;
+                    while (it.hasNext()) {
+                        final Entry<String, Object> entry = it.next();
+                        if (position == crawlentry_number) {
+                            currentObject = entry.getKey();
+                            break;
+                        }
+                        position++;
+                    }
+                } else if (currentObject instanceof LinkedHashMap) {
                     tmp_linkedmap = (LinkedHashMap<String, Object>) currentObject;
                     currentObject = tmp_linkedmap.get(crawlpart);
                 } else if (currentObject instanceof HashMap) {
                     tmp_map = (HashMap<String, Object>) currentObject;
                     currentObject = tmp_map.get(crawlpart);
                 } else if (currentObject instanceof ArrayList) {
-                    int crawlentry_number = 0;
-                    tmp_list = (ArrayList) currentObject;
-                    final String crawlpart_crawlnumber = new Regex(crawlpart, "\\{(\\d+)\\}").getMatch(0);
                     if (crawlpart_crawlnumber == null) {
                         /* crawlpart does not match the DataType we have --> Return null */
                         return null;
                     }
-                    crawlentry_number = Integer.parseInt(crawlpart_crawlnumber);
+                    tmp_list = (ArrayList) currentObject;
                     currentObject = tmp_list.get(crawlentry_number);
                 } else {
                     break;
