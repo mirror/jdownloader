@@ -46,6 +46,15 @@ public class DomainRule implements Storable {
     }
 
     private String accountPattern;
+    private String pluginPattern;
+
+    public String getPluginPattern() {
+        return pluginPattern;
+    }
+
+    public void setPluginPattern(String pluginPattern) {
+        this.pluginPattern = pluginPattern;
+    }
 
     public String getAccountPattern() {
         return accountPattern;

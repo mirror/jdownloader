@@ -6,36 +6,38 @@ import jd.plugins.Account;
 
 public class CompiledDomainRule {
 
-    private Pattern domainPattern;
-
-    public Pattern getDomainPattern() {
-        return domainPattern;
-    }
-
-    private DomainRule rule;
-    private Pattern    accountPattern;
-    private Pattern    filenamePattern;
+    private final DomainRule rule;
+    private final Pattern    domainPattern;
+    private final Pattern    accountPattern;
+    private final Pattern    filenamePattern;
+    private final Pattern    pluginPattern;
 
     public CompiledDomainRule(DomainRule dr) {
         this.domainPattern = dr.getDomainPattern() == null ? null : Pattern.compile(dr.getDomainPattern(), Pattern.DOTALL);
-        accountPattern = dr.getAccountPattern() == null ? null : Pattern.compile(dr.getAccountPattern(), Pattern.DOTALL);
-        filenamePattern = dr.getFilenamePattern() == null ? null : Pattern.compile(dr.getFilenamePattern(), Pattern.DOTALL);
+        this.accountPattern = dr.getAccountPattern() == null ? null : Pattern.compile(dr.getAccountPattern(), Pattern.DOTALL);
+        this.pluginPattern = dr.getPluginPattern() == null ? null : Pattern.compile(dr.getPluginPattern(), Pattern.DOTALL);
+        this.filenamePattern = dr.getFilenamePattern() == null ? null : Pattern.compile(dr.getFilenamePattern(), Pattern.DOTALL);
         this.rule = dr;
     }
 
-    public boolean matches(Account account, String domain, String name) {
+    public boolean matches(final Account account, final String domain, final String plugin, final String filename) {
         if (accountPattern != null) {
             if (!accountPattern.matcher(account == null ? "" : account.getUser()).matches()) {
                 return false;
             }
         }
         if (filenamePattern != null) {
-            if (!filenamePattern.matcher(name).matches()) {
+            if (!filenamePattern.matcher(filename == null ? "" : filename).matches()) {
                 return false;
             }
         }
         if (domainPattern != null) {
-            if (!domainPattern.matcher(domain).matches()) {
+            if (!domainPattern.matcher(domain == null ? "" : domain).matches()) {
+                return false;
+            }
+        }
+        if (pluginPattern != null) {
+            if (!pluginPattern.matcher(plugin == null ? "" : plugin).matches()) {
                 return false;
             }
         }

@@ -41,6 +41,8 @@ import jd.plugins.download.HashInfo;
 import jd.plugins.download.HashInfo.TYPE;
 import jd.plugins.download.HashResult;
 
+import org.appwork.utils.StringUtils;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "videomega.tv" }, urls = { "http://(www\\.)?videomega\\.tv/(?:(?:(?:iframe|cdn|view)\\.php)?\\?ref=|validatehash\\.php\\?hashkey=)[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoMegaTv extends antiDDoSForHost {
 
@@ -113,7 +115,14 @@ public class VideoMegaTv extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        link.setFinalFileName(fuid + ".mp4");
+        final String fileName = br.getRegex("class=\"center\">Videomega\\.tv - (.*?)</div").getMatch(0);
+        if (link.getFinalFileName() == null) {
+            if (StringUtils.isNotEmpty(fileName)) {
+                link.setFinalFileName(fileName + ".mp4");
+            } else {
+                link.setFinalFileName(fuid + ".mp4");
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
