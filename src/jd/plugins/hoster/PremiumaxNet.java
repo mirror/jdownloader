@@ -23,6 +23,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -37,10 +41,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumax.net" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class PremiumaxNet extends antiDDoSForHost {
@@ -99,8 +99,8 @@ public class PremiumaxNet extends antiDDoSForHost {
     private static final String                                       NICE_HOST          = "premiumax.net";
     private static final String                                       NICE_HOSTproperty  = "premiumaxnet";
 
-    private Account                                                   currAcc            = null;
-    private DownloadLink                                              currDownloadLink   = null;
+    private Account      currAcc          = null;
+    private DownloadLink currDownloadLink = null;
 
     public PremiumaxNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -246,7 +246,9 @@ public class PremiumaxNet extends antiDDoSForHost {
                         // traffic limit per host, resets every 24 hours... http://www.premiumax.net/hosts.html
                         tempUnavailableHoster(determineTrafficResetTime(), "Traffic limit exceeded for " + link.getHost());
                     } else if (br.toString().equalsIgnoreCase("nginx error")) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nginx Error", 30 * 1000l);
+                        // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nginx Error", 30 * 1000l);
+                        dumpAccountSessionInfo();
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
                     } else if (br.containsHTML(">\\s*Our [\\w\\-\\.]+ account has reach bandwidth limit\\s*<")) {
                         // global issue
                         this.currAcc = null;
