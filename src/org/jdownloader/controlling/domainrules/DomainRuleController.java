@@ -23,7 +23,7 @@ public class DomainRuleController implements GenericConfigEventListener<Object> 
 
     /**
      * get the only existing instance of DomainRuleController. This is a singleton
-     * 
+     *
      * @return
      */
     public static DomainRuleController getInstance() {
@@ -41,7 +41,6 @@ public class DomainRuleController implements GenericConfigEventListener<Object> 
     private DomainRuleController() {
         eventSender = new DomainRuleControllerEventSender();
         CFG_GENERAL.DOMAIN_RULES.getEventSender().addListener(this);
-
         update();
     }
 
@@ -59,21 +58,19 @@ public class DomainRuleController implements GenericConfigEventListener<Object> 
     }
 
     private void update() {
-        List<DomainRule> rules = CFG_GENERAL.CFG.getDomainRules();
-        ArrayList<CompiledDomainRule> newList = new ArrayList<CompiledDomainRule>();
+        final List<DomainRule> rules = CFG_GENERAL.CFG.getDomainRules();
+        final ArrayList<CompiledDomainRule> newList = new ArrayList<CompiledDomainRule>();
         int maxDownloads = 0;
         if (rules != null) {
-            for (DomainRule dr : rules) {
+            for (final DomainRule dr : rules) {
                 if (dr != null && dr.isEnabled()) {
                     try {
                         newList.add(new CompiledDomainRule(dr));
-
                         if (dr.isAllowToExceedTheGlobalLimit()) {
                             maxDownloads = Math.max(maxDownloads, dr.getMaxSimultanDownloads());
                         }
                     } catch (Throwable e) {
                         UIOManager.I().show(ExceptionDialogInterface.class, new ExceptionDialog(UIOManager.BUTTONS_HIDE_CANCEL, _GUI._.lit_error_occured(), e.getMessage() + "\r\n" + JSonStorage.toString(dr), e, _GUI._.lit_close(), null));
-
                     }
 
                 }
@@ -103,16 +100,13 @@ public class DomainRuleController implements GenericConfigEventListener<Object> 
         return maxSimultaneDownloads;
     }
 
-    public DomainRuleSet createRuleSet(Account account, String domain, String name) {
-
-        DomainRuleSet set = new DomainRuleSet();
-        for (CompiledDomainRule rule : rules) {
-            if (rule.matches(account, domain, name)) {
+    public DomainRuleSet createRuleSet(final Account account, final String downloadDomain, final String pluginDomain, final String name) {
+        final DomainRuleSet set = new DomainRuleSet();
+        for (final CompiledDomainRule rule : rules) {
+            if (rule.matches(account, downloadDomain, pluginDomain, name)) {
                 set.add(rule);
             }
-
         }
-
         return set;
     }
 }

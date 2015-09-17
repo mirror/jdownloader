@@ -404,14 +404,18 @@ public class FaceBookComVideos extends PluginForHost {
     private static final String LOGINFAIL_GERMAN  = "\r\nEvtl. ungültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!\r\nBedenke, dass die Facebook Anmeldung per JD nur funktioniert, wenn Facebook\r\nkeine zusätzlichen Sicherheitsabfragen beim Login deines Accounts verlangt.\r\nPrüfe das und versuchs erneut!";
     private static final String LOGINFAIL_ENGLISH = "\r\nMaybe invalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!\r\nNote that the Facebook login via JD will only work if there are no additional\r\nsecurity questions when logging in your account.\r\nCheck that and try again!";
 
-    @SuppressWarnings("unchecked")
-    public void login(final Account account, Browser br) throws Exception {
+    private void setHeaders(Browser br) {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getHeaders().put("Accept-Encoding", "gzip, deflate");
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
         br.setCookie("http://www.facebook.com", "locale", "en_GB");
+    }
+
+    @SuppressWarnings("unchecked")
+    public void login(final Account account, Browser br) throws Exception {
         synchronized (LOCK) {
+            setHeaders(br);
             // Load cookies
             br.setCookiesExclusive(true);
             final Object ret = account.getProperty("cookies", null);
@@ -427,16 +431,23 @@ public class FaceBookComVideos extends PluginForHost {
                         final String value = cookieEntry.getValue();
                         br.setCookie(FACEBOOKMAINPAGE, key, value);
                     }
-                    br.getPage(FACEBOOKMAINPAGE);
+                    final boolean follow = br.isFollowingRedirects();
+                    try {
+                        br.setFollowRedirects(true);
+                        br.getPage(FACEBOOKMAINPAGE);
+                    } finally {
+                        br.setFollowRedirects(follow);
+                    }
                     if (br.containsHTML("id=\"logoutMenu\"")) {
                         return;
                     }
                     /* Get rid of old cookies / headers */
                     br = new Browser();
+                    br.setCookiesExclusive(true);
+                    setHeaders(br);
                 }
             }
             br.setFollowRedirects(true);
-
             final boolean prefer_mobile_login = false;
             // better use the website login. else the error handling below might be broken.
             if (prefer_mobile_login) {
