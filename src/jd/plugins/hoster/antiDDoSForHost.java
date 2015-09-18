@@ -19,16 +19,14 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.ContextFactory;
-import org.mozilla.javascript.ScriptableObject;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -37,6 +35,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ContextFactory;
+import org.mozilla.javascript.ScriptableObject;
 
 /**
  *
@@ -344,6 +346,102 @@ public abstract class antiDDoSForHost extends PluginForHost {
 
     private int responseCode429 = 0;
     private int responseCode5xx = 0;
+
+    protected URLConnectionAdapter openAntiDDOSRequestConnection(final Browser ibr, Request request) throws Exception {
+        final String host = Browser.getHost(request.getUrl());
+        prepBrowser(ibr, host);
+        final URLConnectionAdapter con = ibr.openRequestConnection(request);
+        if (con.getResponseCode() == 503 && con.getRequest().getCookies().get("__cfduid") != null) {
+            ibr.followConnection();
+            if (request instanceof HeadRequest) {
+                return openAntiDDOSRequestConnection(ibr, new GetRequest(request));
+            }
+            final Cookies cookies = new Cookies();
+            final int responseCode = con.getResponseCode();
+            if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
+                Form cloudflare = ibr.getFormbyProperty("id", "ChallengeForm");
+                if (cloudflare == null) {
+                    cloudflare = ibr.getFormbyProperty("id", "challenge-form");
+                }
+                if (responseCode == 403 && cloudflare != null) {
+                    // new method seems to be within 403
+                    if (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                        // they seem to add multiple input fields which is most likely meant to be corrected by js ?
+                        // we will manually remove all those
+                        while (cloudflare.hasInputFieldByName("recaptcha_response_field")) {
+                            cloudflare.remove("recaptcha_response_field");
+                        }
+                        while (cloudflare.hasInputFieldByName("recaptcha_challenge_field")) {
+                            cloudflare.remove("recaptcha_challenge_field");
+                        }
+                        // this one is null, needs to be ""
+                        if (cloudflare.hasInputFieldByName("message")) {
+                            cloudflare.remove("message");
+                            cloudflare.put("messsage", "\"\"");
+                        }
+                        // recaptcha bullshit
+                        String apiKey = cloudflare.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                        if (apiKey == null) {
+                            apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
+                            if (apiKey == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                        }
+                        final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
+                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(ibr);
+                        rc.setId(apiKey);
+                        rc.load();
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        final String response = getCaptchaCode("recaptcha", cf, dllink);
+                        if (inValidate(response)) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        }
+                        cloudflare.put("recaptcha_challenge_field", rc.getChallenge());
+                        cloudflare.put("recaptcha_response_field", Encoding.urlEncode(response));
+                        final URLConnectionAdapter ret = ibr.openFormConnection(cloudflare);
+                        // TODO: captcha failed
+                        final Cookies add = ibr.getCookies(ibr.getHost());
+                        for (final Cookie c : add.getCookies()) {
+                            if (new Regex(c.getKey(), cfRequiredCookies).matches()) {
+                                cookies.add(c);
+                            }
+                        }
+                        synchronized (antiDDoSCookies) {
+                            antiDDoSCookies.put(ibr.getHost(), cookies);
+                        }
+                        return ret;
+                    }
+                } else if (responseCode == 503 && cloudflare != null) {
+                    // 503 response code with javascript math section && with 5 second pause
+                    final String[] line1 = ibr.getRegex("var t,r,a,f, (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
+                    String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURL(), true) + "\";\r\n");
+                    sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
+                    sb.append(line2);
+
+                    ScriptEngineManager mgr = jd.plugins.hoster.DummyScriptEnginePlugin.getScriptEngineManager(this);
+                    ScriptEngine engine = mgr.getEngineByName("JavaScript");
+                    long answer = ((Number) engine.eval(sb.toString())).longValue();
+                    cloudflare.getInputFieldByName("jschl_answer").setValue(answer + "");
+                    Thread.sleep(8000);
+                    final URLConnectionAdapter ret = ibr.openFormConnection(cloudflare);
+                    final Cookies add = ibr.getCookies(ibr.getHost());
+                    for (final Cookie c : add.getCookies()) {
+                        if (new Regex(c.getKey(), cfRequiredCookies).matches()) {
+                            cookies.add(c);
+                        }
+                    }
+                    synchronized (antiDDoSCookies) {
+                        antiDDoSCookies.put(ibr.getHost(), cookies);
+                    }
+                    return ret;
+                }
+            }
+        }
+        return con;
+    }
 
     /**
      * Performs Cloudflare and Incapsula requirements.<br />
