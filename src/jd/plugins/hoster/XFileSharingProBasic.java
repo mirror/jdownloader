@@ -19,9 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -32,7 +30,6 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -58,77 +55,82 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class XFileSharingProBasic extends PluginForHost {
 
     /* Some HTML code to identify different (error) states */
-    private static final String            HTML_PASSWORDPROTECTED        = "<br><b>Passwor(d|t):</b> <input";
-    private static final String            HTML_MAINTENANCE_MODE         = ">This server is in maintenance mode";
+    private static final String            HTML_PASSWORDPROTECTED          = "<br><b>Passwor(d|t):</b> <input";
+    private static final String            HTML_MAINTENANCE_MODE           = ">This server is in maintenance mode";
 
     /* Here comes our XFS-configuration */
     /* primary website url, take note of redirects */
-    private static final String            COOKIE_HOST                   = "http://ForDevsToPlayWith.com";
-    private static final String            NICE_HOST                     = COOKIE_HOST.replaceAll("(https://|http://)", "");
-    private static final String            NICE_HOSTproperty             = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
+    private static final String            COOKIE_HOST                     = "http://ForDevsToPlayWith.com";
+    private static final String            NICE_HOST                       = COOKIE_HOST.replaceAll("(https://|http://)", "");
+    private static final String            NICE_HOSTproperty               = COOKIE_HOST.replaceAll("(https://|http://|\\.|\\-)", "");
     /* domain names used within download links */
-    private static final String            DOMAINS                       = "(ForDevsToPlayWith\\.com)";
+    private static final String            DOMAINS                         = "(ForDevsToPlayWith\\.com)";
     /*
      * If activated, filename can be null - fuid will be used instead then. Also the code will check for imagehosts-continue-POST-forms and
      * check for imagehost final downloadlinks.
      */
-    private static final boolean           AUDIOHOSTER                   = false;
+    private static final boolean           AUDIOHOSTER                     = false;
     /* If activated, checks if the video is directly available via "vidembed" --> Skips ALL waittimes- and captchas */
-    private static final boolean           VIDEOHOSTER                   = false;
+    private static final boolean           VIDEOHOSTER                     = false;
     /* If activated, checks if the video is directly available via "embed" --> Skips all waittimes & captcha in most cases */
-    private static final boolean           VIDEOHOSTER_2                 = false;
+    private static final boolean           VIDEOHOSTER_2                   = false;
     /* Enable this for imagehosts */
-    private static final boolean           IMAGEHOSTER                   = false;
+    private static final boolean           IMAGEHOSTER                     = false;
 
-    private static final boolean           SUPPORTS_HTTPS                = false;
-    private static final boolean           SUPPORTS_HTTPS_FORCED         = false;
-    private static final boolean           SUPPORTS_AVAILABLECHECK_ALT   = true;
-    private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE = true;
-    private static final boolean           ENABLE_RANDOM_UA              = false;
-    private static final boolean           ENABLE_HTML_FILESIZE_CHECK    = true;
+    private static final boolean           SUPPORTS_HTTPS                  = false;
+    private static final boolean           SUPPORTS_HTTPS_FORCED           = false;
+    private static final boolean           SUPPORTS_AVAILABLECHECK_ALT     = true;
+    private static final boolean           SUPPORTS_AVAILABLECHECK_ABUSE   = true;
+    private static final boolean           ENABLE_RANDOM_UA                = false;
+    private static final boolean           ENABLE_HTML_FILESIZE_CHECK      = true;
     /* Waittime stuff */
-    private static final boolean           WAITFORCED                    = false;
-    private static final int               WAITSECONDSMIN                = 3;
-    private static final int               WAITSECONDSMAX                = 100;
-    private static final int               WAITSECONDSFORCED             = 5;
+    private static final boolean           WAITFORCED                      = false;
+    private static final int               WAITSECONDSMIN                  = 3;
+    private static final int               WAITSECONDSMAX                  = 100;
+    private static final int               WAITSECONDSFORCED               = 5;
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                   = true;
-    private static final int               FREE_MAXCHUNKS                = 0;
-    private static final int               FREE_MAXDOWNLOADS             = 20;
-    private static final boolean           ACCOUNT_FREE_RESUME           = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS        = 0;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS     = 20;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME        = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS     = 0;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS  = 20;
+    private static final boolean           FREE_RESUME                     = true;
+    private static final int               FREE_MAXCHUNKS                  = 0;
+    private static final int               FREE_MAXDOWNLOADS               = 20;
+    private static final boolean           ACCOUNT_FREE_RESUME             = true;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS          = 0;
+    private static final int               ACCOUNT_FREE_MAXDOWNLOADS       = 20;
+    private static final boolean           ACCOUNT_PREMIUM_RESUME          = true;
+    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
+    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
 
     /* Linktypes */
-    private static final String            TYPE_EMBED                    = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
-    private static final String            TYPE_NORMAL                   = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
-    private static final String            USERTEXT_ALLWAIT_SHORT        = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String            USERTEXT_MAINTENANCE          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under maintenance");
-    private static final String            USERTEXT_PREMIUMONLY1         = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String            USERTEXT_PREMIUMONLY2         = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final String            TYPE_EMBED                      = "https?://[A-Za-z0-9\\-\\.]+/embed\\-[a-z0-9]{12}";
+    private static final String            TYPE_NORMAL                     = "https?://[A-Za-z0-9\\-\\.]+/[a-z0-9]{12}";
+    private static final String            USERTEXT_ALLWAIT_SHORT          = "Waiting till new downloads can be started";
+    private static final String            USERTEXT_MAINTENANCE            = "This server is under maintenance";
+    private static final String            USERTEXT_PREMIUMONLY_LINKCHECK  = "Only downloadable via premium or registered";
+
+    /* Properties */
+    private static final String            PROPERTY_DLLINK_FREE            = "freelink";
+    private static final String            PROPERTY_DLLINK_ACCOUNT_FREE    = "freelink2";
+    private static final String            PROPERTY_DLLINK_ACCOUNT_PREMIUM = "premlink";
+    private static final String            PROPERTY_PASS                   = "pass";
 
     /* Used variables */
-    private String                         correctedBR                   = "";
-    private String                         fuid                          = null;
-    private String                         passCode                      = null;
+    private String                         correctedBR                     = "";
+    private String                         fuid                            = null;
+    private String                         passCode                        = null;
 
-    private static AtomicReference<String> agent                         = new AtomicReference<String>(null);
+    private static AtomicReference<String> agent                           = new AtomicReference<String>(null);
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger           totalMaxSimultanFreeDownload  = new AtomicInteger(FREE_MAXDOWNLOADS);
+    private static AtomicInteger           totalMaxSimultanFreeDownload    = new AtomicInteger(FREE_MAXDOWNLOADS);
     /* don't touch the following! */
-    private static AtomicInteger           maxFree                       = new AtomicInteger(1);
-    private static AtomicInteger           maxPrem                       = new AtomicInteger(1);
-    private static Object                  LOCK                          = new Object();
+    private static AtomicInteger           maxFree                         = new AtomicInteger(1);
+    private static AtomicInteger           maxPrem                         = new AtomicInteger(1);
+    private static Object                  LOCK                            = new Object();
 
     /* DEV NOTES */
-    // XfileSharingProBasic Version 2.7.0.1
+    // XfileSharingProBasic Version 2.7.0.2
     // Tags: Script, template
     // mods:
     // limit-info:
@@ -152,11 +154,7 @@ public class XFileSharingProBasic extends PluginForHost {
         if (link.getDownloadURL().matches(TYPE_EMBED)) {
             final String url_embed = protocol + NICE_HOST + "/embed-" + fuid + ".html";
             /* Make sure user gets the kind of content urls that he added to JD. */
-            try {
-                link.setContentUrl(url_embed);
-            } catch (final Throwable e) {
-                /* Not available in 0.9.581 Stable */
-            }
+            link.setContentUrl(url_embed);
         }
         link.setUrlDownload(corrected_downloadurl);
     }
@@ -199,7 +197,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         if (br.getURL().contains("/?op=login&redirect=")) {
             logger.info("PREMIUMONLY handling: Trying alternative linkcheck");
-            link.getLinkStatus().setStatusText(USERTEXT_PREMIUMONLY2);
+            link.getLinkStatus().setStatusText(USERTEXT_PREMIUMONLY_LINKCHECK);
             try {
                 if (SUPPORTS_AVAILABLECHECK_ABUSE) {
                     fileInfo[0] = this.getFnameViaAbuseLink(altbr, link);
@@ -334,13 +332,13 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, PROPERTY_DLLINK_FREE);
     }
 
     @SuppressWarnings({ "unused", "deprecation", "static-access" })
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
-        passCode = downloadLink.getStringProperty("pass");
+        passCode = downloadLink.getStringProperty(PROPERTY_PASS);
         /* 1, bring up saved final links */
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /* 2, check for streaming/direct links on the first page */
@@ -564,16 +562,10 @@ public class XFileSharingProBasic extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
-                    try {
-                        invalidateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
+                    invalidateLastChallengeResponse();
                     continue;
                 } else {
-                    try {
-                        validateLastChallengeResponse();
-                    } catch (final Throwable e) {
-                    }
+                    validateLastChallengeResponse();
                     break;
                 }
             }
@@ -643,8 +635,8 @@ public class XFileSharingProBasic extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-            /* free accounts also have captchas */
+        if (acc.getType() == AccountType.FREE) {
+            /* Free accounts can have captchas */
             return true;
         }
         return false;
@@ -925,7 +917,7 @@ public class XFileSharingProBasic extends PluginForHost {
         if (passCode == null || passCode.equals("")) {
             logger.info("User has entered blank password, exiting handlePassword");
             passCode = null;
-            thelink.setProperty("pass", Property.NULL);
+            thelink.setProperty(PROPERTY_PASS, Property.NULL);
             return null;
         }
         if (pwform == null) {
@@ -935,7 +927,7 @@ public class XFileSharingProBasic extends PluginForHost {
             logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
             pwform.put("password", Encoding.urlEncode(passCode));
         }
-        thelink.setProperty("pass", passCode);
+        thelink.setProperty(PROPERTY_PASS, passCode);
         return passCode;
     }
 
@@ -945,7 +937,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 /* handle password has failed in the past, additional try catching / resetting values */
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 passCode = null;
-                theLink.setProperty("pass", Property.NULL);
+                theLink.setProperty(PROPERTY_PASS, Property.NULL);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
             if (correctedBR.contains("Wrong captcha")) {
@@ -1008,35 +1000,14 @@ public class XFileSharingProBasic extends PluginForHost {
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
                 logger.info("As free user you can download files up to " + filesizelimit + " only");
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, USERTEXT_PREMIUMONLY1 + " " + filesizelimit);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } else {
                 logger.info("Only downloadable via premium");
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, USERTEXT_PREMIUMONLY2);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             }
         } else if (br.getURL().contains("/?op=login&redirect=")) {
             logger.info("Only downloadable via premium");
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, USERTEXT_PREMIUMONLY2);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         if (new Regex(correctedBR, HTML_MAINTENANCE_MODE).matches()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, USERTEXT_MAINTENANCE, 2 * 60 * 60 * 1000l);
@@ -1136,53 +1107,31 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         if ((expire_milliseconds - System.currentTimeMillis()) <= 0) {
             maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            account.setProperty("nopremium", true);
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) account");
         } else {
             ai.setValidUntil(expire_milliseconds);
             maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-            account.setProperty("nopremium", false);
-            try {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(true);
             ai.setStatus("Premium account");
         }
         return ai;
     }
 
-    @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
                 prepBrowser(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        return;
-                    }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
                 }
                 br.setFollowRedirects(true);
                 getPage(COOKIE_HOST + "/login.html");
@@ -1212,21 +1161,13 @@ public class XFileSharingProBasic extends PluginForHost {
                     getPage("/?op=my_account");
                 }
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
-                    account.setProperty("nopremium", true);
+                    account.setType(AccountType.FREE);
                 } else {
-                    account.setProperty("nopremium", false);
+                    account.setType(AccountType.PREMIUM);
                 }
-                /* Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -1235,14 +1176,14 @@ public class XFileSharingProBasic extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        passCode = downloadLink.getStringProperty("pass");
+        passCode = downloadLink.getStringProperty(PROPERTY_PASS);
         requestFileInformation(downloadLink);
         login(account, false);
-        if (account.getBooleanProperty("nopremium")) {
+        if (account.getType() == AccountType.FREE) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
+            doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, PROPERTY_DLLINK_ACCOUNT_FREE);
         } else {
-            String dllink = checkDirectLink(downloadLink, "premlink");
+            String dllink = checkDirectLink(downloadLink, PROPERTY_DLLINK_ACCOUNT_PREMIUM);
             if (dllink == null) {
                 br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
@@ -1278,7 +1219,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 handlePluginBroken(downloadLink, "dllinknofile", 3);
             }
             fixFilename(downloadLink);
-            downloadLink.setProperty("premlink", dllink);
+            downloadLink.setProperty(PROPERTY_DLLINK_ACCOUNT_PREMIUM, dllink);
             dl.startDownload();
         }
     }

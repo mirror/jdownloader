@@ -37,7 +37,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?!art/|status/)[^<>\"]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/(?!art/|status/)[^<>\"]+" }, flags = { 0 })
 public class DevArtCm extends PluginForDecrypt {
 
     /**
@@ -113,17 +113,11 @@ public class DevArtCm extends PluginForDecrypt {
         try {
             br.getPage(PARAMETER);
         } catch (final BrowserException be) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + PARAMETER);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            this.decryptedLinks.add(this.createOfflinelink(this.PARAMETER));
             return decryptedLinks;
         }
         if (br.containsHTML("The page you were looking for doesn\\'t exist\\.") || br.getURL().matches("https?://([A-Za-z0-9]+\\.)?deviantart\\.com/browse/.+")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + PARAMETER);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            this.decryptedLinks.add(this.createOfflinelink(this.PARAMETER));
             return decryptedLinks;
         }
 
@@ -146,13 +140,9 @@ public class DevArtCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @SuppressWarnings("deprecation")
     private void decryptJournals() throws DecrypterException, IOException {
         if (br.containsHTML("class=\"empty\\-state journal\"")) {
-            try {
-                this.decryptedLinks.add(this.createOfflinelink(PARAMETER));
-            } catch (final Throwable e) {
-            }
+            this.decryptedLinks.add(this.createOfflinelink(PARAMETER));
             return;
         }
         String username = getSiteUsername();
@@ -177,13 +167,9 @@ public class DevArtCm extends PluginForDecrypt {
         int currentOffset = 0;
         final boolean stop_after_first_run = getOffsetFromURL() != null;
         do {
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user: " + PARAMETER);
-                    return;
-                }
-            } catch (final Throwable e) {
-                // Not available in old 0.9.581 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user: " + PARAMETER);
+                return;
             }
             logger.info("Decrypting offset " + next);
             if (next != null) {
@@ -206,19 +192,10 @@ public class DevArtCm extends PluginForDecrypt {
                     dl.setAvailable(true);
                 }
                 /* No reason to hide their single links */
-                try {
-                    /* JD2 only */
-                    dl.setContentUrl(link);
-                } catch (Throwable e) {/* Stable */
-                    dl.setBrowserUrl(link);
-                }
+                dl.setContentUrl(link);
                 dl.setName(urltitle + ".html");
                 dl._setFilePackage(fp);
-                try {
-                    distribute(dl);
-                } catch (final Throwable e) {
-                    // Not available in old 0.9.581 Stable
-                }
+                distribute(dl);
                 decryptedLinks.add(dl);
             }
             next = br.getRegex("class=\"next\"><a class=\"away\" data\\-offset=\"(\\d+)\"").getMatch(0);
@@ -248,23 +225,16 @@ public class DevArtCm extends PluginForDecrypt {
 
     private void decryptBlog() throws DecrypterException, IOException {
         if (br.containsHTML(">Sorry\\! This blog entry cannot be displayed")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + PARAMETER);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
+            this.decryptedLinks.add(this.createOfflinelink(this.PARAMETER));
             return;
         }
         String fpName = br.getRegex("name=\"og:title\" content=\"([^<>\"]*?) on DeviantArt\"").getMatch(0);
         final boolean stop_after_first_run = getOffsetFromURL() != null;
         int currentOffset = 0;
         do {
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user: " + PARAMETER);
-                    return;
-                }
-            } catch (final Throwable e) {
-                // Not available in old 0.9.581 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user: " + PARAMETER);
+                return;
             }
             logger.info("Decrypting offset " + currentOffset);
             if (currentOffset > 0) {
@@ -293,13 +263,9 @@ public class DevArtCm extends PluginForDecrypt {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void decryptStandard() throws DecrypterException, IOException {
         if (br.containsHTML("class=\"empty\\-state gallery\"|class=\"empty\\-state faves\"")) {
-            try {
-                this.decryptedLinks.add(this.createOfflinelink(PARAMETER));
-            } catch (final Throwable e) {
-            }
+            this.decryptedLinks.add(this.createOfflinelink(PARAMETER));
             return;
         }
         /* Correct input links */
@@ -369,13 +335,9 @@ public class DevArtCm extends PluginForDecrypt {
             fp.setProperty("ALLOW_MERGE", true);
         }
         do {
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted by user: " + PARAMETER);
-                    return;
-                }
-            } catch (final Throwable e) {
-                // Not available in old 0.9.581 Stable
+            if (this.isAbort()) {
+                logger.info("Decryption aborted by user: " + PARAMETER);
+                return;
             }
             logger.info("Decrypting offset " + currentOffset + " of " + maxOffset);
             if (PARAMETER.matches(TYPE_CATPATH_1) && !PARAMETER.contains("offset=")) {
@@ -389,6 +351,9 @@ public class DevArtCm extends PluginForDecrypt {
                 }
             } else if (counter > 1) {
                 accessOffset(currentOffset);
+            }
+            if (this.br.containsHTML("475970334")) {
+                logger.info("WTF");
             }
             try {
                 final String grab = br.getRegex("<smoothie q=(.*?)(class=\"folderview-bottom\"></div>|div id=\"gallery_pager\")").getMatch(0);
@@ -414,21 +379,11 @@ public class DevArtCm extends PluginForDecrypt {
                             fina.setAvailable(true);
                         }
                         /* No reason to hide their single links */
-                        try {
-                            /* JD2 only */
-                            fina.setContentUrl(artlink);
-                        } catch (Throwable e) {
-                            /* Stable */
-                            fina.setBrowserUrl(artlink);
-                        }
+                        fina.setContentUrl(artlink);
                         if (fp != null) {
                             fp.add(fina);
                         }
-                        try {
-                            distribute(fina);
-                        } catch (final Throwable e) {
-                            // Not available in old 0.9.581 Stable
-                        }
+                        distribute(fina);
                         decryptedLinks.add(fina);
                     }
                 }

@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2014  JD-Team support@jdownloader.org
+//Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -18,16 +18,19 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.ArrayList;
+import java.util.Locale;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -37,14 +40,19 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "storbit.net" }, urls = { "https?://storbit\\.net/file/[A-Za-z0-9]+?/([^<>\"]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "storbit.net" }, urls = { "https?://(www\\.)?(?:uploads\\.xxx|streambit\\.tv|storbit\\.net)/(?:video|file)/[A-Za-z0-9\\-_]+/" }, flags = { 2 })
 public class StorBitNet extends PluginForHost {
 
     public StorBitNet(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("http://storbit.net/premium/");
-        // this.setConfigElements();
+        this.enablePremium("http://storbit.net/premium/");
+    }
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("https?://(www\\.)?[^/]+/(?:video|file)/", "http://storbit.net/file/"));
     }
 
     @Override
@@ -52,139 +60,389 @@ public class StorBitNet extends PluginForHost {
         return "http://storbit.net/rules/";
     }
 
-    private int           MAXCHUNKSFORFREE          = 1;
-    private int           MAXCHUNKSFORPREMIUM       = 0;
-    private String        MAINPAGE                  = "http://storbit.net/";
-    private String        PREMIUM_DAILY_TRAFFIC_MAX = "20 GB";
-    private String        FREE_DAILY_TRAFFIC_MAX    = "10 GB";
-    private static Object LOCK                      = new Object();
+    private static final String  API_SERVER                      = "http://storbit.net/api";
 
-    private void prepareBrowser(Browser br) {
-        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "pl-PL,pl;q=0.8,en-US;q=0.6,en;q=0.4");
-        br.setCookie(MAINPAGE, "xxx_lang", "en");
-        br.setReadTimeout(3 * 60 * 1000);
+    /* Connection stuff */
+    private static final boolean FREE_RESUME                     = false;
+    private static final int     FREE_MAXCHUNKS                  = 1;
+    private static final int     FREE_MAXDOWNLOADS               = 20;
+    private static final boolean ACCOUNT_FREE_RESUME             = false;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS          = 1;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS       = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME          = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
+
+    /* Properties */
+    private static final String  PROPERTY_DLLINK_FREE            = "freelink";
+    private static final String  PROPERTY_DLLINK_ACCOUNT_FREE    = "freelink2";
+    private static final String  PROPERTY_DLLINK_ACCOUNT_PREMIUM = "premlink";
+
+    private static final boolean USE_API_SINGLE_FILECHECK        = true;
+
+    private void prepBR_API(final Browser br) {
+        br.getHeaders().put("User-Agent", "JDownloader");
+    }
+
+    private void prepBR_Website(final Browser br) {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0");
+        br.setCookie(this.getHost(), "xxx_lang", "en");
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        prepareBrowser(br);
-        String downloadURL = downloadLink.getPluginPatternMatcher();
-        br.getPage(downloadURL);
-        if (br.containsHTML(">404 - File not found\\.\\.\\.</b>")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) {
+            return false;
         }
-
-        String fileName = br.getRegex("div class=\"title\"><h1 title=\"([^<>\"]*?)\">&nbsp;").getMatch(0);
-
-        String fileSize = br.getRegex("<span class=\"size\">(\\d+\\.\\d+ [GMTk]B)</span>").getMatch(0);
-
-        fileName = Encoding.htmlDecode(fileName.trim());
-        fileName = unescape(fileName);
-        if (fileName == null || fileSize == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        try {
+            final Browser br = new Browser();
+            prepBR_API(br);
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once (50 tested, more might be possible) */
+                    if (index == urls.length || links.size() > 50) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("id=");
+                for (final DownloadLink dl : links) {
+                    final String tmp_fid = this.getFID(dl);
+                    dl.setLinkID(tmp_fid);
+                    sb.append(tmp_fid);
+                    sb.append("%2C");
+                }
+                br.postPage(API_SERVER + "/getFileDetails/", sb.toString());
+                for (final DownloadLink dllink : links) {
+                    final String fid = getFID(dllink);
+                    final String linkdata = br.getRegex("(\\{\"fileStatus\":\\d+,\"fileId\":\"" + fid + "\"[^\\}]*\\})").getMatch(0);
+                    if (linkdata == null) {
+                        /* Should never happen */
+                        dllink.setName(fid);
+                        dllink.setAvailable(false);
+                    } else {
+                        final String ftitle = getJson(linkdata, "fileName");
+                        final String fsize = getJson(linkdata, "fileSize");
+                        if (ftitle == null || fsize == null) {
+                            dllink.setName(fid);
+                            logger.warning("Linkchecker broken for " + this.getHost());
+                            return false;
+                        }
+                        dllink.setAvailable(true);
+                        dllink.setFinalFileName(ftitle);
+                        dllink.setDownloadSize(Long.parseLong(fsize));
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
         }
+        return true;
+    }
 
-        downloadLink.setFinalFileName(Encoding.htmlDecode(fileName.trim()));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize));
-        downloadLink.setAvailable(true);
-        String fileID = new Regex(downloadURL, "https?://storbit\\.net/file/([A-Za-z0-9]+?)/[^<>\"]+").getMatch(0);
-        downloadLink.setProperty("fileID", fileID);
-
+    @SuppressWarnings("deprecation")
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        if (USE_API_SINGLE_FILECHECK) {
+            checkLinks(new DownloadLink[] { downloadLink });
+            if (!downloadLink.isAvailabilityStatusChecked()) {
+                return AvailableStatus.UNCHECKED;
+            }
+            if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } else {
+            this.setBrowserExclusive();
+            prepBR_Website(this.br);
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">404 - File not found|>Sorry, but the specified file may have been deleted")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String filename = br.getRegex("h1 title=\"([^<>\"]*?)\"").getMatch(0);
+            if (filename == null) {
+                String format = br.getRegex(">Format: <b>([^<>\"]*?)</b>").getMatch(0);
+                filename = br.getRegex("class=\"title\">[\t\n\r ]+<h\\d+ title=\"([^<>\"]*?)\"").getMatch(0);
+                if (filename == null || format == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                filename += "." + format;
+            }
+            String filesize = br.getRegex(">Size: <b>([^<>\"]+)<").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("class=\"size\">([^<>\"]*?)<").getMatch(0);
+            }
+            if (filename == null || filesize == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink);
+        doFreeWebsite(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        String downloadURL = downloadLink.getPluginPatternMatcher();
-
-        br.getPage(downloadURL);
-        setMainPage(downloadURL);
-        // br.setCookiesExclusive(true);
-        prepareBrowser(br);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.setFollowRedirects(true);
-        String fileID = downloadLink.getProperty("fileID").toString();
-        br.postPage("http://storbit.net/ajax.php?a=getDownloadForFree", "id=" + fileID + "&_go=");
-
-        String success = getJson("message");
-        // not tested
-        if (!"success".equals(success)) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, getPhrase("DOWNLOAD_LIMIT"), 60 * 60l * 1000l);
-        }
-        br.getPage(downloadURL);
-
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        Form dlForm = new Form();
-
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        dlForm.put("ajax", "1");
-        dlForm.put("cachestop", "0.7658682554028928");
-        rc.setForm(dlForm);
-        // id for the hoster
-        String id = "6Lc4YwgTAAAAAPoZXXByh65cUKulPwDN31HlV1Wp";
-
-        rc.setId(id);
-        String dllink = null;
-        for (int i = 0; i < 5; i++) {
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode("recaptcha", cf, downloadLink);
-
-            br.postPage("http://storbit.net/ajax.php?a=getDownloadLink", "captcha1=" + rc.getChallenge() + "&captcha2=" + Encoding.urlEncode(c) + "&id=" + fileID + "&_go=");
-            String message = getJson("message");
-
-            if (message == null || "error".equals(message)) {
-                logger.info("StoreBitNet: ReCaptcha challenge reports: " + message);
-                rc.reload();
-                continue;
-
-            } else if (message.equals("success")) {
-                dllink = getJson("location").replace("\\", "");
-
-            }
-            break;
-        }
-
+    @SuppressWarnings("static-access")
+    private void doFreeWebsite(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        this.prepBR_Website(this.br);
+        String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, getPhrase("CAPTCHA_ERROR"), -1l);
+            final String fid = this.getFID(downloadLink);
+            br.getPage(MAINPAGE + "/play/" + fid + "/");
+            final String streamlink = br.getRegex("file: \\'(http://[^<>\"\\']*?)\\'").getMatch(0);
+            /* video/xxx.mp4 = conversion in progress, video/lock.mp4 = IP_blocked */
+            if (streamlink == null || streamlink.contains("video/xxx.mp4") || streamlink.contains("video/lock.mp4")) {
+                // if (br.containsHTML("/img/streaming\\.jpg")) {
+                // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Converting video in progress ...");
+                // }
+                this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("/ajax.php?a=getDownloadForFree", "id=" + fid + "&_go=");
+                if (br.containsHTML("\"message\":\"error\"")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+                }
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.setId("6Lc4YwgTAAAAAPoZXXByh65cUKulPwDN31HlV1Wp");
+                for (int i = 0; i < 5; i++) {
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode("recaptcha", cf, downloadLink);
+                    br.postPage("/ajax.php?a=getDownloadLink", "captcha1=" + Encoding.urlEncode(rc.getChallenge()) + "&captcha2=" + Encoding.urlEncode(c) + "&id=" + fid + "&_go=");
+                    if (br.containsHTML("\"message\":\"error\"")) {
+                        rc.reload();
+                        continue;
+                        // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    break;
+                }
+                dllink = getJson("location");
+                if (dllink == null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wrong Captcha code in 5 trials OR final download link not found!", 1 * 60 * 1000l);
+                }
+                if (dllink.contains("http://.streambit.tv/")) {
+                    /* We get crippled downloadlinks if the user enters "" as captcha response */
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+            } else {
+                /* Prefer streams as we can avoid the captcha though the quality does not match the originally uploaded content. */
+                dllink = streamlink;
+            }
         }
-        dllink = dllink.replace("//.storbit.net", "//storbit.net");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, MAXCHUNKSFORFREE);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, getPhrase("FINAL_LINK_ERROR"));
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
-    void setLoginData(final Account account) throws Exception {
-        br.getPage(MAINPAGE);
-        br.setCookiesExclusive(true);
-        final Object ret = account.getProperty("cookies", null);
-        final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-        if (account.isValid()) {
-            for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                final String key = cookieEntry.getKey();
-                final String value = cookieEntry.getValue();
-                this.br.setCookie(MAINPAGE, key, value);
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            URLConnectionAdapter con = null;
+            try {
+                final Browser br2 = br.cloneBrowser();
+                con = br2.openHeadConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+            } catch (final Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        return dllink;
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return FREE_MAXDOWNLOADS;
+    }
+
+    private static final String MAINPAGE = "http://storbit.net";
+    private static Object       LOCK     = new Object();
+
+    /* Keep this - might be needed in the future e.g. for free accounts. */
+    @SuppressWarnings("unused")
+    private void loginWebsite(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                // Load cookies
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                br.setFollowRedirects(false);
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
+                }
+                br.postPage(MAINPAGE + "/ajax.php?a=getUserLogin", "login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&remember=0&_go=");
+
+                String success = getJson("message");
+                if (!"success".equals(success)) {
+                    logger.warning("Couldn't determine premium status or account is Free not Premium!");
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
             }
         }
     }
 
-    private static AtomicBoolean yt_loaded = new AtomicBoolean(false);
+    private void loginAPI(final Account acc) throws IOException, PluginException {
+        this.accessAPI(API_SERVER + "/getAccountDetails/", "login=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()));
+    }
 
-    private String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
-        if (!yt_loaded.getAndSet(true)) {
-            JDUtilities.getPluginForHost("youtube.com");
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            loginAPI(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
         }
-        return jd.plugins.hoster.Youtube.unescape(s);
+        final boolean isPremium = "1".equals(getJson("userPremium"));
+        if (isPremium) {
+            final String expiredate = getJson("userPremiumDateEnd");
+            account.setType(AccountType.PREMIUM);
+            /* Do not set any specified max simultan downloads num on premium accounts */
+            // account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            /* Simultaneous usage of multiple premium accounts should be possible! */
+            account.setConcurrentUsePossible(true);
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+            ai.setStatus("Premium account");
+        } else {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            /* Free accounts have more likely strict limits and can have captchas */
+            account.setConcurrentUsePossible(false);
+            ai.setStatus("Registered (free) user");
+        }
+        ai.setUnlimitedTraffic();
+        account.setValid(true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        /* Make sure to use the API headers in case we use the website-availablecheck */
+        prepBR_API(this.br);
+        String dllink;
+        String directlinkproperty;
+        boolean resumable;
+        int maxchunks;
+        final boolean isPremium = account.getType() == AccountType.PREMIUM;
+        if (isPremium) {
+            directlinkproperty = PROPERTY_DLLINK_ACCOUNT_PREMIUM;
+            resumable = ACCOUNT_PREMIUM_RESUME;
+            maxchunks = ACCOUNT_PREMIUM_MAXCHUNKS;
+        } else {
+            directlinkproperty = PROPERTY_DLLINK_ACCOUNT_FREE;
+            resumable = ACCOUNT_FREE_RESUME;
+            maxchunks = ACCOUNT_FREE_MAXCHUNKS;
+        }
+        dllink = this.checkDirectLink(link, directlinkproperty);
+        if (dllink == null) {
+            this.accessAPI(API_SERVER + "/getDownloadFile/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&id=" + this.getFID(link));
+            dllink = getJson("fileLocation");
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setProperty("premium_directlink", dllink);
+        dl.startDownload();
+    }
+
+    private void accessAPI(final String url, final String postdata) throws IOException, PluginException {
+        this.br.postPage(url, postdata);
+        if (this.br.containsHTML("errorEmptyLoginOrPassword|errorAccountNotFound")) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder nicht unterstützter Account Typ!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or unsupported account type!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        } else if (this.br.containsHTML("errorEmptyFileId")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL API failure");
+        } else if (this.br.containsHTML("errorFileNotFound")) {
+            /* File not found on (premium) download attempt */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.containsHTML("errorDateNextDownload")) {
+            /* Free download limit reached TODO: implement */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "/([^/]+)/$").getMatch(0);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from String source.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String source, final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
+    }
+
+    /**
+     * Wrapper<br/>
+     * Tries to return value of key from JSon response, from default 'br' Browser.
+     *
+     * @author raztoki
+     * */
+    private String getJson(final String key) {
+        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
     }
 
     @Override
@@ -192,100 +450,7 @@ public class StorBitNet extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public void resetDownloadlink(DownloadLink link) {
     }
 
-    @Override
-    public void resetDownloadlink(final DownloadLink link) {
-    }
-
-    /*
-     * *
-     * Wrapper<br/> Tries to return value of key from JSon response, from default 'br' Browser.
-     * 
-     * @author raztoki
-     */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    void setMainPage(String downloadUrl) {
-        if (downloadUrl.contains("https://")) {
-            MAINPAGE = "https://storbit.net/";
-        } else {
-            MAINPAGE = "http://storbit.net/";
-        }
-    }
-
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("nopremium"))) {
-            /* free accounts also have captchas */
-            return true;
-        }
-        if (acc.getStringProperty("session_type") != null && !"premium".equalsIgnoreCase(acc.getStringProperty("session_type"))) {
-            return true;
-        }
-        return false;
-    }
-
-    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("INVALID_LOGIN", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
-                                                      put("PREMIUM", "Premium User");
-                                                      put("FREE", "Free (Registered) User");
-                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Login failed or not Premium");
-                                                      put("LOGIN_ERROR", "StorBit.net: Login Error");
-                                                      put("LOGIN_FAILED", "Login failed!\r\nPlease check your Username and Password!");
-                                                      put("NO_TRAFFIC", "No traffic left");
-                                                      put("DOWNLOAD_LIMIT", "You can only download 1 file per 60 minutes");
-                                                      put("CAPTCHA_ERROR", "Wrong Captcha code in 5 trials OR final download link not found!");
-                                                      put("FINAL_LINK_ERROR", "Plugin Error: final download link is invalid");
-                                                  }
-                                              };
-
-    private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-                                                  {
-                                                      put("INVALID_LOGIN", "\r\nNieprawidłowy login/hasło!\r\nCzy jesteś pewien, że poprawnie wprowadziłeś nazwę użytkownika i hasło? Sugestie:\r\n1. Jeśli twoje hasło zawiera znaki specjalne, zmień je (usuń) i spróbuj ponownie!\r\n2. Wprowadź nazwę użytkownika/hasło ręcznie, bez użycia funkcji Kopiuj i Wklej.");
-                                                      put("PREMIUM", "Użytkownik Premium");
-                                                      put("FREE", "Użytkownik zarejestrowany (darmowy)");
-                                                      put("LOGIN_FAILED_NOT_PREMIUM", "Nieprawidłowe konto lub konto nie-Premium");
-                                                      put("LOGIN_ERROR", "StorBit.net: Błąd logowania");
-                                                      put("LOGIN_FAILED", "Logowanie nieudane!\r\nZweryfikuj proszę Nazwę Użytkownika i Hasło!");
-                                                      put("NO_TRAFFIC", "Brak dostępnego transferu");
-                                                      put("DOWNLOAD_LIMIT", "Można pobrać maksymalnie 1 plik na 60 minut");
-                                                      put("CAPTCHA_ERROR", "Wprowadzono 5-krotnie nieprawiłowy kod Captcha LUB nie można określić linku pobierania!");
-                                                      put("FINAL_LINK_ERROR", "Błąd wtyczki: finalny link pobierania jest nieprawidłowy");
-
-                                                  }
-                                              };
-
-    /**
-     * Returns a German/English translation of a phrase. We don't use the JDownloader translation framework since we need only German and
-     * English.
-     *
-     * @param key
-     * @return
-     */
-    private String getPhrase(String key) {
-        if ("pl".equals(System.getProperty("user.language")) && phrasesPL.containsKey(key)) {
-            return phrasesPL.get(key);
-        } else if (phrasesEN.containsKey(key)) {
-            return phrasesEN.get(key);
-        }
-        return "Translation not found!";
-    }
 }
