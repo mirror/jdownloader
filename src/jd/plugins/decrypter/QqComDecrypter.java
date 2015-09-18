@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Random;
 
 import jd.PluginWrapper;
@@ -28,19 +29,24 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DummyScriptEnginePlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qq.com" }, urls = { "http://(www\\.)?(fenxiang\\.qq\\.com/((share|upload)/index\\.php/share/share_c/index(_v2)?/|x/)[A-Za-z0-9\\-_~]+|urlxf\\.qq\\.com/\\?[A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "qq.com", "qqmusic.qq.com" }, urls = { "http://(?:www\\.)?(fenxiang\\.qq\\.com/((share|upload)/index\\.php/share/share_c/index(_v2)?/|x/)[A-Za-z0-9\\-_~]+|urlxf\\.qq\\.com/\\?[A-Za-z0-9]+)", "http://y\\.qq\\.com/#type=album\\&mid=[A-Za-z0-9]+" }, flags = { 0, 0 })
 public class QqComDecrypter extends PluginForDecrypt {
 
     public QqComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_SHORT = "http://(www\\.)?urlxf\\.qq\\.com/\\?[A-Za-z0-9]+";
+    private static final String TYPE_SHORT  = "http://(www\\.)?urlxf\\.qq\\.com/\\?[A-Za-z0-9]+";
+    private static final String TYPE_NORMAL = "http://(?:www\\.)?fenxiang\\.qq\\.com/(?:(?:share|upload)/index\\.php/share/share_c/index(?:_v2)?/|x/)[A-Za-z0-9\\-_~]+";
+    private static final String TYPE_MUSIC  = "http://y\\.qq\\.com/#type=album\\&mid=[A-Za-z0-9]+";
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        String fpName = null;
         br.setFollowRedirects(false);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:27.0) Gecko/20100101 Firefox/27.0");
         br.getPage(parameter);
@@ -57,37 +63,69 @@ public class QqComDecrypter extends PluginForDecrypt {
             }
             parameter = redirect;
             br.getPage(parameter);
-        }
+        } else if (parameter.matches(TYPE_NORMAL)) {
+            if (br.containsHTML(">很抱歉，此资源已被删除或包含敏感信息不能查看啦<")) {
+                final DownloadLink offline = this.createOfflinelink(parameter);
+                offline.setFinalFileName(new Regex(parameter, "([A-Za-z0-9\\-_~]+)$").getMatch(0));
+                decryptedLinks.add(offline);
+                return decryptedLinks;
+            }
 
-        if (br.containsHTML(">很抱歉，此资源已被删除或包含敏感信息不能查看啦<")) {
-            final DownloadLink offline = createDownloadlink("http://qqdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-            offline.setName(new Regex(parameter, "([A-Za-z0-9\\-_~]+)$").getMatch(0));
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
-        }
-
-        final String fpName = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
-        final String[] tableEntries = br.getRegex("<td class=\"td_c\">(.*?)</td>").getColumn(0);
-        if (tableEntries == null || tableEntries.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (final String tableEntry : tableEntries) {
-            final String qhref = new Regex(tableEntry, "qhref=\"(qqdl://[^<>\"]*?)\"").getMatch(0);
-            final String filehash = new Regex(tableEntry, "filehash=\"([^<>\"]*?)\"").getMatch(0);
-            final String filesize = new Regex(tableEntry, "filesize=\"([^<>\"]*?)\"").getMatch(0);
-            final String title = new Regex(tableEntry, "title=\"([^<>\"]*?)\"").getMatch(0);
-            final DownloadLink dl = createDownloadlink("http://qqdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-            dl.setFinalFileName(Encoding.htmlDecode(title.trim()));
-            dl.setDownloadSize(Long.parseLong(filesize));
-            dl.setProperty("qhref", qhref);
-            dl.setProperty("filehash", filehash);
-            dl.setProperty("mainlink", parameter);
-            dl.setProperty("plainfilename", title);
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
+            fpName = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+            final String[] tableEntries = br.getRegex("<td class=\"td_c\">(.*?)</td>").getColumn(0);
+            if (tableEntries == null || tableEntries.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (final String tableEntry : tableEntries) {
+                final String qhref = new Regex(tableEntry, "qhref=\"(qqdl://[^<>\"]*?)\"").getMatch(0);
+                final String filehash = new Regex(tableEntry, "filehash=\"([^<>\"]*?)\"").getMatch(0);
+                final String filesize = new Regex(tableEntry, "filesize=\"([^<>\"]*?)\"").getMatch(0);
+                final String title = new Regex(tableEntry, "title=\"([^<>\"]*?)\"").getMatch(0);
+                final DownloadLink dl = createDownloadlink("http://qqdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                dl.setFinalFileName(Encoding.htmlDecode(title.trim()));
+                dl.setDownloadSize(Long.parseLong(filesize));
+                dl.setContentUrl(parameter);
+                dl.setProperty("qhref", qhref);
+                dl.setProperty("filehash", filehash);
+                dl.setProperty("mainlink", parameter);
+                dl.setProperty("plainfilename", title);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
+        } else {
+            /* TYPE_MUSIC */
+            final String albumid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
+            this.br.getPage("http://i.y.qq.com/v8/fcg-bin/fcg_v8_album_detail_cp.fcg?tpl=20&albummid=" + albumid + "&play=0");
+            // this.br.getPage("http://base.music.qq.com/fcgi-bin/fcg_musicexpress.fcg?json=3&guid=1755471437&g_tk=938407465&loginUin=0&hostUin=0&format=jsonp&inCharset=GB2312&outCharset=GB2312&notice=0&platform=yqq&jsonpCallback=jsonCallback&needNewCode=0");
+            if (this.br.getHttpConnection().getResponseCode() == 404) {
+                decryptedLinks.add(this.createOfflinelink(parameter));
+                return decryptedLinks;
+            }
+            final String json = this.br.getRegex("mapSongInfo : \\{\"Disc\\d+_\":(\\[.*?\\}\\])\\}").getMatch(0);
+            if (json == null) {
+                return null;
+            }
+            LinkedHashMap<String, Object> entries = null;
+            final ArrayList<Object> ressourcelist = (ArrayList) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+            for (final Object datao : ressourcelist) {
+                entries = (LinkedHashMap<String, Object>) datao;
+                final String albumname = encodeUnicode((String) entries.get("albumname"));
+                final String songname = encodeUnicode((String) entries.get("songname"));
+                final String songid = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("songid"), -1));
+                final long filesize = DummyScriptEnginePlugin.toLong(entries.get("size320"), -1);
+                final DownloadLink dl = createDownloadlink("http://qqdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
+                dl.setProperty(jd.plugins.hoster.QqCom.PROPERTY_TYPE, jd.plugins.hoster.QqCom.TYPE_MUSIC);
+                dl.setProperty(jd.plugins.hoster.QqCom.PROPERTY_MUSIC_SONGID, songid);
+                dl.setProperty(jd.plugins.hoster.QqCom.PROPERTY_MUSIC_ALBUMID, albumid);
+                dl.setLinkID(songid);
+                dl.setFinalFileName(albumname + " - " + songname + ".mp3");
+                dl.setDownloadSize(filesize);
+                dl.setContentUrl(parameter);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
+            fpName = albumid;
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
@@ -95,6 +133,22 @@ public class QqComDecrypter extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    /** Avoid chars which are not allowed in filenames under certain OS' */
+    private static String encodeUnicode(final String input) {
+        String output = input;
+        output = output.replace(":", ";");
+        output = output.replace("|", "¦");
+        output = output.replace("<", "[");
+        output = output.replace(">", "]");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
+        output = output.replace("*", "#");
+        output = output.replace("?", "¿");
+        output = output.replace("!", "¡");
+        output = output.replace("\"", "'");
+        return output;
     }
 
     /* NO OVERRIDE!! */

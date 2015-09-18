@@ -148,7 +148,7 @@ public class FilePostCom extends PluginForHost {
 
     /*
      * (non-Javadoc)
-     *
+     * 
      * @see jd.plugins.PluginForHost#correctDownloadLink(jd.plugins.DownloadLink)
      */
     @Override
@@ -478,7 +478,7 @@ public class FilePostCom extends PluginForHost {
             } else if (cookieError != null && new Regex(cookieError, "You%20still%20need%20to%20wait%20for%20the%20start%20of%20your%20download").matches()) {
                 logger.warning("Wait time not respected?");
                 logger.warning("waitDone = " + waitDone);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Multiple concurrent download error!");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Multiple concurrent download error!", 5 * 60 * 1000l);
             } else if (cookieError != null && new Regex(cookieError, "(Sorry%2C%20you%20have%20exceeded%20your%20daily%20download%20limit\\.|%3Cbr%20%2F%3ETry%20again%20tomorrow%20or%20obtain%20a%20premium%20membership\\.)").matches()) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 2 * 60 * 60 * 1000l);
             } else if (cookieError != null) {
