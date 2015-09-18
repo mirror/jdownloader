@@ -769,10 +769,11 @@ public class DirectHTTP extends antiDDoSForHost {
                         urlConnection = openAntiDDOSRequestConnection(br, br.createGetRequest(getDownloadURL(downloadLink)));
                     } else if (preferHeadRequest || "HEAD".equals(downloadLink.getStringProperty("requestType", null))) {
                         urlConnection = openAntiDDOSRequestConnection(br, br.createHeadRequest(getDownloadURL(downloadLink)));
-                        if (urlConnection.getResponseCode() == 404 /*
-                         * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"),
-                         * "must-revalidate") && urlConnection.getHeaderField("Via") != null
-                         */) {
+                        if (urlConnection.getResponseCode() == 404) {
+                            /*
+                             * && StringUtils.contains(urlConnection.getHeaderField("Cache-Control"), "must-revalidate") &&
+                             * urlConnection.getHeaderField("Via") != null
+                             */
                             urlConnection.disconnect();
                             urlConnection = openAntiDDOSRequestConnection(br, br.createGetRequest(getDownloadURL(downloadLink)));
                         } else if (urlConnection.getResponseCode() != 404 && urlConnection.getResponseCode() >= 300) {
