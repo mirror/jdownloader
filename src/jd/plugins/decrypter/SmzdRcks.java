@@ -27,6 +27,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
@@ -40,7 +41,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision: 28619 $", interfaceVersion = 3, names = { "smoozed.rocks" }, urls = { "https?://(www\\.)?smoozed\\.rocks/folder/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 28619 $", interfaceVersion = 3, names = { "smoozed.rocks" }, urls = { "https?://(www\\.)?smoozed\\.rocks/(folder/[A-Za-z0-9\\-_]+|redirect/[A-Za-z0-9\\-_]+\\?_link=[A-Za-z0-9\\-_]+)" }, flags = { 0 })
 public class SmzdRcks extends antiDDoSForDecrypt {
 
     private final String ssid;
@@ -67,6 +68,18 @@ public class SmzdRcks extends antiDDoSForDecrypt {
         String parameter = param.toString();
         parameter = parameter.replace("https://", getProtocol());
         getPage(parameter);
+
+        if (br.containsHTML("\"download_free\"")) {
+
+            // redirect url
+            String base64 = br.getRegex("atob\\('([A-Za-z0-9\\-_]+)'\\)").getMatch(0);
+            String redirect = Encoding.Base64Decode(base64);
+            if (StringUtils.isNotEmpty(redirect)) {
+                decryptedLinks.add(createDownloadlink(redirect));
+            }
+            return decryptedLinks;
+        }
+
         final String rcID = br.getRegex("challenge\\?k=([^\"]+)").getMatch(0);
         // Form[] forms = br.getForms();
         final DirectHTTP.Recaptcha rc = DirectHTTP.getReCaptcha(br.cloneBrowser());
