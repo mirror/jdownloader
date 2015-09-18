@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+|https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+|https?://[\\w\\.\\-]*?deviantartdecrypted\\.com/journal/[\\w\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "deviantart.com" }, urls = { "https?://[\\w\\.\\-]*?deviantart\\.com/art/[\\w\\-]+|https?://[\\w\\.\\-]*?\\.deviantart\\.com/status/\\d+|https?://[\\w\\.\\-]*?deviantartdecrypted\\.com/journal/[\\w\\-]+" }, flags = { 2 })
 public class DeviantArtCom extends PluginForHost {
 
     private boolean             DOWNLOADS_STARTED            = false;
@@ -355,24 +355,8 @@ public class DeviantArtCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         DOWNLOADS_STARTED = true;
         requestFileInformation(downloadLink);
-        if (br.containsHTML(TYPE_ACCOUNTNEEDED)) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This content can only be downloaded via account");
-        } else if (br.containsHTML(MATURECONTENTFILTER)) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Mature content can only be downloaded via account");
+        if (br.containsHTML(TYPE_ACCOUNTNEEDED) || br.containsHTML(MATURECONTENTFILTER)) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         if (DLLINK == null) {
             getDllink();
