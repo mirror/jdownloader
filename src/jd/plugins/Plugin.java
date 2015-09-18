@@ -35,10 +35,18 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
 import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.LinkCrawler;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.BrowserSettingsThread;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.components.SiteType.SiteTemplate;
@@ -48,8 +56,10 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.auth.Login;
 import org.jdownloader.gui.dialog.AskCrawlerPasswordDialogInterface;
 import org.jdownloader.gui.dialog.AskDownloadPasswordDialogInterface;
@@ -290,15 +300,55 @@ public abstract class Plugin implements ActionListener {
     }
 
     public static Plugin getCurrentActivePlugin() {
-        Thread currentThread = Thread.currentThread();
+        final Thread currentThread = Thread.currentThread();
         if (currentThread instanceof LinkCrawlerThread) {
             //
             return (PluginForDecrypt) ((LinkCrawlerThread) currentThread).getCurrentOwner();
         } else if (currentThread instanceof SingleDownloadController) {
             //
             return ((SingleDownloadController) currentThread).getProcessingPlugin();
+        } else if (currentThread instanceof LinkCheckerThread) {
+            return ((LinkCheckerThread) currentThread).getPlugin();
         }
         return null;
+    }
+
+    protected boolean isConnectionOffline(Throwable e) {
+        HTTPProxy proxy = null;
+        final BrowserException browserException = Exceptions.getInstanceof(e, BrowserException.class);
+        if (browserException != null && browserException.getRequest() != null) {
+            proxy = browserException.getRequest().getProxy();
+        }
+        if (proxy == null) {
+            final Plugin plugin = getCurrentActivePlugin();
+            if (plugin != null) {
+                final Browser br;
+                if (plugin instanceof PluginForHost) {
+                    br = ((PluginForHost) plugin).getBrowser();
+                } else if (plugin instanceof PluginForDecrypt) {
+                    br = ((PluginForDecrypt) plugin).getBrowser();
+                } else {
+                    br = null;
+                }
+                if (br != null && br.getRequest() != null) {
+                    proxy = br.getRequest().getProxy();
+                }
+            }
+        }
+        final ProxySelectorInterface proxySelector;
+        if (proxy != null) {
+            proxySelector = new StaticProxySelector(proxy);
+        } else {
+            proxySelector = BrowserSettingsThread.getThreadProxySelector();
+        }
+        final BalancedWebIPCheck onlineCheck = new BalancedWebIPCheck(proxySelector);
+        try {
+            onlineCheck.getExternalIP();
+        } catch (final OfflineException e2) {
+            return true;
+        } catch (final IPCheckException e2) {
+        }
+        return false;
     }
 
     public boolean isAbort() {
