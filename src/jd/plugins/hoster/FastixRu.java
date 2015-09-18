@@ -21,6 +21,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
@@ -34,38 +38,33 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fastix.ru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 /**
  * @author pspzockerscene
  * @author raztoki
  *
  */
-public class FastixRu extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fastix.ru" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
+public class FastixRu extends antiDDoSForHost {
 
     /** Using API: http://fastix.ru/apidoc */
-    private final String                                   NOCHUNKS                     = "NOCHUNKS";
-    private final String                                   DOMAIN                       = "http://fastix.ru/api_v2/";
-    private final String                                   NICE_HOST                    = "fastix.ru";
-    private final String                                   NICE_HOSTproperty            = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private final String NOCHUNKS          = "NOCHUNKS";
+    private final String DOMAIN            = "http://fastix.ru/api_v2/";
+    private final String NICE_HOST         = "fastix.ru";
+    private final String NICE_HOSTproperty = NICE_HOST.replaceAll("(\\.|\\-)", "");
 
     /* Connection limits */
-    private final boolean                                  ACCOUNT_PREMIUM_RESUME       = true;
-    private final int                                      ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
-    private final int                                      ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -2;
+    private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap           = new HashMap<Account, HashMap<String, Long>>();
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap     = new HashMap<Account, HashMap<String, Long>>();
     // used for checkDirectLink
-    private boolean                                        supportsHeadConnection       = true;
+    private boolean                                        supportsHeadConnection = true;
     // this session info
-    private int                                            statuscode                   = 0;
-    private Account                                        account                      = null;
-    private DownloadLink                                   downloadLink                 = null;
+    private int                                            statuscode             = 0;
+    private Account                                        account                = null;
+    private DownloadLink                                   downloadLink           = null;
 
     public FastixRu(PluginWrapper wrapper) {
         super(wrapper);
@@ -273,7 +272,7 @@ public class FastixRu extends PluginForHost {
         // null or parse exceptions will result in 0 traffic, users should complain and we can 'fix'
         long p = 0;
         try {
-            p = Long.parseLong(points);
+            p = points.contains(".") ? Long.parseLong(points.substring(0, points.lastIndexOf("."))) : Long.parseLong(points);
         } catch (final Exception e) {
         }
         p = p * 1024 * 1024;
@@ -392,68 +391,6 @@ public class FastixRu extends PluginForHost {
             logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
             throw e;
         }
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from String source.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value of key from JSon response, from provided Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJson(final Browser ibr, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJson(ibr.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response provided String source.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String source, final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(source, key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return value given JSon Array of Key from JSon response, from default 'br' Browser.
-     *
-     * @author raztoki
-     * */
-    private String getJsonArray(final String key) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonArray(br.toString(), key);
-    }
-
-    /**
-     * Wrapper<br/>
-     * Tries to return String[] value from provided JSon Array
-     *
-     * @author raztoki
-     * @param source
-     * @return
-     */
-    private String[] getJsonResultsFromArray(final String source) {
-        return jd.plugins.hoster.K2SApi.JSonUtils.getJsonResultsFromArray(source);
     }
 
     private void tempUnavailableHoster(final long timeout) throws PluginException {
