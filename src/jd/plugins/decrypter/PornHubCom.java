@@ -141,10 +141,10 @@ public class PornHubCom extends PluginForDecrypt {
         return this.createDownloadlink("http://pornhubdecrypted" + new Random().nextInt(1000000000));
     }
 
-    /* For testing */
-    public int getMaxConcurrentProcessingInstances() {
-        return 2;
-    }
+    // /* For testing */
+    // public int getMaxConcurrentProcessingInstances() {
+    // return 2;
+    // }
 
     /**
      * JD2 CODE: DO NOIT USE OVERRIDE FÒR COMPATIBILITY REASONS!!!!!
