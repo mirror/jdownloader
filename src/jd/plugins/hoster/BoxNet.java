@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -25,23 +27,20 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.com", "box.net" }, urls = { "(https?://(www|[a-z0-9\\-_]+)\\.box\\.com(/(shared/static/|rssdownload/).*|/index\\.php\\?rm=box_download_shared_file\\&file_id=f_\\d+\\&shared_name=\\w+)|https?://www\\.boxdecrypted\\.(net|com)/shared/[a-z0-9]+|https?://www\\.boxdecrypted\\.com/s/[a-z0-9]+/\\d+/\\d+/\\d+/\\d+)", "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 0, 0 })
-public class BoxNet extends PluginForHost {
-    private static final String TOS_LINK                = "https://www.box.net/static/html/terms.html";
+public class BoxNet extends antiDDoSForHost {
+    private static final String TOS_LINK = "https://www.box.net/static/html/terms.html";
 
-    private static final String OUT_OF_BANDWITH_MSG     = "error_message_bandwidth";
-    private static final String REDIRECT_DOWNLOAD_LINK  = "https?://[a-z0-9\\-_]+\\.box\\.com/index\\.php\\?rm=box_download_shared_file\\&file_id=f_[a-z0-9]+\\&shared_name=\\w+";
-    private static final String DLLINKREGEX             = "href=\"(https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=[^<>\"\\']+)\"";
-    private static final String SLINK                   = "https?://www\\.box\\.com/shared/[a-z0-9]+";
-    private static final String DECRYPTEDFOLDERLINK     = "https?://www\\.box\\.com/s/[a-z0-9]+/\\d+/\\d+/\\d+/\\d+";
+    private static final String OUT_OF_BANDWITH_MSG    = "error_message_bandwidth";
+    private static final String REDIRECT_DOWNLOAD_LINK = "https?://[a-z0-9\\-_]+\\.box\\.com/index\\.php\\?rm=box_download_shared_file\\&file_id=f_[a-z0-9]+\\&shared_name=\\w+";
+    private static final String DLLINKREGEX            = "href=\"(https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=[^<>\"\\']+)\"";
+    private static final String SLINK                  = "https?://www\\.box\\.com/shared/[a-z0-9]+";
+    private static final String DECRYPTEDFOLDERLINK    = "https?://www\\.box\\.com/s/[a-z0-9]+/\\d+/\\d+/\\d+/\\d+";
 
-    private String              dllink                  = null;
-    private boolean             force_http_download     = false;
-    private boolean             error_message_bandwidth = false;
+    private String  dllink                  = null;
+    private boolean force_http_download     = false;
+    private boolean error_message_bandwidth = false;
 
     public BoxNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -147,9 +146,10 @@ public class BoxNet extends PluginForHost {
             final String sharedName = new Regex(parameter.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage("https://app.box.com/preview/info/f_" + fileID + ".json?shared_name=" + sharedName);
-            final String filename = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
-            final String filesize = br.getRegex("\"size\":\"([^<>\"]*?)\"").getMatch(0);
+            br.getPage("https://app.box.com/index.php?rm=preview_shared&fileId=" + fileID + "&firstLoad=true&ignoreFolderContents=true&sharedName=" + sharedName + "&vanityName=&isSharedFilePage=true&isSharedFileEmbed=false&isSharedFolderPage=false&isSharedFolderEmbed=false&clientIsMobile=false&clientSupportsSWF=true&clientSupportsSVG=true&clientSupportsMP3=true&clientSupportsH264Baseline=true&clientSupportsMSE=true&clientSupportsDash=true&clientSupportsWebGL=true&sortType=&sortDirection=");
+
+            final String filename = getJson("name");
+            final String filesize = getJson("size");
             parameter.setProperty("fileid", fileID);
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
