@@ -28,6 +28,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primejailbait.com" }, urls = { "https?://(www\\.)?primejailbait\\.com/(id/\\d+|profile/[A-Za-z0-9\\-_]+/fav/\\d+)/$" }, flags = { 0 })
 public class PrimeJailBaitCom extends PluginForDecrypt {
 
@@ -86,7 +89,11 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
                     dl.setAvailable(true);
                     if (ID != null) {
                         dl.setContentUrl("https://www.primejailbait.com/id/" + ID);
-                        dl.setFinalFileName(ID + thumb_url.substring(thumb_url.lastIndexOf(".")));
+                        String ext = Files.getExtension(thumb_url);
+                        if (!StringUtils.contains(ext, "png") && !StringUtils.contains(ext, "gif") && !StringUtils.contains(ext, "jpg")) {
+                            ext = "jpg";
+                        }
+                        dl.setFinalFileName(ID + "." + ext);
                     }
                     decryptedLinks.add(dl);
                     distribute(dl);
@@ -108,7 +115,11 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
             link.setAvailableStatus(AvailableStatus.TRUE);
             if (ID != null) {
                 link.setContentUrl("https://www.primejailbait.com/id/" + ID);
-                link.setFinalFileName(ID + finallink.substring(finallink.lastIndexOf(".")));
+                String ext = Files.getExtension(finallink);
+                if (!StringUtils.contains(ext, "png") && !StringUtils.contains(ext, "gif") && !StringUtils.contains(ext, "jpg")) {
+                    ext = "jpg";
+                }
+                link.setFinalFileName(ID + "." + ext);
             }
             decryptedLinks.add(link);
         }

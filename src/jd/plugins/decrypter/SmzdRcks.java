@@ -76,8 +76,8 @@ public class SmzdRcks extends antiDDoSForDecrypt {
             String redirect = Encoding.Base64Decode(base64);
             if (StringUtils.isNotEmpty(redirect)) {
                 decryptedLinks.add(createDownloadlink(redirect));
+                return decryptedLinks;
             }
-            return decryptedLinks;
         }
 
         final String rcID = br.getRegex("challenge\\?k=([^\"]+)").getMatch(0);

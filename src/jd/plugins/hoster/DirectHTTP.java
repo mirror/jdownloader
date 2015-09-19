@@ -826,6 +826,8 @@ public class DirectHTTP extends antiDDoSForHost {
         if (retry == 5) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final int ioExceptions = downloadLink.getIntegerProperty(IOEXCEPTIONS, 0);
+        downloadLink.removeProperty(IOEXCEPTIONS);
         // if (true) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
         this.setBrowserExclusive();
         this.br.setDefaultSSLTrustALL(isSSLTrustALL());
@@ -1095,14 +1097,17 @@ public class DirectHTTP extends antiDDoSForHost {
         } catch (IOException e) {
             resetDownloadlink(downloadLink);
             if (!isConnectionOffline(e)) {
-                if (e instanceof java.net.ConnectException || e.getCause() instanceof java.net.ConnectException) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                final int nextIOExceptions = ioExceptions + 1;
+                if (nextIOExceptions > 2) {
+                    if (e instanceof java.net.ConnectException || e.getCause() instanceof java.net.ConnectException) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    if (e instanceof java.net.UnknownHostException || e.getCause() instanceof java.net.UnknownHostException) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                 }
-                if (e instanceof java.net.UnknownHostException || e.getCause() instanceof java.net.UnknownHostException) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
+                downloadLink.setProperty(IOEXCEPTIONS, nextIOExceptions);
             }
-
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Network problem: " + e.getMessage(), 30 * 60 * 1000l);
         } catch (final Exception e) {
             this.logger.log(Level.SEVERE, e.getMessage(), e);
@@ -1114,6 +1119,8 @@ public class DirectHTTP extends antiDDoSForHost {
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
+
+    private final String IOEXCEPTIONS = "IOEXCEPTIONS";
 
     private void validateLogins(DownloadLink downloadLink, String basicAuth) {
         try {
@@ -1168,6 +1175,7 @@ public class DirectHTTP extends antiDDoSForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        link.removeProperty(IOEXCEPTIONS);
         link.setProperty(DirectHTTP.NORESUME, Property.NULL);
         link.setProperty(DirectHTTP.NOCHUNKS, Property.NULL);
         link.setProperty("lastRefURL", Property.NULL);
