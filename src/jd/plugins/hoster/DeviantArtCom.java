@@ -451,14 +451,24 @@ public class DeviantArtCom extends PluginForHost {
                     /* Prefer HQ */
                     dllink = getHQpic();
                     if (dllink == null) {
-                        final String orimage = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);
-                        final String image = br.getRegex("<div class=\"dev\\-view\\-deviation\">[\t\n\r ]+<img collect_rid=\"[0-9:]+\" src=\"(http[^<>\"]*?)\"").getMatch(0);
-                        if (orimage != null && image == null) {
-                            dllink = orimage;
-                        } else if (orimage == null && image != null) {
-                            dllink = image;
-                        } else if (orimage != null && image != null) {
-                            dllink = image;
+                        final String images[] = br.getRegex("<img collect_rid=\"[0-9:]+\" src=\"(http[^<>\"]*?)\"").getColumn(0);
+                        if (images != null && images.length > 0) {
+                            String org = null;
+                            for (String image : images) {
+                                if (image.contains("/pre/") || image.contains("//pre")) {
+                                    continue;
+                                } else {
+                                    org = image;
+                                    break;
+                                }
+                            }
+                            if (org == null) {
+                                dllink = images[0];
+                            } else {
+                                dllink = org;
+                            }
+                        } else {
+                            dllink = br.getRegex("(name|property)=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(1);
                         }
                     }
 
