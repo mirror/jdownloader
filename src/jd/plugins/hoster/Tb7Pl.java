@@ -104,7 +104,7 @@ public class Tb7Pl extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         } else {
-            validUntil = br.getRegex("<div class=\"textPremium\">Dostęp Premium ważny do (.*?)<br>").getMatch(0);
+            validUntil = br.getRegex("<div class=\"textPremium\">Dostęp Premium ważny do <b>(.*?)</b><br />").getMatch(0);
             if (validUntil == null) {
                 if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -112,19 +112,21 @@ public class Tb7Pl extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin broken, please contact the JDownloader Support!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            validUntil = validUntil.replace(" | ", " ");
+            validUntil = validUntil.replace(" / ", " ");
         }
 
         /*
          * unfortunatelly there is no list with supported hosts anywhere on the page only PNG image at the main page
          */
-        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList("turbobit.net", "catshare.net", "rapidu.net", "rapidgator.net", "rg.to", "uploaded.to", "uploaded.net", "ul.to", "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net", "freakshare.com", "uploadable.ch", "lunaticfiles.com", "fileshark.pl"));
+        final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList("turbobit.net", "catshare.net", "devilshare.net", "fileshark.pl", "lunaticfiles.com", "rapidgator.net", "rg.to", "rapidu.net", "storbit.net", "uploadable.ch", "uploaded.to", "uploaded.net", "ul.to"
+                // "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net", "freakshare.com"
+                ));
         long expireTime = TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", Locale.ENGLISH);
         ai.setValidUntil(expireTime);
         account.setValid(true);
         ai.setMultiHostSupport(this, supportedHosts);
         ai.setProperty("Turbobit traffic", "Unlimited");
-        final String otherHostersLimitLeft = br.getRegex(" Pozostały limit na serwisy dodatkowe: ([^<>\"\\']+)<br />").getMatch(0);
+        final String otherHostersLimitLeft = br.getRegex(" Pozostały limit na serwisy dodatkowe: <b>([^<>\"\\']+)</b></div>").getMatch(0);
         ai.setProperty("Other hosters traffic", SizeFormatter.getSize(otherHostersLimitLeft));
         ai.setStatus("Premium User (TB: unlimited," + " Other: " + otherHostersLimitLeft + ")");
 
@@ -243,7 +245,7 @@ public class Tb7Pl extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, resume, chunks);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
-        // error
+            // error
         {
             br.followConnection();
             if (br.containsHTML("<div id=\"message\">Ważność linka wygasła.</div>")) {
