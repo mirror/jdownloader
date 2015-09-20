@@ -119,7 +119,7 @@ public class Tb7Pl extends PluginForHost {
          * unfortunatelly there is no list with supported hosts anywhere on the page only PNG image at the main page
          */
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList("turbobit.net", "catshare.net", "devilshare.net", "fileshark.pl", "lunaticfiles.com", "rapidgator.net", "rg.to", "rapidu.net", "storbit.net", "uploadable.ch", "uploaded.to", "uploaded.net", "ul.to"
-                // "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net", "freakshare.com"
+        // "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net", "freakshare.com"
                 ));
         long expireTime = TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", Locale.ENGLISH);
         ai.setValidUntil(expireTime);
@@ -239,13 +239,13 @@ public class Tb7Pl extends PluginForHost {
         // generated fileshark link allows only 1 chunk
         // because download doesn't support more chunks and
         // and resume (header response has no: "Content-Range" info)
-        if (link.getBrowserUrl().contains("fileshark.pl") || link.getDownloadURL().contains("fileshark.pl")) {
+        if (link.getBrowserUrl().contains("fileshark.pl") || link.getDownloadURL().contains("fileshark.pl") || link.getBrowserUrl().contains("lunaticfiles.pl") || link.getDownloadURL().contains("lunaticfiles.pl")) {
             chunks = 1;
             resume = false;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, resume, chunks);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
-            // error
+        // error
         {
             br.followConnection();
             if (br.containsHTML("<div id=\"message\">Ważność linka wygasła.</div>")) {
