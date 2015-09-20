@@ -2,14 +2,13 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLStreamHandler;
 
 import jd.network.rtmp.RtmpDump;
 import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.RTMPStreamHandler;
 import jd.plugins.download.RAFDownload;
 
 /* Old librtmp handling in revision < 13938 */
@@ -35,13 +34,7 @@ public class RTMPDownload extends RAFDownload {
         super(plugin, downloadLink, null);
         this.plg = plugin;
         this.dLink = downloadLink;
-        url = new URL(null, rtmpURL, new URLStreamHandler() {
-
-            @Override
-            protected URLConnection openConnection(URL url) throws IOException {
-                return new RtmpUrlConnection(url);
-            }
-        });
+        url = new URL(null, rtmpURL, new RTMPStreamHandler());
         rtmpConnection = new RtmpUrlConnection(url);
     }
 
