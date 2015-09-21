@@ -2825,8 +2825,26 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Field for entering the API key to use 9kw.eu." })
     String NinekwService_createPanel_apikey_tooltipText();
 
-    @Default(lngs = { "en" }, values = { "Hosteroptions" })
+    @Default(lngs = { "en" }, values = { "Hosteroptions: " })
     String NinekwService_createPanel_hosteroptions();
+
+    @Default(lngs = { "en" }, values = { "More informations: " })
+    String NinekwService_createPanel_hosteroptions_more();
+
+    @Default(lngs = { "en" }, values = { "API documentation" })
+    String NinekwService_createPanel_hosteroptions_api_button();
+
+    @Default(lngs = { "en" }, values = { "Show api documentation site on 9kw.eu in your browser" })
+    String NinekwService_createPanel_hosteroptions_api_button_tooltip();
+
+    @Default(lngs = { "en" }, values = { "Your config: " })
+    String NinekwService_createPanel_hosteroptions_userconfig();
+
+    @Default(lngs = { "en" }, values = { "Userconfig on 9kw.eu" })
+    String NinekwService_createPanel_hosteroptions_userconfig_button();
+
+    @Default(lngs = { "en" }, values = { "Show userconfig site on 9kw.eu in your browser" })
+    String NinekwService_createPanel_hosteroptions_userconfig_button_tooltip();
 
     @Default(lngs = { "en" }, values = { "Some options like a timeout hoster exactly define." })
     String NinekwService_createPanel_hosteroptions_tooltiptext();
@@ -2846,8 +2864,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Clear log" })
     String NinekwService_createPanel_btnUserDebug2();
 
+    @Default(lngs = { "en" }, values = { "Clear Stats" })
+    String NinekwService_createPanel_btnUserDebugStatReset();
+
     @Default(lngs = { "en" }, values = { "Debuglog cleared" })
     String NinekwService_createPanel_btnUserDebug2_text();
+
+    @Default(lngs = { "en" }, values = { "Stats cleared" })
+    String NinekwService_createPanel_btnUserDebugStatReset_text();
 
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Clear the debug log to get a new log." })
@@ -2894,6 +2918,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "List all Downloadhoster from JDownloader." })
     String NinekwService_createPanel_btnUserDebug3_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Clear stats." })
+    String NinekwService_createPanel_btnUserDebugStatReset_tooltiptext();
 
     @Default(lngs = { "en" }, values = { "Register" })
     String NinekwService_createPanel_btnRegister();
@@ -3059,7 +3086,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Https" })
     String NinekwService_createPanel_https();
 
-    @Default(lngs = { "en" }, values = { "Activates encrypted connections in the form of HTTPS (SSL / TLS)" })
+    @Default(lngs = { "en" }, values = { "Activates encrypted connections in the form of HTTPS (SSL / TLS) as secure connection" })
     String NinekwService_createPanel_https_tooltiptext();
 
     @Default(lngs = { "en" }, values = { "Confirm (Cost +6)" })
@@ -3073,6 +3100,30 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Activates a confirmation of the solution in the form of a Confirm Mouse captchas." })
     String NinekwService_createPanel_mouseconfirm_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Too many bad feedbacks" })
+    String NinekwService_createPanel_notification_badfeedback();
+
+    @Default(lngs = { "en" }, values = { "Warn if the feedbacks are really bad like only 100 NotOK." })
+    String NinekwService_createPanel_notification_badfeedback_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Without feedbacks" })
+    String NinekwService_createPanel_notification_badnofeedback();
+
+    @Default(lngs = { "en" }, values = { "Warn if the feedbacks are not possible." })
+    String NinekwService_createPanel_notification_NinekwService_createPanel_notification_badtimeout_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Too short timeouts" })
+    String NinekwService_createPanel_notification_badtimeout();
+
+    @Default(lngs = { "en" }, values = { "Warn if too many errors are available." })
+    String NinekwService_createPanel_notification_badtimeout_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Errors and bad uploads" })
+    String NinekwService_createPanel_notification_baderrorsanduploads();
+
+    @Default(lngs = { "en" }, values = { "Warn if too many errors are available." })
+    String NinekwService_createPanel_notification_baderrorsanduploads_tooltiptext();
 
     @Default(lngs = { "en" }, values = { "Debug" })
     String NinekwService_createPanel_debug();
@@ -3143,10 +3194,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Format: pluginname:prio=1:timeout=999;pluginname2:prio=0:timeout=999:min=2:max=50;" })
     String NinekwService_createPanel_hosteroptions_description1();
 
-    @Default(lngs = { "en" }, values = { "Allowed values: : prio, max, min, case-sensitive, numeric, cph, cpm, phrase, math, selfsolve, confirm, ocr, nomd5, timeout" })
+    @Default(lngs = { "en" }, values = { "Allowed values: : prio, max, min, case-sensitive, numeric, nospace, cph, cpm, phrase, math, selfsolve, confirm, ocr, nomd5, timeout" })
     String NinekwService_createPanel_hosteroptions_description2();
 
-    @Default(lngs = { "en" }, values = { "Specifies whether certain Hoster are allowed or forbidden." })
+    @Default(lngs = { "en" }, values = { "Black-/Whitelist in the plugin" })
+    String NinekwService_createPanel_blackwhitelist_title();
+
+    @Default(lngs = { "en" }, values = { "Specifies whether certain Hoster are allowed or forbidden. (Only in the plugin like a skipfunction)" })
     String NinekwService_createPanel_blackwhitelist_des();
 
     @Default(lngs = { "en" }, values = { "Options" })

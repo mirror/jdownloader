@@ -184,7 +184,7 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
 
     @AboutConfig
     @DefaultIntValue(600000)
-    @SpinnerValidator(min = 60000, max = Integer.MAX_VALUE)
+    @SpinnerValidator(min = 60000, max = 3999000)
     @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Other max. timeout only for 9kw Service")
     int getCaptchaOther9kwTimeout();
 
@@ -226,8 +226,36 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     void setlowcredits(boolean b);
 
     @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Activate the badfeedbacks dialog")
+    boolean getbadfeedbacks();
+
+    void setbadfeedbacks(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Activate the badnofeedbacks dialog")
+    boolean getbadnofeedbacks();
+
+    void setbadnofeedbacks(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Activate the badtimeout dialog")
+    boolean getbadtimeout();
+
+    void setbadtimeout(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Activate the errors/uploads dialog")
+    boolean getbaderrorsanduploads();
+
+    void setbaderrorsanduploads(boolean b);
+
+    @AboutConfig
     @DefaultIntValue(600000)
-    @SpinnerValidator(min = 60000, max = Integer.MAX_VALUE)
+    @SpinnerValidator(min = 60000, max = 3999000)
     @DescriptionForConfigEntry("Default Timeout in ms")
     int getDefaultTimeout();
 

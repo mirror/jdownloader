@@ -109,6 +109,26 @@ public class CFG_9KWCAPTCHA {
     public static final BooleanKeyHandler                  LOWCREDITS               = SH.getKeyHandler("lowcredits", BooleanKeyHandler.class);
 
     /**
+     * Activate the badfeedback dialog
+     **/
+    public static final BooleanKeyHandler                  BADFEEDBACKS             = SH.getKeyHandler("badfeedbacks", BooleanKeyHandler.class);
+
+    /**
+     * Activate the badnofeedback dialog
+     **/
+    public static final BooleanKeyHandler                  BADNOFEEDBACKS           = SH.getKeyHandler("badnofeedbacks", BooleanKeyHandler.class);
+
+    /**
+     * Activate the badtimeout dialog
+     **/
+    public static final BooleanKeyHandler                  BADTIMEOUT               = SH.getKeyHandler("badtimeout", BooleanKeyHandler.class);
+
+    /**
+     * Activate the baderrorsanduploads dialog
+     **/
+    public static final BooleanKeyHandler                  BADERRORSANDUPLOADS      = SH.getKeyHandler("baderrorsanduploads", BooleanKeyHandler.class);
+
+    /**
      * Activate the Puzzle Captchas
      **/
     public static final BooleanKeyHandler                  PUZZLE                   = SH.getKeyHandler("puzzle", BooleanKeyHandler.class);

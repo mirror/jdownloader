@@ -4,25 +4,37 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.swing.Icon;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.filechooser.FileFilter;
 
 import jd.controlling.ClipboardMonitoring;
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
 import jd.gui.swing.jdgui.views.settings.components.SettingsButton;
+import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.Spinner;
+import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.AbstractCaptchaSolverConfigPanel;
+import jd.gui.swing.jdgui.views.settings.panels.anticaptcha.CaptchaRegexListTextPane;
 import jd.http.Browser;
+import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
+import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -30,7 +42,9 @@ import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
 import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.FileChooserType;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.extensions.Header;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.settings.Pair;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
@@ -38,204 +52,92 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.staticreferences.CFG_9KWCAPTCHA;
+import org.jdownloader.updatev2.gui.LAFOptions;
 
 public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
-
-    private ExtButton           btnRegister;
-    private ExtButton           btnApi;
-    private ExtButton           btnPlugins;
-    private ExtButton           btnFAQ;
-    private ExtButton           btnSupport;
-    private ExtButton           btnHelp;
-    private ExtButton           btnUserhistory;
-    private ExtButton           btnUserCheck;
-    private ExtButton           btnUserBuy;
-    private ExtButton           btnUserDebug1;
-    private ExtButton           btnUserDebug1clipboard;
-    private ExtButton           btnUserDebug1file;
-    private ExtButton           btnUserDebug2;
-    private ExtButton           btnUserDebug3;
-    private ExtButton           btnUserDebug3hoster;
-    private ExtButton           btnUserDebug3crawler;
-    private Captcha9kwSettings  config;
-    public static final String  DEBUGEXT         = ".txt";
-    private static final long   serialVersionUID = -1805335184795063609L;
-    private TextInput           apiKey;
-    private TextInput           hosteroptions;
-    private TextInput           blacklist;
-    private TextInput           whitelist;
-    private TextInput           blacklistprio;
-    private TextInput           whitelistprio;
-    private TextInput           blacklisttimeout;
-    private TextInput           whitelisttimeout;
-    private NineKwSolverService service;
+    private ExtButton                      btnRegister;
+    private ExtButton                      btnApi;
+    private ExtButton                      btnPlugins;
+    private ExtButton                      btnFAQ;
+    private ExtButton                      btnSupport;
+    private ExtButton                      btnHelp;
+    private ExtButton                      btnApiDocu;
+    private ExtButton                      btnUserhistory;
+    private ExtButton                      btnUserCheck;
+    private ExtButton                      btnUserConfig;
+    private ExtButton                      btnUserBuy;
+    private ExtButton                      btnUserDebug1;
+    private ExtButton                      btnUserDebug1clipboard;
+    private ExtButton                      btnUserDebug1file;
+    private ExtButton                      btnUserDebug2;
+    private ExtButton                      btnUserDebug3;
+    private ExtButton                      btnUserDebug3hoster;
+    private ExtButton                      btnUserDebug3crawler;
+    private ExtButton                      btnUserDebugStatReset;
+    private Captcha9kwSettings             config;
+    public static final String             DEBUGEXT         = ".txt";
+    private static final long              serialVersionUID = -1805335184795063609L;
+    private TextInput                      apiKey;
+    private TextInput                      hosteroptions;
+    private TextInput                      blacklist;
+    private TextInput                      whitelist;
+    private Pair<CaptchaRegexListTextPane> blacklistnew;
+    private Pair<CaptchaRegexListTextPane> whitlistnew;
+    private TextInput                      blacklistprio;
+    private TextInput                      whitelistprio;
+    private TextInput                      blacklisttimeout;
+    private TextInput                      whitelisttimeout;
+    private NineKwSolverService            service;
 
     public NineKwConfigPanel(NineKwSolverService nineKwSolverService) {
         this.service = nineKwSolverService;
-        addHeader(getTitle(), NewTheme.I().getIcon(IconKey.ICON_9KW, 32));
-        addDescription(_GUI._.AntiCaptchaConfigPanel_onShow_description_ces());
 
-        add(new SettingsButton(new AppAction() {
-            /**
-             *
-             */
+        JTabbedPane tabbedPane = new JTabbedPane();
+
+        // Tab 1
+        JPanel Tab1_9kw = new JPanel(new MigLayout("ins 0"));
+        Tab1_9kw.add(new Header(getTitle(), NewTheme.I().getIcon(IconKey.ICON_9KW, 32)), "spanx,growx,pushx");
+        JLabel txt = addDescriptionPlain9kw(_GUI._.AntiCaptchaConfigPanel_onShow_description_ces());
+        Tab1_9kw.add(txt, "gaptop 0,spanx,growx,pushx,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");
+        Tab1_9kw.add(new JSeparator(), "gapleft " + getLeftGap() + ",spanx,growx,pushx,gapbottom 5");
+
+        Tab1_9kw.add(new SettingsButton(new AppAction() {
             private static final long serialVersionUID = 8804949739472915394L;
-
             {
                 setName(_GUI._.lit_open_website());
-
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
                 CrossSystem.openURL(getAPIROOT());
-
             }
         }), "gapleft 37,spanx,pushx,growx");
 
         MigPanel toolbar1 = new MigPanel("ins 0", "[][][][]", "[]");
         MigPanel toolbar2 = new MigPanel("ins 0", "[][][][]", "[]");
-        btnRegister = new ExtButton(new AppAction() {
-            /**
-             *
-             */
-            private static final long serialVersionUID = 7195034001951861669L;
 
-            {
-                setName(_GUI._.NinekwService_createPanel_btnRegister());
+        btnRegister = addClickButton9kw(btnRegister, _GUI._.NinekwService_createPanel_btnRegister(), getAPIROOT() + "register.html", _GUI._.NinekwService_createPanel_btnRegister_tooltiptext());
+        btnApi = addClickButton9kw(btnApi, _GUI._.NinekwService_createPanel_btnApi(), getAPIROOT() + "userapi.html", _GUI._.NinekwService_createPanel_btnApi_tooltiptext());
+        btnPlugins = addClickButton9kw(btnPlugins, _GUI._.NinekwService_createPanel_btnPlugins(), getAPIROOT() + "plugins.html", _GUI._.NinekwService_createPanel_btnPlugins_tooltiptext());
+        btnFAQ = addClickButton9kw(btnFAQ, _GUI._.NinekwService_createPanel_btnFAQ(), getAPIROOT() + "faq.html", _GUI._.NinekwService_createPanel_btnFAQ_tooltiptext());
+        btnHelp = addClickButton9kw(btnHelp, _GUI._.NinekwService_createPanel_btnHelp(), getAPIROOT() + "hilfe.html", _GUI._.NinekwService_createPanel_btnHelp_tooltiptext());
+        btnSupport = addClickButton9kw(btnSupport, _GUI._.NinekwService_createPanel_btnSupport(), getAPIROOT() + "kontakt.html", _GUI._.NinekwService_createPanel_btnSupport_tooltiptext());
+        btnUserhistory = addClickButton9kw(btnUserhistory, _GUI._.NinekwService_createPanel_btnUserhistory(), getAPIROOT() + "userhistory.html", _GUI._.NinekwService_createPanel_btnUserhistory_tooltiptext());
 
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                CrossSystem.openURL(getAPIROOT() + "register.html");
-
-            }
-        });
-        btnApi = new ExtButton(new AppAction() {
-            /**
-             *
-             */
-            private static final long serialVersionUID = 7443478587786398670L;
-
-            {
-                setName(_GUI._.NinekwService_createPanel_btnApi());
-
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                CrossSystem.openURL(getAPIROOT() + "userapi.html");
-
-            }
-        });
-        btnPlugins = new ExtButton(new AppAction() {
-            /**
-             *
-             */
-            private static final long serialVersionUID = 535406846478413287L;
-
-            {
-                setName(_GUI._.NinekwService_createPanel_btnPlugins());
-
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                CrossSystem.openURL(getAPIROOT() + "plugins.html");
-
-            }
-        });
-        btnFAQ = new ExtButton(new AppAction() {
-            /**
-             *
-             */
-            private static final long serialVersionUID = -93146391722269060L;
-
-            {
-                setName(_GUI._.NinekwService_createPanel_btnFAQ());
-
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                CrossSystem.openURL(getAPIROOT() + "faq.html");
-
-            }
-        });
-        btnHelp = new ExtButton(new AppAction() {
-            /**
-             *
-             */
-            private static final long serialVersionUID = -8623650782355847927L;
-
-            {
-                setName(_GUI._.NinekwService_createPanel_btnHelp());
-
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                CrossSystem.openURL(getAPIROOT() + "hilfe.html");
-
-            }
-        });
-        btnSupport = new ExtButton(new AppAction() {
-            /**
-             *
-             */
-            private static final long serialVersionUID = 36350110842819194L;
-
-            {
-                setName(_GUI._.NinekwService_createPanel_btnSupport());
-
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                CrossSystem.openURL(getAPIROOT() + "kontakt.html");
-
-            }
-        });
-        btnUserhistory = new ExtButton(new AppAction() {
-            /**
-             *
-             */
-            private static final long serialVersionUID = 8334258034515555683L;
-
-            {
-                setName(_GUI._.NinekwService_createPanel_btnUserhistory());
-
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                CrossSystem.openURL(getAPIROOT() + "userhistory.html");
-
-            }
-        });
-        btnRegister.setToolTipText(_GUI._.NinekwService_createPanel_btnRegister_tooltiptext());
         toolbar1.add(btnRegister, "pushx,growx,sg 1,height 26!");
-
-        btnPlugins.setToolTipText(_GUI._.NinekwService_createPanel_btnPlugins_tooltiptext());
         toolbar1.add(btnPlugins, "pushx,growx,sg 1,height 26!");
-
-        btnFAQ.setToolTipText(_GUI._.NinekwService_createPanel_btnFAQ_tooltiptext());
         toolbar1.add(btnFAQ, "pushx,growx,sg 1,height 26!");
-
-        btnHelp.setToolTipText(_GUI._.NinekwService_createPanel_btnHelp_tooltiptext());
         toolbar1.add(btnHelp, "pushx,growx,sg 1,height 26!");
-        add(toolbar1, "gapleft 37,spanx,pushx,growx");
+        Tab1_9kw.add(toolbar1, "gapleft 37,spanx,pushx,growx");
 
-        btnApi.setToolTipText(_GUI._.NinekwService_createPanel_btnApi_tooltiptext());
         toolbar2.add(btnApi, "pushx,growx,sg 1,height 26!");
-
-        btnUserhistory.setToolTipText(_GUI._.NinekwService_createPanel_btnUserhistory_tooltiptext());
         toolbar2.add(btnUserhistory, "pushx,growx,sg 1,height 26!");
-
-        btnSupport.setToolTipText(_GUI._.NinekwService_createPanel_btnSupport_tooltiptext());
         toolbar2.add(btnSupport, "pushx,growx,sg 1,height 26!");
-        add(toolbar2, "gapleft 37,spanx,pushx,growx");
+        Tab1_9kw.add(toolbar2, "gapleft 37,spanx,pushx,growx");
+
+        Tab1_9kw.add(new Header(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32)), "spanx,growx,pushx");
+        JLabel txt_myaccount = addDescriptionPlain9kw(_GUI._.NinekwService_createPanel_logins_());
+        Tab1_9kw.add(txt_myaccount, "gaptop 0,spanx,growx,pushx,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");
 
         apiKey = new TextInput(CFG_9KWCAPTCHA.API_KEY);
         apiKey.setHelpText(_GUI._.NinekwService_createPanel_apikey_helptext());
@@ -262,12 +164,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         whitelisttimeout = new TextInput(CFG_9KWCAPTCHA.WHITELISTTIMEOUT);
         whitelisttimeout.setToolTipText(_GUI._.NinekwService_createPanel_whitelisttimeout_tooltiptext());
 
-        this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_logins_(), NewTheme.I().getIcon(IconKey.ICON_LOGINS, 32));
-        this.addDescriptionPlain(_GUI._.NinekwService_createPanel_logins_());
-
         MigPanel toolbar3 = new MigPanel("ins 0", "[][][]", "[]");
-        // toolbar3.add(btnHelp, "sg 1,height 26!");
-        // add(toolbar3, "gapleft 37,spanx,pushx,growx");
         toolbar3.add(label(_GUI._.NinekwService_createPanel_enabled()), "width 135!");
 
         Checkbox textcaptchas = new Checkbox(CFG_9KWCAPTCHA.ENABLED);
@@ -291,25 +188,20 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         slidercaptchas.setToolTipText(_GUI._.NinekwService_createPanel_slidercaptchas_tooltiptext());
         // toolbar3.add(slidercaptchas);
         // toolbar3.add(label(_GUI._.NinekwService_createPanel_slidercaptchas()));
-        add(toolbar3, "gapleft 33,spanx,pushx,growx");
+        Tab1_9kw.add(toolbar3, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar4 = new MigPanel("ins 0", "[][][][]", "[]");
         toolbar4.add(label(_GUI._.NinekwService_createPanel_apikey()), "width 135!");
         toolbar4.add(apiKey, "pushx,growx");
 
         btnUserCheck = new ExtButton(new AppAction() {
-            /**
-             *
-             */
             private static final long serialVersionUID = -103695205004891917L;
-
             {
                 setName(_GUI._.NinekwService_createPanel_btnUserCheck());
             }
 
             @Override
             public void actionPerformed(ActionEvent e) {
-
                 if (apiKey.getText().length() < 5) {
                     jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "No api key.");
                 } else if (!apiKey.getText().matches("^[a-zA-Z0-9]*$")) {
@@ -317,7 +209,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
                 } else {
                     try {
                         Browser br = new Browser();
-                        String accountcheck = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchaguthaben&okcheck=1&apikey=" + CFG_9KWCAPTCHA.API_KEY);
+                        String accountcheck = br.getPage(getAPIROOT() + "index.cgi?action=usercaptchaguthaben&source=jd2&okcheck=1&apikey=" + CFG_9KWCAPTCHA.API_KEY);
                         String errorcheck = br.getRegex("^([0-9]+ .*)").getMatch(0);
                         if (accountcheck.startsWith("OK-")) {
                             jd.gui.UserIO.getInstance().requestMessageDialog("9kw message ", "Account OK\nCredits: " + accountcheck.substring("OK-".length()));
@@ -329,32 +221,21 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
                             jd.gui.UserIO.getInstance().requestMessageDialog("9kw error(1) ", "Unknown error.");
                         }
                     } catch (IOException e9kw) {
-                        jd.gui.UserIO.getInstance().requestMessageDialog("9kw error(2) ", "No connection or unknown error.");
+                        if (config.ishttps()) {
+                            jd.gui.UserIO.getInstance().requestMessageDialog("9kw error(2) ", "No connection or unknown error. Please deactivate https und try it again.");
+                        } else {
+                            jd.gui.UserIO.getInstance().requestMessageDialog("9kw error(2) ", "No connection or unknown error.");
+                        }
                     }
                 }
             }
         });
         btnUserCheck.setToolTipText(_GUI._.NinekwService_createPanel_btnUserCheck_tooltiptext());
         toolbar4.add(btnUserCheck);
-        btnUserBuy = new ExtButton(new AppAction() {
-            /**
-             *
-             */
-            private static final long serialVersionUID = 8334258034515555683L;
-            {
-                setName(_GUI._.NinekwService_createPanel_btnUserbuy());
 
-            }
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                CrossSystem.openURL(getAPIROOT() + "buy.html");
-
-            }
-        });
-        btnUserBuy.setToolTipText(_GUI._.NinekwService_createPanel_btnUserbuy_tooltiptext());
+        btnUserBuy = addClickButton9kw(btnUserBuy, _GUI._.NinekwService_createPanel_btnUserbuy(), getAPIROOT() + "buy.html", _GUI._.NinekwService_createPanel_btnUserbuy_tooltiptext());
         toolbar4.add(btnUserBuy);
-        add(toolbar4, "gapleft 33,spanx,pushx,growx");
+        Tab1_9kw.add(toolbar4, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar6 = new MigPanel("ins 0", "[][][][]", "[]");
         toolbar6.add(label("Options"), "width 135!");
@@ -378,8 +259,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         lowcreditscaptchas.setToolTipText(_GUI._.NinekwService_createPanel_lowcredits_tooltiptext());
         toolbar6.add(lowcreditscaptchas);
         toolbar6.add(label(_GUI._.NinekwService_createPanel_lowcredits()));
-        add(toolbar6, "gapleft 33,spanx,pushx,growx");
-        // Old example: addPair(_GUI._.NinekwService_createPanel_feedback(), null, new Checkbox(CFG_9KWCAPTCHA.FEEDBACK));
+        Tab1_9kw.add(toolbar6, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar7 = new MigPanel("ins 0", "[][][][]", "[]");
         toolbar7.add(label(" "), "width 135!");
@@ -393,7 +273,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         mouseconfirmcaptchas.setToolTipText(_GUI._.NinekwService_createPanel_mouseconfirm_tooltiptext());
         toolbar7.add(mouseconfirmcaptchas);
         toolbar7.add(label(_GUI._.NinekwService_createPanel_mouseconfirm()));
-        add(toolbar7, "gapleft 33,spanx,pushx,growx");
+        Tab1_9kw.add(toolbar7, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar8 = new MigPanel("ins 0", "[][][][]", "[]");
         toolbar8.add(label(" "), "width 135!");
@@ -413,7 +293,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         toolbar8.add(mincaptchas);
         toolbar8.add(label(_GUI._.NinekwService_createPanel_minute()));
         toolbar8.add(label(_GUI._.NinekwService_createPanel_unlimited()));
-        add(toolbar8, "gapleft 33,spanx,pushx,growx");
+        Tab1_9kw.add(toolbar8, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar9 = new MigPanel("ins 0", "[][][][]", "[]");
         toolbar9.add(label(" "), "width 135!");
@@ -427,83 +307,163 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         neunkwtimeoutcaptchas.setToolTipText(_GUI._.NinekwService_createPanel_9kwtimeout_tooltiptext());
         toolbar9.add(neunkwtimeoutcaptchas);
         toolbar9.add(label(_GUI._.NinekwService_createPanel_9kwtimeout()));
-        add(toolbar9, "gapleft 33,spanx,pushx,growx");
+        Tab1_9kw.add(toolbar9, "gapleft 33,spanx,pushx,growx");
 
-        this.addHeader(_GUI._.MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_blackwhitelist_(), NewTheme.I().getIcon(IconKey.ICON_SELECT, 32));
-        addDescription(_GUI._.NinekwService_createPanel_blackwhitelist_des());
+        MigPanel toolbarNotifications = new MigPanel("ins 0", "[][][][]", "[]");
+        toolbarNotifications.add(label("Notifications"), "width 135!");
+
+        Checkbox toolbarNotifications1 = new Checkbox(CFG_9KWCAPTCHA.BADFEEDBACKS);
+        toolbarNotifications1.setToolTipText(_GUI._.NinekwService_createPanel_confirm_tooltiptext());
+        toolbarNotifications.add(toolbarNotifications1);
+        toolbarNotifications.add(label(_GUI._.NinekwService_createPanel_notification_badfeedback()));
+
+        Checkbox toolbarNotifications2 = new Checkbox(CFG_9KWCAPTCHA.BADNOFEEDBACKS);
+        toolbarNotifications2.setToolTipText(_GUI._.NinekwService_createPanel_confirm_tooltiptext());
+        toolbarNotifications.add(toolbarNotifications2);
+        toolbarNotifications.add(label(_GUI._.NinekwService_createPanel_notification_badnofeedback()));
+
+        Checkbox toolbarNotifications3 = new Checkbox(CFG_9KWCAPTCHA.BADTIMEOUT);
+        toolbarNotifications3.setToolTipText(_GUI._.NinekwService_createPanel_confirm_tooltiptext());
+        toolbarNotifications.add(toolbarNotifications3);
+        toolbarNotifications.add(label(_GUI._.NinekwService_createPanel_notification_badtimeout()));
+
+        Checkbox toolbarNotifications4 = new Checkbox(CFG_9KWCAPTCHA.BADERRORSANDUPLOADS);
+        toolbarNotifications4.setToolTipText(_GUI._.NinekwService_createPanel_confirm_tooltiptext());
+        toolbarNotifications.add(toolbarNotifications4);
+        toolbarNotifications.add(label(_GUI._.NinekwService_createPanel_notification_baderrorsanduploads()));
+        Tab1_9kw.add(toolbarNotifications, "gapleft 33,spanx,pushx,growx");
+
+        tabbedPane.addTab("General", Tab1_9kw);
+
+        // Tab 2
+        JPanel Tab2_9kw = new JPanel(new MigLayout("ins 0"));
+
+        Tab2_9kw.add(new Header(_GUI._.captcha_settings_black_whitelist_header(), NewTheme.I().getIcon(IconKey.ICON_LIST, 32)), "spanx,growx,pushx");
+        JLabel txt_blackwhitelist3 = addDescriptionPlain9kw(_GUI._.captcha_settings_black_whitelist_description());
+        Tab2_9kw.add(txt_blackwhitelist3, "gaptop 0,spanx,growx,pushx,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");
+
+        BooleanKeyHandler keyHandler = CFG_9KWCAPTCHA.CFG._getStorageHandler().getKeyHandler("BlackWhiteListingEnabled", BooleanKeyHandler.class);
+        Pair<Checkbox> condition = null;
+        if (keyHandler != null) {
+            condition = addPair9kw(_GUI._.captcha_settings_blacklist_enabled(), null, new jd.gui.swing.jdgui.views.settings.components.Checkbox(keyHandler), Tab2_9kw);
+        }
+        blacklistnew = addPair9kw(_GUI._.captcha_settings_blacklist(), null, new CaptchaRegexListTextPane(), Tab2_9kw);
+        whitlistnew = addPair9kw(_GUI._.captcha_settings_whitelist(), null, new CaptchaRegexListTextPane(), Tab2_9kw);
+        if (condition != null) {
+            blacklistnew.setConditionPair(condition);
+            whitlistnew.setConditionPair(condition);
+        }
+        blacklistnew.getComponent().setList(CFG_9KWCAPTCHA.CFG.getBlacklistEntries());
+        whitlistnew.getComponent().setList(CFG_9KWCAPTCHA.CFG.getWhitelistEntries());
+        blacklistnew.getComponent().addStateUpdateListener(new StateUpdateListener() {
+            @Override
+            public void onStateUpdated() {
+                CFG_9KWCAPTCHA.CFG.setBlacklistEntries(new ArrayList<String>(blacklistnew.getComponent().getList()));
+            }
+        });
+
+        whitlistnew.getComponent().addStateUpdateListener(new StateUpdateListener() {
+            @Override
+            public void onStateUpdated() {
+                CFG_9KWCAPTCHA.CFG.setWhitelistEntries(new ArrayList<String>(whitlistnew.getComponent().getList()));
+            }
+        });
+
+        Tab2_9kw.add(new Header(_GUI._.NinekwService_createPanel_blackwhitelist_title(), NewTheme.I().getIcon(IconKey.ICON_SELECT, 32)), "spanx,growx,pushx");
+        JLabel txt_blackwhitelist = addDescriptionPlain9kw(_GUI._.NinekwService_createPanel_blackwhitelist_des());
+        Tab2_9kw.add(txt_blackwhitelist, "gaptop 0,spanx,growx,pushx,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");
 
         MigPanel toolbar10 = new MigPanel("ins 0", "[][][][]", "[]");
         toolbar10.add(new Checkbox(CFG_9KWCAPTCHA.BLACKLISTCHECK));
         toolbar10.add(label(_GUI._.NinekwService_createPanel_blacklist()));
         toolbar10.add(blacklist, "pushx,growx");
-        add(toolbar10, "gapleft 33,spanx,pushx,growx");
+        Tab2_9kw.add(toolbar10, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar11 = new MigPanel("ins 0", "[][][][]", "[]");
         toolbar11.add(new Checkbox(CFG_9KWCAPTCHA.WHITELISTCHECK));
         toolbar11.add(label(_GUI._.NinekwService_createPanel_whitelist()));
         toolbar11.add(whitelist, "pushx,growx");
-        add(toolbar11, "gapleft 33,spanx,pushx,growx");
+        Tab2_9kw.add(toolbar11, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar13t3 = new MigPanel("ins 0", "[][][][]", "[]");
         toolbar13t3.add(label(" "));
-        add(toolbar13t3, "gapleft 33,spanx,pushx,growx");
+        Tab2_9kw.add(toolbar13t3, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar12 = new MigPanel("ins 0", "[][][][]", "[]");
         toolbar12.add(new Checkbox(CFG_9KWCAPTCHA.BLACKLISTPRIOCHECK));
         toolbar12.add(label(_GUI._.NinekwService_createPanel_blacklistprio()));
         toolbar12.add(blacklistprio, "pushx,growx");
-        add(toolbar12, "gapleft 33,spanx,pushx,growx");
+        Tab2_9kw.add(toolbar12, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar13 = new MigPanel("ins 0", "[][][][]", "[]");
         toolbar13.add(new Checkbox(CFG_9KWCAPTCHA.WHITELISTPRIOCHECK));
         toolbar13.add(label(_GUI._.NinekwService_createPanel_whitelistprio()));
         toolbar13.add(whitelistprio, "pushx,growx");
-        add(toolbar13, "gapleft 33,spanx,pushx,growx");
+        Tab2_9kw.add(toolbar13, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar13t0 = new MigPanel("ins 0", "[][][][]", "[]");
         toolbar13t0.add(label(" "));
-        add(toolbar13t0, "gapleft 33,spanx,pushx,growx");
+        Tab2_9kw.add(toolbar13t0, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar13t = new MigPanel("ins 0", "[][][][]", "[]");
         toolbar13t.add(new Checkbox(CFG_9KWCAPTCHA.WHITELISTTIMEOUTCHECK));
         toolbar13t.add(label(_GUI._.NinekwService_createPanel_whitelisttimeout()));
         toolbar13t.add(whitelisttimeout, "pushx,growx");
-        add(toolbar13t, "gapleft 33,spanx,pushx,growx");
+        Tab2_9kw.add(toolbar13t, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar13t1 = new MigPanel("ins 0", "[][][][]", "[]");
         toolbar13t1.add(new Checkbox(CFG_9KWCAPTCHA.BLACKLISTTIMEOUTCHECK));
         toolbar13t1.add(label(_GUI._.NinekwService_createPanel_blacklisttimeout()));
         toolbar13t1.add(blacklisttimeout, "pushx,growx");
-        add(toolbar13t1, "gapleft 33,spanx,pushx,growx");
+        Tab2_9kw.add(toolbar13t1, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar9a = new MigPanel("ins 0", "[][][]", "[]");
         toolbar9a.add(label(" "), "width 130!");
-
         toolbar9a.add(label(_GUI._.NinekwService_createPanel_9kwtimeoutother()));
 
         Spinner new9kwtimeoutcaptchas = new Spinner(CFG_9KWCAPTCHA.CAPTCHA_OTHER9KW_TIMEOUT);
         new9kwtimeoutcaptchas.setToolTipText(_GUI._.NinekwService_createPanel_9kwtimeoutother_tooltiptext());
         toolbar9a.add(new9kwtimeoutcaptchas);
         toolbar9a.add(label(_GUI._.NinekwService_createPanel_ms()));
-        add(toolbar9a, "gapleft 33,spanx,pushx,growx");
+        Tab2_9kw.add(toolbar9a, "gapleft 33,spanx,pushx,growx");
 
-        this.addHeader(_GUI._.NinekwService_createPanel_options_header(), NewTheme.I().getIcon(IconKey.ICON_FOLDER_ADD, 32));
-        // MigPanel toolbar9b = new MigPanel("ins 0", "[][][][]", "[]");
-        // toolbar9b.add(label(_GUI._.NinekwService_createPanel_useragent()), "width 130!");
-        // toolbar9b.add(useragent, "pushx,growx");
-        // add(toolbar9b, "gapleft 33,spanx,pushx,growx");
+        tabbedPane.addTab("Black-/Whitelist", Tab2_9kw);
+
+        // Tab 3
+        JPanel Tab3_9kw = new JPanel(new MigLayout("ins 0"));
+        Tab3_9kw.add(new Header(_GUI._.NinekwService_createPanel_options_header(), NewTheme.I().getIcon(IconKey.ICON_FOLDER_ADD, 32)), "spanx,growx,pushx");
 
         MigPanel toolbar9c = new MigPanel("ins 0", "[][][][]", "[]");
         toolbar9c.add(label(_GUI._.NinekwService_createPanel_hosteroptions()), "width 130!");
         toolbar9c.add(hosteroptions, "pushx,growx");
-        // addDescription(_GUI._.NinekwService_createPanel_useragent_description());
-        add(toolbar9c, "gapleft 33,spanx,pushx,growx");
-        addDescription(_GUI._.NinekwService_createPanel_hosteroptions_description1());
-        addDescription(_GUI._.NinekwService_createPanel_hosteroptions_description2());
+        Tab3_9kw.add(toolbar9c, "gapleft 33,spanx,pushx,growx");
 
-        this.addHeader(_GUI._.NinekwService_createPanel_debug(), NewTheme.I().getIcon(IconKey.ICON_EVENT, 32));
+        JLabel txt_blackwhitelist1 = addDescriptionPlain9kw(_GUI._.NinekwService_createPanel_hosteroptions_description1());
+        Tab3_9kw.add(txt_blackwhitelist1, "gaptop 0,spanx,growx,pushx,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");
+        JLabel txt_blackwhitelist2 = addDescriptionPlain9kw(_GUI._.NinekwService_createPanel_hosteroptions_description2());
+        Tab3_9kw.add(txt_blackwhitelist2, "gaptop 0,spanx,growx,pushx,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");
+
+        MigPanel toolbar9cA = new MigPanel("ins 0", "[][][][]", "[]");
+        toolbar9cA.add(label(_GUI._.NinekwService_createPanel_hosteroptions_more()), "width 130!");
+        btnApiDocu = addClickButton9kw(btnApiDocu, _GUI._.NinekwService_createPanel_hosteroptions_api_button(), getAPIROOT() + "api.html", _GUI._.NinekwService_createPanel_hosteroptions_api_button_tooltip());
+        toolbar9cA.add(btnApiDocu, "gaptop 0,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");
+        Tab3_9kw.add(toolbar9cA, "gapleft 33,spanx,pushx,growx");
+
+        MigPanel toolbar9cB = new MigPanel("ins 0", "[][][][]", "[]");
+        toolbar9cB.add(label(_GUI._.NinekwService_createPanel_hosteroptions_userconfig()), "width 130!");
+        btnUserConfig = addClickButton9kw(btnUserConfig, _GUI._.NinekwService_createPanel_hosteroptions_userconfig_button(), getAPIROOT() + "userconfig.html", _GUI._.NinekwService_createPanel_hosteroptions_userconfig_button_tooltip());
+        toolbar9cB.add(btnUserConfig, "gaptop 0,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");
+        Tab3_9kw.add(toolbar9cB, "gapleft 33,spanx,pushx,growx");
+
+        tabbedPane.addTab("Options", Tab3_9kw);
+
+        // Tab 4
+        JPanel Tab4_9kw = new JPanel(new MigLayout("ins 0"));
+        Tab4_9kw.add(new Header(_GUI._.NinekwService_createPanel_debug(), NewTheme.I().getIcon(IconKey.ICON_EVENT, 32)), "spanx,growx,pushx");
         MigPanel toolbardebug1 = new MigPanel("ins 0", "[][][][]", "[]");
-        addDescription(_GUI._.NinekwService_createPanel_debug_description());
+
+        JLabel txt_debug1 = addDescriptionPlain9kw(_GUI._.NinekwService_createPanel_debug_description());
+        Tab4_9kw.add(txt_debug1, "gaptop 0,spanx,growx,pushx,gapleft " + getLeftGap() + ",gapbottom 5,wmin 10");
 
         Checkbox debugcaptchas = new Checkbox(CFG_9KWCAPTCHA.DEBUG);
         debugcaptchas.setToolTipText(_GUI._.NinekwService_createPanel_debugcaptchas_tooltiptext());
@@ -511,11 +471,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         toolbardebug1.add(label(_GUI._.NinekwService_createPanel_debugcaptchas()));
 
         btnUserDebug1 = new ExtButton(new AppAction() {
-            /**
-             *
-             */
             private static final long serialVersionUID = 1700532687116057633L;
-
             {
                 setName(_GUI._.NinekwService_createPanel_btnUserDebug1());
             }
@@ -539,11 +495,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         toolbardebug1.add(btnUserDebug1);
 
         btnUserDebug1clipboard = new ExtButton(new AppAction() {
-            /**
-             *
-             */
             private static final long serialVersionUID = 1700532687116057633L;
-
             {
                 setName(_GUI._.NinekwService_createPanel_btnUserDebug1clipboard());
             }
@@ -565,7 +517,6 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
              * Save debuglog as file
              */
             private static final long serialVersionUID = 1700542687116057633L;
-
             {
                 setName(_GUI._.NinekwService_createPanel_btnUserDebug1file());
             }
@@ -590,7 +541,6 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
 
                     d.setFileSelectionMode(FileChooserSelectionMode.FILES_AND_DIRECTORIES);
                     d.setMultiSelection(false);
-
                     d.setStorageID(DEBUGEXT);
                     d.setType(FileChooserType.SAVE_DIALOG);
                     try {
@@ -617,11 +567,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         toolbardebug1.add(btnUserDebug1file);
 
         btnUserDebug2 = new ExtButton(new AppAction() {
-            /**
-             *
-             */
             private static final long serialVersionUID = -4020410143121908004L;
-
             {
                 setName(_GUI._.NinekwService_createPanel_btnUserDebug2());
             }
@@ -632,17 +578,13 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
                 jd.gui.UserIO.getInstance().requestMessageDialog("9kw debug ", _GUI._.NinekwService_createPanel_btnUserDebug2_text());
             }
         });
-        btnUserDebug2.setToolTipText(_GUI._.NinekwService_createPanel_btnUserDebug3_tooltiptext());
+        btnUserDebug2.setToolTipText(_GUI._.NinekwService_createPanel_btnUserDebug2());
         toolbardebug1.add(btnUserDebug2);
-        add(toolbardebug1, "gapleft 33,spanx,pushx,growx");
+        Tab4_9kw.add(toolbardebug1, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbardebug1ex = new MigPanel("ins 0", "[][][][]", "[]");
         btnUserDebug3 = new ExtButton(new AppAction() {
-            /**
-             *
-             */
             private static final long serialVersionUID = -622574297401313782L;
-
             {
                 setName(_GUI._.NinekwService_createPanel_btnUserDebug3());
             }
@@ -662,15 +604,11 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
                 }
             }
         });
-        btnUserDebug3.setToolTipText(_GUI._.NinekwService_createPanel_btnUserDebug3_tooltiptext());
+        btnUserDebug3.setToolTipText(_GUI._.NinekwService_createPanel_btnUserDebug3());
         toolbardebug1ex.add(btnUserDebug3);
 
         btnUserDebug3hoster = new ExtButton(new AppAction() {
-            /**
-             *
-             */
             private static final long serialVersionUID = 1700532687116057633L;
-
             {
                 setName(_GUI._.NinekwService_createPanel_btnUserDebug3hoster());
             }
@@ -696,11 +634,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         toolbardebug1ex.add(btnUserDebug3hoster);
 
         btnUserDebug3crawler = new ExtButton(new AppAction() {
-            /**
-             *
-             */
             private static final long serialVersionUID = 1300532687116057633L;
-
             {
                 setName(_GUI._.NinekwService_createPanel_btnUserDebug3crawler());
             }
@@ -724,7 +658,103 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         });
         btnUserDebug3crawler.setToolTipText(_GUI._.NinekwService_createPanel_btnUserDebug3crawler_tooltiptext());
         toolbardebug1ex.add(btnUserDebug3crawler);
-        add(toolbardebug1ex, "gapleft 33,spanx,pushx,growx");
+        Tab4_9kw.add(toolbardebug1ex, "gapleft 33,spanx,pushx,growx");
+
+        btnUserDebugStatReset = new ExtButton(new AppAction() {
+            private static final long serialVersionUID = -4020410143121908004L;
+            {
+                setName(_GUI._.NinekwService_createPanel_btnUserDebugStatReset());
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Captcha9kwSolver.getInstance().counterSolved.set(0);
+                Captcha9kwSolver.getInstance().counterInterrupted.set(0);
+                Captcha9kwSolver.getInstance().counter.set(0);
+                Captcha9kwSolver.getInstance().counterSend.set(0);
+                Captcha9kwSolver.getInstance().counterSendError.set(0);
+                Captcha9kwSolver.getInstance().counterOK.set(0);
+                Captcha9kwSolver.getInstance().counterNotOK.set(0);
+                Captcha9kwSolver.getInstance().counterUnused.set(0);
+
+                Captcha9kwSolverClick.getInstance().click9kw_counterSolved.set(0);
+                Captcha9kwSolverClick.getInstance().click9kw_counterInterrupted.set(0);
+                Captcha9kwSolverClick.getInstance().click9kw_counter.set(0);
+                Captcha9kwSolverClick.getInstance().click9kw_counterSend.set(0);
+                Captcha9kwSolverClick.getInstance().click9kw_counterSendError.set(0);
+                Captcha9kwSolverClick.getInstance().click9kw_counterOK.set(0);
+                Captcha9kwSolverClick.getInstance().click9kw_counterNotOK.set(0);
+                Captcha9kwSolverClick.getInstance().click9kw_counterUnused.set(0);
+
+                jd.gui.UserIO.getInstance().requestMessageDialog("9kw debug ", _GUI._.NinekwService_createPanel_btnUserDebugStatReset_text());
+            }
+        });
+        btnUserDebugStatReset.setToolTipText(_GUI._.NinekwService_createPanel_btnUserDebugStatReset_tooltiptext());
+        toolbardebug1.add(btnUserDebugStatReset);
+
+        tabbedPane.addTab("Debug", Tab4_9kw);
+
+        int tabcount = tabbedPane.getTabCount();
+        tabbedPane.setSelectedIndex(0);
+        add(tabbedPane, "gapleft 37,spanx,pushx,growx");
+    }
+
+    private JLabel addDescriptionPlain9kw(String description) {
+
+        if (!description.toLowerCase().startsWith("<html>")) {
+            description = "<html>" + description.replace("\r\n", "<br>").replace("\r", "<br>").replace("\n", "<br>") + "<html>";
+        }
+        JLabel txt = new JLabel();
+        SwingUtils.setOpaque(txt, false);
+        // txt.setEnabled(false);
+        LAFOptions.getInstance().applyConfigDescriptionTextColor(txt);
+
+        txt.setText(description);
+        return txt;
+    }
+
+    private ExtButton addClickButton9kw(ExtButton btnTemp, String title, String url, String tooltext) {
+        btnTemp = new ExtButton(new AppAction() {
+            private static final long serialVersionUID = 7195034001951861669L;
+            {
+                setName(title);
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                CrossSystem.openURL(url);
+            }
+        });
+        btnTemp.setToolTipText(tooltext);
+        return btnTemp;
+    }
+
+    private <T extends SettingsComponent> Pair<T> addPair9kw(String name, BooleanKeyHandler enabled, T comp, JPanel TabTemp) {
+        String lblConstraints = "gapleft" + getLeftGap() + ",aligny " + (comp.isMultiline() ? "top" : "center");
+        return addPair9kw(name, lblConstraints, enabled, comp, TabTemp);
+    }
+
+    private <T extends SettingsComponent> Pair<T> addPair9kw(String name, String lblConstraints, BooleanKeyHandler enabled, T comp, JPanel TabTemp) {
+        JLabel lbl = createLabel(name);
+        MigPanel toolbarTemp = new MigPanel("ins 0", "[][][]", "[]");
+        toolbarTemp.add(lbl, lblConstraints);
+        ExtCheckBox cb = null;
+        String con = "pushx,grow";
+        if (enabled != null) {
+            cb = new ExtCheckBox(enabled, lbl, (JComponent) comp);
+            SwingUtils.setOpaque(cb, false);
+            toolbarTemp.add(cb, "width " + cb.getPreferredSize().width + "!, aligny " + (comp.isMultiline() ? "top" : "center"));
+            cb.setToolTipText(_GUI._.AbstractConfigPanel_addPair_enabled());
+        }
+        if (comp.getConstraints() != null) {
+            con += "," + comp.getConstraints();
+        }
+        toolbarTemp.add((JComponent) comp, con);
+        TabTemp.add(toolbarTemp, "gapleft 33,spanx,pushx,growx");
+
+        Pair<T> p = new Pair<T>(lbl, comp, cb);
+        pairs.add(p);
+        return p;
     }
 
     @Override

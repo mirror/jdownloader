@@ -183,6 +183,55 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
             }
         }
 
+        // debug
+        // jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "OK: " + counterOK.get() + "\nNotOK: " + counterNotOK.get() +
+        // "\nSolved: " + counterSolved.get() + "\nAll: " + counter.get());
+
+        boolean badfeedbackstemp = config.getbadfeedbacks();
+        if (badfeedbackstemp == true && config.isfeedback() == true) {
+            if (counterNotOK.get() > 10 && counterSend.get() > 10 && counterSolved.get() > 10 && counter.get() > 10 || counterOK.get() < 10 && counterNotOK.get() > 10 && counterSolved.get() > 10 && counter.get() > 10) {
+                if ((counterNotOK.get() / counter.get() * 100) > 30 || counterOK.get() < 10 && counterNotOK.get() > 10 && counterSolved.get() > 10 && counter.get() > 10) {
+                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "Too many bad feedbacks like 30% captchas with NotOK. Please check it and then you can reset the stats.\n\n" + "OK: " + counterOK.get() + "\nNotOK: " + counterNotOK.get() + "\nSolved: " + counterSolved.get() + "\nAll: " + counter.get());
+                    return;
+                }
+            }
+        }
+
+        boolean badnofeedbackstemp = config.getbadnofeedbacks();
+        if (badnofeedbackstemp == true && config.isfeedback() == true) {
+            if (counterSend.get() > 10 && counter.get() > 10) {
+                if (((counterOK.get() + counterNotOK.get() + counterInterrupted.get()) / counter.get() * 100) < 50) {
+                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "Too many captchas without feedbacks like OK or NotOK. Please check it and then you can reset the stats.\n\n" + "OK: " + counterOK.get() + "\nNotOK: " + counterNotOK.get() + "\nSolved: " + counterSolved.get() + "\nAll: " + counter.get());
+                    // return;
+                }
+            }
+        }
+
+        boolean getbadtimeouttemp = config.getbadtimeout();
+        if (getbadtimeouttemp == true) {
+            if (counterSend.get() > 5 && counter.get() > 5 && counterSolved.get() > 5) {
+                if ((config.getDefaultTimeout() / 1000) < 90 || (config.getDefaultTimeout() / 1000) < (config.getCaptchaOther9kwTimeout() / 1000)) {
+                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "Your max. timeout is really low or the othertimeout is higher than your default timeout. Please change it and then try it again.\n");
+                    return;
+                }
+            }
+        }
+
+        boolean getbaderrorsanduploadstemp = config.getbaderrorsanduploads();
+        if (getbaderrorsanduploadstemp == true) {
+            if (counterSendError.get() > 10 || counterInterrupted.get() > 10) {
+                if (((counterSendError.get() + counterInterrupted.get()) / counter.get() * 100) > 50) {
+                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "You have many send errors or interrupted captchas. Please check it.\n");
+                }
+            }
+        }
+
+        // for debug
+        // counterSolved.set(10);
+        // counterSend.set(10);
+        // counterNotOK.set(10);
+        // counter.set(10);
+
         String moreoptions = "";
         String hosterOptions = config.gethosteroptions();
         if (hosterOptions != null && hosterOptions.length() > 5) {
@@ -208,13 +257,16 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                             if (detailvalue[0].equals("nomd5") && detailvalue[1].matches("^[0-9]+$")) {
                                 moreoptions += "&nomd5=" + detailvalue[1];
                             }
+                            if (detailvalue[0].equals("nospace") && detailvalue[1].matches("^[0-9]+$")) {
+                                moreoptions += "&nospace=" + detailvalue[1];
+                            }
                             if (detailvalue[0].equals("ocr") && detailvalue[1].matches("^[0-9]+$")) {
                                 moreoptions += "&ocr=" + detailvalue[1];
                             }
-                            if (detailvalue[0].equals("min") && detailvalue[1].matches("^[0-9]+$")) {
+                            if (detailvalue[0].equals("min") && detailvalue[1].matches("^[0-9]+$") || detailvalue[0].equals("min_length") && detailvalue[1].matches("^[0-9]+$")) {
                                 moreoptions += "&min_len=" + detailvalue[1];
                             }
-                            if (detailvalue[0].equals("max") && detailvalue[1].matches("^[0-9]+$")) {
+                            if (detailvalue[0].equals("max") && detailvalue[1].matches("^[0-9]+$") || detailvalue[0].equals("max_length") && detailvalue[1].matches("^[0-9]+$")) {
                                 moreoptions += "&max_len=" + detailvalue[1];
                             }
                             if (detailvalue[0].equals("phrase") && detailvalue[1].matches("^[0-9]+$")) {
@@ -297,6 +349,12 @@ public class Captcha9kwSolver extends CESChallengeSolver<String> implements Chal
                 if (ret.startsWith("OK-answered-")) {
                     counterSolved.incrementAndGet();
                     job.setAnswer(new Captcha9kwResponse(challenge, this, ret.substring("OK-answered-".length()), 100, captchaID));
+                    return;
+                } else if (((System.currentTimeMillis() - startTime) / 1000) > (timeoutthing + 10)) {
+                    counterInterrupted.incrementAndGet();
+                    return;
+                } else if (ret.startsWith("OK-answered-ERROR NO USER")) {
+                    counterInterrupted.incrementAndGet();
                     return;
                 }
 
