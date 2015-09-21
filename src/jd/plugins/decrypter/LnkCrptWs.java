@@ -31,6 +31,14 @@ import javax.imageio.ImageIO;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
+import org.jdownloader.captcha.v2.challenge.xsolver.CaptXSolver;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
@@ -49,14 +57,6 @@ import jd.plugins.Plugin;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
-import org.jdownloader.captcha.v2.challenge.xsolver.CaptXSolver;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
 public class LnkCrptWs extends antiDDoSForDecrypt {
@@ -398,8 +398,11 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
             }
             br.clearCookies(parameter);
             getPage(parameter);
-            if (br.containsHTML("/hsmoozedrocks")) {
-                getPage(parameter);
+            // here is some smoozed bullshit hijack
+            if (br.containsHTML("<div class=\"red\" id=\"download_free\">")) {
+                getPage(br.getURL());
+                // this sets a cookie, but number changes all the time.
+                // hintmsg=xxxxxxxxxx x = \d
             }
             for (int i = 0; i < 5; i++) {
                 if (isAbort()) {
@@ -411,6 +414,8 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                     br.clearCookies(parameter);
                     getPage(parameter);
                     continue;
+                } else {
+                    break;
                 }
             }
             System.out.println("TextX " + br.containsHTML("TextX"));
