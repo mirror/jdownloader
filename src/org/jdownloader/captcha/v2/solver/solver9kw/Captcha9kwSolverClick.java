@@ -176,6 +176,45 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
             }
         }
 
+        boolean badfeedbackstemp = config.getbadfeedbacks();
+        if (badfeedbackstemp == true && config.isfeedback() == true) {
+            if (click9kw_counterNotOK.get() > 10 && click9kw_counterSend.get() > 10 && click9kw_counterSolved.get() > 10 && click9kw_counter.get() > 10 || click9kw_counterOK.get() < 10 && click9kw_counterNotOK.get() > 10 && click9kw_counterSolved.get() > 10 && click9kw_counter.get() > 10) {
+                if ((click9kw_counterNotOK.get() / click9kw_counter.get() * 100) > 30 || click9kw_counterOK.get() < 10 && click9kw_counterNotOK.get() > 10 && click9kw_counterSolved.get() > 10 && click9kw_counter.get() > 10) {
+                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "Too many bad feedbacks like 30% captchas with NotOK. Please check it and then you can reset the stats.\n\n" + "OK: " + click9kw_counterOK.get() + "\nNotOK: " + click9kw_counterNotOK.get() + "\nSolved: " + click9kw_counterSolved.get() + "\nAll: " + click9kw_counter.get());
+                    return;
+                }
+            }
+        }
+
+        boolean badnofeedbackstemp = config.getbadnofeedbacks();
+        if (badnofeedbackstemp == true && config.isfeedback() == true) {
+            if (click9kw_counterSend.get() > 10 && click9kw_counter.get() > 10) {
+                if (((click9kw_counterOK.get() + click9kw_counterNotOK.get() + click9kw_counterInterrupted.get()) / click9kw_counter.get() * 100) < 50) {
+                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "Too many captchas without feedbacks like OK or NotOK. Please check it and then you can reset the stats.\n\n" + "OK: " + click9kw_counterOK.get() + "\nNotOK: " + click9kw_counterNotOK.get() + "\nSolved: " + click9kw_counterSolved.get() + "\nAll: " + click9kw_counter.get());
+                    // return;
+                }
+            }
+        }
+
+        boolean getbadtimeouttemp = config.getbadtimeout();
+        if (getbadtimeouttemp == true) {
+            if (click9kw_counterSend.get() > 5 && click9kw_counter.get() > 5 && click9kw_counterSolved.get() > 5) {
+                if ((config.getDefaultTimeout() / 1000) < 90 || (config.getDefaultTimeout() / 1000) < (config.getCaptchaOther9kwTimeout() / 1000)) {
+                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "Your max. timeout is really lower than 150s or the othertimeout is higher than your default timeout. Please change it and then try it again.\n");
+                    return;
+                }
+            }
+        }
+
+        boolean getbaderrorsanduploadstemp = config.getbaderrorsanduploads();
+        if (getbaderrorsanduploadstemp == true) {
+            if (click9kw_counterSendError.get() > 10 || click9kw_counterInterrupted.get() > 10) {
+                if (((click9kw_counterSendError.get() + click9kw_counterInterrupted.get()) / click9kw_counter.get() * 100) > 50 || click9kw_counterOK.get() < 10 && click9kw_counterNotOK.get() > 100) {
+                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "You have many send errors or interrupted captchas. Please check it.\n");
+                }
+            }
+        }
+
         String moreoptions = "";
         String hosterOptions = config.gethosteroptions();
         if (hosterOptions != null && hosterOptions.length() > 5) {
@@ -204,10 +243,10 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
                             if (detailvalue[0].equals("ocr") && detailvalue[1].matches("^[0-9]+$")) {
                                 moreoptions += "&ocr=" + detailvalue[1];
                             }
-                            if (detailvalue[0].equals("min") && detailvalue[1].matches("^[0-9]+$")) {
+                            if (detailvalue[0].equals("min") && detailvalue[1].matches("^[0-9]+$") || detailvalue[0].equals("min_length") && detailvalue[1].matches("^[0-9]+$")) {
                                 moreoptions += "&min_len=" + detailvalue[1];
                             }
-                            if (detailvalue[0].equals("max") && detailvalue[1].matches("^[0-9]+$")) {
+                            if (detailvalue[0].equals("max") && detailvalue[1].matches("^[0-9]+$") || detailvalue[0].equals("max_length") && detailvalue[1].matches("^[0-9]+$")) {
                                 moreoptions += "&max_len=" + detailvalue[1];
                             }
                             if (detailvalue[0].equals("phrase") && detailvalue[1].matches("^[0-9]+$")) {
@@ -291,6 +330,12 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
                     String[] splitResult = antwort.split("x");
 
                     solverJob.setAnswer(new Captcha9kwClickResponse(captchaChallenge, this, new ClickedPoint(Integer.parseInt(splitResult[0]), Integer.parseInt(splitResult[1])), 100, captchaID));
+                    return;
+                } else if (((System.currentTimeMillis() - startTime) / 1000) > (timeoutthing + 10)) {
+                    click9kw_counterInterrupted.incrementAndGet();
+                    return;
+                } else if (ret.startsWith("OK-answered-ERROR NO USER")) {
+                    click9kw_counterInterrupted.incrementAndGet();
                     return;
                 }
 
