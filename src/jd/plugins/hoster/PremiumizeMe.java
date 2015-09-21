@@ -68,7 +68,6 @@ public class PremiumizeMe extends UseNet {
      * IMPORTANT INFORMATION: According to their support we can 'hammer' their API every 5 minutes so we could even make an
      * "endless retries" mode which, on fatal errors, waits 5 minutes, then tries again.
      */
-    @SuppressWarnings("deprecation")
     public PremiumizeMe(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -466,13 +465,13 @@ public class PremiumizeMe extends UseNet {
                 }
                 tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000);
                 break;
-            /* DB cnnection problem */
-            // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
-            // /* Retried enough times --> Temporarily disable account! */
-            // globalDB.compareAndSet(5, 0);
-            // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            // }
-            // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
+                /* DB cnnection problem */
+                // if (downloadLink.getLinkStatus().getRetryCount() >= 5 || globalDB.incrementAndGet() > 5) {
+                // /* Retried enough times --> Temporarily disable account! */
+                // globalDB.compareAndSet(5, 0);
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                // }
+                // throw new PluginException(LinkStatus.ERROR_RETRY, "DB connection problem");
             case 2:
                 /* E.g. Error: file_get_contents[...] */
                 logger.info("Errorcode 2: Strange error");

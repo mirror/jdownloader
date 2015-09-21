@@ -37,10 +37,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
-public class HighWayMe extends PluginForHost {
+public class HighWayMe extends UseNet {
 
     /** General API information: According to admin we can 'hammer' the API every 60 seconds */
 
@@ -97,8 +96,12 @@ public class HighWayMe extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws PluginException {
-        return AvailableStatus.UNCHECKABLE;
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (isUsenetLink(link)) {
+            return super.requestFileInformation(link);
+        } else {
+            return AvailableStatus.UNCHECKABLE;
+        }
     }
 
     @Override
@@ -188,23 +191,6 @@ public class HighWayMe extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         this.br = newBrowser();
-
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
-                    }
-                }
-            }
-        }
-
         /*
          * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
          * needed to get the individual host limits.
@@ -216,34 +202,62 @@ public class HighWayMe extends PluginForHost {
             }
         }
         this.setConstants(account, link);
+        if (isUsenetLink(link)) {
+            try {
+                controlSlot(+1);
+                super.handleMultiHost(link, account);
+            } finally {
+                // remove usedHost slot from hostMap
+                // remove download slot
+                controlSlot(-1);
+            }
+            return;
+        } else {
 
-        String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
-        if (dllink == null) {
-            /* request creation of downloadlink */
-            br.setFollowRedirects(true);
-            String passCode = Encoding.urlEncode(link.getStringProperty("pass", ""));
-            postAPISafe(DOMAIN + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
-            this.getAPISafe("http://http.high-way.me/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&pass=" + Encoding.urlEncode(passCode));
-            if (this.statuscode == STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
-                /* We alredy tried the saved password --> Ask for PW now */
-                logger.info("MOCH and download password ...");
-                passCode = Plugin.getUserInput("Password?", link);
-                this.getAPISafe("/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&pass=" + Encoding.urlEncode(passCode));
-                if (this.statuscode == STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
-                    link.setProperty("pass", Property.NULL);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            synchronized (hostUnavailableMap) {
+                HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+                if (unavailableMap != null) {
+                    Long lastUnavailable = unavailableMap.get(link.getHost());
+                    if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                        final long wait = lastUnavailable - System.currentTimeMillis();
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                    } else if (lastUnavailable != null) {
+                        unavailableMap.remove(link.getHost());
+                        if (unavailableMap.size() == 0) {
+                            hostUnavailableMap.remove(account);
+                        }
+                    }
                 }
-                /* Seems like the password is valid --> Save it */
-                link.setProperty("pass", passCode);
             }
-            dllink = getJson("download");
+
+            String dllink = checkDirectLink(link, NICE_HOSTproperty + "directlink");
             if (dllink == null) {
-                logger.warning("Final downloadlink is null");
-                handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
+                /* request creation of downloadlink */
+                br.setFollowRedirects(true);
+                String passCode = Encoding.urlEncode(link.getStringProperty("pass", ""));
+                postAPISafe(DOMAIN + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
+                this.getAPISafe("http://http.high-way.me/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&pass=" + Encoding.urlEncode(passCode));
+                if (this.statuscode == STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
+                    /* We alredy tried the saved password --> Ask for PW now */
+                    logger.info("MOCH and download password ...");
+                    passCode = Plugin.getUserInput("Password?", link);
+                    this.getAPISafe("/load.php?json&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&pass=" + Encoding.urlEncode(passCode));
+                    if (this.statuscode == STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
+                        link.setProperty("pass", Property.NULL);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                    }
+                    /* Seems like the password is valid --> Save it */
+                    link.setProperty("pass", passCode);
+                }
+                dllink = getJson("download");
+                if (dllink == null) {
+                    logger.warning("Final downloadlink is null");
+                    handleErrorRetries("dllinknull", 10, 60 * 60 * 1000l);
+                }
+                dllink = Encoding.htmlDecode(dllink);
             }
-            dllink = Encoding.htmlDecode(dllink);
+            handleDL(account, link, dllink);
         }
-        handleDL(account, link, dllink);
     }
 
     private String checkDirectLink(final DownloadLink downloadLink, final String property) {
@@ -637,6 +651,22 @@ public class HighWayMe extends PluginForHost {
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         return maxPrem.get();
+    }
+
+    @Override
+    protected String getServerAddress() {
+        return "reader.high-way.me";
+    }
+
+    @Override
+    protected int[] getAvailablePorts() {
+        /* Untested! */
+        return new int[] { 119 };
+    }
+
+    @Override
+    protected int[] getAvailableSSLPorts() {
+        return new int[] { 563 };
     }
 
     @Override
