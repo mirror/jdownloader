@@ -52,12 +52,12 @@ import org.jdownloader.plugins.controller.host.PluginFinder;
 @HostPlugin(revision = "$Revision: 27915 $", interfaceVersion = 3, names = { "smoozed.com" }, urls = { "" }, flags = { 2 })
 public class SmoozedCom extends PluginForHost {
 
-    private final String                                     API          = "www.smoozed.com";
+    private final String                                     API                  = "www.smoozed.com";
 
-    private static WeakHashMap<Account, Map<String, Object>> ACCOUNTINFOS = new WeakHashMap<Account, Map<String, Object>>();
-    private final String                                     ACCOUNTINFO  = "ACCOUNTINFO";
-    private final String                                     ACCOUNTHASH  = "ACCOUNTHASH";
-    private final String                                     SSL          = "SSL";
+    private static WeakHashMap<Account, Map<String, Object>> ACCOUNTINFOS         = new WeakHashMap<Account, Map<String, Object>>();
+    public static final String                               PROPERTY_ACCOUNTINFO = "ACCOUNTINFO";
+    public static final String                               PROPERTY_ACCOUNTHASH = "ACCOUNTHASH";
+    private final String                                     SSL                  = "SSL";
 
     public SmoozedCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -124,10 +124,10 @@ public class SmoozedCom extends PluginForHost {
     private void restoreAccountInfos(Account account) {
         synchronized (ACCOUNTINFOS) {
             if (!ACCOUNTINFOS.containsKey(account)) {
-                final String responseString = account.getStringProperty(ACCOUNTINFO, null);
+                final String responseString = account.getStringProperty(PROPERTY_ACCOUNTINFO, null);
                 if (StringUtils.isNotEmpty(responseString)) {
                     try {
-                        if (StringUtils.equals(Hash.getSHA256((account.getUser() + account.getPass()).toLowerCase(Locale.ENGLISH)), account.getStringProperty(ACCOUNTHASH, null))) {
+                        if (StringUtils.equals(Hash.getSHA256((account.getUser() + account.getPass()).toLowerCase(Locale.ENGLISH)), account.getStringProperty(PROPERTY_ACCOUNTHASH, null))) {
                             final HashMap<String, Object> responseMap = JSonStorage.restoreFromString(responseString, new TypeRef<HashMap<String, Object>>() {
                             }, null);
                             if (responseMap != null && responseMap.size() > 0) {
@@ -139,8 +139,8 @@ public class SmoozedCom extends PluginForHost {
                     } catch (final Throwable e) {
                         LogSource.exception(logger, e);
                     }
-                    account.removeProperty(ACCOUNTHASH);
-                    account.removeProperty(ACCOUNTINFO);
+                    account.removeProperty(PROPERTY_ACCOUNTHASH);
+                    account.removeProperty(PROPERTY_ACCOUNTINFO);
                 }
             }
         }
@@ -162,6 +162,7 @@ public class SmoozedCom extends PluginForHost {
                 }
                 if (request == null) {
                     request = apiLogin(account);
+                    account.saveCookies(this.br.getCookies(this.getHost()), "");
                 }
                 final String responseString = request.getHtmlCode();
                 final HashMap<String, Object> responseMap = JSonStorage.restoreFromString(responseString, new TypeRef<HashMap<String, Object>>() {
@@ -171,12 +172,13 @@ public class SmoozedCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account locked, please contact smoozed.com support", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 ACCOUNTINFOS.put(account, responseMap);
-                account.setProperty(ACCOUNTINFO, responseString);
-                account.setProperty(ACCOUNTHASH, Hash.getSHA256((account.getUser() + account.getPass()).toLowerCase(Locale.ENGLISH)));
+                account.setProperty(PROPERTY_ACCOUNTINFO, responseString);
+                account.setProperty(PROPERTY_ACCOUNTHASH, Hash.getSHA256((account.getUser() + account.getPass()).toLowerCase(Locale.ENGLISH)));
                 return responseMap;
             } catch (final PluginException e) {
-                account.removeProperty(ACCOUNTINFO);
-                account.removeProperty(ACCOUNTHASH);
+                account.removeProperty(PROPERTY_ACCOUNTINFO);
+                account.removeProperty(PROPERTY_ACCOUNTHASH);
+                account.clearCookies("");
                 ACCOUNTINFOS.remove(account);
                 throw e;
             }
@@ -484,8 +486,8 @@ public class SmoozedCom extends PluginForHost {
                     if (session_Key != null) {
                         synchronized (ACCOUNTINFOS) {
                             if (StringUtils.equals(session_Key, get(account, String.class, "data", "session_key"))) {
-                                account.removeProperty(ACCOUNTINFO);
-                                account.removeProperty(ACCOUNTHASH);
+                                account.removeProperty(PROPERTY_ACCOUNTINFO);
+                                account.removeProperty(PROPERTY_ACCOUNTHASH);
                                 ACCOUNTINFOS.remove(account);
                             }
                         }
@@ -764,7 +766,7 @@ public class SmoozedCom extends PluginForHost {
         return get(map, keyPath);
     }
 
-    private Object get(Map<String, Object> map, String... keyPath) {
+    public static Object get(Map<String, Object> map, String... keyPath) {
         if (map != null && keyPath.length > 0) {
             synchronized (map) {
                 if (keyPath.length == 1) {

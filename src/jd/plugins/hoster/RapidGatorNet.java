@@ -235,6 +235,7 @@ public class RapidGatorNet extends PluginForHost {
         if (freedlsizelimit != null) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.rapidgatornet.only4premium", "This file is restricted to Premium users only"));
         }
+        final String md5 = this.br.getRegex(">MD5: ([A-Fa-f0-9]{32})</label>").getMatch(0);
         String filename = this.br.getRegex("Downloading:[\t\n\r ]+</strong>([^<>\"]+)</p>").getMatch(0);
         if (filename == null) {
             filename = this.br.getRegex("<title>Download file ([^<>\"]+)</title>").getMatch(0);
@@ -255,6 +256,9 @@ public class RapidGatorNet extends PluginForHost {
         // Only show message if user has no active premium account
         if (this.br.containsHTML(RapidGatorNet.PREMIUMONLYTEXT) && AccountController.getInstance().getValidAccount(this) == null) {
             link.getLinkStatus().setStatusText(RapidGatorNet.PREMIUMONLYUSERTEXT);
+        }
+        if (md5 != null) {
+            link.setMD5Hash(md5);
         }
         return AvailableStatus.TRUE;
     }
@@ -1072,6 +1076,7 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public void handlePremium_api(final DownloadLink link, final Account account) throws Exception {
         this.prepareBrowser_api(this.br);
         String session_id = null;
@@ -1150,9 +1155,9 @@ public class RapidGatorNet extends PluginForHost {
             /*
              * This can happen if links go offline in the moment when the user is trying to download them - I (psp) was not able to
              * reproduce this so this is just a bad workaround! Correct server response would be:
-             *
+             * 
              * {"response":null,"response_status":404,"response_details":"Error: File not found"}
-             *
+             * 
              * TODO: Maybe move this info handleErrors_api
              */
             if (br.containsHTML("\"response_details\":null")) {
