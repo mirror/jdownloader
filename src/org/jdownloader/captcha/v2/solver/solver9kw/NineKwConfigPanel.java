@@ -238,7 +238,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         Tab1_9kw.add(toolbar4, "gapleft 33,spanx,pushx,growx");
 
         MigPanel toolbar6 = new MigPanel("ins 0", "[][][][]", "[]");
-        toolbar6.add(label("Options"), "width 135!");
+        toolbar6.add(label(_GUI._.NinekwService_createPanel_options_header()), "width 135!");
 
         Checkbox feedbackcaptchas = new Checkbox(CFG_9KWCAPTCHA.FEEDBACK);
         feedbackcaptchas.setToolTipText(_GUI._.NinekwService_createPanel_feedback_tooltiptext());
@@ -333,7 +333,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         toolbarNotifications.add(label(_GUI._.NinekwService_createPanel_notification_baderrorsanduploads()));
         Tab1_9kw.add(toolbarNotifications, "gapleft 33,spanx,pushx,growx");
 
-        tabbedPane.addTab("General", Tab1_9kw);
+        tabbedPane.addTab(_GUI._.NinekwService_createPanel_general_header(), Tab1_9kw);
 
         // Tab 2
         JPanel Tab2_9kw = new JPanel(new MigLayout("ins 0"));
