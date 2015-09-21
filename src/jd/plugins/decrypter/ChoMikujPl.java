@@ -219,7 +219,7 @@ public class ChoMikujPl extends PluginForDecrypt {
 
         final String numberof_files = br.getRegex("class=\"bold\">(\\d+)</span> plik\\&#243;w<br />").getMatch(0);
 
-        if (br.containsHTML("Nie znaleziono \\- błąd 404") || br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("class=\"greenActionButton\"|name=\"FolderId\"") || "0".equals(numberof_files)) {
+        if (br.containsHTML("Nie znaleziono \\- błąd 404") || br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("class=\"greenActionButton\"|name=\"FolderId\"") || ("0".equals(numberof_files) && !br.containsHTML("foldersList"))) {
             // Offline
             final DownloadLink dloffline = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
             dloffline.setAvailable(false);
