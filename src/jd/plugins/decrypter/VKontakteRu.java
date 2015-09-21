@@ -291,7 +291,7 @@ public class VKontakteRu extends PluginForDecrypt {
                     newLink = "https://vk.com/audios" + new Regex(CRYPTEDLINK_FUNCTIONAL, "((?:\\-)?\\d+)").getMatch(0);
                 } else if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_PAGE)) {
                     /* PATTERN_AUDIO_PAGE RegEx is wide open --> Make sure that our URL is correct! */
-                    final String pageID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/page\\-(\\d+_\\d+)").getMatch(0);
+                    final String pageID = get_ID_PAGE(this.CRYPTEDLINK_FUNCTIONAL);
                     newLink = "http://vk.com/page-" + pageID;
                 } else if (isKnownType()) {
                     /* Don't change anything */
@@ -627,7 +627,7 @@ public class VKontakteRu extends PluginForDecrypt {
         if (CRYPTEDLINK_FUNCTIONAL.matches(PATTERN_AUDIO_PAGE_oid) && fpName == null) {
             fpName = Encoding.htmlDecode(new Regex(CRYPTEDLINK_FUNCTIONAL, "\\&p=(.+)").getMatch(0));
         } else if (fpName == null) {
-            final String pageID = new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/page\\-(\\d+_\\d+)").getMatch(0);
+            final String pageID = get_ID_PAGE(this.CRYPTEDLINK_FUNCTIONAL);
             fpName = "vk.com page " + pageID;
         }
 
@@ -2009,6 +2009,10 @@ public class VKontakteRu extends PluginForDecrypt {
             output = input;
         }
         return output;
+    }
+
+    private String get_ID_PAGE(final String url) {
+        return new Regex(this.CRYPTEDLINK_FUNCTIONAL, "/page\\-(\\d+_\\d+)").getMatch(0);
     }
 
     /** Correct filenames for Windows users */

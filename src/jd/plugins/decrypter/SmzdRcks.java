@@ -102,7 +102,6 @@ public class SmzdRcks extends antiDDoSForDecrypt {
                  */
                 this.br.setCookie("www.smoozed.rocks", "smzd_id", session_Key);
                 smzd_id = session_Key;
-                ssid = session_Key;
             }
         }
 

@@ -48,19 +48,19 @@ public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
     // other #3: Plugins with "high security" removed 2015-07-02: BravoTubeNet, BravoTeensCom REMAINING ONES: TubeWolfCom, AlphaPornoCom
     /**
      * specifications that have to be met for hosts to be added here:
-     * 
+     *
      * -404 error response on file not found
-     * 
+     *
      * -Possible filename inside URL
-     * 
+     *
      * -No serverside downloadlimits
-     * 
+     *
      * -No account support
-     * 
+     *
      * -Final downloadlink that fits the RegExes
-     * 
+     *
      * -Website should NOT link to external sources (needs decrypter)
-     * 
+     *
      * */
 
     /* Extension which will be used if no correct extension is found */
@@ -95,6 +95,10 @@ public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
         if (downloadLink.getDownloadURL().matches(type_only_numbers)) {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         } else {
+            String filename_url = new Regex(downloadLink.getDownloadURL(), "videos/(?:\\d+/)?([a-z0-9\\-]+)/?$").getMatch(0);
+            /* Make it look a bit better by using spaces instead of '-' which is always used inside their URLs. */
+            filename_url = filename_url.replace("-", " ");
+
             filename = this.br.getRegex("class=\"block\\-title\">[\t\n\r ]*?<h\\d+>([^<>]*?)<").getMatch(0);
             if (filename == null) {
                 filename = this.br.getRegex("<h\\d+ class=\"block_header\">([^<>]*?)<").getMatch(0);
@@ -115,6 +119,11 @@ public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
                 filename = new Regex(downloadLink.getDownloadURL(), "videos/(?:\\d+/)?([a-z0-9\\-]+)/?$").getMatch(0);
                 /* Make it look a bit better by using spaces instead of '-' which is always used inside their URLs. */
                 filename = filename.replace("-", " ");
+            }
+
+            if (downloadLink.getHost().equals("hdzog.com")) {
+                /* Small workaround */
+                filename = filename_url;
             }
         }
         /* Offline links should also have nice filenames */
