@@ -73,12 +73,14 @@ public class YouPornCom extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("http://www.youporn.com/watch/" + new Regex(link.getDownloadURL(), "youporn\\.com/watch/(\\d+)").getMatch(0) + "/" + System.currentTimeMillis() + "/");
     }
 
     private static final String defaultEXT = ".mp4";
 
+    @SuppressWarnings("deprecation")
     public AvailableStatus requestFileInformation(final DownloadLink parameter) throws IOException, PluginException {
         this.DLLINK = null;
         this.setBrowserExclusive();
@@ -117,6 +119,9 @@ public class YouPornCom extends PluginForHost {
         DLLINK = br.getRegex("\"(http://[^<>\"\\']+)\">MP4").getMatch(0);
         if (DLLINK == null) {
             DLLINK = br.getRegex("\"(http://videos\\-\\d+\\.youporn\\.com/[^<>\"\\'/]+/save/scene_h264[^<>\"\\']+)\"").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\"(http://cdn[a-z0-9]+\\.public\\.youporn\\.phncdn\\.com/[^<>\"]*?)\"").getMatch(0);
         }
         if (DLLINK == null) {
             DLLINK = br.getRegex("<ul class=\"downloadList\">.*?href=\"(http://[^\"]+)\">.*?</ul>").getMatch(0);

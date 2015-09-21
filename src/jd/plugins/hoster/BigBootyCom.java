@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bigbooty.com" }, urls = { "http://(www\\.)?bigbooty\\.com/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigbooty.com" }, urls = { "http://(?:www\\.)?bigbooty\\.com/video/\\d+" }, flags = { 0 })
 public class BigBootyCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -50,24 +51,38 @@ public class BigBootyCom extends PluginForHost {
     }
 
     private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.bigbootycom", "Only downloadable for premium users");
-    private static final String PREMIUMONLYTEXT     = ">You must be premium user to view this video";
+    private static final String PREMIUMONLYTEXT     = "You must be premium user to view this video";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("bigbooty.com/error/video_missing") || br.containsHTML("(>This video cannot be found\\. Are you sure you typed in the correct|<h2>ERROR</h2>|<title>Big Booty</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.getURL().equals("http://www.bigbooty.com/upgrade")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String fid = new Regex(downloadLink.getDownloadURL(), "bigbooty\\.com/video/(\\d+)").getMatch(0);
+        downloadLink.setLinkID(fid);
+        if (br.getURL().contains("bigbooty.com/error/video_missing") || br.containsHTML("(>This video cannot be found\\. Are you sure you typed in the correct|<h2>ERROR</h2>|<title>Big Booty</title>)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (br.getURL().equals("http://www.bigbooty.com/upgrade")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("class=\"content\\-title\">[\t\n\r ]+<h\\d+>([^<>\"]*?)</h\\d+>").getMatch(0);
+        if (filename == null) {
+            filename = fid;
+        }
+        if (filename == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
         if (br.containsHTML(PREMIUMONLYTEXT)) {
             downloadLink.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
             return AvailableStatus.TRUE;
         }
         DLLINK = br.getRegex("flashvars=\"file=(http.*?)\\&image").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -75,10 +90,11 @@ public class BigBootyCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -91,7 +107,9 @@ public class BigBootyCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(PREMIUMONLYTEXT)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+        if (br.containsHTML(PREMIUMONLYTEXT)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

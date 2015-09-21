@@ -50,26 +50,55 @@ public class BeegCom extends PluginForHost {
 
     private static final String INVALIDLINKS = "http://(www\\.)?beeg\\.com/generator.+";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (downloadLink.getDownloadURL().matches(INVALIDLINKS)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL().toLowerCase());
         // Link offline
-        if (br.containsHTML("(<h1>404 error \\- Page Not found</h1>|<title>beeg\\. \\— Page Not Found\\. \\(Error 404\\)</title>|<p>In about 5 seconds, you will be automatically redirected to the main page| the page you’re looking for can\\'t be found\\. May be invalid or outdated\\.</h2>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<h1>404 error \\- Page Not found</h1>|<title>beeg\\. \\— Page Not Found\\. \\(Error 404\\)</title>|<p>In about 5 seconds, you will be automatically redirected to the main page| the page you’re looking for can\\'t be found\\. May be invalid or outdated\\.</h2>)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         // Invalid link
-        if (br.containsHTML("404 2") || br.getURL().equals("http://beeg.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("404 2") || br.getURL().equals("http://beeg.com/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<title>(.*?) \\(Bang Bros[^<>]+</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<meta name=\"description\" content=\"([^\"<>]+)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<meta name=\"description\" content=\"([^\"<>]+)\"").getMatch(0);
+        }
         DLLINK = br.getRegex("\\'file\\': \\'(https?://[^\\'\"\\,]+)\\'").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\\'file\\'(,|: )\\'(http://.*?)\\'").getMatch(1);
-        if (DLLINK == null) DLLINK = br.getRegex("\\'(http://\\d+\\.video\\.mystreamservice\\.com/default/[a-z0-9\\-]+\\.flv)\\'").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\\'file\\'(,|: )\\'(http://.*?)\\'").getMatch(1);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\\'(http://\\d+\\.video\\.mystreamservice\\.com/default/[a-z0-9\\-]+\\.flv)\\'").getMatch(0);
+        }
+        if (DLLINK == null) {
+            final String[] qualities = { "1080", "720", "480", "360", "240" };
+            for (final String quality : qualities) {
+                DLLINK = br.getRegex("\\'" + quality + "p\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+                if (DLLINK != null) {
+                    break;
+                }
+            }
+        }
+
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
+        if (ext == null || ext.length() > 5) {
+            ext = ".flv";
+        }
         filename = filename.trim();
-        if (filename.endsWith(".")) filename = filename.substring(0, filename.length() - 1);
+        if (filename.endsWith(".")) {
+            filename = filename.substring(0, filename.length() - 1);
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -77,10 +106,11 @@ public class BeegCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
