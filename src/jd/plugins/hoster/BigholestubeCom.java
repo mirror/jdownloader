@@ -19,11 +19,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,41 +31,48 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vid.me" }, urls = { "https://viddecrypted\\.me/[A-Za-z0-9]+" }, flags = { 0 })
-public class VidMe extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "bigholestube.com" }, urls = { "http://(?:www\\.)?bigholestube\\.com/[a-z0-9\\-_]+/" }, flags = { 0 })
+public class BigholestubeCom extends PluginForHost {
 
-    public VidMe(PluginWrapper wrapper) {
+    public BigholestubeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension = ".mp4";
+    /* DEV NOTES */
+    // Porn_plugin
+    // Tags:
+    // protocol: no https
+    // other:
 
-    private String              DLLINK            = null;
+    /* Extension which will be used if no correct extension is found */
+    private static final String  default_Extension = ".flv";
+    /* Connection stuff */
+    private static final boolean free_resume       = true;
+    private static final int     free_maxchunks    = 0;
+    private static final int     free_maxdownloads = -1;
+
+    private String               DLLINK            = null;
 
     @Override
     public String getAGBLink() {
-        return "https://vid.me/terms-of-use";
+        return "http://bigholestube.com/";
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("viddecrypted.me/", "vid.me/"));
-    }
-
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(410);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.getHttpConnection().isOK() || !br.containsHTML("property=\"og:video\"") || br.containsHTML("class=\"note downloading\\-header\"")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.containsHTML("id=\"playerbox\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("property=\"og:video:url\" content=\"(http[^<>\"]*?/videos/[^<>\"]*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(downloadLink.getDownloadURL(), "([a-z0-9\\-_]+)/$").getMatch(0);
         }
+        DLLINK = br.getRegex("type=\"video/[^<>\"]+\" src=\"(http[^<>\"]*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -88,7 +95,7 @@ public class VidMe extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = br2.openHeadConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -110,34 +117,24 @@ public class VidMe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, free_resume, free_maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
             br.followConnection();
+            try {
+                dl.getConnection().disconnect();
+            } catch (final Throwable e) {
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            try {
-                final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || !con.isOK()) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-                con.disconnect();
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            }
-        }
-        return dllink;
-    }
-
-    /* Avoid chars which are not allowed in filenames under certain OS' */
+    /** Avoid chars which are not allowed in filenames under certain OS' */
     private static String encodeUnicode(final String input) {
         String output = input;
         output = output.replace(":", ";");
@@ -155,7 +152,7 @@ public class VidMe extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return free_maxdownloads;
     }
 
     @Override

@@ -31,7 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DummyScriptEnginePlugin;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "qq.com", "qqmusic.qq.com" }, urls = { "http://(?:www\\.)?(fenxiang\\.qq\\.com/((share|upload)/index\\.php/share/share_c/index(_v2)?/|x/)[A-Za-z0-9\\-_~]+|urlxf\\.qq\\.com/\\?[A-Za-z0-9]+)", "http://y\\.qq\\.com/#type=album\\&mid=[A-Za-z0-9]+" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "qq.com", "qqmusic.qq.com" }, urls = { "http://(?:www\\.)?(fenxiang\\.qq\\.com/((share|upload)/index\\.php/share/share_c/index(_v2)?/|x/)[A-Za-z0-9\\-_~]+|urlxf\\.qq\\.com/\\?[A-Za-z0-9]+)", "http://y\\.qq\\.com/#type=(?:album|singer)\\&mid=[A-Za-z0-9]+" }, flags = { 0, 0 })
 public class QqComDecrypter extends PluginForDecrypt {
 
     public QqComDecrypter(PluginWrapper wrapper) {
@@ -40,7 +40,7 @@ public class QqComDecrypter extends PluginForDecrypt {
 
     private static final String TYPE_SHORT  = "http://(www\\.)?urlxf\\.qq\\.com/\\?[A-Za-z0-9]+";
     private static final String TYPE_NORMAL = "http://(?:www\\.)?fenxiang\\.qq\\.com/(?:(?:share|upload)/index\\.php/share/share_c/index(?:_v2)?/|x/)[A-Za-z0-9\\-_~]+";
-    private static final String TYPE_MUSIC  = "http://y\\.qq\\.com/#type=album\\&mid=[A-Za-z0-9]+";
+    private static final String TYPE_MUSIC  = "http://y\\.qq\\.com/#type=(album|singer)\\&mid=([A-Za-z0-9]+)";
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -95,14 +95,21 @@ public class QqComDecrypter extends PluginForDecrypt {
             }
         } else {
             /* TYPE_MUSIC */
-            final String albumid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
-            this.br.getPage("http://i.y.qq.com/v8/fcg-bin/fcg_v8_album_detail_cp.fcg?tpl=20&albummid=" + albumid + "&play=0");
-            // this.br.getPage("http://base.music.qq.com/fcgi-bin/fcg_musicexpress.fcg?json=3&guid=1755471437&g_tk=938407465&loginUin=0&hostUin=0&format=jsonp&inCharset=GB2312&outCharset=GB2312&notice=0&platform=yqq&jsonpCallback=jsonCallback&needNewCode=0");
+            String json = null;
+            final String type = new Regex(parameter, TYPE_MUSIC).getMatch(0);
+            final String albumid = new Regex(parameter, TYPE_MUSIC).getMatch(1);
+            if (type.equals("singer")) {
+                this.br.getPage("http://i.y.qq.com/v8/fcg-bin/fcg_v8_singer_detail_cp.fcg?tpl=20&singermid=" + albumid);
+                json = this.br.getRegex("songlist[\t\n\r ]*?:[\t\n\r ]*?(\\[.*?\\}\\]),[\t\n\r ]+").getMatch(0);
+            } else {
+                this.br.getPage("http://i.y.qq.com/v8/fcg-bin/fcg_v8_album_detail_cp.fcg?tpl=20&albummid=" + albumid + "&play=0");
+                // this.br.getPage("http://base.music.qq.com/fcgi-bin/fcg_musicexpress.fcg?json=3&guid=1755471437&g_tk=938407465&loginUin=0&hostUin=0&format=jsonp&inCharset=GB2312&outCharset=GB2312&notice=0&platform=yqq&jsonpCallback=jsonCallback&needNewCode=0");
+                json = this.br.getRegex("mapSongInfo[\t\n\r ]*?:[\t\n\r ]*?\\{\"Disc\\d+_\":(\\[.*?\\}\\])\\}").getMatch(0);
+            }
             if (this.br.getHttpConnection().getResponseCode() == 404) {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            final String json = this.br.getRegex("mapSongInfo : \\{\"Disc\\d+_\":(\\[.*?\\}\\])\\}").getMatch(0);
             if (json == null) {
                 return null;
             }
@@ -114,6 +121,9 @@ public class QqComDecrypter extends PluginForDecrypt {
                 final String songname = encodeUnicode((String) entries.get("songname"));
                 final String songid = Long.toString(DummyScriptEnginePlugin.toLong(entries.get("songid"), -1));
                 final long filesize = DummyScriptEnginePlugin.toLong(entries.get("size320"), -1);
+                if (albumname == null || songname == null || "-1".equals(songid)) {
+                    return null;
+                }
                 final DownloadLink dl = createDownloadlink("http://qqdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
                 dl.setProperty(jd.plugins.hoster.QqCom.PROPERTY_TYPE, jd.plugins.hoster.QqCom.TYPE_MUSIC);
                 dl.setProperty(jd.plugins.hoster.QqCom.PROPERTY_MUSIC_SONGID, songid);
@@ -124,8 +134,14 @@ public class QqComDecrypter extends PluginForDecrypt {
                 dl.setContentUrl(parameter);
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
+                /* This might not be the best way to take the first existing albumname of */
+                if (fpName == null) {
+                    fpName = albumname;
+                }
             }
-            fpName = albumid;
+            if (fpName == null) {
+                fpName = albumid;
+            }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
