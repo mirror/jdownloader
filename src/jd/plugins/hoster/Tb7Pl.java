@@ -119,7 +119,7 @@ public class Tb7Pl extends PluginForHost {
          * unfortunatelly there is no list with supported hosts anywhere on the page only PNG image at the main page
          */
         final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList("turbobit.net", "catshare.net", "devilshare.net", "fileshark.pl", "lunaticfiles.com", "rapidgator.net", "rg.to", "rapidu.net", "storbit.net", "uploadable.ch", "uploaded.to", "uploaded.net", "ul.to"
-        // "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net", "freakshare.com"
+                // "oboom.com", "fileparadox.in", "netload.in", "bitshare.com", "freakshare.net", "freakshare.com"
                 ));
         long expireTime = TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", Locale.ENGLISH);
         ai.setValidUntil(expireTime);
@@ -207,7 +207,7 @@ public class Tb7Pl extends PluginForHost {
             generatedLink = br.getRegex("<div class=\"download\"><a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(0);
             if (generatedLink == null) {
                 // New Regex (works with video files)
-                generatedLink = br.getRegex("<div class=\"download\">(<a target=\"_blank\" href=\"mojekonto/ogladaj/[0-9A-Za-z]*?\">Oglądaj online</a> / )<a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(1);
+                generatedLink = br.getRegex("<div class=\"download\">(<a target=\"_blank\" href=\"mojekonto/ogladaj/[0-9A-Za-z]*?\">Oglądaj[ online]*?</a> / )<a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(1);
             }
             if (generatedLink == null) {
                 logger.severe("Tb7.pl(Error): " + generatedLink);
@@ -239,7 +239,7 @@ public class Tb7Pl extends PluginForHost {
         // generated fileshark link allows only 1 chunk
         // because download doesn't support more chunks and
         // and resume (header response has no: "Content-Range" info)
-        if (link.getBrowserUrl().contains("fileshark.pl") || link.getDownloadURL().contains("fileshark.pl") || link.getBrowserUrl().contains("lunaticfiles.pl") || link.getDownloadURL().contains("lunaticfiles.pl")) {
+        if (link.getBrowserUrl().contains("fileshark.pl") || link.getDownloadURL().contains("fileshark.pl") || link.getBrowserUrl().contains("lunaticfiles.com") || link.getDownloadURL().contains("lunaticfiles.com")) {
             chunks = 1;
             resume = false;
         }
