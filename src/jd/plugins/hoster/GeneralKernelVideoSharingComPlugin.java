@@ -116,9 +116,7 @@ public class GeneralKernelVideoSharingComPlugin extends PluginForHost {
                 filename = this.br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             }
             if (filename == null) {
-                filename = new Regex(downloadLink.getDownloadURL(), "videos/(?:\\d+/)?([a-z0-9\\-]+)/?$").getMatch(0);
-                /* Make it look a bit better by using spaces instead of '-' which is always used inside their URLs. */
-                filename = filename.replace("-", " ");
+                filename = filename_url;
             }
 
             if (downloadLink.getHost().equals("hdzog.com")) {
