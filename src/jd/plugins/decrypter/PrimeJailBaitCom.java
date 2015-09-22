@@ -31,15 +31,15 @@ import jd.plugins.PluginForDecrypt;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primejailbait.com" }, urls = { "https?://(www\\.)?primejailbait\\.com/(id/\\d+|profile/[A-Za-z0-9\\-_]+/fav/\\d+)/$" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primejailbait.com" }, urls = { "https?://(www\\.)?primejailbait\\.com/(id/\\d+|profile/[A-Za-z0-9\\-_]+/fav/\\d+)/?$" }, flags = { 0 })
 public class PrimeJailBaitCom extends PluginForDecrypt {
 
     public PrimeJailBaitCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String TYPE_SINGLE       = "^https?://(www\\.)?primejailbait\\.com/id/\\d+/$";
-    private final String TYPE_PROFILE_FAVS = "^https?://(www\\.)?primejailbait\\.com/profile/[A-Za-z0-9\\-_]+/fav/\\d+/$";
+    private final String TYPE_SINGLE       = "^https?://(www\\.)?primejailbait\\.com/id/\\d+/?$";
+    private final String TYPE_PROFILE_FAVS = "^https?://(www\\.)?primejailbait\\.com/profile/[A-Za-z0-9\\-_]+/fav/\\d+/?$";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -52,7 +52,7 @@ public class PrimeJailBaitCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (parameter.matches(TYPE_PROFILE_FAVS)) {
-            final Regex urlinfo = new Regex(parameter, "primejailbait.com/profile/([^/]+)/fav/([^/]+)/$");
+            final Regex urlinfo = new Regex(parameter, "primejailbait.com/profile/([^/]+)/fav/([^/]+)/?$");
             final String username = urlinfo.getMatch(0);
             final String lid = urlinfo.getMatch(1);
 

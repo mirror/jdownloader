@@ -713,7 +713,7 @@ public final class NineKwConfigPanel extends AbstractCaptchaSolverConfigPanel {
         return txt;
     }
 
-    private ExtButton addClickButton9kw(ExtButton btnTemp, String title, String url, String tooltext) {
+    private ExtButton addClickButton9kw(ExtButton btnTemp, final String title, final String url, String tooltext) {
         btnTemp = new ExtButton(new AppAction() {
             private static final long serialVersionUID = 7195034001951861669L;
             {

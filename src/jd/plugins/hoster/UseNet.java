@@ -53,7 +53,7 @@ public class UseNet extends PluginForHost {
             }
             if (supportsSSL()) {
                 final Integer[] sslPorts = getPortSelection(getAvailableSSLPorts());
-                if (sslPorts.length > 1 || ports.length == 0) {
+                if (sslPorts.length > 1) {
                     getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), USENET_SELECTED_SSLPORT, sslPorts, "Select (Usenet)ServerPort(SSL)").setDefaultValue(0));
                 }
                 if (sslPorts.length > 0 && ports.length > 0) {
