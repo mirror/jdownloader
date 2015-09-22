@@ -31,14 +31,6 @@ import javax.imageio.ImageIO;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
-import org.jdownloader.captcha.v2.challenge.xsolver.CaptXSolver;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
@@ -57,6 +49,14 @@ import jd.plugins.Plugin;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptchaShowDialogTwo;
+import org.jdownloader.captcha.v2.challenge.xsolver.CaptXSolver;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
 public class LnkCrptWs extends antiDDoSForDecrypt {
@@ -357,7 +357,19 @@ public class LnkCrptWs extends antiDDoSForDecrypt {
                             /* does not exist in 09581 */
                         }
                         decryptedLinks.add(dl);
+                    } else {
+                        link = clone.getRedirectLocation();
+                        if (link != null) {
+                            final DownloadLink dl = createDownloadlink(link);
+                            try {
+                                distribute(dl);
+                            } catch (final Throwable e) {
+                                /* does not exist in 09581 */
+                            }
+                            decryptedLinks.add(dl);
+                        }
                     }
+
                     try {
                         if (this.isAbort()) {
                             return decryptedLinks;
