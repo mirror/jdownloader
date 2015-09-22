@@ -24,6 +24,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
@@ -42,12 +48,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10})\\.html" }, flags = { 0 })
 public class FileCryptCc extends PluginForDecrypt {
@@ -147,7 +147,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 submitForm(captchaForm);
             } else if (captchaForm != null && captchaForm.containsHTML("solvemedia\\.com/papi/")) {
-               
+
                 final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
                 File cf = null;
                 try {
@@ -222,16 +222,23 @@ public class FileCryptCc extends PluginForDecrypt {
             if (!mirror.endsWith("mirror=0")) {
                 br.getPage(mirror);
             }
+            final ArrayList<DownloadLink> tdl = new ArrayList<DownloadLink>();
             // Use clicknload first as it doesn't rely on JD service.jdownloader.org, which can go down!
-            handleCnl2(decryptedLinks, parameter);
-            if (!decryptedLinks.isEmpty()) {
+            handleCnl2(tdl, parameter);
+            if (!tdl.isEmpty()) {
+                decryptedLinks.addAll(tdl);
                 continue;
             }
             /* Second try DLC, then single links */
             final String dlc_id = br.getRegex("DownloadDLC\\('([^<>\"]*?)'\\)").getMatch(0);
             if (dlc_id != null) {
                 logger.info("DLC found - trying to add it");
-                decryptedLinks.addAll(loadcontainer("http://filecrypt.cc/DLC/" + dlc_id + ".dlc"));
+                tdl.addAll(loadcontainer("http://filecrypt.cc/DLC/" + dlc_id + ".dlc"));
+                if (tdl.isEmpty()) {
+                    logger.warning("DLC is empty or something is broken!");
+                    continue;
+                }
+                decryptedLinks.addAll(tdl);
             }
         }
         if (!decryptedLinks.isEmpty()) {
@@ -319,7 +326,7 @@ public class FileCryptCc extends PluginForDecrypt {
 
     private final String containsCaptcha = "class=\"safety\">Sicherheitsabfrage<";
 
-    private String       cleanHTML       = null;
+    private String cleanHTML = null;
 
     private final void cleanUpHTML() {
         String toClean = br.toString();
