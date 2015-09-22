@@ -2,11 +2,15 @@ package org.jdownloader.api.myjdownloader.api;
 
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Type;
-import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.GZIPInputStream;
 
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
+import jd.http.requests.RequestVariable;
 import jd.nutils.encoding.Encoding;
 
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -19,16 +23,14 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.Base64InputStream;
-import org.appwork.utils.net.BasicHTTP.BasicHTTP;
-import org.appwork.utils.net.httpconnection.HTTPConnection;
 import org.jdownloader.myjdownloader.client.AbstractMyJDClientForDesktopJVM;
 import org.jdownloader.myjdownloader.client.exceptions.ExceptionResponse;
 import org.jdownloader.settings.staticreferences.CFG_MYJD;
 
 public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
 
-    private BasicHTTP br;
-    private LogSource logger;
+    private final Browser br;
+    private LogSource     logger;
 
     @Override
     protected byte[] base64decode(String base64encodedString) {
@@ -59,15 +61,16 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
 
     @Override
     protected byte[] post(final String query, final String object, final byte[] keyAndIV) throws ExceptionResponse {
-        HTTPConnection con = null;
+        URLConnectionAdapter con = null;
         byte[] ret = null;
         try {
+            final byte[] sendBytes = (object == null ? "" : object).getBytes("UTF-8");
+            PostRequest request = (PostRequest) br.createPostRequest(this.getServerRoot() + query, new ArrayList<RequestVariable>(), null);
+            request.setPostBytes(sendBytes);
+            request.setContentType("application/json; charset=utf-8");
             if (keyAndIV != null) {
-                br.putRequestHeader("Accept-Encoding", "gazeisp");
-                final byte[] sendBytes = (object == null ? "" : object).getBytes("UTF-8");
-                final HashMap<String, String> header = new HashMap<String, String>();
-                header.put(HTTPConstants.HEADER_RESPONSE_CONTENT_LENGTH, "" + sendBytes.length);
-                con = br.openPostConnection(new URL(this.getServerRoot() + query), null, new ByteArrayInputStream(sendBytes), header);
+                request.getHeaders().put("Accept-Encoding", "gazeisp");
+                con = br.openRequestConnection(request);
                 final String content_Encoding = con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING);
                 final String content_Type = con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE);
                 if (con.getResponseCode() == 200) {
@@ -84,9 +87,9 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
                     ret = IO.readStream(-1, con.getInputStream());
                 }
             } else {
-                br.putRequestHeader("Accept-Encoding", null);
-                ret = br.postPage(new URL(this.getServerRoot() + query), object == null ? "" : object).getBytes("UTF-8");
-                con = br.getConnection();
+                request.getHeaders().put("Accept-Encoding", null);
+                con = br.openRequestConnection(request);
+                ret = IO.readStream(-1, con.getInputStream());
             }
             // System.out.println(con);
             if (con != null && con.getResponseCode() > 0 && con.getResponseCode() != 200) {
@@ -126,13 +129,9 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
 
     public MyJDownloaderAPI() {
         super("JD_" + getRevision());
-
         setServerRoot("http://" + CFG_MYJD.CONNECT_IP.getValue() + ":" + CFG_MYJD.CLIENT_CONNECT_PORT.getValue());
-
-        br = new BasicHTTP();
+        br = new Browser();
         br.setAllowedResponseCodes(200, 503, 401, 407, 403, 500, 429);
-        br.putRequestHeader("Content-Type", "application/json; charset=utf-8");
-
     }
 
     public LogSource getLogger() {
