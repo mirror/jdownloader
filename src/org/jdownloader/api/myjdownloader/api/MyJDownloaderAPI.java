@@ -130,7 +130,14 @@ public class MyJDownloaderAPI extends AbstractMyJDClientForDesktopJVM {
     public MyJDownloaderAPI() {
         super("JD_" + getRevision());
         setServerRoot("http://" + CFG_MYJD.CONNECT_IP.getValue() + ":" + CFG_MYJD.CLIENT_CONNECT_PORT.getValue());
-        br = new Browser();
+        br = new Browser() {
+            @Override
+            public java.util.logging.Logger getLogger() {
+                return MyJDownloaderAPI.this.getLogger();
+            };
+        };
+        br.setDebug(true);
+        br.setVerbose(true);
         br.setAllowedResponseCodes(200, 503, 401, 407, 403, 500, 429);
     }
 
