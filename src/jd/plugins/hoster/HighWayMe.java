@@ -203,14 +203,7 @@ public class HighWayMe extends UseNet {
         }
         this.setConstants(account, link);
         if (isUsenetLink(link)) {
-            try {
-                controlSlot(+1);
-                super.handleMultiHost(link, account);
-            } finally {
-                // remove usedHost slot from hostMap
-                // remove download slot
-                controlSlot(-1);
-            }
+            super.handleMultiHost(link, account);
             return;
         } else {
 
@@ -649,19 +642,27 @@ public class HighWayMe extends UseNet {
     }
 
     @Override
-    public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
-        return maxPrem.get();
-    }
-
-    @Override
     protected String getServerAddress() {
         return "reader.high-way.me";
     }
 
     @Override
+    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+        if (isUsenetLink(link)) {
+            return 10;
+        } else {
+            return maxPrem.get();
+        }
+    }
+
+    @Override
+    protected boolean useSSL() {
+        return true;
+    }
+
+    @Override
     protected int[] getAvailablePorts() {
-        /* Untested! */
-        return new int[] { 119 };
+        return new int[0];
     }
 
     @Override

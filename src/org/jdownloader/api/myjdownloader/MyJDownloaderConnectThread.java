@@ -288,6 +288,13 @@ public class MyJDownloaderConnectThread extends Thread {
         }
     }
 
+    protected void log(String message, Throwable throwable) {
+        if (debugEnabled) {
+            logger.info(message);
+            logger.log(throwable);
+        }
+    }
+
     protected void log(Throwable throwable) {
         if (debugEnabled) {
             logger.log(throwable);
@@ -400,13 +407,13 @@ public class MyJDownloaderConnectThread extends Thread {
             return null;
         } catch (ConnectException e) {
             currentHelper.requestbackoff();
-            log("Could not connect! Server down?");
+            log("Could not connect! Server down?", e);
             setConnected(MyJDownloaderConnectionStatus.PENDING);
             myJDownloaderController.onError(MyJDownloaderError.SERVER_DOWN);
             return null;
         } catch (SocketTimeoutException e) {
             currentHelper.requestbackoff();
-            log("ReadTimeout on server connect!");
+            log("ReadTimeout on server connect!", e);
             setConnected(MyJDownloaderConnectionStatus.PENDING);
             myJDownloaderController.onError(MyJDownloaderError.IO);
             return null;
@@ -527,7 +534,7 @@ public class MyJDownloaderConnectThread extends Thread {
                             myJDownloaderController.onError(MyJDownloaderError.BAD_LOGINS);
                             return;
                         } else if (Exceptions.containsInstanceOf(e, ConnectException.class, SocketTimeoutException.class)) {
-                            log("Could not connect! Server down?");
+                            log("Could not connect! Server down?", e);
                             myJDownloaderController.onError(MyJDownloaderError.SERVER_DOWN);
                             currentHelper.requestbackoff();
                         } else {
