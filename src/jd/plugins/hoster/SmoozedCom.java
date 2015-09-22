@@ -543,6 +543,18 @@ public class SmoozedCom extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Check timed out at smoozed.com");
                     }
+                } else if (StringUtils.equalsIgnoreCase(message, "Internal server error")) {
+                    if (seconds != null) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal server error at smoozed.com", Math.max(60, seconds.intValue()) * 1000);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Internal server error at smoozed.com");
+                    }
+                } else {
+                    if (seconds != null) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error at smoozed.com", Math.max(60, seconds.intValue()) * 1000);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error at smoozed.com");
+                    }
                 }
             }
         }
