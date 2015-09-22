@@ -64,7 +64,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
@@ -314,22 +313,23 @@ public class GorillaVidIn extends PluginForHost {
                 }
             }
         }
-        if (inValidate(fileInfo[1])) {
-            fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
-            if (inValidate(fileInfo[1])) {
-                fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
-                if (inValidate(fileInfo[1])) {
-                    fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
-                    if (inValidate(fileInfo[1])) {
-                        try {
-                            // only needed in rare circumstances
-                            // altAvailStat(downloadLink, fileInfo);
-                        } catch (Exception e) {
-                        }
-                    }
-                }
-            }
-        }
+        /* Filesize is never available in html - disable filesize RegExes to prevent wrong filesizes */
+        // if (inValidate(fileInfo[1])) {
+        // fileInfo[1] = cbr.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+        // if (inValidate(fileInfo[1])) {
+        // fileInfo[1] = cbr.getRegex("</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
+        // if (inValidate(fileInfo[1])) {
+        // fileInfo[1] = cbr.getRegex("(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+        // if (inValidate(fileInfo[1])) {
+        // try {
+        // // only needed in rare circumstances
+        // // altAvailStat(downloadLink, fileInfo);
+        // } catch (Exception e) {
+        // }
+        // }
+        // }
+        // }
+        // }
         return fileInfo;
     }
 
@@ -1482,7 +1482,7 @@ public class GorillaVidIn extends PluginForHost {
             logger.info("Detected captcha method \"Solve Media\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
-           
+
             final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(captcha);
             final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
             String code = "";
@@ -1498,7 +1498,7 @@ public class GorillaVidIn extends PluginForHost {
             logger.info("Detected captcha method \"Key Captcha\"");
             final Browser captcha = br.cloneBrowser();
             cleanupBrowser(captcha, form.getHtmlCode());
-           
+
             String result = handleCaptchaChallenge(getDownloadLink(), new KeyCaptcha(this, captcha, getDownloadLink()).createChallenge(form.hasInputFieldByName("login") && form.hasInputFieldByName("password"), this));
 
             if (result == null || "CANCEL".equals(result)) {
@@ -2071,9 +2071,9 @@ public class GorillaVidIn extends PluginForHost {
         }
     }
 
-	@Override
-	public SiteTemplate siteTemplateType() {
-		return SiteTemplate.SibSoft_XFileShare;
-	}
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.SibSoft_XFileShare;
+    }
 
 }

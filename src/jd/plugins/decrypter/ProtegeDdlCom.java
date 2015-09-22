@@ -16,17 +16,23 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.RandomUserAgent;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protege-ddl.com" }, urls = { "http://(www\\.)?protege\\-ddl\\.com/(check\\.[a-z]{10}|[a-z]{10}\\-.+)\\.html" }, flags = { 0 })
 public class ProtegeDdlCom extends PluginForDecrypt {
@@ -40,9 +46,10 @@ public class ProtegeDdlCom extends PluginForDecrypt {
 
     private String ua = RandomUserAgent.generate();
 
+    @SuppressWarnings("static-access")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
         br.setCookie("http://www.protege-ddl", "lang", "english");
         br.getHeaders().put("User-Agent", ua);
         br.setFollowRedirects(true);
@@ -55,7 +62,27 @@ public class ProtegeDdlCom extends PluginForDecrypt {
         }
         // find correct forum, post form
         final Form getform = br.getFormbyProperty("name", "linkprotect");
-        if (getform != null) br.submitForm(getform);
+        if (getform != null) {
+            boolean failed = true;
+            for (int i = 0; i <= 4; i++) {
+                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.findID();
+                rc.load();
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode("recaptcha", cf, param);
+                getform.put("recaptcha_challenge_field", rc.getChallenge());
+                getform.put("recaptcha_response_field", Encoding.urlEncode(c));
+                br.submitForm(getform);
+                if (!br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    failed = false;
+                    break;
+                }
+            }
+            if (failed) {
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+        }
 
         // find tables
         String table = br.getRegex("<table(.*?)</table>").getMatch(0);

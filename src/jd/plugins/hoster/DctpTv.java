@@ -39,7 +39,9 @@ public class DctpTv extends PluginForHost {
         return "http://www.dctp.tv/";
     }
 
-    private static final String app = "dctpvod/";
+    /* Tags: spiegel.tv, dctp.tv */
+    private static final boolean rtmpe_supported = false;
+    private static final String  app             = "dctp/";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -63,7 +65,12 @@ public class DctpTv extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String rtmpurl = "rtmp://mf.dctpvod.c.nmdn.net/" + app;
+        final String rtmpurl;
+        if (rtmpe_supported) {
+            rtmpurl = "rtmpe://dctpfs.fplive.net/" + app;
+        } else {
+            rtmpurl = "rtmp://dctpfs.fplive.net/" + app;
+        }
         try {
             dl = new RTMPDownload(this, downloadLink, rtmpurl);
         } catch (final NoClassDefFoundError e) {
@@ -71,7 +78,27 @@ public class DctpTv extends PluginForHost {
         }
         /* Setup rtmp connection */
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        setupRtmp(rtmp, rtmpurl);
+
+        final String playpathpart = br.getRegex("vods3/_definst/mp4:dctp_completed_media/([a-z0-9]{32})_iphone\\.m4v/playlist\\.m3u8\"").getMatch(0);
+        if (playpathpart == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String heigth = br.getRegex("height = (\\d+);").getMatch(0);
+        String aspect;
+        if (heigth != null && heigth.equals("180")) {
+            aspect = "16x9";
+        } else {
+            aspect = "4x3";
+        }
+        final String playpath = "mp4:" + playpathpart + "_dctp_0500_" + aspect + ".m4v";
+        rtmp.setPlayPath(playpath);
+        // rtmp.setTcUrl("rtmp://mf.dctpvod.c.nmdn.net/dctpvod/");
+        rtmp.setPageUrl(br.getURL());
+        rtmp.setApp(app);
+        rtmp.setFlashVer("WIN 19,0,0,185");
+        rtmp.setSwfVfy("http://svm-prod-dctptv-static.s3.amazonaws.com/dctptv-relaunch2012-88.swf");
+        rtmp.setUrl(rtmpurl);
+
         rtmp.setResume(true);
         ((RTMPDownload) dl).startDownload();
     }
