@@ -16,7 +16,7 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.LinkedHashMap;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -39,32 +39,60 @@ public class VidMe extends PluginForHost {
     }
 
     /* Extension which will be used if no correct extension is found */
-    private static final String default_Extension = ".mp4";
+    public static final String   default_Extension = ".mp4";
 
-    private String              DLLINK            = null;
+    public static final String   API_ENDPOINT      = "https://api.vid.me/";
+    private String               DLLINK            = null;
+
+    private static final boolean api_use_api       = true;
 
     @Override
     public String getAGBLink() {
         return "https://vid.me/terms-of-use";
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("viddecrypted.me/", "vid.me/"));
     }
 
+    public static void api_prepBR(final Browser br) {
+        br.setAllowedResponseCodes(400);
+    }
+
+    public static void website_prepBR(final Browser br) {
+        br.setAllowedResponseCodes(410);
+    }
+
+    @SuppressWarnings({ "deprecation", "unchecked" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(410);
-        br.getPage(downloadLink.getDownloadURL());
-        if (!br.getHttpConnection().isOK() || !br.containsHTML("property=\"og:video\"") || br.containsHTML("class=\"note downloading\\-header\"")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        DLLINK = checkDirectLink(downloadLink, "directlink");
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("property=\"og:video:url\" content=\"(http[^<>\"]*?/videos/[^<>\"]*?)\"").getMatch(0);
+        String filename;
+        if (api_use_api) {
+            api_prepBR(this.br);
+            this.br.getPage(api_get_video(downloadLink.getDownloadURL()));
+            if (this.br.getHttpConnection().getResponseCode() != 200) {
+                /* Typically 400 video offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
+            entries = (LinkedHashMap<String, Object>) entries.get("video");
+            filename = getVideoTitle(entries);
+            DLLINK = (String) entries.get("complete_url");
+        } else {
+            website_prepBR(this.br);
+            br.getPage(downloadLink.getDownloadURL());
+            if (!br.getHttpConnection().isOK() || !br.containsHTML("property=\"og:video\"") || br.containsHTML("class=\"note downloading\\-header\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            DLLINK = checkDirectLink(downloadLink, "directlink");
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("property=\"og:video:url\" content=\"(http[^<>\"]*?/videos/[^<>\"]*?)\"").getMatch(0);
+            }
         }
         if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -88,7 +116,7 @@ public class VidMe extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = br2.openHeadConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -151,6 +179,31 @@ public class VidMe extends PluginForHost {
         output = output.replace("!", "¡");
         output = output.replace("\"", "'");
         return output;
+    }
+
+    public static final long api_get_max_videos_per_page() {
+        return 100;
+    }
+
+    public static String api_get_video(final String url) {
+        return API_ENDPOINT + "videoByUrl?url=" + Encoding.urlEncode(url);
+    }
+
+    public static String api_get_userinfo(final String user) {
+        return API_ENDPOINT + "userByUsername?username=" + Encoding.urlEncode(user);
+    }
+
+    /* Limit = 100 == max */
+    public static String api_get_user_videos(final String user_id, final String offset) {
+        return API_ENDPOINT + "list?moderated=-1&private=0&nsfw=-1&order=date_completed&direction=DESC&limit=" + Long.toString(api_get_max_videos_per_page()) + "&offset=" + offset + "&user=" + user_id;
+    }
+
+    public static String getVideoTitle(final LinkedHashMap<String, Object> sourcemap) {
+        String title = (String) sourcemap.get("title");
+        if (title != null) {
+            title = encodeUnicode(title);
+        }
+        return title;
     }
 
     @Override

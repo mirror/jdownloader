@@ -36,16 +36,17 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?((((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\-]+|#[A-Za-z0-9%\\/+=\\-]+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+|yadi\\.sk/mail/\\?hash=[A-Za-z0-9%/\\+=]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "disk.yandex.net", "docviewer.yandex.com" }, urls = { "https?://(?:www\\.)?((((mail|disk)\\.)?yandex\\.(?:net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\-]+|#[A-Za-z0-9%\\/+=\\-]+))|(?:yadi\\.sk|yadisk\\.cc)/(?:d|i)/[A-Za-z0-9\\-_]+|yadi\\.sk/mail/\\?hash=[A-Za-z0-9%/\\+=]+)", "https?://docviewer\\.yandex\\.(?:net|com|com\\.tr|ru|ua)/\\?url=ya\\-disk\\-public%3A%2F%2F[^/\"\\&]+" }, flags = { 0, 0 })
 public class DiskYandexNetFolder extends PluginForDecrypt {
 
     public DiskYandexNetFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String        primaryURLs       = "https?://(www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\-]+|#[A-Za-z0-9%\\/+=\\-]+)";
-    private final String        shortURLs_d       = "https?://(www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
-    private final String        shortURLs_i       = "https?://(www\\.)?(yadi\\.sk|yadisk\\.cc)/i/[A-Za-z0-9\\-_]+";
+    private static final String type_docviewer    = "https?://docviewer\\.yandex\\.[^/]+/\\?url=ya\\-disk\\-public%3A%2F%2F([^/\"\\&]+)";
+    private final String        type_primaryURLs  = "https?://(?:www\\.)?((mail|disk)\\.)?yandex\\.(net|com|com\\.tr|ru|ua)/(disk/)?public/(\\?hash=[A-Za-z0-9%/\\+=\\-]+|#[A-Za-z0-9%\\/+=\\-]+)";
+    private final String        type_shortURLs_d  = "https?://(?:www\\.)?(yadi\\.sk|yadisk\\.cc)/d/[A-Za-z0-9\\-_]+";
+    private final String        type_shortURLs_i  = "https?://(?:www\\.)?(yadi\\.sk|yadisk\\.cc)/i/[A-Za-z0-9\\-_]+";
 
     private final String        type_yadi_sk_mail = "https?://(www\\.)?yadi\\.sk/mail/\\?hash=[A-Za-z0-9%/\\+=]+";
 
@@ -58,15 +59,20 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         br.setFollowRedirects(true);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        if (parameter.matches(type_yadi_sk_mail)) {
-            final String hash = new Regex(parameter, "hash=(.+)").getMatch(0);
-            parameter = "https://disk.yandex.com/public/?hash=" + hash;
+        String hash_temp = null;
+        if (parameter.matches(type_docviewer)) {
+            /* Documents in web view mode --> File-URLs! */
+            hash_temp = Encoding.htmlDecode(hash_temp);
+            parameter = "https://disk.yandex.com/public/?hash=" + hash_temp;
+        } else if (parameter.matches(type_yadi_sk_mail)) {
+            hash_temp = new Regex(parameter, "hash=(.+)").getMatch(0);
+            parameter = "https://disk.yandex.com/public/?hash=" + hash_temp;
         } else {
             parameter = parameter.replace("mail.yandex.ru/", "disk.yandex.net/").replace("#", "?hash=");
         }
         final DownloadLink main = createDownloadlink("http://yandexdecrypted.net/" + System.currentTimeMillis() + new Random().nextInt(10000000));
         String mainhashID = null;
-        if (parameter.matches(shortURLs_d) || parameter.matches(shortURLs_i)) {
+        if (parameter.matches(type_shortURLs_d) || parameter.matches(type_shortURLs_i)) {
             br.getPage(parameter);
             if (br.containsHTML(OFFLINE_TEXT)) {
                 main.setAvailable(false);
@@ -76,11 +82,11 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 return decryptedLinks;
             }
             String newUrl = Encoding.htmlDecode(br.getURL()).replace("&locale=ru", "");
-            if (newUrl.matches(primaryURLs)) {
-                parameter = new Regex(newUrl, primaryURLs).getMatch(-1);
+            if (newUrl.matches(type_primaryURLs)) {
+                parameter = new Regex(newUrl, type_primaryURLs).getMatch(-1);
             }
         }
-        if (parameter.matches(primaryURLs)) {
+        if (parameter.matches(type_primaryURLs)) {
             String protocol = new Regex(parameter, "(https?)://").getMatch(0);
             mainhashID = new Regex(parameter, "hash=(.+)$").getMatch(0);
             if (protocol == null || mainhashID == null) {

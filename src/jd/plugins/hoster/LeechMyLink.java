@@ -116,6 +116,7 @@ public class LeechMyLink extends antiDDoSForHost {
             account.setConcurrentUsePossible(true);
         } else {
             account.setType(AccountType.FREE);
+            ac.setStatus("Registered (free) account");
             account.setMaxSimultanDownloads(-1);
             account.setConcurrentUsePossible(true);
         }

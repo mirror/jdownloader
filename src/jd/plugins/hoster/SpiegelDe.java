@@ -49,6 +49,7 @@ public class SpiegelDe extends PluginForHost {
 
     private String               DLLINK                           = null;
 
+    /* Tags: spiegel.tv, dctp.tv */
     /*
      * Important for pattern_supported_video: Way to get mobile versions of videos: Use a mobile UA - Video site:
      * http://m.spiegel.de/video/video-1234567.html AND link that leads to the final mobile video URL:
