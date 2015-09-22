@@ -48,6 +48,9 @@ public class RTMPDownload extends RAFDownload {
          * cause plugin defect - maybe catch this and show invalid download path instead!
          */
         String finalfilename = this.plg.getDownloadLink().getFinalFileName();
+        if (finalfilename == null) {
+            finalfilename = this.plg.getDownloadLink().getName();
+        }
         finalfilename = finalfilename.replace("⁄", "_");
         this.plg.getDownloadLink().setFinalFileName(finalfilename);
         return rtmpDump().start(rtmpConnection);
