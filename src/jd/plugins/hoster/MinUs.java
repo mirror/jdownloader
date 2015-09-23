@@ -126,7 +126,7 @@ public class MinUs extends PluginForHost {
             final String uid = new Regex(downloadLink.getDownloadURL(), "\\.com/[a-z]([A-Za-z0-9\\-_]+)").getMatch(0);
 
             // Sometimes servers are pretty slow
-            br.setReadTimeout(3 * 60);
+            br.setReadTimeout(3 * 60 * 1000);
 
             // generic for all download types, based on button!
             dllink = br.getRegex("class=\"btn-action[^>]+no-counter[^>]+href=\"(https?://[^\"]+\\.minus\\.com/[^\"]+)").getMatch(0);
