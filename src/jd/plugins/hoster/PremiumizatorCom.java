@@ -56,7 +56,7 @@ public class PremiumizatorCom extends PluginForHost {
      * TODO: Remove hyperspeeds.com plugin once they either shut it down or it is clear that only premiumizator.com will be continued!
      */
     /* Tags: Script vinaget.us */
-    private static final String                            DOMAIN               = "http://premiumizator.com/dl/debrid";
+    private static final String                            API_ENDPOINT         = "http://premiumizator.com/dl/debrid";
     private static final String                            NICE_HOST            = "premiumizator.com";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
@@ -253,7 +253,7 @@ public class PremiumizatorCom extends PluginForHost {
         if (dllink == null || forceNewLinkGeneration) {
             /* request creation of downloadlink */
             br.setFollowRedirects(true);
-            this.getAPISafe(DOMAIN + "/deb_api.php?link=" + Encoding.urlEncode(link.getDownloadURL()));
+            this.getAPISafe(API_ENDPOINT + "/deb_api.php?link=" + Encoding.urlEncode(link.getDownloadURL()));
             dllink = getJson("link");
             if (dllink == null) {
                 logger.warning("Final downloadlink is null");
@@ -385,12 +385,12 @@ public class PremiumizatorCom extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(DOMAIN, key, value);
+                            this.br.setCookie(API_ENDPOINT, key, value);
                         }
                     }
                 } else {
                     br.setFollowRedirects(true);
-                    this.getAPISafe(DOMAIN + "/deb_login.php?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&api_key=apikeytest");
+                    this.getAPISafe(API_ENDPOINT + "/deb_login.php?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&api_key=apikeytest");
                     final String cookietext = this.getJson("cookie");
                     if (cookietext == null) {
                         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -404,11 +404,11 @@ public class PremiumizatorCom extends PluginForHost {
                     for (final String[] cookiePair : cookiePairs) {
                         final String key = cookiePair[0].trim();
                         final String value = cookiePair[1];
-                        this.br.setCookie(DOMAIN, key, value);
+                        this.br.setCookie(API_ENDPOINT, key, value);
                     }
                     /* Save cookies */
                     final HashMap<String, String> cookies = new HashMap<String, String>();
-                    final Cookies add = this.br.getCookies(DOMAIN);
+                    final Cookies add = this.br.getCookies(API_ENDPOINT);
                     for (final Cookie c : add.getCookies()) {
                         cookies.put(c.getKey(), c.getValue());
                     }
@@ -420,7 +420,7 @@ public class PremiumizatorCom extends PluginForHost {
                  * This call is always needed to check the account as the call before simply returns cookies but no useful information at
                  * all.
                  */
-                this.getAPISafe(DOMAIN + "/deb_account.php");
+                this.getAPISafe(API_ENDPOINT + "/deb_account.php");
                 final String username = getJson("username");
                 final String email = getJson("email");
                 if (username == null && email == null || username.equals("null") || email.equals("null")) {

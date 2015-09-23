@@ -43,22 +43,25 @@ public class DctpTv extends PluginForHost {
     private static final boolean rtmpe_supported = false;
     private static final String  app             = "dctp/";
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("class=\\'error\\'>Der gewünschte Film ist \\(zur Zeit\\) nicht")) {
+        if (br.containsHTML("class=\\'error\\'>Der gewünschte Film ist \\(zur Zeit\\) nicht") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("property=\"media:title\" content=\"([^<>\"]*?)\"></span>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<meta name=\\'DC\\.title\\' content=\\'([^<>\"]*?)\\'").getMatch(0);
         }
-        if (filename == null) {
+        final String date = this.br.getRegex("name=\\'DC\\.date\\.created\\' content=\\'(\\d{4}\\-\\d{2}\\-\\d{2})\\'").getMatch(0);
+        if (filename == null || date == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        filename = date + "_dctpTV_" + Encoding.htmlDecode(filename.trim()) + ".flv";
+        link.setFinalFileName(filename);
         return AvailableStatus.TRUE;
     }
 
