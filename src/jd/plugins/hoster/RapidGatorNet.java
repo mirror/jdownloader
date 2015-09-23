@@ -630,7 +630,16 @@ public class RapidGatorNet extends PluginForHost {
                          * expiring too early
                          */
                         ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l));
-                        ai.setTrafficLeft(Long.parseLong(traffic_left));
+                        final long left = Long.parseLong(traffic_left);
+                        ai.setTrafficLeft(left);
+                        final long TB = 1024 * 1024 * 1024 * 1024l;
+                        if (left > 3 * TB) {
+                            ai.setTrafficMax(12 * TB);
+                        } else if (left <= 3 * TB && left > TB) {
+                            ai.setTrafficMax(3 * TB);
+                        } else {
+                            ai.setTrafficMax(TB);
+                        }
                         if (!ai.isExpired()) {
                             account.setType(AccountType.PREMIUM);
                             /* account still valid */
