@@ -78,7 +78,7 @@ public class XddiskCom extends PluginForHost {
 
     @Override
     public SiteTemplate siteTemplateType() {
-        return SiteTemplate.Unknown_VideoHosting;
+        return SiteTemplate.Unknown_ChineseFileHosting;
     }
 
     @Override

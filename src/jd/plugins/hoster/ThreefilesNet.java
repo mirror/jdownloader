@@ -111,7 +111,7 @@ public class ThreefilesNet extends PluginForHost {
     // limit-info:
     // protocol: no https
     // captchatype: null
-    // other: 2015-09-23: ASll finallinks lead to server response 404
+    // other: 2015-09-23: ALL finallinks lead to server response 404
     // TODO: Add case maintenance + alternative filesize check
 
     @SuppressWarnings("deprecation")
