@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -25,6 +24,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -39,6 +39,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "playvid.com" }, urls = { "http://playviddecrypted\\.com/\\d+" }, flags = { 2 })
@@ -64,26 +65,46 @@ public class PlayVidCom extends PluginForHost {
     private static final String ALLOW_480P    = "ALLOW_480P";
     private static final String ALLOW_720     = "ALLOW_720";
 
+    private boolean             loggedin      = false;
+    private String              qualityvalue  = null;
+
+    private static final String quality_360   = "360p";
+    private static final String quality_480   = "480p";
+    private static final String quality_720   = "720p";
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         if (downloadLink.getBooleanProperty("offline", false)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        qualityvalue = downloadLink.getStringProperty("qualityvalue", null);
         this.setBrowserExclusive();
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("playvid.com");
+        boolean loggedin = false;
+        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        if (aa != null) {
+            try {
+                login(this.br, aa, false);
+                loggedin = true;
+            } catch (final PluginException e) {
+            }
+        }
         br.setFollowRedirects(true);
         String filename = downloadLink.getStringProperty("directname", null);
         DLLINK = checkDirectLink(downloadLink, "directlink");
-        DLLINK = null;
         if (DLLINK == null) {
-            if (downloadLink.getStringProperty("mainlink", null) == null) {
-                /* Errorhandling for old links */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
             /* Refresh directlink */
             br.getPage(downloadLink.getStringProperty("mainlink", null));
+            if (isOffline(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final String videosource = getVideosource(this.br);
             if (videosource == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (quality_720.equals(qualityvalue) && !loggedin) {
+                logger.info("User is not logged in but tries to download a quality which needs login");
+                return AvailableStatus.TRUE;
             }
             DLLINK = getQuality(downloadLink.getStringProperty("qualityvalue", null), videosource);
         }
@@ -117,12 +138,24 @@ public class PlayVidCom extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (quality_720.equals(qualityvalue) && !loggedin) {
+            /* Should never happen! */
+            logger.info("User is not logged in but tries to download a quality which needs login");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    public static final boolean isOffline(final Browser br) {
+        if (br.containsHTML("Video not found<|class=\"play\\-error\"|class=\"error\\-sorry\"") || br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        }
+        return false;
     }
 
     private static final String MAINPAGE = "http://playvid.com";

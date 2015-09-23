@@ -26,6 +26,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -46,10 +47,14 @@ public class XddiskCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">文件已经被删除<br")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">文件已经被删除<br")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String filename = br.getRegex("<li>文件名: ([^<>\"]*?)</li>").getMatch(0);
         final String filesize = br.getRegex("id=\"file_size\">文件大小: ([^<>\"]*?)\\&nbsp").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize + "b"));
         return AvailableStatus.TRUE;
@@ -60,13 +65,20 @@ public class XddiskCom extends PluginForHost {
         requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL().replace("/file-", "/down-"));
         final String dllink = br.getRegex("\"(http://[a-z0-9]+\\.xddisk\\.com/file/sub/dl\\.php\\?[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.Unknown_VideoHosting;
     }
 
     @Override

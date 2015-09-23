@@ -51,12 +51,10 @@ public class PremiumizatorCom extends PluginForHost {
      * TODO API: Return max downloadable filesize (especially for free accounts), return traffic information (if not unlimited), return host
      * array based on account e.g. free accounts get another host list than premium, implement list of supported hosts via API, remove the
      * website workaround.
-     *
-     *
-     * TODO: Remove hyperspeeds.com plugin once they either shut it down or it is clear that only premiumizator.com will be continued!
      */
     /* Tags: Script vinaget.us */
-    private static final String                            API_ENDPOINT         = "http://premiumizator.com/dl/debrid";
+    private static final String                            API_ENDPOINT         = "http://premiumizator.com/dl/api/DownloadApi.php";
+    private static final String                            API_APP              = "JDownloader";
     private static final String                            NICE_HOST            = "premiumizator.com";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
@@ -253,7 +251,7 @@ public class PremiumizatorCom extends PluginForHost {
         if (dllink == null || forceNewLinkGeneration) {
             /* request creation of downloadlink */
             br.setFollowRedirects(true);
-            this.getAPISafe(API_ENDPOINT + "/deb_api.php?link=" + Encoding.urlEncode(link.getDownloadURL()));
+            this.getAPISafe(API_ENDPOINT + "?action=generateLink&link=" + Encoding.urlEncode(link.getDownloadURL()) + "&app=" + API_APP);
             dllink = getJson("link");
             if (dllink == null) {
                 logger.warning("Final downloadlink is null");
@@ -339,8 +337,8 @@ public class PremiumizatorCom extends PluginForHost {
             account.setProperty("max_file_size", Property.NULL);
         }
 
-        /* TODO: Add API call for this once it's available */
-        // this.getAPISafe("/deb_hosters.php");
+        /* TODO: Use this API call for the list of supported hosts once they fixed it */
+        // this.getAPISafe("?action=hosters");
         this.getAPISafe("http://premiumizator.com/");
         ArrayList<String> supportedhostslist = new ArrayList();
         final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc", "eu" };
@@ -390,7 +388,7 @@ public class PremiumizatorCom extends PluginForHost {
                     }
                 } else {
                     br.setFollowRedirects(true);
-                    this.getAPISafe(API_ENDPOINT + "/deb_login.php?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&api_key=apikeytest");
+                    this.getAPISafe(API_ENDPOINT + "?action=login&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&app=" + API_APP);
                     final String cookietext = this.getJson("cookie");
                     if (cookietext == null) {
                         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -420,7 +418,7 @@ public class PremiumizatorCom extends PluginForHost {
                  * This call is always needed to check the account as the call before simply returns cookies but no useful information at
                  * all.
                  */
-                this.getAPISafe(API_ENDPOINT + "/deb_account.php");
+                this.getAPISafe(API_ENDPOINT + "?action=accountInfo&app=" + API_APP);
                 final String username = getJson("username");
                 final String email = getJson("email");
                 if (username == null && email == null || username.equals("null") || email.equals("null")) {
@@ -528,7 +526,75 @@ public class PremiumizatorCom extends PluginForHost {
         }
     }
 
+    /* Needed for their stupid idea of using different errorcodes for different API calls! */
     private void handleAPIErrors(final Browser br) throws PluginException {
+        final String url = br.getURL();
+        if (url != null && (url.contains("action=accountInfo") || url.contains("action=login"))) {
+            handleAPILoginErrors(br);
+        } else {
+            handleAPIDownloadErrors(br);
+        }
+    }
+
+    private void handleAPIDownloadErrors(final Browser br) throws PluginException {
+        String statusMessage = null;
+        try {
+            switch (statuscode) {
+            case 0:
+                /* Everything ok */
+                break;
+            case 1:
+                /* Should never happen */
+                statusMessage = "'link' parameter is empty or 'http://' is missing";
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_linkparameterempty", 10, 5 * 60 * 1000l);
+            case 2:
+                /* Should never happen */
+                statusMessage = "'link' parameter is empty or 'http://' is missing";
+                handleErrorRetries(NICE_HOSTproperty + "timesfailed_linkparameterempty", 10, 5 * 60 * 1000l);
+            case 3:
+                statusMessage = "Host not supported by multihost or unknown linktype";
+                tempUnavailableHoster(5 * 60 * 1000l);
+            case 4:
+                statusMessage = "This filehost is only enabled in Premium mode or Link dead or filehoster not supported";
+                // handleErrorRetries(NICE_HOSTproperty + "timesfailed_host_unsupported_or_link_dead", 10, 5 * 60 * 1000l);
+                tempUnavailableHoster(5 * 60 * 1000l);
+            case 5:
+                /* Also covered within canHandle - should never happen here! */
+                statusMessage = "You can only generate & download links during happy hours";
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, this.getHost() + ": You can only generate & download links during happy hours", 1 * 60 * 1000l);
+            case 6:
+                statusMessage = "Free account limits exceeded!";
+                this.currAcc.getAccountInfo().setTrafficLeft(0);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree account limits exceeded!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            case 7:
+                /* Also covered within canHandle - should never happen here! */
+                statusMessage = "File is too big to download with this multihost/account";
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is too big to download with this multihost/account", 2 * 60 * 1000l);
+            case 8:
+                statusMessage = "Host not supported by multihost or under maintenance";
+                tempUnavailableHoster(10 * 60 * 1000l);
+            case 9:
+                statusMessage = "Limit for current host reached";
+                tempUnavailableHoster(10 * 60 * 1000l);
+            case 10:
+                /* Gosh is this a meaningless errorcode! */
+                statusMessage = "Filehost under maintenance, Link dead, Error with generated link or link unsupported";
+                tempUnavailableHoster(5 * 60 * 1000l);
+            case 666:
+                /* Unknown error */
+                statusMessage = "Unknown error";
+                logger.info(NICE_HOST + ": Unknown API download error");
+                // handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 10, 5 * 60 * 1000l);
+                /* TODO: Remove this once the plugin is tested well enough */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } catch (final PluginException e) {
+            logger.info(NICE_HOST + ": Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
+            throw e;
+        }
+    }
+
+    private void handleAPILoginErrors(final Browser br) throws PluginException {
         String statusMessage = null;
         try {
             switch (statuscode) {
@@ -543,39 +609,11 @@ public class PremiumizatorCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             case 2:
-                /* Should never happen */
-                statusMessage = "'link' parameter is empty or 'http://' is missing";
-                handleErrorRetries(NICE_HOSTproperty + "timesfailed_linkparameterempty", 10, 5 * 60 * 1000l);
-            case 3:
-                /* Should never happen */
-                statusMessage = "Host not supported by multihost or unknown linktype";
-                tempUnavailableHoster(5 * 60 * 1000l);
-            case 4:
-                /* Should never happen */
-                statusMessage = "This filehost is only enabled in Premium mode or Link dead or filehoster not supported";
-                // handleErrorRetries(NICE_HOSTproperty + "timesfailed_host_unsupported_or_link_dead", 10, 5 * 60 * 1000l);
-                tempUnavailableHoster(5 * 60 * 1000l);
-            case 5:
-                /* Also covered within canHandle - should never happen here! */
-                statusMessage = "You can only generate & download links during happy hours";
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, this.getHost() + ": You can only generate & download links during happy hours", 1 * 60 * 1000l);
-            case 6:
-                statusMessage = "Free account limits exceeded!";
-                this.currAcc.getAccountInfo().setTrafficLeft(0);
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nFree account limits exceeded!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            case 7:
-                /* Also covered within canHandle - should never happen here! */
-                statusMessage = "File is too big to download with this multihost/account";
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is too big to download with this multihost/account", 1 * 60 * 1000l);
-            case 8:
-                statusMessage = "Host not supported by multihost or under maintenance";
-                tempUnavailableHoster(10 * 60 * 1000l);
+                /* Everything ok */
             case 666:
                 /* Unknown error */
                 statusMessage = "Unknown error";
-                logger.info(NICE_HOST + ": Unknown API error");
-                // handleErrorRetries(NICE_HOSTproperty + "timesfailed_unknown_api_error", 10, 5 * 60 * 1000l);
-                /* TODO: Remove this once the plugin is tested well enough */
+                logger.info(NICE_HOST + ": Unknown API login error");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } catch (final PluginException e) {

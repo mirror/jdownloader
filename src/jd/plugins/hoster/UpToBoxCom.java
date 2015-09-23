@@ -28,9 +28,6 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -57,10 +54,13 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(?:www\\.)?(uptobox|uptostream)\\.com/(?:iframe/)?[a-z0-9]{12}" }, flags = { 2 })
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uptobox.com" }, urls = { "https?://(?:www\\.)?(?:uptobox|uptostream)\\.com/(?:iframe/)?[a-z0-9]{12}" }, flags = { 2 })
 public class UpToBoxCom extends antiDDoSForHost {
 
-    private final static String SSL_CONNECTION = "SSL_CONNECTION";
+    private final static String  SSL_CONNECTION               = "SSL_CONNECTION";
 
     private boolean              happyHour                    = false;
     private String               correctedBR                  = "";
@@ -74,7 +74,7 @@ public class UpToBoxCom extends antiDDoSForHost {
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
@@ -83,8 +83,8 @@ public class UpToBoxCom extends antiDDoSForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.1-raz
     // mods: heavily modified, do NOT upgrade!
-    // non account: 2 * 20
-    // free account: 2 * 20
+    // non account: 2 * 1
+    // free account: 2 * 1
     // premium account: 20 * 3 = max 60 connections
     // protocol: no https
     // captchatype: solvemedia
@@ -147,6 +147,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         return prepBr;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
@@ -705,7 +706,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Free Account");
             try {
-                maxPrem.set(20);
+                maxPrem.set(1);
                 // free accounts can still have captcha.
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());

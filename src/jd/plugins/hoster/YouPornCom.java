@@ -93,11 +93,11 @@ public class YouPornCom extends PluginForHost {
             br.getPage(br.getRedirectLocation());
         }
         // Offline link
-        if (br.containsHTML("<div id=\"video\\-not\\-found\\-related\"|watchRemoved\"")) {
+        if (br.containsHTML("<div id=\"video\\-not\\-found\\-related\"|watchRemoved\"|class=\\'video\\-not\\-found\\'")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Invalid link
-        if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"")) {
+        if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>(.*?) \\- Free Porn Videos \\- YouPorn</title>").getMatch(0);

@@ -128,7 +128,7 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String     PATTERN_PHOTO_ALBUM                     = ".*?(tag|album(?:\\-)?\\d+_|photos(?:\\-)?)\\d+";
     private static final String     PATTERN_PHOTO_ALBUMS                    = "https?://(www\\.)?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)";
     private static final String     PATTERN_PHOTO_ALBUMS_USERNAME_Z         = "https?://(www\\.)?vk\\.com/[^<>\"/]+\\?z=albums\\d+";
-    private static final String     PATTERN_GENERAL_WALL_LINK               = "https?://(www\\.)?vk\\.com/wall(\\-)?\\d+(\\-maxoffset=\\d+\\-currentoffset=\\d+)?";
+    private static final String     PATTERN_GENERAL_WALL_LINK               = "https?://(www\\.)?vk\\.com/wall(?:\\-)?\\d+(?:\\-maxoffset=\\d+\\-currentoffset=\\d+)?";
     private static final String     PATTERN_WALL_LOOPBACK_LINK              = "https?://(www\\.)?vk\\.com/wall\\-\\d+\\-maxoffset=\\d+\\-currentoffset=\\d+";
     private static final String     PATTERN_WALL_POST_LINK                  = "https?://(www\\.)?vk\\.com/wall(\\-)?\\d+_\\d+";
     private static final String     PATTERN_PUBLIC_LINK                     = "https?://(www\\.)?vk\\.com/public\\d+";
@@ -1817,7 +1817,7 @@ public class VKontakteRu extends PluginForDecrypt {
             return false;
         }
         try {
-            ((jd.plugins.hoster.VKontakteRuHoster) hostPlugin).login(this.br, aa, force);
+            jd.plugins.hoster.VKontakteRuHoster.login(this.br, aa);
         } catch (final PluginException e) {
             logger.warning("Login failed - continuing without login");
             aa.setValid(false);
@@ -1984,7 +1984,7 @@ public class VKontakteRu extends PluginForDecrypt {
             this.CRYPTEDLINK_ORIGINAL = removeParamsFromURL(CRYPTEDLINK_ORIGINAL);
         } else {
             /* Remove unneeded parameters. */
-            final String[] unwantedParts = { "(\\?profile=\\d+)", "(\\?rev=\\d+)", "(/rev)$", "(\\?albums=\\d+)" };
+            final String[] unwantedParts = { "(\\?profile=\\d+)", "(\\?rev=\\d+)", "(/rev)$", "(\\?albums=\\d+)", "(\\?own=(?:0|1))" };
             for (final String unwantedPart : unwantedParts) {
                 final String unwantedData = new Regex(this.CRYPTEDLINK_ORIGINAL, unwantedPart).getMatch(0);
                 if (unwantedData != null) {

@@ -62,7 +62,7 @@ public class PlayVidComDecrypter extends PluginForDecrypt {
         // Log in if possible to get 720p quality
         getUserLogin(false);
         br.getPage(PARAMETER);
-        if (br.containsHTML("Video not found<|class=\"play\\-error\"|class=\"error\\-sorry\"") || br.getHttpConnection().getResponseCode() == 404) {
+        if (jd.plugins.hoster.PlayVidCom.isOffline(this.br)) {
             decryptedLinks.add(createOfflinelink(PARAMETER));
             return decryptedLinks;
         }
