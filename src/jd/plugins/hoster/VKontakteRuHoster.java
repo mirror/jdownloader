@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -28,13 +27,11 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -52,7 +49,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 //Links are coming from a decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_\\d+|videolink/[\\d\\-]+)|https?://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp3" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_\\d+|videolink/[\\d\\-]+)|https?://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp3" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN                                = "http://vk.com";
@@ -64,7 +61,6 @@ public class VKontakteRuHoster extends PluginForHost {
     private int                 MAXCHUNKS                             = 1;
     private static final String TEMPORARILYBLOCKED                    = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
     /* Settings stuff */
-    private static final String USECOOKIELOGIN                        = "USECOOKIELOGIN";
     private static final String FASTLINKCHECK_VIDEO                   = "FASTLINKCHECK_VIDEO";
     private static final String FASTLINKCHECK_PICTURES                = "FASTLINKCHECK_PICTURES";
     private static final String FASTLINKCHECK_AUDIO                   = "FASTLINKCHECK_AUDIO";
@@ -243,7 +239,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 return AvailableStatus.UNCHECKABLE;
             } else if (aa != null) {
                 /* Always login if possible. */
-                this.login(this.br, aa, false);
+                this.login(this.br, aa);
             }
             if (link.getDownloadURL().matches(VKontakteRuHoster.TYPE_AUDIOLINK)) {
                 String finalFilename = link.getFinalFileName();
@@ -409,19 +405,14 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
-            if (this.getPluginConfig().getBooleanProperty(this.USECOOKIELOGIN, false)) {
-                this.logger.info("Logging in with cookies.");
-                this.login(this.br, account, false);
-                this.logger.info("Logged in successfully with cookies...");
-            } else {
-                this.logger.info("Logging in without cookies (forced login)...");
-                this.login(this.br, account, true);
-                this.logger.info("Logged in successfully without cookies (forced login)!");
-            }
+            this.logger.info("Logging in without cookies (forced login)...");
+            login(this.br, account);
+            this.logger.info("Logged in successfully without cookies (forced login)!");
         } catch (final PluginException e) {
             this.logger.info("Login failed!");
             account.setValid(false);
@@ -486,12 +477,12 @@ public class VKontakteRuHoster extends PluginForHost {
         if (acc != null && this.br.getRedirectLocation() != null && this.br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
             this.logger.info("Avoiding 'https://login.vk.com/?role=fast&_origin=' security check by re-logging in...");
             // Force login
-            this.login(this.br, acc, true);
+            login(this.br, acc);
             this.br.getPage(page);
         } else if (acc != null && this.br.toString().length() < 100 && this.br.toString().trim().matches("\\d+<\\!><\\!>\\d+<\\!>\\d+<\\!>\\d+<\\!>[a-z0-9]+")) {
             this.logger.info("Avoiding possible outdated cookie/invalid account problem by re-logging in...");
             // Force login
-            this.login(this.br, acc, true);
+            login(this.br, acc);
             this.br.getPage(page);
         }
         this.generalErrorhandling();
@@ -519,6 +510,7 @@ public class VKontakteRuHoster extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private boolean checkNoLoginNeeded(final DownloadLink dl) {
         boolean noLogin = dl.getBooleanProperty("nologin", false);
         if (!noLogin) {
@@ -530,7 +522,7 @@ public class VKontakteRuHoster extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         this.requestFileInformation(link);
-        this.login(this.br, account, false);
+        login(this.br, account);
         this.doFree(link);
     }
 
@@ -642,30 +634,23 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /** TODO: Maybe add login via API: https://vk.com/dev/auth_mobile */
-    @SuppressWarnings("unchecked")
-    public void login(final Browser br, final Account account, final boolean force) throws Exception {
+    public static void login(Browser br, final Account account) throws Exception {
         synchronized (VKontakteRuHoster.LOCK) {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
                 prepBrowser(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) {
-                    acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            br.setCookie(VKontakteRuHoster.DOMAIN, key, value);
-                        }
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null) {
+                    br.setCookies(DOMAIN, cookies);
+                    br.setFollowRedirects(true);
+                    br.getPage(DOMAIN);
+                    if (br.containsHTML("id=\"logout_link_td\"")) {
                         return;
                     }
+                    /* Delete cookies / Headers to perform a full login */
+                    br = prepBrowser(new Browser());
                 }
-                br.clearCookies("http://vk.com/login.php");
                 br.setFollowRedirects(true);
                 br.getPage("http://vk.com/login.php");
                 final String damnlg_h = br.getRegex("name=\"lg_h\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -677,7 +662,6 @@ public class VKontakteRuHoster extends PluginForHost {
                     damnIPH = br.getRegex("loginscheme: \\'https\\'.*?ip_h: \\'(.*?)\\'").getMatch(0);
                 }
                 if (damnIPH == null || damnlg_h == null) {
-                    this.logger.info("one or more login values are missing --> Login broken");
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else if ("pl".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -691,7 +675,6 @@ public class VKontakteRuHoster extends PluginForHost {
                 br.postPage("https://login.vk.com/", "act=login&to=&ip_h=" + damnIPH + "&lg_h=" + damnlg_h + "&email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&expire=");
                 /* Do NOT check based on cookies as they sometimes change them! */
                 if (!br.containsHTML("id=\"logout_link\"")) {
-                    this.logger.info("login failed --> Account invalid ?!");
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
@@ -707,19 +690,9 @@ public class VKontakteRuHoster extends PluginForHost {
                     br.submitForm(lol);
                 }
                 /* Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(VKontakteRuHoster.DOMAIN);
-                for (final Cookie c : add.getCookies()) {
-                    if ("deleted".equalsIgnoreCase(c.getValue())) {
-                        continue;
-                    }
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.saveCookies(br.getCookies(DOMAIN), "");
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.clearCookies("");
                 throw e;
             }
         }
@@ -730,19 +703,19 @@ public class VKontakteRuHoster extends PluginForHost {
         if (acc != null && this.br.getRedirectLocation() != null && this.br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
             this.logger.info("Avoiding 'https://login.vk.com/?role=fast&_origin=' security check by re-logging in...");
             // Force login
-            this.login(this.br, acc, true);
+            login(this.br, acc);
             this.br.postPage(page, postData);
         } else if (acc != null && this.br.toString().length() < 100 && this.br.toString().trim().matches("\\d+<\\!><\\!>\\d+<\\!>\\d+<\\!>\\d+<\\!>[a-z0-9]+")) {
             this.logger.info("Avoiding possible outdated cookie/invalid account problem by re-logging in...");
             // Force login
-            this.login(this.br, acc, true);
+            login(this.br, acc);
             this.br.postPage(page, postData);
         }
         this.generalErrorhandling();
     }
 
     @SuppressWarnings("deprecation")
-    public static void prepBrowser(final Browser br) {
+    public static Browser prepBrowser(final Browser br) {
         String useragent = SubConfiguration.getConfig("vkontakte.ru").getStringProperty(VKADVANCED_USER_AGENT, default_user_agent);
         if (useragent.equals("") || useragent.length() <= 3) {
             useragent = default_user_agent;
@@ -754,6 +727,7 @@ public class VKontakteRuHoster extends PluginForHost {
         br.setConnectTimeout(2 * 60 * 1000);
         /* Loads can be very high. Site sometimes returns more than 10 000 entries with 1 request. */
         br.setLoadLimit(br.getLoadLimit() * 4);
+        return br;
     }
 
     /**
@@ -939,10 +913,6 @@ public class VKontakteRuHoster extends PluginForHost {
         return dl.getStringProperty("content_id", null);
     }
 
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
-    }
-
     @Override
     public void reset() {
     }
@@ -957,7 +927,6 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /* Default values... */
-    private static final boolean default_USECOOKIELOGIN                        = false;
     private static final boolean default_fastlinkcheck_FASTLINKCHECK           = true;
     private static final boolean default_fastlinkcheck_FASTPICTURELINKCHECK    = true;
     private static final boolean default_fastlinkcheck_FASTAUDIOLINKCHECK      = true;
@@ -1020,7 +989,6 @@ public class VKontakteRuHoster extends PluginForHost {
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Advanced settings:\r\n<html><p style=\"color:#F62817\">WARNING: Only change these settings if you really know what you're doing!</p></html>"));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), VKontakteRuHoster.VKPHOTO_CORRECT_FINAL_LINKS, JDL.L("plugins.hoster.vkontakteruhoster.correctFinallinks", "For 'vk.com/photo' links: Change final downloadlinks from 'https?://csXXX.vk.me/vXXX/...' to 'https://pp.vk.me/cXXX/vXXX/...' (forces HTTPS)?")).setDefaultValue(default_VKPHOTO_CORRECT_FINAL_LINKS));
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), VKADVANCED_USER_AGENT, JDL.L("plugins.hoster.vkontakteruhoster.customUserAgent", "User-Agent: ")).setDefaultValue(default_user_agent));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), USECOOKIELOGIN, JDL.L("plugins.hoster.vkontakteruhoster.alwaysUseCookiesForLogin", "Always use cookies for login (this can cause out of date errors)")).setDefaultValue(default_USECOOKIELOGIN));
     }
 
 }

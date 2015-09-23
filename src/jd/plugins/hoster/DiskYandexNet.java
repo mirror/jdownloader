@@ -70,8 +70,8 @@ public class DiskYandexNet extends PluginForHost {
     private static final String   NORESUME                           = "NORESUME";
 
     /* Some constants which they used in browser */
-    private final String          CLIENT_ID                          = "883aacd8d0b882b2e379506a55fb6b0f";
-    private final String          VERSION                            = "2.10.1";
+    public static final String    CLIENT_ID                          = "6214e1ac6b579eb984b716151bcb5143";
+    public static String          VERSION                            = "2.19.2";
     private static final String   STANDARD_FREE_SPEED                = "64 kbit/s";
 
     /* Different languages == different 'downloads' directory names */
@@ -103,7 +103,7 @@ public class DiskYandexNet extends PluginForHost {
     private String getMainLink(final DownloadLink dl) {
         String mainlink = dl.getStringProperty("mainlink", null);
         if (!mainlink.contains("yadi")) {
-            mainlink = "https://disk.yandex.com/" + new Regex(mainlink, "yandex\\.[a-z]+/(.+)").getMatch(0);
+            mainlink = "https://disk.yandex.com/" + new Regex(mainlink, "yandex\\.[^/]+/(.+)").getMatch(0);
         }
         return mainlink;
     }
@@ -116,15 +116,18 @@ public class DiskYandexNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         setBrowserExclusive();
-        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
-        br.setCookie("http://disk.yandex.com/", "ys", "");
+        this.br = prepBR(this.br);
         br.setFollowRedirects(true);
         String filename;
+        String final_filename = link.getStringProperty("plain_filename", null);
+        if (final_filename == null) {
+            final_filename = link.getFinalFileName();
+        }
         if (link.getDownloadURL().matches(TYPE_VIDEO)) {
             br.getPage(link.getDownloadURL());
             if (link.getDownloadURL().matches(TYPE_VIDEO_USER)) {
                 /* offline|empty|enything else (e.g. abuse) */
-                if (br.containsHTML("<title>Ролик не найден</title>|>Здесь пока пусто<|class=\"error\\-container\"")) {
+                if (br.containsHTML("<title>Ролик не найден</title>|>Здесь пока пусто<|class=\"error\\-container\"") || this.br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 String iframe_url = br.getRegex("property=\"og:video:ifrаme\" content=\"(http://video\\.yandex\\.ru/iframe/[^<>\"]*?)\"").getMatch(0);
@@ -140,7 +143,7 @@ public class DiskYandexNet extends PluginForHost {
                 link.setUrlDownload(iframe_url);
                 br.getPage(iframe_url);
             }
-            if (br.containsHTML("<title>Яндекс\\.Видео</title>")) {
+            if (br.containsHTML("<title>Яндекс\\.Видео</title>") || this.br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("<title>([^<>]*?) — Яндекс\\.Видео</title>").getMatch(0);
@@ -149,6 +152,7 @@ public class DiskYandexNet extends PluginForHost {
             }
             filename = Encoding.htmlDecode(filename.trim()) + ".mp4";
             filename = encodeUnicode(filename);
+            link.setName(filename);
         } else {
             if (link.getBooleanProperty("offline", false)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -160,13 +164,27 @@ public class DiskYandexNet extends PluginForHost {
             if (br.containsHTML("(<title>The file you are looking for could not be found\\.|>Nothing found</span>|<title>Nothing found \\— Yandex\\.Disk</title>)") || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = link.getStringProperty("plain_filename", null);
-            final String filesize = link.getStringProperty("plain_size", null);
+            filename = this.br.getRegex("class=\"nb-panel__title\" title=\"([^<>\"]*?)\"").getMatch(0);
+            String filesize = link.getStringProperty("plain_size", null);
+            if (filesize == null) {
+                filesize = this.br.getRegex("class=\"item-details__name\">Size:</span> ([^<>\"]+)</div>").getMatch(0);
+            }
+            if (filesize == null) {
+                /* Language independant */
+                filesize = this.br.getRegex("class=\"item-details__name\">[^<>\"]+</span> ([\\d\\.]+ (?:B|KB|MB|GB))</div>").getMatch(0);
+            }
             if (filesize != null) {
+                filesize = filesize.replace(",", ".");
                 link.setDownloadSize(SizeFormatter.getSize(filesize));
             }
+            if (final_filename == null && filename == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (final_filename == null) {
+                final_filename = filename;
+            }
+            link.setFinalFileName(filename);
         }
-        link.setName(filename);
         /* Important for account download handling */
         if (br.containsHTML(ACCOUNTONLYTEXT)) {
             link.setProperty("premiumonly", true);
@@ -174,6 +192,12 @@ public class DiskYandexNet extends PluginForHost {
             link.setProperty("premiumonly", false);
         }
         return AvailableStatus.TRUE;
+    }
+
+    public static Browser prepBR(final Browser br) {
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+        br.setCookie("http://disk.yandex.com/", "ys", "");
+        return br;
     }
 
     @SuppressWarnings("deprecation")
@@ -367,7 +391,7 @@ public class DiskYandexNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
         } catch (PluginException e) {

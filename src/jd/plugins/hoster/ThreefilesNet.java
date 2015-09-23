@@ -106,11 +106,12 @@ public class ThreefilesNet extends PluginForHost {
     /* DEV NOTES */
     // XfileSharingProBasic Version 2.6.8.8
     // Tags: Script, template
-    // mods:
+    // mods: requestFileInformation[More offline texts], scanInfo[removed general filesize RegEx failovers as filesize is not given on
+    // mainpage]
     // limit-info:
     // protocol: no https
     // captchatype: null
-    // other: removed general filesize RegEx failovers as filesize is not given on mainpage
+    // other: 2015-09-23: ASll finallinks lead to server response 404
     // TODO: Add case maintenance + alternative filesize check
 
     @SuppressWarnings("deprecation")
@@ -159,7 +160,7 @@ public class ThreefilesNet extends PluginForHost {
         altbr = br.cloneBrowser();
         setFUID(link);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired)").matches()) {
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|File Not Found|>The file expired|The file does not exist or has been deleted)").matches()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
