@@ -65,10 +65,10 @@ public class StorBitNet extends PluginForHost {
     /* Connection stuff */
     private static final boolean FREE_RESUME                     = false;
     private static final int     FREE_MAXCHUNKS                  = 1;
-    private static final int     FREE_MAXDOWNLOADS               = 20;
+    private static final int     FREE_MAXDOWNLOADS               = 1;
     private static final boolean ACCOUNT_FREE_RESUME             = false;
     private static final int     ACCOUNT_FREE_MAXCHUNKS          = 1;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS       = 20;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS       = 1;
     private static final boolean ACCOUNT_PREMIUM_RESUME          = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS       = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS    = 20;
@@ -411,7 +411,21 @@ public class StorBitNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML("errorDateNextDownload")) {
             /* Free download limit reached TODO: implement */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            long wait = 0;
+            final String wait_until_date = getJson("errorDateNextDownload");
+            if (wait_until_date != null) {
+                // 2015-09-21 22:40:20
+                final long wait_until_date_long = TimeFormatter.getMilliSeconds(wait_until_date, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+                if (wait_until_date_long > System.currentTimeMillis()) {
+                    wait = wait_until_date_long - System.currentTimeMillis();
+                }
+            }
+            if (wait == 0) {
+                /* Simple fallback to default free (account) 'limit reached'-waittime - 3 hours. */
+                wait = 3 * 60 * 60 * 1001l;
+            }
+            /* 2015-09-23: Yes, IP changes will actually also remove this host side free account limit */
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
         }
     }
 

@@ -107,10 +107,16 @@ public class SmzdRcks extends antiDDoSForDecrypt {
 
         getPage(parameter);
 
+        String redirect = this.br.getRedirectLocation();
+        if (redirect != null && redirect.contains("smoozed.rocks/404")) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        }
+
         if (br.containsHTML("\"download_free\"")) {
             // redirect url
             String base64 = br.getRegex("atob\\('([A-Za-z0-9\\-_]+)'\\)").getMatch(0);
-            String redirect = Encoding.Base64Decode(base64);
+            redirect = Encoding.Base64Decode(base64);
             if (StringUtils.isNotEmpty(redirect)) {
                 decryptedLinks.add(createDownloadlink(redirect));
                 return decryptedLinks;

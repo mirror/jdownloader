@@ -50,7 +50,7 @@ public class ShareNeoNet extends PluginForHost {
 
     // For sites which use this script: http://www.yetishare.com/
     // YetiShareBasic Version 0.5.9-psp
-    // mods:
+    // mods: heavily modified, do NOT upgrade!
     // limit-info:
     // protocol: no https
     // captchatype: reCaptchaV1
@@ -62,40 +62,41 @@ public class ShareNeoNet extends PluginForHost {
     }
 
     /* Basic constants */
-    private final String         mainpage                                     = "http://shareneo.net";
-    private final String         domains                                      = "(shareneo\\.net)";
-    private final String         type                                         = "html";
-    private static final int     wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
-    private static final int     additional_WAIT_SECONDS                      = 3;
-    private static final int     directlinkfound_WAIT_SECONDS                 = 10;
-    private static final boolean supportshttps                                = false;
-    private static final boolean supportshttps_FORCED                         = false;
+    private final String         mainpage                                       = "http://shareneo.net";
+    private final String         domains                                        = "(shareneo\\.net)";
+    private final String         type                                           = "html";
+    private static final int     wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT   = 10;
+    private static final int     additional_WAIT_SECONDS                        = 3;
+    private static final int     directlinkfound_WAIT_SECONDS                   = 10;
+    private static final boolean supportshttps                                  = false;
+    private static final boolean supportshttps_FORCED                           = false;
     /* In case there is no information when accessing the main link */
-    private static final boolean available_CHECK_OVER_INFO_PAGE               = true;
-    private static final boolean useOldLoginMethod                            = false;
+    private static final boolean available_CHECK_OVER_INFO_PAGE                 = true;
+    private static final boolean useOldLoginMethod                              = false;
     /* Known errors */
-    private static final String  url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
-    private static final String  url_ERROR_SERVER                             = "e=Error%3A+Could+not+open+file+for+reading.";
-    private static final String  url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT       = "e=You+must+wait+";
-    private static final String  url_ERROR_PREMIUMONLY                        = "e=You+must+register+for+a+premium+account+to+download+files+of+this+size";
+    private static final String  url_ERROR_SIMULTANDLSLIMIT                     = "e=You+have+reached+the+maximum+concurrent+downloads";
+    private static final String  url_ERROR_SERVER                               = "e=Error%3A+Could+not+open+file+for+reading.";
+    private static final String  url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT         = "e=You+must+wait+";
+    private static final String  url_ERROR_PREMIUMONLY                          = "e=You+must+register+for+a+premium+account+to+download+files+of+this+size";
+    private static final String  url_ERROR_FREE_TOO_MANY_SIMULTANEOUS_DOWNLOADS = "e=Error%3A+You+must+upgrade+your+account+to+download+more+files";
     /* Texts for the known errors */
-    private static final String  errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT = "You must wait between downloads!";
-    private static final String  errortext_ERROR_SERVER                       = "Server error";
-    private static final String  errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
-    private static final String  errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
+    private static final String  errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT   = "You must wait between downloads!";
+    private static final String  errortext_ERROR_SERVER                         = "Server error";
+    private static final String  errortext_ERROR_PREMIUMONLY                    = "This file can only be downloaded by premium (or registered) users";
+    private static final String  errortext_ERROR_SIMULTANDLSLIMIT               = "Max. simultan downloads limit reached, wait to start more downloads from this host";
 
     /* Connection stuff */
-    private static final boolean free_RESUME                                  = false;
-    private static final int     free_MAXCHUNKS                               = 1;
-    private static final int     free_MAXDOWNLOADS                            = 20;
-    private static final boolean account_FREE_RESUME                          = true;
-    private static final int     account_FREE_MAXCHUNKS                       = 0;
-    private static final int     account_FREE_MAXDOWNLOADS                    = 20;
-    private static final boolean account_PREMIUM_RESUME                       = true;
-    private static final int     account_PREMIUM_MAXCHUNKS                    = 0;
-    private static final int     account_PREMIUM_MAXDOWNLOADS                 = 20;
+    private static final boolean free_RESUME                                    = false;
+    private static final int     free_MAXCHUNKS                                 = 1;
+    private static final int     free_MAXDOWNLOADS                              = 1;
+    private static final boolean account_FREE_RESUME                            = true;
+    private static final int     account_FREE_MAXCHUNKS                         = 0;
+    private static final int     account_FREE_MAXDOWNLOADS                      = 20;
+    private static final boolean account_PREMIUM_RESUME                         = true;
+    private static final int     account_PREMIUM_MAXCHUNKS                      = 0;
+    private static final int     account_PREMIUM_MAXDOWNLOADS                   = 20;
 
-    private static AtomicInteger MAXPREM                                      = new AtomicInteger(1);
+    private static AtomicInteger MAXPREM                                        = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
     @Override
@@ -140,7 +141,7 @@ public class ShareNeoNet extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             handleErrors();
-            if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\"")) || br.getHttpConnection().getResponseCode() == 404) {
+            if (isOffline()) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
@@ -156,6 +157,13 @@ public class ShareNeoNet extends PluginForHost {
         link.setName(Encoding.htmlDecode(filename).trim());
         link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace(",", "")).trim()));
         return AvailableStatus.TRUE;
+    }
+
+    private boolean isOffline() {
+        if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\"")) || br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -184,6 +192,16 @@ public class ShareNeoNet extends PluginForHost {
             } else {
                 if (available_CHECK_OVER_INFO_PAGE) {
                     br.getPage(downloadLink.getDownloadURL());
+                    if (isOffline()) {
+                        /*
+                         * Workaround - sometimes URLs checked via info page are online but their IDs need to be uppercase to work via the
+                         * normal way hmm
+                         */
+                        this.br.getPage("/" + this.getFID(downloadLink).toUpperCase());
+                        if (isOffline()) {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
+                    }
                 }
                 handleErrors();
                 /* Passwords are usually before waittime. */
@@ -326,7 +344,7 @@ public class ShareNeoNet extends PluginForHost {
     private void handleErrors() throws PluginException {
         if (br.containsHTML("Error: Too many concurrent download requests")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
-        } else if (br.getURL().contains(url_ERROR_SIMULTANDLSLIMIT)) {
+        } else if (br.getURL().contains(url_ERROR_SIMULTANDLSLIMIT) || br.getURL().contains(url_ERROR_FREE_TOO_MANY_SIMULTANEOUS_DOWNLOADS)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errortext_ERROR_SIMULTANDLSLIMIT, 1 * 60 * 1000l);
         } else if (br.getURL().contains("error.php?e=Error%3A+Could+not+open+file+for+reading")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);

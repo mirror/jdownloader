@@ -38,6 +38,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.NewTheme;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class HighWayMe extends UseNet {
 
@@ -520,7 +526,7 @@ public class HighWayMe extends UseNet {
     }
 
     /**
-     * 0 = everything ok, 1-99 = official errorcodes, 100-199 = login-errors, 666 = hell
+     * 0 = everything ok, 1-99 = official errorcodes, 100-199 = login-errors, 200-299 = info-states, 666 = hell
      */
     private void updatestatuscode() {
         /* First look for errorcode */
@@ -529,6 +535,7 @@ public class HighWayMe extends UseNet {
             /* No errorcode? Look for errormessage (e.g. used in login function). */
             error = this.getJson("error");
         }
+        final String info = this.getJson("info");
         if (error != null) {
             if (error.matches("\\d+")) {
                 statuscode = Integer.parseInt(error);
@@ -539,6 +546,8 @@ public class HighWayMe extends UseNet {
                     statuscode = 100;
                 }
             }
+        } else if ("Traffic ist kleiner als 10%".equals(info)) {
+            statuscode = 200;
         } else {
             statuscode = 0;
         }
@@ -628,6 +637,16 @@ public class HighWayMe extends UseNet {
                 } else {
                     statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            case 200:
+                if (!org.appwork.utils.Application.isHeadless()) {
+                    BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
+
+                        @Override
+                        public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
+                            return new BasicNotify("Weniger als 10% Traffic verbleibend", "Weniger als 10% Traffic verbleibend", NewTheme.I().getIcon("info", 32));
+                        }
+                    });
                 }
             case 666:
                 /* Unknown error */
