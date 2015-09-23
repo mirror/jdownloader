@@ -78,7 +78,6 @@ public class HighWayMe extends UseNet {
     private Account                                        currAcc                             = null;
     private DownloadLink                                   currDownloadLink                    = null;
     private long                                           currentWaittimeOnFailue             = 0;
-    private long                                           currentWaittime;
 
     public HighWayMe(PluginWrapper wrapper) {
         super(wrapper);
