@@ -77,6 +77,8 @@ public class HighWayMe extends UseNet {
     private static AtomicInteger                           maxPrem                             = new AtomicInteger(1);
     private Account                                        currAcc                             = null;
     private DownloadLink                                   currDownloadLink                    = null;
+    private long                                           currentWaittimeOnFailue             = 0;
+    private long                                           currentWaittime;
 
     public HighWayMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -418,9 +420,13 @@ public class HighWayMe extends UseNet {
         return br.getRegex("<" + key + ">([^<>\"]*?)</" + key + ">").getMatch(0);
     }
 
-    private void tempUnavailableHoster(final long timeout) throws PluginException {
+    private void tempUnavailableHoster(long timeout) throws PluginException {
         if (this.currDownloadLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        }
+        if (this.currentWaittimeOnFailue > 0) {
+            /* API timeout can override default timeout */
+            timeout = this.currentWaittimeOnFailue;
         }
         synchronized (hostUnavailableMap) {
             HashMap<String, Long> unavailableMap = hostUnavailableMap.get(this.currAcc);
@@ -529,6 +535,7 @@ public class HighWayMe extends UseNet {
      * 0 = everything ok, 1-99 = official errorcodes, 100-199 = login-errors, 200-299 = info-states, 666 = hell
      */
     private void updatestatuscode() {
+        final String waittime_on_failure = getJson("timeout");
         /* First look for errorcode */
         String error = this.getJson("code");
         if (error == null) {
@@ -550,6 +557,9 @@ public class HighWayMe extends UseNet {
             statuscode = 200;
         } else {
             statuscode = 0;
+        }
+        if (waittime_on_failure != null && waittime_on_failure.matches("\\d+")) {
+            this.currentWaittimeOnFailue = Long.parseLong(waittime_on_failure);
         }
     }
 

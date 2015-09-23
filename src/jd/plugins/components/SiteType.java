@@ -65,6 +65,10 @@ public class SiteType {
          */
         Qooy_Mirrors,
         /**
+         * Script used by some chinese file-hosting sites. <a href="http:/sx566.com/">sx566.com</a>. Not sure what to call this script.
+         */
+        Unknown_ChineseFileHosting,
+        /**
          * the template that supports mirror stack type sites.. Not sure what to call this script.
          */
         Unknown_MirrorStack,
