@@ -76,18 +76,20 @@ public class ExtremeTubeCom extends PluginForHost {
         br.setCookie("http://www.extremetube.com/", "age_verified", "1");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.extremetube.com/") || !br.containsHTML("\\.swf")) {
+        if (br.getURL().equals("http://www.extremetube.com/") || !br.containsHTML("\\.swf|</video>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1 class=\"title\\-video\\-box float\\-left\" title=\"(.*?)\"").getMatch(0);
         final String[] qualities = { "1080p", "720p", "480p", "360p", "240p", "180p" };
         for (final String quality : qualities) {
-            DLLINK = br.getRegex("amp;quality_" + quality + "=(http[^<>\"]*?)\\&amp;").getMatch(0);
+            DLLINK = br.getRegex("quality_" + quality + "\":\"(http[^<>\"]*?)\"").getMatch(0);
             if (DLLINK != null) {
+                DLLINK = DLLINK.replace("\\", "");
                 break;
             }
         }
         if (filename == null || DLLINK == null) {
+            logger.info("filename: " + filename + ", DLLINK: " + DLLINK);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
