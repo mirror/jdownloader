@@ -368,7 +368,10 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
                 } else {
                     setdebug(solverJob, "9kw.eu CaptchaID " + captchaID + " - Answer after " + ((System.currentTimeMillis() - startTime) / 1000) + "s: " + ret);
                 }
-                if (ret.startsWith("OK-answered-")) {
+                if (ret.startsWith("OK-answered-ERROR NO USER") || ret.startsWith("ERROR NO USER")) {
+                    click9kw_counterInterrupted.incrementAndGet();
+                    return;
+                } else if (ret.startsWith("OK-answered-")) {
                     click9kw_counterSolved.incrementAndGet();
                     String antwort = ret.substring("OK-answered-".length());
                     String[] splitResult = antwort.split("x");
@@ -376,9 +379,6 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
                     solverJob.setAnswer(new Captcha9kwClickResponse(captchaChallenge, this, new ClickedPoint(Integer.parseInt(splitResult[0]), Integer.parseInt(splitResult[1])), 100, captchaID));
                     return;
                 } else if (((System.currentTimeMillis() - startTime) / 1000) > (timeoutthing + 10)) {
-                    click9kw_counterInterrupted.incrementAndGet();
-                    return;
-                } else if (ret.startsWith("OK-answered-ERROR NO USER")) {
                     click9kw_counterInterrupted.incrementAndGet();
                     return;
                 }
