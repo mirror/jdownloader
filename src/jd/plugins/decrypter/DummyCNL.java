@@ -61,6 +61,22 @@ public class DummyCNL extends PluginForDecrypt {
         return ret;
     }
 
+    public static DownloadLink createDummyCNL(String crypted, final String jk, String k, final String source) throws Exception {
+        final HashMap<String, String> infos = new HashMap<String, String>();
+        infos.put("crypted", crypted);
+        if (jk != null) {
+            infos.put("jk", jk);
+        }
+        if (k != null) {
+            infos.put("k", k);
+        }
+        if (source != null) {
+            infos.put("source", source);
+        }
+        final String json = JSonStorage.toString(infos);
+        return new DownloadLink(null, null, "dummycnl.jdownloader.org", "http://dummycnl.jdownloader.org/" + HexFormatter.byteArrayToHex(json.getBytes("UTF-8")), true);
+    }
+
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
