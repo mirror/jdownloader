@@ -27,6 +27,7 @@ import org.jdownloader.api.myjdownloader.event.MyJDownloaderListener;
 import org.jdownloader.captcha.v2.solver.captchabrotherhood.CBSolverService;
 import org.jdownloader.captcha.v2.solver.cheapcaptcha.CheapCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.dbc.DeathByCaptchaSolverService;
+import org.jdownloader.captcha.v2.solver.endcaptcha.EndCaptchaSolverService;
 import org.jdownloader.captcha.v2.solver.imagetyperz.ImageTyperzSolverService;
 import org.jdownloader.captcha.v2.solver.jac.JacSolverService;
 import org.jdownloader.captcha.v2.solver.service.AbstractSolverService;
@@ -71,7 +72,7 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
             services.add(new ServiceCollection<CaptchaMyJDSolver>() {
 
                 /**
-                 * 
+                 *
                  */
                 private static final long serialVersionUID = 5569965026755271172L;
 
@@ -205,6 +206,7 @@ public class CaptchaMyJDSolverService extends AbstractSolverService implements S
         ret.put(DeathByCaptchaSolverService.ID, 60000);
         ret.put(CheapCaptchaSolverService.ID, 60000);
         ret.put(ImageTyperzSolverService.ID, 60000);
+        ret.put(EndCaptchaSolverService.ID, 60000);
 
         return ret;
     }

@@ -39,12 +39,6 @@ public interface UpdaterTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "You already have the latest version", "Sie nutzen bereits die aktuelle Version." })
     String guiless_you_are_up2date();
 
-    @Default(lngs = { "en", "de" }, values = { "Are you sure that you want to exit?", "Soll die Anwendung wirklich beendet werden?" })
-    String rlyexit();
-
-    @Default(lngs = { "en", "de" }, values = { "Really exit?", "Wirklich beenden?" })
-    String rlyexit_title();
-
     ;
 
     @Default(lngs = { "en", "de" }, values = { "Later", "Später" })

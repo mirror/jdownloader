@@ -36,9 +36,6 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Cracking password: %s1 %" })
     String plugins_optional_extraction_status_crackingpass_progress(double percent);
 
-    @Default(lngs = { "en" }, values = { "Overwrite existing files?" })
-    String settings_overwrite();
-
     @Default(lngs = { "en" }, values = { "Password found" })
     String plugins_optional_extraction_status_passfound();
 
@@ -104,9 +101,6 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Special settings (Only for rar, 7z and zip. Not for split files)" })
     String settings_multi();
-
-    @Default(lngs = { "en" }, values = { "CPU/IO Usage" })
-    String settings_cpupriority_v2();
 
     @Default(lngs = { "en" }, values = { "High(Fast extraction)" })
     String settings_cpupriority_high();

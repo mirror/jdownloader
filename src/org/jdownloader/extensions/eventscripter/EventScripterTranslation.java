@@ -57,12 +57,6 @@ public interface EventScripterTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "// ========= Properties for the EventTrigger '%s1'  =========" })
     String properties_for_eventtrigger(String label);
 
-    @Default(lngs = { "en" }, values = { "// DownloadLink" })
-    String downloadLink();
-
-    @Default(lngs = { "en" }, values = { "// Filepackage" })
-    String filepackage();
-
     @Default(lngs = { "en" }, values = { "// This Event will never be triggered." })
     String none_trigger();
 
@@ -98,9 +92,6 @@ public interface EventScripterTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "A new file has been created" })
     String ON_NEW_FILE();
-
-    @Default(lngs = { "en" }, values = { "/* ===== Classes ===== */" })
-    String classes();
 
     @Default(lngs = { "en" }, values = { "New Crawler Job" })
     String ON_NEW_CRAWLER_JOB();

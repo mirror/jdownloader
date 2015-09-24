@@ -297,9 +297,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Various Files" })
     String LinkCollector_addCrawledLink_variouspackage();
 
-    @Default(lngs = { "en" }, values = { "Unknown Files" })
-    String LinkCollector_addCrawledLink_unknownpackage();
-
     @Default(lngs = { "en" }, values = { "%s1" })
     String LinkCollector_archiv(String cleanFileName);
 
@@ -606,14 +603,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extract Mp3 Audio" })
     String GenericVariants_FLV_TO_MP3_();
 
-    @Default(lngs = { "en" }, values = { "Convert to Ogg Vorbis Audio" })
-    String GenericVariants_TO_OGG();
-
     @Default(lngs = { "en" }, values = { "to obtain video stream details, and to split audio from a video stream" })
     String plugin_for_host_reason_for_ffmpeg_demux();
-
-    @Default(lngs = { "en" }, values = { "to obtain video stream details, split audio from a video stream and convert it to the %s1 audio format" })
-    String plugin_for_host_reason_for_ffmpeg_demux_and_convert(String type);
 
     @Default(lngs = { "en" }, values = { "FFmpeg™ failed" })
     String PluginForHost_handle_ffmpeg_conversion_failed();
@@ -722,15 +713,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Delete Mode" })
     String GenericDeleteFromTableToolbarAction_getTranslationForDeleteMode();
-
-    @Default(lngs = { "en" }, values = { "Show in all Views" })
-    String SelectionBasedToolbarAction_getTranslationForShowInAllViews();
-
-    @Default(lngs = { "en" }, values = { "Show in Download view" })
-    String SelectionBasedToolbarAction_getTranslationForShowInDownloadView();
-
-    @Default(lngs = { "en" }, values = { "Show in Linkgrabber view" })
-    String SelectionBasedToolbarAction_getTranslationForShowInLinkgrabberView();
 
     @Default(lngs = { "en" }, values = { "Visible in Download Tab" })
     String ToolbarContext_getTranslationForVisibleInDownloadTab();
@@ -962,9 +944,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Hidden (Usermode)" })
     String DonateButtonState_CUSTOM_HIDDEN();
-
-    @Default(lngs = { "en", "de" }, values = { "Updates are ready for Installation. Do you want to run the update now?" })
-    String update_dialog_msg_x_updates_available();
 
     @Default(lngs = { "en" }, values = { "Google 2-Step Verification" })
     String Google_helper_2factor_sms_dialog_title();
