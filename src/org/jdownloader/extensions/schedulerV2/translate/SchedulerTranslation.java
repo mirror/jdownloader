@@ -45,12 +45,6 @@ public interface SchedulerTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Hourly" })
     String time_option_hourly();
 
-    @Default(lngs = { "en" }, values = { "Daily" })
-    String time_option_daily();
-
-    @Default(lngs = { "en" }, values = { "Weekly" })
-    String time_option_weekly();
-
     @Default(lngs = { "en" }, values = { "Choose interval" })
     String time_option_choose_interval();
 
@@ -95,9 +89,6 @@ public interface SchedulerTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Minute" })
     String addScheduleEntryDialog_minute();
-
-    @Default(lngs = { "en" }, values = { "Number" })
-    String addScheduleEntryDialog_number();
 
     @Default(lngs = { "en" }, values = { "Action & Parameters" })
     String addScheduleEntryDialog_actionParameters();

@@ -192,9 +192,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Change Package Name" })
     String gui_table_contextmenu_editpackagename();
 
-    @Default(lngs = { "en" }, values = { "Move into new Package" })
-    String gui_table_contextmenu_newpackage();
-
     @Default(lngs = { "en" }, values = { "Open File" })
     String gui_table_contextmenu_openfile();
 
@@ -503,9 +500,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Size" })
     String SizeColumn_SizeColumn();
-
-    @Default(lngs = { "en" }, values = { "Watch As You Download" })
-    String WatchAsYouDownloadColumn_WatchAsYouDownloadColumn();
 
     @Default(lngs = { "en" }, values = { "Bytes Left" })
     String RemainingColumn_RemainingColumn();
@@ -1162,9 +1156,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download from" })
     String LinkGrabberTableModel_initColumns_url();
 
-    @Default(lngs = { "en" }, values = { "Click to open Url in browser" })
-    String UrlColumn_UrlColumn_open_tt_();
-
     @Default(lngs = { "en" }, values = { "Move to new Package" })
     String MergeToPackageAction_MergeToPackageAction_();
 
@@ -1672,9 +1663,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "You added an Archive that has several parts. \r\nYou need at least one Link for each part. Some Links are missing." })
     String ConfirmAction_run_incomplete_archive_msg();
-
-    @Default(lngs = { "en" }, values = { "Continue anyway" })
-    String ConfirmAction_run_incomplete_archive_continue();
 
     @Default(lngs = { "en" }, values = { "Show details" })
     String ConfirmAction_run_incomplete_archive_details();
@@ -2357,18 +2345,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "You changed the %s1-option. You have to restart JDownloader to reinitialize this option." })
     String AdvancedConfigEntry_setValue_restart_warning(String key);
 
-    @Default(lngs = { "en" }, values = { "Enable/Disable all Captcha Exchange Services  (like 9kw, Captchabrotherhood, ...)" })
-    String CaptchaExchangeToogleAction_createTooltip_();
-
-    @Default(lngs = { "en" }, values = { "Enable/Disable JAC - the JDownloader Auto Captcha Solver" })
-    String JAntiCaptchaToogleAction_createTooltip_();
-
-    @Default(lngs = { "en" }, values = { "Enable/Disable Remote Anti Captcha (Like Mobile Apps, My.JDownloader,..." })
-    String RemoteCaptchaToogleAction_createTooltip_();
-
-    @Default(lngs = { "en" }, values = { "Enable/Disable Captcha Dialogs. (Check our SilentMode)" })
-    String CaptchaDialogsToogleAction_createTooltip_();
-
     @Default(lngs = { "en" }, values = { "Enable/Disable captcha handling" })
     String CaptchaMode_createTooltip_();
 
@@ -2377,18 +2353,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Auto Reconnect" })
     String AutoReconnectToggleAction_getNameWhenEnabled_();
-
-    @Default(lngs = { "en" }, values = { "Captcha Dialogs" })
-    String CaptchaDialogsToogleAction_getNameWhenDisabled_();
-
-    @Default(lngs = { "en" }, values = { "Captcha Dialogs" })
-    String CaptchaDialogsToogleAction_getNameWhenEnabled_();
-
-    @Default(lngs = { "en" }, values = { "Captcha Exchange Services" })
-    String CaptchaExchangeToogleAction_getNameWhenDisabled_();
-
-    @Default(lngs = { "en" }, values = { "Captcha Exchange Services" })
-    String CaptchaExchangeToogleAction_getNameWhenEnabled_();
 
     @Default(lngs = { "en" }, values = { "Clipboard Monitoring" })
     String ClipBoardToggleAction_getNameWhenDisabled_();
@@ -2401,18 +2365,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Premium Downloads" })
     String GlobalPremiumSwitchToggleAction_getNameWhenEnabled_();
-
-    @Default(lngs = { "en" }, values = { "Auto Captcha Recognition" })
-    String JAntiCaptchaToogleAction_getNameWhenDisabled_();
-
-    @Default(lngs = { "en" }, values = { "Auto Captcha Recognition" })
-    String JAntiCaptchaToogleAction_getNameWhenEnabled_();
-
-    @Default(lngs = { "en" }, values = { "Captchas via My.JDownloader" })
-    String RemoteCaptchaToogleAction_getNameWhenDisabled_();
-
-    @Default(lngs = { "en" }, values = { "Captchas via My.JDownloader" })
-    String RemoteCaptchaToogleAction_getNameWhenEnabled_();
 
     @Default(lngs = { "en" }, values = { "Silent Mode" })
     String SilentModeToggleAction_getNameWhenDisabled_();
@@ -2532,9 +2484,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Settings" })
     // String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_settings_();
-
-    @Default(lngs = { "en" }, values = { "Black-/Whitelist" })
-    String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_blackwhitelist_();
 
     @Default(lngs = { "en" }, values = { "Email" })
     String MyJDownloaderSettingsPanel_MyJDownloaderSettingsPanel_email_();
@@ -2795,17 +2744,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Many services ask you to enter a so called 'Captcha'. Usually, a captcha is a tiny image that contains a few letters. You have to type these letters to proove that you are human. JDownloader will try to solve these captchas without asking you. However, there are captchas that are too hard to read for JDownloader - thus JD will ask you." })
     String AntiCaptchaConfigPanel_onShow_description();
 
-    @Default(lngs = { "en" }, values = { "Captcha Solver Services" })
-    String AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_solver();
-
     @Default(lngs = { "en" }, values = { "Play Notify Sound for Captchas" })
     String AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_sounds();
 
     @Default(lngs = { "en" }, values = { "Download Captchas auto close after timeout" })
     String AntiCaptchaConfigPanel_AntiCaptchaConfigPanel_countdown_download();
-
-    @Default(lngs = { "en" }, values = { "Some captchas are too hard for JDownloader to auto recognize. There are a few Captcha Solver Services that help you to get these captchas solved anyways..." })
-    String AntiCaptchaConfigPanel_onShow_description_solver();
 
     @Default(lngs = { "en" }, values = { "The my.JDownloader.org Service tries to solve all captchas fully automated by sending them to our Captcha Solver Service" })
     String MyJDownloaderService_createPanel_description_2();
@@ -2921,9 +2864,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "No data" })
     String NinekwService_createPanel_btnUserDebug3_text();
 
-    @Default(lngs = { "en" }, values = { "List all Downloadhoster from JDownloader." })
-    String NinekwService_createPanel_btnUserDebug3_tooltiptext();
-
     @Default(lngs = { "en" }, values = { "Clear stats." })
     String NinekwService_createPanel_btnUserDebugStatReset_tooltiptext();
 
@@ -2984,8 +2924,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter your 9kw.eu API Key below. If you do not have an account yet, click the Link above and register for an account. It's free!" })
     String NinekwService_createPanel_logins_();
 
-    @Default(lngs = { "en" }, values = { "Enter your deathbycaptcha.eu username and password below. If you do not have an account yet, click the Link above and register for an account!" })
-    String dbcService_createPanel_logins_();
+    @Default(lngs = { "en" }, values = { "Enter your %s1 username and password below. If you do not have an account yet, click the Link above and register for an account!" })
+    String captchasolver_configpanel_my_account_description(String serviceName);
 
     @Default(lngs = { "en" }, values = { "Enable 9kw.eu Service" })
     String NinekwService_createPanel_enabled();
@@ -3222,9 +3162,6 @@ public interface GuiTranslation extends TranslateInterface {
     // @Default(lngs = { "en" }, values = { "Useragent" })
     // String NinekwService_createPanel_useragent();
 
-    @Default(lngs = { "en" }, values = { "Field for the user agent. More than 20 characters and the function is automatically activated." })
-    String NinekwService_createPanel_useragent_tooltiptext();
-
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = {
     // "A user agent may have an effect for captchas of Recaptcha and Solvemedia have to get any easier images." })
@@ -3262,12 +3199,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Password" })
     String captchabrotherhoodService_createPanel_password();
-
-    @Default(lngs = { "en" }, values = { "Blacklist" })
-    String captchabrotherhoodService_createPanel_blacklist();
-
-    @Default(lngs = { "en" }, values = { "Whitelist" })
-    String captchabrotherhoodService_createPanel_whitelist();
 
     @Default(lngs = { "en" }, values = { "Finding Links..." })
     String LinkCrawlerBubble_update_header();
@@ -3551,9 +3482,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Auto Extract Disable*" })
     String PackagePropertiesPanel_getListCellRendererComponent_autoextract_default_false_closed();
 
-    @Default(lngs = { "en" }, values = { "Mixed Priority" })
-    String PackagePropertiesPanel_getLabel_mixed_priority();
-
     @Default(lngs = { "en" }, values = { "File name:" })
     String propertiespanel_filename();
 
@@ -3667,9 +3595,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Filesize is not available/known yet" })
     String SizeColumn_getSizeString_zero_tt();
-
-    @Default(lngs = { "en" }, values = { "Captchas solved by the Captchabrotherhood Captcha Exchange System" })
-    String CaptchaBrotherhoodService_getDescription_tt_();
 
     @Default(lngs = { "en" }, values = { "Captcha solved by My.JDownloader Remote Applications (Webinterface,Mobile Apps,...)" })
     String MyJDownloaderService_getDescription_tt_();
@@ -3884,23 +3809,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Include Disabled Links" })
     String OverViewHeader_disabled();
 
-    @Default(lngs = { "en" }, values = { "Enable the Death By Captcha Service" })
-    String DeatchbyCaptcha_Service_createPanel_enabled();
+    @Default(lngs = { "en" }, values = { "Enable the %s1 Service" })
+    String captchasolver_configpanel_enabled(String name);
 
     @Default(lngs = { "en" }, values = { "Report incorrect Captchas" })
     String DeatchbyCaptcha_Service_createPanel_feedback();
 
     @Default(lngs = { "en" }, values = { "Blacklist" })
     String DeatchbyCaptcha_Service_createPanel_blacklist();
-
-    @Default(lngs = { "en" }, values = { "Whitelist" })
-    String DeatchbyCaptcha_Service_createPanel_whitelist();
-
-    @Default(lngs = { "en" }, values = { "Captchas solved by the deathbycaptcha.eu System" })
-    String DeatchbyCaptcha_Service_getDescription_tt_();
-
-    @Default(lngs = { "en" }, values = { "Account is banned!" })
-    String ServicePanel9kwTooltip_runInEDT_banned();
 
     @Default(lngs = { "en" }, values = { "Account ID" })
     String lit_accountid();
@@ -3910,6 +3826,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Captchas remaining" })
     String ServicePanelDBCTooltip_captcha_free();
+
+    @Default(lngs = { "en" }, values = { "Account is banned!" })
+    String ServicePanel9kwTooltip_runInEDT_banned();
 
     @Default(lngs = { "en" }, values = { "Abort Crawling" })
     String GenericDeleteFromLinkgrabberAction_cancelCrawler();
@@ -4236,11 +4155,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Prefer HTTPS Connections" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_https();
 
-    @Default(lngs = { "en" }, values = { "Quality: %s1" })
-    String YoutubeDashConfigPanel_MultiVariantBox_getLabel_(String qualityExtension);
-
     @Default(lngs = { "en" }, values = { "Best" })
     String YoutubeDashConfigPanel_getLabel_best();
+
+    @Default(lngs = { "en" }, values = { "Quality: %s1" })
+    String YoutubeDashConfigPanel_MultiVariantBox_getLabel_(String qualityExtension);
 
     @Default(lngs = { "en" }, values = { "Worst" })
     String YoutubeDashConfigPanel_getLabel_worst();
@@ -4436,6 +4355,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "SubRip Subtitle File" })
     String YoutubeVariant_name_SUBTITLES();
 
+    @Default(lngs = { "en" }, values = { "2160p MP4-Video" })
+    String YoutubeVariant_name_MP4_ORIGINAL();
+
     @Default(lngs = { "en" }, values = { "Best Quality Image" })
     String YoutubeVariant_name_IMAGE_MAX();
 
@@ -4570,15 +4492,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "2160p MP4-Video" })
     String YoutubeVariant_name_MP4_DASH_ORIGINAL_AAC128();
-
-    @Default(lngs = { "en" }, values = { "2160p MP4-Video" })
-    String YoutubeVariant_name_MP4_DASH_ORIGINAL_AAC256();
-
-    @Default(lngs = { "en" }, values = { "2160p MP4-Video" })
-    String YoutubeVariant_name_MP4_DASH_ORIGINAL_AAC48();
-
-    @Default(lngs = { "en" }, values = { "2160p MP4-Video" })
-    String YoutubeVariant_name_MP4_ORIGINAL();
 
     @Default(lngs = { "en" }, values = { "144p 3GP Video" })
     String YoutubeVariant_name_THREEGP_144();
@@ -4750,15 +4663,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "2160p" })
     String YoutubeVariant_filenametag_MP4_DASH_ORIGINAL_AAC128();
-
-    @Default(lngs = { "en" }, values = { "2160p" })
-    String YoutubeVariant_filenametag_MP4_DASH_ORIGINAL_AAC256();
-
-    @Default(lngs = { "en" }, values = { "2160p" })
-    String YoutubeVariant_filenametag_MP4_DASH_ORIGINAL_AAC48();
-
-    @Default(lngs = { "en" }, values = { "2160p" })
-    String YoutubeVariant_filenametag_MP4_ORIGINAL();
 
     @Default(lngs = { "en" }, values = { "144p" })
     String YoutubeVariant_filenametag_THREEGP_144();
@@ -4947,15 +4851,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Send" })
     String lit_send();
 
-    @Default(lngs = { "en" }, values = { "Report a Problem" })
-    String gui_menu_error_report();
-
-    @Default(lngs = { "en" }, values = { "Report a Download Problem" })
-    String ReportADownloadErrorAction_ReportADownloadErrorAction_label();
-
-    @Default(lngs = { "en" }, values = { "Report a Download Problem" })
-    String ReportADownloadErrorAction_ReportADownloadErrorAction_tooltip();
-
     @Default(lngs = { "en" }, values = { "Report a Download Problem" })
     String DownloadBugFinderWindow_getTitle();
 
@@ -4971,60 +4866,6 @@ public interface GuiTranslation extends TranslateInterface {
     // TODO Remove unused code found by UCDetector
     // @Default(lngs = { "en" }, values = { "Free OBOOM.com Pro Account" })
     // String special_deal_oboom();
-
-    @Default(lngs = { "en" }, values = { "Get a free OBOOM.com Pro Account" })
-    String specialdeals_oboom_dialog_title();
-
-    @Default(lngs = { "en" }, values = { "About that Deal!" })
-    String specialdeals_oboom_dialog_conditions();
-
-    @Default(lngs = { "en" }, values = { "We give away absolutely free OBOOM.com Pro Accounts (while supplies last). All accounts are valid for 2 days, so you can download with full premium conditions for 2 days. <br>You receive your access data after entering your eMail-address." })
-    String specialdeals_oboom_dialog_msg();
-
-    @Default(lngs = { "en" }, values = { "Enter your eMail-address" })
-    String specialdeals_oboom_dialog_email();
-
-    @Default(lngs = { "en" }, values = { "your eMail-address ..." })
-    String specialdeals_oboom_dialog_email_help();
-
-    @Default(lngs = { "en" }, values = { "OBOOM.com Terms of Service" })
-    String specialdeals_oboom_tocs();
-
-    @Default(lngs = { "en" }, values = { "Requesting your account..." })
-    String specialdeals_oboom_dialog_request_title();
-
-    @Default(lngs = { "en" }, values = { "Please wait..." })
-    String specialdeals_oboom_dialog_request_msg();
-
-    @Default(lngs = { "en" }, values = { "This eMail-address is already used for a valid Pro Account." })
-    String specialdeals_oboom_dialog_request_error_e_premium();
-
-    @Default(lngs = { "en" }, values = { "An unknown error occured. Please try again later or with a different eMail-address." })
-    String specialdeals_oboom_dialog_request_error_forbidden();
-
-    @Default(lngs = { "en" }, values = { "This eMail-address has been rejected by OBOOM.com!" })
-    String specialdeals_oboom_dialog_request_error_email_forbidden();
-
-    @Default(lngs = { "en" }, values = { "This eMail-address has already been used to get a free Pro Account." })
-    String specialdeals_oboom_dialog_request_error_used();
-
-    @Default(lngs = { "en" }, values = { "Congratulations!" })
-    String specialdeals_oboom_dialog_request_success_title();
-
-    @Default(lngs = { "en" }, values = { "Your new OBOOM.com Pro Account is ready to use. \r\nJust start downloading now!" })
-    String specialdeals_oboom_dialog_request_success_msg();
-
-    @Default(lngs = { "en" }, values = { "We upgraded your existing OBOOM.com Account.\r\nJust start downloading now!" })
-    String specialdeals_oboom_dialog_request_successupdate_msg();
-
-    @Default(lngs = { "en" }, values = { "We upgraded your existing OBOOM.com Account.\r\nPlease click continue to enter your password." })
-    String specialdeals_oboom_dialog_request_successupdate_input_msg();
-
-    @Default(lngs = { "en" }, values = { "The entered eMail-address does not exist!" })
-    String specialdeals_oboom_dialog_request_invalidEmail();
-
-    @Default(lngs = { "en" }, values = { "An unknown problem occured. Please try again later!" })
-    String specialdeals_oboom_dialog_request_disabled();
 
     @Default(lngs = { "en" }, values = { "Autoproxy(PAC) Script address" })
     String gui_column_proxytype_pac_tt();
@@ -5218,9 +5059,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Moving File" })
     String PluginForHost_copyMove_progressdialog_title();
 
-    @Default(lngs = { "en" }, values = { "Move downloaded data from \r\n%s1\r\nto\r\n%s2" })
-    String PluginForHost_copyMove_progressdialog_msg(String absolutePath, String absolutePath2);
-
     @Default(lngs = { "en" }, values = { "Move from" })
     String PLUGINFORHOST_MOVECOPY_DIALOG_OLD();
 
@@ -5260,9 +5098,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Convert to..." })
     String PluginForHost_extendLinkgrabberContextMenu_generic_convert();
 
-    @Default(lngs = { "en" }, values = { "Add additional 'Convert to' variant..." })
-    String PluginForHost_extendLinkgrabberContextMenu_generic_convert_add();
-
     @Default(lngs = { "en" }, values = { "Rename %s1 link(s)" })
     String RenameDialog_RenameDialog(int size);
 
@@ -5286,15 +5121,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Copy download address to Clipboard (%s1)" })
     String UrlColumn_onDoubleClick_object_copy(String url);
-
-    @Default(lngs = { "en" }, values = { "Open download address in browser (%s1)" })
-    String UrlColumn_onDoubleClick_object_open(String url);
-
-    @Default(lngs = { "en" }, values = { "Copy origin address to Clipboard (%s1)" })
-    String UrlColumn_onDoubleClick_object_copy_origin(String url);
-
-    @Default(lngs = { "en" }, values = { "Open origin address in browser (%s1)" })
-    String UrlColumn_onDoubleClick_object_open_origin(String url);
 
     @Default(lngs = { "en" }, values = { "Installation Directory:" })
     String jd_gui_swing_components_AboutDialog_installdir();
@@ -5356,32 +5182,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Add online & offline links to the Downloadlist" })
     String ConfirmLinksContextAction_getListCellRendererComponent_INCLUDE_OFFLINE();
 
-    @Default(lngs = { "en" }, values = { "Move already downloaded files" })
-    String MergeToPackageAction_getTranslationForCustomizer_moveDownloadedFilesEnabled();
-
     @Default(lngs = { "en" }, values = { "Export all Menu Settings" })
     String ExportMenuItemsAction_ExportMenuItemsAction();
 
     @Default(lngs = { "en" }, values = { "Import all Menu Settings" })
     String ImportMenuItemsAction();
-
-    @Default(lngs = { "en" }, values = { "2160p 60fps MP4-Video" })
-    String YoutubeVariant_name_MP4_DASH_VIDEO_2160_H264_FPS_60_AAC128();
-
-    @Default(lngs = { "en" }, values = { "2160p 60fps" })
-    String YoutubeVariant_filenametag_MP4_DASH_VIDEO_2160_H264_FPS_60_AAC48();
-
-    @Default(lngs = { "en" }, values = { "2160p 60fps MP4-Video" })
-    String YoutubeVariant_name_MP4_DASH_VIDEO_2160_H264_FPS_60_AAC48();
-
-    @Default(lngs = { "en" }, values = { "2160p 60fps" })
-    String YoutubeVariant_filenametag_MP4_DASH_VIDEO_2160_H264_FPS_60_AAC256();
-
-    @Default(lngs = { "en" }, values = { "2160p 60fps MP4-Video" })
-    String YoutubeVariant_name_MP4_DASH_VIDEO_2160_H264_FPS_60_AAC256();
-
-    @Default(lngs = { "en" }, values = { "2160p 60fps" })
-    String YoutubeVariant_filenametag_MP4_DASH_VIDEO_2160_H264_FPS_60_AAC128();
 
     @Default(lngs = { "en" }, values = { "1080p 60fps MP4-Video" })
     String YoutubeVariant_name_MP4_DASH_VIDEO_1080_H264_FPS_60_AAC128();
@@ -5455,15 +5260,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "720p 60fps" })
     String YoutubeVariant_filenametag_WEBM_720_60FPS();
 
-    @Default(lngs = { "en" }, values = { "Internal Captcha Solver (JAntiCaptcha)" })
-    String JacToolbarToogleAction_getNameWhenDisabled_();
-
-    @Default(lngs = { "en" }, values = { "Internal Captcha Solver (JAntiCaptcha)" })
-    String JacToolbarToogleAction_getNameWhenEnabled_();
-
-    @Default(lngs = { "en" }, values = { "Enable/Disable the internal Captcha Solver (JAntiCaptcha)" })
-    String JacToolbarToogleAction_createTooltip_();
-
     @Default(lngs = { "en" }, values = { "There are several ways to solve a captcha in JDownloader. You can change the general order/priority of these \"Solvers\" and the time a solver waits for its predecessors.\r\nExample:\r\nBy default, the manual Dialog solvers wait upto 60 seconds for all automated solvers." })
     String CaptchaConfigPanel_order_description();
 
@@ -5512,9 +5308,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Semi-automatic Captcha Solving" })
     String CBSolver_getName_();
 
-    @Default(lngs = { "en" }, values = { "Semi-automatic Captcha Solving" })
-    String DeathByCaptchaSolver_getName_();
-
     @Default(lngs = { "en" }, values = { "My.JDownloader.org" })
     String CaptchaMyJDSolver_gettypeName();
 
@@ -5533,29 +5326,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Wait for" })
     String SolverOrderTableModel_initColumns_startafter();
 
-    @Default(lngs = { "en" }, values = { "The %s1-Solver will start after %s2 at the latest." })
-    String SolverOrderTableModel_getTooltipText_object_(String serviceName, String formatMilliSeconds);
-
     @Default(lngs = { "en" }, values = { "Settings" })
     String lit_settings();
 
     @Default(lngs = { "en" }, values = { "Timeouts" })
     String SolverOrderTableModel_initColumns_timeout();
-
-    @Default(lngs = { "en" }, values = { "9kw.eu" })
-    String Captcha9kwSolverClick_gettypeName_();
-
-    @Default(lngs = { "en" }, values = { "Supported Captcha Types" })
-    String SolverOrderTableModel_initColumns_captcha_types();
-
-    @Default(lngs = { "en" }, values = { "all" })
-    String solver_types_all();
-
-    @Default(lngs = { "en" }, values = { "text" })
-    String solver_types_text();
-
-    @Default(lngs = { "en" }, values = { "click(mouse)" })
-    String solver_types_click();
 
     @Default(lngs = { "en" }, values = { "Timing Options for %s1 via %s2" })
     String SolverTimingDialog(String typeName, String service);
@@ -5689,14 +5464,8 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "finished package" })
     String lit_finished_package();
 
-    @Default(lngs = { "en" }, values = { "Semi-automatic Captcha Solving" })
-    String ImageTyperzSolver_getName_();
-
     @Default(lngs = { "en" }, values = { "imagetyperz.com" })
     String ImageTyperzSolver_gettypeName_();
-
-    @Default(lngs = { "en" }, values = { "Solving..." })
-    String ImageTyperzSolver_solveBasicCaptchaChallenge_solving();
 
     @Default(lngs = { "en" }, values = { "↑ At the top" })
     String setOverviewPositions_north();
@@ -5794,9 +5563,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Donate now" })
     String DonationDialog_ok();
 
-    @Default(lngs = { "en" }, values = { "Donate now, support the development of JDownloader and make Botty happy :)" })
-    String DonationDialog_layoutDialogContent_donate_now();
-
     @Default(lngs = { "en" }, values = { "Amount" })
     String DonationDialog_layoutDialogContent_donate_amount();
 
@@ -5827,9 +5593,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "If you are a satisfied user of JDownloader, please think about contributing to this project. JDownloader is the result of daily hard work since more than 8 years. We need your help to keep it free of charge, free of advertising, free of installer bundles and to improve JDownloader even more. Moreover, donating is a good way to tell us what modules we should focus our work on." })
     String DonationDialog_layoutDialogContent_top_text();
 
-    @Default(lngs = { "en" }, values = { "Please choose an amount between 1 and 1000!" })
-    String DonationDialog_setReturnmask_range();
-
     @Default(lngs = { "en" }, values = { "Thank you for contributing!" })
     String DonationDialog_run_thanks_();
 
@@ -5844,12 +5607,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "More..." })
     String DonationDialog_layoutDialogContent_more();
-
-    @Default(lngs = { "en" }, values = { "Credit Card" })
-    String DonationDialog_popup_creditcard();
-
-    @Default(lngs = { "en" }, values = { "PaysafeCard" })
-    String DonationDialog_popup_paysafe();
 
     @Default(lngs = { "en" }, values = { "Mobile Pay (e.g. SMS)" })
     String DonationDialog_popup_mobile();
@@ -5866,9 +5623,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Amazon Pay" })
     String DonationDialog_popup_amazon();
 
-    @Default(lngs = { "en" }, values = { "Other" })
-    String DonationDialog_popup_other();
-
     @Default(lngs = { "en" }, values = { "This payment gateway is not available yet. We will probably add it soon." })
     String DonationDialog_NotImplementedProvider_actionPerformed_();
 
@@ -5877,9 +5631,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Please choose an amount between %s1 and %s2" })
     String DonationDialog_setReturnmask_range2(double amtMin, double amtMax);
-
-    @Default(lngs = { "en" }, values = { "Giro Pay" })
-    String DonationDialog_popup_giropay();
 
     @Default(lngs = { "en" }, values = { "We need your help!" })
     String StatsManager_StatsManager_advanced_survey_title();
@@ -5953,9 +5704,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "This service is not available right now.\r\nPlease try again later." })
     String LiveHeaderDetectionWizard_sendRouter_na();
 
-    @Default(lngs = { "en" }, values = { "Show Raw Script" })
-    String LiveHeaderScriptConfirmUploadDialog_show_script();
-
     @Default(lngs = { "en" }, values = { "Please wait..." })
     String lit_please_wait();
 
@@ -6028,9 +5776,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Start CRC task!" })
     String gui_table_contextmenu_runchecksum();
 
-    @Default(lngs = { "en" }, values = { "This will validate data on storage device against Checksum column reference." })
-    String gui_table_contextmnu_runcheksum_explaination();
-
     @Default(lngs = { "en" }, values = { "%s1 (click to change)" })
     String change_language(String set);
 
@@ -6054,9 +5799,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "later" })
     String lit_later();
-
-    @Default(lngs = { "en" }, values = { "Semi-automatic Captcha Solving" })
-    String CheapCaptchaSolver_getName_();
 
     @Default(lngs = { "en" }, values = { "cheapcaptcha.com" })
     String CheapCaptchaSolver_gettypeName_();
@@ -6168,5 +5910,17 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "New payment options available!" })
     String donation_news_title();
+
+    @Default(lngs = { "en" }, values = { "EndCaptcha.com" })
+    String EndCaptchaSolver_gettypeName_();
+
+    @Default(lngs = { "en" }, values = { "Register for a paid captcha service. In return, these services will solve almost all your captchas while you are not in front of your computer. Check out the service's website for more details." })
+    String AntiCaptchaConfigPanel_onShow_description_paid_service();
+
+    @Default(lngs = { "en" }, values = { "(PAID) Fully automated remote Captcha Solving" })
+    String CaptchaSolver_Type_paid_online();
+
+    @Default(lngs = { "en" }, values = { "2160p" })
+    String YoutubeVariant_filenametag_MP4_ORIGINAL();
 
 }
