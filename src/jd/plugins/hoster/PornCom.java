@@ -113,6 +113,15 @@ public class PornCom extends antiDDoSForHost {
             DLLINK = brc.getRegex("\"Low\"(,file)?:\"(http:.*?)\"").getMatch(1);
             if (DLLINK == null) {
                 DLLINK = brc.getRegex("\"trailer\"(file)?:\"(http:.*?)\"").getMatch(1);
+                if (DLLINK == null) {
+                    DLLINK = brc.getRegex("480p\",url:\"(http:.*?)\"").getMatch(0);
+                    if (DLLINK == null) {
+                        DLLINK = brc.getRegex("360p\",url:\"(http:.*?)\"").getMatch(0);
+                        if (DLLINK == null) {
+                            DLLINK = brc.getRegex("240p\",url:\"(http:.*?)\"").getMatch(0);
+                        }
+                    }
+                }
             }
         }
         if (DLLINK != null) {
