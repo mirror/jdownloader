@@ -1,6 +1,8 @@
 package org.jdownloader.captcha.v2.solver.solver9kw;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -12,6 +14,8 @@ import jd.nutils.encoding.Encoding;
 
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByLink;
+import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.ChallengeResponseValidation;
@@ -22,7 +26,9 @@ import org.jdownloader.captcha.v2.solver.CESChallengeSolver;
 import org.jdownloader.captcha.v2.solver.CESSolverJob;
 import org.jdownloader.captcha.v2.solver.jac.SolverException;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> implements ChallengeResponseValidation {
 
@@ -95,13 +101,13 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
         boolean confirm = config.ismouseconfirm();
 
         if (!config.getApiKey().matches("^[a-zA-Z0-9]+$")) {
-            jd.gui.UserIO.getInstance().requestMessageDialog("API Key is not correct!\nOnly a-z, A-Z and 0-9\n");
+            if (org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime5.get() == 0 || ((System.currentTimeMillis() / 1000) - org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime5.get()) > 30) {
+                org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime5.set((System.currentTimeMillis() / 1000));
+                jd.gui.UserIO.getInstance().requestMessageDialog(_GUI._.NinekwService_createPanel_error9kwtitle(), _GUI._.NinekwService_createPanel_errortext_wrongapikey1() + "\n" + _GUI._.NinekwService_createPanel_errortext_wrongapikey2() + "\n");
+            }
             return;
         }
 
-        // setdebug(solverJob, "Start Captcha to 9kw.eu. Timeout: " +
-        // JsonConfig.create(CaptchaSettings.class).getCaptchaDialogJAntiCaptchaTimeout() + " - getTypeID: " +
-        // captchaChallenge.getTypeID());
         if (config.getwhitelistcheck()) {
             if (config.getwhitelist() != null) {
                 if (config.getwhitelist().length() > 5) {
@@ -176,11 +182,26 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
             }
         }
 
+        if (org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().captcha_map9kw.containsKey(captchaChallenge.getDownloadLink())) {
+            if (org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().captcha_map9kw.get(captchaChallenge.getDownloadLink()) > config.getmaxcaptchaperdl()) {
+                setdebug(solverJob, "Too many captchas for one link. The link is on the local blacklist.\nLink: " + captchaChallenge.getDownloadLink().getPluginPatternMatcher() + "\n");
+                CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByLink(captchaChallenge.getDownloadLink()));
+                return;
+            } else {
+                org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().captcha_map9kw.put(captchaChallenge.getDownloadLink(), org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().captcha_map9kw.get(captchaChallenge.getDownloadLink()) + 1);
+            }
+        } else {
+            org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().captcha_map9kw.put(captchaChallenge.getDownloadLink(), 1);
+        }
+
         boolean badfeedbackstemp = config.getbadfeedbacks();
         if (badfeedbackstemp == true && config.isfeedback() == true) {
             if (click9kw_counterNotOK.get() > 10 && click9kw_counterSend.get() > 10 && click9kw_counterSolved.get() > 10 && click9kw_counter.get() > 10 || click9kw_counterOK.get() < 10 && click9kw_counterNotOK.get() > 10 && click9kw_counterSolved.get() > 10 && click9kw_counter.get() > 10) {
                 if ((click9kw_counterNotOK.get() / click9kw_counter.get() * 100) > 30 || click9kw_counterOK.get() < 10 && click9kw_counterNotOK.get() > 10 && click9kw_counterSolved.get() > 10 && click9kw_counter.get() > 10) {
-                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "Too many bad feedbacks like 30% captchas with NotOK. Please check it and then you can reset the stats.\n\n" + "OK: " + click9kw_counterOK.get() + "\nNotOK: " + click9kw_counterNotOK.get() + "\nSolved: " + click9kw_counterSolved.get() + "\nAll: " + click9kw_counter.get());
+                    if (org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime1.get() == 0 || ((System.currentTimeMillis() / 1000) - org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime1.get()) > 300) {
+                        org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime1.set((System.currentTimeMillis() / 1000));
+                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI._.NinekwService_createPanel_error9kwtitle(), _GUI._.NinekwService_createPanel_notification_badfeedback_errortext() + "\n\n" + "OK: " + click9kw_counterOK.get() + "\nNotOK: " + click9kw_counterNotOK.get() + "\nSolved: " + click9kw_counterSolved.get() + "\nAll: " + click9kw_counter.get());
+                    }
                     return;
                 }
             }
@@ -190,7 +211,10 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
         if (badnofeedbackstemp == true && config.isfeedback() == true) {
             if (click9kw_counterSend.get() > 10 && click9kw_counter.get() > 10) {
                 if (((click9kw_counterOK.get() + click9kw_counterNotOK.get() + click9kw_counterInterrupted.get()) / click9kw_counter.get() * 100) < 50) {
-                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "Too many captchas without feedbacks like OK or NotOK. Please check it and then you can reset the stats.\n\n" + "OK: " + click9kw_counterOK.get() + "\nNotOK: " + click9kw_counterNotOK.get() + "\nSolved: " + click9kw_counterSolved.get() + "\nAll: " + click9kw_counter.get());
+                    if (org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime2.get() == 0 || ((System.currentTimeMillis() / 1000) - org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime2.get()) > 300) {
+                        org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime2.set((System.currentTimeMillis() / 1000));
+                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI._.NinekwService_createPanel_error9kwtitle(), _GUI._.NinekwService_createPanel_notification_badfeedback_errortext() + "\n\n" + "OK: " + click9kw_counterOK.get() + "\nNotOK: " + click9kw_counterNotOK.get() + "\nSolved: " + click9kw_counterSolved.get() + "\nAll: " + click9kw_counter.get());
+                    }
                     // return;
                 }
             }
@@ -199,8 +223,17 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
         boolean getbadtimeouttemp = config.getbadtimeout();
         if (getbadtimeouttemp == true) {
             if (click9kw_counterSend.get() > 5 && click9kw_counter.get() > 5 && click9kw_counterSolved.get() > 5) {
-                if ((config.getDefaultTimeout() / 1000) < 90 || (config.getDefaultTimeout() / 1000) < (config.getCaptchaOther9kwTimeout() / 1000)) {
-                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "Your max. timeout is really lower than 150s or the othertimeout is higher than your default timeout. Please change it and then try it again.\n");
+                if ((config.getDefaultTimeout() / 1000) < 90) {
+                    if (org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime3.get() == 0 || ((System.currentTimeMillis() / 1000) - org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime3.get()) > 300) {
+                        org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime3.set((System.currentTimeMillis() / 1000));
+                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI._.NinekwService_createPanel_error9kwtitle(), _GUI._.NinekwService_createPanel_notification_badtimeout_errortext() + "\n");
+                    }
+                    return;
+                } else if ((config.getDefaultTimeout() / 1000) < (config.getCaptchaOther9kwTimeout() / 1000)) {
+                    if (org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime3.get() == 0 || ((System.currentTimeMillis() / 1000) - org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime3.get()) > 300) {
+                        org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime3.set((System.currentTimeMillis() / 1000));
+                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI._.NinekwService_createPanel_error9kwtitle(), _GUI._.NinekwService_createPanel_notification_baderrorsanduploads_errortext() + "\n");
+                    }
                     return;
                 }
             }
@@ -210,7 +243,10 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
         if (getbaderrorsanduploadstemp == true) {
             if (click9kw_counterSendError.get() > 10 || click9kw_counterInterrupted.get() > 10) {
                 if (((click9kw_counterSendError.get() + click9kw_counterInterrupted.get()) / click9kw_counter.get() * 100) > 50 || click9kw_counterOK.get() < 10 && click9kw_counterNotOK.get() > 100) {
-                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "You have many send errors or interrupted captchas. Please check it.\n");
+                    if (org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime4.get() == 0 || ((System.currentTimeMillis() / 1000) - org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime4.get()) > 300) {
+                        org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime4.set((System.currentTimeMillis() / 1000));
+                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI._.NinekwService_createPanel_error9kwtitle(), _GUI._.NinekwService_createPanel_notification_baderrorsanduploads_errortext() + "\n");
+                    }
                 }
             }
         }
@@ -283,7 +319,7 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
 
         setdebug(solverJob, "Upload Captcha to 9kw.eu. GetTypeID: " + captchaChallenge.getTypeID() + " - Plugin: " + captchaChallenge.getPlugin());
         try {
-            solverJob.showBubble(this);
+            solverJob.showBubble(this, getBubbleTimeout(captchaChallenge));
             click9kw_counter.incrementAndGet();
             solverJob.setStatus(SolverStatus.UPLOADING);
             byte[] data = IO.readFile(captchaChallenge.getImageFile());
@@ -305,7 +341,15 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
             setdebug(solverJob, "Send Captcha to 9kw.eu. - " + getAPIROOT() + " Answer: " + ret);
             if (!ret.startsWith("OK-")) {
                 if (ret.contains("0011 Guthaben ist nicht ausreichend") && config.getlowcredits()) {
-                    jd.gui.UserIO.getInstance().requestMessageDialog("9kw error ", "0011 Not enough credits.\n" + ret);
+                    if (org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime5.get() == 0 || ((System.currentTimeMillis() / 1000) - org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime5.get()) > 30) {
+                        org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime5.set((System.currentTimeMillis() / 1000));
+                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI._.NinekwService_createPanel_error9kwtitle(), _GUI._.NinekwService_createPanel_errortext_nocredits() + "\n" + ret);
+                    }
+                } else if (ret.contains("0008 Kein Captcha gefunden")) {
+                    if (org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime5.get() == 0 || ((System.currentTimeMillis() / 1000) - org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime5.get()) > 30) {
+                        org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver.getInstance().counterdialogtime5.set((System.currentTimeMillis() / 1000));
+                        jd.gui.UserIO.getInstance().requestMessageDialog(_GUI._.NinekwService_createPanel_error9kwtitle(), _GUI._.NinekwService_createPanel_errortext_nocaptcha() + "\n" + ret);
+                    }
                 }
                 click9kw_counterSendError.incrementAndGet();
                 throw new SolverException(ret);
@@ -351,6 +395,16 @@ public class Captcha9kwSolverClick extends CESChallengeSolver<ClickedPoint> impl
 
         }
 
+    }
+
+    private int getBubbleTimeout(ClickCaptchaChallenge challenge) {
+        HashMap<String, Integer> map = config.getBubbleTimeoutByHostMap();
+
+        Integer ret = map.get(challenge.getHost().toLowerCase(Locale.ENGLISH));
+        if (ret == null || ret < 0) {
+            ret = CFG_CAPTCHA.CFG.getCaptchaExchangeChanceToSkipBubbleTimeout();
+        }
+        return ret;
     }
 
     @Override

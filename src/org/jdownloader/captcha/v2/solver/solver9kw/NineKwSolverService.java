@@ -40,7 +40,7 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
 
     /**
      * get the only existing instance of NineKwSolverService. This is a singleton
-     * 
+     *
      * @return
      */
     public static NineKwSolverService getInstance() {
@@ -53,7 +53,7 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
             services.add(new ServiceCollection<Captcha9kwSolver>() {
 
                 /**
-                 * 
+                 *
                  */
                 private static final long serialVersionUID = 5569965026755271172L;
 
@@ -163,9 +163,10 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
         }
     }
 
-    private Captcha9kwSettings    config;
-    private Captcha9kwSolver      textSolver;
-    private Captcha9kwSolverClick clickSolver;
+    private Captcha9kwSettings     config;
+    private Captcha9kwSolver       textSolver;
+    private Captcha9kwSolverClick  clickSolver;
+    private Captcha9kwSolverPuzzle puzzleSolver;
 
     /**
      * Create a new instance of NineKwSolverService. This is a singleton class. Access the only existing instance by using
@@ -287,6 +288,10 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
 
     public void setClickSolver(Captcha9kwSolverClick captcha9kwSolverClick) {
         this.clickSolver = captcha9kwSolverClick;
+    }
+
+    public void setPuzzleSolver(Captcha9kwSolverPuzzle captcha9kwSolverPuzzle) {
+        this.puzzleSolver = captcha9kwSolverPuzzle;
     }
 
 }
