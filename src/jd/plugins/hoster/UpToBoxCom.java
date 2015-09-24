@@ -834,16 +834,24 @@ public class UpToBoxCom extends antiDDoSForHost {
                 getPage(link.getDownloadURL());
                 dllink = getDllink();
                 if (dllink == null) {
-                    checkErrors(link, true, passCode);
-                    Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
                     if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
+                        Form dlform = br.getFormbyProperty("name", "F1");
+                        if (dlform == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                         passCode = handlePassword(passCode, dlform, link);
+                        submitForm(dlform);
+                        dllink = getDllink();
+                    } else {
+                        Form dlform = br.getFormbyProperty("name", "F1");
+                        if (dlform == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        submitForm(dlform);
+                        dllink = getDllink();
                     }
-                    submitForm(dlform);
-                    dllink = getDllink();
+                }
+                if (dllink == null) {
                     checkErrors(link, true, passCode);
                 }
             }
