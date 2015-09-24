@@ -40,7 +40,7 @@ public class EroTikCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        if (parameter.matches("http://www\\.ero-tik\\.com/(contact_us|login)\\.html")) {
+        if (parameter.matches("http://www\\.ero-tik\\.com/(contact_us|login|memberlist|profile|register)\\.html")) {
             logger.info("Unsupported/invalid link: " + parameter);
             return decryptedLinks;
         }
@@ -109,6 +109,9 @@ public class EroTikCom extends PluginForDecrypt {
         }
         logger.info("externID: " + externID);
         DownloadLink dl = createDownloadlink(externID);
+        if (externID.contains("validatehash.php?hashkey=")) {
+            externID = externID.replace("validatehash.php?hashkey=", "genembedv2.php?ref=");
+        }
         dl.setContentUrl(externID);
         dl.setFinalFileName(filename + "." + ".mp4");
         decryptedLinks.add(dl);
