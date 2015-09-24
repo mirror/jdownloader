@@ -590,9 +590,13 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
                     if (isEnabled) {
                         linkInfo.bytesTotal = view.getBytesTotal();
                         linkInfo.bytesDone = view.getBytesLoaded();
-                    } else if (linkInfo.bytesTotal < view.getBytesTotal() || linkInfo.bytesDone < view.getBytesLoaded()) {
-                        linkInfo.bytesTotal = view.getBytesTotal();
-                        linkInfo.bytesDone = view.getBytesLoaded();
+                    } else {
+                        if (linkInfo.bytesTotal < view.getBytesTotal()) {
+                            linkInfo.bytesTotal = view.getBytesTotal();
+                        }
+                        if (linkInfo.bytesDone < view.getBytesLoaded()) {
+                            linkInfo.bytesDone = view.getBytesLoaded();
+                        }
                     }
                 }
             }
