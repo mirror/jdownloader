@@ -23,11 +23,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,6 +46,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitch.tv" }, urls = { "http://twitchdecrypted\\.tv/\\d+" }, flags = { 2 })
 public class JustinTv extends PluginForHost {
 
@@ -70,16 +70,16 @@ public class JustinTv extends PluginForHost {
         return -1;
     }
 
-    private final String        FASTLINKCHECK     = "FASTLINKCHECK";
-    private final String        NOCHUNKS          = "NOCHUNKS";
-    private final static String CUSTOM_DATE_2     = "CUSTOM_DATE_2";
-    private final static String CUSTOM_FILENAME_3 = "CUSTOM_FILENAME_3";
-    private final static String CUSTOM_FILENAME_4 = "CUSTOM_FILENAME_4";
-    private final static String PARTNUMBERFORMAT  = "PARTNUMBERFORMAT";
+    private final String        FASTLINKCHECK             = "FASTLINKCHECK";
+    private final String        NOCHUNKS                  = "NOCHUNKS";
+    private final static String CUSTOM_DATE_2             = "CUSTOM_DATE_2";
+    private final static String CUSTOM_FILENAME_3         = "CUSTOM_FILENAME_3";
+    private final static String CUSTOM_FILENAME_4         = "CUSTOM_FILENAME_4";
+    private final static String PARTNUMBERFORMAT          = "PARTNUMBERFORMAT";
 
-    private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
+    private static final int    ACCOUNT_FREE_MAXDOWNLOADS = 20;
 
-    private String dllink = null;
+    private String              dllink                    = null;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
@@ -333,7 +333,7 @@ public class JustinTv extends PluginForHost {
                 }
                 // NOTE: form can contain recaptchav2, even though js is loaded on the auth, the div isn't present only in new user iframe
                 // <div class="g-recaptcha" data-sitekey="6Ld65QcTAAAAAMBbAE8dkJq4Wi4CsJy7flvKhYqX"></div>
-                f.put("login", Encoding.urlEncode(account.getUser()));
+                f.put("username", Encoding.urlEncode(account.getUser()));
                 f.put("password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(f);
                 if (br.getCookie(MAINPAGE, "persistent") == null) {

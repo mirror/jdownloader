@@ -19,9 +19,7 @@ package jd.plugins.decrypter;
 import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 
 import jd.PluginWrapper;
@@ -29,9 +27,10 @@ import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.nativeintegration.LocalBrowser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -42,18 +41,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?(ncrypt\\.in/(folder|link)\\-.{3,}|urlcrypt\\.com/open\\-[A-Za-z0-9]+)" }, flags = { 0 })
 public class NCryptIn extends PluginForDecrypt {
 
-    private static final String            RECAPTCHA      = "recaptcha/api/challenge";
-    private static final String            ANICAPTCHA     = "/temp/anicaptcha/\\d+\\.gif";
-    private static final String            CIRCLECAPTCHA  = "\"/classes/captcha/circlecaptcha\\.php\"";
-    private static final String            PASSWORDTEXT   = "password";
-    private static final String            PASSWORDFAILED = "<h2><span class=\"arrow\">Gesch\\&uuml;tzter Ordner</span></h2>";
-    private final HashMap<String, Boolean> CNL_URL_MAP    = new HashMap<String, Boolean>();
-    private String                         aBrowser       = "";
+    private static final String RECAPTCHA      = "recaptcha/api/challenge";
+    private static final String ANICAPTCHA     = "/temp/anicaptcha/\\d+\\.gif";
+    private static final String CIRCLECAPTCHA  = "\"/classes/captcha/circlecaptcha\\.php\"";
+    private static final String PASSWORDTEXT   = "password";
+    private static final String PASSWORDFAILED = "<h2><span class=\"arrow\">Gesch\\&uuml;tzter Ordner</span></h2>";
+    private String              aBrowser       = "";
 
     public NCryptIn(final PluginWrapper wrapper) {
         super(wrapper);
@@ -290,7 +287,7 @@ public class NCryptIn extends PluginForDecrypt {
                     }
                 }
             }
-            if (decryptedLinks == null || (containerIDs == null || containerIDs.length == 0)) {
+            if (decryptedLinks.size() == 0 || (containerIDs == null || containerIDs.length == 0)) {
                 // Webprotection decryption
                 logger.info("ContainerID is null, trying webdecryption...");
                 br.setFollowRedirects(false);
@@ -298,9 +295,16 @@ public class NCryptIn extends PluginForDecrypt {
                 if (links == null || links.length == 0) {
                     logger.info("No links found, let's see if CNL2 is available!");
                     if (br.containsHTML("cnl2")) {
-                        LocalBrowser.openDefaultURL(new URL(parameter));
-                        CNL_URL_MAP.put(parameter, Boolean.TRUE);
-                        throw new DecrypterException(JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
+                        final Form cnl2 = br.getFormbyActionRegex("addcrypted2");
+                        if (cnl2 != null) {
+                            final InputField crypted = cnl2.getInputField("crypted");
+                            final InputField jk = cnl2.getInputField("jk");
+                            final InputField k = cnl2.getInputField("k");
+                            final InputField source = cnl2.getInputField("source");
+                            final DownloadLink dummyCNL = DummyCNL.createDummyCNL(getValue(crypted), getValue(jk), getValue(k), getValue(source));
+                            decryptedLinks.add(dummyCNL);
+                            return decryptedLinks;
+                        }
                     }
                     logger.warning("Didn't find anything to decrypt, stopping...");
                     return null;
@@ -329,6 +333,13 @@ public class NCryptIn extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
+    }
+
+    public static String getValue(final InputField inputField) {
+        if (inputField != null) {
+            return Encoding.urlDecode(inputField.getValue(), false);
+        }
+        return null;
     }
 
     private String decryptSingle(final String dcrypt) throws IOException {

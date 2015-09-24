@@ -5911,6 +5911,12 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "New payment options available!" })
     String donation_news_title();
 
+    @Default(lngs = { "en" }, values = { "JDownloader 1 import?" })
+    String jd1_import_title();
+
+    @Default(lngs = { "en" }, values = { "Import %s1 packages and %s2 links from JDownloader 1 to" })
+    String jd1_import_message(int numberOfPackages, int numberOfLinks);
+
     @Default(lngs = { "en" }, values = { "EndCaptcha.com" })
     String EndCaptchaSolver_gettypeName_();
 

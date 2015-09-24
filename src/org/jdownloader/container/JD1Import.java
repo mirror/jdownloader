@@ -1,5 +1,6 @@
 package org.jdownloader.container;
 
+import java.awt.Dialog.ModalityType;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
@@ -12,6 +13,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import jd.config.DatabaseConnector;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.PackageInfo;
 import jd.gui.UserIO;
@@ -22,9 +24,15 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginsC;
 import jd.utils.locale.JDL;
 
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.net.HexInputStream;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
 
 public class JD1Import extends PluginsC {
 
@@ -39,7 +47,9 @@ public class JD1Import extends PluginsC {
         FileInputStream fis = null;
         try {
             List<FilePackage> packages = null;
+            final boolean jd1Database;
             if (jdcFile.getName().endsWith(".jdc")) {
+                jd1Database = false;
                 fis = new FileInputStream(jdcFile);
                 String hexString = (JDHash.getMD5(UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, JDL.L("jd.gui.swing.jdgui.menu.actions.BackupLinkListAction.password", "Enter Encryption Password"), "jddefault")));
                 if (StringUtils.isEmpty(hexString)) {
@@ -61,17 +71,41 @@ public class JD1Import extends PluginsC {
                 }
                 packages = (ArrayList<FilePackage>) in.readObject();
             } else {
+                jd1Database = true;
                 packages = (List<FilePackage>) new DatabaseConnector(jdcFile.getAbsolutePath()).getLinks();
             }
             if (packages != null && packages.size() > 0) {
-                for (FilePackage p : packages) {
+                if (jd1Database) {
+                    try {
+                        int links = 0;
+                        for (final FilePackage p : packages) {
+                            links += p.size();
+                        }
+                        final ConfirmDialog d = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, _GUI._.jd1_import_title(), _GUI._.jd1_import_message(packages.size(), links), NewTheme.I().getIcon("question", 16), _GUI._.jd_gui_swing_jdgui_views_downloadview_tab_title(), _GUI._.jd_gui_swing_jdgui_views_linkgrabberview_tab_title()) {
+                            @Override
+                            public ModalityType getModalityType() {
+                                return ModalityType.MODELESS;
+                            }
+                        };
+                        UIOManager.I().show(ConfirmDialogInterface.class, d).throwCloseExceptions();
+                        DownloadController.getInstance().addAll(packages);
+                        cs.setStatus(ContainerStatus.STATUS_FINISHED);
+                        return cs;
+                    } catch (DialogNoAnswerException e) {
+                        if (e.isCausedbyESC() || e.isCausedByTimeout()) {
+                            cs.setStatus(ContainerStatus.STATUS_FINISHED);
+                            return cs;
+                        }
+                    }
+                }
+                for (final FilePackage p : packages) {
                     final PackageInfo packageInfo = new PackageInfo();
                     packageInfo.setComment(p.getComment());
                     packageInfo.setName(p.getName());
                     if (new File(p.getDownloadDirectory()).exists()) {
                         packageInfo.setDestinationFolder(p.getDownloadDirectory());
                     }
-                    for (DownloadLink dl : p.getChildren()) {
+                    for (final DownloadLink dl : p.getChildren()) {
                         CrawledLink cl = new CrawledLink(dl);
                         if (packageInfo.isNotEmpty()) {
                             cl.setDesiredPackageInfo(packageInfo.getCopy());
