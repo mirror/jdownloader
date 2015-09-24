@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.http.BrowserSettings;
+import jd.http.BrowserSettingsThread;
 import jd.http.NoGateWayException;
 import jd.http.ProxySelectorInterface;
 import jd.plugins.Account;
@@ -72,11 +72,15 @@ public class UseNet extends PluginForHost {
     }
 
     protected int getPort(final String ID, int[] ports) {
-        final int index = getPluginConfig().getIntegerProperty(ID, 0);
-        if (index >= ports.length) {
-            return ports[0];
+        if (ports.length == 0) {
+            return -1;
         } else {
-            return ports[index];
+            final int index = getPluginConfig().getIntegerProperty(ID, 0);
+            if (index >= ports.length) {
+                return ports[0];
+            } else {
+                return ports[index];
+            }
         }
     }
 
@@ -110,12 +114,7 @@ public class UseNet extends PluginForHost {
     }
 
     protected ProxySelectorInterface getProxySelector() {
-        final Thread currentThread = Thread.currentThread();
-        if (currentThread != null && currentThread instanceof BrowserSettings) {
-            final BrowserSettings settings = (BrowserSettings) currentThread;
-            return settings.getProxySelector();
-        }
-        return null;
+        return BrowserSettingsThread.getThreadProxySelector();
     }
 
     protected boolean isIncomplete(DownloadLink link) {
@@ -178,18 +177,32 @@ public class UseNet extends PluginForHost {
         final SimpleUseNet client = new SimpleUseNet(proxies.get(0), getLogger());
         this.client.set(client);
         try {
+            final String username = getUsername(account);
+            final String password = getPassword(account);
+            final boolean useSSL;
+            final String serverAddress;
+            final int port;
             if (useSSL()) {
-                final String serverAddress;
                 final String sslServerAddress = getSSLServerAddress();
                 if (sslServerAddress != null) {
                     serverAddress = sslServerAddress;
                 } else {
                     serverAddress = getServerAddress();
                 }
-                client.connect(serverAddress, getPort(USENET_SELECTED_SSLPORT, getAvailableSSLPorts()), true, getUsername(account), getPassword(account));
+                useSSL = true;
+                port = getPort(USENET_SELECTED_SSLPORT, getAvailableSSLPorts());
             } else {
-                client.connect(getServerAddress(), getPort(USENET_SELECTED_PORT, getAvailablePorts()), false, getUsername(account), getPassword(account));
+                serverAddress = getServerAddress();
+                useSSL = false;
+                port = getPort(USENET_SELECTED_PORT, getAvailablePorts());
             }
+            if (serverAddress == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (port == -1) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            client.connect(serverAddress, port, useSSL, username, password);
         } catch (InvalidAuthException e) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }

@@ -41,11 +41,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premium.to" }, urls = { "https?://torrent\\d*\\.premium\\.to/(t|z)/[^<>/\"]+(/[^<>/\"]+){0,1}(/\\d+)*|https?://storage\\.premium\\.to/file/[A-Z0-9]+" }, flags = { 2 })
-public class PremiumTo extends PluginForHost {
+public class PremiumTo extends UseNet {
 
     private static WeakHashMap<Account, HashMap<String, Long>> hostUnavailableMap             = new WeakHashMap<Account, HashMap<String, Long>>();
     private static HashMap<String, Integer>                    connectionLimits               = new HashMap<String, Integer>();
@@ -98,7 +97,7 @@ public class PremiumTo extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ac = new AccountInfo();
+        final AccountInfo ac = new AccountInfo();
         try {
             login(account, true);
         } catch (PluginException e) {
@@ -107,9 +106,9 @@ public class PremiumTo extends PluginForHost {
             throw e;
         }
         {
-            Browser tbr = br.cloneBrowser();
+            final Browser tbr = br.cloneBrowser();
             tbr.getPage(API_BASE + "straffic.php");
-            String[] traffic = tbr.toString().split(";");
+            final String[] traffic = tbr.toString().split(";");
             if (traffic != null && traffic.length == 2) {
                 // because we can not account for separate traffic allocations.
                 final long nT = Long.parseLong(traffic[0]);
@@ -123,9 +122,10 @@ public class PremiumTo extends PluginForHost {
         {
             final Browser hbr = br.cloneBrowser();
             hbr.getPage(API_BASE + "hosts.php");
-            String hosters[] = hbr.toString().split(";|\\s+");
+            final String hosters[] = hbr.toString().split(";|\\s+");
             if (hosters != null && hosters.length != 0) {
-                ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosters));
+                final ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosters));
+                supportedHosts.add("usenet");
                 ac.setMultiHostSupport(this, supportedHosts);
             }
         }
@@ -156,20 +156,25 @@ public class PremiumTo extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(account, false);
-        String url = link.getDownloadURL();
-        // allow resume and up to 10 chunks
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -10);
-        if (dl.getConnection().getResponseCode() == 403) {
-            /*
-             * This e.g. happens if the user deletes a file via the premium.to site and then tries to download the previously added link via
-             * JDownloader.
-             */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 (file offline?)", 30 * 60 * 1000l);
-        } else if (dl.getConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+        if (isUsenetLink(link)) {
+            super.handleMultiHost(link, account);
+            return;
+        } else {
+            login(account, false);
+            String url = link.getDownloadURL();
+            // allow resume and up to 10 chunks
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, -10);
+            if (dl.getConnection().getResponseCode() == 403) {
+                /*
+                 * This e.g. happens if the user deletes a file via the premium.to site and then tries to download the previously added link
+                 * via JDownloader.
+                 */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403 (file offline?)", 30 * 60 * 1000l);
+            } else if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @SuppressWarnings("unchecked")
@@ -228,146 +233,150 @@ public class PremiumTo extends PluginForHost {
     /** no override to keep plugin compatible to old stable */
     @SuppressWarnings("deprecation")
     public void handleMultiHost(DownloadLink link, Account account) throws Exception {
-
-        synchronized (hostUnavailableMap) {
-            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
-            if (unavailableMap != null) {
-                Long lastUnavailable = unavailableMap.get(link.getHost());
-                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
-                    final long wait = lastUnavailable - System.currentTimeMillis();
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
-                } else if (lastUnavailable != null) {
-                    unavailableMap.remove(link.getHost());
-                    if (unavailableMap.size() == 0) {
-                        hostUnavailableMap.remove(account);
+        if (isUsenetLink(link)) {
+            super.handleMultiHost(link, account);
+            return;
+        } else {
+            synchronized (hostUnavailableMap) {
+                HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+                if (unavailableMap != null) {
+                    Long lastUnavailable = unavailableMap.get(link.getHost());
+                    if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                        final long wait = lastUnavailable - System.currentTimeMillis();
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Host is temporarily unavailable via " + this.getHost(), wait);
+                    } else if (lastUnavailable != null) {
+                        unavailableMap.remove(link.getHost());
+                        if (unavailableMap.size() == 0) {
+                            hostUnavailableMap.remove(account);
+                        }
                     }
                 }
             }
-        }
 
-        try {
-            dl = null;
-            String url = link.getDownloadURL().replaceFirst("https?://", "");
-
-            // this here is bullshit... multihoster side should do all the corrections.
-            /* begin code from premium.to support */
-            if (url.startsWith("http://")) {
-                url = url.substring(7);
-            }
-            if (url.startsWith("www.")) {
-                url = url.substring(4);
-            }
-            if (url.startsWith("freakshare.com/")) {
-                url = url.replaceFirst("freakshare.com/", "fs.com/");
-            } else if (url.startsWith("depositfiles.com/")) {
-                url = url.replaceFirst("depositfiles.com/", "df.com/");
-            } else if (url.startsWith("netload.in/")) {
-                url = url.replaceFirst("netload.in/", "nl.in/");
-            } else if (url.startsWith("filepost.com/")) {
-                url = url.replaceFirst("filepost.com/", "fp.com/");
-            } else if (url.startsWith("turbobit.net/")) {
-                url = url.replaceFirst("turbobit.net/", "tb.net/");
-            } else if (url.startsWith("filefactory.com/")) {
-                url = url.replaceFirst("filefactory.com/", "ff.com/");
-            } else if (url.startsWith("k2s.cc/")) {
-                // doesn't work...
-                // url = url.replaceFirst("k2s.cc/", "keep2share.cc/");
-            }
-            /* end code from premium.to support */
-            if (url.startsWith("oboom.com/")) {
-                url = url.replaceFirst("oboom.com/#", "oboom.com/");
-            }
-            url = Encoding.urlEncode(url);
-            showMessage(link, "Phase 1/3: Login...");
-            login(account, false);
-            showMessage(link, "Phase 2/3: Get link");
-
-            int connections = getConnections(link.getHost());
-            if (link.getChunks() != -1) {
-                connections = link.getChunks();
-            }
-            if (link.getBooleanProperty(noChunks, false)) {
-                connections = 1;
-            }
-
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, API_BASE + "getfile.php?link=" + url, true, connections);
-            if (dl.getConnection().getResponseCode() == 404) {
-                /* file offline */
-                dl.getConnection().disconnect();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (!dl.getConnection().isContentDisposition()) {
-                if (dl.getConnection().getResponseCode() == 420) {
-                    int timesFailed = link.getIntegerProperty("timesfailedpremiumto_420dlerror", 0);
-                    link.getLinkStatus().setRetryCount(0);
-                    logger.info("premium.to: Download attempt failed because of server error 420");
-                    if (timesFailed <= 10) {
-                        timesFailed++;
-                        link.setProperty("timesfailedpremiumto_420dlerror", timesFailed);
-                        throw new PluginException(LinkStatus.ERROR_RETRY, "Download could not be started (420)");
-                    } else {
-                        link.setProperty("timesfailedpremiumto_420dlerror", Property.NULL);
-                        logger.info("premium.to: 420 download error - disabling current host!");
-                        tempUnavailableHoster(account, link, 60 * 60 * 1000l);
-                    }
-                }
-                br.followConnection();
-
-                logger.severe("PremiumTo Error");
-                if (br.toString().matches("File not found")) {
-                    // we can not trust multi-hoster file not found returns, they could be wrong!
-                    // jiaz new handling to dump to next download candidate.
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                }
-                if (br.toString().matches("File hosting service not supported")) {
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                /*
-                 * after x retries we disable this host and retry with normal plugin
-                 */
-                if (link.getLinkStatus().getRetryCount() >= 3) {
-                    /* disable hoster for 1h */
-                    tempUnavailableHoster(account, link, 60 * 60 * 1000);
-                    /* reset retry counter */
-                    link.getLinkStatus().setRetryCount(0);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
-                String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 3 + ")";
-                showMessage(link, msg);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
-            }
-            showMessage(link, "Phase 3/3: Download...");
             try {
-                /* Check if the download is successful && user wants JD to delete the file in his premium.to account afterwards. */
-                if (dl.startDownload() && this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY_STORAGE, default_clear_download_history_storage) && link.getDownloadURL().matches(type_storage)) {
-                    boolean success = false;
-                    try {
-                        /*
-                         * TODO: Check if there is a way to determine if the deletion was successful and add loggers for
-                         * successful/unsuccessful cases!
-                         */
-                        br.getPage("https://storage.premium.to/removeFile.php?f=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
-                        success = true;
-                    } catch (final Throwable e) {
-                        /* Don't fail here */
+                dl = null;
+                String url = link.getDownloadURL().replaceFirst("https?://", "");
+
+                // this here is bullshit... multihoster side should do all the corrections.
+                /* begin code from premium.to support */
+                if (url.startsWith("http://")) {
+                    url = url.substring(7);
+                }
+                if (url.startsWith("www.")) {
+                    url = url.substring(4);
+                }
+                if (url.startsWith("freakshare.com/")) {
+                    url = url.replaceFirst("freakshare.com/", "fs.com/");
+                } else if (url.startsWith("depositfiles.com/")) {
+                    url = url.replaceFirst("depositfiles.com/", "df.com/");
+                } else if (url.startsWith("netload.in/")) {
+                    url = url.replaceFirst("netload.in/", "nl.in/");
+                } else if (url.startsWith("filepost.com/")) {
+                    url = url.replaceFirst("filepost.com/", "fp.com/");
+                } else if (url.startsWith("turbobit.net/")) {
+                    url = url.replaceFirst("turbobit.net/", "tb.net/");
+                } else if (url.startsWith("filefactory.com/")) {
+                    url = url.replaceFirst("filefactory.com/", "ff.com/");
+                } else if (url.startsWith("k2s.cc/")) {
+                    // doesn't work...
+                    // url = url.replaceFirst("k2s.cc/", "keep2share.cc/");
+                }
+                /* end code from premium.to support */
+                if (url.startsWith("oboom.com/")) {
+                    url = url.replaceFirst("oboom.com/#", "oboom.com/");
+                }
+                url = Encoding.urlEncode(url);
+                showMessage(link, "Phase 1/3: Login...");
+                login(account, false);
+                showMessage(link, "Phase 2/3: Get link");
+
+                int connections = getConnections(link.getHost());
+                if (link.getChunks() != -1) {
+                    connections = link.getChunks();
+                }
+                if (link.getBooleanProperty(noChunks, false)) {
+                    connections = 1;
+                }
+
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, API_BASE + "getfile.php?link=" + url, true, connections);
+                if (dl.getConnection().getResponseCode() == 404) {
+                    /* file offline */
+                    dl.getConnection().disconnect();
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (!dl.getConnection().isContentDisposition()) {
+                    if (dl.getConnection().getResponseCode() == 420) {
+                        int timesFailed = link.getIntegerProperty("timesfailedpremiumto_420dlerror", 0);
+                        link.getLinkStatus().setRetryCount(0);
+                        logger.info("premium.to: Download attempt failed because of server error 420");
+                        if (timesFailed <= 10) {
+                            timesFailed++;
+                            link.setProperty("timesfailedpremiumto_420dlerror", timesFailed);
+                            throw new PluginException(LinkStatus.ERROR_RETRY, "Download could not be started (420)");
+                        } else {
+                            link.setProperty("timesfailedpremiumto_420dlerror", Property.NULL);
+                            logger.info("premium.to: 420 download error - disabling current host!");
+                            tempUnavailableHoster(account, link, 60 * 60 * 1000l);
+                        }
                     }
-                    if (success) {
-                        logger.info("Deletion of downloaded file seems to be successful");
-                    } else {
-                        logger.warning("Deletion of downloaded file seems have failed");
+                    br.followConnection();
+
+                    logger.severe("PremiumTo Error");
+                    if (br.toString().matches("File not found")) {
+                        // we can not trust multi-hoster file not found returns, they could be wrong!
+                        // jiaz new handling to dump to next download candidate.
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    }
+                    if (br.toString().matches("File hosting service not supported")) {
+                        tempUnavailableHoster(account, link, 60 * 60 * 1000);
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                    /*
+                     * after x retries we disable this host and retry with normal plugin
+                     */
+                    if (link.getLinkStatus().getRetryCount() >= 3) {
+                        /* disable hoster for 1h */
+                        tempUnavailableHoster(account, link, 60 * 60 * 1000);
+                        /* reset retry counter */
+                        link.getLinkStatus().setRetryCount(0);
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                    String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 3 + ")";
+                    showMessage(link, msg);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
+                }
+                showMessage(link, "Phase 3/3: Download...");
+                try {
+                    /* Check if the download is successful && user wants JD to delete the file in his premium.to account afterwards. */
+                    if (dl.startDownload() && this.getPluginConfig().getBooleanProperty(CLEAR_DOWNLOAD_HISTORY_STORAGE, default_clear_download_history_storage) && link.getDownloadURL().matches(type_storage)) {
+                        boolean success = false;
+                        try {
+                            /*
+                             * TODO: Check if there is a way to determine if the deletion was successful and add loggers for
+                             * successful/unsuccessful cases!
+                             */
+                            br.getPage("https://storage.premium.to/removeFile.php?f=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+                            success = true;
+                        } catch (final Throwable e) {
+                            /* Don't fail here */
+                        }
+                        if (success) {
+                            logger.info("Deletion of downloaded file seems to be successful");
+                        } else {
+                            logger.warning("Deletion of downloaded file seems have failed");
+                        }
+                    }
+                } catch (final PluginException ex) {
+                    /* unknown error, we disable multiple chunks */
+                    if (link.getBooleanProperty(noChunks, false) == false) {
+                        link.setProperty(noChunks, Boolean.valueOf(true));
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                 }
-            } catch (final PluginException ex) {
-                /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(noChunks, false) == false) {
-                    link.setProperty(noChunks, Boolean.valueOf(true));
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+            } finally {
+                if (link.getHost().equals("share-online.biz")) {
+                    shareOnlineLocked.set(false);
                 }
-            }
-        } finally {
-            if (link.getHost().equals("share-online.biz")) {
-                shareOnlineLocked.set(false);
             }
         }
     }
@@ -382,75 +391,45 @@ public class PremiumTo extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        final String dlink = Encoding.urlDecode(link.getDownloadURL(), true);
-        br.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        long fileSize = -1;
-        ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
+        if (isUsenetLink(link)) {
+            return super.requestFileInformation(link);
+        } else {
+            final String dlink = Encoding.urlDecode(link.getDownloadURL(), true);
+            br.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            long fileSize = -1;
+            ArrayList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
 
-        if (accs == null || accs.size() == 0) {
-            if (link.getDownloadURL().matches(type_storage)) {
-                /* This linktype can only be downloaded/checked via account */
-                link.getLinkStatus().setStatusText("Only downlodable via account!");
-                return AvailableStatus.UNCHECKABLE;
-            }
-            /* try without login (only possible for links with token) */
-            try {
-                con = br.openGetConnection(dlink);
-                if (!con.getContentType().contains("html")) {
-                    fileSize = con.getLongContentLength();
-                    if (fileSize == 0) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else if (fileSize == -1) {
-                        link.getLinkStatus().setStatusText("Only downlodable via account!");
-                        return AvailableStatus.UNCHECKABLE;
-                    }
-                    String name = con.getHeaderField("Content-Disposition");
-                    if (name != null) {
-                        /* filter the filename from content disposition and decode it... */
-                        name = new Regex(name, "filename.=UTF-8\'\'([^\"]+)").getMatch(0);
-                        name = Encoding.UTF8Decode(name).replaceAll("%20", " ");
-                        if (name != null) {
-                            link.setFinalFileName(name);
-                        }
-                    }
-                    link.setDownloadSize(fileSize);
-                    return AvailableStatus.TRUE;
-                } else {
+            if (accs == null || accs.size() == 0) {
+                if (link.getDownloadURL().matches(type_storage)) {
+                    /* This linktype can only be downloaded/checked via account */
+                    link.getLinkStatus().setStatusText("Only downlodable via account!");
                     return AvailableStatus.UNCHECKABLE;
                 }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
-
-        } else {
-            // if accounts available try all whether the link belongs to it links with token should work anyway
-            for (Account acc : accs) {
-                login(acc, false);
-
+                /* try without login (only possible for links with token) */
                 try {
                     con = br.openGetConnection(dlink);
                     if (!con.getContentType().contains("html")) {
                         fileSize = con.getLongContentLength();
-                        if (fileSize <= 0) {
+                        if (fileSize == 0) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        } else if (fileSize == -1) {
+                            link.getLinkStatus().setStatusText("Only downlodable via account!");
+                            return AvailableStatus.UNCHECKABLE;
                         }
-                        link.setDownloadSize(fileSize);
                         String name = con.getHeaderField("Content-Disposition");
-
                         if (name != null) {
-                            // filter the filename from content disposition and decode it...
+                            /* filter the filename from content disposition and decode it... */
                             name = new Regex(name, "filename.=UTF-8\'\'([^\"]+)").getMatch(0);
                             name = Encoding.UTF8Decode(name).replaceAll("%20", " ");
-                            name = Encoding.htmlDecode(name);
                             if (name != null) {
                                 link.setFinalFileName(name);
                             }
                         }
+                        link.setDownloadSize(fileSize);
                         return AvailableStatus.TRUE;
+                    } else {
+                        return AvailableStatus.UNCHECKABLE;
                     }
                 } finally {
                     try {
@@ -458,8 +437,42 @@ public class PremiumTo extends PluginForHost {
                     } catch (Throwable e) {
                     }
                 }
+
+            } else {
+                // if accounts available try all whether the link belongs to it links with token should work anyway
+                for (Account acc : accs) {
+                    login(acc, false);
+
+                    try {
+                        con = br.openGetConnection(dlink);
+                        if (!con.getContentType().contains("html")) {
+                            fileSize = con.getLongContentLength();
+                            if (fileSize <= 0) {
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            }
+                            link.setDownloadSize(fileSize);
+                            String name = con.getHeaderField("Content-Disposition");
+
+                            if (name != null) {
+                                // filter the filename from content disposition and decode it...
+                                name = new Regex(name, "filename.=UTF-8\'\'([^\"]+)").getMatch(0);
+                                name = Encoding.UTF8Decode(name).replaceAll("%20", " ");
+                                name = Encoding.htmlDecode(name);
+                                if (name != null) {
+                                    link.setFinalFileName(name);
+                                }
+                            }
+                            return AvailableStatus.TRUE;
+                        }
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (Throwable e) {
+                        }
+                    }
+                }
+                return AvailableStatus.UNCHECKABLE;
             }
-            return AvailableStatus.UNCHECKABLE;
         }
     }
 
@@ -477,6 +490,15 @@ public class PremiumTo extends PluginForHost {
             unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
         throw new PluginException(LinkStatus.ERROR_RETRY);
+    }
+
+    @Override
+    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+        if (isUsenetLink(link)) {
+            return 10;
+        } else {
+            return super.getMaxSimultanDownload(link, account);
+        }
     }
 
     @Override
@@ -548,6 +570,21 @@ public class PremiumTo extends PluginForHost {
         }
         // default is up to 10 connections
         return -10;
+    }
+
+    @Override
+    protected String getServerAddress() throws Exception {
+        return "usenet2.premium.to";
+    }
+
+    @Override
+    protected int[] getAvailablePorts() {
+        return new int[] { 81, 119 };
+    }
+
+    @Override
+    protected int[] getAvailableSSLPorts() {
+        return new int[] { 444, 563 };
     }
 
 }
