@@ -31,6 +31,7 @@ import org.jdownloader.captcha.v2.solver.jac.JACSolver;
 import org.jdownloader.captcha.v2.solver.myjd.CaptchaMyJDSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolver;
 import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverClick;
+import org.jdownloader.captcha.v2.solver.solver9kw.Captcha9kwSolverPuzzle;
 import org.jdownloader.captcha.v2.solverjob.ResponseList;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
 import org.jdownloader.controlling.UniqueAlltimeID;
@@ -81,6 +82,7 @@ public class ChallengeResponseController {
             addSolver(CBSolver.getInstance());
             addSolver(Captcha9kwSolver.getInstance());
             addSolver(Captcha9kwSolverClick.getInstance());
+            addSolver(Captcha9kwSolverPuzzle.getInstance());
 
             if (!Application.isHeadless()) {
                 addSolver(DialogBasicCaptchaSolver.getInstance());

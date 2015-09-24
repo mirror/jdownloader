@@ -52,6 +52,11 @@ public class CFG_9KWCAPTCHA {
     public static final IntegerKeyHandler                  THREADPOOL_SIZE          = SH.getKeyHandler("ThreadpoolSize", IntegerKeyHandler.class);
 
     /**
+     * Max. Captchas per Download
+     **/
+    public static final IntegerKeyHandler                  MAXCAPTCHADL_SIZE        = SH.getKeyHandler("maxcaptchaperdl", IntegerKeyHandler.class);
+
+    /**
      * Other max. timeout only for 9kw Service
      **/
     public static final IntegerKeyHandler                  CAPTCHA_OTHER9KW_TIMEOUT = SH.getKeyHandler("CaptchaOther9kwTimeout", IntegerKeyHandler.class);

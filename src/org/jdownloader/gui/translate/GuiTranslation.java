@@ -2867,15 +2867,20 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Clear Stats" })
     String NinekwService_createPanel_btnUserDebugStatReset();
 
+    @Default(lngs = { "en" }, values = { "Clear CaptchaBlacklist" })
+    String NinekwService_createPanel_btnUserDebugBlacklistReset();
+
     @Default(lngs = { "en" }, values = { "Debuglog cleared" })
     String NinekwService_createPanel_btnUserDebug2_text();
 
     @Default(lngs = { "en" }, values = { "Stats cleared" })
     String NinekwService_createPanel_btnUserDebugStatReset_text();
 
-    // TODO Remove unused code found by UCDetector
-    // @Default(lngs = { "en" }, values = { "Clear the debug log to get a new log." })
-    // String NinekwService_createPanel_btnUserDebug2_tooltiptext();
+    @Default(lngs = { "en" }, values = { "CaptchaBlacklist cleared" })
+    String NinekwService_createPanel_btnUserDebugBlacklistReset_text();
+
+    @Default(lngs = { "en" }, values = { "Clear the debug log to get a new log." })
+    String NinekwService_createPanel_btnUserDebug2_tooltiptext();
 
     @Default(lngs = { "en" }, values = { "Log to clipboard" })
     String NinekwService_createPanel_btnUserDebug1clipboard();
@@ -2921,6 +2926,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Clear stats." })
     String NinekwService_createPanel_btnUserDebugStatReset_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Clear CaptchaBlacklist." })
+    String NinekwService_createPanel_btnUserDebugBlacklistReset_tooltiptext();
 
     @Default(lngs = { "en" }, values = { "Register" })
     String NinekwService_createPanel_btnRegister();
@@ -2994,16 +3002,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Activates mouse captchas" })
     String NinekwService_createPanel_mousecaptchas_tooltiptext();
 
-    // TODO Remove unused code found by UCDetector
-    // @Default(lngs = { "en" }, values = { "Puzzle Captchas" })
-    // String NinekwService_createPanel_puzzlecaptchas();
+    @Default(lngs = { "en" }, values = { "Puzzle Captchas" })
+    String NinekwService_createPanel_puzzlecaptchas();
 
     @Default(lngs = { "en" }, values = { "Activates puzzle captchas" })
     String NinekwService_createPanel_puzzlecaptchas_tooltiptext();
 
-    // TODO Remove unused code found by UCDetector
-    // @Default(lngs = { "en" }, values = { "Slider Captchas" })
-    // String NinekwService_createPanel_slidercaptchas();
+    @Default(lngs = { "en" }, values = { "Slider Captchas" })
+    String NinekwService_createPanel_slidercaptchas();
 
     @Default(lngs = { "en" }, values = { "Activates slider captchas" })
     String NinekwService_createPanel_slidercaptchas_tooltiptext();
@@ -3101,29 +3107,59 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Activates a confirmation of the solution in the form of a Confirm Mouse captchas." })
     String NinekwService_createPanel_mouseconfirm_tooltiptext();
 
+    @Default(lngs = { "en" }, values = { "9kw error" })
+    String NinekwService_createPanel_error9kwtitle();
+
+    @Default(lngs = { "en" }, values = { "Not enough credits." })
+    String NinekwService_createPanel_errortext_nocredits();
+
+    @Default(lngs = { "en" }, values = { "No captcha found." })
+    String NinekwService_createPanel_errortext_nocaptcha();
+
+    @Default(lngs = { "en" }, values = { "API Key is not correct!" })
+    String NinekwService_createPanel_errortext_wrongapikey1();
+
+    @Default(lngs = { "en" }, values = { "Only a-z, A-Z and 0-9" })
+    String NinekwService_createPanel_errortext_wrongapikey2();
+
     @Default(lngs = { "en" }, values = { "Too many bad feedbacks" })
     String NinekwService_createPanel_notification_badfeedback();
 
-    @Default(lngs = { "en" }, values = { "Warn if the feedbacks are really bad like only 100 NotOK." })
+    @Default(lngs = { "en" }, values = { "Warn if the feedbacks are really bad like 100 NotOK." })
     String NinekwService_createPanel_notification_badfeedback_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Too many bad feedbacks like 30% captchas with NotOK. Please check it and then you can reset the stats." })
+    String NinekwService_createPanel_notification_badfeedback_errortext();
 
     @Default(lngs = { "en" }, values = { "Without feedbacks" })
     String NinekwService_createPanel_notification_badnofeedback();
 
     @Default(lngs = { "en" }, values = { "Warn if the feedbacks are not possible." })
-    String NinekwService_createPanel_notification_NinekwService_createPanel_notification_badtimeout_tooltiptext();
+    String NinekwService_createPanel_notification_badnofeedback_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Too many captchas without feedbacks like OK or NotOK. Please check it." })
+    String NinekwService_createPanel_notification_badnofeedback_errortext();
 
     @Default(lngs = { "en" }, values = { "Too short timeouts" })
     String NinekwService_createPanel_notification_badtimeout();
 
-    @Default(lngs = { "en" }, values = { "Warn if too many errors are available." })
+    @Default(lngs = { "en" }, values = { "Warn if too many timeout errors are available." })
     String NinekwService_createPanel_notification_badtimeout_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "Your max. timeout for 9kw.eu is really low. Please change it and then try it again." })
+    String NinekwService_createPanel_notification_badtimeout_errortext();
+
+    @Default(lngs = { "en" }, values = { "Your othertimeout as second max. timeout from the black-/whitelist is higher than your default timeout.\nPlease change it and then try it again." })
+    String NinekwService_createPanel_notification_badtimeout_errortext2();
 
     @Default(lngs = { "en" }, values = { "Errors and bad uploads" })
     String NinekwService_createPanel_notification_baderrorsanduploads();
 
-    @Default(lngs = { "en" }, values = { "Warn if too many errors are available." })
+    @Default(lngs = { "en" }, values = { "Warn if too many errors with captcha uploads are available." })
     String NinekwService_createPanel_notification_baderrorsanduploads_tooltiptext();
+
+    @Default(lngs = { "en" }, values = { "You have many send errors or interrupted captchas. Please check it." })
+    String NinekwService_createPanel_notification_baderrorsanduploads_errortext();
 
     @Default(lngs = { "en" }, values = { "Debug" })
     String NinekwService_createPanel_debug();
@@ -3173,6 +3209,12 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Activates a new timeout as the maximum value for the selected hoster." })
     String NinekwService_createPanel_9kwtimeoutother_tooltiptext();
 
+    @Default(lngs = { "en" }, values = { "Max. Captchas per download" })
+    String NinekwService_createPanel_maxcaptchasperdl();
+
+    @Default(lngs = { "en" }, values = { "Specifies how many tasks per download are maximum submitted." })
+    String NinekwService_createPanel_maxcaptchasperdl_tooltiptext();
+
     @Default(lngs = { "en" }, values = { "ms" })
     String NinekwService_createPanel_ms();
 
@@ -3202,6 +3244,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Specifies whether certain Hoster are allowed or forbidden. (Only in the plugin like a skipfunction)" })
     String NinekwService_createPanel_blackwhitelist_des();
+
+    @Default(lngs = { "en" }, values = { "Notifications" })
+    String NinekwService_createPanel_notifications_header();
 
     @Default(lngs = { "en" }, values = { "Options" })
     String NinekwService_createPanel_options_header();

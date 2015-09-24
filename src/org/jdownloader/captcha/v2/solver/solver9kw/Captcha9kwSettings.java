@@ -1,8 +1,11 @@
 package org.jdownloader.captcha.v2.solver.solver9kw;
 
+import java.util.HashMap;
+
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
@@ -260,4 +263,19 @@ public interface Captcha9kwSettings extends ChallengeSolverConfig {
     int getDefaultTimeout();
 
     void setDefaultTimeout(int ms);
+
+    @AboutConfig
+    @DefaultJsonObject("{\"jdownloader.org\":60000}")
+    @DescriptionForConfigEntry("Host bound Waittime before using CES. Use CaptchaExchangeChanceToSkipBubbleTimeout for a global timeout")
+    HashMap<String, Integer> getBubbleTimeoutByHostMap();
+
+    void setBubbleTimeoutByHostMap(HashMap<String, Integer> map);
+
+    @AboutConfig
+    @DefaultIntValue(4)
+    @SpinnerValidator(min = 3, max = 20)
+    @DescriptionForConfigEntry("Max. Captchas per download")
+    int getmaxcaptchaperdl();
+
+    void setmaxcaptchaperdl(int size);
 }
