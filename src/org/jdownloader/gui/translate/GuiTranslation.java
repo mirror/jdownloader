@@ -5296,7 +5296,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "JAntiCaptcha" })
     String JACSolver_gettypeName_();
 
-    @Default(lngs = { "en" }, values = { "Semi-automatic Captcha Solving" })
+    @Default(lngs = { "en" }, values = { "Fully automated remote Captcha Solving" })
     String Captcha9kwSolver_getName_();
 
     @Default(lngs = { "en" }, values = { "9kw.eu" })
@@ -5305,7 +5305,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Fully automated remote Captcha Solving" })
     String CaptchaMyJDSolver_getName();
 
-    @Default(lngs = { "en" }, values = { "Semi-automatic Captcha Solving" })
+    @Default(lngs = { "en" }, values = { "Fully automated remote Captcha Solving" })
     String CBSolver_getName_();
 
     @Default(lngs = { "en" }, values = { "My.JDownloader.org" })
