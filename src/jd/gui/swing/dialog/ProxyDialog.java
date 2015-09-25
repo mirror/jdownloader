@@ -18,8 +18,6 @@ import javax.swing.JTextField;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.ClipboardMonitoring.ClipboardContent;
 import jd.controlling.TaskQueue;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.proxy.PacProxySelectorImpl;
@@ -138,7 +136,6 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                     @Override
                     protected void runInEDT() {
                         set(txtHost.getText());
-
                     }
                 };
 
@@ -157,12 +154,7 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
         panel.add(lblPass = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_password()));
         panel.add(txtPass = new JTextField(), "spanx");
         this.okButton.setEnabled(false);
-        ClipboardContent content = ClipboardMonitoring.getINSTANCE().getCurrentContent();
-        String clipboardTxt = "";
-        if (content != null) {
-            clipboardTxt = content.getContent();
-        }
-        set(clipboardTxt);
+        set(null);
         panel.add(lblNetIf = new JLabel(_GUI._.jd_gui_swing_dialog_ProxyDialog_netif()));
         panel.add(cmbNetIf = new JComboBox(new NetIfSelection[] { new NetIfSelection("-", "") }), "spanx");
         cmbNetIf.setVisible(false);
@@ -204,7 +196,6 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
     }
 
     protected void set(final String text) {
-
         int carPos = txtHost.getCaretPosition();
         String myText = text;
         if (myText == null) {
@@ -224,7 +215,6 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                 } else {
                     txtHost.setText(url.getHost());
                 }
-
                 if (url.getPort() > 0) {
                     txtPort.setText(url.getPort() + "");
                 }
@@ -240,12 +230,11 @@ public class ProxyDialog extends AbstractDialog<AbstractProxySelectorImpl> imple
                 }
                 return;
             } catch (MalformedURLException e) {
-                if (text.contains(":")) {
+                if (text != null && text.contains(":")) {
                     myText = "http://" + myText;
                 }
             }
         }
-
         txtHost.setCaretPosition(carPos);
 
     }
