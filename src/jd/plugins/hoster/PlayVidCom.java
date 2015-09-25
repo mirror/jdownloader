@@ -65,7 +65,7 @@ public class PlayVidCom extends PluginForHost {
     private static final String ALLOW_480P    = "ALLOW_480P";
     private static final String ALLOW_720     = "ALLOW_720";
 
-    private boolean             loggedin      = false;
+    private Account             account       = null;
     private String              qualityvalue  = null;
 
     private static final String quality_360   = "360p";
@@ -80,13 +80,14 @@ public class PlayVidCom extends PluginForHost {
         qualityvalue = downloadLink.getStringProperty("qualityvalue", null);
         this.setBrowserExclusive();
         final PluginForHost hostPlugin = JDUtilities.getPluginForHost("playvid.com");
-        boolean loggedin = false;
-        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
-        if (aa != null) {
+        if (account == null) {
+            account = AccountController.getInstance().getValidAccount(hostPlugin);
+        }
+        if (account != null) {
             try {
-                login(this.br, aa, false);
-                loggedin = true;
+                login(this.br, account, false);
             } catch (final PluginException e) {
+                account = null;
             }
         }
         br.setFollowRedirects(true);
@@ -102,7 +103,7 @@ public class PlayVidCom extends PluginForHost {
             if (videosource == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (quality_720.equals(qualityvalue) && !loggedin) {
+            if (quality_720.equals(qualityvalue) && account == null) {
                 logger.info("User is not logged in but tries to download a quality which needs login");
                 return AvailableStatus.TRUE;
             }
@@ -138,7 +139,7 @@ public class PlayVidCom extends PluginForHost {
 
     private void doFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (quality_720.equals(qualityvalue) && !loggedin) {
+        if (quality_720.equals(qualityvalue) && account == null) {
             /* Should never happen! */
             logger.info("User is not logged in but tries to download a quality which needs login");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -247,7 +248,7 @@ public class PlayVidCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(this.br, account, false);
+        this.account = account;
         doFree(link);
     }
 
@@ -336,6 +337,7 @@ public class PlayVidCom extends PluginForHost {
 
     @Override
     public void reset() {
+        account = null;
     }
 
     @Override
