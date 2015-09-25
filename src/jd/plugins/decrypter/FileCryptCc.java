@@ -19,16 +19,9 @@ package jd.plugins.decrypter;
 import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.HexFormatter;
-import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -39,6 +32,7 @@ import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -48,6 +42,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filecrypt.cc" }, urls = { "https?://(?:www\\.)?filecrypt\\.cc/Container/([A-Z0-9]{10})\\.html" }, flags = { 0 })
 public class FileCryptCc extends PluginForDecrypt {
@@ -256,7 +256,7 @@ public class FileCryptCc extends PluginForDecrypt {
         for (final String singleLink : links) {
             final Browser br2 = br.cloneBrowser();
             br2.getPage("http://filecrypt.cc/Link/" + singleLink + ".html");
-            if (br2.containsHTML("friendlyduck.com/") || br2.containsHTML("filecrypt\\.cc/usenet\\.html")) {
+            if (br2.containsHTML("friendlyduck.com/") || br2.containsHTML("filecrypt\\.cc/usenet\\.html") || br2.containsHTML("share-online\\.biz/affiliate")) {
                 /* Advertising */
                 continue;
             }
@@ -274,11 +274,11 @@ public class FileCryptCc extends PluginForDecrypt {
                     finallink = br2.getRedirectLocation();
                 }
             }
-            if (finallink == null || finallink.contains("filecrypt.cc/")) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            if (finallink != null && finallink.contains("filecrypt.cc/")) {
+                logger.warning("Decrypter broken for link: " + parameter + "->" + finallink);
+            } else if (finallink != null) {
+                decryptedLinks.add(createDownloadlink(finallink));
             }
-            decryptedLinks.add(createDownloadlink(finallink));
         }
 
         if (fpName != null) {
@@ -290,13 +290,29 @@ public class FileCryptCc extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void handleCnl2(final ArrayList<DownloadLink> decryptedLinks, final String parameter) throws UnsupportedEncodingException {
-        Form cnl = null;
+    private void handleCnl2(final ArrayList<DownloadLink> decryptedLinks, final String parameter) throws Exception {
         final Form[] forms = br.getForms();
+        Form CNLPOP = null;
+        Form cnl = null;
         for (final Form f : forms) {
-            if (f.hasInputFieldByName("jk")) {
-                cnl = f;
+            if (f.containsHTML("CNLPOP")) {
+                CNLPOP = f;
                 break;
+            }
+        }
+        if (CNLPOP != null) {
+            final String infos[] = CNLPOP.getRegex("'(.*?)'").getColumn(0);
+            cnl = new Form();
+            cnl.addInputField(new InputField("crypted", infos[2]));
+            cnl.addInputField(new InputField("jk", "function f(){ return \'" + infos[1] + "';}"));
+            cnl.addInputField(new InputField("source", null));
+        }
+        if (cnl == null) {
+            for (final Form f : forms) {
+                if (f.hasInputFieldByName("jk")) {
+                    cnl = f;
+                    break;
+                }
             }
         }
         if (cnl != null) {
@@ -326,7 +342,7 @@ public class FileCryptCc extends PluginForDecrypt {
 
     private final String containsCaptcha = "class=\"safety\">Sicherheitsabfrage<";
 
-    private String cleanHTML = null;
+    private String       cleanHTML       = null;
 
     private final void cleanUpHTML() {
         String toClean = br.toString();
