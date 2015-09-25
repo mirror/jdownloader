@@ -1059,7 +1059,7 @@ public class TheVideoMe extends antiDDoSForHost {
                 getPage(downloadLink.getDownloadURL());
                 dllink = getDllink();
                 if (dllink == null) {
-                    String link = br.getRegex("\"(https?://the1video\\.me/download/.*?)\"").getMatch(0);
+                    String link = br.getRegex("\"(https?://thevideo\\.me/download/.*?)\"").getMatch(0);
                     if (link != null) {
                         br.getPage(link);
                         link = br.getRegex("url: \"(/cgi-bin/.*?)\"").getMatch(0);
