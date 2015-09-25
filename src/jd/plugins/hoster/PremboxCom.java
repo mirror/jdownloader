@@ -215,7 +215,10 @@ public class PremboxCom extends PluginForHost {
                 // dllink = "https://offcloud.com/cloud/download/" + requestID + "/" + Encoding.urlEncode(filename);
             } else {
                 link.setProperty(PROPERTY_DOWNLOADTYPE, PROPERTY_DOWNLOADTYPE_instant);
-                this.postAPISafe(API_SERVER + "/serverFileStatus", "directDownload=1&login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
+                this.postAPISafe(API_SERVER + "/downloadLink", "directDownload=1&login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
+                // this.postAPISafe(API_SERVER + "/serverFileStatus", "directDownload=1&login=" + JSonUtils.escape(this.currAcc.getUser()) +
+                // "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" +
+                // Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
                 dllink = getJson("downloadLink");
                 if (dllink == null) {
                     /* Should never happen */
