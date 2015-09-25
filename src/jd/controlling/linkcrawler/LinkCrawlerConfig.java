@@ -5,6 +5,7 @@ import java.util.List;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DefaultStringArrayValue;
@@ -64,5 +65,17 @@ public interface LinkCrawlerConfig extends ConfigInterface {
     List<LinkCrawlerRuleStorable> getLinkCrawlerRules();
 
     void setLinkCrawlerRules(List<LinkCrawlerRuleStorable> linkCrawlerRules);
+
+    public static enum DirectHTTPPermission {
+        ALWAYS,
+        RULES_ONLY,
+        FORBIDDEN
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("ALWAYS")
+    DirectHTTPPermission getDirectHTTPPermission();
+
+    void setDirectHTTPPermission(DirectHTTPPermission e);
 
 }

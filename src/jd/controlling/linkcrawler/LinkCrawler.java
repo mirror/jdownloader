@@ -34,6 +34,7 @@ import jd.controlling.HTACCESSController;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
 import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -127,13 +128,13 @@ public class LinkCrawler {
     private final List<LazyHostPlugin>                     unsortedLazyHostPlugins;
     private List<LazyCrawlerPlugin>                        unsortedLazyCrawlerPlugins;
     protected final PluginClassLoaderChild                 classLoader;
-    private boolean                                        directHttpEnabled           = true;
     private final String                                   defaultDownloadFolder;
     private final AtomicReference<List<LazyCrawlerPlugin>> sortedLazyCrawlerPlugins    = new AtomicReference<List<LazyCrawlerPlugin>>();
     private final AtomicReference<List<LazyHostPlugin>>    sortedLazyHostPlugins       = new AtomicReference<List<LazyHostPlugin>>();
 
     private final List<LinkCrawlerRule>                    linkCrawlerRules;
     private LinkCrawlerDeepInspector                       deepInspector               = null;
+    private DirectHTTPPermission                           directHTTPPermission        = DirectHTTPPermission.ALWAYS;
 
     protected List<LinkCrawlerRule> getLinkCrawlerRules() {
         return listLinkCrawlerRules();
@@ -145,8 +146,12 @@ public class LinkCrawler {
         return CONFIG;
     }
 
-    public void setDirectHttpEnabled(boolean directHttpEnabled) {
-        this.directHttpEnabled = directHttpEnabled;
+    public void setDirectHTTPPermission(DirectHTTPPermission directHTTPPermission) {
+        if (directHTTPPermission == null) {
+            this.directHTTPPermission = DirectHTTPPermission.ALWAYS;
+        } else {
+            this.directHTTPPermission = directHTTPPermission;
+        }
     }
 
     protected final static ScheduledExecutorService TIMINGQUEUE = DelayedRunnable.getNewScheduledExecutorService();
@@ -326,7 +331,7 @@ public class LinkCrawler {
             this.directPlugin = parentCrawler.directPlugin;
             this.httpPlugin = parentCrawler.httpPlugin;
             this.ftpPlugin = parentCrawler.ftpPlugin;
-            this.directHttpEnabled = parentCrawler.directHttpEnabled;
+            this.directHTTPPermission = parentCrawler.directHTTPPermission;
             this.defaultDownloadFolder = parentCrawler.defaultDownloadFolder;
             duplicateFinderContainer = parentCrawler.duplicateFinderContainer;
             duplicateFinderCrawler = parentCrawler.duplicateFinderCrawler;
@@ -885,7 +890,11 @@ public class LinkCrawler {
     protected boolean canHandle(final LazyPlugin<? extends Plugin> lazyPlugin, final String url, final CrawledLink link) {
         if (lazyPlugin.canHandle(url)) {
             try {
-                final Plugin plugin = lazyPlugin.newInstance(getPluginClassLoaderChild());
+                Plugin plugin = lazyPlugin.getPrototype(getPluginClassLoaderChild());
+                if (plugin != null && Plugin.implementsCanHandleString(plugin)) {
+                    /* TODO: store implementsCanHandleString within LazyPlugin */
+                    plugin = lazyPlugin.newInstance(getPluginClassLoaderChild());
+                }
                 if (plugin != null) {
                     /* now we run the plugin and let it find some links */
                     return plugin.canHandle(url);
@@ -905,35 +914,36 @@ public class LinkCrawler {
 
     protected Boolean distributePluginForHost(final LazyHostPlugin pluginForHost, final int generation, final String url, final CrawledLink link) {
         try {
+            if (isBlacklisted(pluginForHost)) {
+                return true;
+            }
             if (canHandle(pluginForHost, url, link)) {
-                if (!isBlacklisted(pluginForHost)) {
-                    if (insideCrawlerPlugin()) {
-                        if (!checkAllowStart(generation)) {
-                            /* LinkCrawler got aborted! */
-                            return false;
-                        }
-                        processHostPlugin(generation, pluginForHost, link);
-                    } else {
-                        if (checkStartNotify(generation)) {
-                            threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
-                                @Override
-                                public long getAverageRuntime() {
-                                    final Long ret = getDefaultAverageRuntime();
-                                    if (ret != null) {
-                                        return ret;
-                                    }
-                                    return pluginForHost.getAverageParseRuntime();
+                if (insideCrawlerPlugin()) {
+                    if (!checkAllowStart(generation)) {
+                        /* LinkCrawler got aborted! */
+                        return false;
+                    }
+                    processHostPlugin(generation, pluginForHost, link);
+                } else {
+                    if (checkStartNotify(generation)) {
+                        threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+                            @Override
+                            public long getAverageRuntime() {
+                                final Long ret = getDefaultAverageRuntime();
+                                if (ret != null) {
+                                    return ret;
                                 }
+                                return pluginForHost.getAverageParseRuntime();
+                            }
 
-                                @Override
-                                void crawling() {
-                                    processHostPlugin(getGeneration(), pluginForHost, link);
-                                }
-                            });
-                        } else {
-                            /* LinkCrawler got aborted! */
-                            return false;
-                        }
+                            @Override
+                            void crawling() {
+                                processHostPlugin(getGeneration(), pluginForHost, link);
+                            }
+                        });
+                    } else {
+                        /* LinkCrawler got aborted! */
+                        return false;
                     }
                 }
                 return true;
@@ -946,57 +956,58 @@ public class LinkCrawler {
 
     protected Boolean distributePluginForDecrypt(final LazyCrawlerPlugin pDecrypt, final int generation, final String url, final CrawledLink link) {
         try {
+            if (isBlacklisted(pDecrypt)) {
+                return true;
+            }
             if (canHandle(pDecrypt, url, link)) {
-                if (!isBlacklisted(pDecrypt)) {
-                    final java.util.List<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pDecrypt.getPattern(), link, link.getCustomCrawledLinkModifier());
-                    if (allPossibleCryptedLinks != null) {
-                        if (insideCrawlerPlugin()) {
-                            /*
-                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on
-                             * plugin waiting for linkcrawler results
-                             */
-                            for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
-                                if (!checkAllowStart(generation)) {
-                                    /* LinkCrawler got aborted! */
-                                    return false;
-                                }
-                                crawl(generation, pDecrypt, decryptThis);
+                final java.util.List<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pDecrypt.getPattern(), link, link.getCustomCrawledLinkModifier());
+                if (allPossibleCryptedLinks != null) {
+                    if (insideCrawlerPlugin()) {
+                        /*
+                         * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
+                         * waiting for linkcrawler results
+                         */
+                        for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
+                            if (!checkAllowStart(generation)) {
+                                /* LinkCrawler got aborted! */
+                                return false;
                             }
-                        } else {
-                            /*
-                             * enqueue these cryptedLinks for decrypting
-                             */
-                            for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
-                                if (checkStartNotify(generation)) {
-                                    threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+                            crawl(generation, pDecrypt, decryptThis);
+                        }
+                    } else {
+                        /*
+                         * enqueue these cryptedLinks for decrypting
+                         */
+                        for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
+                            if (checkStartNotify(generation)) {
+                                threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
 
-                                        public long getAverageRuntime() {
-                                            final Long ret = getDefaultAverageRuntime();
-                                            if (ret != null) {
-                                                return ret;
-                                            }
-                                            return pDecrypt.getAverageCrawlRuntime();
+                                    public long getAverageRuntime() {
+                                        final Long ret = getDefaultAverageRuntime();
+                                        if (ret != null) {
+                                            return ret;
                                         }
+                                        return pDecrypt.getAverageCrawlRuntime();
+                                    }
 
-                                        @Override
-                                        protected Object sequentialLockingObject() {
-                                            return pDecrypt.getDisplayName();
-                                        }
+                                    @Override
+                                    protected Object sequentialLockingObject() {
+                                        return pDecrypt.getDisplayName();
+                                    }
 
-                                        @Override
-                                        protected int maxConcurrency() {
-                                            return pDecrypt.getMaxConcurrentInstances();
-                                        }
+                                    @Override
+                                    protected int maxConcurrency() {
+                                        return pDecrypt.getMaxConcurrentInstances();
+                                    }
 
-                                        @Override
-                                        void crawling() {
-                                            crawl(getGeneration(), pDecrypt, decryptThis);
-                                        }
-                                    });
-                                } else {
-                                    /* LinkCrawler got aborted! */
-                                    return false;
-                                }
+                                    @Override
+                                    void crawling() {
+                                        crawl(getGeneration(), pDecrypt, decryptThis);
+                                    }
+                                });
+                            } else {
+                                /* LinkCrawler got aborted! */
+                                return false;
                             }
                         }
                     }
@@ -1156,7 +1167,11 @@ public class LinkCrawler {
                             /* WTF, no URL?! let's continue */
                             continue mainloop;
                         }
-                        if (url.startsWith("file:/")) {
+                        final boolean isDirect = url.startsWith("directhttp://");
+                        final boolean isFtp = url.startsWith("ftp://");
+                        final boolean isFile = url.startsWith("file:/");
+                        final boolean isHttpJD = url.startsWith("httpviajd://") || url.startsWith("httpsviajd://");
+                        if (isFile) {
                             /*
                              * first we will walk through all available container plugins
                              */
@@ -1168,107 +1183,130 @@ public class LinkCrawler {
                                     continue mainloop;
                                 }
                             }
-                        } else {
-                            if (!url.startsWith("directhttp://") && !url.startsWith("httpviajd://") && !url.startsWith("httpsviajd://")) {
-                                {
-                                    /*
-                                     * first we will walk through all available decrypter plugins
-                                     */
-                                    final List<LazyCrawlerPlugin> lazyCrawlerPlugins = getSortedLazyCrawlerPlugins();
-                                    final ListIterator<LazyCrawlerPlugin> it = lazyCrawlerPlugins.listIterator();
-                                    while (it.hasNext()) {
-                                        final LazyCrawlerPlugin pDecrypt = it.next();
-                                        final Boolean ret = distributePluginForDecrypt(pDecrypt, generation, url, possibleCryptedLink);
-                                        if (Boolean.FALSE.equals(ret)) {
-                                            return;
-                                        } else if (Boolean.TRUE.equals(ret)) {
-                                            if (it.previousIndex() > lazyCrawlerPlugins.size() / 50) {
-                                                resetSortedLazyCrawlerPlugins(lazyCrawlerPlugins);
-                                            }
-                                            continue mainloop;
+                        } else if (!isDirect && !isHttpJD) {
+                            {
+                                /*
+                                 * first we will walk through all available decrypter plugins
+                                 */
+                                final List<LazyCrawlerPlugin> lazyCrawlerPlugins = getSortedLazyCrawlerPlugins();
+                                final ListIterator<LazyCrawlerPlugin> it = lazyCrawlerPlugins.listIterator();
+                                while (it.hasNext()) {
+                                    final LazyCrawlerPlugin pDecrypt = it.next();
+                                    final Boolean ret = distributePluginForDecrypt(pDecrypt, generation, url, possibleCryptedLink);
+                                    if (Boolean.FALSE.equals(ret)) {
+                                        return;
+                                    } else if (Boolean.TRUE.equals(ret)) {
+                                        if (it.previousIndex() > lazyCrawlerPlugins.size() / 50) {
+                                            resetSortedLazyCrawlerPlugins(lazyCrawlerPlugins);
                                         }
+                                        continue mainloop;
                                     }
                                 }
-                                {
-                                    /* now we will walk through all available hoster plugins */
-                                    final List<LazyHostPlugin> sortedLazyHostPlugins = getSortedLazyHostPlugins();
-                                    final ListIterator<LazyHostPlugin> it = sortedLazyHostPlugins.listIterator();
-                                    while (it.hasNext()) {
-                                        final LazyHostPlugin pHost = it.next();
-                                        final Boolean ret = distributePluginForHost(pHost, generation, url, possibleCryptedLink);
-                                        if (Boolean.FALSE.equals(ret)) {
-                                            return;
-                                        } else if (Boolean.TRUE.equals(ret)) {
-                                            if (it.previousIndex() > sortedLazyHostPlugins.size() / 50) {
-                                                resetSortedLazyHostPlugins(sortedLazyHostPlugins);
-                                            }
-                                            continue mainloop;
+                            }
+                            {
+                                /* now we will walk through all available hoster plugins */
+                                final List<LazyHostPlugin> sortedLazyHostPlugins = getSortedLazyHostPlugins();
+                                final ListIterator<LazyHostPlugin> it = sortedLazyHostPlugins.listIterator();
+                                while (it.hasNext()) {
+                                    final LazyHostPlugin pHost = it.next();
+                                    final Boolean ret = distributePluginForHost(pHost, generation, url, possibleCryptedLink);
+                                    if (Boolean.FALSE.equals(ret)) {
+                                        return;
+                                    } else if (Boolean.TRUE.equals(ret)) {
+                                        if (it.previousIndex() > sortedLazyHostPlugins.size() / 50) {
+                                            resetSortedLazyHostPlugins(sortedLazyHostPlugins);
                                         }
+                                        continue mainloop;
                                     }
                                 }
                             }
                         }
-                        if (ftpPlugin != null && url.startsWith("ftp://")) {
-                            /* now we will check for generic ftp links */
-                            final Boolean ret = distributePluginForHost(ftpPlugin, generation, url, possibleCryptedLink);
-                            if (Boolean.FALSE.equals(ret)) {
-                                return;
-                            } else if (Boolean.TRUE.equals(ret)) {
-                                continue mainloop;
+                        if (isFtp) {
+                            if (ftpPlugin != null) {
+                                /* now we will check for generic ftp links */
+                                final Boolean ret = distributePluginForHost(ftpPlugin, generation, url, possibleCryptedLink);
+                                if (Boolean.FALSE.equals(ret)) {
+                                    return;
+                                } else if (Boolean.TRUE.equals(ret)) {
+                                    continue mainloop;
+                                }
                             }
-                        } else if (isDirectHttpEnabled()) {
+                        } else if (!isFile) {
+                            final DirectHTTPPermission directHTTPPermission = getDirectHTTPPermission();
                             if (directPlugin != null) {
                                 LinkCrawlerRule rule = null;
-                                if (url.startsWith("directhttp://")) {
-                                    /* now we will check for directPlugin links */
-                                    final Boolean ret = distributePluginForHost(directPlugin, generation, url, possibleCryptedLink);
-                                    if (Boolean.FALSE.equals(ret)) {
-                                        return;
-                                    } else if (Boolean.TRUE.equals(ret)) {
+                                if (isDirect) {
+                                    rule = possibleCryptedLink.getMatchingRule();
+                                    if (DirectHTTPPermission.ALWAYS.equals(directHTTPPermission) || (DirectHTTPPermission.RULES_ONLY.equals(directHTTPPermission) && LinkCrawlerRule.RULE.DIRECTHTTP.equals(rule))) {
+                                        /* now we will check for directPlugin links */
+                                        final Boolean ret = distributePluginForHost(directPlugin, generation, url, possibleCryptedLink);
+                                        if (Boolean.FALSE.equals(ret)) {
+                                            return;
+                                        } else if (Boolean.TRUE.equals(ret)) {
+                                            continue mainloop;
+                                        }
+                                    } else {
+                                        // DirectHTTPPermission.FORBIDDEN
                                         continue mainloop;
                                     }
                                 } else if ((rule = matchesDirectHTTPRule(possibleCryptedLink, url)) != null) {
-                                    final String newURL = "directhttp://" + url;
-                                    final CrawledLink modifiedPossibleCryptedLink = new CrawledLink(newURL);
-                                    modifiedPossibleCryptedLink.setMatchingRule(rule);
-                                    final String[] originalSourceURLS = possibleCryptedLink.getSourceUrls();
-                                    final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
-                                    final CrawledLinkModifier parentLinkModifier = possibleCryptedLink.getCustomCrawledLinkModifier();
-                                    possibleCryptedLink.setCustomCrawledLinkModifier(null);
-                                    forwardCrawledLinkInfos(possibleCryptedLink, modifiedPossibleCryptedLink, parentLinkModifier, sourceURLs, true);
-                                    final Boolean ret = distributePluginForHost(directPlugin, generation, newURL, modifiedPossibleCryptedLink);
-                                    if (Boolean.FALSE.equals(ret)) {
-                                        return;
-                                    } else if (Boolean.TRUE.equals(ret)) {
-                                        continue mainloop;
-                                    }
-                                    possibleCryptedLink.setSourceUrls(originalSourceURLS);
-                                    possibleCryptedLink.setCustomCrawledLinkModifier(parentLinkModifier);
-                                }
-                            }
-                            if (httpPlugin != null && url.startsWith("http")) {
-                                /* now we will check for normal http links */
-                                final String newURL = url.replaceFirst("https?://", (url.startsWith("https://") ? "httpsviajd://" : "httpviajd://"));
-                                try {
-                                    if (canHandle(httpPlugin, newURL, possibleCryptedLink)) {
-                                        /* create new CrawledLink that holds the modified CrawledLink */
+                                    if (!DirectHTTPPermission.FORBIDDEN.equals(directHTTPPermission)) {
+                                        // no need to check directHTTPPermission as it is ALWAYS or RULES_ONLY
+                                        final String newURL = "directhttp://" + url;
                                         final CrawledLink modifiedPossibleCryptedLink = new CrawledLink(newURL);
+                                        modifiedPossibleCryptedLink.setMatchingRule(rule);
                                         final String[] originalSourceURLS = possibleCryptedLink.getSourceUrls();
                                         final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
                                         final CrawledLinkModifier parentLinkModifier = possibleCryptedLink.getCustomCrawledLinkModifier();
                                         possibleCryptedLink.setCustomCrawledLinkModifier(null);
                                         forwardCrawledLinkInfos(possibleCryptedLink, modifiedPossibleCryptedLink, parentLinkModifier, sourceURLs, true);
-                                        final Boolean ret = distributePluginForHost(httpPlugin, generation, newURL, modifiedPossibleCryptedLink);
+                                        final Boolean ret = distributePluginForHost(directPlugin, generation, newURL, modifiedPossibleCryptedLink);
                                         if (Boolean.FALSE.equals(ret)) {
                                             return;
                                         } else if (Boolean.TRUE.equals(ret)) {
                                             continue mainloop;
                                         }
-                                        /**
-                                         * restore possibleCryptedLink properties because it is still unhandled
-                                         */
                                         possibleCryptedLink.setSourceUrls(originalSourceURLS);
                                         possibleCryptedLink.setCustomCrawledLinkModifier(parentLinkModifier);
+                                    } else {
+                                        // DirectHTTPPermission.FORBIDDEN
+                                        continue mainloop;
+                                    }
+                                }
+                            }
+                            if (httpPlugin != null && url.startsWith("http")) {
+                                /* now we will check for normal http links */
+                                final String newURL;
+                                if (isHttpJD) {
+                                    newURL = url;
+                                } else {
+                                    newURL = url.replaceFirst("https?://", (url.startsWith("https://") ? "httpsviajd://" : "httpviajd://"));
+                                }
+                                try {
+                                    if (canHandle(httpPlugin, newURL, possibleCryptedLink)) {
+                                        if (DirectHTTPPermission.ALWAYS.equals(directHTTPPermission)) {
+                                            /* create new CrawledLink that holds the modified CrawledLink */
+                                            final CrawledLink modifiedPossibleCryptedLink = new CrawledLink(newURL);
+                                            final String[] originalSourceURLS = possibleCryptedLink.getSourceUrls();
+                                            final String[] sourceURLs = getAndClearSourceURLs(possibleCryptedLink);
+                                            final CrawledLinkModifier parentLinkModifier = possibleCryptedLink.getCustomCrawledLinkModifier();
+                                            possibleCryptedLink.setCustomCrawledLinkModifier(null);
+                                            forwardCrawledLinkInfos(possibleCryptedLink, modifiedPossibleCryptedLink, parentLinkModifier, sourceURLs, true);
+                                            final Boolean ret = distributePluginForHost(httpPlugin, generation, newURL, modifiedPossibleCryptedLink);
+                                            if (Boolean.FALSE.equals(ret)) {
+                                                return;
+                                            } else if (Boolean.TRUE.equals(ret)) {
+                                                continue mainloop;
+                                            }
+                                            /**
+                                             * restore possibleCryptedLink properties because it is still unhandled
+                                             */
+                                            possibleCryptedLink.setSourceUrls(originalSourceURLS);
+                                            possibleCryptedLink.setCustomCrawledLinkModifier(parentLinkModifier);
+                                        }
+                                    } else {
+                                        // DirectHTTPPermission.FORBIDDEN
+                                        continue mainloop;
                                     }
                                 } catch (final Throwable e) {
                                     LogController.CL().log(e);
@@ -1288,17 +1326,20 @@ public class LinkCrawler {
                             /* lets retry this crawledLink */
                             continue mainloopretry;
                         }
-                        final Boolean deeperOrFollow = distributeDeeperOrFollowRedirect(generation, url, possibleCryptedLink);
-                        if (Boolean.FALSE.equals(deeperOrFollow)) {
-                            return;
-                        } else if (Boolean.TRUE.equals(deeperOrFollow)) {
-                            continue mainloop;
-                        }
-                        final Boolean embedded = distributeEmbeddedLink(generation, url, possibleCryptedLink);
-                        if (Boolean.FALSE.equals(embedded)) {
-                            return;
-                        } else if (Boolean.TRUE.equals(embedded)) {
-                            continue mainloop;
+                        if (!isFtp && !isHttpJD && !isDirect) {
+                            // only process non directhttp/https?viajd/ftp
+                            final Boolean deeperOrFollow = distributeDeeperOrFollowRedirect(generation, url, possibleCryptedLink);
+                            if (Boolean.FALSE.equals(deeperOrFollow)) {
+                                return;
+                            } else if (Boolean.TRUE.equals(deeperOrFollow)) {
+                                continue mainloop;
+                            }
+                            final Boolean embedded = distributeEmbeddedLink(generation, url, possibleCryptedLink);
+                            if (Boolean.FALSE.equals(embedded)) {
+                                return;
+                            } else if (Boolean.TRUE.equals(embedded)) {
+                                continue mainloop;
+                            }
                         }
                         break mainloopretry;
                     }
@@ -1525,8 +1566,8 @@ public class LinkCrawler {
         return sortedLazyHostPlugins.compareAndSet(lazyHostPlugins, null);
     }
 
-    public boolean isDirectHttpEnabled() {
-        return directHttpEnabled;
+    protected DirectHTTPPermission getDirectHTTPPermission() {
+        return directHTTPPermission;
     }
 
     public List<CrawledLink> getCrawlableLinks(Pattern pattern, CrawledLink source, CrawledLinkModifier modifier) {
