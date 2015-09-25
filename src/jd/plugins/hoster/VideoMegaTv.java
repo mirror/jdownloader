@@ -60,10 +60,13 @@ public class VideoMegaTv extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        if (link.getDownloadURL().matches(TYPE_NORMAL)) {
-            link.setUrlDownload("http://videomega.tv/?ref=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
-        } else {
-            link.setUrlDownload("http://videomega.tv/?ref=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+        if (link.getSetLinkID() == null) {
+            final String fuid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+            if (link.getDownloadURL().matches(TYPE_HASH)) {
+                link.setLinkID("hash" + fuid);
+            } else {
+                link.setLinkID("id" + fuid);
+            }
         }
     }
 
