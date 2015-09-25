@@ -453,6 +453,20 @@ public abstract class Plugin implements ActionListener {
         return;
     }
 
+    public static boolean implementsCanHandleString(Plugin plugin) {
+        try {
+            if (plugin != null) {
+                final Method method = plugin.getClass().getMethod("canHandle", String.class);
+                final boolean impl = method.getDeclaringClass() != Plugin.class;
+                return impl;
+            }
+        } catch (NoSuchMethodException e) {
+        } catch (Throwable e) {
+            LogController.CL().log(e);
+        }
+        return false;
+    }
+
     /**
      * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des
      * Patterns vorhanden ist.

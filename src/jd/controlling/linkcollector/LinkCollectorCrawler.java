@@ -12,11 +12,11 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
 public class LinkCollectorCrawler extends LinkCrawler implements LinkCollectorListener {
 
-    private LinkCollectorCrawlerEventSender eventSender;
+    private final LinkCollectorCrawlerEventSender eventSender;
 
     public LinkCollectorCrawler() {
         super(true, true);
-        setDirectHttpEnabled(CFG_GENERAL.CFG.isDirectHTTPCrawlerEnabled());
+        setDirectHTTPPermission(LinkCrawler.getConfig().getDirectHTTPPermission());
         setHostPluginBlacklist(CFG_GENERAL.CFG.getCrawlerHostPluginBlacklist());
         setCrawlerPluginBlacklist(CFG_GENERAL.CFG.getCrawlerCrawlerPluginBlacklist());
         eventSender = new LinkCollectorCrawlerEventSender();

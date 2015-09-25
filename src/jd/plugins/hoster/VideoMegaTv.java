@@ -115,8 +115,11 @@ public class VideoMegaTv extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        final String fileName = br.getRegex("class=\"center\">Videomega\\.tv - (.*?)</div").getMatch(0);
+        String fileName = br.getRegex("class=\"center\">Videomega\\.tv - (.*?)</div").getMatch(0);
         if (link.getFinalFileName() == null) {
+            if (StringUtils.isEmpty(fileName)) {
+                fileName = br.getRegex("<title>Videomega\\.tv - (.*?)</title").getMatch(0);
+            }
             if (StringUtils.isNotEmpty(fileName)) {
                 link.setFinalFileName(fileName + ".mp4");
             } else {
@@ -126,7 +129,6 @@ public class VideoMegaTv extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         String dllink = null;
