@@ -48,4 +48,10 @@ public interface ShutdownConfig extends ExtensionConfigInterface {
 
     void setShutdownActiveByDefaultEnabled(boolean b);
 
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    boolean isShowWarningDialog();
+
+    public void setShowWarningDialog(boolean b);
+
 }

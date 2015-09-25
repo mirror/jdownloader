@@ -108,6 +108,7 @@ public class Uploadedto extends PluginForHost {
     private static final String            SSL_CONNECTION                            = "SSL_CONNECTION";
     private static final String            PREFER_PREMIUM_DOWNLOAD_API               = "PREFER_PREMIUM_DOWNLOAD_API_V2";
     private static final String            DOWNLOAD_ABUSED                           = "DOWNLOAD_ABUSED";
+    private static final String            DISABLE_START_INTERVAL                    = "DISABLE_START_INTERVAL";
     private boolean                        PREFERSSL                                 = true;
     private boolean                        avoidHTTPS                                = false;
 
@@ -339,8 +340,8 @@ public class Uploadedto extends PluginForHost {
         this.enablePremium("http://uploaded.to/");
     }
 
-    protected long getStartIntervall(DownloadLink downloadLink, Account account) {
-        if (downloadLink != null) {
+    protected long getStartIntervall(final DownloadLink downloadLink, final Account account) {
+        if (!this.getPluginConfig().getBooleanProperty(DISABLE_START_INTERVAL, false) && downloadLink != null) {
             final long verifiedFileSize = downloadLink.getVerifiedFileSize();
             if (account != null) {
                 if (verifiedFileSize >= 50 * 1000 * 1000l) {
@@ -1916,6 +1917,7 @@ public class Uploadedto extends PluginForHost {
         final ConfigEntry cfe = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_PREMIUM_DOWNLOAD_API, getPhrase("SETTING_PREFER_PREMIUM_DOWNLOAD_API")).setDefaultValue(default_ppda);
         getConfig().addEntry(cfe);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DOWNLOAD_ABUSED, JDL.L("plugins.hoster.uploadedto.downloadAbused", getPhrase("SETTING_DOWNLOAD_ABUSED"))).setDefaultValue(default_abused).setEnabledCondidtion(cfe, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DISABLE_START_INTERVAL, "Disable start interval. Warning: This may cause IP blocks from uploaded.to").setDefaultValue(false));
 
     }
 

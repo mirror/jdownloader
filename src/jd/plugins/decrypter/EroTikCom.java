@@ -113,7 +113,7 @@ public class EroTikCom extends PluginForDecrypt {
             externID = externID.replace("validatehash.php?hashkey=", "genembedv2.php?ref=");
         }
         dl.setContentUrl(externID);
-        dl.setFinalFileName(filename + "." + ".mp4");
+        dl.setFinalFileName(filename + "." + "mp4");
         decryptedLinks.add(dl);
         logger.info("decryptedLinks.add(dl) done");
         return;

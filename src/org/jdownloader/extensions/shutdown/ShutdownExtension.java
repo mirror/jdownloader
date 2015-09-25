@@ -360,81 +360,91 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                     }
                 }
             }
-            String message;
-            int ret2;
+            final boolean showDialog = getSettings().isShowWarningDialog();
             switch (getSettings().getShutdownMode()) {
             case SHUTDOWN:
                 /* try to shutdown */
-                LogController.CL().info("ask user about shutdown");
-                message = _.interaction_shutdown_dialog_msg_shutdown();
-
-                WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_shutdown(), message);
-
-                WarningDialogInterface io = UIOManager.I().show(WarningDialogInterface.class, d);
-                switch (io.getCloseReason()) {
-                case OK:
-                case TIMEOUT:
+                if (showDialog) {
+                    LogController.CL().info("ask user about shutdown");
+                    final String message = _.interaction_shutdown_dialog_msg_shutdown();
+                    final WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_shutdown(), message);
+                    final WarningDialogInterface io = UIOManager.I().show(WarningDialogInterface.class, d);
+                    switch (io.getCloseReason()) {
+                    case OK:
+                    case TIMEOUT:
+                        shutdown();
+                        return;
+                    default:
+                        break;
+                    }
+                } else {
+                    LogController.CL().info("don't ask user about shutdown");
                     shutdown();
-                    break;
-                default:
-                    break;
+                    return;
                 }
-
                 break;
             case STANDBY:
                 /* try to standby */
-                LogController.CL().info("ask user about standby");
-
-                message = _.interaction_shutdown_dialog_msg_standby();
-                d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_standby(), message);
-                io = UIOManager.I().show(WarningDialogInterface.class, d);
-
-                switch (io.getCloseReason()) {
-                case OK:
-                case TIMEOUT:
+                if (showDialog) {
+                    LogController.CL().info("ask user about standby");
+                    final String message = _.interaction_shutdown_dialog_msg_standby();
+                    final WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_standby(), message);
+                    final WarningDialogInterface io = UIOManager.I().show(WarningDialogInterface.class, d);
+                    switch (io.getCloseReason()) {
+                    case OK:
+                    case TIMEOUT:
+                        standby();
+                        return;
+                    default:
+                        break;
+                    }
+                } else {
+                    LogController.CL().info("don't ask user about standby");
                     standby();
-                    break;
-                default:
-                    break;
+                    return;
                 }
-
                 break;
             case HIBERNATE:
                 /* try to hibernate */
-                LogController.CL().info("ask user about hibernate");
-
-                message = _.interaction_shutdown_dialog_msg_hibernate();
-                d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_hibernate(), message);
-
-                io = UIOManager.I().show(WarningDialogInterface.class, d);
-
-                switch (io.getCloseReason()) {
-                case OK:
-                case TIMEOUT:
+                if (showDialog) {
+                    LogController.CL().info("ask user about hibernate");
+                    final String message = _.interaction_shutdown_dialog_msg_hibernate();
+                    final WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_hibernate(), message);
+                    final WarningDialogInterface io = UIOManager.I().show(WarningDialogInterface.class, d);
+                    switch (io.getCloseReason()) {
+                    case OK:
+                    case TIMEOUT:
+                        hibernate();
+                        return;
+                    default:
+                        break;
+                    }
+                } else {
+                    LogController.CL().info("dont' ask user about hibernate");
                     hibernate();
-                    break;
-                default:
-                    break;
+                    return;
                 }
-
                 break;
             case CLOSE:
                 /* try to close */
-                LogController.CL().info("ask user about closing");
-                message = _.interaction_shutdown_dialog_msg_closejd();
-
-                d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_closejd(), message);
-                io = UIOManager.I().show(WarningDialogInterface.class, d);
-
-                switch (io.getCloseReason()) {
-                case OK:
-                case TIMEOUT:
+                if (showDialog) {
+                    LogController.CL().info("ask user about closing");
+                    final String message = _.interaction_shutdown_dialog_msg_closejd();
+                    final WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_closejd(), message);
+                    final WarningDialogInterface io = UIOManager.I().show(WarningDialogInterface.class, d);
+                    switch (io.getCloseReason()) {
+                    case OK:
+                    case TIMEOUT:
+                        RestartController.getInstance().exitAsynch(new SmartRlyExitRequest(true));
+                        return;
+                    default:
+                        break;
+                    }
+                } else {
+                    LogController.CL().info("don't ask user about closing");
                     RestartController.getInstance().exitAsynch(new SmartRlyExitRequest(true));
-                    break;
-                default:
-                    break;
+                    return;
                 }
-
                 break;
             default:
                 break;
