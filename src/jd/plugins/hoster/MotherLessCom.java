@@ -120,6 +120,10 @@ public class MotherLessCom extends PluginForHost {
             }
             title = getUploadTitle();
             getPictureLink();
+            logger.info("DLLINK: " + DLLINK);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("fileurl = \'(http://.*?)\'").getMatch(0);
+            }
             // No link there but link to the full picture -> Offline
             if (DLLINK == null && br.containsHTML("<div id=\"media-media\">[\t\n\r ]+<div>[\t\n\r ]+<a href=\"/[A-Z0-9]+\\?full\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
