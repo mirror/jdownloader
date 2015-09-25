@@ -1115,7 +1115,7 @@ public class RockFileEu extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account, false);
         if (account.getBooleanProperty("nopremium", false)) {
-            requestFileInformation(downloadLink);
+            // requestFileInformation(downloadLink); // Filenaame is not available if logged in
             doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
         } else {
             String dllink = checkDirectLink(downloadLink, "premlink");
