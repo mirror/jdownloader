@@ -808,7 +808,7 @@ NinekwService_createPanel_notification_badnofeedback_tooltiptext=Warnen wenn die
 NinekwService_createPanel_notification_badnofeedback_errortext=Zu viele Captchas ohne Feedback wie OK oder NotOK. Bitte prüfe es.
 NinekwService_createPanel_notification_badtimeout=Zu kurze Zeitüberschreitungen
 NinekwService_createPanel_notification_badtimeout_tooltiptext=Warnen wenn zu viele Fehler mit Zeitüberschreitung verfügbar sind
-NinekwService_createPanel_notification_badtimeout_errortextDeine max. Zeitüberschreitung für 9kw.eu ist wirklich gering. Bitte ändere es und versuche es erneut.
+NinekwService_createPanel_notification_badtimeout_errortext=Deine max. Zeitüberschreitung für 9kw.eu ist wirklich gering. Bitte ändere es und versuche es erneut.
 NinekwService_createPanel_notification_badtimeout_errortext2=Dein "othertimeout" als zweite max. Zeitüberschreitung von der Black-/Whitelist ist höher als die Standardzeitüberschreiung.\nBitte ändere es und versuche es erneut.
 NinekwService_createPanel_notification_baderrorsanduploads=Fehler und schlechte Uploads
 NinekwService_createPanel_notification_baderrorsanduploads_tooltiptext=Warnen wenn zu viele Fehler mit dem Hochladen vom Captcha verfügbar sind
