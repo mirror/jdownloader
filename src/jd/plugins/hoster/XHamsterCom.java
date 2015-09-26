@@ -261,17 +261,11 @@ public class XHamsterCom extends PluginForHost {
     }
 
     private String getFilename() throws PluginException, IOException {
-        String filename = getSiteTitle();
+        String filename = br.getRegex("gr\"><h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\"").getMatch(0);
+            filename = br.getRegex("<title>([^<>\"]*?), Free Porn: xHamster</title>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<meta name=\"keywords\" content=\"(.*?)\"").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("height=\"26\" width=.*?align=left>\\&nbsp;(.*?)</th>").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("<B>Description:</B></td>.*?<td width=[0-9]+>(.*?)</td>").getMatch(0);
-                    }
-                }
+                filename = getSiteTitle();
             }
         }
         if (filename == null) {
