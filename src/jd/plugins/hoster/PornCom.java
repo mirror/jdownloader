@@ -19,6 +19,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -28,14 +31,17 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "porn.com" }, urls = { "http://(www\\.)?porn\\.com/videos/[^<>\"/]+\\d+(\\.html)?" }, flags = { 0 })
 public class PornCom extends antiDDoSForHost {
 
     private String DLLINK = null;
+    private String vq     = null;
 
     public PornCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.setConfigElements();
     }
 
     @Override
@@ -86,7 +92,11 @@ public class PornCom extends antiDDoSForHost {
         if (ext == null || ext.length() > 5) {
             ext = ".mp4";
         }
-        downloadLink.setFinalFileName(filename + ext);
+        if (vq == null) {
+            downloadLink.setFinalFileName(filename + ext);
+        } else {
+            downloadLink.setFinalFileName(filename + "." + vq + ext);
+        }
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -108,21 +118,27 @@ public class PornCom extends antiDDoSForHost {
     }
 
     private void get_dllink(final Browser brc) {
-        DLLINK = brc.getRegex("\"Med\"(,file)?:\"(http:.*?)\"").getMatch(1);
-        if (DLLINK == null) {
-            DLLINK = brc.getRegex("\"Low\"(,file)?:\"(http:.*?)\"").getMatch(1);
-            if (DLLINK == null) {
-                DLLINK = brc.getRegex("\"trailer\"(file)?:\"(http:.*?)\"").getMatch(1);
-                if (DLLINK == null) {
-                    DLLINK = brc.getRegex("480p\",url:\"(http:.*?)\"").getMatch(0);
-                    if (DLLINK == null) {
-                        DLLINK = brc.getRegex("360p\",url:\"(http:.*?)\"").getMatch(0);
-                        if (DLLINK == null) {
-                            DLLINK = brc.getRegex("240p\",url:\"(http:.*?)\"").getMatch(0);
-                        }
-                    }
-                }
-            }
+        final SubConfiguration cfg = SubConfiguration.getConfig("porn.com");
+        boolean q240 = cfg.getBooleanProperty("240p", false);
+        boolean q360 = cfg.getBooleanProperty("360p", false);
+        boolean q480 = cfg.getBooleanProperty("480p", false);
+        boolean q720 = cfg.getBooleanProperty("720p", false);
+        DLLINK = brc.getRegex("240p\",url:\"(http:.*?)\"").getMatch(0); // Default
+        if (q240) {
+            DLLINK = brc.getRegex("240p\",url:\"(http:.*?)\"").getMatch(0);
+            vq = "240p";
+        }
+        if (q360) {
+            DLLINK = brc.getRegex("360p\",url:\"(http:.*?)\"").getMatch(0);
+            vq = "360p";
+        }
+        if (q480) {
+            DLLINK = brc.getRegex("480p\",url:\"(http:.*?)\"").getMatch(0);
+            vq = "480p";
+        }
+        if (q720) {
+            DLLINK = brc.getRegex("720p\",url:\"(http:.*?)\"").getMatch(0);
+            vq = "720p";
         }
         if (DLLINK != null) {
             return;
@@ -168,6 +184,21 @@ public class PornCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @Override
+    public String getDescription() {
+        return "Only highest quality video available that you choose will be chosen.";
+    }
+
+    private void setConfigElements() {
+        final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_BEST", JDL.L("plugins.hoster.PornCom.checkbest", "Only grab the best available resolution")).setDefaultValue(false);
+        // getConfig().addEntry(hq);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "240p", JDL.L("plugins.hoster.PornCom.check360p", "Choose 240p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "360p", JDL.L("plugins.hoster.PornCom.check360p", "Choose 360p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "480p", JDL.L("plugins.hoster.PornCom.check480p", "Choose 480p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "720p", JDL.L("plugins.hoster.PornCom.check720p", "Choose 720p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
     }
 
     @Override
