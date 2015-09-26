@@ -229,6 +229,17 @@ public class NineKwSolverService extends AbstractSolverService implements Servic
                             ServicePanel.getInstance().requestUpdate(true);
                         }
                     });
+                    CFG_9KWCAPTCHA.PUZZLE.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+                        @Override
+                        public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                        }
+
+                        @Override
+                        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                            ServicePanel.getInstance().requestUpdate(true);
+                        }
+                    });
                 }
 
             });
