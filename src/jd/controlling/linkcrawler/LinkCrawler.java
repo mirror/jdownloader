@@ -1303,10 +1303,10 @@ public class LinkCrawler {
                                              */
                                             possibleCryptedLink.setSourceUrls(originalSourceURLS);
                                             possibleCryptedLink.setCustomCrawledLinkModifier(parentLinkModifier);
+                                        } else {
+                                            // DirectHTTPPermission.FORBIDDEN
+                                            continue mainloop;
                                         }
-                                    } else {
-                                        // DirectHTTPPermission.FORBIDDEN
-                                        continue mainloop;
                                     }
                                 } catch (final Throwable e) {
                                     LogController.CL().log(e);

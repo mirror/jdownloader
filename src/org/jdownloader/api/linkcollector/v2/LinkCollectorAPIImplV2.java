@@ -341,7 +341,9 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                     packageInfo.setUniqueId(null);
                     link.setDesiredPackageInfo(packageInfo);
                 }
-                link.setPriority(fp);
+                if (!Priority.DEFAULT.equals(fp)) {
+                    link.setPriority(fp);
+                }
                 if (StringUtils.isNotEmpty(query.getDestinationFolder())) {
                     PackageInfo packageInfo = link.getDesiredPackageInfo();
                     if (packageInfo == null) {
@@ -352,7 +354,7 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                     packageInfo.setUniqueId(null);
                     link.setDesiredPackageInfo(packageInfo);
                 }
-                DownloadLink dlLink = link.getDownloadLink();
+                final DownloadLink dlLink = link.getDownloadLink();
                 if (dlLink != null) {
                     if (StringUtils.isNotEmpty(query.getDownloadPassword())) {
                         dlLink.setDownloadPassword(query.getDownloadPassword());
