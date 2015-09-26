@@ -80,6 +80,7 @@ public class LuckyShareNet extends PluginForHost {
         return false;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -434,6 +435,7 @@ public class LuckyShareNet extends PluginForHost {
         return ai;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
@@ -449,7 +451,17 @@ public class LuckyShareNet extends PluginForHost {
                 refreshCookies(fresh, cookies, account);
                 getPage(this.br, link.getDownloadURL());
             }
-
+            if (!this.getPluginConfig().getBooleanProperty(ALLOW_FREE_DOWNLOADS, false)) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) {
+                        throw (PluginException) e;
+                    }
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
