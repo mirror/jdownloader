@@ -42,14 +42,14 @@ public class CryptTo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        this.br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("\"images/error\\.gif\"")) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         final String folderid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
-        final String containerurl = "http://crypt.to/container," + folderid + ",0";
-        decryptedLinks = loadcontainer(containerurl);
+        decryptedLinks = loadcontainer(folderid);
         // String fpName = br.getRegex("").getMatch(0);
         // final String[] links = br.getRegex("").getColumn(0);
         // if (links == null || links.length == 0) {
@@ -70,7 +70,8 @@ public class CryptTo extends PluginForDecrypt {
     }
 
     @SuppressWarnings("deprecation")
-    private ArrayList<DownloadLink> loadcontainer(final String theLink) throws IOException, PluginException {
+    private ArrayList<DownloadLink> loadcontainer(final String folderid) throws IOException, PluginException {
+        final String theLink = "http://crypt.to/container," + folderid + ",0";
         ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         final Browser brc = br.cloneBrowser();
         File file = null;
@@ -78,7 +79,7 @@ public class CryptTo extends PluginForDecrypt {
         try {
             con = brc.openGetConnection(theLink);
             if (con.getResponseCode() == 200) {
-                file = JDUtilities.getResourceFile("tmp/cryptto/" + theLink);
+                file = JDUtilities.getResourceFile("tmp/cryptto/" + folderid);
                 if (file == null) {
                     return links;
                 }

@@ -238,10 +238,6 @@ public class BrOnlineDe extends PluginForHost {
 
                 dest.write(start_formatted + " --> " + end_formatted + lineseparator);
 
-                if (info.contains("Doch diesmal spielte man auch")) {
-                    System.out.println("");
-                }
-
                 final String[][] texts = new Regex(info, "<tt:span style=\"([A-Za-z0-9]+)\">([^<>\"]*?)</tt:span>").getMatches();
                 String text = "";
                 int line_counter = 1;
