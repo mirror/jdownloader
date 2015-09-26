@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yuvutu.com" }, urls = { "http://(www\\.)?yuvutu.com/(video/\\d+/|modules\\.php\\?name=Video\\&op=view\\&video_id=\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yuvutu.com" }, urls = { "http://(www\\.)?yuvutu.com/(video/\\d+/|modules\\.php\\?name=Video\\&op=view\\&video_id=\\d+)" }, flags = { 2 })
 public class YuvutuCom extends PluginForHost {
 
     public String dllink = null;
@@ -75,14 +75,18 @@ public class YuvutuCom extends PluginForHost {
         return -1;
     }
 
+    @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload("http://www.yuvutu.com/modules.php?name=Video&op=view&video_id=" + new Regex(link.getDownloadURL(), "(\\d+)/?$").getMatch(0));
+        final String linkid = this.getLinkid(link);
+        link.setUrlDownload("http://www.yuvutu.com/modules.php?name=Video&op=view&video_id=" + linkid);
+        link.setLinkID(linkid);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + ".mp4");
+        downloadLink.setName(getLinkid(downloadLink) + ".mp4");
         br.setCookie("http://www.yuvutu.com/", "lang", "english");
         br.setCookie("http://www.yuvutu.com/", "warningcookie", "viewed");
         br.setFollowRedirects(false);
@@ -98,6 +102,12 @@ public class YuvutuCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
+        if (filename == null) {
+            filename = this.br.getRegex("<div class=\"video-title-content\">([^<>\"]*?)</div>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = this.getLinkid(downloadLink);
+        }
         final String embedlink = br.getRegex("\"(/embed_video\\.php\\?uri=[^<>\"]*?)\"").getMatch(0);
         if (embedlink == null || filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -122,7 +132,7 @@ public class YuvutuCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(dllink);
+            con = br2.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -146,6 +156,10 @@ public class YuvutuCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getLinkid(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
     }
 
     @Override

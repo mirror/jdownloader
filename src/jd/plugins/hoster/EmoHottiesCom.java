@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emohotties.com" }, urls = { "http://(www\\.)?emohotties\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "emohotties.com" }, urls = { "http://(www\\.)?decryptedemohotties\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html" }, flags = { 0 })
 public class EmoHottiesCom extends PluginForHost {
 
     public EmoHottiesCom(PluginWrapper wrapper) {
@@ -43,33 +43,46 @@ public class EmoHottiesCom extends PluginForHost {
         return "http://emohotties.com/contact.php";
     }
 
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("decryptedemohotties.com", "emohotties.com"));
+    }
+
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://emohotties.com/404.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- Emo Hotties</title>").getMatch(0);
+        if (isOffline(this.br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = getTitle(this.br);
         // DLLINK = br.getRegex("(http://emohotties\\.com/playerConfig\\.php\\?[^<>\"/]+\\.(flv|mp4)(\\|\\d+)?)\"").getMatch(0);
         /* Important: Remember that: http://jdownloader.net:8081/pastebin/123271 */
         DLLINK = br.getRegex("itemprop=\"contentURL\" content=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || DLLINK == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
+        if (ext == null || ext.length() > 5) {
+            ext = ".flv";
+        }
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
+            con = br2.openHeadConnection(DLLINK);
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
@@ -77,6 +90,21 @@ public class EmoHottiesCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    public static String getTitle(final Browser br) {
+        String filename = br.getRegex("itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?)\\- Emo Hotties</title>").getMatch(0);
+        }
+        return filename;
+    }
+
+    public static boolean isOffline(final Browser br) {
+        if (br.getURL().equals("http://emohotties.com/404.php") || br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        }
+        return false;
     }
 
     @Override

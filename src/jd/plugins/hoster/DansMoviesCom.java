@@ -24,6 +24,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dansmovies.com" }, urls = { "http://(www\\.)?dansmovies\\.com/video/[a-z0-9\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dansmovies.com" }, urls = { "http://(www\\.)?dansmovies\\.com/video/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class DansMoviesCom extends PluginForHost {
 
     public DansMoviesCom(PluginWrapper wrapper) {
@@ -59,12 +60,15 @@ public class DansMoviesCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("class=\\'notification error\\'") || br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains("/video/")) {
+        if (br.containsHTML("class=\\'notification error\\'|class=\"notification error\"") || br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains("/video/")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<div class=\"title\">[\t\n\r ]+<h1>([^<>]*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?) \\- Dansmovies\\.com</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = new Regex(downloadLink.getDownloadURL(), "/video/([a-z0-9\\-]+)\\.html$").getMatch(0);
         }
         DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         if (DLLINK == null) {
@@ -95,7 +99,7 @@ public class DansMoviesCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = br2.openGetConnection(DLLINK);
+                con = br2.openHeadConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
