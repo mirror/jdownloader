@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -27,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "canna.to" }, urls = { "http://[uu\\.canna\\.to|85\\.17\\.36\\.224]+/cpuser/links\\.php\\?action=[cp_]*?popup&kat_id=[\\d]+&fileid=[\\d]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "canna.to" }, urls = { "http://[uu\\.canna\\.to|85\\.17\\.36\\.224]+/cpuser/links\\.php\\?action=[cp_]*?popup&kat_id=[\\d]+&fileid=[\\d]+" }, flags = { 0 })
 public class CnnT extends PluginForDecrypt {
 
     public CnnT(PluginWrapper wrapper) {
@@ -36,9 +37,11 @@ public class CnnT extends PluginForDecrypt {
 
     public static Object LOCK = new Object();
 
+    @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
+        final String fid = new Regex(parameter, "fileid=(\\d+)").getMatch(0);
         boolean valid = false;
         br.setFollowRedirects(true);
         br.getPage(parameter);
@@ -46,13 +49,14 @@ public class CnnT extends PluginForDecrypt {
             logger.info("Site overloaded at the moment: " + parameter);
             return decryptedLinks;
         }
-        if (br.containsHTML("Es existiert kein Eintrag zu dieser ID")) {
-            logger.info("Link offline: " + parameter);
+        if (br.containsHTML("Es existiert kein Eintrag zu dieser ID") || this.br.getHttpConnection().getResponseCode() == 404) {
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         synchronized (LOCK) {
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                 final Form captchaForm = br.getFormbyProperty("name", "download_form");
+                captchaForm.setAction("/cpuser/links.php?action=load&fileid=" + fid);
                 final String captchaUrl = br.getRegex("\"(securimage_show\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
                 if (captchaUrl == null || captchaForm == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
@@ -67,7 +71,9 @@ public class CnnT extends PluginForDecrypt {
                 } else {
                     valid = true;
                     String finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
-                    if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
+                    if (finallink != null) {
+                        decryptedLinks.add(createDownloadlink(finallink));
+                    }
                     String links[] = br.getRegex("<a target=\"_blank\" href=\"(.*?)\">").getColumn(0);
                     if (links != null && links.length != 0) {
                         for (String link : links) {

@@ -66,10 +66,17 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-//When adding new domains here also add them to the turbobit.net decrypter (TurboBitNetFolder)
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(?:www\\.|new\\.|m\\.)?(wayupload\\.com|turo-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbobit\\.net|upload\\.mskvn\\.by|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.uz|xrfiles\\.ru|turbobax\\.net|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|freefo\\.ru|savebit\\.net|filemaster\\.ru|файлообменник\\.рф|vipgfx\\.net|turbovit\\.com\\.ua|turboot\\.ru|filez\\.ninja|kilofile\\.com)/([A-Za-z0-9]+(/[^<>\"/]*?)?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
 
+    /**
+     * TODO: Check if we already got errorhandling for this kind of error http://turbobit.net/error/download/dcount/xxxtesst --> "
+     *
+     * An amount of maximum downloads for this link has been exceeded "
+     *
+     * When adding new domains here also add them to the turbobit.net decrypter (TurboBitNetFolder)
+     *
+     */
     private static final String RECAPTCHATEXT                         = "api\\.recaptcha\\.net";
     private static final String CAPTCHAREGEX                          = "\"(https?://(?:\\w+\\.)?turbobit\\.net/captcha/.*?)\"";
     private static final String MAINPAGE                              = "http://turbobit.net";
@@ -286,6 +293,7 @@ public class TurboBitNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        getCurrentTimeCookie();
         // support for public premium links
         if (downloadLink.getDownloadURL().matches(premRedirectLinks)) {
             handlePremiumLink(downloadLink);
@@ -390,13 +398,15 @@ public class TurboBitNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
             rc.setId(theId);
             rc.setForm(captchaform);
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             final String c = getCaptchaCode("recaptcha", cf, downloadLink);
             rc.getForm().setAction("/download/free/" + id + "#");
+            /* IMPORTANT!! */
+            br.setCookie(br.getHost(), "turbobit1", getCurrentTimeCookie());
             rc.setCode(c);
             if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML("Incorrect, try again")) {
                 try {
@@ -429,6 +439,8 @@ public class TurboBitNet extends PluginForHost {
                 }
                 captchaform.put("captcha_response", Encoding.urlEncode(captchaCode));
                 final Browser br = this.br.cloneBrowser();
+                /* IMPORTANT!! */
+                br.setCookie(br.getHost(), "turbobit1", getCurrentTimeCookie());
                 br.submitForm(captchaform);
                 if (br.getRegex(CAPTCHAREGEX).getMatch(0) == null) {
                     this.br = br;
@@ -557,10 +569,6 @@ public class TurboBitNet extends PluginForHost {
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage(continueLink);
-            // Wed Jun 13 12:29:47 UTC 0200 2012
-            SimpleDateFormat df = new SimpleDateFormat("EEE MMM dd HH:mm:ss zZ yyyy");
-            Date date = new Date();
-            br.setCookie(br.getHost(), "turbobit1", Encoding.urlEncode_light(df.format(date)).replace(":", "%3A"));
             downloadUrl = br.getRegex("(\"|')(/?/download/redirect/.*?)\\1").getMatch(1);
             if (downloadUrl == null) {
                 if (br.toString().matches("Error: \\d+")) {
@@ -569,6 +577,8 @@ public class TurboBitNet extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            /* IMPORTANT!! */
+            br.setCookie(br.getHost(), "turbobit2", getCurrentTimeCookie());
         }
         br.setFollowRedirects(false);
         // Future redirects at this point! We want to catch them and not process in order to get the MD5sum! example url structure
@@ -605,6 +615,19 @@ public class TurboBitNet extends PluginForHost {
         dl.startDownload();
     }
 
+    private String getCurrentTimeCookie() {
+        // old: Wed Jun 13 12:29:47 UTC 0200 2012 --> EEE MMM dd HH:mm:ss zZ yyyy
+        // new: Sat Sep 26 2015 16:17:42 GMT+0200 -->
+        final SimpleDateFormat df = new SimpleDateFormat("EEE MMM dd yyyy HH:mm:ss");
+        /* Not needed but that is what they use */
+        // df.setTimeZone(TimeZone.getTimeZone("GMT"));
+        final Date date = new Date();
+        String output = df.format(date) + " GMT+0200";
+        output = Encoding.urlEncode_light(output);
+        output = output.replace(":", "%3A");
+        return output;
+    }
+
     /**
      * fuid = case sensitive.
      *
@@ -612,6 +635,7 @@ public class TurboBitNet extends PluginForHost {
      * @return
      * @throws PluginException
      */
+    @SuppressWarnings("deprecation")
     private String getFUID(DownloadLink downloadLink) throws PluginException {
         // standard links turbobit.net/uid.html && turbobit.net/uid/filename.html
         String fuid = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([a-zA-F0-9]+)(/[^/]+)?\\.html").getMatch(0);
@@ -629,6 +653,7 @@ public class TurboBitNet extends PluginForHost {
         return fuid;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         // support for public premium links

@@ -37,7 +37,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1gold.de", "sixx.de", "7tv.de" }, urls = { "http://(?:www\\.)?prosieben\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://www\\.prosiebenmaxx\\.de/[^<>\"\\']*?videos?/[\\w\\-]+", "http://(?:www\\.)?the\\-voice\\-of\\-germany\\.de/video/[\\w\\-]+", "http://(?:www\\.)?kabeleins\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(?:www\\.)?sat1\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(?:www\\.)?sat1gold\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(?:www\\.)?sixx\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(?:www\\.)?7tv\\.de/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prosieben.de", "prosiebenmaxx.de", "the-voice-of-germany.de", "kabeleins.de", "sat1.de", "sat1gold.de", "sixx.de", "7tv.de" }, urls = { "http://(?:www\\.)?prosieben\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://www\\.prosiebenmaxx\\.de/[^<>\"\\']*?videos?/[\\w\\-]+", "http://(?:www\\.)?the\\-voice\\-of\\-germany\\.de/video/[\\w\\-]+", "http://(?:www\\.)?kabeleins\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(?:www\\.)?sat1\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(?:www\\.)?sat1gold\\.de/tv/[\\w\\-]+/videos?/[\\w\\-]+", "http://(?:www\\.)?sixx\\.de/tv/.+", "http://(?:www\\.)?7tv\\.de/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+" }, flags = { 32, 32, 32, 32, 32, 32, 32, 32 })
 public class ProSevenDe extends PluginForHost {
 
     /** Other domains: proxieben.at (redirects to .de) */
@@ -229,7 +229,7 @@ public class ProSevenDe extends PluginForHost {
              * TODO: Instead of just trying all qualities, consider to use the f4mgenerator XML file to find the existing qualities:
              * http://vas.sim-technik.de/f4mgenerator.f4m?cid=3868276&ttl=604800&access_token=kabeleins&cdn=akamai&token=
              * a3c706238cec19617b8e70b64480fa20aacc2a162a3bbd21294a8ddaf0209699&g=TGENNQIQUMYD&hdcore=3.7.0&plugin=aasp-3.7.0.39.44
-             *
+             * 
              * ... but it might happen that not all are listed so maybe trying all possible qualities makes more sense especially if one of
              * them is down e.g. because of server issues.
              */

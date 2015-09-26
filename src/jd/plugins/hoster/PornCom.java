@@ -17,15 +17,21 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
+import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -33,15 +39,30 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "porn.com" }, urls = { "http://(www\\.)?porn\\.com/videos/[^<>\"/]+\\d+(\\.html)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "http://(www\\.)?porn\\.com/videos/[^<>\"/]+\\d+(\\.html)?" }, flags = { 2 })
 public class PornCom extends antiDDoSForHost {
 
-    private String DLLINK = null;
-    private String vq     = null;
+    /* Connection stuff */
+    private static final boolean FREE_RESUME       = true;
+    private static final int     FREE_MAXCHUNKS    = 0;
+    private static final int     FREE_MAXDOWNLOADS = -1;
+    // private static final boolean ACCOUNT_FREE_RESUME = true;
+    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
+    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
+    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
+    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+
+    private String               DLLINK            = null;
+    private String               vq                = null;
+
+    /* don't touch the following! */
+    private static AtomicInteger maxPrem           = new AtomicInteger(1);
 
     public PornCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setConfigElements();
+        this.enablePremium("http://www.porn.com/profile/premium");
     }
 
     @Override
@@ -51,13 +72,21 @@ public class PornCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return FREE_MAXDOWNLOADS;
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        final Account aa = AccountController.getInstance().getValidAccount(this);
+        if (aa != null) {
+            try {
+                this.login(aa, false);
+            } catch (final Throwable e) {
+            }
+        }
         br.getPage(downloadLink.getDownloadURL().replace("/embed/", "/"));
         if (br.containsHTML("(id=\"error\"><h2>404|No such video|<title>PORN\\.COM</title>)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -102,7 +131,7 @@ public class PornCom extends antiDDoSForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
@@ -117,6 +146,7 @@ public class PornCom extends antiDDoSForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void get_dllink(final Browser brc) {
         final SubConfiguration cfg = SubConfiguration.getConfig("porn.com");
         boolean q240 = cfg.getBooleanProperty("240p", false);
@@ -166,24 +196,97 @@ public class PornCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    private void doFree(final DownloadLink downloadLink) throws Exception {
         if (DLLINK == null && br.containsHTML(">Sorry, this video is only available to members")) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Only available for registered users");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private static final String MAINPAGE = "http://porn.com";
+    private static Object       LOCK     = new Object();
+
+    /** Login e.g. needed for videos that are only available to registered users and/or premium content. */
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                // Load cookies
+                br.setCookiesExclusive(true);
+                final Cookies cookies = account.loadCookies("");
+                if (cookies != null && !force) {
+                    this.br.setCookies(this.getHost(), cookies);
+                    return;
+                }
+                br.setFollowRedirects(false);
+                br.getPage("http://www.porn.com/");
+                // br.getHeaders().put("X-CSRF-Token", "");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("/login/ajax-login.json", "captcha=&captcha_hash=&remember=yes&form_id=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.getPage("http://www.porn.com/");
+                if (br.getCookie(MAINPAGE, "auth") == null) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                }
+                account.saveCookies(this.br.getCookies(this.getHost()), "");
+            } catch (final PluginException e) {
+                account.clearCookies("");
+                throw e;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            throw e;
+        }
+        ai.setUnlimitedTraffic();
+        maxPrem.set(FREE_MAXDOWNLOADS);
+        try {
+            account.setType(AccountType.FREE);
+            /* free accounts can still have captcha */
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(false);
+        } catch (final Throwable e) {
+            /* not available in old Stable 0.9.581 */
+        }
+        ai.setStatus("Registered (free) user");
+        account.setValid(true);
+        return ai;
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        login(account, false);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        doFree(link);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     @Override

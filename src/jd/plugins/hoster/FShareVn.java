@@ -37,6 +37,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -55,12 +56,22 @@ import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fshare.vn" }, urls = { "https?://(?:www\\.)?(?:mega\\.1280\\.com|fshare\\.vn)/file/([0-9A-Z]+)" }, flags = { 2 })
 public class FShareVn extends PluginForHost {
 
-    private final String         SERVERERROR = "Tài nguyên bạn yêu cầu không tìm thấy";
-    private final String         IPBLOCKED   = "<li>Tài khoản của bạn thuộc GUEST nên chỉ tải xuống";
-    private static Object        LOCK        = new Object();
-    private static AtomicInteger maxPrem     = new AtomicInteger(1);
-    private String               dllink      = null;
-    private String               uid         = null;
+    private final String         SERVERERROR                  = "Tài nguyên bạn yêu cầu không tìm thấy";
+    private final String         IPBLOCKED                    = "<li>Tài khoản của bạn thuộc GUEST nên chỉ tải xuống";
+    private static Object        LOCK                         = new Object();
+    private String               dllink                       = null;
+    private String               uid                          = null;
+
+    /* Connection stuff */
+    private static final boolean FREE_RESUME                  = false;
+    private static final int     FREE_MAXCHUNKS               = 1;
+    private static final int     FREE_MAXDOWNLOADS            = 1;
+    // private static final boolean ACCOUNT_FREE_RESUME = false;
+    // private static final int ACCOUNT_FREE_MAXCHUNKS = 1;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 1;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = -3;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
 
     public FShareVn(PluginWrapper wrapper) {
         super(wrapper);
@@ -83,8 +94,9 @@ public class FShareVn extends PluginForHost {
         return super.rewriteHost(host);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         br = new Browser();
         this.setBrowserExclusive();
         correctDownloadLink(link);
@@ -234,7 +246,7 @@ public class FShareVn extends PluginForHost {
             }
             sleep(Long.parseLong(wait) * 1001l, downloadLink);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, FREE_RESUME, FREE_MAXCHUNKS);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(SERVERERROR)) {
@@ -264,13 +276,12 @@ public class FShareVn extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return FREE_MAXDOWNLOADS;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override
@@ -279,11 +290,12 @@ public class FShareVn extends PluginForHost {
         doFree(downloadLink);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         // this should set English here...
         requestFileInformation(link);
-        if (account.getBooleanProperty("free", false)) {
+        if (account.getType() == AccountType.FREE) {
             // premium link wont need user to login!
             if (dllink == null) {
                 login(account, true);
@@ -321,7 +333,7 @@ public class FShareVn extends PluginForHost {
             } else if (dllink.contains("logout")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL premium error");
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -3);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 if (br.containsHTML(SERVERERROR)) {
@@ -336,6 +348,15 @@ public class FShareVn extends PluginForHost {
     public String getDllink() throws Exception {
         final Form dlfast = br.getFormbyAction("/download/get");
         if (dlfast != null) {
+            // Fix form
+            if (!dlfast.hasInputFieldByName("ajax")) {
+                dlfast.put("ajax", "download-form");
+            }
+            if (!dlfast.hasInputFieldByName("undefined")) {
+                dlfast.put("undefined", "undefined");
+            }
+            dlfast.remove("DownloadForm%5Bpwd%5D");
+            dlfast.put("DownloadForm[pwd]", "");
             // button base download here,
             final Browser ajax = br.cloneBrowser();
             ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -443,7 +464,9 @@ public class FShareVn extends PluginForHost {
         }
         if (br.containsHTML("title=\"Platium\">VIP </span>")) {
             ai.setStatus("VIP Account");
-            account.setProperty("free", false);
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
         } else if (validUntil != null) {
             long validuntil = 0;
             if (validUntil.contains("-")) {
@@ -452,23 +475,21 @@ public class FShareVn extends PluginForHost {
                 validuntil = TimeFormatter.getMilliSeconds(validUntil, "dd/MM/yyyy", Locale.ENGLISH);
             }
             ai.setValidUntil(validuntil, br, "EEE, dd MMM yyyy HH:mm:ss z");
-            maxPrem.set(-1);
-            try {
-                account.setMaxSimultanDownloads(-1);
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-            }
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
             ai.setStatus("Premium Account");
-            account.setProperty("free", false);
+            account.setType(AccountType.PREMIUM);
+        } else if (this.br.containsHTML(">BUNDLE</a>")) {
+            /* This is a kind of account that they give to their ADSL2+/FTTH service users. It works like VIP. */
+            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
+            ai.setStatus("Bundle Account");
+            account.setType(AccountType.PREMIUM);
         } else {
-            maxPrem.set(-1);
-            try {
-                account.setMaxSimultanDownloads(-1);
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-            }
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(true);
             ai.setStatus("Free Account");
-            account.setProperty("free", true);
+            account.setType(AccountType.FREE);
         }
         account.setValid(true);
         return ai;
@@ -488,7 +509,7 @@ public class FShareVn extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if (Boolean.TRUE.equals(acc.getBooleanProperty("free"))) {
+        if (acc.getType() == AccountType.FREE) {
             /* free accounts also have captchas */
             return true;
         }

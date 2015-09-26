@@ -33,6 +33,7 @@ import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -237,6 +238,10 @@ public class BrOnlineDe extends PluginForHost {
 
                 dest.write(start_formatted + " --> " + end_formatted + lineseparator);
 
+                if (info.contains("Doch diesmal spielte man auch")) {
+                    System.out.println("");
+                }
+
                 final String[][] texts = new Regex(info, "<tt:span style=\"([A-Za-z0-9]+)\">([^<>\"]*?)</tt:span>").getMatches();
                 String text = "";
                 int line_counter = 1;
@@ -251,6 +256,12 @@ public class BrOnlineDe extends PluginForHost {
                     }
                     line_counter++;
                 }
+                text = text.replaceAll("&apos;", "\\\\u0027");
+                text = HTMLEntities.unhtmlentities(text);
+                text = HTMLEntities.unhtmlAmpersand(text);
+                text = HTMLEntities.unhtmlAngleBrackets(text);
+                text = HTMLEntities.unhtmlSingleQuotes(text);
+                text = HTMLEntities.unhtmlDoubleQuotes(text);
                 dest.write(text + lineseparator + lineseparator);
             }
         } catch (Exception e) {
