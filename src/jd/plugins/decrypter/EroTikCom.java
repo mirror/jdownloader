@@ -105,6 +105,9 @@ public class EroTikCom extends PluginForDecrypt {
                 externID = "http://videomega.tv/view.php?ref=" + ref;
             } else {
                 externID = br.getRegex("\"(https?://videomega\\.tv/[^<>\"]*?)\"").getMatch(0);
+                if (externID == null) {
+                    externID = br.getRegex("\"(https?://[^<>\"]*?)\"").getMatch(0);
+                }
             }
         }
         logger.info("externID: " + externID);
