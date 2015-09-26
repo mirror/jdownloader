@@ -24,6 +24,7 @@ import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -48,6 +49,7 @@ public class ShooshTimeCom extends PluginForHost {
         return "http://shooshtime.com/contact-us/";
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -60,11 +62,17 @@ public class ShooshTimeCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<h1>([^<>\"]*?)</h1>[\t\n\r ]+<p class=\"video_description\">").getMatch(0);
         }
+        if (filename == null) {
+            filename = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9\\-_]+)/?$").getMatch(0);
+        }
         DLLINK = checkDirectLink(downloadLink, "directlink");
         if (DLLINK == null) {
             DLLINK = br.getRegex("class=\"download\"><a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (DLLINK == null) {
-                DLLINK = br.getRegex("\"file\": \"(https?://[^<>\"]*?)\"").getMatch(0);
+                DLLINK = br.getRegex("\"file\"[\t\n\r]*?:[\t\n\r]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
+            }
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("file[\t\n\r ]*?:[\t\n\r ]*?\"(https?://[^<>\"]*?)\"").getMatch(0);
             }
         }
         if (filename == null || DLLINK == null) {
