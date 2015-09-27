@@ -49,7 +49,7 @@ import org.jdownloader.plugins.accounts.AccountFactory;
 import org.jdownloader.plugins.accounts.EditAccountPanel;
 import org.jdownloader.plugins.accounts.Notifier;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "openload.co", "openload.io" }, urls = { "https?://(?:www\\.)?openload\\.(?:io|co)/(?:f|embed)/[A-Za-z0-9_\\-]+", "/null/void" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "openload.co", "openload.io" }, urls = { "https?://(?:www\\.)?openload\\.(?:io|co)/(?:f|embed)/[A-Za-z0-9_\\-]+", "/null/void" }, flags = { 2, 0 })
 public class OpenLoadIo extends antiDDoSForHost {
 
     public OpenLoadIo(PluginWrapper wrapper) {
@@ -83,6 +83,7 @@ public class OpenLoadIo extends antiDDoSForHost {
     private static final int              FREE_MAXCHUNKS               = 0;
     private static final int              FREE_MAXDOWNLOADS            = 20;
     private int                           api_responsecode             = 0;
+    private String                        api_msg                      = null;
     private LinkedHashMap<String, Object> api_data                     = null;
 
     private static final boolean          ACCOUNT_FREE_RESUME          = true;
@@ -108,7 +109,7 @@ public class OpenLoadIo extends antiDDoSForHost {
 
     /*
      * Using API: https://openload.co/api
-     * 
+     *
      * TODO: Check if we can use the mass linkchecker with this API. Add account support, get an API key and use that as well.
      */
     @SuppressWarnings({ "unchecked" })
@@ -124,7 +125,7 @@ public class OpenLoadIo extends antiDDoSForHost {
         api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
         api_data = (LinkedHashMap<String, Object>) api_data.get("result");
         api_data = (LinkedHashMap<String, Object>) api_data.get(fid);
-        api_responsecode = ((Number) api_data.get("status")).intValue();
+        updatestatuscode();
         if (api_responsecode == 403) {
             link.getLinkStatus().setStatusText("Private files can only be downloaded by their owner/uploader");
             return AvailableStatus.TRUE;
@@ -161,22 +162,33 @@ public class OpenLoadIo extends antiDDoSForHost {
         if (dllink == null) {
             String ticket;
             String waittime;
+            int waittime_int;
+            boolean captcha = false;
+            String captcha_response = "null";
             if (enable_api_free) {
                 getPageAPI(api_base + "/file/dlticket?file=" + fid + "&" + getAPILoginString(account));
+                final long timestampBeforeCaptcha = System.currentTimeMillis();
                 api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 api_data = (LinkedHashMap<String, Object>) api_data.get("result");
                 ticket = (String) api_data.get("ticket");
-                waittime = Integer.toString(((Number) api_data.get("wait_time")).intValue());
-                if (((Boolean) api_data.get("captcha_url")).booleanValue()) {
-                    logger.warning("Failed - captcha handling does not yet exist!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                waittime_int = ((Number) api_data.get("wait_time")).intValue();
+                waittime = Integer.toString(waittime_int);
+                final Object captchao = api_data.get("captcha_url");
+                if (captchao instanceof String) {
+                    captcha = true;
+                    final String captchaurl = (String) captchao;
+                    captcha_response = this.getCaptchaCode(captchaurl, downloadLink);
                 }
                 if (ticket == null) {
                     logger.warning("Ticket is null");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
-                getPageAPI(api_base + "/file/dl?file=" + fid + "&ticket=" + Encoding.urlEncode(ticket) + "&captcha_response=null&" + getAPILoginString(account));
+                this.waitTime(timestampBeforeCaptcha, waittime_int, downloadLink);
+                this.br.getPage(api_base + "/file/dl?file=" + fid + "&ticket=" + Encoding.urlEncode(ticket) + "&captcha_response=" + captcha_response + "&" + getAPILoginString(account));
+                updatestatuscode();
+                if (captcha && this.api_responsecode == 403 && "Captcha not solved correctly".equals(this.api_msg)) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
                 api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
                 api_data = (LinkedHashMap<String, Object>) api_data.get("result");
                 dllink = (String) api_data.get("url");
@@ -424,22 +436,43 @@ public class OpenLoadIo extends antiDDoSForHost {
         }
     }
 
+    private void updatestatuscode() {
+        final String status = getJson("status");
+        if (status != null) {
+            api_responsecode = Integer.parseInt(status);
+        }
+        this.api_msg = getJson("msg");
+    }
+
     private void getPageAPI(final String url) throws Exception {
         super.getPage(url);
+        this.updatestatuscode();
         final String status = getJson("status");
-        if ("400".equals(status)) {
+        switch (api_responsecode) {
+        case 0:
+            /* Everything okay */
+            break;
+        case 200:
+            /* Everything okay */
+            break;
+        case 400:
             throw new PluginException(LinkStatus.ERROR_FATAL, "API error 400");
-        } else if ("403".equals(status)) {
+        case 403:
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-        } else if ("404".equals(status) || "451".equals(status)) {
+
+        case 404:
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (status != null && status.startsWith("5")) {
+        case 405:
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        default:
             throw new PluginException(LinkStatus.ERROR_FATAL, "API error " + status);
+
         }
+
     }
 
     /**
@@ -460,6 +493,16 @@ public class OpenLoadIo extends antiDDoSForHost {
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return maxPrem.get();
+    }
+
+    /** Handles pre download (pre-captcha) waittime. If WAITFORCED it ensures to always wait long enough even if the waittime RegEx fails. */
+    @SuppressWarnings("unused")
+    private void waitTime(long timeBefore, int wait, final DownloadLink downloadLink) throws PluginException {
+        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+        wait -= passedTime;
+        if (wait > 0) {
+            sleep(wait * 1000l, downloadLink);
+        }
     }
 
     public static class OpenLoadIoAccountFactory extends AccountFactory {

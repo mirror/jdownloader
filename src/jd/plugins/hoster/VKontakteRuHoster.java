@@ -52,7 +52,7 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/(picturelink/(?:\\-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/[\\d\\-]+_\\d+|videolink/[\\d\\-]+)|https?://vk\\.com/doc[\\d\\-]+_[\\d\\-]+(\\?hash=[a-z0-9]+)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp3" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
-    private static final String DOMAIN                                = "http://vk.com";
+    private static final String DOMAIN                                = "vk.com";
     private static final String TYPE_AUDIOLINK                        = "http://vkontaktedecrypted\\.ru/audiolink/(?:\\-)?\\d+_\\d+";
     private static final String TYPE_VIDEOLINK                        = "http://vkontaktedecrypted\\.ru/videolink/[\\d\\-]+";
     private static final String TYPE_AUDIO_DIRECT                     = "https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me)/[^<>\"]+\\.mp3";
@@ -257,7 +257,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         logger.info("Trying to refresh audiolink directlink via wall-handling");
                         /* We got the info we need to access our single mp3 relatively directly as it initially came from a 'wall'. */
                         final String post = "act=get_wall_playlist&al=1&local_id=" + postID + "&oid=" + fromId + "&wall_type=own";
-                        br.postPage("https://vk.com/audio", post);
+                        br.postPage(getBaseURL() + "/audio", post);
                         url = br.getRegex("\"0\"\\:\"" + Pattern.quote(this.ownerID) + "\"\\,\"1\"\\:\"" + Pattern.quote(this.contentID) + "\"\\,\"2\"\\:(\"[^\"]+\")").getMatch(0);
                         if (url == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -269,10 +269,10 @@ public class VKontakteRuHoster extends PluginForHost {
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
                          * our ID.
-                         *
+                         * 
                          * E.g. get-play-link: https://vk.com/audio?id=<ownerID>&audio_id=<contentID>
                          */
-                        this.postPageSafe(aa, link, "https://vk.com/audio", getAudioAlbumPostString(this.mainlink, this.ownerID));
+                        this.postPageSafe(aa, link, getBaseURL() + "/audio", getAudioAlbumPostString(this.mainlink, this.ownerID));
                         final String[] audioData = getAudioDataArray(this.br);
                         for (final String singleAudioData : audioData) {
                             final String[] singleAudioDataAsArray = new Regex(singleAudioData, "\\'(.*?)\\'").getColumn(0);
@@ -309,7 +309,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (checkstatus != 1) {
                     final String oid = link.getStringProperty("userid", null);
                     final String id = link.getStringProperty("videoid", null);
-                    this.br.getPage("http://vk.com/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
+                    this.br.getPage(getBaseURL() + "/video.php?act=a_flash_vars&vid=" + oid + "_" + id);
                     if (br.containsHTML(VKontakteRuHoster.HTML_VIDEO_NO_ACCESS) || br.containsHTML(VKontakteRuHoster.HTML_VIDEO_REMOVED_FROM_PUBLIC_ACCESS)) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
@@ -338,12 +338,12 @@ public class VKontakteRuHoster extends PluginForHost {
                         /* Access photo inside wall-post */
                         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                         this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                        this.postPageSafe(aa, link, "http://vk.com/al_photos.php", "act=show&al=1&list=" + photo_list_id + "&module=" + module + "&photo=" + photoID);
+                        this.postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&list=" + photo_list_id + "&module=" + module + "&photo=" + photoID);
                     } else {
                         /* Access normal photo / photo inside album */
                         String albumID = link.getStringProperty("albumid");
                         if (albumID == null) {
-                            this.getPageSafe(aa, link, "http://vk.com/photo" + photoID);
+                            this.getPageSafe(aa, link, getBaseURL() + "/photo" + photoID);
                             if (this.br.containsHTML("Unknown error|Unbekannter Fehler|Access denied")) {
                                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                             }
@@ -356,7 +356,7 @@ public class VKontakteRuHoster extends PluginForHost {
                         }
                         this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                         this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-                        this.postPageSafe(aa, link, "http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
+                        this.postPageSafe(aa, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
                     }
                     if (this.br.containsHTML(">Unfortunately, this photo has been deleted") || this.br.containsHTML(">Access denied<")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -446,7 +446,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://vk.com/help.php?page=terms";
+        return getBaseURL() + "/help.php?page=terms";
     }
 
     private String getJson(final String key) {
@@ -475,7 +475,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private void getPageSafe(final Account acc, final DownloadLink dl, final String page) throws Exception {
         this.br.getPage(page);
         if (acc != null && this.br.getRedirectLocation() != null && this.br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
-            this.logger.info("Avoiding 'https://login.vk.com/?role=fast&_origin=' security check by re-logging in...");
+            this.logger.info("Avoiding 'login.vk.com/?role=fast&_origin=' security check by re-logging in...");
             // Force login
             login(this.br, acc);
             this.br.getPage(page);
@@ -644,7 +644,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (cookies != null) {
                     br.setCookies(DOMAIN, cookies);
                     br.setFollowRedirects(true);
-                    br.getPage(DOMAIN);
+                    br.getPage(getBaseURL());
                     if (br.containsHTML("id=\"logout_link_td\"")) {
                         return;
                     }
@@ -652,7 +652,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     br = prepBrowser(new Browser());
                 }
                 br.setFollowRedirects(true);
-                br.getPage("http://vk.com/login.php");
+                br.getPage(getBaseURL() + "/login.php");
                 final String damnlg_h = br.getRegex("name=\"lg_h\" value=\"([^<>\"]*?)\"").getMatch(0);
                 String damnIPH = br.getRegex("name=\"ip_h\" value=\"(.*?)\"").getMatch(0);
                 if (damnIPH == null) {
@@ -671,8 +671,8 @@ public class VKontakteRuHoster extends PluginForHost {
                     }
                 }
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("http://vk.com/login.php", "op=a_login_attempt&login=" + Encoding.urlEncode(account.getUser()));
-                br.postPage("https://login.vk.com/", "act=login&to=&ip_h=" + damnIPH + "&lg_h=" + damnlg_h + "&email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&expire=");
+                br.postPage(getBaseURL() + "/login.php", "op=a_login_attempt&login=" + Encoding.urlEncode(account.getUser()));
+                br.postPage(getProtocol() + "login.vk.com/", "act=login&to=&ip_h=" + damnIPH + "&lg_h=" + damnlg_h + "&email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&expire=");
                 /* Do NOT check based on cookies as they sometimes change them! */
                 if (!br.containsHTML("id=\"logout_link\"")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -701,12 +701,13 @@ public class VKontakteRuHoster extends PluginForHost {
     private void postPageSafe(final Account acc, final DownloadLink dl, final String page, final String postData) throws Exception {
         this.br.postPage(page, postData);
         if (acc != null && this.br.getRedirectLocation() != null && this.br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
-            this.logger.info("Avoiding 'https://login.vk.com/?role=fast&_origin=' security check by re-logging in...");
+            this.logger.info("Avoiding 'login.vk.com/?role=fast&_origin=' security check by re-logging in...");
             // Force login
             login(this.br, acc);
             this.br.postPage(page, postData);
         } else if (acc != null && this.br.toString().length() < 100 && this.br.toString().trim().matches("\\d+<\\!><\\!>\\d+<\\!>\\d+<\\!>\\d+<\\!>[a-z0-9]+")) {
             this.logger.info("Avoiding possible outdated cookie/invalid account problem by re-logging in...");
+            // TODO: Change/remove this - should not be needed anymore!
             // Force login
             login(this.br, acc);
             this.br.postPage(page, postData);
@@ -722,7 +723,7 @@ public class VKontakteRuHoster extends PluginForHost {
         }
         br.getHeaders().put("User-Agent", useragent);
         /* Set english language */
-        br.setCookie("http://vk.com/", "remixlang", "3");
+        br.setCookie(DOMAIN, "remixlang", "3");
         br.setReadTimeout(1 * 60 * 1000);
         br.setConnectTimeout(2 * 60 * 1000);
         /* Loads can be very high. Site sometimes returns more than 10 000 entries with 1 request. */
@@ -911,6 +912,14 @@ public class VKontakteRuHoster extends PluginForHost {
 
     private String getContentID(final DownloadLink dl) {
         return dl.getStringProperty("content_id", null);
+    }
+
+    public static String getProtocol() {
+        return "https://";
+    }
+
+    public static String getBaseURL() {
+        return getProtocol() + DOMAIN;
     }
 
     @Override
