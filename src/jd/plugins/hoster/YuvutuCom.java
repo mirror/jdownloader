@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yuvutu.com" }, urls = { "http://(www\\.)?yuvutu.com/(video/\\d+/|modules\\.php\\?name=Video\\&op=view\\&video_id=\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "yuvutu.com" }, urls = { "http://(www\\.)?yuvutu.com/(video/\\d+|modules\\.php\\?name=Video\\&op=view\\&video_id=\\d+)" }, flags = { 2 })
 public class YuvutuCom extends PluginForHost {
 
     public String dllink = null;
