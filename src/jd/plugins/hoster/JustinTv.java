@@ -264,7 +264,17 @@ public class JustinTv extends PluginForHost {
 
         formattedFilename = formattedFilename.replace("*quality*", quality);
         formattedFilename = formattedFilename.replace("*channelname*", channelName);
-        formattedFilename = formattedFilename.replace("*videoQuality*", videoQuality == -1 ? "" : videoQuality + "p");
+        final String videoQualityString;
+        if (videoQuality != -1) {
+            if (StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked")) {
+                videoQualityString = "chunked_" + videoQuality + "p";
+            } else {
+                videoQualityString = videoQuality + "p";
+            }
+        } else {
+            videoQualityString = "";
+        }
+        formattedFilename = formattedFilename.replace("*videoQuality*", videoQualityString);
         formattedFilename = formattedFilename.replace("*videoCodec*", videoCodec);
         formattedFilename = formattedFilename.replace("*audioBitrate*", audioBitrate == -1 ? "" : audioBitrate + "kbits");
         formattedFilename = formattedFilename.replace("*audioCodec*", audioCodec);
