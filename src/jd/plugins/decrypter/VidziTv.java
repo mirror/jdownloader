@@ -18,11 +18,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -31,6 +30,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
 
 /**
  *
@@ -64,8 +65,18 @@ public class VidziTv extends antiDDoSForDecrypt {
         }
         // lets correct fileInfo[0]
         fileInfo[0] = fileInfo[0].trim();
+        String subtitlesource = null;
+        final String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+        if (cryptedScripts != null && cryptedScripts.length != 0) {
+            for (String crypted : cryptedScripts) {
+                subtitlesource = getSubtitleSource(crypted);
+                if (subtitlesource != null) {
+                    break;
+                }
+            }
+        }
         // files
-        final String[] files = getJsonResultsFromArray(getJsonArray("tracks"));
+        final String[] files = getJsonResultsFromArray(getJsonArray(subtitlesource, "tracks"));
         if (files != null) {
             for (final String file : files) {
                 if (StringUtils.containsIgnoreCase(getJson(file, "kind"), "subtitles")) {
@@ -80,6 +91,30 @@ public class VidziTv extends antiDDoSForDecrypt {
         fp.setName(Encoding.htmlDecode(fileInfo[0]));
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    private String getSubtitleSource(final String s) {
+        String decoded = null;
+
+        try {
+            Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
+
+            String p = params.getMatch(0).replaceAll("\\\\", "");
+            int a = Integer.parseInt(params.getMatch(1));
+            int c = Integer.parseInt(params.getMatch(2));
+            String[] k = params.getMatch(3).split("\\|");
+
+            while (c != 0) {
+                c--;
+                if (k[c].length() != 0) {
+                    p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+                }
+            }
+
+            decoded = p;
+        } catch (Exception e) {
+        }
+        return decoded;
     }
 
     /* NO OVERRIDE!! */

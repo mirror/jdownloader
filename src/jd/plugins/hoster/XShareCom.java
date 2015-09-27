@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xshare.com" }, urls = { "http://(www\\.)?xshare\\.com/video/[A-Za-z0-9\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "xshare.com" }, urls = { "http://(www\\.)?xshare\\.com/video/[A-Za-z0-9\\-]+" }, flags = { 0 })
 public class XShareCom extends PluginForHost {
 
     public XShareCom(PluginWrapper wrapper) {
@@ -55,7 +55,7 @@ public class XShareCom extends PluginForHost {
         } catch (final BrowserException e) {
             return AvailableStatus.UNCHECKABLE;
         }
-        if (br.containsHTML(">404 - Page not found<")) {
+        if (br.containsHTML(">404 - Page not found<") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<title>([^<>\"]*?)\\- xshare\\.com</title>").getMatch(0);
@@ -103,7 +103,7 @@ public class XShareCom extends PluginForHost {
         try {
             br2.getHeaders().put("Accept-Encoding", "identity");
             br2.getHeaders().put("Referer", "http://xshare.com/swf/flowplayer.commercial.flash9-3.2.15.swf");
-            con = br2.openGetConnection(DLLINK);
+            con = br2.openHeadConnection(DLLINK);
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {

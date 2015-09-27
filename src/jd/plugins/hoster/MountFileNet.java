@@ -18,12 +18,20 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -39,6 +47,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -46,8 +55,21 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mountfile.net" }, urls = { "http://(www\\.)?mountfile\\.net/(?!d/)[A-Za-z0-9]+" }, flags = { 2 })
 public class MountFileNet extends PluginForHost {
 
-    private final String  MAINPAGE = "http://mountfile.net";
-    private final boolean useRUA   = true;
+    private final String                   MAINPAGE                   = "http://mountfile.net";
+    private final boolean                  useRUA                     = true;
+
+    /* For reconnect special handling */
+    private static Object                  CTRLLOCK                   = new Object();
+    private final String                   EXPERIMENTALHANDLING       = "EXPERIMENTALHANDLING";
+    private final String[]                 IPCHECK                    = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private static HashMap<String, Long>   blockedIPsMap              = new HashMap<String, Long>();
+    private static final String            PROPERTY_LASTDOWNLOAD      = "mountfilenet_lastdownload_timestamp";
+    private final String                   LASTIP                     = "LASTIP";
+    private static AtomicReference<String> lastIP                     = new AtomicReference<String>();
+    private static AtomicReference<String> currentIP                  = new AtomicReference<String>();
+    private final Pattern                  IPREGEX                    = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+
+    private static final long              FREE_RECONNECTWAIT_GENERAL = 1 * 60 * 60 * 1000L;
 
     public MountFileNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -99,11 +121,36 @@ public class MountFileNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    @SuppressWarnings({ "deprecation", "static-access", "unchecked" })
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        // First, bring up saved final links
         final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+        currentIP.set(this.getIP());
+        final boolean useExperimentalHandling = this.getPluginConfig().getBooleanProperty(this.EXPERIMENTALHANDLING, false);
+        long lastdownload = 0;
+        long passedTimeSinceLastDl = 0;
+
+        synchronized (CTRLLOCK) {
+            /* Load list of saved IPs + timestamp of last download */
+            final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
+            if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
+                blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
+            }
+        }
+
+        if (useExperimentalHandling) {
+            /*
+             * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if he
+             * tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN download
+             * using the same free accounts after performing a reconnect!
+             */
+            lastdownload = getPluginSavedLastDownloadTimestamp();
+            passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
+            if (passedTimeSinceLastDl < FREE_RECONNECTWAIT_GENERAL) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT_GENERAL - passedTimeSinceLastDl);
+            }
+        }
+        requestFileInformation(downloadLink);
         br.postPage(br.getURL(), "free=Slow+download&hash=" + fid);
         final String rcID = br.getRegex("Recaptcha\\.create\\(\\'([^<>\"]*?)\\'").getMatch(0);
         if (rcID == null) {
@@ -151,6 +198,12 @@ public class MountFileNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
+        getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
+        try {
+            this.setIP(currentIP.get(), downloadLink);
+        } catch (final Throwable e) {
         }
         dl.startDownload();
     }
@@ -307,6 +360,92 @@ public class MountFileNet extends PluginForHost {
         }
         prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         return prepBr;
+    }
+
+    /* Stuff for special reconnect errorhandling */
+
+    private String getIP() throws PluginException {
+        final Browser ip = new Browser();
+        String currentIP = null;
+        final ArrayList<String> checkIP = new ArrayList<String>(Arrays.asList(this.IPCHECK));
+        Collections.shuffle(checkIP);
+        for (final String ipServer : checkIP) {
+            if (currentIP == null) {
+                try {
+                    ip.getPage(ipServer);
+                    currentIP = ip.getRegex(this.IPREGEX).getMatch(0);
+                    if (currentIP != null) {
+                        break;
+                    }
+                } catch (final Throwable e) {
+                }
+            }
+        }
+        if (currentIP == null) {
+            this.logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return currentIP;
+    }
+
+    private boolean ipChanged(final String IP, final DownloadLink link) throws PluginException {
+        String currentIP = null;
+        if (IP != null && new Regex(IP, this.IPREGEX).matches()) {
+            currentIP = IP;
+        } else {
+            currentIP = this.getIP();
+        }
+        if (currentIP == null) {
+            return false;
+        }
+        String lastIP = link.getStringProperty(this.LASTIP, null);
+        if (lastIP == null) {
+            lastIP = MountFileNet.lastIP.get();
+        }
+        return !currentIP.equals(lastIP);
+    }
+
+    private boolean setIP(final String IP, final DownloadLink link) throws PluginException {
+        synchronized (this.IPCHECK) {
+            if (IP != null && !new Regex(IP, this.IPREGEX).matches()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (this.ipChanged(IP, link) == false) {
+                // Static IP or failure to reconnect! We don't change lastIP
+                this.logger.warning("Your IP hasn't changed since last download");
+                return false;
+            } else {
+                final String lastIP = IP;
+                link.setProperty(this.LASTIP, lastIP);
+                MountFileNet.lastIP.set(lastIP);
+                this.logger.info("LastIP = " + lastIP);
+                return true;
+            }
+        }
+    }
+
+    private long getPluginSavedLastDownloadTimestamp() {
+        long lastdownload = 0;
+        synchronized (blockedIPsMap) {
+            final Iterator<Entry<String, Long>> it = blockedIPsMap.entrySet().iterator();
+            while (it.hasNext()) {
+                final Entry<String, Long> ipentry = it.next();
+                final String ip = ipentry.getKey();
+                final long timestamp = ipentry.getValue();
+                if (System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT_GENERAL) {
+                    /* Remove old entries */
+                    it.remove();
+                }
+                if (ip.equals(currentIP.get())) {
+                    lastdownload = timestamp;
+                }
+            }
+        }
+        return lastdownload;
+    }
+
+    private void setConfigElements() {
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), this.EXPERIMENTALHANDLING, JDL.L("plugins.hoster.mountfilenet.useExperimentalWaittimeHandling", "Activate experimental waittime handling to prevent additional captchas?")).setDefaultValue(false));
     }
 
     private static AtomicReference<String> userAgent = new AtomicReference<String>(null);

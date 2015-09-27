@@ -66,18 +66,6 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
         }
         String externID = br.getRegex("\"(http://(www\\.)?prochan\\.com/embed\\?f=[^<>\"/]*?)\"").getMatch(0);
         if (externID != null) {
-            br.getPage(Encoding.htmlDecode(externID));
-            externID = br.getRegex("\\'config\\': \\'(http://[^<>\"]*?)\\'").getMatch(0);
-            if (externID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            br.getPage(Encoding.htmlDecode(externID));
-            externID = br.getRegex("<link>(http://[^<>\"]*?)</link>").getMatch(0);
-            if (externID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return decryptedLinks;
-            }
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
@@ -87,8 +75,12 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         String filename = br.getRegex("class=\"section_title\" style=\"vertical\\-align:top; padding\\-right:10px\">([^<>\"]*?)<img").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>LiveLeak\\.com \\- ([^<>\"]*?)</title>").getMatch(0);
-        if (filename == null) filename = new Regex(parameter, "([a-z0-9_]+)$").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<title>LiveLeak\\.com \\- ([^<>\"]*?)</title>").getMatch(0);
+        }
+        if (filename == null) {
+            filename = new Regex(parameter, "([a-z0-9_]+)$").getMatch(0);
+        }
         filename = Encoding.htmlDecode(filename.trim());
         // There can also be multiple videos on one page
         final String[] allEmbedcodes = br.getRegex("generate_embed_code_generator_html\\(\\'([a-z0-9]+)\\'\\)\\)").getColumn(0);

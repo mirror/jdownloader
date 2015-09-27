@@ -18,21 +18,12 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -53,28 +44,26 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareneo.net" }, urls = { "https?://(www\\.)?shareneo\\.net/[A-Za-z0-9]+" }, flags = { 2 })
-public class ShareNeoNet extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecad.com" }, urls = { "https?://(?:www\\.)?filecad\\.com/[A-Za-z0-9]+" }, flags = { 2 })
+public class FilecadCom extends PluginForHost {
 
-    public ShareNeoNet(PluginWrapper wrapper) {
+    public FilecadCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(mainpage + "/upgrade." + type);
-        setConfigElements();
     }
 
     // For sites which use this script: http://www.yetishare.com/
     // YetiShareBasic Version 0.5.9-psp
-    // mods: heavily modified, do NOT upgrade!
-    // limit-info: premium untested, set FREE account limits
+    // mods:
+    // limit-info:
     // protocol: no https
-    // captchatype: reCaptchaV1
-    // other: response 416 on resume attempt, resume not possible!
+    // captchatype: null
+    // other:
 
     @Override
     public String getAGBLink() {
@@ -82,54 +71,40 @@ public class ShareNeoNet extends PluginForHost {
     }
 
     /* Basic constants */
-    private final String                   mainpage                                       = "http://shareneo.net";
-    private final String                   domains                                        = "(shareneo\\.net)";
-    private final String                   type                                           = "html";
-    private static final int               wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT   = 10;
-    private static final int               additional_WAIT_SECONDS                        = 3;
-    private static final int               directlinkfound_WAIT_SECONDS                   = 10;
-    private static final boolean           supportshttps                                  = false;
-    private static final boolean           supportshttps_FORCED                           = false;
+    private final String         mainpage                                     = "http://filecad.com";
+    private final String         domains                                      = "(filecad\\.com)";
+    private final String         type                                         = "html";
+    private static final int     wait_BETWEEN_DOWNLOADS_LIMIT_MINUTES_DEFAULT = 10;
+    private static final int     additional_WAIT_SECONDS                      = 3;
+    private static final int     directlinkfound_WAIT_SECONDS                 = 10;
+    private static final boolean supportshttps                                = true;
+    private static final boolean supportshttps_FORCED                         = true;
     /* In case there is no information when accessing the main link */
-    private static final boolean           available_CHECK_OVER_INFO_PAGE                 = true;
-    private static final boolean           useOldLoginMethod                              = true;
+    private static final boolean available_CHECK_OVER_INFO_PAGE               = false;
+    private static final boolean useOldLoginMethod                            = false;
     /* Known errors */
-    private static final String            url_ERROR_SIMULTANDLSLIMIT                     = "e=You+have+reached+the+maximum+concurrent+downloads";
-    private static final String            url_ERROR_SERVER                               = "e=Error%3A+Could+not+open+file+for+reading.";
-    private static final String            url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT         = "e=You+must+wait+";
-    private static final String            url_ERROR_PREMIUMONLY                          = "e=You+must+register+for+a+premium+account+to+download+files+of+this+size";
-    private static final String            url_ERROR_FREE_TOO_MANY_SIMULTANEOUS_DOWNLOADS = "e=Error%3A+You+must+upgrade+your+account+to+download+more+files";
+    private static final String  url_ERROR_SIMULTANDLSLIMIT                   = "e=You+have+reached+the+maximum+concurrent+downloads";
+    private static final String  url_ERROR_SERVER                             = "e=Error%3A+Could+not+open+file+for+reading.";
+    private static final String  url_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT       = "e=You+must+wait+";
+    private static final String  url_ERROR_PREMIUMONLY                        = "e=You+must+register+for+a+premium+account+to+download+files+of+this+size";
     /* Texts for the known errors */
-    private static final String            errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT   = "You must wait between downloads!";
-    private static final String            errortext_ERROR_SERVER                         = "Server error";
-    private static final String            errortext_ERROR_PREMIUMONLY                    = "This file can only be downloaded by premium (or registered) users";
-    private static final String            errortext_ERROR_SIMULTANDLSLIMIT               = "Max. simultan downloads limit reached, wait to start more downloads from this host";
+    private static final String  errortext_ERROR_WAIT_BETWEEN_DOWNLOADS_LIMIT = "You must wait between downloads!";
+    private static final String  errortext_ERROR_SERVER                       = "Server error";
+    private static final String  errortext_ERROR_PREMIUMONLY                  = "This file can only be downloaded by premium (or registered) users";
+    private static final String  errortext_ERROR_SIMULTANDLSLIMIT             = "Max. simultan downloads limit reached, wait to start more downloads from this host";
 
     /* Connection stuff */
-    private static final boolean           free_RESUME                                    = false;
-    private static final int               free_MAXCHUNKS                                 = 1;
-    private static final int               free_MAXDOWNLOADS                              = 1;
-    private static final boolean           account_FREE_RESUME                            = false;
-    private static final int               account_FREE_MAXCHUNKS                         = 1;
-    private static final int               account_FREE_MAXDOWNLOADS                      = 1;
-    private static final boolean           account_PREMIUM_RESUME                         = false;
-    private static final int               account_PREMIUM_MAXCHUNKS                      = 1;
-    private static final int               account_PREMIUM_MAXDOWNLOADS                   = 1;
+    private static final boolean free_RESUME                                  = true;
+    private static final int     free_MAXCHUNKS                               = 0;
+    private static final int     free_MAXDOWNLOADS                            = 20;
+    private static final boolean account_FREE_RESUME                          = true;
+    private static final int     account_FREE_MAXCHUNKS                       = 0;
+    private static final int     account_FREE_MAXDOWNLOADS                    = 20;
+    private static final boolean account_PREMIUM_RESUME                       = true;
+    private static final int     account_PREMIUM_MAXCHUNKS                    = 0;
+    private static final int     account_PREMIUM_MAXDOWNLOADS                 = 20;
 
-    private static AtomicInteger           MAXPREM                                        = new AtomicInteger(1);
-
-    /* For reconnect special handling */
-    private static Object                  CTRLLOCK                                       = new Object();
-    private final String                   EXPERIMENTALHANDLING                           = "EXPERIMENTALHANDLING";
-    private final String[]                 IPCHECK                                        = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
-    private static HashMap<String, Long>   blockedIPsMap                                  = new HashMap<String, Long>();
-    private static final String            PROPERTY_LASTDOWNLOAD                          = "shareneonet_lastdownload_timestamp";
-    private final String                   LASTIP                                         = "LASTIP";
-    private static AtomicReference<String> lastIP                                         = new AtomicReference<String>();
-    private static AtomicReference<String> currentIP                                      = new AtomicReference<String>();
-    private final Pattern                  IPREGEX                                        = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-
-    private static final long              FREE_RECONNECTWAIT_GENERAL                     = 30 * 60 * 1000L;
+    private static AtomicInteger MAXPREM                                      = new AtomicInteger(1);
 
     @SuppressWarnings("deprecation")
     @Override
@@ -174,7 +149,7 @@ public class ShareNeoNet extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
             handleErrors();
-            if (isOffline()) {
+            if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\"")) || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Regex fInfo = br.getRegex("<strong>([^<>\"]*?) \\((\\d+(?:,\\d+)?(?:\\.\\d+)? (?:KB|MB|GB))\\)<");
@@ -192,46 +167,14 @@ public class ShareNeoNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private boolean isOffline() {
-        if (br.getURL().contains("/error." + type) || br.getURL().contains("/index." + type) || (!br.containsHTML("class=\"downloadPageTable(V2)?\"") && !br.containsHTML("class=\"download\\-timer\"")) || br.getHttpConnection().getResponseCode() == 404) {
-            return true;
-        }
-        return false;
-    }
-
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         doFree(downloadLink, free_RESUME, free_MAXCHUNKS, "free_directlink");
     }
 
-    @SuppressWarnings({ "deprecation", "unchecked" })
+    @SuppressWarnings("deprecation")
     public void doFree(final DownloadLink downloadLink, final boolean resume, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        currentIP.set(this.getIP());
-        final boolean useExperimentalHandling = this.getPluginConfig().getBooleanProperty(this.EXPERIMENTALHANDLING, false);
-        long lastdownload = 0;
-        long passedTimeSinceLastDl = 0;
-
-        synchronized (CTRLLOCK) {
-            /* Load list of saved IPs + timestamp of last download */
-            final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_LASTDOWNLOAD);
-            if (lastdownloadmap != null && lastdownloadmap instanceof HashMap && blockedIPsMap.isEmpty()) {
-                blockedIPsMap = (HashMap<String, Long>) lastdownloadmap;
-            }
-        }
-
-        if (useExperimentalHandling) {
-            /*
-             * If the user starts a download in free (unregistered) mode the waittime is on his IP. This also affects free accounts if he
-             * tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN download
-             * using the same free accounts after performing a reconnect!
-             */
-            lastdownload = getPluginSavedLastDownloadTimestamp();
-            passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
-            if (passedTimeSinceLastDl < FREE_RECONNECTWAIT_GENERAL) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT_GENERAL - passedTimeSinceLastDl);
-            }
-        }
         String continue_link = null;
         boolean captcha = false;
         boolean success = false;
@@ -250,16 +193,6 @@ public class ShareNeoNet extends PluginForHost {
             } else {
                 if (available_CHECK_OVER_INFO_PAGE) {
                     br.getPage(downloadLink.getDownloadURL());
-                    if (isOffline()) {
-                        /*
-                         * Workaround - sometimes URLs checked via info page are online but their IDs need to be uppercase to work via the
-                         * normal way hmm
-                         */
-                        this.br.getPage("/" + this.getFID(downloadLink).toUpperCase());
-                        if (isOffline()) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        }
-                    }
                 }
                 handleErrors();
                 /* Passwords are usually before waittime. */
@@ -352,13 +285,6 @@ public class ShareNeoNet extends PluginForHost {
         handleServerErrors();
         continue_link = dl.getConnection().getURL().toString();
         downloadLink.setProperty(directlinkproperty, continue_link);
-
-        blockedIPsMap.put(currentIP.get(), System.currentTimeMillis());
-        getPluginConfig().setProperty(PROPERTY_LASTDOWNLOAD, blockedIPsMap);
-        try {
-            this.setIP(currentIP.get(), downloadLink);
-        } catch (final Throwable e) {
-        }
         dl.startDownload();
     }
 
@@ -409,7 +335,7 @@ public class ShareNeoNet extends PluginForHost {
     private void handleErrors() throws PluginException {
         if (br.containsHTML("Error: Too many concurrent download requests")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
-        } else if (br.getURL().contains(url_ERROR_SIMULTANDLSLIMIT) || br.getURL().contains(url_ERROR_FREE_TOO_MANY_SIMULTANEOUS_DOWNLOADS)) {
+        } else if (br.getURL().contains(url_ERROR_SIMULTANDLSLIMIT)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errortext_ERROR_SIMULTANDLSLIMIT, 1 * 60 * 1000l);
         } else if (br.getURL().contains("error.php?e=Error%3A+Could+not+open+file+for+reading")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
@@ -685,92 +611,6 @@ public class ShareNeoNet extends PluginForHost {
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return MAXPREM.get();
-    }
-
-    /* Stuff for special reconnect errorhandling */
-
-    private String getIP() throws PluginException {
-        final Browser ip = new Browser();
-        String currentIP = null;
-        final ArrayList<String> checkIP = new ArrayList<String>(Arrays.asList(this.IPCHECK));
-        Collections.shuffle(checkIP);
-        for (final String ipServer : checkIP) {
-            if (currentIP == null) {
-                try {
-                    ip.getPage(ipServer);
-                    currentIP = ip.getRegex(this.IPREGEX).getMatch(0);
-                    if (currentIP != null) {
-                        break;
-                    }
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        if (currentIP == null) {
-            this.logger.warning("firewall/antivirus/malware/peerblock software is most likely is restricting accesss to JDownloader IP checking services");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        return currentIP;
-    }
-
-    private boolean ipChanged(final String IP, final DownloadLink link) throws PluginException {
-        String currentIP = null;
-        if (IP != null && new Regex(IP, this.IPREGEX).matches()) {
-            currentIP = IP;
-        } else {
-            currentIP = this.getIP();
-        }
-        if (currentIP == null) {
-            return false;
-        }
-        String lastIP = link.getStringProperty(this.LASTIP, null);
-        if (lastIP == null) {
-            lastIP = ShareNeoNet.lastIP.get();
-        }
-        return !currentIP.equals(lastIP);
-    }
-
-    private boolean setIP(final String IP, final DownloadLink link) throws PluginException {
-        synchronized (this.IPCHECK) {
-            if (IP != null && !new Regex(IP, this.IPREGEX).matches()) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (this.ipChanged(IP, link) == false) {
-                // Static IP or failure to reconnect! We don't change lastIP
-                this.logger.warning("Your IP hasn't changed since last download");
-                return false;
-            } else {
-                final String lastIP = IP;
-                link.setProperty(this.LASTIP, lastIP);
-                ShareNeoNet.lastIP.set(lastIP);
-                this.logger.info("LastIP = " + lastIP);
-                return true;
-            }
-        }
-    }
-
-    private long getPluginSavedLastDownloadTimestamp() {
-        long lastdownload = 0;
-        synchronized (blockedIPsMap) {
-            final Iterator<Entry<String, Long>> it = blockedIPsMap.entrySet().iterator();
-            while (it.hasNext()) {
-                final Entry<String, Long> ipentry = it.next();
-                final String ip = ipentry.getKey();
-                final long timestamp = ipentry.getValue();
-                if (System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT_GENERAL) {
-                    /* Remove old entries */
-                    it.remove();
-                }
-                if (ip.equals(currentIP.get())) {
-                    lastdownload = timestamp;
-                }
-            }
-        }
-        return lastdownload;
-    }
-
-    private void setConfigElements() {
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), this.EXPERIMENTALHANDLING, JDL.L("plugins.hoster.shareneonet.useExperimentalWaittimeHandling", "Activate experimental waittime handling to prevent additional captchas?")).setDefaultValue(false));
     }
 
     @Override
