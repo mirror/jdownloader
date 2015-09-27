@@ -58,6 +58,7 @@ public class HdStreamTo extends PluginForHost {
         return "http://hdstream.to/#!p=tos";
     }
 
+    /* Tags: 1tube.to, hdstream.to */
     /* Connection stuff */
     private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
