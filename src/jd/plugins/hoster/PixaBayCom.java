@@ -154,7 +154,7 @@ public class PixaBayCom extends PluginForHost {
 
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            /* Last updated: 2017-08-17 */
+            /* Last updated: 2015-08-17 */
             rc.setId("6Ld8hL8SAAAAAKbydL06Ir20hG_u2SfRkBbfpTNf");
             rc.load();
             final File cf = rc.downloadCaptcha(getLocalCaptchaFile());

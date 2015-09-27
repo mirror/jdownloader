@@ -31,20 +31,21 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fondsfinanz.de" }, urls = { "https?://(www\\.)?fondsfinanz\\.de/film/v\\d+" }, flags = { 0 })
-public class FondsfinanzDe extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prochan.com" }, urls = { "http://(?:www\\.)?prochan\\.com/(view\\?p=|embed\\?f=)[A-Za-z0-9\\-_]+" }, flags = { 0 })
+public class ProchanCom extends PluginForHost {
 
-    public FondsfinanzDe(PluginWrapper wrapper) {
+    public ProchanCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /* DEV NOTES */
+    // Porn_plugin
     // Tags:
     // protocol: no https
     // other:
 
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
+    private static final String  default_Extension = ".flv";
     /* Connection stuff */
     private static final boolean free_resume       = true;
     private static final int     free_maxchunks    = 0;
@@ -54,34 +55,39 @@ public class FondsfinanzDe extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://www.fondsfinanz.de/unternehmen/impressum";
+        return "http://www.prochan.com/tos";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         DLLINK = null;
+        final String fid = getFID(downloadLink);
+        downloadLink.setLinkID(fid);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        /* Using embed, we can view mature content without having to log in. */
+        this.br.getPage("http://www.prochan.com/embed?f=" + fid);
+        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("File not found or deleted")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        br.getPage("/film/redirect/index?popup=1");
-        /*--> Redirects to amazonaws server*/
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = fid;
+        DLLINK = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(http[^<>\"]*?)(?:\"|\\')").getMatch(0);
         }
-        final String date = new Regex(br.getURL(), "amazonaws\\.com/(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
-        if (date == null) {
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("property=\"og:video\" content=\"(http[^<>\"]*?)\"").getMatch(0);
+        }
+        if (filename == null || DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DLLINK = this.br.getURL().replace("/index.php", "/video.mp4");
+        DLLINK = Encoding.htmlDecode(DLLINK);
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
         filename = encodeUnicode(filename);
-        filename = date + "_fondsfinanz_" + filename;
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
         /* Make sure that we get a correct extension */
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
@@ -97,7 +103,7 @@ public class FondsfinanzDe extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             try {
-                con = openConnection(br2, DLLINK);
+                con = br2.openHeadConnection(DLLINK);
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -136,15 +142,15 @@ public class FondsfinanzDe extends PluginForHost {
         dl.startDownload();
     }
 
-    /* Avoid chars which are not allowed in filenames under certain OS' */
+    /** Avoid chars which are not allowed in filenames under certain OS' */
     private static String encodeUnicode(final String input) {
         String output = input;
         output = output.replace(":", ";");
         output = output.replace("|", "¦");
         output = output.replace("<", "[");
         output = output.replace(">", "]");
-        output = output.replace("/", "/");
-        output = output.replace("\\", "");
+        output = output.replace("/", "⁄");
+        output = output.replace("\\", "∖");
         output = output.replace("*", "#");
         output = output.replace("?", "¿");
         output = output.replace("!", "¡");
@@ -152,23 +158,14 @@ public class FondsfinanzDe extends PluginForHost {
         return output;
     }
 
+    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9\\-_]+)$").getMatch(0);
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private URLConnectionAdapter openConnection(final Browser br, final String directlink) throws IOException {
-        URLConnectionAdapter con;
-        if (isJDStable()) {
-            con = br.openGetConnection(directlink);
-        } else {
-            con = br.openHeadConnection(directlink);
-        }
-        return con;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

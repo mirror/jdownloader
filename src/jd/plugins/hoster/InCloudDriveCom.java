@@ -43,7 +43,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inclouddrive.com" }, urls = { "https?://(www\\.)?inclouddrive\\.com/(link_download/\\?token=[A-Za-z0-9=_]+|(#/)?(file_download|file|link)/[0-9a-zA-Z=_-]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "inclouddrive.com" }, urls = { "https?://(www\\.)?inclouddrive\\.com/(link_download/\\?token=[A-Za-z0-9=_]+|(#/)?(?:file_download|file|link)/[0-9a-zA-Z=_-]+(?:/[^/]+)?)" }, flags = { 2 })
 public class InCloudDriveCom extends PluginForHost {
 
     // DEV NOTE:
@@ -95,21 +95,25 @@ public class InCloudDriveCom extends PluginForHost {
         return parseFileInformation(link);
     }
 
+    @SuppressWarnings("deprecation")
     private AvailableStatus parseFileInformation(final DownloadLink link) throws Exception {
         setFUID(link);
-        br.getPage("https://www.inclouddrive.com/file/" + hashTag[1]);
+        br.getPage(link.getDownloadURL());
         if (br.containsHTML(">we are performing a service upgrade please try again!")) {
             return AvailableStatus.UNCHECKABLE;
         }
-        final String regexFS = "<div class=\"downloadfileinfo[^>]*>(.*?) \\((.*?)\\)";
+        final String regexFS = "<div class=\"downloadfileinfo [^>]*\">([^<>\"]*?) \\(([^<>\"]*?)\\)<div";
         String filename = br.getRegex(regexFS).getMatch(0);
         String filesize = br.getRegex(regexFS).getMatch(1);
         // premium only files regex is different!
         if (filename == null) {
             filename = br.getRegex("<div class=\"name wordwrap\">(.*?)</div>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("fileinfo [a-z0-9 ]+\">([^<>]*?) \\([0-9\\.]*? .?B\\)<").getMatch(0);
-            }
+        }
+        if (filename == null) {
+            filename = br.getRegex("fileinfo [a-z0-9 ]+\">([^<>]*?) \\([0-9\\.]*? .?B\\)<").getMatch(0);
+        }
+        if (filename == null) {
+            filename = br.getRegex("<title>([^<>\"]*?) \\&ndash; InCloudDrive</title>").getMatch(0);
         }
         if (filesize == null) {
             filesize = br.getRegex("<div class=\"icddownloadsteptwo-filesize\">(.*?)</div>").getMatch(0);
@@ -216,11 +220,7 @@ public class InCloudDriveCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else if (hashTag[1] != null) {
             final String linkID = getHost() + "://" + hashTag[1];
-            try {
-                dl.setLinkID(linkID);
-            } catch (final Throwable e) {
-                dl.setProperty("LINKDUPEID", linkID);
-            }
+            dl.setLinkID(linkID);
         }
     }
 
@@ -480,7 +480,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * When premium only download restriction (eg. filesize), throws exception with given message
-     * 
+     *
      * @param msg
      * @throws PluginException
      */
@@ -555,7 +555,7 @@ public class InCloudDriveCom extends PluginForHost {
 
     /**
      * Validates string to series of conditions, null, whitespace, or "". This saves effort factor within if/for/while statements
-     * 
+     *
      * @param s
      *            Imported String to match against.
      * @return <b>true</b> on valid rule match. <b>false</b> on invalid rule match.
