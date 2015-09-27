@@ -65,11 +65,6 @@ public class SmashTapesCom extends PluginForHost {
         DLLINK = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        this.br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.0");
-        this.br.getHeaders().put("Accept", "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5");
-        this.br.getHeaders().put("Accept-Language", "de,en-US;q=0.7,en;q=0.3");
-        // this.br.getHeaders().put("", "");
-        // this.br.getHeaders().put("", "");
         br.getPage(downloadLink.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -110,6 +105,7 @@ public class SmashTapesCom extends PluginForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
+            br2.getHeaders().put("Accept", "video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,*/*;q=0.5");
             try {
                 /* Do NOT use HEAD-connection - server will return 403 */
                 con = br2.openGetConnection(DLLINK);
