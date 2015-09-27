@@ -58,6 +58,7 @@ public class PremiumizatorCom extends PluginForHost {
     private static final String                            NICE_HOST            = "premiumizator.com";
     private static final String                            NICE_HOSTproperty    = NICE_HOST.replaceAll("(\\.|\\-)", "");
     private static final String                            NORESUME             = NICE_HOSTproperty + "NORESUME";
+    private static final String                            NOCHUNKS             = NICE_HOSTproperty + "NOCHUNKS";
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap   = new HashMap<Account, HashMap<String, Long>>();
     /* Contains <host><number of max possible chunks per download> */
@@ -180,6 +181,9 @@ public class PremiumizatorCom extends PluginForHost {
         if (!resume) {
             maxChunks = 1;
         }
+        if (link.getBooleanProperty(NICE_HOSTproperty + PremiumizatorCom.NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
         link.setProperty(NICE_HOSTproperty + "directlink", dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxChunks);
         if (dl.getConnection().getResponseCode() == 416) {
@@ -203,7 +207,28 @@ public class PremiumizatorCom extends PluginForHost {
         link.setFinalFileName(filename_final);
         try {
             controlSlot(+1);
-            this.dl.startDownload();
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) {
+                        return;
+                    }
+                } catch (final Throwable e) {
+                }
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(NICE_HOSTproperty + PremiumizatorCom.NOCHUNKS, false) == false) {
+                    link.setProperty(NICE_HOSTproperty + PremiumizatorCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        } catch (final PluginException e) {
+            e.printStackTrace();
+            // New V2 chunk errorhandling
+            /* unknown error, we disable multiple chunks */
+            if (link.getBooleanProperty(NICE_HOSTproperty + PremiumizatorCom.NOCHUNKS, false) == false) {
+                link.setProperty(NICE_HOSTproperty + PremiumizatorCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            throw e;
         } finally {
             // remove usedHost slot from hostMap
             // remove download slot
@@ -337,12 +362,12 @@ public class PremiumizatorCom extends PluginForHost {
             account.setProperty("max_file_size", Property.NULL);
         }
 
-        /* TODO: Use this API call for the list of supported hosts once they fixed it */
-        // this.getAPISafe("?action=hosters");
-        this.getAPISafe("http://premiumizator.com/");
+        /* The way they provide this information is pretty stupid but okay we prefer this over the website. */
+        this.getAPISafe(API_ENDPOINT + "?action=hosters");
         ArrayList<String> supportedhostslist = new ArrayList();
         final String[] possible_domains = { "to", "de", "com", "net", "co.nz", "in", "co", "me", "biz", "ch", "pl", "us", "cc", "eu" };
-        final String[] crippledHosts = br.getRegex("hosters\\-icons/([^<>\"]*?)\\.png").getColumn(0);
+        /* Get a list of 'crippled' hosts - only catch ones that work fine according to the API */
+        final String[] crippledHosts = br.getRegex("\"([^<>\"]*?)\":\"up\"").getColumn(0);
         for (final String crippledhost : crippledHosts) {
             if (crippledhost.equals("filecloud")) {
                 /* Workaround as .io is not in the array above also multiple filecloud's exist. */
