@@ -62,10 +62,7 @@ public class TrollVidsCom extends PluginForDecrypt {
         if (videoid == null) {
             return null;
         }
-        /* mp4 = "HD", flv = SD */
-        final String finallink = "directhttp://http://trollvids.com/files/videos/" + videoid + ".mp4";
-        final DownloadLink dl = createDownloadlink(finallink);
-        dl.setFinalFileName(filename + ".flv");
+        final DownloadLink dl = createDownloadlink(parameter.replace("trollvids.com/", "trollvidsdecrypted.com/"));
         decryptedLinks.add(dl);
 
         return decryptedLinks;

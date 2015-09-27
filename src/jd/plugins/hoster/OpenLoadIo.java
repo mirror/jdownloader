@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -77,7 +78,7 @@ public class OpenLoadIo extends antiDDoSForHost {
     private static final boolean          enable_api_free              = true;
     private static final boolean          enable_api_login             = true;
     private static final String           api_base                     = "https://api.openload.co/1";
-
+    private static final long             api_responsecode_private     = 403;
     /* Connection stuff */
     private static final boolean          FREE_RESUME                  = true;
     private static final int              FREE_MAXCHUNKS               = 0;
@@ -107,49 +108,92 @@ public class OpenLoadIo extends antiDDoSForHost {
         return new OpenLoadIoAccountFactory();
     }
 
-    /*
-     * Using API: https://openload.co/api
-     *
-     * TODO: Check if we can use the mass linkchecker with this API. Add account support, get an API key and use that as well.
-     */
     @SuppressWarnings({ "unchecked" })
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        correctDownloadLink(link);
-        final String fid = getFID(link);
-        if (link.getName() == null) {
-            link.setName(fid);
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) {
+            return false;
         }
-        this.setBrowserExclusive();
-        getPageAPI(api_base + "/file/info?file=" + fid);
-        api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
-        api_data = (LinkedHashMap<String, Object>) api_data.get("result");
-        api_data = (LinkedHashMap<String, Object>) api_data.get(fid);
-        updatestatuscode();
-        if (api_responsecode == 403) {
-            link.getLinkStatus().setStatusText("Private files can only be downloaded by their owner/uploader");
-            return AvailableStatus.TRUE;
+        try {
+            final Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            LinkedHashMap<String, Object> api_data = null;
+            LinkedHashMap<String, Object> api_data_singlelink = null;
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once (50 tested, more might be possible) */
+                    if (index == urls.length || links.size() > 50) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                for (final DownloadLink dl : links) {
+                    final String fid = getFID(dl);
+                    dl.setLinkID(fid);
+                    sb.append(fid);
+                    sb.append("%2C");
+                }
+                br.getPage(api_base + "/file/info?file=" + sb.toString());
+                api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                api_data = (LinkedHashMap<String, Object>) api_data.get("result");
+                for (final DownloadLink dl : links) {
+                    final String fid = getFID(dl);
+                    api_data_singlelink = (LinkedHashMap<String, Object>) api_data.get(fid);
+                    final long status = DummyScriptEnginePlugin.toLong(api_data_singlelink.get("status"), 404);
+                    if (status == api_responsecode_private) {
+                        /* Private file */
+                        dl.setName(fid);
+                        dl.setAvailable(true);
+                        continue;
+                    } else if (api_data_singlelink == null || status != 200) {
+                        dl.setName(fid);
+                        dl.setAvailable(false);
+                        continue;
+                    }
+                    final String filename = (String) api_data_singlelink.get("name");
+                    final long filesize = DummyScriptEnginePlugin.toLong(api_data_singlelink.get("size"), 0);
+                    final String sha1 = (String) api_data_singlelink.get("sha1");
+
+                    /* Trust API */
+                    dl.setAvailable(true);
+                    dl.setFinalFileName(filename);
+                    dl.setDownloadSize(filesize);
+                    dl.setSha1Hash(sha1);
+
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
         }
-        if (api_responsecode != 200) {
+        return true;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        checkLinks(new DownloadLink[] { downloadLink });
+        if (!downloadLink.isAvailabilityStatusChecked()) {
+            return AvailableStatus.UNCHECKED;
+        }
+        if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = (String) api_data.get("name");
-        final String filesize = (String) api_data.get("size");
-        final String sha1 = (String) api_data.get("sha1");
-        if (filename == null || filesize == null || sha1 == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* Trust API */
-        link.setFinalFileName(filename);
-        link.setDownloadSize(Long.parseLong(filesize));
-        link.setSha1Hash(sha1);
+        this.updatestatuscode();
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (api_responsecode == 403) {
+        if (api_responsecode == api_responsecode_private) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Private files can only be downloaded by their owner/uploader");
         }
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink", null);
