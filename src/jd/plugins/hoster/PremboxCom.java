@@ -159,7 +159,6 @@ public class PremboxCom extends PluginForHost {
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         String status = null;
         String filename = null;
-        String requestID = null;
         this.br = newBrowser();
 
         synchronized (hostUnavailableMap) {
@@ -194,25 +193,6 @@ public class PremboxCom extends PluginForHost {
         if (dllink == null) {
             if (cloudOnlyHosts.contains(link.getHost())) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Not yet implemented!");
-                // final long timeStarted = System.currentTimeMillis();
-                // link.setProperty(PROPERTY_DOWNLOADTYPE, PROPERTY_DOWNLOADTYPE_cloud);
-                // requestID = getJson("requestId");
-                // if (requestID == null) {
-                // /* Should never happen */
-                // handleErrorRetries("cloud_requestIdnull", 50, 2 * 60 * 1000l);
-                // }
-                // do {
-                // this.sleep(5000l, link);
-                // status = getJson("status");
-                // } while (System.currentTimeMillis() - timeStarted < CLOUD_MAX_WAITTIME && "downloading".equals(status));
-                // filename = getJson("fileName");
-                // if (!"downloaded".equals(status)) {
-                // logger.warning("Cloud failed");
-                // /* Should never happen but will happen */
-                // handleErrorRetries("cloud_download_failed_reason_unknown", 20, 5 * 60 * 1000l);
-                // }
-                // /* Filename needed in URL or server will return bad filenames! */
-                // dllink = "https://offcloud.com/cloud/download/" + requestID + "/" + Encoding.urlEncode(filename);
             } else {
                 link.setProperty(PROPERTY_DOWNLOADTYPE, PROPERTY_DOWNLOADTYPE_instant);
                 this.postAPISafe(API_SERVER + "/downloadLink", "directDownload=1&login=" + JSonUtils.escape(this.currAcc.getUser()) + "&pass=" + JSonUtils.escape(this.currAcc.getPass()) + "&url=" + Encoding.urlEncode(this.currDownloadLink.getDownloadURL()));
@@ -227,7 +207,6 @@ public class PremboxCom extends PluginForHost {
             }
             dllink = dllink.replaceAll("\\\\/", "/");
         }
-        link.setProperty("offcloudrequestId", requestID);
         handleDL(account, link, dllink);
     }
 

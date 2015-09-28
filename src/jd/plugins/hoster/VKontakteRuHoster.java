@@ -59,6 +59,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private static final String TYPE_PICTURELINK                      = "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?[\\d\\-]+_[\\d\\-]+(\\?tag=[\\d\\-]+)?";
     private static final String TYPE_DOCLINK                          = "https?://vk\\.com/doc[\\d\\-]+_\\d+(\\?hash=[a-z0-9]+)?";
     private int                 MAXCHUNKS                             = 1;
+    public static final long    trust_cookie_age                      = 30000l;
     private static final String TEMPORARILYBLOCKED                    = jd.plugins.decrypter.VKontakteRu.TEMPORARILYBLOCKED;
     /* Settings stuff */
     private static final String FASTLINKCHECK_VIDEO                   = "FASTLINKCHECK_VIDEO";
@@ -643,9 +644,16 @@ public class VKontakteRuHoster extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(DOMAIN, cookies);
+                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                        /* We trust these cookies --> Do not check them */
+                        return;
+                    }
+                    /* Check cookies */
                     br.setFollowRedirects(true);
                     br.getPage(getBaseURL());
                     if (br.containsHTML("id=\"logout_link_td\"")) {
+                        /* Refresh timestamp */
+                        account.saveCookies(br.getCookies(DOMAIN), "");
                         return;
                     }
                     /* Delete cookies / Headers to perform a full login */

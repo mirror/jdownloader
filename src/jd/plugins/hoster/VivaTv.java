@@ -178,7 +178,7 @@ public class VivaTv extends PluginForHost {
         final String browser_url = link.getDownloadURL();
         if (browser_url.matches(type_viva)) {
             br.getPage(browser_url);
-            if (!br.containsHTML("player\\.mtvnn\\.com/") || br.getHttpConnection().getResponseCode() == 404) {
+            if ((!br.containsHTML("player\\.mtvnn\\.com/[^/]+/[^/]+\\.swf") && !this.br.containsHTML("\"video_type\":\"")) || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = br.getRegex("<title>([^<>]*?) \\- Musikvideo \\- VIVA\\.tv</title>").getMatch(0);
@@ -188,9 +188,18 @@ public class VivaTv extends PluginForHost {
             if (filename == null) {
                 filename = br.getRegex("<h1 class=\\'title\\'>([^<>]*?)</h1>").getMatch(0);
             }
+            if (filename == null) {
+                filename = this.br.getRegex("content=\"([^<>\"]*?)\" property=\"og:title\"").getMatch(0);
+            }
             if (browser_url.matches(subtype_viva_musicvideo)) {
-                final String title = br.getRegex("content=(?:\\'|\")([^<>\"]*?)(?:\\'|\") itemprop=\\'name\\'").getMatch(0);
-                final String author = br.getRegex("content=(?:\\'|\")([^<>\"]*?)(?:\\'|\") itemprop=\\'author\\'").getMatch(0);
+                String title = br.getRegex("content=(?:\\'|\")([^<>\"]*?)(?:\\'|\") itemprop=\\'name\\'").getMatch(0);
+                if (title == null) {
+                    title = br.getRegex("class=\"page\\-subtitle\"> <span>([^<>\"]*?)</span>").getMatch(0);
+                }
+                String author = br.getRegex("content=(?:\\'|\")([^<>\"]*?)(?:\\'|\") itemprop=\\'author\\'").getMatch(0);
+                if (author == null) {
+                    author = this.br.getRegex("class=\"page\\-title\"> <span>([^<>\"]*?)</span>").getMatch(0);
+                }
                 if (author == null || title == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
