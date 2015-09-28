@@ -26,6 +26,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import jd.controlling.AccountController;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -1187,8 +1188,10 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                         String[][] params = new Regex(url, "/([^/]+)/([^/]+)").getMatches();
                         LinkedHashMap<String, String> query = new LinkedHashMap<String, String>();
                         String[][] xmlArguments = new Regex(r, "\\s+(\\w+)=\"([^\"]+)").getMatches();
-                        for (int i = 0; i < xmlArguments.length; i++) {
-                            query.put(xmlArguments[i][0], xmlArguments[i][1]);
+                        if (xmlArguments != null) {
+                            for (int i = 0; i < xmlArguments.length; i++) {
+                                query.put(xmlArguments[i][0], xmlArguments[i][1]);
+                            }
                         }
                         for (int i = 1; i < params.length; i++) {
                             query.put(params[i][0], Encoding.htmlDecode(params[i][1]));
@@ -1206,7 +1209,22 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                     } else if (url.matches("https?://.*?googlevideo.com/videoplayback?.*")) {
                         url = Encoding.htmlDecode(url);
                         final LinkedHashMap<String, String> query = Request.parseQuery(url);
+                        String[][] xmlArguments = new Regex(r, "\\s+(\\w+)=\"([^\"]+)").getMatches();
+                        if (xmlArguments != null) {
+                            for (int i = 0; i < xmlArguments.length; i++) {
+                                query.put(xmlArguments[i][0], xmlArguments[i][1]);
+                            }
+                        }
 
+                        if ((!query.containsKey("type"))) {
+                            query.put("type", query.get("codecs") + "-" + query.get("mime"));
+                        }
+                        if ((!query.containsKey("fps"))) {
+                            query.put("fps", query.get("frameRate"));
+                        }
+                        if ((!query.containsKey("size") && query.containsKey("width") && query.containsKey("height"))) {
+                            query.put("size", query.get("width") + "x" + query.get("height"));
+                        }
                         handleQuery(vid, ret, html5PlayerJs, r, url, query);
                     } else {
                         throw new Exception("Unknown DashUrl");
@@ -1214,6 +1232,8 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
                 }
             }
+        } catch (BrowserException e) {
+            logger.log(e);
         } catch (Throwable e) {
             logger.log(e);
             Map<String, String> infos = new HashMap<String, String>();

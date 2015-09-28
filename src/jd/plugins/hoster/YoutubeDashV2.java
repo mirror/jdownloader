@@ -1413,7 +1413,7 @@ public class YoutubeDashV2 extends PluginForHost {
                         try {
                             downloadLink.addPluginProgress(progress);
                             String codec = variant.getiTagVideo().getCodecVideo();
-                            if (codec.equalsIgnoreCase("vp9") || codec.equalsIgnoreCase("vp8") || variant.toString().startsWith("WEBM")) {
+                            if (codec.toLowerCase(Locale.ENGLISH).contains("vp9") || codec.toLowerCase(Locale.ENGLISH).contains("vp9") || variant.toString().startsWith("WEBM")) {
                                 if (ffmpeg.muxToWebm(progress, downloadLink.getFileOutput(), videoStreamPath, audioStreamPath)) {
                                     downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                                     new File(videoStreamPath).delete();
