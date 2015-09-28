@@ -66,7 +66,7 @@ public class ReviveLinkCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + strParameter);
                 return null;
             }
-            br.getPage("http://revivelink.com/liens.php?R=" + fid + "&" + Encoding.urlEncode(pass) + "=");
+            br.getPage("http://revivelink.com/slinks.php?R=" + fid + "&" + Encoding.urlEncode(pass) + "=");
         }
 
         final String[] links = br.getRegex("<a href=\"(.*?)\"").getColumn(0);
@@ -77,12 +77,16 @@ public class ReviveLinkCom extends PluginForDecrypt {
 
         // Added links
         for (String alink : links) {
-            if (!alink.contains("revievelink.com/")) decryptedLinks.add(createDownloadlink(alink));
+            if (!alink.contains("revievelink.com/")) {
+                decryptedLinks.add(createDownloadlink(alink));
+            }
         }
 
         // Add all link in a package
         final FilePackage fp = FilePackage.getInstance();
-        if (strName != "") fp.setName(strName);
+        if (strName != "") {
+            fp.setName(strName);
+        }
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
