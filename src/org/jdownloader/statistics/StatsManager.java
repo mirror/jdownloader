@@ -1545,7 +1545,8 @@ public class StatsManager implements GenericConfigEventListener<Object>, Downloa
         BASIC,
         RECAPTCHA,
         SECURITY,
-        PING
+        PING,
+        PLUGINS
     }
 
     public boolean track(final int reducer, String reducerID, final String id, final Map<String, String> infos, final CollectionName col) {
