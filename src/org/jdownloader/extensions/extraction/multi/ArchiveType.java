@@ -1357,7 +1357,10 @@ public enum ArchiveType {
                     final Archive archive = link.createArchive();
                     archive.setName(fileNameParts[0]);
                     archive.setArchiveType(archiveType);
-                    archive.setArchiveID(Hash.getSHA256(archiveType.name() + "|" + fileNameParts[0] + archiveType.buildIDPattern(fileNameParts, isMultiPart)));
+                    final String rawID = archiveType.name() + " |" + fileNameParts[0] + archiveType.buildIDPattern(fileNameParts, isMultiPart);
+                    final String ID = Hash.getSHA256(rawID);
+                    final String archiveID = Archive.getBestArchiveID(foundArchiveFiles, ID);
+                    archive.setArchiveID(archiveID);
                     final ArrayList<ArchiveFile> sortedArchiveFiles = new ArrayList<ArchiveFile>();
                     final int minimumParts = Math.max(archiveType.getMinimumNeededPartIndex(), highestPartNumber);
                     for (int partIndex = archiveType.getFirstPartIndex(); partIndex <= minimumParts; partIndex++) {
@@ -1380,5 +1383,4 @@ public enum ArchiveType {
         }
         return null;
     }
-
 }

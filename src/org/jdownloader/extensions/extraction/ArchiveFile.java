@@ -1,10 +1,33 @@
 package org.jdownloader.extensions.extraction;
 
 import java.awt.Color;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jdownloader.controlling.FileCreationManager;
 
 public interface ArchiveFile {
+
+    public static class ArchiveID {
+        private final String archiveID;
+
+        public final String getArchiveID() {
+            return archiveID;
+        }
+
+        public final int getScore() {
+            return score.get();
+        }
+
+        public void increaseScore() {
+            score.incrementAndGet();
+        }
+
+        private final AtomicInteger score = new AtomicInteger(1);
+
+        public ArchiveID(final String archiveID) {
+            this.archiveID = archiveID;
+        }
+    }
 
     public Boolean isComplete();
 
@@ -37,5 +60,7 @@ public interface ArchiveFile {
     public Boolean isPartOfAnArchive();
 
     public void notifyChanges(Object type);
+
+    public String getArchiveID();
 
 }

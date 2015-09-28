@@ -7,7 +7,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -29,8 +28,6 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.settings.GeneralSettings;
 
 public class CrawledLinkFactory extends CrawledLinkArchiveFile implements ArchiveFactory {
-
-    private String archiveID = null;
 
     public CrawledLinkFactory(CrawledLink l) {
         super(l);
@@ -195,34 +192,11 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
     }
 
     @Override
-    public void onArchiveFinished(Archive archive) {
-        archiveID = archive.getArchiveID();
-        final LinkedHashSet<String> pws = new LinkedHashSet<String>();
-        // link
-        for (final ArchiveFile af : archive.getArchiveFiles()) {
-            if (af instanceof CrawledLinkArchiveFile) {
-                for (final CrawledLink link : ((CrawledLinkArchiveFile) af).getLinks()) {
-                    link.getDownloadLink().setArchiveID(archiveID);
-                    if (link.hasArchiveInfo()) {
-                        pws.addAll(link.getArchiveInfo().getExtractionPasswords());
-                    }
-                }
-            }
-        }
+    public void setArchive(final Archive archive) {
+        super.setArchive(archive);
         if (BooleanStatus.UNSET != getDefaultAutoExtract()) {
             /* make sure the autoextractValue is written to archiveSettings */
             archive.getSettings();
-        }
-        if (pws.size() > 0) {
-            final String finalPassword = archive.getSettings().getFinalPassword();
-            if (finalPassword != null) {
-                pws.add(finalPassword);
-            }
-            final List<String> storedPws = archive.getSettings().getPasswords();
-            if (storedPws != null) {
-                pws.addAll(storedPws);
-            }
-            archive.getSettings().setPasswords(new ArrayList<String>(pws));
         }
     }
 
@@ -233,11 +207,6 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
             return first.getArchiveInfo().getAutoExtract();
         }
         return BooleanStatus.UNSET;
-    }
-
-    @Override
-    public String getArchiveID() {
-        return archiveID;
     }
 
 }

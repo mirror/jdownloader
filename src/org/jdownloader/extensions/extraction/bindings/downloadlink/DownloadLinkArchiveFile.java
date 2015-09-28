@@ -3,6 +3,7 @@ package org.jdownloader.extensions.extraction.bindings.downloadlink;
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -281,6 +282,42 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
             for (final DownloadLink downloadLink : getDownloadLinks()) {
                 downloadLink.setArchiveID(archiveID);
                 downloadLink.setPartOfAnArchive(Boolean.TRUE);
+            }
+        }
+    }
+
+    @Override
+    public String getArchiveID() {
+        final List<DownloadLink> links = getDownloadLinks();
+        if (links.size() == 0) {
+            return null;
+        } else if (links.size() == 1) {
+            return links.get(0).getArchiveID();
+        } else {
+            final HashMap<String, ArchiveID> scores = new HashMap<String, ArchiveID>();
+            for (final DownloadLink downloadLink : getDownloadLinks()) {
+                final String archiveID = downloadLink.getArchiveID();
+                if (archiveID != null) {
+                    ArchiveID score = scores.get(archiveID);
+                    if (score == null) {
+                        score = new ArchiveID(archiveID);
+                        scores.put(archiveID, score);
+                    }
+                    score.increaseScore();
+                }
+            }
+            if (scores.size() == 0) {
+                return null;
+            } else if (scores.size() == 1) {
+                return scores.values().iterator().next().getArchiveID();
+            } else {
+                ArchiveID ret = null;
+                for (final ArchiveID score : scores.values()) {
+                    if (ret == null || ret.getScore() < score.getScore()) {
+                        ret = score;
+                    }
+                }
+                return ret.getArchiveID();
             }
         }
     }

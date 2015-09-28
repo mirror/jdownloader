@@ -291,7 +291,10 @@ public class NCryptIn extends PluginForDecrypt {
                 // Webprotection decryption
                 logger.info("ContainerID is null, trying webdecryption...");
                 br.setFollowRedirects(false);
-                final String[] links = br.getRegex("\\'(http://ncrypt\\.in/link\\-.*?=)\\'").getColumn(0);
+                String[] links = br.getRegex("\\'(http://ncrypt\\.in/link\\-.*?=)\\'").getColumn(0);
+                if (links == null || links.length == 0) {
+                    links = br.getRegex("'(/link-\\d+)'").getColumn(0);
+                }
                 if (links == null || links.length == 0) {
                     logger.info("No links found, let's see if CNL2 is available!");
                     if (br.containsHTML("cnl2")) {

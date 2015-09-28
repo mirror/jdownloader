@@ -257,7 +257,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                         if (!Boolean.FALSE.equals(extractor.isSupported(factory, deepInspection))) {
                             final Archive archive = extractor.buildArchive(factory, deepInspection);
                             if (archive != null) {
-                                factory.onArchiveFinished(archive);
+                                for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
+                                    archiveFile.setArchive(archive);
+                                }
                                 return archive;
                             }
                         }
