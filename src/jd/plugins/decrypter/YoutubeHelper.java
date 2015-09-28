@@ -67,6 +67,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
@@ -75,6 +76,8 @@ import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.statistics.StatsManager;
+import org.jdownloader.statistics.StatsManager.CollectionName;
 
 public class YoutubeHelper implements YoutubeHelperInterface {
     static {
@@ -1179,71 +1182,44 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 for (String r : repres) {
                     // System.out.println(r);
 
-                    String url = Encoding.htmlDecode(new Regex(r, "<BaseURL yt:contentLength=\"\\d+\">(.*?)</BaseURL>").getMatch(0));
-                    final LinkedHashMap<String, String> query = Request.parseQuery(url);
-                    String signature = new Regex(url, "(sig|signature)=(.*?)(\\&|$)").getMatch(1);
-
-                    if (StringUtils.isEmpty(signature)) {
-                        // verified 7.1.24
-                        // non dash?
-                        signature = query.get("sig");
-                    }
-                    if (StringUtils.isEmpty(signature)) {
-                        signature = query.get("signature");
-                    }
-                    if (StringUtils.isEmpty(signature)) {
-                        // verified 7.1.213
-                        signature = this.descrambleSignature(query.get("s"), html5PlayerJs, vid.videoID);
-                    }
-
-                    if (url != null && !url.contains("sig")) {
-
-                        url = url + "&signature=" + signature;
-                    }
-                    String size = query.get("size");
-                    int width = -1;
-                    int height = -1;
-
-                    if (StringUtils.isNotEmpty(size)) {
-                        String[] splitted = size.split("\\s*x\\s*");
-                        if (splitted != null && splitted.length == 2) {
-                            width = Integer.parseInt(splitted[0]);
-                            height = Integer.parseInt(splitted[1]);
+                    String url = new Regex(r, "<BaseURL( yt:contentLength=\"\\d+\")?>(.*?)</BaseURL>").getMatch(1);
+                    if (url.matches("https?://.*?googlevideo.com/videoplayback/.*/")) {
+                        String[][] params = new Regex(url, "/([^/]+)/([^/]+)").getMatches();
+                        LinkedHashMap<String, String> query = new LinkedHashMap<String, String>();
+                        String[][] xmlArguments = new Regex(r, "\\s+(\\w+)=\"([^\"]+)").getMatches();
+                        for (int i = 0; i < xmlArguments.length; i++) {
+                            query.put(xmlArguments[i][0], xmlArguments[i][1]);
                         }
-                    }
-                    String fps = query.get("fps");
-                    String type = query.get("type");
-                    if (StringUtils.isNotEmpty(type)) {
-                        type = Encoding.urlDecode(type, false);
-                    }
-                    final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, vid.date);
-                    validateItag(size, height, type, itag);
-                    logger.info(Encoding.urlDecode(JSonStorage.toString(query), false));
-                    if (url != null && itag != null) {
+                        for (int i = 1; i < params.length; i++) {
+                            query.put(params[i][0], Encoding.htmlDecode(params[i][1]));
+                        }
+                        if ((!query.containsKey("type"))) {
+                            query.put("type", query.get("codecs") + "-" + query.get("mime"));
+                        }
+                        if ((!query.containsKey("fps"))) {
+                            query.put("fps", query.get("frameRate"));
+                        }
+                        if ((!query.containsKey("size") && query.containsKey("width") && query.containsKey("height"))) {
+                            query.put("size", query.get("width") + "x" + query.get("height"));
+                        }
+                        handleQuery(vid, ret, html5PlayerJs, r, url, query);
+                    } else if (url.matches("https?://.*?googlevideo.com/videoplayback?.*")) {
+                        url = Encoding.htmlDecode(url);
+                        final LinkedHashMap<String, String> query = Request.parseQuery(url);
 
-                        YoutubeStreamData vsd;
-                        ret.put(itag, vsd = new YoutubeStreamData(vid, url, itag));
-                        onITag(vsd, br, query, url);
+                        handleQuery(vid, ret, html5PlayerJs, r, url, query);
                     } else {
-
-                        this.logger.info("Unknown Line: " + r);
-                        this.logger.info("Unknown ITAG: " + query.get("itag"));
-                        this.logger.info(url + "");
-                        this.logger.info(query + "");
-                        try {
-
-                            if (!Application.isJared(null)) {
-                                new ItagHelper(vid, br, query, url).run();
-                            }
-                        } catch (Exception e) {
-                            logger.log(e);
-                        }
+                        throw new Exception("Unknown DashUrl");
                     }
 
                 }
             }
         } catch (Throwable e) {
             logger.log(e);
+            Map<String, String> infos = new HashMap<String, String>();
+            infos.put("name", e.getMessage());
+            infos.put("stacktrace", Exceptions.getStackTrace(e));
+            StatsManager.I().track(0, null, "loadVideo/Exception", infos, CollectionName.PLUGINS);
         }
 
         for (YoutubeStreamData sd : loadThumbnails(vid)) {
@@ -1251,6 +1227,77 @@ public class YoutubeHelper implements YoutubeHelperInterface {
         }
 
         return ret;
+    }
+
+    /**
+     * @param vid
+     * @param ret
+     * @param html5PlayerJs
+     * @param r
+     * @param url
+     * @param query
+     * @throws IOException
+     * @throws PluginException
+     */
+    private void handleQuery(final YoutubeClipData vid, final Map<YoutubeITAG, YoutubeStreamData> ret, String html5PlayerJs, String r, String url, final LinkedHashMap<String, String> query) throws IOException, PluginException {
+        String signature = new Regex(url, "(sig|signature)=(.*?)(\\&|$)").getMatch(1);
+
+        if (StringUtils.isEmpty(signature)) {
+            // verified 7.1.24
+            // non dash?
+            signature = query.get("sig");
+        }
+        if (StringUtils.isEmpty(signature)) {
+            signature = query.get("signature");
+        }
+        if (StringUtils.isEmpty(signature)) {
+            // verified 7.1.213
+            signature = this.descrambleSignature(query.get("s"), html5PlayerJs, vid.videoID);
+        }
+
+        if (url != null && !url.contains("sig")) {
+
+            url = url + "&signature=" + signature;
+        }
+        String size = query.get("size");
+        int width = -1;
+        int height = -1;
+
+        if (StringUtils.isNotEmpty(size)) {
+            String[] splitted = size.split("\\s*x\\s*");
+            if (splitted != null && splitted.length == 2) {
+                width = Integer.parseInt(splitted[0]);
+                height = Integer.parseInt(splitted[1]);
+            }
+        }
+        String fps = query.get("fps");
+        String type = query.get("type");
+        if (StringUtils.isNotEmpty(type)) {
+            type = Encoding.urlDecode(type, false);
+        }
+        final YoutubeITAG itag = YoutubeITAG.get(Integer.parseInt(query.get("itag")), width, height, StringUtils.isEmpty(fps) ? -1 : Integer.parseInt(fps), type, vid.date);
+        validateItag(size, height, type, itag);
+        logger.info(Encoding.urlDecode(JSonStorage.toString(query), false));
+        if (url != null && itag != null) {
+
+            YoutubeStreamData vsd;
+            ret.put(itag, vsd = new YoutubeStreamData(vid, url, itag));
+
+        } else {
+
+            this.logger.info("Unknown Line: " + r);
+            this.logger.info("Unknown ITAG: " + query.get("itag"));
+            this.logger.info(url + "");
+            this.logger.info(query + "");
+            try {
+
+                if (!Application.isJared(null)) {
+                    new ItagHelper(vid, br, query, url).run();
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
+        }
     }
 
     private void handleRentalVideos(YoutubeClipData vid) throws Exception {
@@ -1714,7 +1761,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
             YoutubeStreamData vsd;
             vsd = new YoutubeStreamData(vid, url, itag);
-            onITag(vsd, br, query, url);
+
             return vsd;
         } else {
             this.logger.info("Unknown Line: " + line);
@@ -1755,7 +1802,7 @@ public class YoutubeHelper implements YoutubeHelperInterface {
                 } else if (tag instanceof VideoCodec) {
                     switch ((VideoCodec) tag) {
                     case H263:
-                        if (!StringUtils.containsIgnoreCase(type, "x-flv")) {
+                        if (!StringUtils.containsIgnoreCase(type, "x-flv") && !StringUtils.containsIgnoreCase(type, "3gp")) {
                             itagWarning(itag, "Codec", type);
                         }
                         break;
@@ -1816,17 +1863,6 @@ public class YoutubeHelper implements YoutubeHelperInterface {
 
     private void itagWarning(YoutubeITAG itag, String string, Object size) {
         this.logger.warning("Youtube WARNING! Bad Itag choosen: " + itag + " does not support " + string + " of " + size);
-    }
-
-    private void onITag(YoutubeStreamData vsd, Browser br, LinkedHashMap<String, String> query, String url) {
-        // System.out.println(1);
-        // if (vsd.getItag().getItag() == 272) {
-        // try {
-        // new ItagHelper(vsd.getClip(), br, query, url).run();
-        // } catch (IOException e) {
-        // e.printStackTrace();
-        // }
-        // }
     }
 
     private String replaceHttps(final String s) {
