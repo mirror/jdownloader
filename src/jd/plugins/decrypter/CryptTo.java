@@ -32,6 +32,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.Application;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crypt.to" }, urls = { "https?://(?:www\\.)?crypt\\.to/fid,[A-Za-z0-9]+" }, flags = { 0 })
 public class CryptTo extends PluginForDecrypt {
 
@@ -79,25 +81,21 @@ public class CryptTo extends PluginForDecrypt {
         try {
             con = brc.openGetConnection(theLink);
             if (con.getResponseCode() == 200) {
-                file = JDUtilities.getResourceFile("tmp/cryptto/" + folderid);
-                if (file == null) {
-                    return links;
-                }
+                file = Application.getTempResource("/cryptto/" + folderid + ".dlc");
                 file.getParentFile().mkdirs();
-                file.deleteOnExit();
                 brc.downloadConnection(file, con);
-                if (file != null && file.exists() && file.length() > 100) {
+                if (file.exists() && file.length() > 100) {
                     links.addAll(JDUtilities.getController().getContainerLinks(file));
                 }
             }
         } catch (Throwable e) {
-
+            throw new IOException(e);
         } finally {
             try {
                 con.disconnect();
             } catch (final Throwable e) {
             }
-            if (file.exists()) {
+            if (file != null && file.exists()) {
                 file.delete();
             }
 
