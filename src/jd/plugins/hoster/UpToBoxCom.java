@@ -73,8 +73,21 @@ public class UpToBoxCom extends antiDDoSForHost {
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+
+    /* Connection stuff */
+    private static final boolean FREE_RESUME                  = true;
+    private static final int     FREE_MAXCHUNKS               = -2;
+    private static final int     FREE_MAXDOWNLOADS            = 20;
+    private static final boolean ACCOUNT_FREE_RESUME          = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = -2;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(FREE_MAXDOWNLOADS);
+
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
@@ -220,7 +233,7 @@ public class UpToBoxCom extends antiDDoSForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         ipBlock();
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -706,7 +719,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Free Account");
             try {
-                maxPrem.set(1);
+                maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
                 // free accounts can still have captcha.
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
@@ -724,7 +737,7 @@ public class UpToBoxCom extends antiDDoSForHost {
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH) + 24 * 60 * 60 * 1000l);
                 try {
-                    maxPrem.set(20);
+                    maxPrem.set(ACCOUNT_PREMIUM_MAXDOWNLOADS);
                     account.setMaxSimultanDownloads(maxPrem.get());
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
@@ -817,8 +830,9 @@ public class UpToBoxCom extends antiDDoSForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         String passCode = null;
         requestFileInformation(link);
         ipBlock();
@@ -827,7 +841,7 @@ public class UpToBoxCom extends antiDDoSForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             getPage(link.getDownloadURL());
-            doFree(link, true, -2, "freelink2");
+            doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
@@ -860,7 +874,7 @@ public class UpToBoxCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();

@@ -51,17 +51,17 @@ public class DebridItaliaCom extends antiDDoSForHost {
         return "https://www.debriditalia.com/premium.php";
     }
 
-    private static final String NICE_HOST                        = "debriditalia.com";
-    private static final String NICE_HOSTproperty                = NICE_HOST.replaceAll("(\\.|\\-)", "");
-    private static final String NOCHUNKS                         = "NOCHUNKS";
-    private static final String MAX_RETRIES_UNAVAILABLE_PROPERTY = "MAX_RETRIES_UNAVAILABLE";
-    private static final int    DEFAULT_MAX_RETRIES_UNAVAILABLE  = 30;
-    private static final String MAX_RETRIES_DL_ERROR_PROPERTY    = "MAX_RETRIES_DL_ERROR";
-    private static final int    DEFAULT_MAX_RETRIES_DL_ERROR     = 50;
+    private static final String                            NICE_HOST                        = "debriditalia.com";
+    private static final String                            NICE_HOSTproperty                = NICE_HOST.replaceAll("(\\.|\\-)", "");
+    private static final String                            NOCHUNKS                         = "NOCHUNKS";
+    private static final String                            MAX_RETRIES_UNAVAILABLE_PROPERTY = "MAX_RETRIES_UNAVAILABLE";
+    private static final int                               DEFAULT_MAX_RETRIES_UNAVAILABLE  = 30;
+    private static final String                            MAX_RETRIES_DL_ERROR_PROPERTY    = "MAX_RETRIES_DL_ERROR";
+    private static final int                               DEFAULT_MAX_RETRIES_DL_ERROR     = 50;
 
-    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private Account                                        currAcc            = null;
-    private DownloadLink                                   currDownloadLink   = null;
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap               = new HashMap<Account, HashMap<String, Long>>();
+    private Account                                        currAcc                          = null;
+    private DownloadLink                                   currDownloadLink                 = null;
 
     private void setConstants(final Account acc, final DownloadLink dl) {
         this.currAcc = acc;
@@ -182,7 +182,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
                 host_downloadlink = host_downloadlink.replace("https://", "http://");
             }
             final String encodedLink = Encoding.urlEncode(host_downloadlink);
-            getPage("https://debriditalia.com/api.php?generate=on&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(account.getPass()) + "&link=" + encodedLink);
+            getPage("https://debriditalia.com/api.php?generate=on&u=" + Encoding.urlEncode(account.getUser()) + "&p=" + encodePassword(account.getPass()) + "&link=" + encodedLink);
             /* Either server error or the host is broken (we have to find out by retrying) */
             if (br.containsHTML("ERROR: not_available")) {
                 int timesFailed = link.getIntegerProperty("timesfaileddebriditalia_not_available", 0);
@@ -270,11 +270,19 @@ public class DebridItaliaCom extends antiDDoSForHost {
     }
 
     private boolean loginAPI(final Account acc) throws Exception {
-        getPage("https://debriditalia.com/api.php?check=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + Encoding.urlEncode(acc.getPass()));
+        getPage("https://debriditalia.com/api.php?check=on&u=" + Encoding.urlEncode(acc.getUser()) + "&p=" + encodePassword(acc.getPass()));
         if (!br.containsHTML("<status>valid</status>") || br.getHttpConnection().getResponseCode() == 401) {
             return false;
         }
         return true;
+    }
+
+    /** Workaround(s) for special chars issues with login passwords. */
+    private String encodePassword(String password) {
+        if (!password.contains("%")) {
+            password = Encoding.urlEncode(password);
+        }
+        return password;
     }
 
     private void tempUnavailableHoster(long timeout) throws PluginException {
