@@ -25,7 +25,6 @@ import org.jdownloader.settings.GeneralSettings;
 public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactory {
 
     private final Archive origin;
-    private String        archiveID = null;
 
     public FileArchiveFactory(File archiveStartFile) {
         this(archiveStartFile, null);
@@ -162,18 +161,8 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
     }
 
     @Override
-    public void onArchiveFinished(Archive archive) {
-        archiveID = archive.getArchiveID();
-    }
-
-    @Override
     public BooleanStatus getDefaultAutoExtract() {
         return BooleanStatus.UNSET;
-    }
-
-    @Override
-    public String getArchiveID() {
-        return archiveID;
     }
 
 }

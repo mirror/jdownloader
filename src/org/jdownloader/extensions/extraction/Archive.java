@@ -17,10 +17,12 @@
 package org.jdownloader.extensions.extraction;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.appwork.utils.Application;
+import org.jdownloader.extensions.extraction.ArchiveFile.ArchiveID;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
 import org.jdownloader.extensions.extraction.split.SplitType;
@@ -32,6 +34,48 @@ import org.jdownloader.extensions.extraction.split.SplitType;
  *
  */
 public class Archive {
+
+    public static String getBestArchiveID(List<ArchiveFile> archiveFiles, final String suggestedArchiveID) {
+        final HashMap<String, ArchiveID> scores = new HashMap<String, ArchiveID>();
+        for (final ArchiveFile archiveFile : archiveFiles) {
+            if (archiveFile != null) {
+                final String archiveID = archiveFile.getArchiveID();
+                if (archiveID != null) {
+                    ArchiveID score = scores.get(archiveID);
+                    if (score == null) {
+                        score = new ArchiveID(archiveID);
+                        score.increaseScore();
+                        scores.put(archiveID, score);
+                    }
+                    score.increaseScore();
+                }
+            }
+        }
+        if (suggestedArchiveID != null) {
+            ArchiveID score = scores.get(suggestedArchiveID);
+            if (score == null) {
+                if (scores.size() == 0) {
+                    return suggestedArchiveID;
+                }
+                score = new ArchiveID(suggestedArchiveID);
+                scores.put(suggestedArchiveID, score);
+            }
+            score.increaseScore();
+        }
+        if (scores.size() == 0) {
+            return null;
+        } else if (scores.size() == 1) {
+            return scores.values().iterator().next().getArchiveID();
+        } else {
+            ArchiveID ret = null;
+            for (final ArchiveID score : scores.values()) {
+                if (ret == null || ret.getScore() < score.getScore()) {
+                    ret = score;
+                }
+            }
+            return ret.getArchiveID();
+        }
+    }
 
     /**
      * Encrypted archive

@@ -2,6 +2,7 @@ package org.jdownloader.extensions.extraction.bindings.crawledlink;
 
 import java.awt.Color;
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
@@ -239,5 +240,41 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
     @Override
     public void invalidateExists() {
         exists.set(null);
+    }
+
+    @Override
+    public String getArchiveID() {
+        final List<CrawledLink> links = getLinks();
+        if (links.size() == 0) {
+            return null;
+        } else if (links.size() == 1) {
+            return links.get(0).getArchiveID();
+        } else {
+            final HashMap<String, ArchiveID> scores = new HashMap<String, ArchiveID>();
+            for (final CrawledLink crawledLink : getLinks()) {
+                final String archiveID = crawledLink.getArchiveID();
+                if (archiveID != null) {
+                    ArchiveID score = scores.get(archiveID);
+                    if (score == null) {
+                        score = new ArchiveID(archiveID);
+                        scores.put(archiveID, score);
+                    }
+                    score.increaseScore();
+                }
+            }
+            if (scores.size() == 0) {
+                return null;
+            } else if (scores.size() == 1) {
+                return scores.values().iterator().next().getArchiveID();
+            } else {
+                ArchiveID ret = null;
+                for (final ArchiveID score : scores.values()) {
+                    if (ret == null || ret.getScore() < score.getScore()) {
+                        ret = score;
+                    }
+                }
+                return ret.getArchiveID();
+            }
+        }
     }
 }

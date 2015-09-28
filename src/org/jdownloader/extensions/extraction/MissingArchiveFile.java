@@ -8,6 +8,7 @@ public class MissingArchiveFile implements ArchiveFile {
 
     private final String name;
     private final String filePath;
+    private String       archiveID = null;
 
     @Override
     public Boolean isComplete() {
@@ -65,6 +66,7 @@ public class MissingArchiveFile implements ArchiveFile {
 
     @Override
     public void setArchive(Archive archive) {
+        this.archiveID = archive.getArchiveID();
     }
 
     @Override
@@ -82,6 +84,11 @@ public class MissingArchiveFile implements ArchiveFile {
     @Override
     public Boolean isPartOfAnArchive() {
         return null;
+    }
+
+    @Override
+    public String getArchiveID() {
+        return archiveID;
     }
 
 }

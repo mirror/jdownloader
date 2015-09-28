@@ -198,25 +198,8 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     }
 
     @Override
-    public void onArchiveFinished(final Archive archive) {
-        archiveID = archive.getArchiveID();
-        for (final ArchiveFile archiveFile : archive.getArchiveFiles()) {
-            if (archiveFile instanceof DownloadLinkArchiveFile) {
-                for (final DownloadLink downloadLink : ((DownloadLinkArchiveFile) archiveFile).getDownloadLinks()) {
-                    downloadLink.setArchiveID(archiveID);
-                }
-            }
-        }
-    }
-
-    @Override
     public BooleanStatus getDefaultAutoExtract() {
         return BooleanStatus.UNSET;
-    }
-
-    @Override
-    public String getArchiveID() {
-        return archiveID;
     }
 
 }

@@ -38,10 +38,6 @@ public interface ArchiveFactory extends ArchiveFile {
 
     Archive createArchive();
 
-    String getArchiveID();
-
     File toFile(String path);
-
-    void onArchiveFinished(Archive archive);
 
 }

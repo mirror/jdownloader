@@ -16,7 +16,8 @@ public class FileArchiveFile implements ArchiveFile {
     private final String                   name;
     private final String                   filePath;
     private final int                      hashCode;
-    private final AtomicReference<Boolean> exists = new AtomicReference<Boolean>(null);
+    private final AtomicReference<Boolean> exists    = new AtomicReference<Boolean>(null);
+    private String                         archiveID = null;
 
     protected FileArchiveFile(File f) {
         this.file = f;
@@ -91,6 +92,7 @@ public class FileArchiveFile implements ArchiveFile {
 
     @Override
     public void setArchive(Archive archive) {
+        archiveID = archive.getArchiveID();
     }
 
     @Override
@@ -122,6 +124,11 @@ public class FileArchiveFile implements ArchiveFile {
 
     public Boolean isPartOfAnArchive() {
         return null;
+    }
+
+    @Override
+    public String getArchiveID() {
+        return archiveID;
     };
 
 }

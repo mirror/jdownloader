@@ -698,9 +698,13 @@ public class DirectHTTP extends antiDDoSForHost {
                 return;
             } else {
                 if (downloadLink.getBooleanProperty(DirectHTTP.NOCHUNKS, false) == false) {
-                    /* disable multiple chunks => use only 1 chunk and retry */
-                    downloadLink.setProperty(DirectHTTP.NOCHUNKS, Boolean.TRUE);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                    if (downloadLink.getDownloadCurrent() > downloadCurrentRaw + (1024 * 1024l)) {
+                        throw e;
+                    } else {
+                        /* disable multiple chunks => use only 1 chunk and retry */
+                        downloadLink.setProperty(DirectHTTP.NOCHUNKS, Boolean.TRUE);
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
                 } else if (downloadLink.getBooleanProperty(DirectHTTP.NORESUME, false) == false) {
                     boolean disableRanges = false;
                     final long[] progress = downloadLink.getChunksProgress();
