@@ -443,7 +443,7 @@ public class EightTracksCom extends antiDDoSForHost {
                 accessSoundcloudLink(br2, dlink);
             } catch (final Throwable e) {
             }
-            final String streamlink = jd.plugins.hoster.SoundcloudCom.getDirectlink(br2.toString());
+            final String streamlink = jd.plugins.hoster.SoundcloudCom.getDirectlink(br2.toString(), null);
             return streamlink;
         } else {
             return dlink;
