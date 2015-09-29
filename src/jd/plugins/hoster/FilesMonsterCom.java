@@ -225,6 +225,7 @@ public class FilesMonsterCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -265,8 +266,8 @@ public class FilesMonsterCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("Waiting for ticket...");
             String newTemporaryLink = getNewTemporaryLink(downloadLink.getStringProperty("mainlink"), downloadLink.getStringProperty("origfilename"));
             if (newTemporaryLink == null) {
-                logger.warning("Failed to find a new temporary link for this link...");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.warning("Failed to find a new temporary link for this link --> Chances are high that it is not downloadable for freeusers anymore --> Free link(s) are offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.getPage(newTemporaryLink);
         }

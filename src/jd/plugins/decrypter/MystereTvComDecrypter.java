@@ -40,26 +40,16 @@ public class MystereTvComDecrypter extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getURL().equals("http://www.mystere-tv.com/") || br.containsHTML("<title>Paranormal \\- Ovni \\- Mystere TV </title>")) {
+        if (jd.plugins.hoster.MystereTvCom.isOffline(this.br)) {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
-        } else if (this.br.containsHTML(">Cliquez ici</a> pour vous inscrire")) {
+        } else if (this.br.containsHTML("class=\"playerwrapper\">[\t\n\r ]+<a href=\"inscription\\.html\"")) {
             /* Premiumonly */
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         // Same as in hosterplugin
-        String filename = br.getRegex("<h1 class=\"videoTitle\">(.*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<br /><br /><strong><u>(.*?)</u></strong>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>(.*?) \\- Paranormal</title>").getMatch(0);
-            }
-        }
-        if (filename == null) {
-            return null;
-        }
-        filename = Encoding.htmlDecode(filename.trim());
+        final String filename = jd.plugins.hoster.MystereTvCom.getFilename(this.br, parameter);
         String externalLink = br.getRegex("\"(http://(www\\.)dailymotion\\.com/embed/video/.*?)\"").getMatch(0);
         if (externalLink != null) {
             decryptedLinks.add(createDownloadlink(externalLink.replace("/embed", "")));
@@ -82,12 +72,15 @@ public class MystereTvComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://video.google.com/videoplay?docid=" + externalLink));
             return decryptedLinks;
         }
-        externalLink = br.getRegex("name=\"movie\" value=\"(http://(www\\.)youtube\\.com/v/.*?)\\&").getMatch(0);
+        externalLink = br.getRegex("name=\"movie\" value=\"https?://(?:www\\.)youtube\\.com/v/(.*?)\\&").getMatch(0);
         if (externalLink == null) {
-            externalLink = br.getRegex("></param><embed src=\"(http://(www\\.)?youtube\\.com/v/.*?)\\&").getMatch(0);
+            externalLink = br.getRegex("></param><embed src=\"https?://(?:www\\.)?youtube\\.com/v/(.*?)\\&").getMatch(0);
+        }
+        if (externalLink == null) {
+            externalLink = br.getRegex("\"https?://(?:www\\.)?youtube\\.com/embed/([^<>\"]*?)\"").getMatch(0);
         }
         if (externalLink != null) {
-            decryptedLinks.add(createDownloadlink(externalLink));
+            decryptedLinks.add(createDownloadlink("https://www.youtube.com/watch?v=" + externalLink));
             return decryptedLinks;
         }
         decryptedLinks.add(createDownloadlink(parameter.replace("mystere-tv.com/", "decryptedmystere-tv.com/")));

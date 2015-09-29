@@ -50,7 +50,8 @@ public class FlickrCom extends PluginForDecrypt {
     private static final String     NICE_HOST                = "flickr.com";
     private static final String     TYPE_FAVORITES           = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/favorites/?";
     private static final String     TYPE_GROUPS              = "https?://(www\\.)?flickr\\.com/groups/[^<>\"/]+([^<>\"]+)?";
-    private static final String     TYPE_SET                 = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/sets/\\d+/?";
+    private static final String     TYPE_SET_SINGLE          = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/(?:sets|albums)/\\d+/?";
+    private static final String     TYPE_SETS_OF_USER_ALL    = ".+/(?:albums|sets)/?$";
     private static final String     TYPE_SINGLE_PHOTO        = "https?://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+.+";
 
     private static final String     TYPE_PHOTO               = "https?://(www\\.)?flickr\\.com/photos/.*?";
@@ -178,7 +179,7 @@ public class FlickrCom extends PluginForDecrypt {
         String forcedOwner = null;
         String apilink = null;
         String path_alias = null;
-        if (parameter.matches(TYPE_SET)) {
+        if (parameter.matches(TYPE_SET_SINGLE)) {
             final String setid = new Regex(parameter, "(\\d+)/?$").getMatch(0);
             /* This request is only needed to get the title and owner of the photoset, */
             api_getPage("https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&method=flickr.photosets.getInfo&photoset_id=" + Encoding.urlEncode(setid));
@@ -194,7 +195,7 @@ public class FlickrCom extends PluginForDecrypt {
             }
             apilink = "https://api.flickr.com/services/rest?format=" + api_format + "&csrf=" + this.csrf + "&api_key=" + api_apikey + "&per_page=" + api_max_entries_per_page + "&page=GETJDPAGE&photoset_id=" + Encoding.urlEncode(setid) + "&method=flickr.photosets.getPhotos" + "&hermes=1&hermesClient=1&nojsoncallback=1";
             api_getPage(apilink.replace("GETJDPAGE", "1"));
-        } else if (parameter.matches(".+/sets/?") && !parameter.matches(TYPE_SET)) {
+        } else if (parameter.matches(TYPE_SETS_OF_USER_ALL) && !parameter.matches(TYPE_SET_SINGLE)) {
             apiGetSetsOfUser();
             return;
         } else if (parameter.matches(TYPE_FAVORITES)) {

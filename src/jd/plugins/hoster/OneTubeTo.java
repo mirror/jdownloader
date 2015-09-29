@@ -32,7 +32,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1tube.to" }, urls = { "httpss?://(?:www\\.)?1tube\\.to/f/[^<>\"]*?[A-Za-z0-9]+\\.html" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "1tube.to" }, urls = { "https?://(?:www\\.)?1tube\\.to/f/([^<>\"]*?\\-[A-Za-z0-9]+\\.html|[A-Za-z0-9]+)" }, flags = { 0 })
 public class OneTubeTo extends PluginForHost {
 
     public OneTubeTo(PluginWrapper wrapper) {
@@ -47,17 +49,26 @@ public class OneTubeTo extends PluginForHost {
 
     /* Tags: 1tube.to, hdstream.to */
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
+    private static final boolean FREE_RESUME                  = true;
     /* Max total connections: 10 */
-    private static final int     FREE_MAXCHUNKS    = -2;
-    private static final int     FREE_MAXDOWNLOADS = 5;
+    private static final int     FREE_MAXCHUNKS               = -2;
+    private static final int     FREE_MAXDOWNLOADS            = 5;
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final boolean ACCOUNT_FREE_RESUME          = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
+    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
+    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 10;
+
+    private static final int     PREMIUM_OVERALL_MAXCON       = -ACCOUNT_PREMIUM_MAXDOWNLOADS;
+
+    @SuppressWarnings("deprecation")
+    public void correctDownloadLink(final DownloadLink link) {
+        final String fid = getFID(link);
+        link.setLinkID(fid);
+        link.setUrlDownload("https://1tube.to/f/" + fid);
+    }
 
     // /* don't touch the following! */
     // private static AtomicInteger maxPrem = new AtomicInteger(1);
@@ -94,12 +105,9 @@ public class OneTubeTo extends PluginForHost {
                     sb.append("\n");
                 }
                 /* TODO: Implement this correctly! */
-                br.postPage("https://1tube.to/p/api/", sb.toString());
-                final String json = br.getRegex("name=\"check\" class=\"validate\\[required\\]\">(.*?)</textarea>").getMatch(0);
-                if (json == null) {
-                    return false;
-                }
-                api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(json);
+                br.postPage("https://1tube.to/p/api/?json=1", sb.toString());
+                api_data = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(br.toString());
+                api_data = (LinkedHashMap<String, Object>) api_data.get("data");
                 for (final DownloadLink dl : links) {
                     final String fid = getFID(dl);
                     api_data_singlelink = (LinkedHashMap<String, Object>) api_data.get(fid);
@@ -147,28 +155,52 @@ public class OneTubeTo extends PluginForHost {
         doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    @SuppressWarnings("deprecation")
+    private void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        final String fid = this.getFID(downloadLink);
+        final String premiumtoken = getPremiumToken(downloadLink);
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         if (dllink == null) {
             this.br.setFollowRedirects(false);
-            final String fid = this.getFID(downloadLink);
             this.br.getPage("https://1tube.to/send/?visited=" + fid);
             final String canPlay = getJson("canPlay");
+            final String server = getJson("server");
+            final String waittime = getJson("wait");
+            final String free_downloadable = getJson("downloadable");
+            final String free_downloadable_max_filesize = new Regex(free_downloadable, "mb(\\d+)").getMatch(0);
+            final String traffic_left_free = getJson("traffic");
             if ("true".equals(canPlay)) {
                 /* Prefer to download the stream if possible as it has the same filesize as download but no waittime. */
-                this.br.getPage("https://sx1.1tube.to/send/?token=" + fid + "&stream=1");
-                dllink = this.br.getRedirectLocation();
-            } else {
-                /* Download */
-                final String traffic_left_free = getJson("traffic");
+                final Browser br2 = br.cloneBrowser();
+                br2.getPage("https://sx" + server + ".1tube.to/send/?token=" + fid + "&stream=1");
+                dllink = br2.getRedirectLocation();
+            }
+            if (dllink == null) {
+                /* Download file - stream impossible */
+                /*
+                 * Note that premiumtokens can override this NOTE that premiumtokens do not (yet) exist for this host (project), see
+                 * hdstream.to plugin.
+                 */
+                if (free_downloadable.equals("premium") || (free_downloadable_max_filesize != null && downloadLink.getDownloadSize() >= SizeFormatter.getSize(free_downloadable_max_filesize + " mb")) && premiumtoken.equals("")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                }
                 if (traffic_left_free.equals("0")) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
                 }
-                /* TODO */
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-            }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dllink = getDllink(downloadLink);
+                if (waittime == null) {
+                    /* This should never happen! */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final int wait = Integer.parseInt(waittime);
+                /* Make sure that the premiumtoken is valid - if it is not valid, wait is higher than 0 */
+                if (!premiumtoken.equals("") && wait == 0) {
+                    logger.info("Seems like the user is using a valid premiumtoken, enabling chunks & resume...");
+                    resumable = ACCOUNT_PREMIUM_RESUME;
+                    maxchunks = PREMIUM_OVERALL_MAXCON;
+                } else {
+                    this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
+                }
             }
         }
         this.br.setFollowRedirects(true);
@@ -206,9 +238,30 @@ public class OneTubeTo extends PluginForHost {
         return dllink;
     }
 
+    /** Returns final downloadlink, same for free and premium */
+    private String getDllink(final DownloadLink dl) {
+        return "http://sx" + getJson("server") + ".1tube.to/send.php?token=" + getFID(dl);
+    }
+
+    /**
+     * Links which contain a premium token can be downloaded via free like a premium user - in case such a token exists in a link, this
+     * function will return it.
+     *
+     * @return: "" (empty String) if there is no token and the token if there is one
+     */
     @SuppressWarnings("deprecation")
+    private String getPremiumToken(final DownloadLink dl) {
+        final String addedlink = dl.getDownloadURL();
+        String premtoken = new Regex(addedlink, "hdstream\\.to/(f/|#\\!f=)[A-Za-z0-9]+\\-([A-Za-z0-9]+)$").getMatch(1);
+        if (premtoken == null) {
+            premtoken = "";
+        }
+        return premtoken;
+    }
+
     private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)\\.html").getMatch(0);
+        final String fid = new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)(?:\\.html)?$").getMatch(0);
+        return fid;
     }
 
     @Override
@@ -216,7 +269,7 @@ public class OneTubeTo extends PluginForHost {
         return FREE_MAXDOWNLOADS;
     }
 
-    // private static final String MAINPAGE = "http://examplehoster.com";
+    // private static final String MAINPAGE = "http://1tube.to";
     // private static Object LOCK = new Object();
     //
     // @SuppressWarnings("unchecked")

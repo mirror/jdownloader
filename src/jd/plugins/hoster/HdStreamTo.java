@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -45,7 +44,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hdstream.to" }, urls = { "https?://(www\\.)?hdstream\\.to/(#(!|%21)f=[A-Za-z0-9]+(\\-[A-Za-z0-9]+)?|f/.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hdstream.to" }, urls = { "https?://(www\\.)?hdstream\\.to/(#(!|%21)f=[A-Za-z0-9]+(\\-[A-Za-z0-9]+)?|f/.+)" }, flags = { 2 })
 public class HdStreamTo extends PluginForHost {
 
     public HdStreamTo(PluginWrapper wrapper) {
@@ -72,12 +71,10 @@ public class HdStreamTo extends PluginForHost {
 
     private static final int     PREMIUM_OVERALL_MAXCON       = -ACCOUNT_PREMIUM_MAXDOWNLOADS;
 
-    /* don't touch the following! */
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-
     private Exception            checkjlinksexception         = null;
 
     /** Using API: http://hdstream.to/#!p=api */
+    @SuppressWarnings("deprecation")
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) {
@@ -114,7 +111,7 @@ public class HdStreamTo extends PluginForHost {
                     } else {
                         final String sha1hash = this.getJson(thisjson, "hash");
                         /*
-                         * file_title = user defined title (without extension) - prefer that --> name = original title/server-title (withz
+                         * file_title = user defined title (without extension) - prefer that --> name = original title/server-title (with
                          * extension, can contain encoding issues)
                          */
                         final String extension = "." + getJson(thisjson, "extension");
@@ -173,21 +170,14 @@ public class HdStreamTo extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    public void doFree(final DownloadLink downloadLink, boolean resume, int maxchunks) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks) throws Exception, PluginException {
         checkDownloadable();
         String premiumtoken = getPremiumToken(downloadLink);
         final String free_downloadable = getJson("downloadable");
         final String free_downloadable_max_filesize = new Regex(free_downloadable, "mb(\\d+)").getMatch(0);
         /* Note that premiumtokens can override this */
         if (free_downloadable.equals("premium") || (free_downloadable_max_filesize != null && downloadLink.getDownloadSize() >= SizeFormatter.getSize(free_downloadable_max_filesize + " mb")) && premiumtoken.equals("")) {
-            try {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-            } catch (final Throwable e) {
-                if (e instanceof PluginException) {
-                    throw (PluginException) e;
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         }
         String dllink = getDllink(downloadLink);
         dllink += "&premium=" + premiumtoken;
@@ -199,18 +189,19 @@ public class HdStreamTo extends PluginForHost {
         br.getPage("http://hdstream.to/send.php?visited=" + fid + "&premium=" + premiumtoken);
         final String waittime = getJson("wait");
         if (waittime == null) {
+            /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final int wait = Integer.parseInt(waittime);
         /* Make sure that the premiumtoken is valid - if it is not valid, wait is higher than 0 */
         if (!premiumtoken.equals("") && wait == 0) {
             logger.info("Seems like the user is using a valid premiumtoken, enabling chunks & resume...");
-            resume = ACCOUNT_PREMIUM_RESUME;
+            resumable = ACCOUNT_PREMIUM_RESUME;
             maxchunks = PREMIUM_OVERALL_MAXCON;
         } else {
             this.sleep(Integer.parseInt(waittime) * 1001l, downloadLink);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             /* 403 error means different things for free and premium */
             /* Should never happen here */
@@ -274,6 +265,7 @@ public class HdStreamTo extends PluginForHost {
      *
      * @return: "" (empty String) if there is no token and the token if there is one
      */
+    @SuppressWarnings("deprecation")
     private String getPremiumToken(final DownloadLink dl) {
         final String addedlink = dl.getDownloadURL();
         String premtoken = new Regex(addedlink, "hdstream\\.to/(f/|#\\!f=)[A-Za-z0-9]+\\-([A-Za-z0-9]+)$").getMatch(1);
@@ -421,8 +413,6 @@ public class HdStreamTo extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         try {
             login(account, true);
         } catch (PluginException e) {
@@ -440,18 +430,11 @@ public class HdStreamTo extends PluginForHost {
              * Free accounts are accepted but basically never used because their traffic is ZERO. Admin told us they only bring minor
              * advantages, not related to downloading links of others so it's all fine.
              */
-            account.setProperty("free", true);
-            maxPrem.set(ACCOUNT_FREE_MAXDOWNLOADS);
-            try {
-                account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) user");
         } else {
-            account.setProperty("free", false);
             br.getPage("http://s.hdstream.to/js/data.js");
             int max_prem_dls = ACCOUNT_PREMIUM_MAXDOWNLOADS;
             try {
@@ -459,14 +442,9 @@ public class HdStreamTo extends PluginForHost {
             } catch (final Throwable e) {
             }
             ai.setValidUntil(Long.parseLong(expire) * 1000l);
-            try {
-                account.setType(AccountType.PREMIUM);
-                maxPrem.set(max_prem_dls);
-                account.setMaxSimultanDownloads(maxPrem.get());
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-                /* not available in old Stable 0.9.581 */
-            }
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(max_prem_dls);
+            account.setConcurrentUsePossible(true);
             ai.setStatus("Premium User");
         }
         account.setValid(true);
@@ -480,7 +458,7 @@ public class HdStreamTo extends PluginForHost {
         checkDownloadable();
         dllink = getDllink(link);
         login(account, false);
-        if (account.getBooleanProperty("free", false)) {
+        if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
         } else {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
@@ -504,8 +482,7 @@ public class HdStreamTo extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        /* workaround for free/premium issue on stable 09581 */
-        return maxPrem.get();
+        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
     }
 
     @Override

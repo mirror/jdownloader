@@ -875,7 +875,7 @@ public class LaFilesCom extends PluginForHost {
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
         try {
-            login(account, true);
+            login(account);
         } catch (final PluginException e) {
             account.setValid(false);
             throw e;
@@ -931,18 +931,19 @@ public class LaFilesCom extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private void login(final Account account, final boolean force) throws Exception {
+    private void login(final Account account) throws Exception {
         synchronized (LOCK) {
             try {
                 /* Load cookies */
                 br.setCookiesExclusive(true);
                 prepBrowser(br);
+                Form loginform = null;
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) {
                     acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 }
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
@@ -950,13 +951,20 @@ public class LaFilesCom extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(COOKIE_HOST, key, value);
                         }
-                        return;
+                        this.br.getPage(COOKIE_HOST + "/?op=my_files");
+                        loginform = br.getFormbyProperty("name", "FL");
+                        if (loginform == null) {
+                            return;
+                        }
+                        /* Drop old cookies / Headers */
+                        this.br = new Browser();
+                        prepBrowser(br);
                     }
                 }
                 br.setFollowRedirects(true);
                 getPage(COOKIE_HOST + "/login.html");
                 final String lang = System.getProperty("user.language");
-                final Form loginform = br.getFormbyProperty("name", "FL");
+                loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) {
                     if ("de".equalsIgnoreCase(lang)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlugin defekt, bitte den JDownloader Support kontaktieren!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -984,6 +992,8 @@ public class LaFilesCom extends PluginForHost {
                     }
                     loginform.put("code", code.toString());
                 }
+                /* Wait = Important! */
+                Thread.sleep(5000l);
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                     if ("de".equalsIgnoreCase(lang)) {
@@ -1020,7 +1030,7 @@ public class LaFilesCom extends PluginForHost {
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         passCode = downloadLink.getStringProperty("pass");
         requestFileInformation(downloadLink);
-        login(account, false);
+        login(account);
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
             doFree(downloadLink, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "freelink2");
