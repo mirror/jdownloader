@@ -17,10 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,7 +32,6 @@ import jd.config.ConfigEntry;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
-import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -62,6 +59,8 @@ public class FaceBookComVideos extends PluginForHost {
     private static final String TYPE_SINGLE_VIDEO_ALL = "https?://(www\\.)?facebook\\.com/video\\.php\\?v=\\d+";
     private static final String TYPE_DOWNLOAD         = "https?://(www\\.)?facebook\\.com/download/\\d+";
     private static final String REV                   = jd.plugins.decrypter.FaceBookComGallery.REV;
+
+    public static final long    trust_cookie_age      = 30000l;
 
     private static Object       LOCK                  = new Object();
     private boolean             pluginloaded          = false;
@@ -424,34 +423,29 @@ public class FaceBookComVideos extends PluginForHost {
             setHeaders(br);
             // Load cookies
             br.setCookiesExclusive(true);
-            final Object ret = account.getProperty("cookies", null);
-            boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) {
-                acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-            }
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (cookies.containsKey("c_user") && cookies.containsKey("xs") && account.isValid()) {
-                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                        final String key = cookieEntry.getKey();
-                        final String value = cookieEntry.getValue();
-                        br.setCookie(FACEBOOKMAINPAGE, key, value);
-                    }
-                    final boolean follow = br.isFollowingRedirects();
-                    try {
-                        br.setFollowRedirects(true);
-                        br.getPage(FACEBOOKMAINPAGE);
-                    } finally {
-                        br.setFollowRedirects(follow);
-                    }
-                    if (br.containsHTML("id=\"logoutMenu\"")) {
-                        return;
-                    }
-                    /* Get rid of old cookies / headers */
-                    br = new Browser();
-                    br.setCookiesExclusive(true);
-                    setHeaders(br);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(FACEBOOKMAINPAGE, cookies);
+                if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
+                    /* We trust these cookies --> Do not check them */
+                    return;
                 }
+                final boolean follow = br.isFollowingRedirects();
+                try {
+                    br.setFollowRedirects(true);
+                    br.getPage(FACEBOOKMAINPAGE);
+                } finally {
+                    br.setFollowRedirects(follow);
+                }
+                if (br.containsHTML("id=\"logoutMenu\"")) {
+                    /* Save cookies to save new valid cookie timestamp */
+                    account.saveCookies(br.getCookies(FACEBOOKMAINPAGE), "");
+                    return;
+                }
+                /* Get rid of old cookies / headers */
+                br = new Browser();
+                br.setCookiesExclusive(true);
+                setHeaders(br);
             }
             br.setFollowRedirects(true);
             final boolean prefer_mobile_login = false;
@@ -626,15 +620,8 @@ public class FaceBookComVideos extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, LOGINFAIL_ENGLISH, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            // Save cookies
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = br.getCookies(FACEBOOKMAINPAGE);
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            account.setProperty("name", Encoding.urlEncode(account.getUser()));
-            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-            account.setProperty("cookies", cookies);
+            /* Save cookies */
+            account.saveCookies(br.getCookies(FACEBOOKMAINPAGE), "");
             account.setValid(true);
             synchronized (LOCK) {
                 checkFeatureDialog();
