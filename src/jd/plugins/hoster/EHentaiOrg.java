@@ -30,6 +30,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.HeadRequest;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -41,6 +42,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org", "exhentai.org" }, urls = { "http://g\\.e\\-hentai\\.orgdecrypted\\d+", "http://exhentai\\.orgdecrypted\\d+" }, flags = { 2, 2 })
 public class EHentaiOrg extends PluginForHost {
@@ -68,6 +71,7 @@ public class EHentaiOrg extends PluginForHost {
 
     private static final String  TYPE_EHENTAI      = "http://g\\.e\\-hentai\\.orgdecrypted\\d+";
     private static final String  TYPE_EXHENTAI     = "http://exhentai\\.orgdecrypted\\d+";
+    private static final String  default_ext       = ".jpg";
 
     @Override
     public String getAGBLink() {
@@ -78,13 +82,23 @@ public class EHentaiOrg extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         final String namepart = downloadLink.getStringProperty("namepart", null);
+        final String mainlink = getMainlink(downloadLink);
+        String dllink_fullsize = null;
+        String ext = null;
         DLLINK = null;
+        boolean loggedin = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
-            login(this.br, aa, false);
-        } else if (downloadLink.getDownloadURL().matches(TYPE_EXHENTAI)) {
+            try {
+                login(this.br, aa, false);
+                loggedin = true;
+            } catch (final Throwable e) {
+                loggedin = false;
+            }
+        }
+        if (!loggedin && downloadLink.getDownloadURL().matches(TYPE_EXHENTAI)) {
             downloadLink.getLinkStatus().setStatusText("Account needed to check this linktype");
             return AvailableStatus.UNCHECKABLE;
         }
@@ -95,9 +109,18 @@ public class EHentaiOrg extends PluginForHost {
              */
             br.getHeaders().put("User-Agent", jd.plugins.hoster.MediafireCom.stringUserAgent());
         }
-        br.getPage(getMainlink(downloadLink));
+        br.getPage(mainlink);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (downloadLink.getDownloadURL().matches(TYPE_EHENTAI) && loggedin) {
+            /* Try to get fullsize (original) image. */
+            final Regex fulllinkinfo = br.getRegex("href=\"(https?://g\\.e\\-hentai\\.org/fullimg\\.php[^<>\"]*?)\">Download original \\d+ x \\d+ ([^<>\"]*?) source</a>");
+            dllink_fullsize = fulllinkinfo.getMatch(0);
+            final String html_filesize = fulllinkinfo.getMatch(1);
+            if (dllink_fullsize != null && html_filesize != null) {
+                downloadLink.setDownloadSize(SizeFormatter.getSize(html_filesize));
+            }
         }
         DLLINK = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+(:\\d+)?/h/[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) {
@@ -106,20 +129,23 @@ public class EHentaiOrg extends PluginForHost {
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(namepart + DLLINK.substring(DLLINK.lastIndexOf(".")));
+        ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        downloadLink.setFinalFileName(namepart + ext);
+
+        if (dllink_fullsize != null) {
+            dllink_fullsize = Encoding.htmlDecode(dllink_fullsize);
+            /* Filesize is already set via html_filesize, we have our full (original) resolution downloadlink and our file extension! */
+            DLLINK = dllink_fullsize;
+            return AvailableStatus.TRUE;
+        }
+
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             try {
-                if (isJDStable()) {
-                    /* @since JD2 */
-                    con = br2.openHeadConnection(DLLINK);
-                } else {
-                    /* Not supported in old 0.9.581 Stable */
-                    con = br2.openGetConnection(DLLINK);
-                }
+                con = br2.openHeadConnection(DLLINK);
             } catch (final BrowserException ebr) {
                 /* Whatever happens - its most likely a server problem for this host! */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
@@ -316,10 +342,6 @@ public class EHentaiOrg extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override
