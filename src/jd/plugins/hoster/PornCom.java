@@ -153,26 +153,30 @@ public class PornCom extends antiDDoSForHost {
         boolean q360 = cfg.getBooleanProperty("360p", false);
         boolean q480 = cfg.getBooleanProperty("480p", false);
         boolean q720 = cfg.getBooleanProperty("720p", false);
-        DLLINK = brc.getRegex("240p\",url:\"(http:.*?)\"").getMatch(0); // Default
-        if (q240) {
-            DLLINK = brc.getRegex("240p\",url:\"(http:.*?)\"").getMatch(0);
-            vq = "240p";
-        }
-        if (q360) {
-            DLLINK = brc.getRegex("360p\",url:\"(http:.*?)\"").getMatch(0);
-            vq = "360p";
-        }
-        if (q480) {
-            DLLINK = brc.getRegex("480p\",url:\"(http:.*?)\"").getMatch(0);
-            vq = "480p";
-        }
         if (q720) {
             DLLINK = brc.getRegex("720p\",url:\"(http:.*?)\"").getMatch(0);
             vq = "720p";
         }
+        if (DLLINK == null) {
+            if (q480) {
+                DLLINK = brc.getRegex("480p\",url:\"(http:.*?)\"").getMatch(0);
+                vq = "480p";
+            }
+        }
+        if (DLLINK == null) {
+            if (q360) {
+                DLLINK = brc.getRegex("360p\",url:\"(http:.*?)\"").getMatch(0);
+                vq = "360p";
+            }
+        }
+        if (DLLINK == null) {
+            DLLINK = brc.getRegex("240p\",url:\"(http:.*?)\"").getMatch(0); // Default
+            vq = "240p";
+        }
         if (DLLINK != null) {
             return;
         }
+        logger.info("Video quality selection failed.");
         // json
         final String a = getJsonArray("streams");
         final String[] array = getJsonResultsFromArray(a);
