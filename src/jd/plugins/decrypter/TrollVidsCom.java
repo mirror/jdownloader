@@ -58,9 +58,20 @@ public class TrollVidsCom extends PluginForDecrypt {
             decryptedLinks.add(this.createDownloadlink(externID));
             return decryptedLinks;
         }
-        final String videoid = this.br.getRegex("property=\"og:image\" content=\"http?://trollvids\\.com/files/thumbs/([a-z0-9]+)\\-\\d+\\.jpg\"").getMatch(0);
-        if (videoid == null) {
-            return null;
+        final String source_html = this.br.getRegex("<div class=\"watch_left\">(.*?)<div class=\"rating_container\">").getMatch(0);
+        if (source_html != null) {
+            externID = new Regex(source_html, "\"(http[^<>\"]*?)\"").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(this.createDownloadlink(externID));
+                return decryptedLinks;
+            }
+        }
+        final String fid = jd.plugins.hoster.TrollVidsCom.getFID(parameter);
+        this.br.getPage("http://trollvids.com/nuevo/player/config.php?v=" + fid);
+        externID = br.getRegex("<(?:filehd|file)>(http[^<>\"]*?)</(?:filehd|file)>").getMatch(0);
+        if (!externID.contains("trollvids.com/")) {
+            decryptedLinks.add(this.createDownloadlink(externID));
+            return decryptedLinks;
         }
         final DownloadLink dl = createDownloadlink(parameter.replace("trollvids.com/", "trollvidsdecrypted.com/"));
         decryptedLinks.add(dl);
