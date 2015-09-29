@@ -502,8 +502,8 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
     }
 
     /* Collection of possible values */
-    private final String[] versionCodes             = { "VO", "VO-STA", "VOF-STMF", "VA-STMA", "VOF-STA", "VOA-STMA", "VAAUD", "VE", "VF-STMF", "VE[ANG]", "VI" };
-    private final String[] versionShortLibelleCodes = { "DE", "VA", "VE", "FR", "VF", "OmU", "VO", "VOF", "VOSTF", "VE[ANG]", "VI" };
+    private final String[] versionCodes             = { "VO", "VO-STA", "VOF-STMF", "VA-STMA", "VOF-STA", "VOA-STA", "VOA-STMA", "VAAUD", "VE", "VF-STMF", "VE[ANG]", "VI" };
+    private final String[] versionShortLibelleCodes = { "DE", "VA", "VE", "FR", "VF", "OmU", "VO", "VOA", "VOF", "VOSTF", "VE[ANG]", "VI" };
 
     /* Non-subtitled versions, 3 = Subtitled versions, 4 = Subtitled versions for disabled people, 5 = Audio descriptions */
     private int getFormatCode(final String versionShortLibelle, final String versionCode) throws DecrypterException {
@@ -523,7 +523,7 @@ public class ArteMediathekDecrypter extends PluginForDecrypt {
             lint = 4;
         } else if (versionCode.equals("VAAUD")) {
             lint = 5;
-        } else if (versionShortLibelle.equals("OmU") || versionShortLibelle.equals("VO") || versionCode.equals("VO") || versionShortLibelle.equals("VE") || versionCode.equals("VE") || versionShortLibelle.equals("VE[ANG]") || versionCode.equals("VE[ANG]") || versionCode.equals("VI")) {
+        } else if (versionShortLibelle.equals("OmU") || versionShortLibelle.equals("VO") || versionCode.equals("VO") || versionShortLibelle.equals("VE") || versionCode.equals("VE") || versionShortLibelle.equals("VE[ANG]") || versionCode.equals("VE[ANG]") || versionCode.equals("VI") || "VOA-STA".equals(versionCode)) {
             /* VE Actually means English but there is no specified selection for this. */
             /* Without language --> So it simply is our current language */
             lint = languageVersion;

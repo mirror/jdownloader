@@ -212,10 +212,6 @@ public class NowVideoEu extends PluginForHost {
         if (fKey == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /*
-         * http://www.nowvideo.ch/api/player.api.php?numOfErrors=0&user=undefined&key=79%2E216%2E193%2E67%2D
-         * 0bbb2d3c46961e28b0d2358e8609a055&file=c3eda0e32606f&cid=1&cid2=undefined&pass=undefined&cid3=undefined
-         */
         final String player = "/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey) + "&cid=" + cid1 + "&cid2=" + (cid2 == null ? "undefined" : cid2) + "&cid3=" + br.getHost() + "&numOfErrors=";
         final String host = new Regex(br.getURL(), "https?://[^/]+").getMatch(-1);
         int errCount = 0;
@@ -245,7 +241,7 @@ public class NowVideoEu extends PluginForHost {
             br.getHeaders().put("Referer", host + "/player/cloudplayer.swf");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 500 || dl.getConnection().getResponseCode() == 404) {
+                if (dl.getConnection().getResponseCode() == 500 || dl.getConnection().getResponseCode() == 404 || dl.getConnection().getResponseCode() == 403) {
                     if (errCount > 4) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Can not connect to streaming link!", 10 * 60 * 1000l);
                     }

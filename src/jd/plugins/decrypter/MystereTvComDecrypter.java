@@ -41,7 +41,11 @@ public class MystereTvComDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getURL().equals("http://www.mystere-tv.com/") || br.containsHTML("<title>Paranormal \\- Ovni \\- Mystere TV </title>")) {
-            logger.info("Link offline: " + parameter);
+            decryptedLinks.add(this.createOfflinelink(parameter));
+            return decryptedLinks;
+        } else if (this.br.containsHTML(">Cliquez ici</a> pour vous inscrire")) {
+            /* Premiumonly */
+            decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
         // Same as in hosterplugin
@@ -52,7 +56,9 @@ public class MystereTvComDecrypter extends PluginForDecrypt {
                 filename = br.getRegex("<title>(.*?) \\- Paranormal</title>").getMatch(0);
             }
         }
-        if (filename == null) return null;
+        if (filename == null) {
+            return null;
+        }
         filename = Encoding.htmlDecode(filename.trim());
         String externalLink = br.getRegex("\"(http://(www\\.)dailymotion\\.com/embed/video/.*?)\"").getMatch(0);
         if (externalLink != null) {
@@ -63,7 +69,9 @@ public class MystereTvComDecrypter extends PluginForDecrypt {
         if (externalLink != null) {
             br.getPage("http://www.tagtele.com/videos/playlist/" + externalLink);
             String finallink = br.getRegex("<location>(http://.*?)</location>").getMatch(0);
-            if (finallink == null) return null;
+            if (finallink == null) {
+                return null;
+            }
             DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink.trim()));
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
@@ -75,7 +83,9 @@ public class MystereTvComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         externalLink = br.getRegex("name=\"movie\" value=\"(http://(www\\.)youtube\\.com/v/.*?)\\&").getMatch(0);
-        if (externalLink == null) externalLink = br.getRegex("></param><embed src=\"(http://(www\\.)?youtube\\.com/v/.*?)\\&").getMatch(0);
+        if (externalLink == null) {
+            externalLink = br.getRegex("></param><embed src=\"(http://(www\\.)?youtube\\.com/v/.*?)\\&").getMatch(0);
+        }
         if (externalLink != null) {
             decryptedLinks.add(createDownloadlink(externalLink));
             return decryptedLinks;

@@ -48,6 +48,7 @@ public class RtbfBe extends PluginForHost {
 
     private String DLLINK = null;
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -67,10 +68,19 @@ public class RtbfBe extends PluginForHost {
         br.getPage("http://www.rtbf.be/video/embed?id=" + fid + "&autoplay=1");
         String vid_text = br.getRegex("<div class=\"js\\-player\\-embed.*?\" data\\-video=\"(.*?)\">").getMatch(0);
         if (vid_text == null) {
+            vid_text = this.br.getRegex("data\\-video=\"(.*?)\"").getMatch(0);
+        }
+        if (vid_text == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         vid_text = Encoding.htmlDecode(vid_text).replaceAll("\\\\/", "/");
         DLLINK = new Regex(vid_text, "\"downloadUrl\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = new Regex(vid_text, "\"high\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        }
+        if (DLLINK == null) {
+            DLLINK = new Regex(vid_text, "\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        }
         if (DLLINK == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

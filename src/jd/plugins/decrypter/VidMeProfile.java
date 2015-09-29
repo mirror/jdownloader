@@ -103,7 +103,7 @@ public class VidMeProfile extends PluginForDecrypt {
                 for (final Object videoo : ressourcelist) {
                     entries = (LinkedHashMap<String, Object>) videoo;
                     final String title = jd.plugins.hoster.VidMe.getVideoTitle(entries);
-                    final String videoid = (String) entries.get("url");
+                    final String videoid = jd.plugins.hoster.VidMe.getVideoID(entries);
                     if (title == null || videoid == null) {
                         return null;
                     }
@@ -112,6 +112,7 @@ public class VidMeProfile extends PluginForDecrypt {
                     dl.setAvailable(true);
                     dl.setName(title + jd.plugins.hoster.VidMe.default_Extension);
                     dl.setLinkID(videoid);
+                    dl.setContentUrl("https://vid.me/" + videoid);
                     decryptedLinks.add(dl);
                     distribute(dl);
                     offset++;

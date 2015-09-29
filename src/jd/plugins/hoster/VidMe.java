@@ -80,6 +80,10 @@ public class VidMe extends PluginForHost {
             }
             LinkedHashMap<String, Object> entries = (LinkedHashMap<String, Object>) jd.plugins.hoster.DummyScriptEnginePlugin.jsonToJavaObject(this.br.toString());
             entries = (LinkedHashMap<String, Object>) entries.get("video");
+            final String state = (String) entries.get("state");
+            if (!state.equals("success")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             filename = getVideoTitle(entries);
             DLLINK = (String) entries.get("complete_url");
         } else {
@@ -200,10 +204,18 @@ public class VidMe extends PluginForHost {
 
     public static String getVideoTitle(final LinkedHashMap<String, Object> sourcemap) {
         String title = (String) sourcemap.get("title");
-        if (title != null) {
+        if (title != null && !"".equals(title)) {
             title = encodeUnicode(title);
+        } else {
+            /* Title is not always given - use video-ID then. */
+            title = getVideoID(sourcemap);
         }
         return title;
+    }
+
+    public static String getVideoID(final LinkedHashMap<String, Object> sourcemap) {
+        final String videoid = (String) sourcemap.get("url");
+        return videoid;
     }
 
     @Override

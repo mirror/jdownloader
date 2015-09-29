@@ -60,17 +60,19 @@ public class TrollVidsCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public void correctDownloadLink(final DownloadLink link) {
-        final String fid = getFID(link);
+        final String fid = getFID(link.getDownloadURL());
         link.setLinkID(fid);
         link.setUrlDownload(link.getDownloadURL().replace("trollvidsdecrypted.com/", "trollvids.com/"));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         DLLINK = null;
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        final String fid = getFID(downloadLink);
+        this.br.setFollowRedirects(true);
+        this.br.setCustomCharset("UTF-8");
+        final String fid = getFID(downloadLink.getDownloadURL());
         this.br.getPage("http://trollvids.com/nuevo/player/config.php?v=" + fid);
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("videos/no_video\\.flv")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -152,8 +154,8 @@ public class TrollVidsCom extends PluginForHost {
     }
 
     @SuppressWarnings("deprecation")
-    private String getFID(final DownloadLink dl) {
-        return new Regex(dl.getDownloadURL(), "/video/(\\d+)/").getMatch(0);
+    public static String getFID(final String url) {
+        return new Regex(url, "/video/(\\d+)/").getMatch(0);
     }
 
     /** Avoid chars which are not allowed in filenames under certain OS' */
@@ -175,10 +177,6 @@ public class TrollVidsCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
-    }
-
-    private boolean isJDStable() {
-        return System.getProperty("jd.revision.jdownloaderrevision") == null;
     }
 
     @Override

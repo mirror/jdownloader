@@ -96,11 +96,22 @@ public class XHamsterCom extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("://(www\\.)?([a-z]{2}\\.)?", "://"));
         if (link.getDownloadURL().matches(TYPE_MOBILE) || link.getDownloadURL().matches(TYPE_EMBED)) {
-            link.setUrlDownload("http://xhamster.com/movies/" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "/" + System.currentTimeMillis() + new Random().nextInt(10000) + ".html");
+            link.setUrlDownload("http://xhamster.com/movies/" + getFID(link) + "/" + System.currentTimeMillis() + new Random().nextInt(10000) + ".html");
         } else {
             final String thisdomain = new Regex(link.getDownloadURL(), "https?://(?:www\\.)?([^/]+)/.+").getMatch(0);
             link.getDownloadURL().replace(thisdomain, DOMAIN_CURRENT);
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private String getFID(final DownloadLink dl) {
+        final String fid;
+        if (dl.getDownloadURL().matches(TYPE_MOBILE) || dl.getDownloadURL().matches(TYPE_EMBED)) {
+            fid = new Regex(dl.getDownloadURL(), "(\\d+)$").getMatch(0);
+        } else {
+            fid = new Regex(dl.getDownloadURL(), "movies/([0-9]+)/").getMatch(0);
+        }
+        return fid;
     }
 
     /**
@@ -184,6 +195,7 @@ public class XHamsterCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        final String fid = getFID(downloadLink);
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBr();
@@ -227,7 +239,7 @@ public class XHamsterCom extends PluginForHost {
         } else if (br.containsHTML(HTML_PAID_VIDEO)) {
             downloadLink.getLinkStatus().setStatusText("To download, you have to buy this video");
             if (filename != null) {
-                downloadLink.setName(filename + ".mp4");
+                downloadLink.setName(fid + "_" + filename + ".mp4");
             }
             return AvailableStatus.TRUE;
         }
@@ -236,7 +248,7 @@ public class XHamsterCom extends PluginForHost {
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            downloadLink.setFinalFileName(filename);
+            downloadLink.setFinalFileName(fid + "_" + filename);
         }
         if (downloadLink.getDownloadSize() <= 0) {
             URLConnectionAdapter con = null;
