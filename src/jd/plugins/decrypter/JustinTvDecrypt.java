@@ -391,6 +391,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 if (true) {
                     // highest to lowest determines best. this is how there api returns 'source[chunked], high, medium, low, mobile'
                     // I assume that is... 1080, 720, 480, 360, 240, but it might not be!
+                    boolean avoidChunked = this.getPluginConfig().getBooleanProperty("avoidChunked", true);
                     boolean q1080 = this.getPluginConfig().getBooleanProperty("q1080p", true);
                     boolean q720 = this.getPluginConfig().getBooleanProperty("q720p", true);
                     boolean q480 = this.getPluginConfig().getBooleanProperty("q480p", true);
@@ -411,7 +412,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                         if (q1080 && (desiredLinks.isEmpty() || !useBest)) {
                             for (final DownloadLink downloadLink : decryptedLinks) {
                                 final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
-                                if (vidQual >= 1080 && StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked) {
+                                if (vidQual >= 1080 && (!avoidChunked || StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked)) {
                                     desiredLinks.add(downloadLink);
                                 }
                             }
@@ -419,7 +420,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                         if (q720 && (desiredLinks.isEmpty() || !useBest)) {
                             for (final DownloadLink downloadLink : decryptedLinks) {
                                 final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
-                                if (vidQual < 1080 && vidQual >= 720 && StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked) {
+                                if (vidQual < 1080 && vidQual >= 720 && (!avoidChunked || StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked)) {
                                     desiredLinks.add(downloadLink);
                                 }
                             }
@@ -427,7 +428,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                         if (q480 && (desiredLinks.isEmpty() || !useBest)) {
                             for (final DownloadLink downloadLink : decryptedLinks) {
                                 final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
-                                if (vidQual < 720 && vidQual >= 480 && StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked) {
+                                if (vidQual < 720 && vidQual >= 480 && (!avoidChunked || StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked)) {
                                     desiredLinks.add(downloadLink);
                                 }
                             }
@@ -435,7 +436,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                         if (q360 && (desiredLinks.isEmpty() || !useBest)) {
                             for (final DownloadLink downloadLink : decryptedLinks) {
                                 final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
-                                if (vidQual < 480 && vidQual >= 360 && StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked) {
+                                if (vidQual < 480 && vidQual >= 360 && (!avoidChunked || StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked)) {
                                     desiredLinks.add(downloadLink);
                                 }
                             }
@@ -443,7 +444,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                         if (q240 && (desiredLinks.isEmpty() || !useBest)) {
                             for (final DownloadLink downloadLink : decryptedLinks) {
                                 final int vidQual = downloadLink.getIntegerProperty("videoQuality", -1);
-                                if (vidQual < 360 && vidQual >= 240 && StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked) {
+                                if (vidQual < 360 && vidQual >= 240 && (!avoidChunked || StringUtils.containsIgnoreCase(downloadLink.getStringProperty("m3u"), "/chunked") == chunked)) {
                                     desiredLinks.add(downloadLink);
                                 }
                             }

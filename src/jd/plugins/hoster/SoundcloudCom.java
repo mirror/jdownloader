@@ -570,22 +570,30 @@ public class SoundcloudCom extends PluginForHost {
         String formattedDate = null;
         if (date != null && formattedFilename.contains("*date*")) {
             // 2011-08-10T22:50:49Z
-            date = date.replace("T", ":");
-            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss Z");
-            Date dateStr = formatter.parse(date);
-
-            formattedDate = formatter.format(dateStr);
-            Date theDate = formatter.parse(formattedDate);
-
-            if (userDefinedDateFormat != null) {
-                try {
-                    formatter = new SimpleDateFormat(userDefinedDateFormat);
-                    formattedDate = formatter.format(theDate);
-                } catch (Exception e) {
-                    // prevent user error killing plugin.
-                    formattedDate = "";
+            try {
+                final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE, defaultCustomDate);
+                final SimpleDateFormat formatter;
+                if (date.contains("/")) {
+                    formatter = new SimpleDateFormat("yyyy/MM/dd'T'HH:mm:ss'Z'");
+                } else {
+                    formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
                 }
+
+                final Date dateStr = formatter.parse(date);
+                formattedDate = formatter.format(dateStr);
+                final String defaultformattedDate = formattedDate;
+                if (userDefinedDateFormat != null) {
+                    try {
+                        final SimpleDateFormat customFormatter = new SimpleDateFormat(userDefinedDateFormat);
+                        formattedDate = customFormatter.format(dateStr);
+                    } catch (Exception e) {
+                        // prevent user error killing plugin.
+                        formattedDate = defaultformattedDate;
+                    }
+                }
+            } catch (Exception e) {
+                // prevent user error killing plugin.
+                formattedDate = null;
             }
             if (formattedDate != null) {
                 formattedFilename = formattedFilename.replace("*date*", formattedDate);

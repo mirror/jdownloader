@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.JComponent;
@@ -581,6 +582,11 @@ public abstract class PluginForHost extends Plugin {
 
     public boolean isValidURL(String URL) {
         return true;
+    }
+
+    @Override
+    public Matcher getMatcher() {
+        return lazyP.getMatcher();
     }
 
     /**

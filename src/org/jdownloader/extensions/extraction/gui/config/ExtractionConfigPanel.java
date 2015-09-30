@@ -25,6 +25,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.FileCreationManager;
@@ -262,12 +263,40 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                     path = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder(), "extracted").getAbsolutePath();
                 }
                 final String finalPath = path;
-                final String[] blackListPatterns = s.getBlacklistPatterns();
-                List<String> pwList = s.getPasswordList();
-                if (pwList == null) {
-                    pwList = new ArrayList<String>();
+                final List<String> pwList = s.getPasswordList();
+                final String pwListString;
+                if (pwList == null || pwList.size() == 0) {
+                    pwListString = "";
+                } else {
+                    if (pwList.size() == 1) {
+                        pwListString = pwList.get(0);
+                    } else {
+                        final StringBuilder sb = new StringBuilder();
+                        final String separator = System.getProperty("line.separator");
+                        for (final String pw : pwList) {
+                            sb.append(pw);
+                            sb.append(separator);
+                        }
+                        pwListString = sb.toString();
+                    }
                 }
-                final List<String> finalpwList = pwList;
+                final String[] blackListPatterns = s.getBlacklistPatterns();
+                final String blackListPatternsString;
+                if (blackListPatterns == null || blackListPatterns.length == 0) {
+                    blackListPatternsString = "";
+                } else {
+                    if (blackListPatterns.length == 1) {
+                        blackListPatternsString = blackListPatterns[0];
+                    } else {
+                        final StringBuilder sb = new StringBuilder();
+                        final String separator = System.getProperty("line.separator");
+                        for (final String pw : blackListPatterns) {
+                            sb.append(pw);
+                            sb.append(separator);
+                        }
+                        blackListPatternsString = sb.toString();
+                    }
+                }
                 new EDTRunner() {
                     @Override
                     protected void runInEDT() {
@@ -280,103 +309,102 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                         toggleUseSubpath.getComponent().setSelected(s.isSubpathEnabled());
                         subPath.getComponent().setText(s.getSubPath());
                         subPathMinFiles.getComponent().setValue(s.getSubPathMinFilesTreshhold());
-
                         subPathMinFolders.getComponent().setValue(s.getSubPathMinFoldersTreshhold());
                         subPathMinFilesOrFolders.getComponent().setValue(s.getSubPathMinFilesOrFoldersTreshhold());
-                        StringBuilder sb = new StringBuilder();
-                        if (blackListPatterns != null) {
-                            for (String line : blackListPatterns) {
-                                if (sb.length() > 0) {
-                                    sb.append(System.getProperty("line.separator"));
-                                }
-                                sb.append(line);
-                            }
-                        }
-                        blacklist.getComponent().setText(sb.toString());
-                        sb = new StringBuilder();
-                        if (finalpwList != null) {
-                            for (String line : finalpwList) {
-                                if (sb.length() > 0) {
-                                    sb.append(System.getProperty("line.separator"));
-                                }
-                                sb.append(line);
-                            }
-                        }
-                        passwordlist.getComponent().setText(sb.toString());
-
+                        blacklist.getComponent().setText(blackListPatternsString);
+                        passwordlist.getComponent().setText(pwListString);
                         toggleUseOriginalFileDate.getComponent().setSelected(s.isUseOriginalFileDate());
                     }
-                };
+                }.waitForEDT();
                 return null;
             }
         });
     }
 
-    private void updateHeaders(boolean b) {
-
-    }
-
     @Override
     public void save() {
-        final ExtractionConfig s = extension.getSettings();
-        CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.setValue(toggleDefaultEnabled.getComponent().isSelected());
-        s.setCustomExtractionPathEnabled(toggleCustomizedPath.getComponent().isSelected());
-        s.setCustomExtractionPath(customPath.getComponent().getText());
-        s.setDeleteArchiveFilesAfterExtractionAction(toggleDeleteArchives.getComponent().getSelectedItem());
-        s.setDeleteArchiveDownloadlinksAfterExtraction(toggleDeleteArchiveDownloadLinks.getComponent().isSelected());
-        s.setIfFileExistsAction(toggleOverwriteExisting.getComponent().getSelectedItem());
-        s.setSubpathEnabled(toggleUseSubpath.getComponent().isSelected());
-        s.setSubPath(subPath.getComponent().getText());
-        try {
-            s.setSubPathMinFilesTreshhold((Integer) subPathMinFiles.getComponent().getValue());
-        } catch (final Throwable e) {
-            Log.exception(e);
-        }
-        try {
-            s.setSubPathMinFoldersTreshhold((Integer) subPathMinFolders.getComponent().getValue());
-        } catch (final Throwable e) {
-            Log.exception(e);
-        }
-        try {
-            s.setSubPathMinFilesOrFoldersTreshhold((Integer) subPathMinFilesOrFolders.getComponent().getValue());
-        } catch (final Throwable e) {
-            Log.exception(e);
-        }
+        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-        s.setUseOriginalFileDate(toggleUseOriginalFileDate.getComponent().isSelected());
-        {
-            final String txt = passwordlist.getComponent().getText();
-            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+            @Override
+            protected Void run() throws RuntimeException {
+                final ExtractionConfig s = extension.getSettings();
+                new EDTRunner() {
 
-                @Override
-                protected Void run() throws RuntimeException {
-                    final String[] list = txt.split("[\r\n]{1,2}");
-                    final LinkedHashSet<String> passwords = new LinkedHashSet<String>();
-                    for (String ss : list) {
-                        passwords.add(ss);
+                    @Override
+                    protected void runInEDT() {
+                        CFG_LINKGRABBER.AUTO_EXTRACTION_ENABLED.setValue(toggleDefaultEnabled.getComponent().isSelected());
+                        s.setCustomExtractionPathEnabled(toggleCustomizedPath.getComponent().isSelected());
+                        s.setCustomExtractionPath(customPath.getComponent().getText());
+                        s.setDeleteArchiveFilesAfterExtractionAction(toggleDeleteArchives.getComponent().getSelectedItem());
+                        s.setDeleteArchiveDownloadlinksAfterExtraction(toggleDeleteArchiveDownloadLinks.getComponent().isSelected());
+                        s.setIfFileExistsAction(toggleOverwriteExisting.getComponent().getSelectedItem());
+                        s.setSubpathEnabled(toggleUseSubpath.getComponent().isSelected());
+                        s.setSubPath(subPath.getComponent().getText());
+                        try {
+                            s.setSubPathMinFilesTreshhold((Integer) subPathMinFiles.getComponent().getValue());
+                        } catch (final Throwable e) {
+                            Log.exception(e);
+                        }
+                        try {
+                            s.setSubPathMinFoldersTreshhold((Integer) subPathMinFolders.getComponent().getValue());
+                        } catch (final Throwable e) {
+                            Log.exception(e);
+                        }
+                        try {
+                            s.setSubPathMinFilesOrFoldersTreshhold((Integer) subPathMinFilesOrFolders.getComponent().getValue());
+                        } catch (final Throwable e) {
+                            Log.exception(e);
+                        }
+                        s.setUseOriginalFileDate(toggleUseOriginalFileDate.getComponent().isSelected());
                     }
-                    s.setPasswordList(new ArrayList<String>(passwords));
-                    return null;
-                }
-            });
-        }
-        {
-            final String txt = blacklist.getComponent().getText();
-            TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+                };
+                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-                @Override
-                protected Void run() throws RuntimeException {
-                    final String[] list = Regex.getLines(txt);
-                    final LinkedHashSet<String> ignoreList = new LinkedHashSet<String>();
-                    for (String ss : list) {
-                        ignoreList.add(ss);
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        final String txt = new EDTHelper<String>() {
+
+                            @Override
+                            public String edtRun() {
+                                return passwordlist.getComponent().getText();
+                            }
+                        }.getReturnValue();
+                        final String[] list = txt.split("[\r\n]{1,2}");
+                        final LinkedHashSet<String> passwords = new LinkedHashSet<String>();
+                        for (final String pw : list) {
+                            if (StringUtils.isNotEmpty(pw)) {
+                                passwords.add(pw);
+                            }
+                        }
+                        s.setPasswordList(new ArrayList<String>(passwords));
+                        return null;
                     }
-                    s.setBlacklistPatterns(ignoreList.toArray(new String[ignoreList.size()]));
-                    return null;
-                }
-            });
+                });
+                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
-        }
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        final String txt = new EDTHelper<String>() {
+
+                            @Override
+                            public String edtRun() {
+                                return blacklist.getComponent().getText();
+                            }
+                        }.getReturnValue();
+                        final String[] list = Regex.getLines(txt);
+                        final LinkedHashSet<String> ignoreList = new LinkedHashSet<String>();
+                        for (String ss : list) {
+                            ignoreList.add(ss);
+                        }
+                        s.setBlacklistPatterns(ignoreList.toArray(new String[ignoreList.size()]));
+                        return null;
+                    }
+                });
+                return null;
+            }
+
+        });
+
     }
 
 }

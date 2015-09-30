@@ -91,7 +91,7 @@ public class OBoomCom extends PluginForHost {
     private void setLatestRefID(String ID) {
         final SubConfiguration pluginConfig = getPluginConfig();
         if (pluginConfig != null) {
-            pluginConfig.setProperty(REF_TOKEN, ID);
+            pluginConfig.setPropertyWithoutMark(REF_TOKEN, ID);
         }
     }
 

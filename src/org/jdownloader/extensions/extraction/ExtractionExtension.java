@@ -521,21 +521,20 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     @Override
     public void handleCommand(String command, String... parameters) {
-
         if (command.equalsIgnoreCase("add-passwords") || command.equalsIgnoreCase("add-passwords") || command.equalsIgnoreCase("p")) {
-            List<String> lst = getSettings().getPasswordList();
-            ArrayList<String> ret = new ArrayList<String>();
-            if (lst != null) {
-                ret.addAll(lst);
+            synchronized (PWLOCK) {
+                List<String> lst = getSettings().getPasswordList();
+                ArrayList<String> ret = new ArrayList<String>();
+                if (lst != null) {
+                    ret.addAll(lst);
+                }
+                Collection<String> newPws = Arrays.asList(parameters);
+                ret.removeAll(newPws);
+                ret.addAll(0, newPws);
+                getSettings().setPasswordList(ret);
+                logger.info("Added Passwords: " + newPws + " New List Size: " + ret.size());
             }
-            Collection<String> newPws = Arrays.asList(parameters);
-            ret.removeAll(newPws);
-            ret.addAll(0, newPws);
-            getSettings().setPasswordList(ret);
-            logger.info("Added Passwords: " + newPws + " New List Size: " + ret.size());
-
         }
-
     }
 
     // public void handleStartupParameters(ParameterParser parameters) {
@@ -559,8 +558,12 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                         List<String> currentList = getSettings().getPasswordList();
                         if (currentList == null) {
                             currentList = new ArrayList<String>();
+                        } else {
+                            for (final String pw : currentList) {
+                                dups.add(pw);
+                            }
                         }
-                        for (Object item : (List<?>) oldList) {
+                        for (final Object item : (List<?>) oldList) {
                             if (item != null && item instanceof String) {
                                 final String pw = (String) item;
                                 if (dups.add(pw)) {

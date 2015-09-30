@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.controlling.linkcollector.LinkOriginDetails;
@@ -74,6 +75,7 @@ public abstract class PluginsC {
 
     public PluginsC(String name, String pattern, String rev) {
         this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+        this.matcher = this.pattern.matcher("");
         this.name = name;
         long version = -1;
         try {
@@ -91,14 +93,20 @@ public abstract class PluginsC {
     protected byte[]                 k;
 
     private boolean                  askFileDeletion = true;
+    private final Matcher            matcher;
 
     public abstract ContainerStatus callDecryption(File file) throws Exception;
 
     // @Override
     public synchronized boolean canHandle(final String data) {
         if (data != null) {
-            final String match = new Regex(data, this.getSupportedLinks()).getMatch(-1);
-            return match != null && match.equalsIgnoreCase(data);
+            synchronized (matcher) {
+                try {
+                    return matcher.reset(data).find();
+                } finally {
+                    matcher.reset("");
+                }
+            }
         }
         return false;
     }

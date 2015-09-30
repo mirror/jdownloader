@@ -112,6 +112,10 @@ public class SmzdRcks extends antiDDoSForDecrypt {
             decryptedLinks.add(this.createOfflinelink(parameter));
             return decryptedLinks;
         }
+        if (redirect != null && parameter.contains("redirect/")) {
+            decryptedLinks.add(createDownloadlink(redirect));
+            return decryptedLinks;
+        }
 
         if (br.containsHTML("\"download_free\"")) {
             // redirect url

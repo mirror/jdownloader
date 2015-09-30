@@ -83,7 +83,7 @@ public class PornCom extends antiDDoSForHost {
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             try {
-                this.login(aa, false);
+                login(br, aa, false);
             } catch (final Throwable e) {
             }
         }
@@ -91,6 +91,8 @@ public class PornCom extends antiDDoSForHost {
         if (br.containsHTML("(id=\"error\"><h2>404|No such video|<title>PORN\\.COM</title>)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String q = downloadLink.getStringProperty("q", null);
+
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
@@ -99,32 +101,44 @@ public class PornCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = Encoding.htmlDecode(filename.trim());
-        get_dllink(this.br);
+        if (q != null) {
+            DLLINK = br.getRegex(q + "\",url:\"(https?:.*?)\"").getMatch(0);
+        } else {
+            get_dllink(this.br);
+        }
         /* A little trick to download videos that are usually only available for registered users WITHOUT account :) */
         if (DLLINK == null) {
             final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)(?:\\.html)?$").getMatch(0);
             final Browser brc = br.cloneBrowser();
             /* This way we can access links which are usually only accessible for registered users */
             brc.getPage("http://www.porn.com/videos/embed/" + fid + ".html");
-            get_dllink(brc);
-        }
-        if (DLLINK == null && br.containsHTML(">Sorry, this video is only available to members")) {
-            downloadLink.setName(filename + ".mp4");
-            downloadLink.getLinkStatus().setStatusText("Only available for registered users");
-            return AvailableStatus.TRUE;
+            if (q != null) {
+                DLLINK = brc.getRegex(q + "\",url:\"(https?:.*?)\"").getMatch(0);
+            } else {
+                get_dllink(brc);
+            }
         }
         if (DLLINK == null) {
+            if (br.containsHTML(">Sorry, this video is only available to members")) {
+                if (q == null) {
+                    downloadLink.setName(filename + ".mp4");
+                }
+                downloadLink.getLinkStatus().setStatusText("Only available for registered users");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) {
-            ext = ".mp4";
-        }
-        if (vq == null) {
-            downloadLink.setFinalFileName(filename + ext);
-        } else {
-            downloadLink.setFinalFileName(filename + "." + vq + ext);
+        if (q == null) {
+            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            if (ext == null || ext.length() > 5) {
+                ext = ".mp4";
+            }
+            if (vq == null) {
+                downloadLink.setFinalFileName(filename + ext);
+            } else {
+                downloadLink.setFinalFileName(filename + "." + vq + ext);
+            }
         }
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -148,7 +162,7 @@ public class PornCom extends antiDDoSForHost {
 
     @SuppressWarnings("deprecation")
     private void get_dllink(final Browser brc) {
-        final SubConfiguration cfg = SubConfiguration.getConfig("porn.com");
+        final SubConfiguration cfg = getPluginConfig();
         boolean q240 = cfg.getBooleanProperty("240p", false);
         boolean q360 = cfg.getBooleanProperty("360p", false);
         boolean q480 = cfg.getBooleanProperty("480p", false);
@@ -221,14 +235,14 @@ public class PornCom extends antiDDoSForHost {
     private static Object       LOCK     = new Object();
 
     /** Login e.g. needed for videos that are only available to registered users and/or premium content. */
-    private void login(final Account account, final boolean force) throws Exception {
+    public static void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies("porn.com", cookies);
                     return;
                 }
                 br.setFollowRedirects(false);
@@ -244,9 +258,11 @@ public class PornCom extends antiDDoSForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies("porn.com"), "");
             } catch (final PluginException e) {
-                account.clearCookies("");
+                if (e.getLinkStatus() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
+                    account.clearCookies("");
+                }
                 throw e;
             }
         }
@@ -256,12 +272,7 @@ public class PornCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            throw e;
-        }
+        login(br, account, true);
         ai.setUnlimitedTraffic();
         maxPrem.set(FREE_MAXDOWNLOADS);
         try {
@@ -277,13 +288,9 @@ public class PornCom extends antiDDoSForHost {
         return ai;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
         doFree(link);
     }
 
@@ -299,17 +306,17 @@ public class PornCom extends antiDDoSForHost {
     }
 
     private void setConfigElements() {
-        final ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_BEST", JDL.L("plugins.hoster.PornCom.checkbest", "Only grab the best available resolution")).setDefaultValue(false);
-        // getConfig().addEntry(hq);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "ALLOW_BEST", JDL.L("plugins.hoster.PornCom.checkbest", "Only grab the best available resolution")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "240p", JDL.L("plugins.hoster.PornCom.check360p", "Choose 240p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "360p", JDL.L("plugins.hoster.PornCom.check360p", "Choose 360p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "480p", JDL.L("plugins.hoster.PornCom.check480p", "Choose 480p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "720p", JDL.L("plugins.hoster.PornCom.check720p", "Choose 720p?")).setDefaultValue(true).setEnabledCondidtion(hq, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "240p", JDL.L("plugins.hoster.PornCom.check360p", "Choose 240p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "360p", JDL.L("plugins.hoster.PornCom.check360p", "Choose 360p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "480p", JDL.L("plugins.hoster.PornCom.check480p", "Choose 480p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "720p", JDL.L("plugins.hoster.PornCom.check720p", "Choose 720p?")).setDefaultValue(true));
     }
 
     @Override
     public void reset() {
+        DLLINK = null;
     }
 
     @Override

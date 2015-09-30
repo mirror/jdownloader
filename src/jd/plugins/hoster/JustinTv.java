@@ -456,6 +456,7 @@ public class JustinTv extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q360p", JDL.L("plugins.hoster.justintv.check360p", "Grab 360p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "q240p", JDL.L("plugins.hoster.justintv.check240p", "Grab 240p?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "useBest", JDL.L("plugins.hoster.justintv.usebest", "Only grab Best video within selection above?, Else will return available videos within your selected above")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "avoidChunked", JDL.L("plugins.hoster.justintv.avoidChunked", "Avoid source quality (chunked)?")).setDefaultValue(true));
 
     }
 

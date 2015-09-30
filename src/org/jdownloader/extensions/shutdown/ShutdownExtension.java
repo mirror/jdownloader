@@ -104,6 +104,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         case WINDOWS_2000:
         case WINDOWS_NT:
         case WINDOWS_SERVER_2008:
+        case WINDOWS_10:
             /* not so modern windows versions */
             if (getSettings().isForceShutdownEnabled()) {
                 /* force shutdown */
